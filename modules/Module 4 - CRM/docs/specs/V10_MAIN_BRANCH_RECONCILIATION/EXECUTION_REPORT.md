@@ -145,7 +145,7 @@ Both deviations were toolchain-only and did not change the SPEC's intent or outc
 
 | # | Ambiguous point | My decision | Why |
 |---|---|---|---|
-| 1 | Modified tracked file `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` (uncommitted edits at session start, written by the Cowork session — the merge-attempt log + V10 status block) — SPEC §7 only excludes "untracked" planning artifacts, doesn't address tracked-but-modified | Stashed under `v10_reconciliation_handoff_wip` (own slot, not touching `handoff_mid_session`); leaving stashed at SPEC close so the Cowork session can pop later | Achieves the §11 "clean tree" requirement without destroying real WIP content; preserves the named stash criterion (#3) by checking by name not by position |
+| 1 | Modified tracked file `roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` (uncommitted edits at session start, written by the Cowork session — the merge-attempt log + V10 status block) — SPEC §7 only excludes "untracked" planning artifacts, doesn't address tracked-but-modified | Stashed under `v10_reconciliation_handoff_wip` (own slot, not touching `handoff_mid_session`); leaving stashed at SPEC close so the Cowork session can pop later | Achieves the §11 "clean tree" requirement without destroying real WIP content; preserves the named stash criterion (#3) by checking by name not by position |
 | 2 | `gh` CLI absent — install via winget vs. work around with curl | Tried winget once, it failed silently (no output, package never appeared). Switched to curl + REST API. | One install attempt is acceptable per the executor playbook; persisting on a failed tool install would be detour not progress |
 | 3 | Single closing commit vs two-commit close (per §9 allowing both) | One closing commit: `chore(spec): V10 reconciliation audit + PR ready for Daniel review` containing EXECUTION_REPORT.md + FINDINGS.md, with PR URL embedded in §4 | Single commit is preferred per §9; the PR URL was known before the report was written so no second commit was needed |
 | 4 | Local main: leave untouched vs. propose cleanup | Leave untouched; out of scope for this SPEC | SPEC §7 lists "Local main mutation" as out of scope explicitly. The bypass strategy works without touching it. Future SPEC can `git fetch origin && git reset --hard origin/main` if desired. |
@@ -205,7 +205,7 @@ See `FINDINGS.md` in the same folder. One INFO-severity finding logged (`gh` mis
 - **After merge:** Step 5 of the SPEC remains. The executor can run it in a follow-up turn:
   1. `git fetch origin && git log origin/main --oneline | head -3` — confirm merge commit
   2. Verify Criterion #10 (`git grep "attendees_with_active_coupon" origin/main -- modules/crm/crm-automation-recipient-resolvers.js` → ≥1 hit)
-  3. Append one-line V10-unblocked update to `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` (Criterion #11)
+  3. Append one-line V10-unblocked update to `roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` (Criterion #11)
   4. Optional: pop `stash@{0}` (now `v10_reconciliation_handoff_wip`) IF the Cowork session doesn't claim ownership; otherwise leave for Cowork to pop
   5. Final closing commit if any new content is added
 - **Foreman:** `FOREMAN_REVIEW.md` after this report is committed.

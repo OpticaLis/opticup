@@ -33,7 +33,7 @@
 ## F3 — 30+ historical multisale references intentionally preserved
 
 **Severity:** INFO
-**Location:** Across `modules/Module 4 - CRM/docs/specs/`, `campaigns/supersale/`, `outputs/campaign-mockups/`, `__LAUNCH_PLAN_DRAFT__/site-overseer/`.
+**Location:** Across `modules/Module 4 - CRM/docs/specs/`, `campaigns/supersale/`, `outputs/campaign-mockups/`, `roles/site-overseer/`.
 **Discovered while:** B9 grep sweep.
 
 **Description.** After B9 deleted the live multisale campaign + tag rows, `grep -ri "multisale"` still returns 30+ hits across the repo. By design — those are historical specs, import scripts referencing the old `MULTISALE` constant for column transforms, research mockups, and frozen project-history docs. They describe the state the project HAD when multisale was active; rewriting them would erase historical context. SPEC §3 #11 + §10 explicit on this.

@@ -19,7 +19,7 @@ Add a "סטטוס רכישה" (purchase-status) filter to the Advanced Filters b
 
 Daniel directive 2026-05-03: *"אני רוצה פילטר ברור שמסך 'רשומים' בין לידים שכבר קנו לפחות פעם אחת לכאלה שאף פעם לא קנו... אני רוצה שבמסך 'רשומים' תוסיף עמודה עם מספר האירועים שהליד היה בהם."* The dashboard already shows "לידים חוזרים" (currently 81 on prizma) using `is_returning_customer = true` from `v_crm_lead_event_history`. The leads tab itself has had no equivalent filter or events-count column. This SPEC closes that gap.
 
-Sourced from Campaign Overseer REC-011 (`__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md`).
+Sourced from Campaign Overseer REC-011 (`roles/campaign-overseer/DECISIONS_LOG.md`).
 
 ---
 

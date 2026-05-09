@@ -202,7 +202,7 @@ Supabase:
 
 **Commit 3 (Rung 3) — opticup repo:**
 - Message: `chore(make): wire quick-register EF into scenario 8464122 quick-register branch`
-- Files: `__LAUNCH_PLAN_DRAFT__/campaign-overseer/MAKE_SCENARIO_NOTES.md` (NEW or appended) — documents the Make UI changes that were made via Make MCP. The actual scenario lives in Make, not git.
+- Files: `roles/campaign-overseer/MAKE_SCENARIO_NOTES.md` (NEW or appended) — documents the Make UI changes that were made via Make MCP. The actual scenario lives in Make, not git.
 
 **No merges to main from this SPEC.** Daniel handles the PR-merge after all 3 Rungs verify-green per `feedback_main_merge_via_pr.md`.
 

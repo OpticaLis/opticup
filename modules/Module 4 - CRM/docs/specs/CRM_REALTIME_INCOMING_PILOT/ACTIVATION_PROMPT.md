@@ -175,7 +175,7 @@ Foreman writes FOREMAN_REVIEW.md post-merge.
 
 ## References
 
-- Overseer recommendation: REC-012 in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md`
+- Overseer recommendation: REC-012 in `roles/campaign-overseer/DECISIONS_LOG.md`
 - Iron Rules: `CLAUDE.md` §4–§6
 - Supabase Realtime docs: https://supabase.com/docs/guides/realtime
 - Folder-per-SPEC protocol: `CLAUDE.md` §7

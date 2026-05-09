@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M14 — מסך יומן · Appointments Calendar</title>
+<style>
+  :root{
+    --bg:#FAFAF7; --surface:#FFFFFF; --soft:#F1EFE8;
+    --border:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
+    --text:#1F1F1E; --text-2:#5F5E5A; --text-3:#8A8884;
+    --purple:#534AB7; --purple-soft:#EEEDFE; --purple-deep:#26215C; --purple-mid:#7F77DD;
+    --teal:#0F6E56; --teal-soft:#E1F5EE; --teal-deep:#04342C; --teal-mid:#5DCAA5;
+    --amber:#BA7517; --amber-soft:#FAEEDA; --amber-deep:#412402; --amber-mid:#FAC775;
+    --blue:#185FA5; --blue-soft:#E6F1FB; --blue-deep:#0C447C;
+    --coral:#993C1D; --coral-soft:#FAECE7;
+    --green:#3B6D11; --green-soft:#EAF3DE;
+    --gray:#5F5E5A; --gray-soft:#F1EFE8;
+    --red:#A32D2D; --red-soft:#FBEAEA;
+    --r-md:6px; --r-lg:10px;
+
+    /* Appointment-type fills (inner) */
+    --t-adults:#E1F5EE;        --t-adults-text:#04342C;
+    --t-kids:#E6F1FB;          --t-kids-text:#0C447C;
+    --t-multifocal:#EEEDFE;    --t-multifocal-text:#26215C;
+    --t-contacts:#FAEEDA;      --t-contacts-text:#412402;
+    --t-sales:#FBEAEA;         --t-sales-text:#A32D2D;
+
+    /* Status outline (outer) — system + tenant-defined */
+    --s-confirmed:#3B6D11;       /* customer confirmed via website */
+    --s-pending:#BA7517;         /* awaiting staff approval */
+    --s-arrived:#0F6E56;         /* customer arrived */
+    --s-in-progress:#185FA5;     /* appointment started */
+    --s-done:#534AB7;            /* completed */
+    --s-noshow:#A32D2D;          /* no-show */
+    --s-cancelled:#5F5E5A;       /* cancelled */
+    --s-vip:#993C1D;             /* tenant-custom: VIP */
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;padding:18px;background:var(--bg);color:var(--text);
+    font-family:-apple-system,'Segoe UI',Rubik,sans-serif;font-size:12px;direction:rtl;
+  }
+  h1{font-size:18px;font-weight:500;margin:0 0 4px;}
+  h2{font-size:14px;font-weight:500;margin:0 0 8px;}
+  .lede{color:var(--text-2);margin:0 0 14px;font-size:12px;max-width:1100px;line-height:1.5;}
+
+  .app{
+    background:var(--surface);border:0.5px solid var(--border);
+    border-radius:var(--r-lg);overflow:hidden;max-width:1600px;margin:0 auto 24px;
+  }
+
+  /* HEADER */
+  .header{
+    background:var(--purple-deep);color:#EEEDFE;padding:10px 16px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .header .left{display:flex;align-items:center;gap:14px;}
+  .header .ttl{font-size:15px;font-weight:500;}
+  .header .branch{font-size:11px;color:#CECBF6;}
+  .header .right{display:flex;gap:8px;align-items:center;}
+  .header button{background:var(--purple-mid);color:#FFF;border:0;font-size:11px;padding:6px 12px;border-radius:var(--r-md);cursor:pointer;font-family:inherit;}
+  .header button.primary{background:var(--green);color:#FFF;font-weight:500;}
+  .header button.amber{background:var(--amber);color:#FFF;}
+
+  /* TOOLBAR */
+  .toolbar{
+    padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+    background:var(--soft);border-bottom:0.5px solid var(--border);
+  }
+  .nav{display:flex;gap:4px;align-items:center;}
+  .nav button{
+    background:var(--surface);border:0.5px solid var(--border);width:30px;height:30px;border-radius:4px;
+    cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center;font-family:inherit;
+  }
+  .nav .today{
+    background:var(--purple);color:#FFF;border-color:var(--purple);width:auto;padding:0 12px;font-size:11px;font-weight:500;
+  }
+  .date-label{font-size:14px;font-weight:500;margin-inline-end:8px;}
+  .view-toggle{display:flex;gap:0;border:0.5px solid var(--border);border-radius:var(--r-md);overflow:hidden;}
+  .view-toggle button{
+    background:var(--surface);border:0;padding:7px 14px;font-size:11px;cursor:pointer;font-family:inherit;
+    border-inline-start:0.5px solid var(--border);
+  }
+  .view-toggle button:first-child{border-inline-start:0;}
+  .view-toggle button.active{background:var(--purple);color:#FFF;}
+
+  .filters{margin-inline-start:auto;display:flex;gap:6px;align-items:center;font-size:11px;}
+  .filters select{
+    border:0.5px solid var(--border);border-radius:4px;padding:5px 8px;font-size:11px;font-family:inherit;background:var(--surface);
+  }
+  .pill{
+    background:var(--surface);border:0.5px solid var(--border);padding:4px 10px;border-radius:12px;
+    font-size:11px;cursor:pointer;color:var(--text-2);
+  }
+  .pill:hover{background:var(--purple-soft);border-color:var(--purple-mid);}
+
+  /* MAIN */
+  .main{display:grid;grid-template-columns:230px 1fr;}
+
+  /* SIDEBAR */
+  .sidebar{
+    background:var(--surface);border-inline-start:0.5px solid var(--border);
+    display:flex;flex-direction:column;min-height:780px;
+  }
+  .sb-section{padding:12px 14px;border-bottom:0.5px solid var(--border);}
+  .sb-section h3{
+    font-size:10px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:0.4px;
+    margin:0 0 8px;
+  }
+  .mini-cal{
+    width:100%;font-size:10px;text-align:center;
+  }
+  .mini-cal table{width:100%;border-collapse:collapse;}
+  .mini-cal th{padding:3px;color:var(--text-3);font-weight:500;}
+  .mini-cal td{padding:3px;cursor:pointer;border-radius:3px;}
+  .mini-cal td:hover{background:var(--purple-soft);}
+  .mini-cal td.today{background:var(--purple);color:#FFF;font-weight:500;}
+  .mini-cal td.has-evt{font-weight:500;color:var(--purple-deep);}
+  .mini-cal td.muted{color:var(--text-3);}
+
+  .legend-row{
+    display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;cursor:pointer;
+  }
+  .legend-row .dot{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
+  .legend-row .ring{
+    width:12px;height:12px;border-radius:3px;border:2px solid;flex-shrink:0;background:var(--surface);
+  }
+  .legend-row .lbl{flex:1;}
+  .legend-row .ct{color:var(--text-3);font-size:9px;}
+
+  .resources-list .res{
+    padding:5px 0;display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;
+  }
+  .resources-list .res input{margin:0;}
+  .resources-list .res .av{
+    width:20px;height:20px;border-radius:50%;background:var(--purple-mid);color:#FFF;
+    font-size:9px;display:inline-flex;align-items:center;justify-content:center;font-weight:500;
+  }
+
+  .quick-add{
+    background:var(--green);color:#FFF;border:0;padding:9px;border-radius:var(--r-md);
+    cursor:pointer;font-size:12px;font-weight:500;width:100%;font-family:inherit;
+  }
+  .quick-add:hover{background:#2F560D;}
+
+  /* CALENDAR — week view */
+  .cal-wrap{padding:0;background:var(--bg);overflow:auto;}
+  .cal-grid{
+    display:grid;grid-template-columns:60px repeat(7,1fr);background:var(--surface);
+  }
+  .col-head{
+    padding:9px 6px;background:var(--soft);border-inline-start:0.5px solid var(--border);
+    border-bottom:0.5px solid var(--border);text-align:center;font-size:11px;font-weight:500;
+    position:sticky;top:0;z-index:5;
+  }
+  .col-head:first-child{border-inline-start:0;}
+  .col-head .day{font-size:13px;}
+  .col-head .num{font-size:18px;font-weight:500;color:var(--text-2);}
+  .col-head.today{background:#FFF7E6;}
+  .col-head.today .num{color:var(--amber-deep);}
+  .col-head.fri .day, .col-head.fri .num{color:var(--coral);}
+
+  .holiday-band{
+    grid-column:2 / -1;background:#E6F1FB;color:var(--blue-deep);
+    padding:5px 10px;font-size:11px;border-bottom:0.5px solid var(--border);
+    text-align:center;
+  }
+
+  .time-col{
+    background:var(--soft);border-inline-start:0;
+  }
+  .time-slot{
+    height:48px;padding:2px 6px;font-size:10px;color:var(--text-3);text-align:end;
+    border-bottom:0.5px solid var(--border);position:relative;
+  }
+  .time-slot.hour{font-weight:500;color:var(--text-2);}
+
+  .day-col{
+    border-inline-start:0.5px solid var(--border);position:relative;background:var(--surface);
+  }
+  .day-col.fri{background:#FAFAF7;}
+  .day-col.sat{background:var(--soft);}
+  .day-col.today{background:#FFFCF5;}
+
+  .slot-cell{
+    height:48px;border-bottom:0.5px solid var(--border);cursor:cell;position:relative;
+  }
+  .slot-cell:hover{background:var(--purple-soft);}
+  .slot-cell.shift{background:rgba(225,245,238,0.5);}     /* working-hour shaded */
+  .slot-cell.shift:hover{background:rgba(125,202,165,0.4);}
+  .slot-cell.blocked{
+    background:repeating-linear-gradient(45deg,#F1EFE8,#F1EFE8 6px,#E5E2D8 6px,#E5E2D8 12px);
+    cursor:not-allowed;
+  }
+
+  /* APPOINTMENT */
+  .appt{
+    position:absolute;left:3px;right:3px;border-radius:4px;padding:5px 7px 4px;cursor:pointer;
+    font-size:10px;line-height:1.25;overflow:hidden;
+    border:2.5px solid;background:#FFF;
+    z-index:2;
+  }
+  .appt:hover{box-shadow:0 2px 6px rgba(0,0,0,0.12);transform:translateY(-1px);}
+  .appt .name{font-weight:500;font-size:11px;color:var(--text);}
+  .appt .type{font-size:10px;color:var(--text-2);}
+  .appt .t{font-size:9px;color:var(--text-3);font-variant-numeric:tabular-nums;}
+  .appt .badges{display:flex;gap:3px;align-items:center;margin-top:2px;}
+  .appt .b{font-size:8px;padding:0 4px;border-radius:6px;font-weight:500;}
+  .b-otp{background:var(--green-soft);color:var(--green);}
+  .b-noshow{background:var(--red-soft);color:var(--red);}
+  .b-vip{background:var(--coral-soft);color:var(--coral);}
+  .b-flag{background:var(--amber-soft);color:var(--amber-deep);}
+
+  /* Type fill colors */
+  .tf-adults{background:var(--t-adults);}
+  .tf-kids{background:var(--t-kids);}
+  .tf-multifocal{background:var(--t-multifocal);}
+  .tf-contacts{background:var(--t-contacts);}
+  .tf-sales{background:var(--t-sales);}
+
+  /* Status outline colors */
+  .so-confirmed{border-color:var(--s-confirmed);}
+  .so-pending{border-color:var(--s-pending);border-style:dashed;}
+  .so-arrived{border-color:var(--s-arrived);}
+  .so-in-progress{border-color:var(--s-in-progress);}
+  .so-done{border-color:var(--s-done);}
+  .so-noshow{border-color:var(--s-noshow);}
+  .so-cancelled{border-color:var(--s-cancelled);opacity:0.55;text-decoration:line-through;}
+  .so-vip{border-color:var(--s-vip);border-width:3px;}
+
+  /* APPT POSITIONS — for demo */
+  .pos-sun-09{top:0px;height:80px;}
+  .pos-mon-1020{top:80px;height:80px;}
+  .pos-tue-09{top:0px;height:90px;}
+  .pos-tue-1100{top:160px;height:80px;}
+  .pos-tue-1230{top:280px;height:80px;}
+  .pos-wed-09{top:0px;height:80px;}
+  .pos-wed-1100{top:160px;height:80px;}
+  .pos-thu-09{top:0px;height:80px;}
+  .pos-thu-1300{top:330px;height:120px;}
+  .pos-fri-1000{top:50px;height:80px;}
+  .pos-fri-1130{top:170px;height:60px;}
+
+  /* BOTTOM PANEL — quick stats */
+  .bottom-panel{
+    background:var(--surface);border-top:0.5px solid var(--border);padding:10px 16px;
+    display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:11px;
+  }
+  .bp-stat{display:flex;align-items:center;gap:6px;}
+  .bp-stat .v{font-weight:500;font-size:13px;font-variant-numeric:tabular-nums;}
+  .bp-stat .l{color:var(--text-3);font-size:10px;}
+  .bp-divider{height:18px;width:1px;background:var(--border);}
+</style>
+</head>
+<body>
+
+<h1>M14 — מסך יומן · Appointments Calendar</h1>
+<p class="lede">
+  לוח-עבודה לצוות. תצוגה שבועית כברירת-מחדל, ניתנת להחלפה ליומית/חודשית. כל תור מוצג עם <strong>צבע-פנימי = סוג-מפגש</strong> + <strong>מסגרת חיצונית = סטטוס</strong>. ה-sidebar מציג מיני-יומן + מקרא צבעים + רשימת-משאבים. השעות 08-20 הן שעות-תצוגה (booking-hours = 09-19, צבועות בירוק-בהיר). תורים שהועברו או בוטלו נשארים גלויים עם סימון.
+</p>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="left">
+      <div>
+        <div class="ttl">יומן עבודה · אופטיקה פריזמה</div>
+        <div class="branch">סניף הרצליה · ד"ר נועה כהן + ד"ר עידן רוזן</div>
+      </div>
+    </div>
+    <div class="right">
+      <button>📤 ייצוא Excel</button>
+      <button>⚙️ הגדרות יומן</button>
+      <button class="amber">🚫 חסום זמן</button>
+      <button class="primary">+ פגישה חדשה</button>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="nav">
+      <button title="הקודם">‹</button>
+      <button class="today">היום</button>
+      <button title="הבא">›</button>
+    </div>
+    <span class="date-label">3 - 9 במאי 2026</span>
+
+    <div class="view-toggle">
+      <button>יומית</button>
+      <button class="active">שבועית</button>
+      <button>חודשית</button>
+      <button>רשימה</button>
+    </div>
+
+    <div class="filters">
+      <span>סנן:</span>
+      <select>
+        <option>כל הסוגים</option>
+        <option>בדיקות מבוגרים</option>
+        <option>בדיקות ילדים</option>
+        <option>מולטיפוקל</option>
+        <option>עדשות-מגע</option>
+      </select>
+      <select>
+        <option>כל הסטטוסים</option>
+        <option>אישר באתר</option>
+        <option>ממתין-לאישור</option>
+        <option>הגיע</option>
+        <option>בוטל</option>
+        <option>no-show</option>
+      </select>
+      <span class="pill">⚠️ 3 ביטולים לא-מאושרים</span>
+      <span class="pill">📞 2 לידים חדשים</span>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+
+      <div class="sb-section">
+        <button class="quick-add">+ פגישה חדשה</button>
+      </div>
+
+      <!-- Mini-calendar -->
+      <div class="sb-section">
+        <h3>מאי 2026</h3>
+        <table class="mini-cal">
+          <thead><tr><th>א</th><th>ב</th><th>ג</th><th>ד</th><th>ה</th><th>ו</th><th>ש</th></tr></thead>
+          <tbody>
+            <tr><td class="muted">26</td><td class="muted">27</td><td class="muted">28</td><td class="muted">29</td><td class="muted">30</td><td class="muted">1</td><td class="muted">2</td></tr>
+            <tr><td class="has-evt">3</td><td class="has-evt">4</td><td class="has-evt">5</td><td class="has-evt">6</td><td class="today">7</td><td class="has-evt">8</td><td>9</td></tr>
+            <tr><td class="has-evt">10</td><td>11</td><td class="has-evt">12</td><td>13</td><td class="has-evt">14</td><td>15</td><td>16</td></tr>
+            <tr><td>17</td><td class="has-evt">18</td><td>19</td><td>20</td><td class="has-evt">21</td><td>22</td><td>23</td></tr>
+            <tr><td class="has-evt">24</td><td>25</td><td>26</td><td>27</td><td>28</td><td>29</td><td>30</td></tr>
+            <tr><td>31</td><td class="muted">1</td><td class="muted">2</td><td class="muted">3</td><td class="muted">4</td><td class="muted">5</td><td class="muted">6</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Resources -->
+      <div class="sb-section">
+        <h3>אנשי צוות + משאבים</h3>
+        <div class="resources-list">
+          <label class="res"><input type="checkbox" checked /> <span class="av">נע</span> ד"ר נועה כהן</label>
+          <label class="res"><input type="checkbox" checked /> <span class="av" style="background:var(--amber);">עי</span> ד"ר עידן רוזן</label>
+          <label class="res"><input type="checkbox" /> <span class="av" style="background:var(--coral);">חי</span> ד"ר חיים לוי (אורח)</label>
+          <label class="res"><input type="checkbox" checked /> <span class="av" style="background:var(--teal);">ח1</span> חדר בדיקות 1</label>
+          <label class="res"><input type="checkbox" /> <span class="av" style="background:var(--teal);">ח2</span> חדר בדיקות 2</label>
+        </div>
+      </div>
+
+      <!-- Legend: types (inner) -->
+      <div class="sb-section">
+        <h3>סוג-פגישה (צבע פנימי)</h3>
+        <div class="legend-row"><span class="dot tf-adults"></span><span class="lbl">בדיקות מבוגרים</span><span class="ct">28</span></div>
+        <div class="legend-row"><span class="dot tf-kids"></span><span class="lbl">בדיקות ילדים</span><span class="ct">14</span></div>
+        <div class="legend-row"><span class="dot tf-multifocal"></span><span class="lbl">מולטיפוקל</span><span class="ct">7</span></div>
+        <div class="legend-row"><span class="dot tf-contacts"></span><span class="lbl">תדרוך עדשות-מגע</span><span class="ct">3</span></div>
+        <div class="legend-row"><span class="dot tf-sales"></span><span class="lbl">יום מכירות 30.10</span><span class="ct">0</span></div>
+      </div>
+
+      <!-- Legend: status (outer) -->
+      <div class="sb-section">
+        <h3>סטטוס (מסגרת חיצונית)</h3>
+        <div class="legend-row"><span class="ring" style="border-color:var(--s-confirmed);"></span><span class="lbl">לקוח אישר באתר</span></div>
+        <div class="legend-row"><span class="ring" style="border-color:var(--s-pending);border-style:dashed;"></span><span class="lbl">ממתין-לאישור-צוות</span></div>
+        <div class="legend-row"><span class="ring" style="border-color:var(--s-arrived);"></span><span class="lbl">הגיע לחנות</span></div>
+        <div class="legend-row"><span class="ring" style="border-color:var(--s-in-progress);"></span><span class="lbl">בבדיקה</span></div>
+        <div class="legend-row"><span class="ring" style="border-color:var(--s-done);"></span><span class="lbl">בוצע</span></div>
+        <div class="legend-row"><span class="ring" style="border-color:var(--s-noshow);"></span><span class="lbl">לא הופיע (no-show)</span></div>
+        <div class="legend-row"><span class="ring" style="border-color:var(--s-cancelled);"></span><span class="lbl">בוטל</span></div>
+        <div class="legend-row"><span class="ring" style="border-color:var(--s-vip);border-width:3px;"></span><span class="lbl">VIP (tenant-מותאם)</span></div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:6px;line-height:1.4;">
+          סטטוסי-מערכת קבועים. סטטוסים נוספים הניתנים-להוספה ע"י ה-tenant (כמו "VIP" כאן).
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="cal-wrap">
+      <div class="cal-grid">
+
+        <!-- Headers -->
+        <div class="col-head time-col" style="background:var(--soft);"></div>
+        <div class="col-head"><div class="day">ראשון</div><div class="num">03</div></div>
+        <div class="col-head"><div class="day">שני</div><div class="num">04</div></div>
+        <div class="col-head"><div class="day">שלישי</div><div class="num">05</div></div>
+        <div class="col-head"><div class="day">רביעי</div><div class="num">06</div></div>
+        <div class="col-head today"><div class="day">חמישי · היום</div><div class="num">07</div></div>
+        <div class="col-head fri"><div class="day">שישי</div><div class="num">08</div></div>
+        <div class="col-head"><div class="day">שבת</div><div class="num">09</div></div>
+
+        <!-- Time column -->
+        <div class="time-col">
+          <div class="time-slot hour">08:00</div>
+          <div class="time-slot">08:30</div>
+          <div class="time-slot hour">09:00</div>
+          <div class="time-slot">09:30</div>
+          <div class="time-slot hour">10:00</div>
+          <div class="time-slot">10:30</div>
+          <div class="time-slot hour">11:00</div>
+          <div class="time-slot">11:30</div>
+          <div class="time-slot hour">12:00</div>
+          <div class="time-slot">12:30</div>
+          <div class="time-slot hour">13:00</div>
+          <div class="time-slot">13:30</div>
+          <div class="time-slot hour">14:00</div>
+          <div class="time-slot">14:30</div>
+          <div class="time-slot hour">15:00</div>
+          <div class="time-slot">15:30</div>
+          <div class="time-slot hour">16:00</div>
+          <div class="time-slot">16:30</div>
+          <div class="time-slot hour">17:00</div>
+          <div class="time-slot">17:30</div>
+          <div class="time-slot hour">18:00</div>
+          <div class="time-slot">18:30</div>
+          <div class="time-slot hour">19:00</div>
+          <div class="time-slot">19:30</div>
+        </div>
+
+        <!-- Day: Sunday 03/05 -->
+        <div class="day-col" style="grid-column:2;">
+          <div class="slot-cell"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell"></div>
+          <div class="slot-cell"></div>
+          <div class="appt tf-adults so-confirmed" style="top:96px;height:60px;">
+            <div class="name">יוסי כהן</div>
+            <div class="type">בדיקת מבוגרים</div>
+            <div class="t">09:00 - 09:20 · ד"ר נועה</div>
+            <div class="badges"><span class="b b-otp">✓ OTP</span></div>
+          </div>
+          <div class="appt tf-kids so-pending" style="top:240px;height:60px;">
+            <div class="name">תמר אברהם</div>
+            <div class="type">בדיקת ילדים</div>
+            <div class="t">11:00 - 11:20 · ד"ר עידן</div>
+            <div class="badges"><span class="b b-flag">ממתין-אישור</span></div>
+          </div>
+          <div class="appt tf-multifocal so-vip" style="top:480px;height:120px;">
+            <div class="name">⭐ מירי דהן</div>
+            <div class="type">מולטיפוקל · 40 דקות</div>
+            <div class="t">14:00 - 14:40 · ד"ר נועה</div>
+            <div class="badges"><span class="b b-vip">VIP</span><span class="b b-otp">✓ OTP</span></div>
+          </div>
+        </div>
+
+        <!-- Day: Monday 04/05 -->
+        <div class="day-col" style="grid-column:3;">
+          <div class="slot-cell"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell"></div>
+          <div class="slot-cell"></div>
+          <div class="appt tf-adults so-done" style="top:80px;height:60px;">
+            <div class="name">אבי מזרחי</div>
+            <div class="type">בדיקת מבוגרים</div>
+            <div class="t">09:40 - 10:00</div>
+            <div class="badges"><span class="b b-flag">✓ בוצע</span></div>
+          </div>
+          <div class="appt tf-kids so-confirmed" style="top:240px;height:60px;">
+            <div class="name">נועה רביב</div>
+            <div class="type">בדיקת ילדים · ילד 1</div>
+            <div class="t">11:00 - 11:20 · ד"ר עידן</div>
+          </div>
+          <div class="appt tf-contacts so-arrived" style="top:432px;height:60px;">
+            <div class="name">רן ברק</div>
+            <div class="type">תדרוך עדשות-מגע</div>
+            <div class="t">13:00 - 13:30</div>
+            <div class="badges"><span class="b b-flag">בקופה</span></div>
+          </div>
+        </div>
+
+        <!-- Day: Tuesday 05/05 -->
+        <div class="day-col" style="grid-column:4;">
+          <div class="holiday-band" style="grid-column:1 / -1;position:absolute;top:0;left:0;right:0;">
+            🎯 ל"ג בעומר
+          </div>
+          <div class="slot-cell" style="margin-top:28px;"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell"></div>
+          <div class="slot-cell"></div>
+          <div class="appt tf-adults so-cancelled" style="top:108px;height:80px;">
+            <div class="name">חיים לוי</div>
+            <div class="type">בדיקת מבוגרים</div>
+            <div class="t">09:00 - 09:20 · בוטל ע"י לקוח</div>
+          </div>
+          <div class="appt tf-kids so-confirmed" style="top:268px;height:60px;">
+            <div class="name">איתי רובין</div>
+            <div class="type">בדיקת ילדים</div>
+            <div class="t">11:20 - 11:40 · ד"ר עידן</div>
+            <div class="badges"><span class="b b-otp">✓ OTP</span></div>
+          </div>
+          <div class="appt tf-kids so-confirmed" style="top:328px;height:60px;">
+            <div class="name">דני אבני</div>
+            <div class="type">בדיקת ילדים</div>
+            <div class="t">12:00 - 12:20</div>
+          </div>
+        </div>
+
+        <!-- Day: Wednesday 06/05 -->
+        <div class="day-col" style="grid-column:5;">
+          <div class="slot-cell"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell blocked"></div>
+          <div class="slot-cell blocked"></div>
+          <div class="slot-cell blocked"></div>
+          <div class="slot-cell blocked"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell"></div>
+          <div class="slot-cell"></div>
+          <div class="appt tf-adults so-confirmed" style="top:80px;height:60px;">
+            <div class="name">תמר עמר</div>
+            <div class="type">בדיקת מבוגרים</div>
+            <div class="t">09:20 - 09:40</div>
+          </div>
+          <div class="appt tf-multifocal so-confirmed" style="top:240px;height:120px;">
+            <div class="name">⭐ רחלי דוד</div>
+            <div class="type">מולטיפוקל · 40 דקות</div>
+            <div class="t">11:00 - 11:40 · ד"ר נועה</div>
+          </div>
+          <div style="position:absolute;top:580px;left:0;right:0;text-align:center;font-size:10px;color:var(--text-3);">
+            🚫 חסום: פגישת-צוות 14:00-16:00
+          </div>
+        </div>
+
+        <!-- Day: Thursday 07/05 (today) -->
+        <div class="day-col today" style="grid-column:6;">
+          <div class="slot-cell"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell"></div>
+          <div class="slot-cell"></div>
+          <div class="appt tf-adults so-arrived" style="top:80px;height:60px;">
+            <div class="name">דוד מזרחי</div>
+            <div class="type">בדיקת מבוגרים</div>
+            <div class="t">09:00 - 09:20 · בקופה</div>
+            <div class="badges"><span class="b b-flag">בקופה</span></div>
+          </div>
+          <div class="appt tf-kids so-pending" style="top:200px;height:60px;">
+            <div class="name">איל רוזנפלד</div>
+            <div class="type">בדיקת ילדים</div>
+            <div class="t">10:30 - 10:50 · ד"ר עידן</div>
+            <div class="badges"><span class="b b-flag">ממתין</span></div>
+          </div>
+          <div class="appt tf-multifocal so-confirmed" style="top:312px;height:120px;">
+            <div class="name">רינה כהן</div>
+            <div class="type">מולטיפוקל · 40 דקות</div>
+            <div class="t">12:00 - 12:40 · ד"ר נועה</div>
+            <div class="badges"><span class="b b-otp">✓ OTP</span></div>
+          </div>
+          <div class="appt tf-contacts so-confirmed" style="top:480px;height:60px;">
+            <div class="name">גליה בר</div>
+            <div class="type">תדרוך עדשות-מגע</div>
+            <div class="t">14:00 - 14:30</div>
+          </div>
+          <div class="appt tf-adults so-noshow" style="top:600px;height:60px;">
+            <div class="name">אבי שלום</div>
+            <div class="type">בדיקת מבוגרים</div>
+            <div class="t">15:00 - 15:20 · לא הופיע</div>
+            <div class="badges"><span class="b b-noshow">no-show #3</span></div>
+          </div>
+          <div class="appt tf-adults so-confirmed" style="top:720px;height:60px;">
+            <div class="name">נטע פרץ</div>
+            <div class="type">בדיקת מבוגרים</div>
+            <div class="t">17:00 - 17:20</div>
+          </div>
+        </div>
+
+        <!-- Day: Friday 08/05 -->
+        <div class="day-col fri" style="grid-column:7;">
+          <div class="slot-cell"></div>
+          <div class="slot-cell"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell shift"></div>
+          <div class="slot-cell"></div>
+          <div class="slot-cell"></div>
+          <div class="slot-cell"></div>
+          <div class="slot-cell"></div>
+          <div class="slot-cell"></div>
+          <div class="slot-cell"></div>
+          <div class="slot-cell"></div>
+          <div class="slot-cell"></div>
+          <div class="slot-cell"></div>
+          <div class="slot-cell"></div>
+          <div class="slot-cell"></div>
+          <div class="slot-cell"></div>
+          <div class="slot-cell"></div>
+          <div class="appt tf-adults so-confirmed" style="top:144px;height:60px;">
+            <div class="name">לאה כהן</div>
+            <div class="type">בדיקת מבוגרים</div>
+            <div class="t">10:00 - 10:20</div>
+          </div>
+          <div class="appt tf-kids so-confirmed" style="top:264px;height:60px;">
+            <div class="name">עמית טל</div>
+            <div class="type">בדיקת ילדים</div>
+            <div class="t">11:30 - 11:50</div>
+          </div>
+        </div>
+
+        <!-- Day: Saturday 09/05 (closed) -->
+        <div class="day-col sat" style="grid-column:8;">
+          <div class="slot-cell" style="height:1152px;cursor:not-allowed;">
+            <div style="text-align:center;padding-top:300px;color:var(--text-3);font-size:11px;">
+              סגור · שבת
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM PANEL -->
+  <div class="bottom-panel">
+    <div class="bp-stat"><span class="v">52</span><span class="l">תורים השבוע</span></div>
+    <div class="bp-divider"></div>
+    <div class="bp-stat"><span class="v">38</span><span class="l">לקוח אישר</span></div>
+    <div class="bp-stat"><span class="v">8</span><span class="l">ממתין-אישור</span></div>
+    <div class="bp-stat"><span class="v">3</span><span class="l">בוטלו</span></div>
+    <div class="bp-stat"><span class="v">1</span><span class="l">no-show</span></div>
+    <div class="bp-divider"></div>
+    <div class="bp-stat"><span class="v">68%</span><span class="l">נצילות</span></div>
+    <div class="bp-stat"><span class="v">14</span><span class="l">slots פנויים</span></div>
+    <div class="bp-divider"></div>
+    <div class="bp-stat"><span class="v" style="color:var(--green);">●</span><span class="l">ד"ר נועה זמינה</span></div>
+    <div class="bp-stat"><span class="v" style="color:var(--green);">●</span><span class="l">ד"ר עידן זמין</span></div>
+  </div>
+
+</div>
+
+<!-- LEGEND / NOTES -->
+<div style="max-width:1600px;margin:18px auto;padding:14px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);">
+  <h2 style="margin-bottom:10px;">איך לקרוא תור ביומן</h2>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:18px;">
+    <div>
+      <h3 style="font-size:12px;font-weight:500;margin:0 0 6px;color:var(--purple-deep);">Dual-color system</h3>
+      <p style="font-size:11px;color:var(--text-2);line-height:1.6;margin:0 0 4px;">
+        <strong>צבע פנימי (רקע) = סוג-מפגש.</strong> ירוק=מבוגרים, כחול=ילדים, סגול=מולטיפוקל, צהוב=עדשות-מגע. ה-tenant יכול לשנות את הצבעים בהגדרות-סוגי-מפגשים.
+      </p>
+      <p style="font-size:11px;color:var(--text-2);line-height:1.6;margin:0;">
+        <strong>צבע חיצוני (מסגרת) = סטטוס.</strong> 7 סטטוסי-מערכת (קבועים) + סטטוסים-משלך-להוסיף (כמו "VIP" כאן). מסגרת-מקווקוות = ממתין-לאישור. מסגרת-עבה = VIP.
+      </p>
+    </div>
+    <div>
+      <h3 style="font-size:12px;font-weight:500;margin:0 0 6px;color:var(--purple-deep);">Interactions</h3>
+      <p style="font-size:11px;color:var(--text-2);line-height:1.6;margin:0 0 4px;">
+        <strong>לחיצה על slot ריק:</strong> דיאלוג מהיר ליצירת תור (תאריך/שעה/אופטומטריסט מלאים מראש).
+      </p>
+      <p style="font-size:11px;color:var(--text-2);line-height:1.6;margin:0 0 4px;">
+        <strong>לחיצה על תור:</strong> פאנל-צד עם פרטי-תור + 5 פעולות (אישור-הגעה / שינוי / ביטול / כרטיס-לקוח / ➕ הזמנה).
+      </p>
+      <p style="font-size:11px;color:var(--text-2);line-height:1.6;margin:0 0 4px;">
+        <strong>גרירה (drag):</strong> הזזת-תור לזמן אחר → דיאלוג-אישור + checkbox "שלח הודעה ללקוח".
+      </p>
+      <p style="font-size:11px;color:var(--text-2);line-height:1.6;margin:0;">
+        <strong>קליק-ימני באזור-זמן:</strong> "חסם זמן זה" עם סיבה (פגישת-צוות / חופשה / אחר).
+      </p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

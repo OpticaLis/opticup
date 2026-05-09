@@ -89,8 +89,8 @@ Out of the 30 Iron Rules, these are the ones most likely to be tested by this mo
 
 | File | Why |
 |---|---|
-| `__LAUNCH_PLAN_DRAFT__/MASTER_LIVE_PLAN.md` §4 ({module}) | Full requirements |
-| `__LAUNCH_PLAN_DRAFT__/access-audit/{relevant report}` | Source data structure |
+| `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md` §4 ({module}) | Full requirements |
+| `_archive/access-audit/{relevant report}` | Source data structure |
 | `docs/GLOBAL_MAP.md` | Existing functions to reuse (Iron Rule 21) |
 | `docs/GLOBAL_SCHEMA.sql` | Existing schema |
 | `CLAUDE.md` §4-§6 | Iron Rules |

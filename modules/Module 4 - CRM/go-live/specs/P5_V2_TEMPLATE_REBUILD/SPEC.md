@@ -76,7 +76,7 @@ The copy work is complete (locked in files). This SPEC is exclusively about: sch
 1. `campaigns/supersale/MESSAGES_V2/NEW_SYSTEM_VARIABLES_REQUIRED.md` — the master pre-cutover checklist (5 variables, 6 automation rules, 2 product features, validation steps). **Single source of truth for system wiring**.
 2. `campaigns/supersale/MESSAGES_V2/*.html` — 9 V2 email files
 3. `campaigns/supersale/MESSAGES_V2/*.txt` — 9 V2 SMS files
-4. `__LAUNCH_PLAN_DRAFT__/campaign-overseer/COPY_DECISIONS_LOG.md` — full rationale for every copy decision (P1-P11 patterns + per-template change logs). Foreman should NOT re-litigate copy decisions.
+4. `roles/campaign-overseer/COPY_DECISIONS_LOG.md` — full rationale for every copy decision (P1-P11 patterns + per-template change logs). Foreman should NOT re-litigate copy decisions.
 5. `modules/Module 4 - CRM/go-live/seed-templates-demo.sql` — current seeded templates (line numbers in HANDOFF §11 table). UPDATE statements will modify these rows in place.
 
 ---
@@ -213,7 +213,7 @@ Per Daniel's preference (memory: `feedback_spec_activation_separate.md`), the ac
 
 - **V2 files:** `campaigns/supersale/MESSAGES_V2/` (18 files: 9 .html + 9 .txt + NEW_SYSTEM_VARIABLES_REQUIRED.md)
 - **Master checklist:** `campaigns/supersale/MESSAGES_V2/NEW_SYSTEM_VARIABLES_REQUIRED.md`
-- **Copy rationale:** `__LAUNCH_PLAN_DRAFT__/campaign-overseer/COPY_DECISIONS_LOG.md`
+- **Copy rationale:** `roles/campaign-overseer/COPY_DECISIONS_LOG.md`
 - **Existing seed:** `modules/Module 4 - CRM/go-live/seed-templates-demo.sql`
 - **Most-related prior SPEC:** `modules/Module 4 - CRM/go-live/specs/P21_AUTOMATION_OVERHAUL/SPEC.md`
 - **Most-related schema work:** `modules/Module 4 - CRM/docs/specs/M4_ATTENDEE_PAYMENT_SCHEMA/SPEC.md`

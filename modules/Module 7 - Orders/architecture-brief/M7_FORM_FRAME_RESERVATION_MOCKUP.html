@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<title>Frame Reservation — Sketch · 3 variants</title>
+<style>
+  body{
+    margin:0;padding:24px;background:#EEEEEC;
+    font-family:Arial,'Segoe UI',sans-serif;color:#000;font-size:11px;
+  }
+  h1{font-size:18px;margin:0 0 4px;}
+  .lede{color:#666;margin:0 0 18px;font-size:12px;max-width:1100px;}
+
+  .grid{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:24px;
+    max-width:1700px;margin:0 auto;
+  }
+  .grid > .full{grid-column:1 / -1;}
+
+  .variant-h{
+    background:#993C1D;color:#FFF;padding:7px 12px;border-radius:6px 6px 0 0;
+    font-size:13px;font-weight:500;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .variant-h .tag{font-size:10px;background:#C66B45;padding:2px 7px;border-radius:4px;}
+
+  .paper{
+    background:#FFF;border:1px solid #000;border-radius:0 0 6px 6px;
+    padding:14px 18px 18px;
+  }
+  .paper-h-row{
+    border:1px solid #000;padding:5px 8px;font-size:10px;
+    display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+  }
+  .paper-title{
+    text-align:center;font-size:22px;font-weight:700;margin:8px 0 4px;
+  }
+  .paper-sub{
+    text-align:center;font-size:10px;color:#888;margin-bottom:8px;font-style:italic;
+  }
+
+  .barcode{
+    background:repeating-linear-gradient(90deg,#000 0 2px,#FFF 2px 4px,#000 4px 5px,#FFF 5px 8px);
+    height:30px;border:1px solid #000;
+  }
+  .barcode.tall{
+    height:120px;width:24px;
+    background:repeating-linear-gradient(0deg,#000 0 2px,#FFF 2px 4px,#000 4px 5px,#FFF 5px 8px);
+  }
+  .barcode.wide{width:160px;}
+
+  .inline-bcode-row{
+    display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin:5px 0;
+  }
+  .barcode-block{display:flex;flex-direction:row;gap:3px;align-items:center;}
+  .barcode-block .lbl{
+    writing-mode:vertical-rl;transform:rotate(180deg);
+    font-size:8px;text-align:center;font-weight:500;
+  }
+
+  .cust-row{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:10px;margin:6px 0;
+  }
+  .cust-row .field{display:flex;gap:4px;}
+  .cust-row .field .lbl{font-weight:700;}
+
+  .lead-flag{
+    background:#FAEEDA;color:#412402;padding:4px 8px;font-size:10px;
+    border:1px solid #BA7517;border-radius:4px;display:inline-block;
+    margin:4px 0;font-weight:700;
+  }
+
+  .res-meta{
+    background:#FAECE7;border:1px solid #993C1D;border-radius:4px;
+    padding:6px 10px;font-size:10px;margin:8px 0;
+    display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  }
+  .res-meta .field{display:flex;flex-direction:column;}
+  .res-meta .lbl{font-size:9px;color:#666;font-weight:700;}
+  .res-meta .val{font-size:11px;font-weight:500;}
+  .res-meta .val.warn{color:#993C1D;}
+
+  .prod-block{
+    margin-top:10px;border:1px solid #000;
+  }
+  .prod-block .head{
+    background:#F1EFE8;padding:4px 8px;font-weight:700;font-size:11px;
+    display:flex;justify-content:space-between;align-items:center;
+    border-bottom:1px solid #000;
+  }
+  .prod-block .head .ord-num{font-weight:400;font-size:10px;color:#444;}
+
+  table{
+    width:100%;border-collapse:collapse;font-size:10px;
+  }
+  table th, table td{
+    border:1px solid #000;padding:3px 5px;text-align:center;
+  }
+  table th{background:#FAFAF7;font-weight:700;}
+  table .sidecell{background:#F1EFE8;font-weight:700;width:24px;}
+  table.wide td{height:18px;}
+
+  .signers{
+    margin-top:10px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px;
+    font-size:10px;border-top:1px dashed #888;padding-top:8px;
+  }
+  .signers .sub{font-size:9px;color:#666;font-style:italic;}
+
+  .totals{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:10px;
+  }
+  .totals .box{border:1px solid #000;padding:5px 7px;}
+  .totals .box .lbl{font-size:9px;color:#666;}
+
+  .shop-footer{
+    margin-top:12px;padding-top:8px;border-top:1px solid #888;font-size:10px;
+  }
+
+  .ann{
+    margin-top:6px;padding:6px 10px;background:#FFF8DD;border-right:3px solid #FAC775;
+    font-size:11px;color:#412402;border-radius:3px;
+  }
+  .ann strong{color:#993C1D;}
+
+  .legend-box{
+    grid-column:1 / -1;background:#FFF;border:1px solid #888;border-radius:6px;
+    padding:14px 18px;font-size:12px;line-height:1.6;
+  }
+  .legend-box h2{font-size:14px;margin:0 0 8px;}
+  .legend-box ul{margin:5px 0;padding-right:18px;}
+  .legend-box .imp{
+    background:#FCEBEB;border-right:3px solid #A32D2D;
+    padding:8px 12px;border-radius:3px;margin-top:8px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Frame Reservation — Sketch · 3 Variants</h1>
+<p class="lede">
+  טופס לשמירת-מסגרת ללקוח או לליד. תסריט נפוץ: לקוח מתעניין במסגרת ועדשות-ראייה, אין לו כסף עכשיו או צריך עוד לעשות בדיקת-ראייה — שומרים לו את המסגרת (והעדשות אם בחר) לפרק-זמן.
+  <br/>
+  <strong>פר-תת-הזמנה.</strong> המסגרת יורדת ממלאי מיד (יושבת בשקית עם הטופס בצד). כששולמים — תת-הזמנה משנה מצב מ-<em>reserved</em> ל-<em>active</em>, ואם הלקוח היה ליד הוא הופך לקוח.
+</p>
+
+<div class="grid">
+
+  <!-- ======================================================== -->
+  <!-- VARIANT 1: FRAME ONLY (with prescription pending) -->
+  <!-- ======================================================== -->
+  <div>
+    <div class="variant-h">
+      <span>Variant 1 · רק מסגרת</span>
+      <span class="tag">לקוח מחכה לתור-בדיקה</span>
+    </div>
+    <div class="paper">
+      <div class="paper-h-row">
+        <div><strong>Date:</strong> 18.03.26</div>
+        <div><strong>Optic:</strong> Prizma</div>
+        <div><strong>Branch:</strong> 1 · Ashkelon</div>
+      </div>
+
+      <div class="paper-title">Frame Reservation</div>
+      <div class="paper-sub">המסגרת שמורה — לא למכירה</div>
+
+      <div class="inline-bcode-row">
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-A</div></div>
+        <div style="flex:1;">
+          <div class="barcode wide" style="margin:0 auto;"></div>
+          <div style="text-align:center;font-size:9px;margin-top:2px;">1-9362-A</div>
+        </div>
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-A</div></div>
+      </div>
+
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Client:</span> John Johnson</div>
+        <div class="field"><span class="lbl">Reservation:</span> 1-9362-A</div>
+        <div class="field"><span class="lbl">Client #:</span> 52484</div>
+      </div>
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Phone:</span> 050-0000000</div>
+        <div class="field"><span class="lbl">ID:</span> 205452555</div>
+        <div class="field"><span class="lbl">H.C provider:</span> Maccabi</div>
+      </div>
+
+      <!-- RESERVATION META — the most important block -->
+      <div class="res-meta">
+        <div class="field">
+          <span class="lbl">נוצרה:</span>
+          <span class="val">18.03.26 · 14:22 · Ilya</span>
+        </div>
+        <div class="field">
+          <span class="lbl">תוקף עד:</span>
+          <span class="val warn">25.03.26 (7 ימים)</span>
+        </div>
+        <div class="field">
+          <span class="lbl">מצב תשלום:</span>
+          <span class="val warn">לא שולם</span>
+        </div>
+      </div>
+
+      <!-- FRAME -->
+      <div class="prod-block">
+        <div class="head">
+          <span>Frame · הוצאה ממלאי</span>
+          <span class="ord-num">1-9362-A</span>
+        </div>
+        <table class="wide">
+          <thead><tr>
+            <th>Brand</th><th>Model</th><th>Size</th><th>Color</th><th>Pupil Height</th><th>Note</th><th>Price</th>
+          </tr></thead>
+          <tbody><tr>
+            <td>Cazal</td><td>1280</td><td>52</td><td>03</td><td>—</td><td>ממתין למרשם</td><td>₪1,800</td>
+          </tr></tbody>
+        </table>
+      </div>
+
+      <div class="signers">
+        <div><strong>Employee:</strong> Ilya<br/><span class="sub">(שמר את המסגרת)</span></div>
+        <div><strong>Customer:</strong> ________<br/><span class="sub">(אישור-קבלת-תנאי-שמירה)</span></div>
+      </div>
+
+      <div class="totals">
+        <div class="box"><div class="lbl">Discount:</div><div>—</div></div>
+        <div class="box"><div class="lbl">Total reserved value:</div><div>₪1,800</div></div>
+      </div>
+
+      <div style="margin-top:8px;text-align:center;">
+        <div class="barcode wide" style="margin:0 auto;"></div>
+        <div style="font-size:9px;margin-top:2px;">1-9362-A</div>
+      </div>
+
+      <div class="shop-footer">
+        Herzl 32, Ashkelon · Phone: 05-131313
+      </div>
+    </div>
+
+    <div class="ann">
+      <strong>Variant 1:</strong> שמירה של מסגרת בלבד. אין מרשם, אין עדשות. הלקוח יחזור אחרי בדיקת-ראייה. בלוק תוקף-שמירה בולט בכתום-אדום.
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- VARIANT 2: FRAME + LENSES (typical) -->
+  <!-- ======================================================== -->
+  <div>
+    <div class="variant-h">
+      <span>Variant 2 · מסגרת + עדשות</span>
+      <span class="tag">המקרה הנפוץ ביותר</span>
+    </div>
+    <div class="paper">
+      <div class="paper-h-row">
+        <div><strong>Date:</strong> 18.03.26</div>
+        <div><strong>Optic:</strong> Prizma</div>
+        <div><strong>Branch:</strong> 1 · Ashkelon</div>
+      </div>
+
+      <div class="paper-title">Frame Reservation</div>
+      <div class="paper-sub">המסגרת + העדשות שמורות — לא למכירה</div>
+
+      <div class="inline-bcode-row">
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-B</div></div>
+        <div style="flex:1;">
+          <div class="barcode wide" style="margin:0 auto;"></div>
+          <div style="text-align:center;font-size:9px;margin-top:2px;">1-9362-B</div>
+        </div>
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-B</div></div>
+      </div>
+
+      <span class="lead-flag">⚠ ליד (לא לקוח רשום) · Lead # 1158</span>
+
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Lead:</span> Sarah Levi</div>
+        <div class="field"><span class="lbl">Reservation:</span> 1-9362-B</div>
+        <div class="field"><span class="lbl">Lead #:</span> 1158</div>
+      </div>
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Phone:</span> 052-1234567</div>
+        <div class="field"><span class="lbl">ID:</span> ________</div>
+        <div class="field"><span class="lbl">H.C provider:</span> ________</div>
+      </div>
+
+      <div class="res-meta">
+        <div class="field">
+          <span class="lbl">נוצרה:</span>
+          <span class="val">18.03.26 · 11:15 · Yossi</span>
+        </div>
+        <div class="field">
+          <span class="lbl">תוקף עד:</span>
+          <span class="val warn">21.03.26 (3 ימים)</span>
+        </div>
+        <div class="field">
+          <span class="lbl">מצב תשלום:</span>
+          <span class="val warn">לא שולם</span>
+        </div>
+      </div>
+
+      <!-- FRAME -->
+      <div class="prod-block">
+        <div class="head">
+          <span>Frame · הוצאה ממלאי</span>
+          <span class="ord-num">1-9362-B</span>
+        </div>
+        <table class="wide">
+          <thead><tr>
+            <th>Brand</th><th>Model</th><th>Size</th><th>Color</th><th>Pupil Height</th><th>Note</th><th>Price</th>
+          </tr></thead>
+          <tbody><tr>
+            <td>Ray-Ban</td><td>RB-2140</td><td>50</td><td>902</td><td>—</td><td></td><td>₪900</td>
+          </tr></tbody>
+        </table>
+      </div>
+
+      <!-- LENSES (reserved choice — not yet ordered) -->
+      <div class="prod-block">
+        <div class="head">
+          <span>Lenses · בחירה שמורה (טרם הוזמנו)</span>
+          <span class="ord-num">1-9362-B</span>
+        </div>
+        <table class="wide">
+          <thead><tr>
+            <th>R/L</th><th>Category</th><th>Company</th><th>Lens type</th><th>Index</th><th>Coating</th><th>Note</th><th>Price</th>
+          </tr></thead>
+          <tbody>
+            <tr><td class="sidecell">R</td><td>Single Vision</td><td>Hoya</td><td>Standard</td><td>1.50</td><td>HMC</td><td colspan="2">תמחור סופי לאחר מרשם · ~₪600</td></tr>
+            <tr><td class="sidecell">L</td><td>Single Vision</td><td>Hoya</td><td>Standard</td><td>1.50</td><td>HMC</td><td colspan="2"></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="signers">
+        <div><strong>Employee:</strong> Yossi<br/><span class="sub">(שמר את המסגרת + עדשות)</span></div>
+        <div><strong>Customer:</strong> ________<br/><span class="sub">(אישור-קבלת-תנאי-שמירה)</span></div>
+      </div>
+
+      <div class="totals">
+        <div class="box"><div class="lbl">Discount:</div><div>—</div></div>
+        <div class="box"><div class="lbl">Estimated total:</div><div>₪1,500</div></div>
+      </div>
+
+      <div style="margin-top:8px;text-align:center;">
+        <div class="barcode wide" style="margin:0 auto;"></div>
+      </div>
+
+      <div class="shop-footer">
+        Herzl 32, Ashkelon · Phone: 05-131313
+      </div>
+    </div>
+
+    <div class="ann">
+      <strong>Variant 2:</strong> שמירה של מסגרת + עדשות. הלקוח הוא ליד (לא רשום). העדשות בחירה שמורה — הזמנה לספק תיווצר רק כשהשמירה תהפוך להזמנה. אין מרשם בטופס (טרם נעשה).
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- VARIANT 3: CONTACT LENSES RESERVED -->
+  <!-- ======================================================== -->
+  <div class="full">
+    <div class="variant-h">
+      <span>Variant 3 · עדשות-מגע שמורות</span>
+      <span class="tag">פחות-נפוץ — לקוח שיחזור עם תשלום</span>
+    </div>
+    <div class="paper" style="max-width:600px;margin:0 auto;">
+      <div class="paper-h-row">
+        <div><strong>Date:</strong> 18.03.26</div>
+        <div><strong>Optic:</strong> Prizma</div>
+        <div><strong>Branch:</strong> 1 · Ashkelon</div>
+      </div>
+
+      <div class="paper-title">Reservation · עדשות-מגע</div>
+      <div class="paper-sub">עדשות-מגע שמורות — לא למכירה · תת-הזמנה מסוג "עדשות-מגע" במצב reserved</div>
+
+      <div class="inline-bcode-row">
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-C</div></div>
+        <div style="flex:1;">
+          <div class="barcode wide" style="margin:0 auto;"></div>
+          <div style="text-align:center;font-size:9px;margin-top:2px;">1-9362-C</div>
+        </div>
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-C</div></div>
+      </div>
+
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Client:</span> John Johnson</div>
+        <div class="field"><span class="lbl">Reservation:</span> 1-9362-C</div>
+        <div class="field"><span class="lbl">Client #:</span> 52484</div>
+      </div>
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Phone:</span> 050-0000000</div>
+        <div class="field"><span class="lbl">ID:</span> 205452555</div>
+        <div class="field"><span class="lbl">H.C provider:</span> Maccabi</div>
+      </div>
+
+      <div class="res-meta">
+        <div class="field">
+          <span class="lbl">נוצרה:</span>
+          <span class="val">18.03.26 · 16:40 · Ilya</span>
+        </div>
+        <div class="field">
+          <span class="lbl">תוקף עד:</span>
+          <span class="val warn">23.03.26 (5 ימים)</span>
+        </div>
+        <div class="field">
+          <span class="lbl">מצב תשלום:</span>
+          <span class="val warn">לא שולם</span>
+        </div>
+      </div>
+
+      <!-- CONTACT LENSES -->
+      <div class="prod-block">
+        <div class="head">
+          <span>Contact Lenses · הוצאה ממלאי</span>
+          <span class="ord-num">1-9362-C</span>
+        </div>
+        <table class="wide">
+          <thead><tr>
+            <th>R/L</th><th>Brand</th><th>Model</th><th>Type</th><th>BC</th><th>DIA</th><th>Qty</th><th>Price</th>
+          </tr></thead>
+          <tbody>
+            <tr><td class="sidecell">R</td><td>Acuvue</td><td>Oasys</td><td>Daily</td><td>8.4</td><td>14.0</td><td>30</td><td>₪225</td></tr>
+            <tr><td class="sidecell">L</td><td>Acuvue</td><td>Oasys</td><td>Daily</td><td>8.4</td><td>14.0</td><td>30</td><td>₪225</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="signers">
+        <div><strong>Employee:</strong> Ilya</div>
+        <div><strong>Customer:</strong> ________</div>
+      </div>
+
+      <div class="totals">
+        <div class="box"><div class="lbl">Discount:</div><div>—</div></div>
+        <div class="box"><div class="lbl">Total reserved value:</div><div>₪450</div></div>
+      </div>
+
+      <div style="margin-top:8px;text-align:center;">
+        <div class="barcode wide" style="margin:0 auto;"></div>
+      </div>
+
+      <div class="shop-footer">
+        Herzl 32, Ashkelon · Phone: 05-131313
+      </div>
+    </div>
+
+    <div class="ann">
+      <strong>Variant 3:</strong> שמירה של עדשות-מגע. תרחיש פחות-נפוץ — לקוח שצריך לחזור עם תשלום. אין שמירת-אביזרים (החלטת-Daniel).
+    </div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend-box">
+    <h2>הכללים מאחורי הסקיצה</h2>
+    <ul>
+      <li><strong>גרעין:</strong> פר-תת-הזמנה. טופס אחד לכל תת-הזמנה במצב <em>reserved</em>.</li>
+      <li><strong>מה ניתן לשמור:</strong> מסגרת (עם או בלי עדשות-משקפיים), עדשות-מגע. <strong>לא</strong> אפשר לשמור: עדשות-לבד (ללא מסגרת), אביזרים.</li>
+      <li><strong>מלאי:</strong> מסגרת/עדשות-מגע יורדות ממלאי <strong>מיד</strong> בעת השמירה (פיזית בשקית עם הטופס בצד). עדשות-משקפיים: רק בחירה-שמורה — הזמנה לספק תיווצר רק כשהשמירה תהפוך להזמנה.</li>
+      <li><strong>בלוק "מטא-שמירה" אדום-בולט:</strong> נוצר / תוקף-עד / מצב-תשלום. תקרת-תוקף קונפיגורבילית פר-tenant (ברירת-מחדל: 7 ימים).</li>
+      <li><strong>ליד מול לקוח:</strong> ב-Variant 2 הצגת דגל "⚠ ליד" כשהאדם עדיין לא לקוח רשום. כשהשמירה תהפוך להזמנה (תשלום מתבצע) — הליד אוטומטית הופך ללקוח.</li>
+      <li><strong>סוג תת-הזמנה במערכת:</strong> תמיד אחד מ-4 הסוגים הקיימים (מסגרת / עדשות / עדשות-מגע / אביזרים) עם מצב <code>reserved</code>. לא סוג חמישי. ב-Variant 3 (עדשות-מגע) — הסוג הוא "עדשות-מגע" + מצב reserved. כשמשלמים — המצב משתנה ל-<code>active</code> ותת-ההזמנה ממשיכה לחיות תחת אותו ID.</li>
+      <li><strong>לא בטופס:</strong> מרשם (טרם נעשה במקרים רבים), שלבי-מעבדה, חתימות-של-אופטומטריסט.</li>
+      <li><strong>חתימות:</strong> רק עובד + לקוח (אישור-קבלת-תנאי-שמירה). לא צריך אופטומטריסט/אופטיקאי כי זה לא הזמנה לעבודה.</li>
+      <li><strong>ברקודים:</strong> 4 מיקומים בעמוד. מזהה תת-הזמנה (1-9362-A) בכולם.</li>
+    </ul>
+
+    <div class="imp">
+      <strong>בנוסף לטופס — דרישות-מערכת ב-M7 (לא בטופס עצמו):</strong>
+      <ul>
+        <li>שדה <code>reservation_expires_at</code> בכל תת-הזמנה במצב <em>reserved</em>.</li>
+        <li>גישה-מהירה למסך "כל-השמירות-הפעילות" — סינון לפי "פג-תוקף בקרוב" / "פג-תוקף-עבר".</li>
+        <li>כפתור "המר להזמנה" → מצב משתנה מ-<em>reserved</em> ל-<em>active</em>, ליד הופך ללקוח, מתחיל פלואו תשלום רגיל.</li>
+        <li>השמירה נשארת בהיסטוריית-הלקוח לאחר ההמרה (timestamp + מי שמר + מתי).</li>
+        <li>Pop-up + WhatsApp אוטומטיים על פג-תוקף — דחויים למודול-תקשורת/אוטומציות העתידי. ב-M7 רק שדה-תאריך + הוק.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

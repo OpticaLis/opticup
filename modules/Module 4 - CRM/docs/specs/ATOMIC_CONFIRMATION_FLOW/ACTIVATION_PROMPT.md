@@ -150,7 +150,7 @@ Daniel runs all 8 acceptance criteria on demo. If all pass → PR-merge to main 
 ## References
 
 - Supervisor decision (binding): `SUPERVISOR_DECISION.md` (this folder)
-- Overseer recommendations: REC-017 + REC-018 in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md`
+- Overseer recommendations: REC-017 + REC-018 in `roles/campaign-overseer/DECISIONS_LOG.md`
 - Iron Rules: `CLAUDE.md` §4–§6
 - Production discipline: auto-memory `feedback_production_discipline_post_cutover.md`
 - Pattern-14 (assumption-verification): Realtime saga rounds 1–4 in `REALTIME_INSERT_NOT_RENDERING_DEBUG/`

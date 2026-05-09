@@ -1,0 +1,6 @@
+200 /branches/
+200 /en/branches/
+200 /ru/branches/
+200 /branches/ashkelon/
+200 /en/branches/ashkelon/
+200 /ru/branches/ashkelon/

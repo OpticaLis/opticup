@@ -11,19 +11,112 @@
 
 ## Repo Root
 
+> **Discipline:** every file/directory at root must fall into one of the 3 categories defined in `CLAUDE.md` §0.5 (Root Discipline Rule). Anything outside these categories belongs in `_archive/<subfolder>/`.
+
+**Category 1 — Technical Infrastructure** (`CLAUDE.md`, `README.md`, `package.json`, `package-lock.json`, `.gitignore`, `.mcp.json`, `.nojekyll`, `CNAME`, `favicon.ico`, plus hidden infra dirs `.git/`, `.github/`, `.husky/`, `.vscode/`, `.claude/`, `node_modules/`).
+
+**Category 2 — Live Sources of Truth** (`MASTER_ROADMAP.md`, `TECH_DEBT.md`, `docs/`, `modules/`, `roles/`, `_archive/`, `migrations/`, `scripts/`, `shared/`, `js/`, `css/`, `supabase/`, `tests/`, `campaigns/`, `watcher-deploy/`, `opticup-skills.plugin`, `serve.js`).
+
+**Category 3 — Application Entrypoints (HTML at root, GitHub Pages routing):**
+
 ```
 opticup/
 ├── index.html                  — home screen: PIN login + module cards
+├── admin.html                  — platform admin entry (Module 2)
+├── crm.html                    — CRM module entry (Module 4)
 ├── inventory.html              — inventory management module (full app)
 ├── suppliers-debt.html         — supplier debt tracking module
 ├── employees.html              — standalone employee management page
 ├── shipments.html              — shipments & box management module
 ├── settings.html               — tenant settings (business info, financial config, display prefs)
+├── error.html                  — generic error page
+├── landing.html                — public landing page
+├── r.html                      — short-link redirect handler
 ├── storefront-settings.html    — storefront config: WhatsApp, booking, notifications (Phase 4B)
 ├── storefront-products.html    — storefront product overrides + bulk select (Phase 4B)
 ├── storefront-glossary.html    — translation glossary management (Phase 6)
 ├── storefront-studio.html      — CMS block editor for storefront pages (CMS-2)
-└── CLAUDE.md                   — project constitution (navigation hub)
+├── storefront-blog.html        — storefront blog management (CMS-3)
+├── storefront-content.html     — storefront content overrides (CMS-3)
+└── storefront-landing-content.html — storefront landing-page content editor (CMS-3)
+```
+
+## _archive/ (Single archive vault — added 2026-05-09)
+
+```
+_archive/
+├── README.md                   — explains structure + add/recover policy
+├── root-onboarding/            — 7 legacy onboarding/prompt files superseded by .claude/skills/
+│   (DANIEL_QUICK_REFERENCE, STRATEGIC_CHAT_ONBOARDING, MODULE_DOCUMENTATION_SCHEMA,
+│    UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT, UNIVERSAL_SECONDARY_CHAT_PROMPT,
+│    PHASE_0_PROGRESS, handoff-next-session)
+│
+├── project-genesis/            — March 2026 era files (consolidated from old archive/, data/, ---QA---/)
+│   (CLAUDE10-3, index_V1.1A→V1.7A + index_backup, MASTER_ROADMAP March-era,
+│    contacts/customers/frames/lenses/sunglasses/suppliers/test_data JSONs,
+│    schema.json, table_fields.json, QA.md + Hebrew QA file)
+│
+├── launch-plan-versions/       — historical MASTER_LIVE_PLAN versions
+│   (MASTER_LIVE_PLAN_v1.md — current truth lives in /MASTER_ROADMAP.md)
+│
+└── session-outputs/            — 53 historical session prompts/handoffs from old outputs/
+    (PROMPT_*.md, INSTRUCTIONS_*.md, HANDOFF_*.md, NIGHT_HANDOFF.md,
+     campaign-mockups/, campaign-screen-screenshots/)
+```
+
+**Discipline:** files arrive here only via the Root Discipline Rule (CLAUDE.md §0.5). They are git-tracked but not actively maintained. Recover via `git log --follow <path>` / `git show <hash>:<path>`.
+
+## roles/ (Operational role artifacts — added 2026-05-09)
+
+```
+roles/
+├── README.md                   — explains structure + how to add a role
+├── campaign-overseer/          — Campaign Overseer (active campaigns + decisions log)
+│   ├── CAMPAIGN_OVERSEER_HANDOFF.md
+│   ├── DECISIONS_LOG.md
+│   ├── LEARNINGS.md
+│   └── POST_CUTOVER_TECH_DEBT.md
+└── site-overseer/              — Marketing/info site Overseer (site map, content drift)
+    ├── SITE_OVERSEER_HANDOFF.md
+    ├── SITE_OVERSEER_SKILL.md
+    ├── DECISIONS_LOG.md
+    ├── LEARNINGS.md
+    └── SITE_MAP.md
+```
+
+**Discipline:** roles are NOT modules. They are operational personas that own surfaces (campaigns, the public site) rather than building modules. Each role has its own handoff + decisions log + learnings, and may have a session-startup skill in `.claude/skills/opticup-<role-name>/`.
+
+## modules/Module N - Name/architecture-brief/ (Architecture Brief — pre-SPEC artifacts)
+
+For modules in design phase (Brief sealed, SPEC authoring not yet started), the cross-module Architecture Brief lives inside the module's own home:
+
+```
+modules/Module N - Name/
+├── architecture-brief/         — sealed Brief + sketches + handoff (input for Module Strategist)
+├── docs/                       — MODULE_SPEC, MODULE_MAP, db-schema, SESSION_CONTEXT, specs/ (created when SPEC authoring begins)
+├── ROADMAP.md                  — phase plan (created when SPEC authoring begins)
+└── README.md                   — module life-stage status pointer
+```
+
+**One Home Per Module rule** (per CLAUDE.md §0.5; established by `MODULES_HOME_UNIFICATION` SPEC, 2026-05-09): every module — at every stage of its life (Brief → SPECs → Code → Production) — lives under `modules/Module N - Name/`. The previous split between "live modules in `modules/`" and "in-design modules in `[retired-2026-05-09:LAUNCH_PLAN_DRAFT]/architecture-briefs/`" is gone.
+
+In-design modules (M5–M15) each have a sealed Brief in their `architecture-brief/` subfolder. See `MASTER_ROADMAP.md` §2.5 for current Brief status per module.
+
+## .claude/ (Claude Code skills + local config)
+
+```
+.claude/
+├── skills/                     — Optic Up project skills (TRACKED via .gitignore negation)
+│   ├── opticup-main-strategic/ — Main Strategic chat skill (orchestrator)
+│   │   ├── SKILL.md
+│   │   └── references/
+│   │       ├── DECISIONS_LOG.md             — index of cross-module decisions
+│   │       ├── MODULE_BRIEF_TEMPLATE.md
+│   │       └── decisions/                   — per-module decision logs (M5, M6, M7, M8, M11, M12, CROSS) (added 2026-05-09)
+│   ├── opticup-strategic/      — Module Strategic / Foreman skill
+│   ├── opticup-executor/       — Code Executor skill
+│   └── (other opticup-* skills)
+└── (other .claude/* paths are gitignored — local config, transcripts, settings)
 ```
 
 ## css/

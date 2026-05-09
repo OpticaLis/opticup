@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M14 — מסכי-משנה · Appointments Sub-screens</title>
+<style>
+  :root{
+    --bg:#FAFAF7; --surface:#FFFFFF; --soft:#F1EFE8;
+    --border:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
+    --text:#1F1F1E; --text-2:#5F5E5A; --text-3:#8A8884;
+    --purple:#534AB7; --purple-soft:#EEEDFE; --purple-deep:#26215C; --purple-mid:#7F77DD;
+    --teal:#0F6E56; --teal-soft:#E1F5EE; --teal-deep:#04342C; --teal-mid:#5DCAA5;
+    --amber:#BA7517; --amber-soft:#FAEEDA; --amber-deep:#412402; --amber-mid:#FAC775;
+    --blue:#185FA5; --blue-soft:#E6F1FB; --blue-deep:#0C447C;
+    --coral:#993C1D; --coral-soft:#FAECE7;
+    --green:#3B6D11; --green-soft:#EAF3DE;
+    --gray:#5F5E5A; --gray-soft:#F1EFE8;
+    --red:#A32D2D; --red-soft:#FBEAEA;
+    --r-md:6px; --r-lg:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;padding:18px;background:var(--bg);color:var(--text);
+    font-family:-apple-system,'Segoe UI',Rubik,sans-serif;font-size:12px;direction:rtl;
+  }
+  h1{font-size:20px;font-weight:500;margin:0 0 4px;}
+  h2{font-size:14px;font-weight:500;margin:0 0 8px;}
+  .lede{color:var(--text-2);margin:0 0 16px;font-size:12px;max-width:1100px;line-height:1.5;}
+
+  /* TOP NAV */
+  .top-nav{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);
+    padding:12px;margin-bottom:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+  }
+  .top-nav .label{font-size:12px;color:var(--text-2);font-weight:500;}
+  .top-nav button{
+    background:var(--purple-soft);color:var(--purple-deep);border:0;font-size:12px;
+    padding:8px 16px;border-radius:var(--r-md);cursor:pointer;font-weight:500;font-family:inherit;
+  }
+  .top-nav button.active{background:var(--purple);color:#FFF;}
+  .top-nav .meta{margin-inline-start:auto;color:var(--text-3);font-size:11px;}
+
+  .app{
+    background:var(--surface);border:0.5px solid var(--border);
+    border-radius:var(--r-lg);overflow:hidden;max-width:1500px;margin:0 auto 24px;
+  }
+
+  .sketch-title{
+    max-width:1500px;margin:0 auto 8px;display:flex;justify-content:space-between;align-items:flex-end;gap:14px;
+  }
+  .sketch-title h2{font-size:18px;font-weight:500;margin:0;}
+  .sketch-title .desc{font-size:12px;color:var(--text-2);max-width:780px;line-height:1.5;}
+  .sketch-title .tagline{font-size:11px;color:var(--purple);font-weight:500;text-transform:uppercase;letter-spacing:0.5px;}
+
+  /* ============================================================
+     SCREEN 1: SETTINGS
+     ============================================================ */
+  .set-header{
+    background:var(--purple-deep);color:#FFF;padding:12px 16px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .set-header .ttl{font-size:15px;font-weight:500;}
+  .set-header button{background:var(--green);color:#FFF;border:0;padding:7px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:500;}
+
+  .set-body{display:grid;grid-template-columns:240px 1fr;}
+  .set-side{
+    background:var(--soft);border-inline-start:0.5px solid var(--border);
+  }
+  .set-side button{
+    width:100%;background:transparent;border:0;padding:11px 14px;text-align:right;font-size:12px;
+    cursor:pointer;font-family:inherit;border-bottom:0.5px solid var(--border);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .set-side button:hover{background:var(--surface);}
+  .set-side button.active{background:var(--surface);border-inline-end:3px solid var(--purple);font-weight:500;}
+  .set-side button .ic{margin-inline-end:8px;}
+  .set-side button .ct{font-size:10px;color:var(--text-3);}
+
+  .set-main{padding:18px;background:var(--bg);min-height:600px;overflow:auto;}
+  .set-section{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    padding:14px;margin-bottom:14px;
+  }
+  .set-section h3{font-size:13px;font-weight:500;margin:0 0 8px;}
+  .set-section .desc{font-size:11px;color:var(--text-3);margin-bottom:10px;line-height:1.4;}
+
+  .types-grid{display:flex;flex-direction:column;gap:8px;}
+  .type-row{
+    display:grid;grid-template-columns:36px 1.6fr 70px 70px 1fr 100px 80px;gap:10px;align-items:center;
+    padding:10px;background:var(--soft);border-radius:var(--r-md);font-size:11px;
+  }
+  .type-row .swatch{
+    width:32px;height:32px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;
+  }
+  .type-row .nm{font-weight:500;}
+  .type-row .sub{font-size:10px;color:var(--text-3);}
+  .type-row input[type=text],
+  .type-row input[type=number],
+  .type-row select{
+    border:0.5px solid var(--border);border-radius:3px;padding:5px 7px;font-size:11px;font-family:inherit;background:var(--surface);width:100%;
+  }
+  .type-row .actions button{
+    background:var(--surface);border:0.5px solid var(--border);padding:4px 9px;border-radius:3px;font-size:10px;
+    cursor:pointer;font-family:inherit;
+  }
+
+  .add-row{
+    background:var(--purple);color:#FFF;border:0;padding:9px;border-radius:var(--r-md);font-size:12px;cursor:pointer;
+    font-family:inherit;font-weight:500;width:100%;margin-top:8px;
+  }
+
+  .hours-grid{display:grid;grid-template-columns:80px repeat(2,1fr) repeat(2,1fr) 100px;gap:8px;align-items:center;font-size:11px;}
+  .hours-grid .hh{font-size:10px;color:var(--text-3);text-transform:uppercase;font-weight:500;}
+  .hours-grid input[type=time]{
+    border:0.5px solid var(--border);border-radius:3px;padding:5px 7px;font-size:11px;font-family:inherit;background:var(--surface);
+  }
+  .hours-row{
+    display:contents;
+  }
+  .hours-row .day{font-weight:500;}
+  .hours-row .closed{color:var(--text-3);font-style:italic;}
+
+  .status-list{display:flex;flex-direction:column;gap:6px;}
+  .status-row{
+    display:grid;grid-template-columns:30px 1.5fr 1fr 1fr 80px;gap:10px;align-items:center;
+    padding:8px 10px;background:var(--soft);border-radius:4px;font-size:11px;
+  }
+  .status-row .ring{
+    width:22px;height:22px;border-radius:4px;border:3px solid;background:var(--surface);
+  }
+  .status-row .lock{font-size:10px;color:var(--text-3);}
+  .status-row .badge-sys{
+    background:var(--gray-soft);color:var(--text-2);font-size:9px;padding:2px 7px;border-radius:8px;
+  }
+  .status-row .badge-tenant{
+    background:var(--purple-soft);color:var(--purple-deep);font-size:9px;padding:2px 7px;border-radius:8px;
+  }
+
+  .res-list{display:flex;flex-direction:column;gap:8px;}
+  .res-row{
+    display:grid;grid-template-columns:32px 1.5fr 1fr 1fr 100px 80px;gap:10px;align-items:center;
+    padding:9px;background:var(--soft);border-radius:var(--r-md);font-size:11px;
+  }
+  .res-row .av{
+    width:28px;height:28px;border-radius:50%;background:var(--purple-mid);color:#FFF;
+    display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;
+  }
+
+  .toggles-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .toggle-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:9px 12px;background:var(--soft);border-radius:4px;font-size:11px;
+  }
+  .toggle-row .nm{font-weight:500;}
+  .toggle-row .sub{font-size:10px;color:var(--text-3);margin-top:2px;}
+  .switch{
+    width:34px;height:20px;background:var(--green);border-radius:10px;position:relative;cursor:pointer;
+  }
+  .switch::after{
+    content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:#FFF;
+    top:3px;right:3px;transition:all 0.2s;
+  }
+  .switch.off{background:var(--gray);}
+  .switch.off::after{right:auto;left:3px;}
+
+  /* ============================================================
+     SCREEN 2: PUBLIC BOOKING PAGE
+     ============================================================ */
+  .pub-frame{
+    max-width:520px;margin:0 auto;background:var(--surface);border-radius:var(--r-lg);
+    overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);
+  }
+  .pub-head{
+    background:#FFF;padding:24px 20px 16px;text-align:center;border-bottom:1px solid var(--border);
+  }
+  .pub-head .logo{
+    width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#c9a555,#8B7035);
+    margin:0 auto 12px;display:inline-flex;align-items:center;justify-content:center;
+    font-size:24px;color:#FFF;font-weight:500;
+  }
+  .pub-head .biz{font-size:18px;font-weight:500;}
+  .pub-head .biz-sub{font-size:11px;color:var(--text-3);margin-top:2px;}
+
+  .pub-body{padding:20px;}
+  .pub-step{margin-bottom:18px;}
+  .pub-step .step-num{
+    display:inline-block;width:22px;height:22px;border-radius:50%;background:var(--purple);color:#FFF;
+    font-size:11px;line-height:22px;text-align:center;font-weight:500;margin-inline-end:8px;
+  }
+  .pub-step .step-title{font-size:13px;font-weight:500;display:inline-block;}
+  .pub-step .step-content{margin-top:10px;}
+
+  .type-card{
+    background:var(--soft);border:1px solid transparent;border-radius:var(--r-md);
+    padding:12px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;
+  }
+  .type-card:hover{background:var(--purple-soft);border-color:var(--purple-mid);}
+  .type-card.selected{background:var(--purple-soft);border-color:var(--purple);}
+  .type-card .nm{font-weight:500;}
+  .type-card .meta{font-size:10px;color:var(--text-3);}
+  .type-card .price{font-size:11px;font-weight:500;color:var(--purple);}
+
+  .date-mini{
+    display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:11px;text-align:center;
+  }
+  .date-mini .dh{padding:4px;color:var(--text-3);font-size:10px;}
+  .date-mini .dd{
+    padding:8px 4px;background:var(--soft);border-radius:4px;cursor:pointer;
+  }
+  .date-mini .dd.muted{color:var(--text-3);background:transparent;cursor:not-allowed;}
+  .date-mini .dd.has-slots{background:var(--green-soft);color:var(--green);font-weight:500;}
+  .date-mini .dd.full{background:var(--red-soft);color:var(--red);cursor:not-allowed;}
+  .date-mini .dd.selected{background:var(--purple);color:#FFF;}
+
+  .slot-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+  .slot-btn{
+    background:var(--surface);border:1px solid var(--border);padding:8px;border-radius:4px;
+    font-size:11px;cursor:pointer;text-align:center;font-family:inherit;
+  }
+  .slot-btn:hover{background:var(--purple-soft);border-color:var(--purple-mid);}
+  .slot-btn.selected{background:var(--purple);color:#FFF;border-color:var(--purple);}
+  .slot-btn.taken{background:var(--gray-soft);color:var(--text-3);cursor:not-allowed;text-decoration:line-through;}
+
+  .pub-form{display:flex;flex-direction:column;gap:10px;}
+  .pub-form label{font-size:11px;color:var(--text-2);font-weight:500;}
+  .pub-form input{
+    border:1px solid var(--border);border-radius:4px;padding:9px 11px;font-size:13px;font-family:inherit;background:var(--surface);
+  }
+  .pub-form input:focus{outline:none;border-color:var(--purple);}
+  .pub-form .field{display:flex;flex-direction:column;gap:3px;}
+  .pub-form .field .help{font-size:10px;color:var(--text-3);}
+  .pub-form .field.optional label::after{content:' (אופציונלי)';color:var(--text-3);font-weight:400;}
+
+  .pub-summary{
+    background:var(--green-soft);border:1px solid var(--green);border-radius:var(--r-md);
+    padding:12px;font-size:12px;
+  }
+  .pub-summary .row{display:flex;justify-content:space-between;padding:3px 0;}
+  .pub-summary .row .l{color:var(--text-2);}
+  .pub-summary .row .v{font-weight:500;}
+
+  .pub-cta{
+    background:var(--purple);color:#FFF;border:0;padding:13px;border-radius:var(--r-md);
+    font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;width:100%;margin-top:8px;
+  }
+  .pub-cta:hover{background:var(--purple-deep);}
+
+  .pub-footer{
+    background:var(--soft);padding:14px 20px;text-align:center;font-size:10px;color:var(--text-3);
+    border-top:1px solid var(--border);line-height:1.6;
+  }
+  .pub-footer a{color:var(--purple);text-decoration:none;}
+
+  .otp-box{
+    background:var(--amber-soft);border:1px solid var(--amber);border-radius:var(--r-md);
+    padding:14px;text-align:center;
+  }
+  .otp-box .head{font-size:12px;color:var(--amber-deep);margin-bottom:10px;}
+  .otp-inputs{display:flex;justify-content:center;gap:6px;direction:ltr;}
+  .otp-inputs input{
+    width:36px;height:42px;text-align:center;font-size:18px;font-weight:500;
+    border:1px solid var(--amber);border-radius:4px;background:var(--surface);font-family:inherit;
+  }
+  .otp-resend{font-size:10px;color:var(--text-3);margin-top:8px;}
+  .otp-resend a{color:var(--purple);text-decoration:none;}
+
+  /* ============================================================
+     SCREEN 3: MANAGE APPOINTMENT (customer-side)
+     ============================================================ */
+  .mng-frame{
+    max-width:520px;margin:0 auto;background:var(--surface);border-radius:var(--r-lg);
+    overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);
+  }
+  .mng-head{
+    background:linear-gradient(135deg,var(--purple) 0%,var(--purple-deep) 100%);
+    color:#FFF;padding:20px;text-align:center;
+  }
+  .mng-head .ttl{font-size:18px;font-weight:500;}
+  .mng-head .sub{font-size:11px;color:#CECBF6;margin-top:3px;}
+
+  .mng-body{padding:20px;}
+  .mng-card{
+    background:var(--soft);border-radius:var(--r-md);padding:16px;margin-bottom:14px;
+  }
+  .mng-card h3{font-size:11px;color:var(--text-3);text-transform:uppercase;font-weight:500;letter-spacing:0.4px;margin:0 0 10px;}
+  .mng-detail{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;}
+  .mng-detail .l{color:var(--text-2);}
+  .mng-detail .v{font-weight:500;}
+
+  .mng-actions{display:flex;flex-direction:column;gap:8px;}
+  .mng-action{
+    background:var(--surface);border:1px solid var(--border);padding:13px 16px;border-radius:var(--r-md);
+    cursor:pointer;display:flex;align-items:center;gap:12px;font-family:inherit;font-size:13px;
+  }
+  .mng-action:hover{background:var(--purple-soft);border-color:var(--purple-mid);}
+  .mng-action .ic{font-size:18px;width:30px;text-align:center;}
+  .mng-action .lab{flex:1;text-align:right;}
+  .mng-action .lab .nm{font-weight:500;}
+  .mng-action .lab .sub{font-size:10px;color:var(--text-3);margin-top:2px;}
+  .mng-action.cta{background:var(--green-soft);border-color:var(--green);}
+  .mng-action.cta .nm{color:var(--green);}
+  .mng-action.amber{background:var(--amber-soft);border-color:var(--amber);}
+  .mng-action.amber .nm{color:var(--amber-deep);}
+  .mng-action.danger{background:var(--red-soft);border-color:var(--red);}
+  .mng-action.danger .nm{color:var(--red);}
+
+  .mng-window-warn{
+    background:var(--amber-soft);border:1px solid var(--amber);border-radius:4px;
+    padding:9px 12px;font-size:10px;color:var(--amber-deep);text-align:center;margin-bottom:12px;
+    line-height:1.4;
+  }
+</style>
+</head>
+<body>
+
+<h1>M14 — מסכי-משנה · 3 סקיצות נוספות</h1>
+<p class="lede">
+  שלושה מסכים שלא נוצרו ב-mockup הראשי: <strong>הגדרות-יומן</strong> (לאדמין/מנהל), <strong>Public booking page</strong> (צד-לקוח, ללא login), <strong>ניהול-תור</strong> (קישור-בהודעה, ביטול/שינוי). יחד עם מסך-היומן הראשי = תמונה מלאה ל-Module Strategist.
+</p>
+
+<div class="top-nav">
+  <span class="label">מעבר בין מסכים:</span>
+  <button class="active" onclick="showS(1)">1 · הגדרות יומן</button>
+  <button onclick="showS(2)">2 · Public Booking Page</button>
+  <button onclick="showS(3)">3 · ניהול-תור (לקוח)</button>
+  <span class="meta">RTL · Hebrew</span>
+</div>
+
+<!-- ===========================================================
+     SKETCH 1: SETTINGS
+     =========================================================== -->
+<div id="sketch1" class="sketch">
+  <div class="sketch-title">
+    <div>
+      <div class="tagline">מסך 1</div>
+      <h2>הגדרות יומן · אדמין</h2>
+    </div>
+    <div class="desc">
+      ניווט-צד עם 6 sub-sections. הראשון (סוגי-מפגשים) מוצג כאקטיבי כדוגמה. כולל הגדרות-תצוגה, סוגי-מפגשים, צוות+משאבים, שעות-עבודה+חריגות, סטטוסים (system+tenant), ושליחת-הודעות-תזכורות.
+    </div>
+  </div>
+
+  <div class="app">
+
+    <div class="set-header">
+      <div class="ttl">⚙️ הגדרות יומן · M14 Appointments</div>
+      <button>שמור שינויים</button>
+    </div>
+
+    <div class="set-body">
+
+      <!-- Side nav -->
+      <div class="set-side">
+        <button class="active">
+          <span><span class="ic">📋</span>סוגי-מפגשים</span>
+          <span class="ct">5</span>
+        </button>
+        <button>
+          <span><span class="ic">👥</span>צוות + משאבים</span>
+          <span class="ct">3</span>
+        </button>
+        <button>
+          <span><span class="ic">🕐</span>שעות-עבודה</span>
+          <span class="ct">סניף הרצליה</span>
+        </button>
+        <button>
+          <span><span class="ic">📅</span>חריגות + חגים</span>
+          <span class="ct">12</span>
+        </button>
+        <button>
+          <span><span class="ic">🎨</span>סטטוסים + צבעים</span>
+          <span class="ct">7+1</span>
+        </button>
+        <button>
+          <span><span class="ic">💬</span>תזכורות + הודעות</span>
+        </button>
+        <button>
+          <span><span class="ic">🔗</span>שיתוף + URL ציבורי</span>
+        </button>
+        <button>
+          <span><span class="ic">⚙️</span>תצוגת יומן</span>
+        </button>
+      </div>
+
+      <!-- Main content -->
+      <div class="set-main">
+
+        <div class="set-section">
+          <h3>סוגי-מפגשים</h3>
+          <p class="desc">סוגי-הפגישות שה-tenant מציע. שם, משך, צבע, אופציונלי שיוך-לאופטומטריסט. הצבע מופיע ב<em>פנים</em> של בלוק-תור ביומן.</p>
+
+          <div class="types-grid">
+
+            <div class="type-row">
+              <div class="swatch" style="background:#E1F5EE;color:#04342C;">👓</div>
+              <div>
+                <div class="nm">בדיקות מבוגרים</div>
+                <div class="sub">ניתן לקבוע מגיל 18+</div>
+              </div>
+              <input type="number" value="20" /><span style="font-size:9px;color:var(--text-3);">דקות</span>
+              <input type="text" value="כל הצוות" />
+              <input type="number" value="20" placeholder="מקסימום ליום" />
+              <div class="actions"><button>ערוך</button><button>מחק</button></div>
+            </div>
+
+            <div class="type-row">
+              <div class="swatch" style="background:#E6F1FB;color:#0C447C;">🧒</div>
+              <div>
+                <div class="nm">בדיקות ילדים</div>
+                <div class="sub">עד גיל 18 · בדיקה אחת = ילד-אחד</div>
+              </div>
+              <input type="number" value="20" /><span style="font-size:9px;color:var(--text-3);">דקות</span>
+              <input type="text" value="ד&quot;ר עידן" />
+              <input type="number" value="3" placeholder="מקסימום ליום (ב'-ה')" />
+              <div class="actions"><button>ערוך</button><button>מחק</button></div>
+            </div>
+
+            <div class="type-row">
+              <div class="swatch" style="background:#EEEDFE;color:#26215C;">⭐</div>
+              <div>
+                <div class="nm">בדיקות מולטיפוקל</div>
+                <div class="sub">בדיקה מורכבת</div>
+              </div>
+              <input type="number" value="40" /><span style="font-size:9px;color:var(--text-3);">דקות</span>
+              <input type="text" value="ד&quot;ר נועה" />
+              <input type="number" value="" placeholder="ללא הגבלה" />
+              <div class="actions"><button>ערוך</button><button>מחק</button></div>
+            </div>
+
+            <div class="type-row">
+              <div class="swatch" style="background:#FAEEDA;color:#412402;">👁️</div>
+              <div>
+                <div class="nm">תדרוך עדשות-מגע</div>
+                <div class="sub">התאמה ראשונה / חידוש</div>
+              </div>
+              <input type="number" value="30" /><span style="font-size:9px;color:var(--text-3);">דקות</span>
+              <input type="text" value="כל הצוות" />
+              <input type="number" value="" placeholder="" />
+              <div class="actions"><button>ערוך</button><button>מחק</button></div>
+            </div>
+
+            <div class="type-row">
+              <div class="swatch" style="background:#FBEAEA;color:#A32D2D;">🛍️</div>
+              <div>
+                <div class="nm">יום מכירות 30.10</div>
+                <div class="sub">קמפיין-זמני</div>
+              </div>
+              <input type="number" value="15" /><span style="font-size:9px;color:var(--text-3);">דקות</span>
+              <input type="text" value="כל הצוות" />
+              <input type="number" value="" placeholder="" />
+              <div class="actions"><button>ערוך</button><button>מחק</button></div>
+            </div>
+
+          </div>
+
+          <button class="add-row">+ סוג-מפגש חדש</button>
+        </div>
+
+        <div class="set-section">
+          <h3>שעות-עבודה · סניף הרצליה</h3>
+          <p class="desc">שעות-תצוגה (ביומן הצוות) ושעות-זימון (זמינות ללקוח). אם שונים — סלוטים מחוץ-לזימון מוצגים אך מסומנים בלבן ולא ניתן לקבוע ב-public booking. הפסקת-צהריים מסומנת באפור-בהיר ביומן.</p>
+
+          <div class="hours-grid">
+            <div class="hh">יום</div>
+            <div class="hh">פתיחה (תצוגה)</div>
+            <div class="hh">סגירה (תצוגה)</div>
+            <div class="hh">הפסקה מ</div>
+            <div class="hh">הפסקה עד</div>
+            <div class="hh">סגור?</div>
+
+            <div class="hours-row">
+              <div class="day">ראשון</div>
+              <input type="time" value="08:00" />
+              <input type="time" value="20:00" />
+              <input type="time" value="13:00" />
+              <input type="time" value="14:00" />
+              <div><label><input type="checkbox" /> סגור</label></div>
+            </div>
+            <div class="hours-row">
+              <div class="day">שני</div>
+              <input type="time" value="08:00" />
+              <input type="time" value="20:00" />
+              <input type="time" value="13:00" />
+              <input type="time" value="14:00" />
+              <div><label><input type="checkbox" /> סגור</label></div>
+            </div>
+            <div class="hours-row">
+              <div class="day">שלישי</div>
+              <input type="time" value="08:00" />
+              <input type="time" value="20:00" />
+              <input type="time" value="13:00" />
+              <input type="time" value="14:00" />
+              <div><label><input type="checkbox" /> סגור</label></div>
+            </div>
+            <div class="hours-row">
+              <div class="day">רביעי</div>
+              <input type="time" value="08:00" />
+              <input type="time" value="20:00" />
+              <input type="time" value="13:00" />
+              <input type="time" value="14:00" />
+              <div><label><input type="checkbox" /> סגור</label></div>
+            </div>
+            <div class="hours-row">
+              <div class="day">חמישי</div>
+              <input type="time" value="08:00" />
+              <input type="time" value="20:00" />
+              <input type="time" value="13:00" />
+              <input type="time" value="14:00" />
+              <div><label><input type="checkbox" /> סגור</label></div>
+            </div>
+            <div class="hours-row">
+              <div class="day">שישי</div>
+              <input type="time" value="09:00" />
+              <input type="time" value="13:00" />
+              <input type="time" value="" disabled />
+              <input type="time" value="" disabled />
+              <div><label><input type="checkbox" /> סגור</label></div>
+            </div>
+            <div class="hours-row">
+              <div class="day closed">שבת</div>
+              <input type="time" value="" disabled />
+              <input type="time" value="" disabled />
+              <input type="time" value="" disabled />
+              <input type="time" value="" disabled />
+              <div><label><input type="checkbox" checked /> סגור</label></div>
+            </div>
+
+          </div>
+
+          <div style="margin-top:14px;padding:10px;background:var(--blue-soft);border-radius:4px;font-size:11px;color:var(--blue-deep);">
+            💡 <strong>שעות-זימון מוגדרות בנפרד.</strong> כברירת-מחדל = שעות-תצוגה. ניתן להגדיר חלון זימון מצומצם יותר (לדוגמה: ראשון 09-19 לזימון, אך 08-20 לתצוגה כדי שאופטומטריסט יוכל לקבוע ידנית מחוץ-לחלון).
+          </div>
+        </div>
+
+        <div class="set-section">
+          <h3>סטטוסים + צבעים</h3>
+          <p class="desc">סטטוסי-מערכת קבועים (לא ניתנים-למחיקה, רק שינוי-צבע). סטטוסים-נוספים שה-tenant מוסיף לעצמו עם צבע משלו. הצבע מופיע כ<em>מסגרת חיצונית</em> של בלוק-תור.</p>
+
+          <div class="status-list">
+
+            <div class="status-row">
+              <span class="ring" style="border-color:#3B6D11;"></span>
+              <div><div style="font-weight:500;">לקוח אישר באתר</div></div>
+              <div style="font-family:monospace;font-size:10px;">#3B6D11</div>
+              <div class="badge-sys">מערכת · קבוע</div>
+              <div><button style="background:var(--surface);border:0.5px solid var(--border);padding:4px 9px;border-radius:3px;font-size:10px;cursor:pointer;font-family:inherit;">שנה צבע</button></div>
+            </div>
+
+            <div class="status-row">
+              <span class="ring" style="border-color:#BA7517;border-style:dashed;"></span>
+              <div><div style="font-weight:500;">ממתין-לאישור-צוות</div></div>
+              <div style="font-family:monospace;font-size:10px;">#BA7517</div>
+              <div class="badge-sys">מערכת · קבוע</div>
+              <div><button style="background:var(--surface);border:0.5px solid var(--border);padding:4px 9px;border-radius:3px;font-size:10px;cursor:pointer;font-family:inherit;">שנה צבע</button></div>
+            </div>
+
+            <div class="status-row">
+              <span class="ring" style="border-color:#0F6E56;"></span>
+              <div><div style="font-weight:500;">הגיע לחנות</div></div>
+              <div style="font-family:monospace;font-size:10px;">#0F6E56</div>
+              <div class="badge-sys">מערכת · קבוע</div>
+              <div><button style="background:var(--surface);border:0.5px solid var(--border);padding:4px 9px;border-radius:3px;font-size:10px;cursor:pointer;font-family:inherit;">שנה צבע</button></div>
+            </div>
+
+            <div class="status-row">
+              <span class="ring" style="border-color:#185FA5;"></span>
+              <div><div style="font-weight:500;">בבדיקה</div></div>
+              <div style="font-family:monospace;font-size:10px;">#185FA5</div>
+              <div class="badge-sys">מערכת · קבוע</div>
+              <div><button style="background:var(--surface);border:0.5px solid var(--border);padding:4px 9px;border-radius:3px;font-size:10px;cursor:pointer;font-family:inherit;">שנה צבע</button></div>
+            </div>
+
+            <div class="status-row">
+              <span class="ring" style="border-color:#534AB7;"></span>
+              <div><div style="font-weight:500;">בוצע</div></div>
+              <div style="font-family:monospace;font-size:10px;">#534AB7</div>
+              <div class="badge-sys">מערכת · קבוע</div>
+              <div><button style="background:var(--surface);border:0.5px solid var(--border);padding:4px 9px;border-radius:3px;font-size:10px;cursor:pointer;font-family:inherit;">שנה צבע</button></div>
+            </div>
+
+            <div class="status-row">
+              <span class="ring" style="border-color:#A32D2D;"></span>
+              <div><div style="font-weight:500;">לא הופיע</div></div>
+              <div style="font-family:monospace;font-size:10px;">#A32D2D</div>
+              <div class="badge-sys">מערכת · קבוע</div>
+              <div><button style="background:var(--surface);border:0.5px solid var(--border);padding:4px 9px;border-radius:3px;font-size:10px;cursor:pointer;font-family:inherit;">שנה צבע</button></div>
+            </div>
+
+            <div class="status-row">
+              <span class="ring" style="border-color:#5F5E5A;"></span>
+              <div><div style="font-weight:500;">בוטל</div></div>
+              <div style="font-family:monospace;font-size:10px;">#5F5E5A</div>
+              <div class="badge-sys">מערכת · קבוע</div>
+              <div><button style="background:var(--surface);border:0.5px solid var(--border);padding:4px 9px;border-radius:3px;font-size:10px;cursor:pointer;font-family:inherit;">שנה צבע</button></div>
+            </div>
+
+            <div class="status-row">
+              <span class="ring" style="border-color:#993C1D;border-width:3px;"></span>
+              <div><div style="font-weight:500;">VIP</div><div style="font-size:10px;color:var(--text-3);">סטטוס שאתה הוספת</div></div>
+              <div style="font-family:monospace;font-size:10px;">#993C1D</div>
+              <div class="badge-tenant">tenant · ניתן-לעריכה</div>
+              <div><button style="background:var(--surface);border:0.5px solid var(--border);padding:4px 9px;border-radius:3px;font-size:10px;cursor:pointer;font-family:inherit;">ערוך</button></div>
+            </div>
+
+          </div>
+
+          <button class="add-row">+ סטטוס-tenant חדש</button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===========================================================
+     SKETCH 2: PUBLIC BOOKING PAGE
+     =========================================================== -->
+<div id="sketch2" class="sketch" style="display:none;">
+  <div class="sketch-title">
+    <div>
+      <div class="tagline">מסך 2</div>
+      <h2>Public Booking Page · צד-לקוח</h2>
+    </div>
+    <div class="desc">
+      URL ייעודי פר-tenant (לדוגמה <code>book.opticalis.co.il/prizma</code>). ללא login. 4 שלבים בעמוד-אחד: סוג-מפגש → תאריך → שעה → פרטים. אם OTP מופעל — מופיע שלב-אימות לפני אישור-סופי.
+    </div>
+  </div>
+
+  <div class="pub-frame">
+    <div class="pub-head">
+      <div class="logo">פ</div>
+      <div class="biz">אופטיקה פריזמה</div>
+      <div class="biz-sub">סניף הרצליה · מאז 1985</div>
+    </div>
+
+    <div class="pub-body">
+
+      <!-- Step 1 -->
+      <div class="pub-step">
+        <span class="step-num">1</span>
+        <span class="step-title">בחרו סוג-בדיקה</span>
+        <div class="step-content">
+          <div class="type-card selected">
+            <div>
+              <div class="nm">בדיקת ראיה למבוגרים (18+)</div>
+              <div class="meta">20 דקות · ד"ר נועה / ד"ר עידן</div>
+            </div>
+            <div class="price">חינם</div>
+          </div>
+          <div class="type-card">
+            <div>
+              <div class="nm">בדיקת ראיה ילדים (עד 18)</div>
+              <div class="meta">20 דקות · בדיקה אחת = ילד-אחד</div>
+            </div>
+            <div class="price">חינם</div>
+          </div>
+          <div class="type-card">
+            <div>
+              <div class="nm">בדיקת ראיה מולטיפוקל</div>
+              <div class="meta">40 דקות · ד"ר נועה</div>
+            </div>
+            <div class="price">חינם</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="pub-step">
+        <span class="step-num">2</span>
+        <span class="step-title">בחרו תאריך</span>
+        <div class="step-content">
+          <div style="text-align:center;margin-bottom:8px;font-size:12px;font-weight:500;">‹ מאי 2026 ›</div>
+          <div class="date-mini">
+            <div class="dh">א</div><div class="dh">ב</div><div class="dh">ג</div><div class="dh">ד</div><div class="dh">ה</div><div class="dh">ו</div><div class="dh">ש</div>
+            <div class="dd muted">26</div><div class="dd muted">27</div><div class="dd muted">28</div><div class="dd muted">29</div><div class="dd muted">30</div><div class="dd muted">1</div><div class="dd muted">2</div>
+            <div class="dd muted">3</div><div class="dd muted">4</div><div class="dd muted">5</div><div class="dd muted">6</div><div class="dd muted">7</div><div class="dd has-slots">8</div><div class="dd muted">9</div>
+            <div class="dd selected">10</div><div class="dd has-slots">11</div><div class="dd full">12</div><div class="dd has-slots">13</div><div class="dd has-slots">14</div><div class="dd has-slots">15</div><div class="dd muted">16</div>
+            <div class="dd has-slots">17</div><div class="dd has-slots">18</div><div class="dd has-slots">19</div><div class="dd has-slots">20</div><div class="dd has-slots">21</div><div class="dd has-slots">22</div><div class="dd muted">23</div>
+          </div>
+          <div style="margin-top:8px;font-size:10px;color:var(--text-3);text-align:center;">
+            <span style="background:var(--green-soft);color:var(--green);padding:1px 6px;border-radius:8px;">פנוי</span>
+            <span style="background:var(--purple);color:#FFF;padding:1px 6px;border-radius:8px;margin-inline-start:4px;">נבחר</span>
+            <span style="background:var(--red-soft);color:var(--red);padding:1px 6px;border-radius:8px;margin-inline-start:4px;">תפוס</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="pub-step">
+        <span class="step-num">3</span>
+        <span class="step-title">בחרו שעה · יום ראשון 10/05</span>
+        <div class="step-content">
+          <div style="font-size:10px;color:var(--text-3);margin-bottom:6px;">בוקר</div>
+          <div class="slot-grid" style="margin-bottom:10px;">
+            <button class="slot-btn">09:20</button>
+            <button class="slot-btn">09:40</button>
+            <button class="slot-btn taken">10:00</button>
+            <button class="slot-btn">10:40</button>
+            <button class="slot-btn">11:00</button>
+            <button class="slot-btn">11:20</button>
+            <button class="slot-btn taken">11:40</button>
+            <button class="slot-btn selected">12:00</button>
+          </div>
+          <div style="font-size:10px;color:var(--text-3);margin-bottom:6px;">אחר-הצהריים</div>
+          <div class="slot-grid">
+            <button class="slot-btn">14:40</button>
+            <button class="slot-btn">15:00</button>
+            <button class="slot-btn">17:00</button>
+            <button class="slot-btn">17:20</button>
+            <button class="slot-btn">17:40</button>
+            <button class="slot-btn">18:00</button>
+            <button class="slot-btn">18:20</button>
+            <button class="slot-btn">18:40</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="pub-step">
+        <span class="step-num">4</span>
+        <span class="step-title">פרטים אישיים</span>
+        <div class="step-content">
+          <form class="pub-form">
+            <div class="field">
+              <label>שם מלא *</label>
+              <input type="text" placeholder="ישראל ישראלי" />
+            </div>
+            <div class="field">
+              <label>טלפון *</label>
+              <input type="tel" placeholder="050-1234567" />
+              <div class="help">נשלח SMS-תזכורת 24 שעות לפני התור</div>
+            </div>
+            <div class="field optional">
+              <label>אימייל</label>
+              <input type="email" placeholder="user@example.com" />
+              <div class="help">לקבלת אישור-תור באימייל</div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- OTP step (shown only when tenant has OTP enabled) -->
+      <div class="otp-box" style="margin-bottom:14px;">
+        <div class="head">📱 שלחנו קוד אימות לטלפון שלכם · 050-***-1234</div>
+        <div class="otp-inputs">
+          <input maxlength="1" />
+          <input maxlength="1" />
+          <input maxlength="1" />
+          <input maxlength="1" />
+        </div>
+        <div class="otp-resend">
+          לא קיבלתם? <a href="#">שלח שוב</a>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div class="pub-summary">
+        <div class="row"><span class="l">סוג בדיקה:</span><span class="v">בדיקת ראיה למבוגרים</span></div>
+        <div class="row"><span class="l">תאריך:</span><span class="v">10 במאי 2026 · יום ראשון</span></div>
+        <div class="row"><span class="l">שעה:</span><span class="v">12:00 - 12:20</span></div>
+        <div class="row"><span class="l">סניף:</span><span class="v">הרצליה · רחוב הראשי 12</span></div>
+      </div>
+
+      <button class="pub-cta">אשרו תור →</button>
+
+      <div style="margin-top:14px;font-size:10px;color:var(--text-3);text-align:center;line-height:1.5;">
+        בלחיצה על "אשרו תור" אתם מסכימים ל<a href="#" style="color:var(--purple);">תקנון</a> ול<a href="#" style="color:var(--purple);">מדיניות-פרטיות</a>.<br>
+        במקרים דחופים: <a href="#" style="color:var(--purple);">📱 WhatsApp</a>
+      </div>
+    </div>
+
+    <div class="pub-footer">
+      © אופטיקה פריזמה · 2026 · powered by Optic Up
+    </div>
+  </div>
+</div>
+
+<!-- ===========================================================
+     SKETCH 3: MANAGE APPOINTMENT (CUSTOMER-SIDE)
+     =========================================================== -->
+<div id="sketch3" class="sketch" style="display:none;">
+  <div class="sketch-title">
+    <div>
+      <div class="tagline">מסך 3</div>
+      <h2>ניהול-תור · קישור מהודעה</h2>
+    </div>
+    <div class="desc">
+      קישור-ייחודי בכל הודעת-תזכורת מוביל לכאן. הלקוח רואה פרטי-תור + 5 פעולות. ביטול ושינוי-מועד תחת אותו חלון-זמן (קונפיגורבילי). קישור חד-פעמי, מבוסס token.
+    </div>
+  </div>
+
+  <div class="mng-frame">
+    <div class="mng-head">
+      <div class="ttl">ניהול התור שלך</div>
+      <div class="sub">אופטיקה פריזמה · סניף הרצליה</div>
+    </div>
+
+    <div class="mng-body">
+
+      <div class="mng-card">
+        <h3>פרטי התור</h3>
+        <div class="mng-detail"><span class="l">סוג בדיקה</span><span class="v">בדיקת ראיה למבוגרים</span></div>
+        <div class="mng-detail"><span class="l">תאריך</span><span class="v">יום ראשון, 10 במאי 2026</span></div>
+        <div class="mng-detail"><span class="l">שעה</span><span class="v">12:00 - 12:20</span></div>
+        <div class="mng-detail"><span class="l">בעל-מקצוע</span><span class="v">ד"ר נועה כהן</span></div>
+        <div class="mng-detail"><span class="l">מיקום</span><span class="v">הרצליה · רחוב הראשי 12</span></div>
+        <div class="mng-detail"><span class="l">סטטוס</span><span class="v" style="color:var(--green);">✓ אישרת באתר</span></div>
+      </div>
+
+      <div class="mng-window-warn">
+        ⏰ ניתן לשנות או לבטל את התור עד <strong>4 שעות לפני</strong> מועדו. אחרי זה — צרו קשר ישיר ב-WhatsApp.
+      </div>
+
+      <div class="mng-actions">
+
+        <button class="mng-action cta">
+          <span class="ic">✓</span>
+          <div class="lab">
+            <div class="nm">אישור הגעה</div>
+            <div class="sub">סמנו אישור-הגעה כשאתם בדרך · עוזר לנו להתכונן</div>
+          </div>
+        </button>
+
+        <button class="mng-action amber">
+          <span class="ic">📅</span>
+          <div class="lab">
+            <div class="nm">שנו מועד</div>
+            <div class="sub">בחירת תאריך/שעה אחרים · הזמינות מתעדכנת בזמן-אמת</div>
+          </div>
+        </button>
+
+        <button class="mng-action">
+          <span class="ic">📥</span>
+          <div class="lab">
+            <div class="nm">הוספה ליומן Google</div>
+            <div class="sub">או הורדה כקובץ .ics</div>
+          </div>
+        </button>
+
+        <button class="mng-action">
+          <span class="ic">🧭</span>
+          <div class="lab">
+            <div class="nm">ניווט אל הסניף</div>
+            <div class="sub">פתיחה ב-Waze או Google Maps</div>
+          </div>
+        </button>
+
+        <button class="mng-action">
+          <span class="ic">📱</span>
+          <div class="lab">
+            <div class="nm">שליחת פרטי-התור ב-WhatsApp</div>
+            <div class="sub">שמירה אצלכם או שיתוף עם בן-משפחה</div>
+          </div>
+        </button>
+
+        <button class="mng-action danger">
+          <span class="ic">✕</span>
+          <div class="lab">
+            <div class="nm">ביטול התור</div>
+            <div class="sub">פעולה זו אינה הפיכה · ה-slot ישתחרר ללקוחות אחרים</div>
+          </div>
+        </button>
+
+      </div>
+
+      <div style="margin-top:18px;background:var(--purple-soft);border-radius:var(--r-md);padding:12px;text-align:center;">
+        <div style="font-size:11px;color:var(--purple-deep);margin-bottom:6px;">צריכים עזרה?</div>
+        <a href="#" style="font-size:13px;color:var(--purple);font-weight:500;text-decoration:none;">📱 WhatsApp ישיר עם הצוות</a>
+      </div>
+
+    </div>
+
+    <div style="background:var(--soft);padding:14px 20px;text-align:center;font-size:10px;color:var(--text-3);border-top:1px solid var(--border);">
+      © אופטיקה פריזמה · 2026
+    </div>
+  </div>
+
+</div>
+
+<script>
+function showS(n){
+  for(let i=1;i<=3;i++){
+    document.getElementById('sketch'+i).style.display = (i===n)?'block':'none';
+  }
+  document.querySelectorAll('.top-nav button').forEach((b,idx)=>{
+    b.classList.toggle('active', idx===n-1);
+  });
+}
+</script>
+
+</body>
+</html>

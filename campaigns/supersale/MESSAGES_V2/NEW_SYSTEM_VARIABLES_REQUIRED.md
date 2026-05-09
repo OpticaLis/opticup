@@ -6,7 +6,7 @@
 >
 > **Status:** authored 2026-04-28 by Campaign Overseer during the V2 email rebuild. All decisions came from Daniel during that session.
 >
-> **What's NOT here:** the email content itself (in `MESSAGES_V2/*.html`) and the design canon (in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/PRIZMA_DESIGN_SYSTEM_CANONICAL.md`).
+> **What's NOT here:** the email content itself (in `MESSAGES_V2/*.html`) and the design canon (in `roles/campaign-overseer/PRIZMA_DESIGN_SYSTEM_CANONICAL.md`).
 
 ---
 

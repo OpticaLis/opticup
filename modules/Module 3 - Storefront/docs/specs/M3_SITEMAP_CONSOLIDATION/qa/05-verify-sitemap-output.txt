@@ -1,0 +1,18 @@
+WARN: 7/30 sampled URLs returned non-200 (pre-existing data-quality issue):
+  [404] https://www.prizma-optic.co.il/brands/morel/
+  [404] https://www.prizma-optic.co.il/brands/flash/
+  [404] https://www.prizma-optic.co.il/brands/accord/
+  [404] https://www.prizma-optic.co.il/brands/gipsy-kids/
+  [404] https://www.prizma-optic.co.il/brands/just/
+  [404] https://www.prizma-optic.co.il/brands/christies/
+  [404] https://www.prizma-optic.co.il/brands/kokids/
+PASS — 9 checks:
+  ✓ sitemap-dynamic.xml returns 200 + valid XML
+  ✓ 364 <loc> + 986 hreflang alternate URLs found
+  ✓ 100% of URLs (loc + alternates) use canonical www domain
+  ✓ <loc> count 364 >= 363 (page-groups; alternates additional)
+  ✓ All 6 branch-URL variants present (loc or hreflang)
+  ✓ sitemap-0.xml returns 404 (consolidated; no longer duplicated)
+  ✓ robots.txt Sitemap directive uses canonical www URL
+  ✓ Sample probe: 23/30 returned 200 (7 pre-existing 404s logged)
+  ✓ 6/6 branch-URL variants return 200

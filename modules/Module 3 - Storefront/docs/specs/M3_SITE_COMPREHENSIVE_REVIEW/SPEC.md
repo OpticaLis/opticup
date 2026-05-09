@@ -95,7 +95,7 @@ A6. **Decorative-real-looking values (LEARNINGS L-PROJECT-001 enforcement).** Ap
 
 **B. Visual / brand consistency**
 
-B1. Design canon compliance per `__LAUNCH_PLAN_DRAFT__/campaign-overseer/PRIZMA_DESIGN_SYSTEM_CANONICAL.md` (if accessible, else baseline = top 3 most-trafficked pages: `/`, `/supersale/`, `/`+language-switched homepages). Fonts: Rubik 4 weights only. Gold: `#c9a555` (+ light/hover variants from `ui_config.brand`). Surface tones: light/dark canon.
+B1. Design canon compliance per `roles/campaign-overseer/PRIZMA_DESIGN_SYSTEM_CANONICAL.md` (if accessible, else baseline = top 3 most-trafficked pages: `/`, `/supersale/`, `/`+language-switched homepages). Fonts: Rubik 4 weights only. Gold: `#c9a555` (+ light/hover variants from `ui_config.brand`). Surface tones: light/dark canon.
 B2. Logo presence & quality on header + footer for all 3 languages.
 B3. Hero image present, loaded, no broken image icon, alt text non-empty.
 B4. RTL/LTR correctness — Hebrew uses `dir="rtl"` and logical CSS properties; English/Russian use `dir="ltr"`. Flag any page with mixed direction or visible LTR layout in a Hebrew context.
@@ -150,12 +150,12 @@ G3. Hardcoded Hebrew month names / dates that won't auto-update (e.g. literal "�
 
 ### Whitelist of write paths (executor may CREATE these and only these)
 
-1. `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_MAP.md` (Mode A baseline — first time creation)
+1. `roles/site-overseer/SITE_MAP.md` (Mode A baseline — first time creation)
 2. `modules/Module 3 - Storefront/docs/specs/M3_SITE_COMPREHENSIVE_REVIEW/SITE_AUDIT_REPORT.md` (the findings report)
 3. `modules/Module 3 - Storefront/docs/specs/M3_SITE_COMPREHENSIVE_REVIEW/EXECUTION_REPORT.md`
 4. `modules/Module 3 - Storefront/docs/specs/M3_SITE_COMPREHENSIVE_REVIEW/FINDINGS.md`
-5. `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md` (update existing)
-6. `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md` (create empty if missing — this becomes the Mode B baseline)
+5. `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (update existing)
+6. `roles/site-overseer/DECISIONS_LOG.md` (create empty if missing — this becomes the Mode B baseline)
 
 No other files may be created or modified. No git operations beyond `add` of those exact files + one atomic `commit` + `push origin develop`.
 
@@ -169,7 +169,7 @@ No other files may be created or modified. No git operations beyond `add` of tho
 | 2 | All ~30 unique slugs × 3 langs sampled (≥80 page fetches) | Audit report §1 page-fetch table | ≥80 rows, each with HTTP status |
 | 3 | Every category A-G has at least 3 findings OR an explicit "0 findings — methodology used: X" note | Audit report ToC | ≥7 sections populated |
 | 4 | Every finding has: ID (FIND-NNN), category (A-G), severity (CRITICAL/HIGH/MEDIUM/LOW/INFO), evidence (URL + quote/screenshot path), recommended fix (one line), customer-impact assessment | Audit report findings table | 100% conformance |
-| 5 | SITE_MAP.md created at `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_MAP.md` per Site Overseer Mode A protocol | File exists + has §1-§7 | File exists, ≥6 sections |
+| 5 | SITE_MAP.md created at `roles/site-overseer/SITE_MAP.md` per Site Overseer Mode A protocol | File exists + has §1-§7 | File exists, ≥6 sections |
 | 6 | NO files created/modified outside the §4 whitelist | `git status` post-commit | Only whitelist paths in commit |
 | 7 | NO DB writes occurred | Supabase audit log review (manual statement in EXECUTION_REPORT) | Confirmed read-only |
 | 8 | Every CRITICAL finding has a 1-paragraph customer-impact statement | Audit report | 100% conformance |
@@ -225,9 +225,9 @@ In addition to global triggers:
 - `modules/Module 3 - Storefront/docs/specs/M3_SITE_COMPREHENSIVE_REVIEW/SITE_AUDIT_REPORT.md` — the master findings document. Structured as: §1 page-fetch matrix, §2-§8 findings by category A-G, §9 recommended next-action priorities, §10 methodology + tool versions used.
 - `modules/Module 3 - Storefront/docs/specs/M3_SITE_COMPREHENSIVE_REVIEW/EXECUTION_REPORT.md` — standard executor retro.
 - `modules/Module 3 - Storefront/docs/specs/M3_SITE_COMPREHENSIVE_REVIEW/FINDINGS.md` — meta-findings about the SPEC itself (NOT the audit findings — those go in SITE_AUDIT_REPORT).
-- `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_MAP.md` — Mode A baseline.
-- `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md` — updated to Mode B (post-discovery).
-- `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md` — empty stub created for Mode B sessions.
+- `roles/site-overseer/SITE_MAP.md` — Mode A baseline.
+- `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` — updated to Mode B (post-discovery).
+- `roles/site-overseer/DECISIONS_LOG.md` — empty stub created for Mode B sessions.
 
 **Production:** UNCHANGED. Storefront live, DB live, no deploys.
 
@@ -257,9 +257,9 @@ Add files (explicit, no -A):
 git add modules/Module\ 3\ -\ Storefront/docs/specs/M3_SITE_COMPREHENSIVE_REVIEW/SITE_AUDIT_REPORT.md
 git add modules/Module\ 3\ -\ Storefront/docs/specs/M3_SITE_COMPREHENSIVE_REVIEW/EXECUTION_REPORT.md
 git add modules/Module\ 3\ -\ Storefront/docs/specs/M3_SITE_COMPREHENSIVE_REVIEW/FINDINGS.md
-git add __LAUNCH_PLAN_DRAFT__/site-overseer/SITE_MAP.md
-git add __LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md
-git add __LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md
+git add roles/site-overseer/SITE_MAP.md
+git add roles/site-overseer/SITE_OVERSEER_HANDOFF.md
+git add roles/site-overseer/DECISIONS_LOG.md
 ```
 
 ---

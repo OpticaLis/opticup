@@ -145,7 +145,7 @@ When all M4 closure work is fully verified on demo and we're ready to lock down 
 
 1. Either **lock the storefront** so `?tenant=` param is ignored when not in `?dev=1` mode (or some employee-only marker), OR document that `?tenant=` is a valid debug param for staff-only use.
 2. Verify default behavior (no `?tenant=`) remains rock-solid for prizma's production traffic.
-3. Document the design decision in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/HANDOFF.md` so a 2nd-tenant onboarding knows where the tenant-routing seam is.
+3. Document the design decision in `roles/campaign-overseer/HANDOFF.md` so a 2nd-tenant onboarding knows where the tenant-routing seam is.
 
 **This task is logged in HANDOFF §"M4 cleanup follow-ups" by the Overseer right now (not the executor's job).**
 

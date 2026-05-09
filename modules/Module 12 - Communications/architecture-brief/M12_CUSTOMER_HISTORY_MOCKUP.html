@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M12 — היסטוריית תקשורת בכרטיס לקוח</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --panel: #ffffff;
+    --header: #f0f2f5;
+    --border: #e5e7eb;
+    --text: #111b21;
+    --text-muted: #667781;
+    --gold: #c9a555;
+    --gold-dark: #a98740;
+    --whatsapp: #25d366;
+    --whatsapp-dark: #075e54;
+    --sms: #6c8ebf;
+    --sms-dark: #4a6fa5;
+    --email: #b85450;
+    --email-dark: #a04340;
+    --hover: #f5f6f6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Rubik', Arial, sans-serif;
+    background: var(--bg);
+    margin: 0;
+    color: var(--text);
+    direction: rtl;
+  }
+  .container {
+    max-width: 1280px;
+    margin: 0 auto;
+    background: white;
+    min-height: 100vh;
+    box-shadow: 0 0 20px rgba(0,0,0,0.05);
+  }
+
+  /* ---------- Customer Card Header ---------- */
+  .customer-header {
+    background: linear-gradient(135deg, #075e54 0%, #128c7e 100%);
+    color: white;
+    padding: 20px 30px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .header-avatar {
+    width: 70px; height: 70px;
+    border-radius: 50%;
+    background: var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    font-weight: 600;
+    color: white;
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+  }
+  .header-info { flex: 1; }
+  .header-info .name {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .header-info .meta {
+    font-size: 13px;
+    opacity: 0.9;
+  }
+  .header-actions { display: flex; gap: 10px; }
+  .header-btn {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .header-btn:hover { background: rgba(255,255,255,0.25); }
+  .header-btn.primary {
+    background: var(--whatsapp);
+    border-color: var(--whatsapp);
+  }
+
+  /* ---------- Tabs ---------- */
+  .tabs-bar {
+    display: flex;
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 0 30px;
+  }
+  .tab {
+    padding: 14px 18px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-muted);
+    border-bottom: 3px solid transparent;
+    font-weight: 500;
+  }
+  .tab.active {
+    color: var(--whatsapp-dark);
+    border-bottom-color: var(--whatsapp);
+    font-weight: 600;
+  }
+  .tab .badge {
+    background: var(--header);
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    margin-right: 6px;
+  }
+  .tab.active .badge { background: var(--whatsapp); color: white; }
+
+  /* ---------- Main Content Area ---------- */
+  .content {
+    padding: 24px 30px;
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .filter-bar .label {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .filter-pill {
+    padding: 5px 12px;
+    background: var(--bg);
+    border-radius: 14px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text-muted);
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .filter-pill.active {
+    background: #fff8e1;
+    color: var(--gold-dark);
+    border-color: var(--gold);
+  }
+  .filter-pill .count {
+    font-weight: 600;
+  }
+
+  .channel-icon {
+    width: 16px; height: 16px;
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 600;
+    color: white;
+  }
+  .channel-icon.wa { background: var(--whatsapp); }
+  .channel-icon.sms { background: var(--sms); }
+  .channel-icon.email { background: var(--email); }
+
+  .filter-bar .right-actions {
+    margin-right: auto;
+    display: flex;
+    gap: 8px;
+  }
+  .export-btn {
+    background: white;
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .stat-card .num {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .stat-card .label {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .stat-card.success .num { color: #2e7d32; }
+  .stat-card.warning .num { color: #e65100; }
+  .stat-card.error .num { color: #c62828; }
+
+  /* Timeline */
+  .timeline {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .day-header {
+    background: var(--bg);
+    padding: 10px 18px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .msg-row {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 80px 36px 1fr 130px 120px;
+    gap: 14px;
+    align-items: center;
+    cursor: pointer;
+  }
+  .msg-row:hover { background: var(--hover); }
+  .msg-row:last-child { border-bottom: none; }
+
+  .msg-time {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .msg-time .relative {
+    display: block;
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  .msg-channel {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: white;
+    font-size: 12px;
+  }
+  .msg-channel.wa { background: var(--whatsapp); }
+  .msg-channel.sms { background: var(--sms); }
+  .msg-channel.email { background: var(--email); }
+
+  .msg-content {
+    min-width: 0;
+  }
+  .msg-direction {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 7px;
+    border-radius: 8px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+  .msg-direction.out {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+  .msg-direction.in {
+    background: #fff3e0;
+    color: #e65100;
+  }
+  .msg-template {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-right: 6px;
+  }
+  .msg-snippet {
+    font-size: 14px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .msg-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+  }
+  .status-icon { font-size: 14px; }
+  .status-text { color: var(--text-muted); }
+  .status-text.delivered { color: #2e7d32; }
+  .status-text.read { color: #1565c0; font-weight: 500; }
+  .status-text.failed { color: #c62828; font-weight: 500; }
+  .status-text.pending { color: #e65100; }
+
+  .msg-agent {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: end;
+  }
+  .agent-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--bg);
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+  }
+  .agent-pill .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+  }
+  .agent-pill.system .dot { background: #9c27b0; }
+  .agent-pill.system { color: #9c27b0; }
+
+  /* Inbound message styling - left border */
+  .msg-row.inbound {
+    background: rgba(255, 243, 224, 0.3);
+  }
+  .msg-row.inbound:hover {
+    background: rgba(255, 243, 224, 0.5);
+  }
+
+  /* Failed message styling */
+  .msg-row.failed {
+    background: rgba(255, 235, 238, 0.3);
+  }
+
+  /* Section: Consent History */
+  .section-header {
+    margin: 30px 0 12px;
+    padding: 0 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .section-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .section-header .sub {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .consent-summary {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+  .consent-card {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+  }
+  .consent-card.granted { border-color: #66bb6a; background: #f1f8e9; }
+  .consent-card.denied { border-color: #ef9a9a; background: #ffebee; }
+  .consent-card .channel {
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+  .consent-card .status {
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .consent-card .meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ============ Customer Header ============ -->
+  <div class="customer-header">
+    <div class="header-avatar">רל</div>
+    <div class="header-info">
+      <div class="name">רחל לוי · #1873</div>
+      <div class="meta">⭐ VIP · חברת מועדון זהב · לקוחה מאז 2023 · רחל.ל@gmail.com · 053-1234567</div>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn primary">💬 פתח שיחה ב-WhatsApp</button>
+      <button class="header-btn">📨 שלח הודעה ידנית</button>
+      <button class="header-btn">⚙️ עדכון הסכמות</button>
+    </div>
+  </div>
+
+  <!-- ============ Context strip — tells the user where this lives ============ -->
+  <div style="background: #f5f6f8; padding: 8px 30px; font-size: 12px; color: #667781; border-bottom: 1px solid #e5e7eb;">
+    📍 כרטיס לקוח (M5) ▸ <strong style="color: #075e54;">טאב תקשורת</strong> · המסך הזה הוא ה-tab החדש שמודול 12 מוסיף לכרטיס-לקוח קיים. שאר ה-tabs (פרטים / מרשמים / הזמנות / מסמכים) שייכים ל-M5/M6/M7 וזמינים בכרטיס המלא.
+  </div>
+
+  <!-- ============ Main Content ============ -->
+  <div class="content">
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="num">142</div>
+        <div class="label">סה"כ הודעות (12 חודשים)</div>
+      </div>
+      <div class="stat-card success">
+        <div class="num">128</div>
+        <div class="label">נמסרו / נקראו</div>
+      </div>
+      <div class="stat-card warning">
+        <div class="num">11</div>
+        <div class="label">הודעות נכנסות מהלקוחה</div>
+      </div>
+      <div class="stat-card error">
+        <div class="num">3</div>
+        <div class="label">נכשלו / לא נמסרו</div>
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <span class="label">סינון:</span>
+      <div class="filter-pill active">הכל <span class="count">142</span></div>
+      <div class="filter-pill"><span class="channel-icon wa">WA</span> WhatsApp <span class="count">98</span></div>
+      <div class="filter-pill"><span class="channel-icon sms">SMS</span> SMS <span class="count">31</span></div>
+      <div class="filter-pill"><span class="channel-icon email">Em</span> Email <span class="count">13</span></div>
+      <div class="filter-pill">📤 יוצאות <span class="count">131</span></div>
+      <div class="filter-pill">📥 נכנסות <span class="count">11</span></div>
+      <div class="filter-pill">⚠ נכשלו <span class="count">3</span></div>
+      <div class="right-actions">
+        <button class="export-btn">📥 ייצוא ל-Excel</button>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="timeline">
+
+      <div class="day-header">היום · 09.05.2026</div>
+
+      <div class="msg-row inbound">
+        <div class="msg-time">14:48 <span class="relative">לפני 12 דקות</span></div>
+        <div class="msg-channel wa">WA</div>
+        <div class="msg-content">
+          <div>
+            <span class="msg-direction in">↓ נכנסת</span>
+          </div>
+          <div class="msg-snippet">מצאתי דגם שאני אוהבת — RB3025 בצבע זהב. תודה רבה! מתי אני יכולה לבוא?</div>
+        </div>
+        <div class="msg-status">
+          <span class="status-icon">📥</span>
+          <span class="status-text">נכנסה</span>
+        </div>
+        <div class="msg-agent">
+          <span class="agent-pill"><span class="dot"></span>הלקוחה</span>
+        </div>
+      </div>
+
+      <div class="msg-row">
+        <div class="msg-time">10:27 <span class="relative">לפני 4 שעות</span></div>
+        <div class="msg-channel wa">WA</div>
+        <div class="msg-content">
+          <div>
+            <span class="msg-direction out">↑ יוצאת</span>
+            <span class="msg-template">📎 קובץ: קטלוג Ray-Ban קיץ 2026.pdf</span>
+          </div>
+          <div class="msg-snippet">📎 קטלוג Ray-Ban קיץ 2026.pdf</div>
+        </div>
+        <div class="msg-status">
+          <span class="status-icon">✓✓</span>
+          <span class="status-text read">נקרא</span>
+        </div>
+        <div class="msg-agent">
+          <span class="agent-pill"><span class="dot"></span>דניאל</span>
+        </div>
+      </div>
+
+      <div class="msg-row">
+        <div class="msg-time">10:25 <span class="relative">לפני 4 שעות</span></div>
+        <div class="msg-channel wa">WA</div>
+        <div class="msg-content">
+          <div>
+            <span class="msg-direction out">↑ יוצאת</span>
+            <span class="msg-template">תשובה ידנית</span>
+          </div>
+          <div class="msg-snippet">בוקר טוב רחל! 😊 כן, יש לנו מבצע מיוחד על Ray-Ban — 30% הנחה כל החודש. רוצה שאשלח לך את הקטלוג?</div>
+        </div>
+        <div class="msg-status">
+          <span class="status-icon">✓✓</span>
+          <span class="status-text read">נקרא</span>
+        </div>
+        <div class="msg-agent">
+          <span class="agent-pill"><span class="dot"></span>דניאל</span>
+        </div>
+      </div>
+
+      <div class="msg-row inbound">
+        <div class="msg-time">10:23 <span class="relative">לפני 4 שעות</span></div>
+        <div class="msg-channel wa">WA</div>
+        <div class="msg-content">
+          <div>
+            <span class="msg-direction in">↓ נכנסת</span>
+          </div>
+          <div class="msg-snippet">היי, אני שמעתי שיש לכם מבצע על משקפי-שמש. אפשר לקבל פרטים?</div>
+        </div>
+        <div class="msg-status">
+          <span class="status-icon">📥</span>
+          <span class="status-text">נכנסה</span>
+        </div>
+        <div class="msg-agent">
+          <span class="agent-pill"><span class="dot"></span>הלקוחה</span>
+        </div>
+      </div>
+
+      <div class="day-header">אתמול · 08.05.2026</div>
+
+      <div class="msg-row failed">
+        <div class="msg-time">11:30</div>
+        <div class="msg-channel email">Em</div>
+        <div class="msg-content">
+          <div>
+            <span class="msg-direction out">↑ יוצאת</span>
+            <span class="msg-template">תבנית: ברכת יום הולדת + 10% הנחה</span>
+          </div>
+          <div class="msg-snippet">יום הולדת שמח רחל! 🎂 לכבוד יום הולדתך — 10% הנחה על כל הקנייה הבאה...</div>
+        </div>
+        <div class="msg-status">
+          <span class="status-icon">⚠️</span>
+          <span class="status-text failed">נכשל — חסום</span>
+        </div>
+        <div class="msg-agent">
+          <span class="agent-pill system"><span class="dot"></span>אוטומטי</span>
+        </div>
+      </div>
+
+      <div class="msg-row">
+        <div class="msg-time">09:00</div>
+        <div class="msg-channel wa">WA</div>
+        <div class="msg-content">
+          <div>
+            <span class="msg-direction out">↑ יוצאת</span>
+            <span class="msg-template">תבנית: ברכת יום הולדת + 10% הנחה</span>
+          </div>
+          <div class="msg-snippet">יום הולדת שמח רחל! 🎂 לכבוד יום הולדתך — 10% הנחה על כל הקנייה הבאה אצלנו (קוד: BIRTHDAY10)</div>
+        </div>
+        <div class="msg-status">
+          <span class="status-icon">✓✓</span>
+          <span class="status-text read">נקרא</span>
+        </div>
+        <div class="msg-agent">
+          <span class="agent-pill system"><span class="dot"></span>אוטומטי</span>
+        </div>
+      </div>
+
+      <div class="day-header">לפני שבוע · 02.05.2026</div>
+
+      <div class="msg-row">
+        <div class="msg-time">15:42</div>
+        <div class="msg-channel wa">WA</div>
+        <div class="msg-content">
+          <div>
+            <span class="msg-direction out">↑ יוצאת</span>
+            <span class="msg-template">תבנית: המשקפיים מוכנים לאיסוף</span>
+          </div>
+          <div class="msg-snippet">היי רחל! 👓 המשקפיים שהזמנת מוכנים לאיסוף בחנות שלנו. מס׳ הזמנה 2418...</div>
+        </div>
+        <div class="msg-status">
+          <span class="status-icon">✓✓</span>
+          <span class="status-text read">נקרא</span>
+        </div>
+        <div class="msg-agent">
+          <span class="agent-pill system"><span class="dot"></span>אוטומטי</span>
+        </div>
+      </div>
+
+      <div class="msg-row">
+        <div class="msg-time">15:40</div>
+        <div class="msg-channel sms">SMS</div>
+        <div class="msg-content">
+          <div>
+            <span class="msg-direction out">↑ יוצאת (גיבוי)</span>
+            <span class="msg-template">תבנית: המשקפיים מוכנים לאיסוף</span>
+          </div>
+          <div class="msg-snippet">היי רחל! המשקפיים מוכנים לאיסוף (הרצל 32, אשקלון). מס׳ הזמנה 2418</div>
+        </div>
+        <div class="msg-status">
+          <span class="status-icon">✓✓</span>
+          <span class="status-text delivered">נמסר</span>
+        </div>
+        <div class="msg-agent">
+          <span class="agent-pill system"><span class="dot"></span>אוטומטי</span>
+        </div>
+      </div>
+
+      <div class="msg-row">
+        <div class="msg-time">11:00</div>
+        <div class="msg-channel wa">WA</div>
+        <div class="msg-content">
+          <div>
+            <span class="msg-direction out">↑ יוצאת</span>
+            <span class="msg-template">תבנית: אישור הזמנה</span>
+          </div>
+          <div class="msg-snippet">תודה על ההזמנה רחל! 🎉 ההזמנה שלך התקבלה. מס׳ 2418, סה"כ ₪1,890. נעדכן כשיהיה מוכן 😊</div>
+        </div>
+        <div class="msg-status">
+          <span class="status-icon">✓✓</span>
+          <span class="status-text read">נקרא</span>
+        </div>
+        <div class="msg-agent">
+          <span class="agent-pill system"><span class="dot"></span>אוטומטי</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============ Consent History Section ============ -->
+    <div class="section-header">
+      <h3>📜 הסכמות תקשורת</h3>
+      <span class="sub">ניתן לעדכן בכל עת. כל שינוי נרשם ב-audit log לצרכי חוק.</span>
+    </div>
+
+    <div class="consent-summary">
+      <div class="consent-card granted">
+        <div class="channel"><span class="channel-icon wa">WA</span> WhatsApp</div>
+        <div class="status">✓ <strong>אישרה</strong> — הודעות שיווקיות פעילות</div>
+        <div class="meta">
+          ניתנה: 14.03.2024 בטופס-אתר<br>
+          טקסט שהוצג: "אני מאשרת קבלת הודעות מפריזמה אופטיק לצורכי שיווק ומבצעים"
+        </div>
+      </div>
+
+      <div class="consent-card granted">
+        <div class="channel"><span class="channel-icon sms">SMS</span> SMS</div>
+        <div class="status">✓ <strong>אישרה</strong> — הודעות שיווקיות פעילות</div>
+        <div class="meta">
+          ניתנה: 14.03.2024 בטופס-אתר (יחד עם WhatsApp)<br>
+          Sender ID: PrizmaOptic
+        </div>
+      </div>
+
+      <div class="consent-card denied">
+        <div class="channel"><span class="channel-icon email">Em</span> Email</div>
+        <div class="status">✗ <strong>סירבה</strong> — שיווקי חסום, שירותי בלבד</div>
+        <div class="meta">
+          הסירה: 08.05.2026 דרך קישור unsubscribe<br>
+          הודעת ברכת יום-הולדת ב-Email נחסמה אוטומטית (8.5.2026)
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

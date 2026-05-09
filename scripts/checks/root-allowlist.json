@@ -1,0 +1,80 @@
+{
+  "_doc": "Root Discipline Rule allowlist — derived from CLAUDE.md §0.5. Maintained per Module Close Ceremony.",
+  "_version": "1.0.0",
+  "_last_updated": "2026-05-09",
+  "_managed_by": "STRUCTURE_PROTECTIONS SPEC + manual updates per CLAUDE.md §0.5 changes",
+
+  "files": {
+    "category_1_infrastructure": [
+      "CLAUDE.md",
+      "README.md",
+      "package.json",
+      "package-lock.json",
+      ".gitignore",
+      ".mcp.json",
+      ".nojekyll",
+      "CNAME",
+      "favicon.ico"
+    ],
+    "category_2_sources_of_truth": [
+      "MASTER_ROADMAP.md",
+      "TECH_DEBT.md"
+    ],
+    "category_3_html_entrypoints": [
+      "index.html",
+      "admin.html",
+      "crm.html",
+      "inventory.html",
+      "settings.html",
+      "shipments.html",
+      "employees.html",
+      "error.html",
+      "landing.html",
+      "r.html",
+      "storefront-blog.html",
+      "storefront-content.html",
+      "storefront-glossary.html",
+      "storefront-landing-content.html",
+      "storefront-products.html",
+      "storefront-settings.html",
+      "storefront-studio.html",
+      "suppliers-debt.html"
+    ],
+    "category_legacy_acknowledged": [
+      "serve.js",
+      "opticup-skills.plugin"
+    ]
+  },
+
+  "directories": {
+    "category_1_infrastructure": [
+      ".git",
+      ".github",
+      ".husky",
+      ".vscode",
+      ".claude",
+      "node_modules"
+    ],
+    "category_2_sources_of_truth": [
+      "docs",
+      "modules",
+      "roles",
+      "_archive",
+      "migrations",
+      "scripts",
+      "shared",
+      "js",
+      "css",
+      "supabase",
+      "tests",
+      "campaigns",
+      "watcher-deploy"
+    ]
+  },
+
+  "_notes": {
+    "directories_warning_only": "New root directories produce a warning (exit 2) not a block (exit 1). Reason: legitimate new top-level dirs may be needed (e.g., roles/ added 2026-05-09). Daniel reviews warnings periodically.",
+    "files_strict_block": "New root files NOT on this allowlist hard-block the commit. Reason: 99% of new root files are accidents (forgot to put in subfolder).",
+    "loader_pattern": "Loaded by scripts/checks/check-root-discipline.mjs which runs as part of scripts/verify.mjs --staged auto-discovery."
+  }
+}

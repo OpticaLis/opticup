@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M8 — הגדרות ערוצי-סליקה · v2 · גמיש מלא</title>
+<style>
+  :root{
+    --bg:#FAFAF7; --surface:#FFFFFF; --soft:#F1EFE8;
+    --border:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
+    --text:#1F1F1E; --text-2:#5F5E5A; --text-3:#888780;
+    --purple:#534AB7; --purple-soft:#EEEDFE; --purple-deep:#26215C;
+    --teal:#0F6E56; --teal-soft:#E1F5EE; --teal-deep:#04342C;
+    --amber:#BA7517; --amber-soft:#FAEEDA; --amber-deep:#412402;
+    --blue:#185FA5; --blue-soft:#E6F1FB; --blue-deep:#0C447C;
+    --coral:#993C1D; --coral-soft:#FAECE7; --coral-deep:#4A1B0C;
+    --green:#3B6D11; --green-soft:#EAF3DE; --green-deep:#173404;
+    --gray:#5F5E5A; --gray-soft:#F1EFE8;
+    --red:#A32D2D; --red-soft:#FBE6E6;
+    --r-md:6px; --r-lg:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;font-family:-apple-system,'Segoe UI',Rubik,sans-serif;
+    background:var(--bg);color:var(--text);font-size:12px;line-height:1.4;direction:rtl;
+  }
+  .page{max-width:1640px;margin:0 auto;padding:18px;}
+  h1{font-size:18px;font-weight:500;margin:0 0 4px;}
+  .lede{color:var(--text-2);margin:0 0 14px;font-size:12px;}
+
+  .panel{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px 16px;margin-bottom:14px;
+  }
+  .panel h3{font-size:13px;font-weight:500;margin:0 0 10px;display:flex;align-items:center;gap:8px;}
+
+  /* v2 changes banner */
+  .changes{
+    background:#FFF8E1;border:1px solid var(--amber);border-radius:var(--r-lg);
+    padding:14px 16px;margin-bottom:14px;
+  }
+  .changes h2{font-size:13px;font-weight:500;margin:0 0 8px;color:var(--amber-deep);}
+  .changes ul{margin:0;padding-inline-start:18px;color:var(--text);font-size:11.5px;}
+  .changes li{margin:4px 0;}
+  .changes li strong{color:var(--amber-deep);}
+
+  /* Header bar */
+  .header-bar{
+    display:flex;justify-content:space-between;align-items:center;
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px 18px;margin-bottom:14px;
+  }
+  .header-bar .left{}
+  .header-bar .breadcrumb{font-size:11px;color:var(--text-2);margin-bottom:4px;}
+  .header-bar .title{font-size:16px;font-weight:600;}
+  .header-bar .actions{display:flex;gap:8px;}
+  .header-bar button{
+    padding:8px 14px;font-size:12px;border-radius:var(--r-md);cursor:pointer;
+    border:1px solid var(--border);background:var(--surface);
+  }
+  .header-bar button:hover{background:var(--soft);}
+  .header-bar .btn-add{background:var(--purple);color:#fff;border-color:var(--purple);font-weight:500;}
+
+  /* Permission banner */
+  .permission-banner{
+    background:var(--amber-soft);border:1px solid var(--amber);border-radius:var(--r-lg);
+    padding:10px 14px;margin-bottom:14px;font-size:11.5px;color:var(--amber-deep);
+    display:flex;align-items:center;gap:10px;
+  }
+  .permission-banner .ico{font-size:18px;}
+  .permission-banner strong{color:var(--text);}
+
+  /* KPIs */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+  .kpi{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:12px 14px;
+  }
+  .kpi .lbl{font-size:11px;color:var(--text-2);}
+  .kpi .val{font-size:18px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums;}
+  .kpi .sub{font-size:10.5px;color:var(--text-3);margin-top:3px;}
+
+  /* Architecture diagram */
+  .arch-diagram{
+    background:var(--blue-soft);border:1px solid var(--blue);border-radius:var(--r-lg);
+    padding:16px 20px;margin-bottom:14px;
+  }
+  .arch-diagram h3{margin:0 0 12px;color:var(--blue-deep);font-size:13px;display:flex;align-items:center;gap:8px;}
+  .arch-grid{display:grid;grid-template-columns:1fr 30px 1fr 30px 1fr;gap:8px;align-items:stretch;}
+  .arch-box{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+    padding:12px 14px;font-size:11.5px;
+  }
+  .arch-box .ttl{font-weight:600;color:var(--blue-deep);font-size:12px;margin-bottom:4px;}
+  .arch-box .desc{color:var(--text-2);font-size:10.5px;line-height:1.5;}
+  .arch-arrow{display:flex;align-items:center;justify-content:center;color:var(--blue-deep);font-size:20px;font-weight:600;}
+
+  /* Channels table */
+  .channels{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    overflow:hidden;
+  }
+  .channels-header{
+    display:grid;grid-template-columns:24px 1.4fr 100px 1fr 100px 100px 90px;
+    gap:10px;padding:10px 16px;background:var(--soft);font-size:10.5px;
+    color:var(--text-2);text-transform:uppercase;letter-spacing:.04em;font-weight:500;
+    border-bottom:1px solid var(--border-strong);
+  }
+  .channel-row{
+    display:grid;grid-template-columns:24px 1.4fr 100px 1fr 100px 100px 90px;
+    gap:10px;padding:12px 16px;align-items:center;font-size:11.5px;
+    border-bottom:1px dashed var(--border);
+    cursor:pointer;
+  }
+  .channel-row:hover{background:var(--soft);}
+  .channel-row.expanded{background:var(--purple-soft);border-bottom:none;}
+  .channel-row:last-of-type{border-bottom:none;}
+
+  .ch-icon{font-size:18px;text-align:center;}
+  .ch-name{font-weight:500;font-size:13px;}
+  .ch-name .desc{font-size:10.5px;color:var(--text-2);font-weight:400;display:block;margin-top:2px;}
+  .ch-tag{
+    display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500;
+  }
+  .ch-tag.default{background:var(--blue-soft);color:var(--blue-deep);}
+  .ch-tag.alt{background:var(--gray-soft);color:var(--gray);}
+  .ch-tag.disabled{background:var(--soft);color:var(--text-3);}
+
+  .ch-caps{font-size:11px;color:var(--text-2);}
+  .ch-caps .cap{
+    display:inline-block;background:var(--surface);padding:2px 6px;border-radius:4px;
+    margin-inline-end:3px;border:1px solid var(--border);font-size:10px;
+  }
+  .ch-caps .cap.on{background:var(--green-soft);color:var(--green-deep);border-color:var(--green);}
+  .ch-caps .cap.off{opacity:.4;}
+
+  .ch-state{font-size:11px;}
+  .ch-state.active{color:var(--green-deep);font-weight:500;}
+  .ch-state.disabled{color:var(--text-3);}
+
+  .ch-actions{display:flex;gap:4px;justify-content:flex-end;}
+  .ch-actions button{
+    background:var(--surface);border:1px solid var(--border);border-radius:4px;
+    padding:4px 8px;font-size:10.5px;cursor:pointer;color:var(--text);
+  }
+  .ch-actions button:hover{background:var(--soft);}
+  .ch-actions .btn-test{background:var(--blue-soft);color:var(--blue-deep);border-color:var(--blue);}
+  .ch-actions .btn-edit{background:var(--purple-soft);color:var(--purple-deep);border-color:var(--purple);}
+
+  /* Expanded panel */
+  .details-panel{
+    background:var(--purple-soft);border-bottom:1px dashed var(--border);
+    padding:18px 20px;
+  }
+  .details-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:16px;
+  }
+  .detail-section{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+    padding:12px 14px;
+  }
+  .detail-section h4{font-size:11.5px;font-weight:500;margin:0 0 10px;color:var(--text-2);text-transform:uppercase;letter-spacing:.04em;}
+  .schema-note{
+    font-size:10px;color:var(--purple-deep);font-style:italic;margin-bottom:8px;
+    background:var(--purple-soft);padding:5px 8px;border-radius:4px;border-inline-start:2px solid var(--purple);
+  }
+  .form-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+  .form-row label{flex:0 0 130px;font-size:11px;color:var(--text-2);}
+  .form-row label .req{color:var(--red);font-weight:600;margin-inline-start:2px;}
+  .form-row input,.form-row select{
+    flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r-md);
+    font-size:11.5px;background:var(--surface);
+  }
+  .form-row input.password{font-family:monospace;letter-spacing:2px;}
+  .form-row input[readonly]{background:var(--gray-soft);color:var(--text-2);}
+
+  /* Capabilities — dynamic toggle list */
+  .caps-list{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+    padding:8px;
+  }
+  .cap-toggle{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:8px 10px;border-bottom:1px dashed var(--border);font-size:11.5px;
+  }
+  .cap-toggle:last-child{border-bottom:none;}
+  .cap-toggle .lbl{color:var(--text);}
+  .cap-toggle .lbl .desc{font-size:10px;color:var(--text-2);display:block;margin-top:2px;}
+  .cap-toggle .lbl .pool-tag{
+    display:inline-block;background:var(--blue-soft);color:var(--blue-deep);
+    padding:0 5px;border-radius:3px;font-size:9px;margin-inline-start:6px;font-weight:500;
+  }
+  .switch{
+    width:36px;height:20px;background:var(--gray-soft);border-radius:10px;
+    position:relative;cursor:pointer;border:1px solid var(--border);flex:0 0 36px;
+  }
+  .switch.on{background:var(--green);border-color:var(--green);}
+  .switch.locked{background:var(--gray-soft);border-color:var(--border);opacity:.5;cursor:not-allowed;}
+  .switch::after{
+    content:"";width:14px;height:14px;background:#fff;border-radius:50%;
+    position:absolute;top:2px;right:2px;transition:all .2s;
+  }
+  .switch.on::after{right:auto;left:2px;}
+
+  .info-banner{
+    background:var(--blue-soft);border-inline-start:3px solid var(--blue);
+    padding:10px 14px;border-radius:var(--r-md);font-size:11px;color:var(--blue-deep);
+    margin-bottom:14px;
+  }
+  .info-banner strong{color:var(--blue-deep);}
+
+  /* Add wizard */
+  .wizard-preview{
+    background:var(--surface);border:2px solid var(--purple);border-radius:var(--r-lg);
+    padding:18px 20px;margin-top:14px;
+  }
+  .wizard-preview h3{margin:0 0 14px;color:var(--purple-deep);font-size:14px;}
+  .wizard-steps{display:grid;grid-template-columns:1fr 24px 1fr 24px 1fr;gap:8px;margin-bottom:14px;}
+  .wiz-step{
+    background:var(--soft);border:1px solid var(--border);border-radius:var(--r-md);
+    padding:12px 14px;
+  }
+  .wiz-step.active{background:var(--purple-soft);border-color:var(--purple);}
+  .wiz-step .num{
+    display:inline-block;width:22px;height:22px;border-radius:50%;
+    background:var(--purple);color:#fff;text-align:center;line-height:22px;
+    font-size:11px;font-weight:600;margin-inline-end:6px;
+  }
+  .wiz-step .title{font-weight:500;font-size:12.5px;display:inline-block;}
+  .wiz-step .desc{color:var(--text-2);font-size:10.5px;margin-top:6px;}
+  .wiz-arrow{display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:18px;}
+
+  .pool-grid{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px;
+  }
+  .pool-item{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+    padding:14px 12px;text-align:center;cursor:pointer;
+  }
+  .pool-item:hover{border-color:var(--purple);background:var(--purple-soft);}
+  .pool-item.installed{opacity:.5;cursor:default;}
+  .pool-item .ico{font-size:24px;}
+  .pool-item .name{font-weight:500;margin-top:6px;font-size:12px;}
+  .pool-item .meta{font-size:10px;color:var(--text-2);margin-top:3px;}
+  .pool-item .badge{
+    display:inline-block;padding:1px 6px;border-radius:8px;font-size:9px;font-weight:500;
+    margin-top:4px;
+  }
+  .pool-item .badge.ready{background:var(--green-soft);color:var(--green-deep);}
+  .pool-item .badge.nda{background:var(--amber-soft);color:var(--amber-deep);}
+  .pool-item .badge.installed{background:var(--gray-soft);color:var(--text-3);}
+
+  /* Annotations */
+  .annotations{
+    margin-top:24px;padding:16px 18px;
+    background:var(--soft);border-radius:var(--r-lg);
+  }
+  .annotations h2{font-size:14px;font-weight:500;margin:0 0 10px;}
+  .annotations ol{margin:0;padding-inline-start:20px;color:var(--text);font-size:11.5px;line-height:1.6;}
+  .annotations li{margin:5px 0;}
+  .annotations li strong{color:var(--purple-deep);}
+
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <h1>M8 — הגדרות ערוצי-סליקה · v2 · גמיש-מלא</h1>
+  <p class="lede">מסך-Admin להגדרת ערוצי-סליקה. בעל-עסק בלבד. כל הרשימות (capabilities, credentials-schema, settlement-modes, roles) הן טבלאות פר-tenant — לא קוד-קשיח. הוספת ספק חדש = adapter חדש שמצהיר על ה-schema שלו, ה-UI בונה אוטומטית. אפס שינוי בליבה.</p>
+
+  <div class="changes">
+    <h2>שינויים מ-v1 → v2 (4 תיקוני-גמישות)</h2>
+    <ul>
+      <li><strong>1. capability flags = טבלה דינמית.</strong> במקום 7 toggles קשיחים, יש pool של יכולות (אשראי/מזומן/ביט/Apple Pay/Google Pay/קריפטו/QR/...). כל adapter מצהיר אילו יכולות הוא תומך, ה-UI מציג toggles אוטומטית. הוספת capability חדשה = שורה בטבלת `payment_capabilities`, אפס שינוי-קוד.</li>
+      <li><strong>2. credentials = schema-driven.</strong> כל adapter מצהיר schema של השדות שהוא צריך (שם/סוג/חובה/validator). ה-UI בונה את הטופס דינמית. Z Credit עם 4 שדות ↔ CardCom עם OAuth ↔ Tranzila עם 6 שדות — הכל אותו מסך, בלי תיקון UI.</li>
+      <li><strong>3. settlement modes = רשימה-מ-pool.</strong> במקום enum-של-2 (פדיון/תשלומים-רגילים), כל adapter מצהיר אילו modes הוא תומך מ-pool כללי. הוספת mode חדש (פדיון-חלקי, etc.) = שורה ב-pool, אפס שינוי-קוד.</li>
+      <li><strong>4. הרשאות = roles-טבלה של ה-tenant.</strong> במקום dropdown-של-3 קשיח, ה-dropdown קורא מטבלת-roles של M2 (Platform Admin). tenant יוצר תפקיד-חדש שלו ("מנהל-משמרת") — מופיע אוטומטית כאן.</li>
+    </ul>
+  </div>
+
+  <!-- Architecture diagram showing the flexibility -->
+  <div class="arch-diagram">
+    <h3>🏗 איך הגמישות מתממשת ארכיטקטונית</h3>
+    <div class="arch-grid">
+      <div class="arch-box">
+        <div class="ttl">Adapter (קוד-Optic-Up)</div>
+        <div class="desc">קלאס פר-ספק (LinetAdapter, GamaAdapter). מצהיר schema של credentials, רשימת capabilities שהוא תומך, רשימת settlement-modes שהוא תומך.</div>
+      </div>
+      <div class="arch-arrow">←</div>
+      <div class="arch-box">
+        <div class="ttl">Adapter Manifest (DB)</div>
+        <div class="desc">טבלת `payment_adapters` — שם, schema-של-credentials, רשימת-capabilities-נתמכות, רשימת-settlement-modes-נתמכים. נטען ב-startup.</div>
+      </div>
+      <div class="arch-arrow">←</div>
+      <div class="arch-box">
+        <div class="ttl">Tenant Config UI (המסך הזה)</div>
+        <div class="desc">קורא את ה-manifest, בונה טופס דינמית, שומר את הבחירות-של-tenant. Checkout, סוף-יום, וכל שאר המסכים קוראים מהאקונפיג ומסתגלים.</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--blue-deep);margin-top:10px;font-style:italic;">
+      ⌥ הגמישות לא רק ב-UI — היא בארכיטקטורה. הוספת ספק חדש = adapter חדש + מניפסט. ה-UI מתאים את עצמו אוטומטית. זה מקיים את Iron Rule 19 (configuration over code) במלואו.
+    </div>
+  </div>
+
+  <!-- Permission gate -->
+  <div class="permission-banner">
+    <span class="ico">🔒</span>
+    <span><strong>הרשאה נדרשת:</strong> מסך זה זמין רק לתפקיד "בעל-עסק" / "מנהל-tenant". קופאים, אופטומטריסטים, אחראי-משמרת ואחראי-חשבונות לא רואים את המסך הזה בתפריט.</span>
+  </div>
+
+  <!-- Header -->
+  <div class="header-bar">
+    <div class="left">
+      <div class="breadcrumb">הגדרות tenant · תשלומים · ערוצי-סליקה</div>
+      <div class="title">📟 ערוצי-סליקה (2 פעילים)</div>
+    </div>
+    <div class="actions">
+      <button>📥 ייצא הגדרות</button>
+      <button class="btn-add">+ הוסף ערוץ-סליקה חדש</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi">
+      <div class="lbl">ערוצים פעילים</div>
+      <div class="val">2</div>
+      <div class="sub">Linet · Gama Pay</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">ברירת-מחדל ב-Checkout</div>
+      <div class="val" style="font-size:14px;">📟 Linet</div>
+      <div class="sub">99% מהעסקאות</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">עסקאות החודש</div>
+      <div class="val money">₪412,300</div>
+      <div class="sub">87% Linet · 13% Gama</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">סטיות-סליקה החודש</div>
+      <div class="val" style="color:var(--coral-deep);">3</div>
+      <div class="sub">2 ב-Gama · 1 ב-Linet</div>
+    </div>
+  </div>
+
+  <div class="info-banner">
+    <strong>מה דינמי במסך הזה?</strong> כל הטבלאות בהמשך נטענות מ-Adapter Manifest של הספק שנבחר. שדות-credentials של Linet שונים מ-CardCom, רשימת-יכולות של Gama שונה מ-Tranzila, settlement-modes של Z Credit שונים מ-Pelecard. אותו UI מציג הכל — אין hardcoding.
+  </div>
+
+  <!-- Active channels list -->
+  <div class="channels">
+    <div class="channels-header">
+      <span></span>
+      <span>ערוץ</span>
+      <span>סטטוס</span>
+      <span>יכולות פעילות (מתוך הנתמכות)</span>
+      <span>ברירת-מחדל</span>
+      <span>נבדק</span>
+      <span style="text-align:end;">פעולות</span>
+    </div>
+
+    <!-- Linet — DEFAULT, EXPANDED -->
+    <div class="channel-row expanded">
+      <span class="ch-icon">📟</span>
+      <span class="ch-name">Linet
+        <span class="desc">Adapter v1.2 · נטען מ-manifest</span>
+      </span>
+      <span><span class="ch-state active">●&nbsp;פעיל</span></span>
+      <span class="ch-caps">
+        <span class="cap on">אשראי</span>
+        <span class="cap on">מזומן</span>
+        <span class="cap on">צ'קים</span>
+        <span class="cap on">תשלומים</span>
+        <span class="cap off">ביט</span>
+        <span style="font-size:9px;color:var(--text-3);">+0 לא-נתמך</span>
+      </span>
+      <span><span class="ch-tag default">⭐ ברירת-מחדל</span></span>
+      <span style="font-size:10.5px;color:var(--text-2);">אתמול 18:42</span>
+      <span class="ch-actions">
+        <button class="btn-test">🔌 בדוק חיבור</button>
+        <button class="btn-edit">✏️ ערוך</button>
+      </span>
+    </div>
+
+    <!-- Expanded details — DYNAMIC sections -->
+    <div class="details-panel">
+      <div class="details-grid">
+
+        <!-- Connection (schema-driven) -->
+        <div class="detail-section">
+          <h4>🔌 פרטי-חיבור</h4>
+          <div class="schema-note">⌥ שדות אלה הוגדרו ב-Adapter Manifest של Linet. ספק אחר יציג שדות שונים.</div>
+
+          <div class="form-row">
+            <label>סוג API <span style="color:var(--text-3);font-size:10px;">(readonly)</span></label>
+            <input value="REST API v2" readonly/>
+          </div>
+          <div class="form-row">
+            <label>Endpoint <span class="req">*</span></label>
+            <input value="https://api.linet.org.il/v2"/>
+          </div>
+          <div class="form-row">
+            <label>שם-משתמש <span class="req">*</span></label>
+            <input value="prizma_optic"/>
+          </div>
+          <div class="form-row">
+            <label>סיסמה <span class="req">*</span></label>
+            <input class="password" value="••••••••••••••" type="password"/>
+          </div>
+          <div class="form-row">
+            <label>מס' מסוף <span class="req">*</span></label>
+            <input value="00457821"/>
+          </div>
+          <div class="form-row">
+            <label>יחידת-מטבע</label>
+            <input value="agorot (× 100)" readonly/>
+          </div>
+
+          <div style="margin-top:10px;font-size:10.5px;color:var(--text-2);font-style:italic;">
+            ⌥ <strong>השוואה — Z Credit ידרוש:</strong> Merchant ID + Terminal ID + API Key (3 שדות, OAuth). <strong>CardCom ידרוש:</strong> Service ID + Username + Password + Terminal Number (4 שדות). הטופס בונה את עצמו דינמית מהמניפסט של ה-adapter שנבחר.
+          </div>
+        </div>
+
+        <!-- Capabilities — DYNAMIC list -->
+        <div class="detail-section">
+          <h4>⚡ יכולות (capability flags)</h4>
+          <div class="schema-note">⌥ נטען מ-pool של capabilities-בעולם. רק היכולות ש-Linet adapter תומך מוצגות. הוספת capability חדשה ל-pool = מופיעה אוטומטית בכל adapter שתומך.</div>
+
+          <div class="caps-list">
+            <div class="cap-toggle">
+              <span class="lbl">אשראי <span class="pool-tag">core</span><span class="desc">סוג-תשלום בסיסי</span></span>
+              <span class="switch on"></span>
+            </div>
+            <div class="cap-toggle">
+              <span class="lbl">מזומן <span class="pool-tag">core</span><span class="desc">רישום קבלה חוקית</span></span>
+              <span class="switch on"></span>
+            </div>
+            <div class="cap-toggle">
+              <span class="lbl">שיק <span class="pool-tag">core</span><span class="desc">פרעון יומי + דחוי</span></span>
+              <span class="switch on"></span>
+            </div>
+            <div class="cap-toggle">
+              <span class="lbl">תשלומים-בכרטיס <span class="pool-tag">credit</span><span class="desc">3/6/12/24 תשלומים</span></span>
+              <span class="switch on"></span>
+            </div>
+            <div class="cap-toggle">
+              <span class="lbl">ביט <span class="pool-tag">digital</span><span class="desc">לא נתמך ב-Linet</span></span>
+              <span class="switch locked"></span>
+            </div>
+            <div class="cap-toggle">
+              <span class="lbl">Webhook חוזר <span class="pool-tag">api</span><span class="desc">לא נתמך — הקלדה ידנית</span></span>
+              <span class="switch locked"></span>
+            </div>
+            <div class="cap-toggle">
+              <span class="lbl">Tokenization <span class="pool-tag">advanced</span><span class="desc">לא נתמך</span></span>
+              <span class="switch locked"></span>
+            </div>
+          </div>
+
+          <div style="margin-top:10px;font-size:10.5px;color:var(--text-2);font-style:italic;">
+            ⌥ <strong>Gama Pay יציג:</strong> אשראי + תשלומים + ביט + tokenization + webhook (5 פעילים). <strong>ספק עתידי שיתמוך ב-Apple Pay:</strong> תוסף ל-pool, יופיע אוטומטית. ⊘ נעול = ה-adapter לא תומך, לא ניתן להפעיל.
+          </div>
+        </div>
+
+        <!-- Settlement (dynamic modes) -->
+        <div class="detail-section">
+          <h4>⏱ סליקה ותזרים</h4>
+          <div class="schema-note">⌥ Settlement modes נטענים מ-pool. ה-adapter מצהיר אילו תומכים.</div>
+
+          <div class="form-row">
+            <label>זמן-סליקה</label>
+            <input value="T+1 עד T+3" readonly/>
+          </div>
+          <div class="form-row">
+            <label>אופן-קבלה</label>
+            <select>
+              <option selected>פדיון (כל הסכום מיד)</option>
+              <option>תשלומים-רגילים (חודש-חודש)</option>
+              <option style="color:var(--text-3);" disabled>פדיון-חלקי 50/50 (לא נתמך)</option>
+              <option style="color:var(--text-3);" disabled>פדיון-עם-עיכוב 7-יום (לא נתמך)</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>עמלת-פדיון</label>
+            <input value="2.4%"/>
+          </div>
+          <div class="form-row">
+            <label>חלון החזרים</label>
+            <input value="90 יום מהעסקה" readonly/>
+          </div>
+
+          <div style="margin-top:10px;font-size:10.5px;color:var(--text-2);font-style:italic;">
+            ⌥ pool של settlement modes גדל לפי הצורך. ספק עתידי שמציע "פדיון-עם-עיכוב 7-יום" = שורה ב-pool, מופיעה אוטומטית. ה-adapter שלו מצהיר שהוא תומך.
+          </div>
+        </div>
+
+        <!-- Routing — uses tenant roles -->
+        <div class="detail-section">
+          <h4>🎯 כללי-ניתוב</h4>
+          <div class="schema-note">⌥ ה-dropdown של "הרשאה" קורא מטבלת-roles של M2 (Platform Admin) — לא enum-קשיח.</div>
+
+          <div class="cap-toggle" style="border-bottom:1px dashed var(--border);">
+            <span class="lbl">ברירת-מחדל ב-Checkout <span class="desc">תופיע אוטומטית בכל תשלום-חדש</span></span>
+            <span class="switch on"></span>
+          </div>
+          <div class="cap-toggle">
+            <span class="lbl">פעיל <span class="desc">תופיע ברשימת-ערוצים-זמינים</span></span>
+            <span class="switch on"></span>
+          </div>
+          <div class="form-row" style="margin-top:10px;">
+            <label>ערוץ-fallback</label>
+            <select>
+              <option>אין</option>
+              <option selected>Gama Pay (אם Linet לא זמין)</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>הרשאה לשימוש</label>
+            <select>
+              <option selected>כל המשתמשים-עם-הרשאת-Checkout</option>
+              <option>קופאי + מנהל-משמרת</option>
+              <option>מנהל-משמרת בלבד</option>
+              <option>בעל-עסק בלבד</option>
+              <option style="color:var(--purple-deep);">+ צור תפקיד חדש...</option>
+            </select>
+          </div>
+
+          <div style="margin-top:10px;font-size:10.5px;color:var(--text-2);font-style:italic;">
+            ⌥ הרשימה למעלה מציגה את התפקידים שהוגדרו ב-tenant. ב-day-1 פריזמה תקבל seed של תפקידים-בסיסיים. שינוי תפקידים = במסך M2 (Platform Admin), משתקף כאן אוטומטית.
+          </div>
+        </div>
+
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;">
+        <button style="padding:8px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);cursor:pointer;font-size:12px;">ביטול</button>
+        <button style="padding:8px 16px;background:var(--coral-soft);color:var(--coral-deep);border:1px solid var(--coral);border-radius:var(--r-md);cursor:pointer;font-size:12px;">🚫 בטל ערוץ</button>
+        <button style="padding:8px 16px;background:var(--purple);color:#fff;border:none;border-radius:var(--r-md);cursor:pointer;font-size:12px;font-weight:500;">💾 שמור שינויים</button>
+      </div>
+    </div>
+
+    <!-- Gama Pay — collapsed -->
+    <div class="channel-row">
+      <span class="ch-icon">📟</span>
+      <span class="ch-name">Gama Pay
+        <span class="desc">Adapter v1.0 · API פתוח</span>
+      </span>
+      <span><span class="ch-state active">●&nbsp;פעיל</span></span>
+      <span class="ch-caps">
+        <span class="cap on">אשראי</span>
+        <span class="cap on">תשלומים</span>
+        <span class="cap on">ביט</span>
+        <span class="cap on">tokenization</span>
+        <span class="cap on">webhook</span>
+        <span style="font-size:9px;color:var(--text-3);">+2 לא-נתמכים</span>
+      </span>
+      <span><span class="ch-tag alt">חלופי</span></span>
+      <span style="font-size:10.5px;color:var(--text-2);">היום 09:14</span>
+      <span class="ch-actions">
+        <button class="btn-test">🔌 בדוק חיבור</button>
+        <button class="btn-edit">✏️ ערוך</button>
+      </span>
+    </div>
+
+  </div>
+
+  <!-- ADD WIZARD PREVIEW -->
+  <div class="wizard-preview">
+    <h3>🪟 לחיצה על "+ הוסף ערוץ-סליקה חדש" — אשף 3 שלבים</h3>
+
+    <div class="wizard-steps">
+      <div class="wiz-step active">
+        <div><span class="num">1</span><span class="title">בחר adapter</span></div>
+        <div class="desc">רשימת adapters זמינים ב-Optic Up. כל adapter מצהיר על capabilities ו-credentials-schema שלו.</div>
+      </div>
+      <div class="wiz-arrow">←</div>
+      <div class="wiz-step">
+        <div><span class="num">2</span><span class="title">credentials-schema (דינמי)</span></div>
+        <div class="desc">השדות נטענים מהמניפסט של ה-adapter. כל ספק = שדות שונים. validation אוטומטית.</div>
+      </div>
+      <div class="wiz-arrow">←</div>
+      <div class="wiz-step">
+        <div><span class="num">3</span><span class="title">capability flags + ניתוב</span></div>
+        <div class="desc">בחירת אילו יכולות להפעיל מ-pool הנתמך, default/fallback, הרשאה.</div>
+      </div>
+    </div>
+
+    <h4 style="font-size:12px;font-weight:500;margin:12px 0 8px;color:var(--text);">שלב 1 — Pool של adapters זמינים:</h4>
+    <div class="pool-grid">
+      <div class="pool-item installed">
+        <div class="ico">📟</div>
+        <div class="name">Linet</div>
+        <div class="meta">REST · NDA · 5 caps</div>
+        <span class="badge installed">✓ מותקן</span>
+      </div>
+      <div class="pool-item installed">
+        <div class="ico">📟</div>
+        <div class="name">Gama Pay</div>
+        <div class="meta">REST · API פתוח · 7 caps</div>
+        <span class="badge installed">✓ מותקן</span>
+      </div>
+      <div class="pool-item">
+        <div class="ico">📟</div>
+        <div class="name">Z Credit</div>
+        <div class="meta">SOAP · NDA · 6 caps</div>
+        <span class="badge nda">⚠️ NDA</span>
+      </div>
+      <div class="pool-item">
+        <div class="ico">📟</div>
+        <div class="name">CardCom</div>
+        <div class="meta">REST · OAuth · 8 caps</div>
+        <span class="badge ready">✓ זמין</span>
+      </div>
+      <div class="pool-item">
+        <div class="ico">📟</div>
+        <div class="name">Tranzila</div>
+        <div class="meta">REST · API פתוח · 9 caps</div>
+        <span class="badge ready">✓ זמין</span>
+      </div>
+      <div class="pool-item">
+        <div class="ico">📟</div>
+        <div class="name">Pelecard</div>
+        <div class="meta">REST · API חלקי · 5 caps</div>
+        <span class="badge ready">✓ זמין</span>
+      </div>
+      <div class="pool-item">
+        <div class="ico">🛠</div>
+        <div class="name">Mock Adapter</div>
+        <div class="meta">לבדיקות · 12 caps (כולן)</div>
+        <span class="badge ready">✓ זמין</span>
+      </div>
+      <div class="pool-item" style="border-style:dashed;">
+        <div class="ico">+</div>
+        <div class="name">ספק חדש</div>
+        <div class="meta">פיתוח adapter (2-4 שבועות)</div>
+        <span class="badge nda">צור-קשר</span>
+      </div>
+    </div>
+
+    <div class="info-banner" style="margin-top:14px;">
+      <strong>למה הוספת ספק = adapter בלבד?</strong> Optic Up מגדירה ממשק-אחיד (IPaymentProvider) שכל adapter מיישם. ה-UI הזה לא יודע אם זה Linet, CardCom או Apple Pay — הוא קורא את ה-manifest של ה-adapter ובונה טופס. הוספת ספק חדש לא מצריכה אף שינוי במסך הזה, ב-Checkout, או ב-סוף-יום-קופה. רק adapter חדש + מניפסט שלו ב-DB.
+    </div>
+  </div>
+
+  <div class="annotations">
+    <h2>4 התיקונים-העיקריים מ-v1 (איפה הגמישות התחזקה)</h2>
+    <ol>
+      <li><strong>capability flags = רשימה דינמית מ-DB.</strong> טבלת `payment_capabilities` (pool של יכולות-בעולם). adapter מצהיר אילו תומך. UI מציג toggles אוטומטית. מסומן ⊘ נעול אם adapter לא תומך — שקיפות מלאה. הוספת capability חדשה (Apple Pay, Google Pay, Crypto, QR) = שורה חדשה בטבלה, מופיעה בכל adapter שמצהיר עליה. אפס שינוי-קוד ב-UI.</li>
+
+      <li><strong>credentials = schema-driven טופס.</strong> כל adapter מצהיר schema של השדות (name, type, required, validator, placeholder). UI בונה טופס דינמית. Linet מציג 6 שדות, Z Credit ידרוש 4 שדות שונים, CardCom OAuth, Tranzila 9 שדות. אותו מסך, בלי שורת-קוד אחת ספציפית-לספק.</li>
+
+      <li><strong>settlement modes = רשימה-מ-pool.</strong> במקום enum-של-2, pool של modes (פדיון, תשלומים-רגילים, פדיון-חלקי, פדיון-עם-עיכוב-7-יום, ...). adapter מצהיר אילו תומך. dropdown מציג רק נתמכים. modes שלא נתמכים מוצגים מבוטלים-באפור (שקיפות).</li>
+
+      <li><strong>הרשאות = roles-של-tenant.</strong> dropdown של "הרשאה לשימוש" קורא מטבלת-roles של M2 (Platform Admin). פריזמה מקבלת seed של תפקידים-בסיסיים, יכולה להוסיף ("מנהל-משמרת", "קופאי-זוטר") במסך-נפרד של M2 — מופיעים אוטומטית כאן. אופציה "+ צור תפקיד חדש..." בתחתית ה-dropdown מקצרת את הניווט.</li>
+    </ol>
+
+    <h2 style="margin-top:18px;">החלטות נוספות שנשארו מ-v1</h2>
+    <ol>
+      <li><strong>בעל-עסק בלבד.</strong> פס-הרשאה צהוב.</li>
+      <li><strong>4 KPIs בראש.</strong> ערוצים-פעילים, default, נפח-החודש, סטיות-החודש.</li>
+      <li><strong>טבלת-ערוצים-ראשית עם הרחבה-בלחיצה.</strong> Linet מורחב, Gama Pay מקופל.</li>
+      <li><strong>"בדוק חיבור" — כפתור פעיל.</strong> ping ל-API, מאמת credentials, מציג תוצאה.</li>
+      <li><strong>אשף-3-שלבים להוספת-ערוץ.</strong> בחר adapter → credentials-schema-דינמי → capabilities+ניתוב.</li>
+      <li><strong>Pool של 7 adapters + "ספק חדש".</strong> Linet/Gama/Z Credit/CardCom/Tranzila/Pelecard/Mock + פיתוח-מותאם.</li>
+      <li><strong>Mock Adapter תמיד זמין.</strong> ל-QA, אימון-צוות, staging.</li>
+      <li><strong>"ייצא הגדרות"</strong> ל-JSON, לגיבוי או העתקה ל-tenant-נוסף.</li>
+    </ol>
+
+    <h2 style="margin-top:18px;">מה לא בסקיצה הזאת ויידון בנפרד</h2>
+    <ol>
+      <li>היסטורית-שינויים (audit log → M1.5).</li>
+      <li>תזכורות-תוקף (credentials, NDA).</li>
+      <li>סטטיסטיקות-מתקדמות (M11 Reports).</li>
+      <li>UI ל"בקשת-adapter-חדש" (flow פיתוח של Optic Up עצמה).</li>
+      <li>multi-branch (כל סניף עם default-משלו) — עתידי.</li>
+      <li>חישובי-עמלות-מצטברות (Finance Hub).</li>
+      <li>2FA / SSO לכניסה למסך (M2 Platform Admin).</li>
+    </ol>
+  </div>
+
+</div>
+
+</body>
+</html>

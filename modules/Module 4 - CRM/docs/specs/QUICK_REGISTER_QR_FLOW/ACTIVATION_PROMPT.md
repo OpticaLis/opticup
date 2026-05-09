@@ -60,7 +60,7 @@ EXECUTION ORDER:
    b. Replace module 36 with an `http:MakeRequest` POST to `https://tsxrrxzmdxaenlvocyit.supabase.co/functions/v1/quick-register` with body `{ "op": "lookup_url", "tenant_slug": "prizma", "event_number": <extracted-N> }`.
    c. Add a router after the HTTP module that branches on `data.ok` — true → continue to QR sender (module 40); false → green-api:SendMessage with Hebrew error text.
    d. Update QR module 40: caption `ברקוד רישום לאירוע {{<httpModuleId>.data.event_number}}` (or just N from the original SetVariable), QR URL `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{encodeURL(<httpModuleId>.data.url)}}`.
-   e. Commit a new doc to opticup repo: `__LAUNCH_PLAN_DRAFT__/campaign-overseer/MAKE_SCENARIO_NOTES.md` (or append if exists) — record the exact module IDs changed + before/after blueprint excerpts. Single commit: `chore(make): wire quick-register EF into scenario 8464122 quick-register branch`.
+   e. Commit a new doc to opticup repo: `roles/campaign-overseer/MAKE_SCENARIO_NOTES.md` (or append if exists) — record the exact module IDs changed + before/after blueprint excerpts. Single commit: `chore(make): wire quick-register EF into scenario 8464122 quick-register branch`.
    f. Push origin/develop.
    g. STOP. Ask Daniel for end-to-end smoke test per SPEC §12.
 

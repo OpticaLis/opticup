@@ -14,7 +14,7 @@ This SPEC is NOT a Claude Code SPEC. It runs in a Cowork session with the Campai
 3. Daniel applies in Make UI.
 4. Overseer re-probes via `scenarios_get` to verify the change landed.
 5. Daniel runs Run-once with `רישום מהיר אירוע 14` → confirms QR receipt + scannability.
-6. Overseer commits documentation to `__LAUNCH_PLAN_DRAFT__/campaign-overseer/MAKE_SCENARIO_NOTES.md` and writes `EXECUTION_REPORT.md` + `FINDINGS.md`.
+6. Overseer commits documentation to `roles/campaign-overseer/MAKE_SCENARIO_NOTES.md` and writes `EXECUTION_REPORT.md` + `FINDINGS.md`.
 
 **No Claude Code dispatch needed.** The whole SPEC executes in the Cowork chat with Overseer + Daniel directly.
 

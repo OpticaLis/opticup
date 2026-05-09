@@ -28,7 +28,7 @@ YOUR TASK:
 1. Read these in order:
    - modules/Module 4 - CRM/go-live/specs/P5_V2_TEMPLATE_REBUILD/SPEC.md (the SPEC)
    - campaigns/supersale/MESSAGES_V2/NEW_SYSTEM_VARIABLES_REQUIRED.md (system wiring checklist)
-   - __LAUNCH_PLAN_DRAFT__/campaign-overseer/COPY_DECISIONS_LOG.md (copy rationale; do NOT re-litigate)
+   - roles/campaign-overseer/COPY_DECISIONS_LOG.md (copy rationale; do NOT re-litigate)
    - modules/Module 4 - CRM/go-live/seed-templates-demo.sql (existing seed)
    - The 18 V2 files in campaigns/supersale/MESSAGES_V2/
 

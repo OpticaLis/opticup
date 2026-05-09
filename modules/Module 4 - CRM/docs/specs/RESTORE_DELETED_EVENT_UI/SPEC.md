@@ -3,7 +3,7 @@
 > **Authored by:** opticup-strategic (Foreman, in-session via Campaign Overseer per L-002)
 > **Authored on:** 2026-05-04 late night (M4 closure rush)
 > **Module:** 4 — CRM
-> **Source:** REC-010 (`__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md`) — Daniel agreed verbally 2026-05-04 evening, immediately after DELETE_EMPTY_EVENT smoke test passed.
+> **Source:** REC-010 (`roles/campaign-overseer/DECISIONS_LOG.md`) — Daniel agreed verbally 2026-05-04 evening, immediately after DELETE_EMPTY_EVENT smoke test passed.
 > **Production discipline:** Prizma is LIVE. All testing on demo. RPC is the inverse of `soft_delete_event_if_empty` — strictly additive, no destructive operation.
 
 ---

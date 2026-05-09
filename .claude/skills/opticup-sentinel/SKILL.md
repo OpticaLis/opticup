@@ -113,7 +113,7 @@ Rules for alerts file:
 
 ---
 
-## The Nine Missions
+## The Ten Missions
 
 Each mission has a detailed checklist in `references/missions/`.
 Read the checklist before running the mission.
@@ -155,11 +155,15 @@ Aggregate all findings into a plain-Hebrew summary for Daniel. No technical term
 Always runs LAST, reads other mission results.
 → Checklist: `references/missions/09-executive-summary.md`
 
+### Mission 10: Structure Discipline (משמר המבנה)
+Audit Root Discipline Rule (CLAUDE.md §0.5) + One Home Per Module rule + roles/ integrity + Module Close Ceremony backlog. Detection layer that catches drift past the pre-commit hook (`scripts/checks/check-root-discipline.mjs`).
+→ Checklist: `references/missions/10-structure-discipline.md`
+
 ## Running Individual vs. All Missions
 
 - **Scheduled hourly:** Missions 1, 2 (fast, high-impact)
 - **Scheduled every 4 hours:** Missions 3, 4, 5, 8
-- **Scheduled daily:** Missions 6, 7, 9
+- **Scheduled daily:** Missions 6, 7, 9, 10
 - **On demand:** Any mission can be triggered by Daniel saying "run mission N"
 
 When running a subset, only update the report sections for those missions.

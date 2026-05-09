@@ -10,7 +10,7 @@
 
 ## 1. Why this SPEC exists
 
-The existing Monday → Optic Up migration script (`campaigns/supersale/scripts/import-monday-data.mjs`, dated 2026-04-21) was authored before Daniel's 7 migration decisions on 2026-05-02 evening (REC-001 through REC-007 in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md`). The script must be updated to reflect those decisions, then verified via dry-run, then run for real on prizma.
+The existing Monday → Optic Up migration script (`campaigns/supersale/scripts/import-monday-data.mjs`, dated 2026-04-21) was authored before Daniel's 7 migration decisions on 2026-05-02 evening (REC-001 through REC-007 in `roles/campaign-overseer/DECISIONS_LOG.md`). The script must be updated to reflect those decisions, then verified via dry-run, then run for real on prizma.
 
 Daniel's verbal directive 2026-05-03 afternoon: "ניקוי + מעבר בפרומפט אחד, נראה איך זה עובר ונראה אם זה עובד טוב" — single combined run, treating prizma as a scratch branch (which it effectively is until F2 flips storefront writes to it).
 
@@ -24,7 +24,7 @@ Apply Daniel's 7 migration decisions to the importer, run a non-destructive dry-
 
 ## 3. The 7 migration decisions to encode (REC-001..007)
 
-Source: `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md`. Reproduced inline so the executor doesn't need to fetch:
+Source: `roles/campaign-overseer/DECISIONS_LOG.md`. Reproduced inline so the executor doesn't need to fetch:
 
 | REC | Decision | Action in importer |
 |---|---|---|

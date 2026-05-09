@@ -28,8 +28,8 @@ Cleanliness is asserted ONLY against this list. Out-of-scope pre-existing untrac
 - `modules/Module 4 - CRM/docs/specs/BROADCAST_1000_CAP_FIX/FINDINGS.md` (executor authored)
 
 **Out of scope (pre-existing at session start; intentionally NOT touched, NOT staged):**
-- 2 modified files: `__LAUNCH_PLAN_DRAFT__/campaign-overseer/{CAMPAIGN_OVERSEER_HANDOFF,DECISIONS_LOG}.md` (Daniel's overnight planning edits, present in `git status` at session start).
-- ~50 untracked files at repo root + under `__LAUNCH_PLAN_DRAFT__/` + sibling SPEC drafts under M1/M3/M4 (Daniel's overnight planning artifacts).
+- 2 modified files: `roles/campaign-overseer/{CAMPAIGN_OVERSEER_HANDOFF,DECISIONS_LOG}.md` (Daniel's overnight planning edits, present in `git status` at session start).
+- ~50 untracked files at repo root + under `[retired-2026-05-09:LAUNCH_PLAN_DRAFT]/` + sibling SPEC drafts under M1/M3/M4 (Daniel's overnight planning artifacts).
 
 ---
 
@@ -167,7 +167,7 @@ If any fails → `git revert <commit_hash> && git push origin develop` reverses 
 
 - **(a) Adherence to SPEC:** 10/10. End state matches §8 exactly. The single deviation (combining A1+A2) is structural-not-semantic and explicitly authorized by Bounded Autonomy ("apply the surgical edits verbatim" — end state identity is the test).
 - **(b) Adherence to Iron Rules:** 10/10. Rule 12 protected on all 4 files (largest is 324, 26 under hard cap). Rule 21 verified (zero parallel pagination implementations). Rule 22 preserved (tenant_id filters left intact in all builders). Rule 31 gate green. No Rule violations introduced.
-- **(c) Commit hygiene:** 10/10. Selective `git add` by exact filename, single coherent commit, type-scope-description message verbatim per SPEC, push only to develop. The 2 pre-existing modified files in `__LAUNCH_PLAN_DRAFT__/` correctly excluded.
+- **(c) Commit hygiene:** 10/10. Selective `git add` by exact filename, single coherent commit, type-scope-description message verbatim per SPEC, push only to develop. The 2 pre-existing modified files in `[retired-2026-05-09:LAUNCH_PLAN_DRAFT]/` correctly excluded.
 - **(d) Documentation currency:** 8/10. SPEC + EXECUTION_REPORT + FINDINGS all written and committed. **Missing:** `docs/GLOBAL_MAP.md` registry append (skipped per SPEC §8 conditional + FINDINGS F2). Foreman should pick this up in FOREMAN_REVIEW or a follow-up housekeeping commit. SESSION_CONTEXT not updated (correct per SPEC §8 — Daniel decides post-QA).
 
 ---

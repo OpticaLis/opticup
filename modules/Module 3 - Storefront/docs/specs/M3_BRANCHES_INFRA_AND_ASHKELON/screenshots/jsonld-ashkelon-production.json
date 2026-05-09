@@ -1,0 +1,92 @@
+{
+  "@context": "https://schema.org",
+  "@type": "OpticalStore",
+  "@id": "https://prizma-optic.co.il/branches/ashkelon/",
+  "url": "https://prizma-optic.co.il/branches/ashkelon/",
+  "name": "אופטיקה פריזמה אשקלון",
+  "image": [
+    "https://prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/general/IMG-20241230-WA0094_1775230229252.webp",
+    "https://prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/general/IMG-20241230-WA0096_1775230678239.webp",
+    "https://prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/general/IMG-20241230-WA0078_1775230673868.webp",
+    "https://prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/general/IMG-20241230-WA0069_1775230670721.webp"
+  ],
+  "telephone": "053-364-5404",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "הרצל 32",
+    "addressLocality": "אשקלון",
+    "postalCode": "7860131",
+    "addressRegion": "מחוז דרום",
+    "addressCountry": "IL"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 31.6688,
+    "longitude": 34.5743
+  },
+  "openingHoursSpecification": [
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": "https://schema.org/Sunday",
+      "opens": "09:00",
+      "closes": "13:00"
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": "https://schema.org/Sunday",
+      "opens": "16:00",
+      "closes": "19:00"
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": "https://schema.org/Monday",
+      "opens": "09:00",
+      "closes": "13:00"
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": "https://schema.org/Monday",
+      "opens": "16:00",
+      "closes": "19:00"
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": "https://schema.org/Tuesday",
+      "opens": "09:00",
+      "closes": "13:00"
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": "https://schema.org/Wednesday",
+      "opens": "09:00",
+      "closes": "13:00"
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": "https://schema.org/Wednesday",
+      "opens": "16:00",
+      "closes": "19:00"
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": "https://schema.org/Thursday",
+      "opens": "09:00",
+      "closes": "13:00"
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": "https://schema.org/Thursday",
+      "opens": "16:00",
+      "closes": "19:00"
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": "https://schema.org/Friday",
+      "opens": "09:00",
+      "closes": "13:00"
+    }
+  ],
+  "sameAs": [
+    "https://share.google/hul3Tg8QJ8pvRp8RW"
+  ]
+}

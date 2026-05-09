@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M11 — תצוגת דוח · טבלה + פילוח + ייצוא</title>
+<style>
+  :root{
+    --bg:#FAFAF7; --surface:#FFFFFF; --soft:#F1EFE8;
+    --border:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
+    --text:#1F1F1E; --text-2:#5F5E5A; --text-3:#888780;
+    --purple:#534AB7; --purple-soft:#EEEDFE; --purple-deep:#26215C;
+    --teal:#0F6E56; --teal-soft:#E1F5EE; --teal-deep:#04342C;
+    --amber:#BA7517; --amber-soft:#FAEEDA; --amber-deep:#412402;
+    --blue:#185FA5; --blue-soft:#E6F1FB; --blue-deep:#0C447C;
+    --green:#3B6D11; --green-soft:#EAF3DE;
+    --gray:#5F5E5A; --gray-soft:#F1EFE8;
+    --red:#A32D2D;
+    --r-md:6px; --r-lg:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;font-family:-apple-system,'Segoe UI',Rubik,sans-serif;
+    background:var(--bg);color:var(--text);font-size:12px;line-height:1.4;direction:rtl;
+  }
+  .page{max-width:1640px;margin:0 auto;padding:18px;}
+  h1{font-size:18px;font-weight:500;margin:0 0 4px;}
+  .lede{color:var(--text-2);margin:0 0 14px;font-size:12px;}
+
+  /* Top header */
+  .view-header{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:14px;
+  }
+  .view-header .title-block{flex:1;}
+  .view-header h2{font-size:15px;font-weight:500;margin:0 0 4px;display:flex;align-items:center;gap:8px;}
+  .view-header .breadcrumb{font-size:11px;color:var(--text-3);}
+  .header-actions{display:flex;gap:8px;}
+
+  .btn{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+    padding:8px 14px;font-size:12px;cursor:pointer;color:var(--text);
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .btn:hover{border-color:var(--border-strong);}
+  .btn.primary{background:var(--purple);color:#fff;border-color:var(--purple);}
+  .btn.primary:hover{background:var(--purple-deep);}
+  .btn.success{background:var(--green);color:#fff;border-color:var(--green);}
+
+  /* Active filters strip */
+  .filter-strip{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  }
+  .filter-strip .lbl{font-size:11.5px;color:var(--text-2);font-weight:500;}
+  .active-filter{
+    background:var(--blue-soft);border:1px solid var(--blue);border-radius:14px;
+    padding:3px 10px 3px 6px;font-size:11px;display:inline-flex;align-items:center;gap:5px;
+    color:var(--blue-deep);
+  }
+  .active-filter .x{cursor:pointer;font-size:13px;line-height:1;}
+  .filter-strip .edit-link{margin-inline-start:auto;font-size:11.5px;color:var(--purple);cursor:pointer;}
+
+  /* KPIs strip */
+  .kpis{
+    display:grid;grid-template-columns:repeat(4, 1fr);gap:10px;margin-bottom:14px;
+  }
+  .kpi{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px 18px;
+  }
+  .kpi .lbl{font-size:11px;color:var(--text-2);}
+  .kpi .val{font-size:22px;font-weight:600;margin-top:4px;}
+  .kpi .sub{font-size:10.5px;color:var(--text-3);margin-top:3px;}
+
+  /* Toolbar */
+  .toolbar{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:10px 14px;margin-bottom:0;border-bottom:none;
+    border-bottom-left-radius:0;border-bottom-right-radius:0;
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  }
+  .toolbar .group{display:flex;align-items:center;gap:6px;}
+  .toolbar .group .lbl{font-size:11px;color:var(--text-2);}
+  .toolbar select, .toolbar input{
+    border:1px solid var(--border);border-radius:var(--r-md);padding:5px 9px;font-size:11.5px;
+    background:var(--surface);direction:rtl;
+  }
+  .toolbar .divider{width:1px;height:18px;background:var(--border);margin:0 4px;}
+  .toolbar .right{margin-inline-start:auto;display:flex;gap:6px;}
+
+  /* Bulk action bar (when rows selected) */
+  .bulk-bar{
+    background:var(--purple-soft);border:1px solid var(--purple);border-bottom:none;
+    padding:10px 14px;display:flex;align-items:center;gap:14px;font-size:12px;color:var(--purple-deep);
+  }
+  .bulk-bar .count{font-weight:600;}
+  .bulk-bar .actions{display:flex;gap:6px;margin-inline-start:auto;}
+
+  /* Table */
+  .table-wrap{
+    background:var(--surface);border:1px solid var(--border);border-top:none;
+    border-bottom-left-radius:var(--r-lg);border-bottom-right-radius:var(--r-lg);
+    overflow-x:auto;
+  }
+  table{width:100%;border-collapse:collapse;font-size:11.5px;}
+  thead th{
+    background:var(--soft);text-align:start;padding:9px 12px;font-weight:600;
+    border-bottom:2px solid var(--border);position:sticky;top:0;z-index:1;
+    font-size:11px;
+  }
+  thead th .sort{color:var(--text-3);font-size:10px;margin-inline-start:4px;cursor:pointer;}
+  tbody td{padding:8px 12px;border-bottom:1px solid var(--border);}
+  tbody tr:hover td{background:var(--soft);}
+
+  /* Group header rows */
+  tr.group-header td{
+    background:var(--purple-soft);font-weight:600;color:var(--purple-deep);
+    border-bottom:1px solid var(--purple);font-size:11.5px;
+  }
+  tr.group-header td .toggle{margin-inline-end:6px;color:var(--purple);}
+  tr.group-header .group-summary{
+    margin-inline-start:auto;font-weight:500;font-size:11px;
+  }
+
+  /* Status pill */
+  .pill{
+    display:inline-block;padding:2px 9px;border-radius:10px;font-size:10.5px;font-weight:500;
+  }
+  .pill.pending{background:var(--amber-soft);color:var(--amber-deep);}
+  .pill.deducted{background:var(--green-soft);color:var(--green);}
+
+  /* Footer / total row */
+  tfoot td{
+    background:var(--purple-soft);font-weight:600;color:var(--purple-deep);
+    padding:11px 12px;border-top:2px solid var(--purple);
+  }
+
+  /* Checkbox col */
+  .col-check{width:28px;text-align:center;}
+
+  /* Pagination */
+  .pagination{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--surface);border:1px solid var(--border);border-top:none;
+    border-bottom-left-radius:var(--r-lg);border-bottom-right-radius:var(--r-lg);
+    padding:10px 14px;font-size:11.5px;color:var(--text-2);
+  }
+  .pagination .pages{display:flex;gap:5px;}
+  .pagination .pages button{
+    border:1px solid var(--border);background:var(--surface);border-radius:4px;
+    padding:4px 9px;font-size:11px;cursor:pointer;
+  }
+  .pagination .pages button.active{background:var(--purple);color:#fff;border-color:var(--purple);}
+
+  /* Right rail with details */
+  .layout{display:grid;grid-template-columns:1fr 320px;gap:16px;}
+
+  .info-block{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px 16px;font-size:11.5px;
+  }
+  .info-block h3{font-size:12.5px;font-weight:600;margin:0 0 10px;}
+  .info-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--border);}
+  .info-row:last-child{border-bottom:none;}
+  .info-row .lbl{color:var(--text-2);}
+
+  .export-block{
+    background:var(--teal-soft);border:1px solid var(--teal);border-radius:var(--r-lg);
+    padding:14px 16px;font-size:11.5px;color:var(--teal-deep);
+  }
+  .export-block h3{font-size:12.5px;font-weight:600;margin:0 0 10px;color:var(--teal-deep);}
+  .export-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;}
+  .export-btn{
+    background:var(--surface);border:1px solid var(--teal);border-radius:var(--r-md);
+    padding:9px;font-size:11.5px;color:var(--teal-deep);cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+  }
+  .export-btn:hover{background:var(--teal);color:#fff;}
+  .export-btn .ico{font-size:18px;}
+
+  .note{font-size:10.5px;color:var(--teal-deep);margin-top:8px;line-height:1.4;}
+
+  .legal-block{
+    background:var(--amber-soft);border:1px solid var(--amber);border-radius:var(--r-lg);
+    padding:12px 16px;font-size:11px;color:var(--amber-deep);line-height:1.45;
+  }
+  .legal-block strong{color:var(--text);}
+
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>M11 · תצוגת דוח — ירד-ממשכורת חודשי</h1>
+  <p class="lede">המסך שצוות-פריזמה רואה אחרי שלוחץ על דוח. כולל סינון-מהיר, פילוח, סיכומי-סוף, סימון-קבוצתי לתשלומים שנוכו, וייצוא PDF/Excel.</p>
+
+  <!-- View header -->
+  <div class="view-header">
+    <div class="title-block">
+      <h2>📊 ירד-ממשכורת חודשי <span style="font-size:10.5px;background:var(--blue-soft);color:var(--blue-deep);padding:2px 8px;border-radius:10px;font-weight:500;">ערוך-טננט</span></h2>
+      <div class="breadcrumb">דוחות · מכירות וכספים · ירד-ממשכורת חודשי</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn">⚙️ ערוך דוח</button>
+      <button class="btn">⭐ הוסף למועדפים</button>
+      <button class="btn">🖨 הדפס</button>
+      <button class="btn primary">📥 ייצוא</button>
+    </div>
+  </div>
+
+  <!-- Active filters -->
+  <div class="filter-strip">
+    <span class="lbl">סינונים:</span>
+    <span class="active-filter">📅 04/2026 <span class="x">×</span></span>
+    <span class="active-filter">סטטוס: ממתין-לחיוב-משכורת <span class="x">×</span></span>
+    <span class="active-filter">סניף: פריזמה ראשי <span class="x">×</span></span>
+    <span class="edit-link">⚙️ ערוך סינונים</span>
+  </div>
+
+  <!-- KPIs strip -->
+  <div class="kpis">
+    <div class="kpi">
+      <div class="lbl">סך-תשלומים-ממתינים</div>
+      <div class="val">5,890₪</div>
+      <div class="sub">בחודש 04/2026</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">מספר תשלומים</div>
+      <div class="val">17</div>
+      <div class="sub">3 עובדים</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">תשלום ממוצע</div>
+      <div class="val">346₪</div>
+      <div class="sub">למקרה</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">מסומן ✓ נוכה</div>
+      <div class="val">0 / 17</div>
+      <div class="sub">ממתין לסימון</div>
+    </div>
+  </div>
+
+  <!-- Layout: table on left, side info on right -->
+  <div class="layout">
+
+    <div>
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="group">
+          <span class="lbl">קבץ לפי:</span>
+          <select>
+            <option>חודש-חיוב-משכורת</option>
+            <option>שם-עובד</option>
+            <option>(ללא)</option>
+          </select>
+        </div>
+        <div class="divider"></div>
+        <div class="group">
+          <span class="lbl">מיון:</span>
+          <select>
+            <option>תאריך — חדש-לישן</option>
+            <option>סכום — גבוה-לנמוך</option>
+            <option>שם-עובד — א-ב</option>
+          </select>
+        </div>
+        <div class="divider"></div>
+        <div class="group">
+          <span class="lbl">חיפוש:</span>
+          <input type="text" placeholder="🔍 שם, מס' הזמנה...">
+        </div>
+        <div class="right">
+          <button class="btn">📊 הצג עמודות</button>
+        </div>
+      </div>
+
+      <!-- Bulk action bar (sample with selection) -->
+      <div class="bulk-bar">
+        <span class="count">3 שורות נבחרו</span>
+        <span>· סך נבחר: 1,710₪</span>
+        <div class="actions">
+          <button class="btn">בטל בחירה</button>
+          <button class="btn success">✓ סמן כ-"נוכה" (קבוצתי)</button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-check"><input type="checkbox"></th>
+              <th>תאריך-תשלום <span class="sort">↓</span></th>
+              <th>שם-עובד</th>
+              <th>מס' הזמנה</th>
+              <th>סכום</th>
+              <th>חודש-חיוב</th>
+              <th>סטטוס</th>
+              <th class="col-check">✓ נוכה</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <!-- Group header: April -->
+            <tr class="group-header">
+              <td colspan="8">
+                <span class="toggle">▼</span>חודש-חיוב: <strong>אפריל 2026</strong>
+                <span class="group-summary" style="float:left;">17 שורות · 5,890₪</span>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="col-check"><input type="checkbox" checked></td>
+              <td>02/04/2026</td>
+              <td>אסף ל.</td>
+              <td>12345</td>
+              <td>450₪</td>
+              <td>אפריל</td>
+              <td><span class="pill pending">ממתין</span></td>
+              <td class="col-check"><input type="checkbox"></td>
+            </tr>
+            <tr>
+              <td class="col-check"><input type="checkbox" checked></td>
+              <td>08/04/2026</td>
+              <td>רותם ב.</td>
+              <td>12389</td>
+              <td>280₪</td>
+              <td>אפריל</td>
+              <td><span class="pill pending">ממתין</span></td>
+              <td class="col-check"><input type="checkbox"></td>
+            </tr>
+            <tr>
+              <td class="col-check"><input type="checkbox"></td>
+              <td>10/04/2026</td>
+              <td>אסף ל.</td>
+              <td>12410</td>
+              <td>320₪</td>
+              <td>אפריל</td>
+              <td><span class="pill pending">ממתין</span></td>
+              <td class="col-check"><input type="checkbox"></td>
+            </tr>
+            <tr>
+              <td class="col-check"><input type="checkbox" checked></td>
+              <td>15/04/2026</td>
+              <td>אסף ל.</td>
+              <td>12456</td>
+              <td>670₪</td>
+              <td>אפריל</td>
+              <td><span class="pill pending">ממתין</span></td>
+              <td class="col-check"><input type="checkbox"></td>
+            </tr>
+            <tr>
+              <td class="col-check"><input type="checkbox"></td>
+              <td>22/04/2026</td>
+              <td>נועה ק.</td>
+              <td>12503</td>
+              <td>320₪</td>
+              <td>אפריל</td>
+              <td><span class="pill pending">ממתין</span></td>
+              <td class="col-check"><input type="checkbox"></td>
+            </tr>
+            <tr>
+              <td class="col-check"><input type="checkbox"></td>
+              <td>28/04/2026</td>
+              <td>אסף ל.</td>
+              <td>12555</td>
+              <td>540₪</td>
+              <td>אפריל</td>
+              <td><span class="pill pending">ממתין</span></td>
+              <td class="col-check"><input type="checkbox"></td>
+            </tr>
+
+            <!-- Group header: March (collapsed) -->
+            <tr class="group-header" style="opacity:0.7;">
+              <td colspan="8">
+                <span class="toggle">▶</span>חודש-חיוב: <strong>מרץ 2026</strong>
+                <span class="group-summary" style="float:left;">12 שורות · 4,120₪ · כולן ✓ נוכה</span>
+              </td>
+            </tr>
+
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="4">סך-הכל (אפריל בלבד)</td>
+              <td>5,890₪</td>
+              <td colspan="2">17 תשלומים · 3 עובדים</td>
+              <td class="col-check">0/17</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <span>מציג 1–17 מתוך 17 שורות</span>
+        <div class="pages">
+          <button>‹</button>
+          <button class="active">1</button>
+          <button>›</button>
+        </div>
+        <span>שורות-לעמוד: <select style="border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:11px;"><option>50</option><option selected>100</option><option>250</option></select></span>
+      </div>
+
+    </div>
+
+    <!-- Right rail -->
+    <aside style="display:flex;flex-direction:column;gap:14px;">
+
+      <!-- Export -->
+      <div class="export-block">
+        <h3>📥 ייצוא</h3>
+        <div class="export-grid">
+          <button class="export-btn">
+            <span class="ico">📊</span>
+            <span>Excel</span>
+            <span style="font-size:10px;">פורמט עשיר</span>
+          </button>
+          <button class="export-btn">
+            <span class="ico">📄</span>
+            <span>PDF</span>
+            <span style="font-size:10px;">תבנית-tenant</span>
+          </button>
+        </div>
+        <div class="note">
+          ⓘ ייצוא חד-פעמי — הקובץ יורד למחשבך ולא נשמר ב-ERP. מתועד ב-activity log (מי, מתי, איזה דוח).
+        </div>
+      </div>
+
+      <!-- Report info -->
+      <div class="info-block">
+        <h3>פרטי-דוח</h3>
+        <div class="info-row"><span class="lbl">קטגוריה:</span><span>💰 מכירות וכספים</span></div>
+        <div class="info-row"><span class="lbl">מקור:</span><span>דוח-מערכת (ערוך)</span></div>
+        <div class="info-row"><span class="lbl">מקורות-נתונים:</span><span>M5 · M7 · M8</span></div>
+        <div class="info-row"><span class="lbl">חישוב:</span><span>חי (ללא cache)</span></div>
+        <div class="info-row"><span class="lbl">ערך אחרון:</span><span>09/05/26 · אופיר</span></div>
+        <div class="info-row"><span class="lbl">פתחו השבוע:</span><span>4 פעמים</span></div>
+        <div class="info-row"><span class="lbl">ייצוא אחרון:</span><span>אתמול · Excel</span></div>
+      </div>
+
+      <!-- Special permission note -->
+      <div class="legal-block">
+        <strong>⚠️ סימון "✓ נוכה"</strong><br>
+        זה הדוח היחיד ב-M11 שמרשה גם עדכון-נתונים — ה-checkbox "✓ נוכה" משנה את הסטטוס במודול-התשלומים (M8) דרך RPC ייעודי. כל סימון מתועד ב-audit-log עם זהות-המשתמש.
+      </div>
+
+    </aside>
+
+  </div>
+
+</div>
+</body>
+</html>

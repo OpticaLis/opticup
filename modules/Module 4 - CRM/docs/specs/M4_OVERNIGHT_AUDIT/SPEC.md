@@ -15,7 +15,7 @@ Run a comprehensive overnight read-only audit of Module 4 (CRM) covering 9 track
 
 ## 2. Background & Motivation
 
-Module 4 closed 6 SPECs in the marathon evening of 2026-05-04 (QUICK_REGISTER_QR_FLOW, DELETE_EMPTY_EVENT, ACTIVITY_LOG_DEDUPLICATION_DELETE_EVENT, RESTORE_DELETED_EVENT_UI, POST_4_LEADS_PAGINATION_BUMP, PHONE_SEARCH_PARTIAL_FIX). 4 of the 6 are missing FOREMAN_REVIEW.md. The Campaign Overseer's HANDOFF lists ~20 open follow-ups but the list is partly stale, partly incomplete. Files that conceptually belong to M4 are scattered across `modules/Module 4 - CRM/`, repo root, `__LAUNCH_PLAN_DRAFT__/`, `campaigns/`, and other locations. Production cutover happened 2026-05-03 — Prizma is live — and Daniel has tightened production discipline. This audit produces situational awareness in one pass so the next 1-2 weeks of M4 work can be planned strategically rather than reactively.
+Module 4 closed 6 SPECs in the marathon evening of 2026-05-04 (QUICK_REGISTER_QR_FLOW, DELETE_EMPTY_EVENT, ACTIVITY_LOG_DEDUPLICATION_DELETE_EVENT, RESTORE_DELETED_EVENT_UI, POST_4_LEADS_PAGINATION_BUMP, PHONE_SEARCH_PARTIAL_FIX). 4 of the 6 are missing FOREMAN_REVIEW.md. The Campaign Overseer's HANDOFF lists ~20 open follow-ups but the list is partly stale, partly incomplete. Files that conceptually belong to M4 are scattered across `modules/Module 4 - CRM/`, repo root, `[retired-2026-05-09:LAUNCH_PLAN_DRAFT]/`, `campaigns/`, and other locations. Production cutover happened 2026-05-03 — Prizma is live — and Daniel has tightened production discipline. This audit produces situational awareness in one pass so the next 1-2 weeks of M4 work can be planned strategically rather than reactively.
 
 ## 3. Success Criteria (Measurable)
 
@@ -129,7 +129,7 @@ The executor runs each track and produces one section per track in OVERNIGHT_AUD
 ### Track B — Open Issues Catalog
 
 Walk all sources of pending work and produce ONE ranked table:
-- Overseer HANDOFF §3, §6, §10–§15 (path: `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md`)
+- Overseer HANDOFF §3, §6, §10–§15 (path: `roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md`)
 - DECISIONS_LOG entries where `Applied: PENDING` or `Outcome: PENDING`
 - Each closed M4 SPEC's "Open follow-ups" / "Tech debt" sections in EXECUTION_REPORT.md + FINDINGS.md
 - The 4 SPECs missing FOREMAN_REVIEW.md — list with paths

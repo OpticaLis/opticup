@@ -35,7 +35,7 @@ The storefront is **largely functional and well-secured at the perimeter**, but 
 
 ### Site Overseer baseline (Mode A → Mode B)
 
-This audit produces the **first-ever SITE_MAP.md** at `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_MAP.md`. Future Site Overseer Mode B sessions can read it as a single-page overview of where each customer-visible value lives. With this delivered, Site Overseer formally transitions Mode A → Mode B (per HANDOFF.md).
+This audit produces the **first-ever SITE_MAP.md** at `roles/site-overseer/SITE_MAP.md`. Future Site Overseer Mode B sessions can read it as a single-page overview of where each customer-visible value lives. With this delivered, Site Overseer formally transitions Mode A → Mode B (per HANDOFF.md).
 
 ---
 
@@ -246,7 +246,7 @@ This audit produces the **first-ever SITE_MAP.md** at `__LAUNCH_PLAN_DRAFT__/sit
 ### C1 — PageSpeed (Tier-1 anchor pages)
 
 **FIND-031 [INFO] [C1-NO-LIGHTHOUSE]** — Lighthouse / PageSpeed Insights / lhci CLI is **not installed in this audit environment** (Claude Code Windows session) and the SPEC restricted writes/installs. Could not produce mobile/desktop performance scores. Logged as a methodology gap.
-- **Recommended fix:** Follow-up SPEC: install `lighthouse` CLI under `__LAUNCH_PLAN_DRAFT__/site-overseer/tools/`, run nightly against the 5 anchor pages, archive scores, alert on regression.
+- **Recommended fix:** Follow-up SPEC: install `lighthouse` CLI under `roles/site-overseer/tools/`, run nightly against the 5 anchor pages, archive scores, alert on regression.
 - **Manual proxy estimates from this audit:** Homepage transferred ≈143KB HTML (uncompressed), but contains CSP, Schema.org JSON-LD, several `<script>` tags including GTM, GA4, Facebook Pixel, Hotjar, TikTok Pixel, Pixel Events, and Userway accessibility widget. **Risk:** the chained third-party tracking scripts will dominate LCP/INP — high probability mobile PageSpeed score is in the 40-60 range.
 
 ### C2 — Image weight audit
@@ -429,7 +429,7 @@ This audit produces the **first-ever SITE_MAP.md** at `__LAUNCH_PLAN_DRAFT__/sit
 
 ### Where the SITE_MAP.md sits
 
-`__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_MAP.md` (Mode A baseline) was authored as part of this commit. Future Mode B sessions can do targeted (single-category) re-audits without re-walking the entire surface.
+`roles/site-overseer/SITE_MAP.md` (Mode A baseline) was authored as part of this commit. Future Mode B sessions can do targeted (single-category) re-audits without re-walking the entire surface.
 
 ### Known unknowns
 

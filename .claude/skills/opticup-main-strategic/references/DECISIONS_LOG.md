@@ -1,101 +1,175 @@
-# Main Strategic — Decisions Log
+# Main Strategic — Decisions Log (Index)
 
-> **Purpose:** Record every meaningful interaction with Daniel — agreements + disagreements + reasons. After each module closes, harvest 1-2 lessons from this log into `SKILL.md`. After a pattern is validated 3 times, formalize it.
-
-> **Read on bootstrap.** Append after every meaningful interaction.
-
----
-
-## Entry Template
-
-```
-## YYYY-MM-DD — [topic in 5-8 words]
-
-**Situation:** [1 sentence — what was being decided]
-**My recommendation:** [what I proposed + the brief reasoning]
-**Daniel's response:** agreed / corrected / partial
-**Reason for [agreement/correction]:** [Daniel's why — ASK if not given]
-**Lesson:** [what to do differently next time, if any]
-```
+> **Purpose:** Single source of truth for all strategic decisions made with Daniel.
+> **Structure:** This file = INDEX (lightweight, loaded on bootstrap). Per-module detail = `decisions/<MODULE>.md`.
+> **When to update:** After EVERY meaningful interaction (in-flight, not session-end). Append a 1-line entry here + full detail in the module file.
+> **Module Close Ceremony:** When a module's Architecture Brief is sealed, harvest 1-2 lessons from its `decisions/<MODULE>.md` → update `SKILL.md` if pattern recurs.
 
 ---
 
-# Initial Seed — From session 2026-05-06 (skill creation conversation)
+## How to read this index
 
-## 2026-05-06 — Wrote SPEC instead of brief
+Each row: `date` · `module` · 1-sentence summary · → link to detail.
 
-**Situation:** After closing 8 strategic decisions on Master Plan, I proposed "to start drafting M5 SPEC".
-**My recommendation:** Start the SPEC of Module 5 myself.
-**Daniel's response:** Corrected.
-**Reason for correction:** "ממתי אתה כותב SPECS? אתה האסטרטג הראשי. אתה זוכר מה התפקיד שלך?" — Main Strategic does NOT write SPECs. SPECs are Module Strategist territory.
-**Lesson:** Catch myself before drafting acceptance criteria, success metrics, or phase plans. Hand-off via brief, never SPEC. Codified as Pattern P10 + anti-pattern in SKILL.md.
-
-## 2026-05-06 — Verbose audit summary, multiple findings as bullet list
-
-**Situation:** Reported audit results from front-end Access file with 4 numbered findings, each a long paragraph.
-**My recommendation:** (implicit — reported deeply)
-**Daniel's response:** Corrected.
-**Reason for correction:** "אתה כותב יותר מידי! תכתוב בקצרה וענייני ותשתדל בלי טכני!!!!" — Daniel wants short, prose, non-technical.
-**Lesson:** Default to prose, terse, no bullets unless strictly needed. Codified as Pattern P16 in SKILL.md.
-
-## 2026-05-06 — Pivot from M5-only cutover to all-modules-then-bigbang
-
-**Situation:** Proposed one-shot M5 customer migration vs ongoing Access sync.
-**My recommendation:** One-shot for M5 alone (cleaner, no dual-source confusion).
-**Daniel's response:** Corrected.
-**Reason for correction:** "אני רוצה לבנות את כל המודולים ורק אז לעשות את המעבר. אין אפשרות אחרת. כל המודולים קשורים זה לזה." — modules are interconnected; partial cutover forces dual-source-of-truth.
-**Lesson:** When proposing a migration mode, FIRST consider data interdependencies across modules. M5/M6/M7/M8/M9 share customer ↔ order ↔ exam ↔ payment relationships; partial cutover breaks them. Pattern: "if 2+ modules share an entity FK, they cutover together or not at all".
-
-## 2026-05-06 — `cust_listb` migration scope guess
-
-**Situation:** Audit found 156 customers in a separate B-table with different schema (mikud, fax, no Rx).
-**My recommendation:** Hypothesized B2B customers; suggested keeping for migration with `is_business` flag or as separate table.
-**Daniel's response:** Corrected.
-**Reason for correction:** "זה לידים. תתעלם מהם. זאת מערכת זמנית שעשינו לקמפיינים מסויימים לפני שהם הופכים ללקוחות."
-**Lesson:** Don't speculate on data purpose from schema alone — ASK before recommending. When schema is unusual, the next message should be "אתה זוכר מה זה?" not a hypothesis. Pattern: "data-shape ≠ data-purpose". Asked sample records, learned origin → corrected.
-
-## 2026-05-06 — Migration scope: only customers with ≥1 order
-
-**Situation:** Decision #4 in Master Plan was about pre-2021 history.
-**My recommendation:** Skip pre-2021.
-**Daniel's response:** Agreed AND expanded — also skip customers without any orders.
-**Reason for expansion:** "לא צריך אותם. רק לקוחות עם מינימום הזמנה 1." Rules out 76% of `cust_list` (15,872 of 20,900) — leaner DB, less storage, less RLS overhead.
-**Lesson:** Daniel will sometimes expand decisions beyond what was asked. Logged here so MASTER_LIVE_PLAN reflects the broader rule. Pattern: "agreement that adds scope = a new decision worth logging in full".
-
-## 2026-05-06 — Send Claude Code on Windows for Access audit
-
-**Situation:** Daniel asked if Cowork could read the Access `.accdb` directly.
-**My recommendation:** Send to Claude Code on Windows (native Access, faster, less encoding issues with Hebrew).
-**Daniel's response:** Agreed.
-**Reason for agreement:** Implicit — Daniel had already noted Cowork's limitations earlier in the project.
-**Lesson:** When tool capability differs sharply between environments (e.g., Windows-native Office formats), default to the right environment without 4-option-menu. Pattern P9 (refer down, don't solve down) applies up the stack too — send work to the environment that owns it.
-
-## 2026-05-06 — Light vs deep audit calibration on lab file
-
-**Situation:** Daniel sent the third file (lab `.accdb`) but said "this file is not so relevant."
-**My recommendation:** Light audit, target 100-200 lines, structure + logic only, skip deep statistics.
-**Daniel's response:** Implicitly agreed (proceeded).
-**Reason for agreement:** Daniel's directive "the data isn't needed — the logic in OpticUp will be different anyway" maps directly to "we're informing not copying".
-**Lesson:** Listen for Daniel's "relevance signals" — they should map directly to audit depth. "Not so relevant" = light audit. "Critical" = deep. Pattern P12 codified in SKILL.md.
-
-## 2026-05-06 — Languages day-1: HE+RU, recommendation expanded
-
-**Situation:** Decision #8 — which languages must be live day-1.
-**My recommendation:** HE + RU mandatory (1,592 + 578 orders), EN/ES later (5+1 orders).
-**Daniel's response:** Corrected — also wants EN day-1.
-**Reason for correction:** Not given explicitly; likely strategic positioning for the SaaS product (English = export potential, white-label, B2B).
-**Lesson:** When SaaS-product strategy is in play, Daniel may take languages beyond what current usage shows. Pattern: "ask if SaaS positioning factors into the decision before recommending based on current data only".
-
-## 2026-05-06 — Skill creation now vs after M5
-
-**Situation:** Daniel asked if I have a skill that improves over time.
-**My recommendation:** Build it after M5 closes ("the improvement will pay back over the remaining 8 modules").
-**Daniel's response:** Corrected — build it NOW.
-**Reason for correction:** "אפשר לבנות עכשיו כבר סקיל בשבילך שתשתמש בו והוא ידייק אותך... חשוב שזה יהיה באמת סקיל שיהיה אפשר להשתמש גם כאן וגם בלקאוד קוד".
-**Lesson:** Daniel prioritizes precision-now over efficiency-later. When the cost is small (30-45 min) and the upside is "no more drift between sessions", build now. Pattern: "underestimate compounding effect of consistency from-day-1".
+Format for full entries (in `decisions/<MODULE>.md`): situation → my recommendation → Daniel's response → reason → lesson.
 
 ---
 
-# Live Entries — append below
+## Cross-Module decisions (workflow, process, communication style)
 
-(Entries from 2026-05-07 onward go here, in reverse-chronological order.)
+→ Full detail: [`decisions/CROSS.md`](decisions/CROSS.md)
+
+| # | Date | Topic | One-liner |
+|---|---|---|---|
+| 1 | 2026-05-06 | Wrote SPEC instead of brief | I conflated Module Strategist's job with mine; Daniel corrected the role boundary. |
+| 2 | 2026-05-06 | Verbose audit summary | Bullet-list overload in chat; learned to compress to 3-line P22 format. |
+| 3 | 2026-05-06 | STRICT 3-line format (P22) | Replaced P20 with hard-coded chat format rules. |
+| 4 | 2026-05-06 | Daniel does not want technical detail in chat | Confirmed: tables/fields/RPC names = file content, NOT chat content. |
+| 5 | 2026-05-09 | Project Structure Cleanup SPEC executed (11 commits) | Root Discipline Rule installed in CLAUDE.md §0.5; 4 archive locations consolidated; Module 1 duplicate resolved; per-tenant chat onboarding docs archived. |
+| 6 | 2026-05-09 | SPEC's pre-flight caught 5 author bugs | Executor's pre-flight check found 5 SPEC defects (data/+---QA--- omitted, git mv vs mv, MASTER_LIVE_PLAN modification at risk, Pre-SPEC commits needed, JWT in archived files). All resolved inline. **Author was Cowork; executor was Claude Code with full repo state visibility.** |
+| 7 | 2026-05-09 | Module Close Ceremony performed for Project Structure Cleanup | Lessons P27 (sketch-the-feature) + P28 (executor pre-flight beats author intent) promoted to SKILL.md. |
+| 8 | 2026-05-09 | Daniel question: why are in-design modules in `__LAUNCH_PLAN_DRAFT__/` when built modules are in `modules/`? | Author-blindspot — historical accident I never noticed. Fixed by MODULES_HOME_UNIFICATION SPEC. **Pattern: Daniel asks structural questions from a clean-thinker perspective; my job is to listen, not defend the status quo.** |
+| 9 | 2026-05-09 | MODULES_HOME_UNIFICATION SPEC executed (12 commits) | One Home Per Module rule established. `__LAUNCH_PLAN_DRAFT__/` retired entirely. 8 in-design module Briefs moved to `modules/Module N - Name/architecture-brief/`. New `roles/` at repo root for operational personas. 99 files updated for path-reference rewriting. |
+| 10 | 2026-05-09 | Module Close Ceremony for MODULES_HOME_UNIFICATION | Lessons P29 (sweep-references pre-flight) + P30 ([retired-YYYY-MM-DD:NAME] marker for closed-SPEC narrative refs) promoted to SKILL.md. F1/F2/F3 also documented for `opticup-executor` SKILL update (separate session). |
+| 11 | 2026-05-09 | Daniel directive: "I want infrastructure, not culture. Culture decays." | Triggered STRUCTURE_PROTECTIONS SPEC. Pattern: when documenting a rule, ask "where's the enforcement?" If only a doc, it will erode. |
+| 12 | 2026-05-09 | STRUCTURE_PROTECTIONS SPEC executed (10 commits) | 3 protection layers active: pre-commit hook (check-root-discipline) + Sentinel Mission 10 (daily audit) + main-strategic Step 4.5 (bootstrap auto-check). Smoke-tested: a FORBIDDEN_TEST.md was correctly blocked. |
+| 13 | 2026-05-09 | Module Close Ceremony for STRUCTURE_PROTECTIONS | Lesson P31 (3-layer enforcement) promoted to SKILL.md. F1 (auto-load vs spawn) + F2 (.gitignore line 34 — 3rd occurrence, MUST FIX next session) documented. |
+
+---
+
+## M5 — Customers
+
+→ Full detail: [`decisions/M5.md`](decisions/M5.md)
+
+| # | Date | Topic | One-liner |
+|---|---|---|---|
+| 1 | 2026-05-06 | Pivot from M5-only cutover to all-modules-then-bigbang | Strategic redirection — single big-bang vs phased. |
+| 2 | 2026-05-06 | `cust_listb` migration scope | Confirmed: don't migrate (campaign leads, not customers). |
+| 3 | 2026-05-06 | Migration scope: only customers with ≥1 order | 20,900 → 5,028 customers (76% reduction). |
+| 4 | 2026-05-06 | Languages day-1: HE+RU+EN, ES later | Per Q15 launch decision. |
+| 5 | 2026-05-06 | Asked field-level questions on data already in audit | Lesson P18 — Brief is structure, audit is fields. |
+| 6 | 2026-05-06 | Consent model: 4 independent flags + active-only re-subscription | Predecessor to per-channel consent (M12 evolved this). |
+| 7 | 2026-05-06 | MAJOR: Lead↔Customer boundary collapsed | Single entity with `lifecycle_stage` — Pattern P21 born. |
+| 8 | 2026-05-06 | M5 households: skeleton entity, optional FK | Pattern P17 — foundation-first. |
+| 9 | 2026-05-06 | M5 entity split: customer vs loyalty_member | Two-entity decision (loyalty member is separate concept). |
+| 10 | 2026-05-07 | M5 Customer Card screen (5 tabs design) | Eye Care merged glasses+contacts; "Update" tab removed. |
+| 11 | 2026-05-07 | M5 Customer Card revision | Queue + tab renames + Prescriptions module separation. |
+| 12 | 2026-05-07 | M5 customers-list: 3 sketches → Split Workspace approved | Layout decision. |
+| 13 | 2026-05-07 | M5 customers-list: Activity-first columns + tenant-config | Per-tenant column set + dual-mode search. |
+| 14 | 2026-05-07 | M5 customers-list: row-click + actions + sort/density | Composite client number. |
+
+---
+
+## M6 — Prescriptions / Eye Exams
+
+→ Full detail: [`decisions/M6.md`](decisions/M6.md)
+
+| # | Date | Topic | One-liner |
+|---|---|---|---|
+| 1 | 2026-05-06 | M6 state-machines: explicit, not boolean | Cross-module pattern — state enum > boolean. |
+| 2 | 2026-05-06 | M6 prescription_glasses vs prescription_contacts | TWO entities, not one with discriminator. |
+| 3 | 2026-05-06 | M6 split: eye_exams (act) vs prescriptions (output) | Separate entities — different lifecycles. |
+
+---
+
+## M7 — Orders
+
+→ Full detail: [`decisions/M7.md`](decisions/M7.md)
+
+| # | Date | Topic | One-liner |
+|---|---|---|---|
+| 1 | 2026-05-07 | M7 messaging flow + sub-order ID format | Three-table model (orders / sub_orders / sub_order_items). |
+| 2 | 2026-05-07 | "Thanks" is order-level, not sub-order-level | Daniel correction. |
+| 3 | 2026-05-07 | M7 print forms protocol + Outside Framing | Form #1 of 5. |
+| 4 | 2026-05-07 | M7 Form #2: Order Inspection | Internal lab basket form; tear-off receipt removed (cashier territory). |
+| 5 | 2026-05-07 | M7 Form #3: Frame Reservation | Reservation = state on sub-order, not new type. Inventory deducts immediately. |
+| 6 | 2026-05-07 | M7 Form #4: Task Form | Per sub-order; 3 signers; resolution block at bottom. |
+| 7 | 2026-05-07 | M7 Form #5: Repair Form | `is_repair=true` flag; Internal+Outside print modes. |
+| 8 | 2026-05-07 | M7 forms consistency pass + 5 fixes | Locked: 4 sub-order types only; 7-day reservation default; manual convert-to-order. |
+| 9 | 2026-05-07 | M7 Architecture Brief CLOSED | 17 locked decisions; 3-table model. |
+
+---
+
+## M8 — Payments
+
+→ Full detail: [`decisions/M8.md`](decisions/M8.md)
+
+| # | Date | Topic | One-liner |
+|---|---|---|---|
+| 1 | 2026-05-09 | M8 Architecture Brief CLOSED | 9+ locked: עוסק-מורשה, ERP-orchestrating-POS, Provider Adapter Pattern. |
+
+---
+
+## M11 — Reports
+
+→ Full detail: [`decisions/M11.md`](decisions/M11.md)
+
+| # | Date | Topic | One-liner |
+|---|---|---|---|
+| 1 | 2026-05-09 | M11 Architecture Brief CLOSED | 22 locked + 5 modularity reinforcements; view-layer not data-owner. |
+
+---
+
+## M12 — Communications
+
+→ Full detail: [`decisions/M12.md`](decisions/M12.md)
+
+| # | Date | Topic | One-liner |
+|---|---|---|---|
+| 1 | 2026-05-09 | WhatsApp BSP = 360dialog | Best price/feature for Israeli mid-volume multi-tenant. |
+| 2 | 2026-05-09 | WhatsApp Coexistence Mode (Daniel correction) | Staff phone app + API in parallel. |
+| 3 | 2026-05-09 | Number +972 53-434-7265 connection state audit | State D (WABA exists, never completed); Coexistence + WABA migration path. |
+| 4 | 2026-05-09 | Edge Function direct → 360dialog (NOT through Make) | Two-way webhooks need direct DB access. |
+| 5 | 2026-05-09 | SMS = GLOBAL SMS stays (Daniel correction) | Default = keep working vendor. |
+| 6 | 2026-05-09 | Email = Gmail through Make stays (Daniel correction) | Defer Resend to post-LIVE. |
+| 7 | 2026-05-09 | Channel architecture = `channel_configs` table | Per-tenant + per-module routing. |
+| 8 | 2026-05-09 | Hybrid channel ownership (Daniel-originated) | Platform-default + tenant-override = SaaS-clean + revenue tier. |
+| 9 | 2026-05-09 | WhatsApp Inbox + AI slot (Daniel-originated) | Day-1 build; AI = data fields + UI strip reserved. |
+| 10 | 2026-05-09 | Inbox UX research (SmartSend + 6 leaders) | 3-pane RTL convergence. |
+| 11 | 2026-05-09 | Tab pollution in customer-card mockup (Daniel correction) | Sketch the feature, not the host screen. |
+| 12 | 2026-05-09 | Consent: 3 separate flags + audit log + transactional/marketing split | Legal hard requirement, not optional. |
+| 13 | 2026-05-09 | DECISIONS_LOG documentation (Daniel-prompted self-correction) | Log in flight, not session-end. |
+| 14 | 2026-05-09 | M12 Architecture Brief CLOSED | 15 locked decisions; 8 entities + 2 reserved for AI. |
+
+---
+
+## Pattern Recurrence Tracker (3-strike rule)
+
+When a pattern surfaces in 3 or more independent decisions across modules, formalize it as a `Pattern Pn` in `SKILL.md`. Patterns currently tracked:
+
+| Pattern candidate | Instances seen | Status |
+|---|---|---|
+| **Don't flow with everything Daniel says** | M7 (Frame Reservation), M8 (settlement mode mid-correction), M12 (channel admin split correction) | ✅ 3 strikes — promoted to **P24** |
+| **Verify existing vendor before recommending switch** | M8 (Linet vs Z Credit), M12 (SMS vs Inforu), M12 (Email vs Resend) | ✅ 3 strikes — promoted to **P25** |
+| **Hybrid model > pure flexibility OR pure control** | M5 (active marketing consent), M8 (settlement mode tenant-config), M12 (channel ownership) | ✅ 3 strikes — promoted to **P26** |
+| **Sketch the feature, not the host screen** | M5 (customer card), M12 (customer history mockup), Project Cleanup (no UI but same lesson — write the change, not the entire host) | ✅ 3 strikes — promoted to **P27** |
+| **Lock infrastructure, defer UX** | M5 (consent), M12 (consent UX) | ⚠️ 2 strikes — watch for 3rd in M13 |
+| **Executor pre-flight catches author blindspots** | Project Cleanup SPEC (5 author bugs caught by executor pre-flight) | ✅ 1 strike but transformational — promoted to **P28** |
+| **Research subagents are 6-12 months stale** | M12 (WhatsApp Coexistence not in initial research) | 🆕 1 strike — watch |
+| **Read-only mode promise for Chrome MCP** | M12 (Meta Business audit) | 🆕 1 strike — watch |
+| **Make = one-way, Edge Function = two-way** | M12 (WhatsApp routing decision) | 🆕 1 strike — watch |
+
+---
+
+## Module Close Ceremony — Mandatory Process
+
+When a module's Architecture Brief is sealed:
+
+1. Read the module's full `decisions/<MODULE>.md` file end-to-end.
+2. Identify 1-2 lessons that should be promoted to `SKILL.md` (recurring patterns or major insights).
+3. Update `SKILL.md` with the new patterns, dated, with link back to source decisions.
+4. Update this index file with module-close summary line.
+5. Verify the `Pattern Recurrence Tracker` table above — promote any 3-strike candidates.
+
+**Last Module Close ceremonies performed:**
+- **M12 — 2026-05-09** — promoted P24, P25, P26 to SKILL.md.
+- **Project Structure Cleanup — 2026-05-09** — promoted P27 (sketch-the-feature) + P28 (executor-pre-flight) to SKILL.md.
+- **MODULES_HOME_UNIFICATION — 2026-05-09** — promoted P29 (sweep-references pre-flight) + P30 (retired-marker policy) to SKILL.md.
+- **STRUCTURE_PROTECTIONS — 2026-05-09** — promoted P31 (3-layer enforcement: prevent + detect + remind) to SKILL.md.
+
+**Modules pending Module Close Ceremony retroactively** (skipped at the time):
+- M5, M6, M7, M8, M11 — these closed without ceremony. Catch-up sweep done 2026-05-09 (this index).
+
+---
+
+*Maintained by `opticup-main-strategic` skill. Bootstrap loads this index file only. Module-detail files loaded on demand when working in that module.*

@@ -18,7 +18,7 @@ Before authoring SPEC.md, the Foreman MUST:
 2. Verify a proper structure exists (timestamped .sql files, tracked in git, follows project convention).
 3. Run `git log --oneline supabase/migrations/ | head -10` to confirm migrations have been committed historically.
 4. Cross-check against M4-DEBT-01 status:
-   - Read `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` references to M4-DEBT-01.
+   - Read `roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` references to M4-DEBT-01.
    - Read auto-memory `project_migrations_git_drift.md` if accessible.
 5. **If proper folder + tracking exists** → proceed to SPEC authoring.
 6. **If proper folder is missing OR migrations aren't actually tracked in git** → HALT. Do NOT write the SPEC. Surface to Daniel: "The migrations folder isn't set up properly. M4-DEBT-01 is still open. Need direction before authoring this SPEC."
@@ -195,6 +195,6 @@ This convention update happens during FOREMAN_REVIEW after merge.
 - Phase 1 SPEC + diagnostic logs: this folder
 - Round 1 (Option A, REVERTED): `SUPERVISOR_DECISION.md`
 - Round 2 (Option D, pre-flight failed): `SUPERVISOR_DECISION_ROUND_2.md` (if present)
-- Round 3 (Option B, current): `SUPERVISOR_DECISION_ROUND_3.md` (Supervisor noted possible mount issue — verify file exists; if absent, reconstruct from `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md` REC-015 entry)
-- Overseer recommendation: REC-015 in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md`
+- Round 3 (Option B, current): `SUPERVISOR_DECISION_ROUND_3.md` (Supervisor noted possible mount issue — verify file exists; if absent, reconstruct from `roles/campaign-overseer/DECISIONS_LOG.md` REC-015 entry)
+- Overseer recommendation: REC-015 in `roles/campaign-overseer/DECISIONS_LOG.md`
 - Iron Rules: `CLAUDE.md` §4–§6

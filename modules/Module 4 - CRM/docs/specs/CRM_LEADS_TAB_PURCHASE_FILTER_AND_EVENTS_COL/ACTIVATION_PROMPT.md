@@ -101,7 +101,7 @@ Daniel runs the 7 acceptance criteria on production after PR-merge to main (Dani
 
 ## References
 
-- Overseer recommendation: REC-011 in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md`
+- Overseer recommendation: REC-011 in `roles/campaign-overseer/DECISIONS_LOG.md`
 - Iron Rules: `CLAUDE.md` §4–§6
 - Folder-per-SPEC protocol: `CLAUDE.md` §7
 - Clean-repo discipline: `CLAUDE.md` §9 + Campaign Overseer SKILL §5.7

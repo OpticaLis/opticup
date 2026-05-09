@@ -40,9 +40,35 @@ backend with RLS-based tenant isolation.
 | 3.1 | Project Reconstruction | ✅ Complete | opticup | Meta-module: foundation doc rewrites, DB audit baseline, roadmap reconciliation. Does not own code — owns documentation accuracy. 3A/3B/3C/3D all complete. |
 | 4 | CRM | 🟢 PRODUCTION (Prizma cutover COMPLETE 2026-05-03; post-cutover closure rolling) | opticup | Customer management — replaces Monday.com for leads. 23 tables, 7 views, 8+ RPCs, 46 RLS policies. Phases A–B9 + Go-Live P1–P3c+P4 + P5–P7 closed. Cutover 2026-05-03 successful — 1158 leads + 88 campaigns + 221 attendees migrated; legacy pipeline decommissioned. **Post-cutover features shipped:** QUICK_REGISTER_QR_FLOW (WhatsApp QR walk-in registration), DELETE_EMPTY_EVENT (soft-delete gated on purchase_amount=0), ACTIVITY_LOG_DEDUPLICATION_DELETE_EVENT (1-row audit), RESTORE_DELETED_EVENT_UI (Approach B: attendee_ids in audit details), payment-lifecycle trio. Open: 4 backlog items (POST-4/5/6 LOW, REC-005 MultiSale archive needs event_type schema), 2 tech-debts (TD-2 migrations git drift, TD-3 multi-tenant URL strategy). |
 | 5–22 | Future modules | ⬜ Not started | — | Orders, prescriptions, payments, lab/KDS, lenses, branches, WhatsApp, reports, supplier portal, content hub, B2B network, AI support, WooCommerce sync, POS. |
+| TBD | Finance Hub | ⬜ Future (post-launch) | opticup | Internal cash-flow + expenses module. NOT in launch scope. Decided 2026-05-08 during M8 design — surfaced because checks-pipeline naturally extends to broader financial tracking. Day-1 scope (when built): expense categorization (configurable per-tenant), monthly/yearly expense tracking, future cash-flow view (consuming check pipeline from M8). Deferred (when built): bank API integrations, email-to-invoice AI matching, export to BizziBox/Hashavshevet/EasyCount/Wizcount. Permissions: accountant + business-owner only — cashiers must NOT see this module. Replaces today's BizziBox usage at Prizma. Owner module-number TBD by future strategic chat. |
 
 **Detailed per-module scope** lives in each module's `README.md` and `MODULE_SPEC.md`
 under `opticup/modules/Module N - .../`.
+
+---
+
+## 2.5 Architecture Briefs Status (pre-LIVE planning)
+
+Each module that needs to ship to LIVE day gets an Architecture Brief (cross-module decisions, entity boundaries, contracts, sketches) **before** Module Strategist starts writing SPECs. Briefs live in `modules/Module N - Name/architecture-brief/` (per-module home, established by MODULES_HOME_UNIFICATION SPEC, 2026-05-09).
+
+| Module | Brief Status | Sketches | Decisions Logged |
+|--------|--------------|----------|-------------------|
+| M5 (Customers) | ✅ v3 | Customer Card + Customers List | `decisions/M5.md` |
+| M6 (Prescriptions) | ✅ v2 | Prescription Editor (sidebar+center, glasses↔contacts toggle) | `decisions/M6.md` |
+| M7 (Orders) | ✅ v1 | Main mockup + 5 forms + catalog | `decisions/M7.md` |
+| M8 (Payments) | ✅ v1 | Checkout + Pipeline + EOD + Provider Config | `decisions/M8.md` |
+| M9 (Lab) | ⬜ Not started | — | — |
+| **M11 (Reports)** | ✅ v1 (closed 2026-05-09) | Reports List + Editor + View | `decisions/M11.md` |
+| **M12 (Communications)** | ✅ v1 (closed 2026-05-09) | Inbox + Templates + Customer History + Channel Configs | `decisions/M12.md` |
+| M13 (Loyalty Club) | ⬜ Next up — handoff written | — | — |
+| M14 (Appointments) | ✅ v1 | Calendar + 3 sub-screens | included in cross |
+| M15 (Queue) | ✅ v1 | Queue panel embedded in M14 calendar | included in cross |
+
+**Sequence to LIVE:** M13 → M9 (depends on third audit). After all Briefs sealed → Module Strategists write SPECs → Executors build → cutover.
+
+**Deferred LIVE-plan content:** Master Plan v1 history (cutover plan, risks, decisions Q1-Q8) is preserved in `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md` for historical reference.
+
+---
 
 ---
 
@@ -181,6 +207,7 @@ without explicit strategic-chat approval.
 | Apr 2026 | Parallel execution of 3A / 3B / 3C | Pre-approved by Daniel. All three sub-phases have disjoint file scopes. Commits interleave on develop — cosmetically ugly, functionally correct. |
 | Apr 2026 | Cancelled Claude API for translations | Translation now manual: Studio export → external chat → import. Claude API remains active only for content generation, logo normalization, Module 1 scan tracking. |
 | Apr 2026 | Module 3.1 (Project Reconstruction) closed | 5 mandatory artifacts produced (UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT, UNIVERSAL_SECONDARY_CHAT_PROMPT, MODULE_DOCUMENTATION_SCHEMA, DANIEL_QUICK_REFERENCE, MASTER_ROADMAP rewrite). DB audit baseline established. 7 security findings documented (4 anon_all leaks + 3 auth.uid tables) and queued for Module 3 Phase B preamble. Module 3 Phase B now unblocked on first gate (TIER-C-PENDING is the second gate). |
+| 2026-05-08 | Finance Hub registered as future module (post-launch) | Surfaced during M8 (Payments) design when discussing the check-pipeline screen. Daniel currently manages cash-flow + expenses in BizziBox. Decision: M8 stays narrow (transactional payments + check pipeline + day-close). A separate Finance Hub module (cash-flow projection, expense tracking, future bank/AI integrations) will be built post-launch. NOT in MASTER_LIVE_PLAN — Optic Up ships to LIVE without this module. Permissions reserved for accountant + business-owner (cashiers blocked). Module number TBD. |
 
 ---
 

@@ -8,7 +8,7 @@
 > **Author signature:** Claude Code Windows desktop session, 2026-05-03 (4th SPEC of session, after CRM_PHONE_SEARCH_NORMALIZATION + BROADCAST_1000_CAP_FIX + CRM_LEADS_TAB_PURCHASE_FILTER_AND_EVENTS_COL)
 > **Source documents:**
 > - Activation prompt: `ACTIVATION_PROMPT.md` (this folder)
-> - Overseer recommendation: REC-012 in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md`
+> - Overseer recommendation: REC-012 in `roles/campaign-overseer/DECISIONS_LOG.md`
 
 ---
 

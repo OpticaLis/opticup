@@ -58,7 +58,7 @@
 
 - **Code:** `M4-FEAT-QR-03`
 - **Severity:** INFO
-- **Discovered during:** Captured by SPEC §12 itself ("Captured for backlog (NOT this SPEC)") — Daniel verbal directive 2026-05-04 logged by Campaign Overseer in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/POST_CUTOVER_TECH_DEBT.md` per SPEC §12 first bullet.
+- **Discovered during:** Captured by SPEC §12 itself ("Captured for backlog (NOT this SPEC)") — Daniel verbal directive 2026-05-04 logged by Campaign Overseer in `roles/campaign-overseer/POST_CUTOVER_TECH_DEBT.md` per SPEC §12 first bullet.
 - **Location:** `register_lead_to_event` RPC + `crm_event_attendees.status` lifecycle. Currently when an attendee cancels, their row goes to `status='cancelled'` and a freed slot is consumed by the next waiting-list promotion. Daniel wants a manual operator path to revive an existing cancelled attendee (e.g., same lead changes their mind) to `status='registered'` instead of forcing a fresh registration.
 - **Description:** Repeating SPEC §12 verbatim so this finding survives even if the launch-plan draft moves: the operator-side feature is "revive cancelled → registered (when a slot opens up)". Out-of-scope for Hotfix #2; logged here so the file-per-SPEC retro carries the breadcrumb forward for the Foreman's roadmap.
 - **Reproduction:** N/A (feature request, not a bug).
