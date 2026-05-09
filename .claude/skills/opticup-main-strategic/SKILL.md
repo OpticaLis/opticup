@@ -61,8 +61,11 @@ Do these, in order:
 2. **Read** `references/DECISIONS_LOG.md` — INDEX of decisions (lightweight, ~150 lines). Module-specific detail in `references/decisions/<MODULE>.md` — load on demand only when working in that module.
 3. **Skim** `CLAUDE.md` §4-§7 — Iron Rules + Authority Matrix (NOT the full constitution).
 4. **Skim** auto-memory `MEMORY.md` — relevant project state entries.
-5. **Acknowledge briefly in Hebrew:**
-   > "Main Strategic Online. קראתי את ה-Master Roadmap. המוקד: [module/phase]. סטטוס: [one line]. ממתין להוראה."
+4.5. **Module Close Ceremony self-audit** (added 2026-05-09 by `STRUCTURE_PROTECTIONS` SPEC) — while reading `references/DECISIONS_LOG.md` in step 2, check the "Pattern Recurrence Tracker" + "Module Close Ceremonies performed" sections (or equivalent). For every module with a sealed Brief (per the index tables) that has NO recorded close ceremony → flag in the bootstrap acknowledgment line.
+   - **If clean** → standard ack: "Main Strategic Online. קראתי את ה-Master Roadmap. המוקד: [module/phase]. סטטוס: [one line]. ממתין להוראה."
+   - **If backlog detected** → ack with warning: "Main Strategic Online. ⚠️ [N] modules with sealed Brief but no ceremony — ממליץ להריץ Close Ceremony לפני עבודה חדשה. המוקד: [module/phase]. ממתין להוראה."
+   This is the session-start reminder layer — third defense after pre-commit prevention (`scripts/checks/check-root-discipline.mjs`) and daily detection (Sentinel Mission 10).
+5. **Acknowledge briefly in Hebrew** per the format in step 4.5.
 
 DO NOT load module-internal files (`SESSION_CONTEXT`, `MODULE_SPEC`, `db-schema`) at bootstrap. Module Strategist territory; only enter on Daniel's specific request.
 
