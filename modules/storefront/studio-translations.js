@@ -33,12 +33,15 @@ const StudioTranslations = (function () {
         sb.from('brands').select('id,name,brand_description,brand_description_short,seo_title,seo_description,active,exclude_website').eq('tenant_id', tid).eq('is_deleted', false).eq('active', true).neq('exclude_website', true),
         sb.from('content_translations').select('*').eq('tenant_id', tid).eq('entity_type', 'brand'),
         sb.from('translation_glossary').select('*').eq('tenant_id', tid).eq('is_deleted', false).order('term_he'),
-        // Allowlist: only brands that the public storefront actually exposes
-        // (active, not excluded, has at least one visible product). This view
-        // already enforces all of those filters.
-        sb.from('v_storefront_brands').select('brand_id').eq('tenant_id', tid),
+        // Allowlist: only brands the public storefront renders. The view
+        // returns active+non-excluded brands but its WHERE clause does not
+        // require product_count>0 — apply that filter client-side to match
+        // Studio → Pages → 🏷️ עמודי מותג and the public /brands/ page (47 rows).
+        sb.from('v_storefront_brands').select('brand_id,product_count').eq('tenant_id', tid),
       ]);
-      const visibleIds = new Set((vb.data || []).map(r => r.brand_id));
+      const visibleIds = new Set(
+        (vb.data || []).filter(r => (r.product_count || 0) > 0).map(r => r.brand_id)
+      );
       dashData = d.data || [];
       tenantConfig = c.data || {};
       brandsData = (b.data || []).filter(row => visibleIds.has(row.id));
