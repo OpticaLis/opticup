@@ -35,6 +35,15 @@
 
 **Maintaining the rule:** Every Module Close Ceremony (per `opticup-main-strategic` skill) must include a 30-second root scan. Anything new not in Categories 1-3 → archive immediately.
 
+**Enforcement (added 2026-05-09 by `STRUCTURE_PROTECTIONS` SPEC):**
+
+This rule is enforced at three independent layers — culture turned into infrastructure:
+
+- **Pre-commit prevention:** `scripts/checks/check-root-discipline.mjs` runs as part of `verify.mjs --staged`. Adding a non-allowlisted root file blocks the commit (exit 1); a new root directory produces a warning (exit 2). Wired via husky.
+- **Daily detection:** Sentinel **Mission 10 — Structure Discipline (משמר המבנה)** audits root + `architecture-brief/` presence in in-design modules + single-archive integrity + `roles/` integrity + Module Close Ceremony backlog. Violations surface in `docs/guardian/GUARDIAN_ALERTS.md`.
+- **Session-start reminder:** `opticup-main-strategic` skill bootstrap (Step 4.5) checks `references/DECISIONS_LOG.md` for sealed-Brief modules with no recorded close ceremony, and flags backlog in the bootstrap ack line.
+- **Allowlist:** `scripts/checks/root-allowlist.json` (data-driven; update **here** in §0.5 + **there** in the JSON whenever this rule changes — both must stay in sync).
+
 This rule prevents drift forever after.
 
 ---
