@@ -1,0 +1,16 @@
+--- / ---
+<img src="/images/prizma-logo-site.png"
+<img src="${img}"
+<img src="${img}"
+--- /products/ ---
+<img src="/images/prizma-logo-site.png"
+<img src="${img}"
+<img src="${img}"
+--- /brands/ ---
+<img src="/images/prizma-logo-site.png"
+<img src="${img}"
+<img src="${img}"
+--- /supersale/ ---
+<img src="/images/prizma-logo-site.png"
+<img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
+<img src="/images/campaigns/supersale/recommendations.jpg"

@@ -1,0 +1,1084 @@
+{
+  "timestamp": "2026-05-09T06:25:44.068Z",
+  "pages": [
+    {
+      "path": "/",
+      "url": "https://www.prizma-optic.co.il/",
+      "imageCount": 55,
+      "sampleSize": 20,
+      "sampleResults": [
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/talla.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/fred.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/swarovski.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/oakley.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/jimmy-choo.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/hublot.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/general/Gotti_100_1776439499314.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/tejesta.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/montblanc.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/gotti.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/general/Cazal_limited_1776439495961.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/blackfin.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/dolce-gabbana.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/matsuda.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/fendi.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/models/yohji-yamamoto_1775853828145_m3y8.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://i.ytimg.com/vi/40f1I0eOR7s/hqdefault.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/moscot.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/products/97fa7ed6-06b0-4aab-8183-47c6cc2fbf9d.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/bvlgari.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        }
+      ],
+      "supabaseLeaks": []
+    },
+    {
+      "path": "/he/",
+      "url": "https://www.prizma-optic.co.il/he/",
+      "imageCount": 2,
+      "sampleSize": 2,
+      "sampleResults": [
+        {
+          "url": "https://www.prizma-optic.co.il/images/prizma-logo-site.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/${img}",
+          "status": 404,
+          "contentType": "text/html",
+          "ok": false
+        }
+      ],
+      "supabaseLeaks": []
+    },
+    {
+      "path": "/en/",
+      "url": "https://www.prizma-optic.co.il/en/",
+      "imageCount": 55,
+      "sampleSize": 20,
+      "sampleResults": [
+        {
+          "url": "https://www.prizma-optic.co.il/videos/hero-poster.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/bottega-veneta.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/montblanc.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/alexander-mcqueen.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/products/b61ca8b6-e738-4b63-9860-26ae1204dcf5.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/saint-laurent.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://i.ytimg.com/vi/40f1I0eOR7s/hqdefault.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/${img}",
+          "status": 404,
+          "contentType": "text/html",
+          "ok": false
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/general/Gotti_100_1776439499314.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/balenciaga.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/tenant-logos/brands/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/4f6e212e-64d5-45ee-9474-a6a1827fc375_1776586571331.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/john-dalia.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/swarovski.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/products/97fa7ed6-06b0-4aab-8183-47c6cc2fbf9d.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/fred.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/retrosuperfuture.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/blackfin.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/yohji-yamamoto.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/valentino.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/oakley.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        }
+      ],
+      "supabaseLeaks": []
+    },
+    {
+      "path": "/ru/",
+      "url": "https://www.prizma-optic.co.il/ru/",
+      "imageCount": 55,
+      "sampleSize": 20,
+      "sampleResults": [
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/talla.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/prizma-logo-site.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/retrosuperfuture.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/saint-laurent.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/hublot.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/matsuda.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/models/yohji-yamamoto_1775853828145_m3y8.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/kamemannen.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/mykita.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/blackfin.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/prada.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/tenant-logos/brands/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/f7455844-f9f5-4ff9-a895-d8b69513d282_1776780735175.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/fendi.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://i.ytimg.com/vi/40f1I0eOR7s/hqdefault.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/gast.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/bottega-veneta.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/henry-jullien.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/cazal.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/bvlgari.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/brands/montblanc.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        }
+      ],
+      "supabaseLeaks": []
+    },
+    {
+      "path": "/products/",
+      "url": "https://www.prizma-optic.co.il/products/",
+      "imageCount": 26,
+      "sampleSize": 20,
+      "sampleResults": [
+        {
+          "url": "https://www.prizma-optic.co.il/images/prizma-logo-site.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fbc4026b-5230-412a-8455-9a36fb563d91/1776237474329_vw0y.webp",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ff91231d-fcbc-4727-91c7-7f2fdcc0eb51/1775545701109_f8xx.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fcca7917-717e-46f1-9d07-8b7567444a59/1776688567852_ni2p.webp",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/feb7a2d1-1a30-4634-bb58-abc7e067d3e0/1778063905925_38m7.webp",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fcf13f12-2826-42eb-a7e2-fb1441da691a/1774506969101_wurp.webp",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ff44c42e-88ef-4745-904f-393839b5d099/1778136006275_itbz.webp",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fe586561-da57-416c-9831-6870743d8780/1775543089095_6iwo.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fd81c8f3-98d7-4cb3-996d-5b73599c0c53/1776932512075_k7tb.webp",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/${img}",
+          "status": 404,
+          "contentType": "text/html",
+          "ok": false
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fca8e6b2-f167-4e3d-b9c7-2dad8cc4c292/1775574437610_ubw6.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ff2b8081-9261-429c-bc30-f657f7bca90f/1775563413952_f38q.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fe50e324-3113-4841-8ba3-46aed5d9ecf1/1778064374201_u5gv.webp",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fc80c593-013d-4f3f-a102-ead98f00affe/1778063588343_tpqf.webp",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fead86e8-fbc5-48fc-8f10-7a5145273991/1778062629456_6pep.webp",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fe0cffce-43d2-47f7-996b-9d592a8c2598/1775375512291_00w3.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ff45732e-ed0f-4a31-8eb9-26c8791a92f9/1775574615087_8we5.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fbb5182b-4df8-48ec-b053-4a95aeb32221/1775375241027_zftu.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fdd8a133-6b15-4008-b86e-87ae5ba34bc5/1774530750395_qlmp.webp",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fff0e722-ff03-440a-9fb8-5d8f466bea3c/1775375469979_yfqm.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        }
+      ],
+      "supabaseLeaks": []
+    },
+    {
+      "path": "/brands/",
+      "url": "https://www.prizma-optic.co.il/brands/",
+      "imageCount": 43,
+      "sampleSize": 20,
+      "sampleResults": [
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/oakley.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/porsche-design.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/prizma-logo-site.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/john-dalia.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/dior.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/tenant-logos/brands/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/4f6e212e-64d5-45ee-9474-a6a1827fc375_1776586571331.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/alexander-mcqueen.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/montblanc.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/yohji-yamamoto.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/prada.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/fendi.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/matsuda.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/henry-jullien.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/dolce-gabbana.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/valentino.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/${img}",
+          "status": 404,
+          "contentType": "text/html",
+          "ok": false
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/celine.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/jimmy-choo.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/saint-laurent.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logos/gotti.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        }
+      ],
+      "supabaseLeaks": []
+    },
+    {
+      "path": "/categories/",
+      "url": "https://www.prizma-optic.co.il/categories/",
+      "imageCount": 2,
+      "sampleSize": 2,
+      "sampleResults": [
+        {
+          "url": "https://www.prizma-optic.co.il/images/prizma-logo-site.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/${img}",
+          "status": 404,
+          "contentType": "text/html",
+          "ok": false
+        }
+      ],
+      "supabaseLeaks": []
+    },
+    {
+      "path": "/supersale/",
+      "url": "https://www.prizma-optic.co.il/supersale/",
+      "imageCount": 35,
+      "sampleSize": 20,
+      "sampleResults": [
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/81a8671d-f27c-4b6c-b5f4-7b3e62ff36a5/1775564868011_py4p.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/wp-migrated/Celine-logo-300x167.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/wp-migrated/RAY-BAN-LOGO.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/wp-migrated/KENZO-LOGO.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/a8ec343a-1467-46d3-b636-00861b6374fb/1776095480729_cxb0.webp",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/bafd8779-e8bb-4fdd-bb37-d7ce2fa40d5c/1775555047482_fhi3.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/wp-migrated/PRADA-300x191.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/wp-migrated/Armani-Exchange-logo-300x169.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/e03b9a36-e1b7-4982-8a38-6f69443eb410/1775808751820_stry.webp",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ad4d4ee2-bb16-4b6e-ab14-3a9ac3fe8811/1775553039016_tzim.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/38d3b206-4cc9-4356-bfa8-bbbf2b83c448/1775565449418_5hau.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/8e4526f5-15f7-4dd6-aee5-929169b56db8/1775808691068_qx3p.webp",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/4a19a359-5f51-4659-878a-258f5cd865f0/1775542702499_t6da.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/wp-migrated/Gucci-logo-300x177.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/campaigns/supersale/gift-box.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/d89181c4-1c06-420e-97cb-17a9f37ded76/1775542593931_18sq.webp",
+          "status": 200,
+          "contentType": "image/webp",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/campaigns/supersale/store-front.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/wp-migrated/Miumiu-300x300-1-150x150.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/prizma-logo-site.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/10899795-4f7c-460f-9cfb-8f7086572ac7/1775808234233_yuap.webp",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        }
+      ],
+      "supabaseLeaks": []
+    },
+    {
+      "path": "/supersalepricescatalog/",
+      "url": "https://www.prizma-optic.co.il/supersalepricescatalog/",
+      "imageCount": 0,
+      "sampleSize": 0,
+      "sampleResults": [],
+      "supabaseLeaks": []
+    },
+    {
+      "path": "/multi/",
+      "url": "https://www.prizma-optic.co.il/multi/",
+      "imageCount": 14,
+      "sampleSize": 14,
+      "sampleResults": [
+        {
+          "url": "https://www.prizma-optic.co.il/images/prizma-logo-site.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/${img}",
+          "status": 404,
+          "contentType": "text/html",
+          "ok": false
+        },
+        {
+          "url": "https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/wp-migrated/IMG-20241230-WA0098-683x1024.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/wp-migrated/e4820205-cc33-4cf9-ab1e-62a90c0781a0.jpeg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/wp-migrated/dde6be28-1dc7-49a3-bebf-dd2a99adcaa1.jpeg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/wp-migrated/48585dd1-f310-4c0e-9ab4-986a4d5ea8cb.jpeg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/wp-migrated/7f560a01-89b5-4403-93c6-5d0e9e0890b8.jpeg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/wp-migrated/132ec7c1-1557-4c08-bb9c-f17076e5655f.jpeg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/wp-migrated/fdc3c5f7-9b1e-428e-b293-8db51c521405.jpeg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://img.youtube.com/vi/7DneD-ug9R0/hqdefault.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://img.youtube.com/vi/-6PCyKYRnZE/hqdefault.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://img.youtube.com/vi/vCsKUMfZTUM/hqdefault.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://img.youtube.com/vi/P6hyUcDPywI/hqdefault.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        }
+      ],
+      "supabaseLeaks": []
+    },
+    {
+      "path": "/lab/",
+      "url": "https://www.prizma-optic.co.il/lab/",
+      "imageCount": 8,
+      "sampleSize": 8,
+      "sampleResults": [
+        {
+          "url": "https://www.prizma-optic.co.il/images/prizma-logo-site.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/${img}",
+          "status": 404,
+          "contentType": "text/html",
+          "ok": false
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/lab/videos/scan.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/lab/videos/data-entry.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/lab/videos/cutting.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/images/lab/videos/install.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img-20241230-wa0077-1024x683.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        }
+      ],
+      "supabaseLeaks": []
+    },
+    {
+      "path": "/about/",
+      "url": "https://www.prizma-optic.co.il/about/",
+      "imageCount": 4,
+      "sampleSize": 4,
+      "sampleResults": [
+        {
+          "url": "https://www.prizma-optic.co.il/images/prizma-logo-site.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/${img}",
+          "status": 404,
+          "contentType": "text/html",
+          "ok": false
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img_3728-1024x683.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img-20241230-wa0069-683x1024.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        }
+      ],
+      "supabaseLeaks": []
+    },
+    {
+      "path": "/en/about/",
+      "url": "https://www.prizma-optic.co.il/en/about/",
+      "imageCount": 4,
+      "sampleSize": 4,
+      "sampleResults": [
+        {
+          "url": "https://www.prizma-optic.co.il/images/prizma-logo-site.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/${img}",
+          "status": 404,
+          "contentType": "text/html",
+          "ok": false
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img_3728-1024x683.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img-20241230-wa0069-683x1024.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        }
+      ],
+      "supabaseLeaks": []
+    },
+    {
+      "path": "/ru/about/",
+      "url": "https://www.prizma-optic.co.il/ru/about/",
+      "imageCount": 4,
+      "sampleSize": 4,
+      "sampleResults": [
+        {
+          "url": "https://www.prizma-optic.co.il/images/prizma-logo-site.png",
+          "status": 200,
+          "contentType": "image/png",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/${img}",
+          "status": 404,
+          "contentType": "text/html",
+          "ok": false
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img_3728-1024x683.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        },
+        {
+          "url": "https://www.prizma-optic.co.il/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img-20241230-wa0069-683x1024.jpg",
+          "status": 200,
+          "contentType": "image/jpeg",
+          "ok": true
+        }
+      ],
+      "supabaseLeaks": []
+    }
+  ],
+  "summary": {
+    "totalImages": 307,
+    "totalNonOk": 10,
+    "totalSupabaseLeak": 0,
+    "pageCount": 14
+  }
+}
