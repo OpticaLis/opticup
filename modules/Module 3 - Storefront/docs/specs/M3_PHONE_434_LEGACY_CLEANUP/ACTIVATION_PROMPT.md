@@ -33,8 +33,8 @@ Whitelist of operations:
 - DELETE the 3 storefront files listed above
 - (optional) DELETE empty src/_deprecated/ folder if no other files remain
 - CREATE EXECUTION_REPORT.md + FINDINGS.md in ERP SPEC folder
-- UPDATE __LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md
-- APPEND __LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md
+- UPDATE roles/site-overseer/SITE_OVERSEER_HANDOFF.md
+- APPEND roles/site-overseer/DECISIONS_LOG.md
 
 Stop triggers (per SPEC §6 + §7):
 - Step 0 reveals ANY src/ import of the 3 files → STOP

@@ -46,8 +46,8 @@ ERP artefacts:
 - **CREATED** `migrations/2026_05_09_cookie_consent_seed_up.sql` (+ down.sql) — Level 2 seeds for prizma + demo tenants. Uses `jsonb_set` + `jsonb_build_object` (L-PROJECT-002 compliant — no string-replace).
 - **CREATED** `EXECUTION_REPORT.md` (this file)
 - **CREATED** `FINDINGS.md` (6 findings)
-- **UPDATED** `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-010 marked closed)
-- **APPENDED** `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md`
+- **UPDATED** `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-010 marked closed)
+- **APPENDED** `roles/site-overseer/DECISIONS_LOG.md`
 
 ### Live mutations executed (Supabase MCP `apply_migration`)
 

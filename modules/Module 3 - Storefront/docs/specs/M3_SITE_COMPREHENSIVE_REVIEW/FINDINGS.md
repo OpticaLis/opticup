@@ -54,7 +54,7 @@ If you were expecting a list of broken phone numbers and 5xx pages — open `SIT
 - **Expected vs Actual:**
   - Expected: automated Lighthouse + axe-core runs producing structured violation lists.
   - Actual: raw HTML grep + visual inspection only. Categories C1 / D1 marked as "partially audited; tooling gap logged."
-- **Suggested next action:** NEW_SPEC (REC-SITE-013 in HANDOFF — bootstrap audit tooling under `__LAUNCH_PLAN_DRAFT__/site-overseer/tools/`) AND TECH_DEBT against opticup-executor SKILL.md (add "Tool Pre-Flight" step — see EXECUTION_REPORT §8 Proposal 1).
+- **Suggested next action:** NEW_SPEC (REC-SITE-013 in HANDOFF — bootstrap audit tooling under `roles/site-overseer/tools/`) AND TECH_DEBT against opticup-executor SKILL.md (add "Tool Pre-Flight" step — see EXECUTION_REPORT §8 Proposal 1).
 - **Rationale for action:** Two-pronged fix: (a) install the tooling in a follow-up SPEC so future audits don't have this gap, (b) update the executor skill so future audit-SPECs surface the gap *before* execution starts (allowing the Foreman to install or explicitly accept reduced coverage).
 - **Foreman override (filled by Foreman in review):** { }
 

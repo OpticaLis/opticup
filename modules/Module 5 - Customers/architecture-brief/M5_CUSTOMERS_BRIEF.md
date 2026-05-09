@@ -390,7 +390,7 @@ UI:
 
 ## 9. Customer Card — מסך כרטיס-הלקוח (v3)
 
-**Mockup:** `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M5_CUSTOMER_CARD_MOCKUP.html`
+**Mockup:** `modules/Module 5 - Customers/architecture-brief/M5_CUSTOMER_CARD_MOCKUP.html`
 
 **מבנה — 5 לשוניות:**
 
@@ -429,7 +429,7 @@ UI:
 
 ## 10. Customer-List Screen — מסך ניהול-לקוחות (v3)
 
-**Mockup:** `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M5_CUSTOMERS_LIST_MOCKUPS.html` (Sketch 2 — Split Workspace).
+**Mockup:** `modules/Module 5 - Customers/architecture-brief/M5_CUSTOMERS_LIST_MOCKUPS.html` (Sketch 2 — Split Workspace).
 
 **מבנה כללי:**
 

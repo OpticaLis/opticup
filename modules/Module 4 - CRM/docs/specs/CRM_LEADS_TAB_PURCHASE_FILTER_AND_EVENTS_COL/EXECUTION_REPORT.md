@@ -24,7 +24,7 @@ Cleanliness is asserted only against this list. The pre-session stash (`pre-CRM_
 - `modules/Module 4 - CRM/docs/specs/CRM_LEADS_TAB_PURCHASE_FILTER_AND_EVENTS_COL/FINDINGS.md`
 
 **Out of scope (stashed at session start, restored at session end):**
-- 112 entries (2 modified + 110 untracked) in `__LAUNCH_PLAN_DRAFT__/`, `*_PROMPT*.md` at repo root, sibling SPEC drafts under M1/M3/M4. Stashed as `pre-CRM_LEADS_TAB overnight planning wip`.
+- 112 entries (2 modified + 110 untracked) in `[retired-2026-05-09:LAUNCH_PLAN_DRAFT]/`, `*_PROMPT*.md` at repo root, sibling SPEC drafts under M1/M3/M4. Stashed as `pre-CRM_LEADS_TAB overnight planning wip`.
 
 ---
 

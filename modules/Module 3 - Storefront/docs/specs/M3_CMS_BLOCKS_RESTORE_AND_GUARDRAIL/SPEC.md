@@ -143,7 +143,7 @@ Append to `docs/LEARNINGS.md`:
 
 **E. Update Site Overseer skill v0.3.**
 
-Add to `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_SKILL.md`:
+Add to `roles/site-overseer/SITE_OVERSEER_SKILL.md`:
 - New section "§ Production Incident Pattern Library" with this incident as case study #1.
 - Add "Before writing to ANY jsonb column on storefront tables, run `jsonb_typeof()` check on the staged value" to the §6 pre-flight checklist.
 
@@ -168,9 +168,9 @@ ERP repo only:
 5. `modules/Module 3 - Storefront/docs/specs/M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL/migrations/2026_05_08_blocks_check_constraint_up.sql`
 6. `modules/Module 3 - Storefront/docs/specs/M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL/migrations/2026_05_08_blocks_check_constraint_down.sql`
 7. `docs/LEARNINGS.md` (append L-PROJECT-002)
-8. `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_SKILL.md` (v0.3 update)
-9. `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md` (log this incident closed)
-10. `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md` (append)
+8. `roles/site-overseer/SITE_OVERSEER_SKILL.md` (v0.3 update)
+9. `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (log this incident closed)
+10. `roles/site-overseer/DECISIONS_LOG.md` (append)
 
 Live mutations authorized:
 - 15 row UPDATEs on `storefront_pages` (Level 2).
@@ -295,9 +295,9 @@ git add modules/Module\ 3\ -\ Storefront/docs/specs/M3_CMS_BLOCKS_RESTORE_AND_GU
 git add modules/Module\ 3\ -\ Storefront/docs/specs/M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL/migrations/2026_05_08_blocks_check_constraint_up.sql
 git add modules/Module\ 3\ -\ Storefront/docs/specs/M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL/migrations/2026_05_08_blocks_check_constraint_down.sql
 git add docs/LEARNINGS.md
-git add __LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_SKILL.md
-git add __LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md
-git add __LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md
+git add roles/site-overseer/SITE_OVERSEER_SKILL.md
+git add roles/site-overseer/SITE_OVERSEER_HANDOFF.md
+git add roles/site-overseer/DECISIONS_LOG.md
 ```
 
 ---

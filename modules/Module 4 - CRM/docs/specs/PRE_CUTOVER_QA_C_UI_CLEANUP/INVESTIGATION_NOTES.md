@@ -90,7 +90,7 @@ Both lines must go in B9. The second is a campaign-type status entry (entity_typ
 - This SPEC + ACTIVATION_PROMPT (doesn't count).
 - Historical campaign discovery / Monday-import / data-discovery docs (preserve as historical).
 - Older module SPECs (CRM_PHASE_*, M4_CAMPAIGNS_*) that are part of the project's frozen history.
-- Research mockups in `outputs/campaign-mockups/` and `__LAUNCH_PLAN_DRAFT__/site-overseer/` (research artifacts, leave alone — SPEC §3 #11 confirms).
+- Research mockups in `outputs/campaign-mockups/` and `roles/site-overseer/` (research artifacts, leave alone — SPEC §3 #11 confirms).
 
 **Active code/seed files referencing multisale that need touching:**
 - `campaigns/supersale/migrations/001_crm_schema.sql` (the seed — 2 lines)

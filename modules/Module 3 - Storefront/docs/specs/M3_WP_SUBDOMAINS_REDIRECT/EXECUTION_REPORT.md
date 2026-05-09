@@ -29,9 +29,9 @@ Phase A of `M3_WP_SUBDOMAINS_REDIRECT` produced 2 redirect-plugin-ready CSV file
 - `modules/Module 3 - Storefront/docs/specs/M3_WP_SUBDOMAINS_REDIRECT/redirects/ru.csv` — 1,609 redirects
 - `modules/Module 3 - Storefront/docs/specs/M3_WP_SUBDOMAINS_REDIRECT/redirects/en.csv` — 1,610 redirects
 - `modules/Module 3 - Storefront/docs/specs/M3_WP_SUBDOMAINS_REDIRECT/redirects/IMPORT_INSTRUCTIONS.md` — Hebrew-first cPanel walkthrough for Daniel
-- `__LAUNCH_PLAN_DRAFT__/site-overseer/LEARNINGS.md` — created with L-SITE-001
-- `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md` — appended 2026-05-08 entry
-- `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md` — REC-SITE-002 status updated, REC-SITE-015 logged closed
+- `roles/site-overseer/LEARNINGS.md` — created with L-SITE-001
+- `roles/site-overseer/DECISIONS_LOG.md` — appended 2026-05-08 entry
+- `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` — REC-SITE-002 status updated, REC-SITE-015 logged closed
 
 **Verify-script results:**
 - `npm run verify:integrity` (First Action 4a, Iron Rule 31): PASS (exit 0, 6 files scanned, all clear)

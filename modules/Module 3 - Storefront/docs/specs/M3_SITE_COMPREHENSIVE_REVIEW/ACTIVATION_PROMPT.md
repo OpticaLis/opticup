@@ -29,9 +29,9 @@ Whitelist of files you may CREATE (everything else is out of scope):
 1. modules/Module 3 - Storefront/docs/specs/M3_SITE_COMPREHENSIVE_REVIEW/SITE_AUDIT_REPORT.md
 2. modules/Module 3 - Storefront/docs/specs/M3_SITE_COMPREHENSIVE_REVIEW/EXECUTION_REPORT.md
 3. modules/Module 3 - Storefront/docs/specs/M3_SITE_COMPREHENSIVE_REVIEW/FINDINGS.md
-4. __LAUNCH_PLAN_DRAFT__/site-overseer/SITE_MAP.md
-5. __LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md (overwrite ok)
-6. __LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md (create empty stub)
+4. roles/site-overseer/SITE_MAP.md
+5. roles/site-overseer/SITE_OVERSEER_HANDOFF.md (overwrite ok)
+6. roles/site-overseer/DECISIONS_LOG.md (create empty stub)
 
 Stop triggers (in addition to global):
 - Homepage 5xx → escalate

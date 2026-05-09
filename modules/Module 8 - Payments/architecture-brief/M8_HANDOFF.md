@@ -144,12 +144,12 @@ M5 (Customers v3), M6 (Prescriptions v2), M7 (Orders v1), M14 (Appointments v1),
 
 ## קישורים מרכזיים
 
-- Master Plan: `__LAUNCH_PLAN_DRAFT__/MASTER_LIVE_PLAN.md`
-- M5 Brief: `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M5_CUSTOMERS_BRIEF.md` (v3)
-- M6 Brief: `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M6_PRESCRIPTIONS_BRIEF.md` (v2)
-- M7 Brief: `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M7_ORDERS_BRIEF.md` (v1)
-- M14 Brief: `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M14_APPOINTMENTS_BRIEF.md` (v1)
-- M15 Brief: `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M15_QUEUE_BRIEF.md` (v1)
+- Master Plan: `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md`
+- M5 Brief: `modules/Module 5 - Customers/architecture-brief/M5_CUSTOMERS_BRIEF.md` (v3)
+- M6 Brief: `modules/Module 6 - Prescriptions/architecture-brief/M6_PRESCRIPTIONS_BRIEF.md` (v2)
+- M7 Brief: `modules/Module 7 - Orders/architecture-brief/M7_ORDERS_BRIEF.md` (v1)
+- M14 Brief: `modules/Module 14 - Appointments/architecture-brief/M14_APPOINTMENTS_BRIEF.md` (v1)
+- M15 Brief: `modules/Module 15 - Queue/architecture-brief/M15_QUEUE_BRIEF.md` (v1)
 - DECISIONS_LOG: `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md`
 - SKILL: `.claude/skills/opticup-main-strategic/SKILL.md` (עם Pattern P23 חדש)
 - Auto-memory: `MEMORY.md` (תזכורות פר-יום של פרוייקט)

@@ -17,7 +17,7 @@ Three deliverables, one SPEC:
 
 **2. Bulk push the improved redirects** to both WordPress instances via the Redirection plugin REST API (already configured + authenticated this session). Replace existing post-tier redirects in-place; do NOT create duplicates.
 
-**3. Site Overseer skill enrichment.** Add to `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_SKILL.md` (create if missing) a **knowledge map** so future Site Overseer Mode B sessions can answer questions about the site without re-discovering structure each time. Includes: tenant config field-list, view names, key tables (`blog_posts`, `storefront_pages`), subdomain inventory, WP REST endpoints, redirect-import procedure, deployment chain.
+**3. Site Overseer skill enrichment.** Add to `roles/site-overseer/SITE_OVERSEER_SKILL.md` (create if missing) a **knowledge map** so future Site Overseer Mode B sessions can answer questions about the site without re-discovering structure each time. Includes: tenant config field-list, view names, key tables (`blog_posts`, `storefront_pages`), subdomain inventory, WP REST endpoints, redirect-import procedure, deployment chain.
 
 ---
 
@@ -126,7 +126,7 @@ After Daniel completes the setup wizard, executor proceeds with §C for en.
 
 **E. Site Overseer skill enrichment.**
 
-Create or update `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_SKILL.md` v0.2 with:
+Create or update `roles/site-overseer/SITE_OVERSEER_SKILL.md` v0.2 with:
 
 - **§ Knowledge Map — Tables.** Names + purpose of: `tenants`, `storefront_config`, `storefront_pages`, `blog_posts`, key UI-config keys (`phone_general`, `phone_catalog`, `support_phone_display`, `whatsapp_phone_e164`, `business_phone`, `business_email`, etc).
 - **§ Knowledge Map — Views.** `v_public_tenant`, `v_storefront_config`, `v_storefront_pages`, `v_storefront_blog_posts`, etc — what each exposes, what consumers read them.
@@ -135,7 +135,7 @@ Create or update `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_SKILL.md` v0
 - **§ Knowledge Map — WP REST endpoints (Application Password auth).** `/wp-json/wp/v2/users/me`, `/wp-json/wp/v2/posts`, `/wp-json/wp/v2/plugins`, `/wp-json/redirection/v1/*`, `/wp-json/wp/v2/pages`.
 - **§ Knowledge Map — Redirection plugin import flow.** Plugin install via REST → setup wizard (Daniel clicks once) → group_id=1 default → `POST /wp-json/redirection/v1/import/file/{group_id}` with multipart CSV → verify with `GET /wp-json/redirection/v1/redirect`.
 - **§ Knowledge Map — Astro deploy flow.** develop branch → PR → main → Vercel auto-deploy.
-- **§ Knowledge Map — Sources of truth.** SPEC slugs live in `modules/Module 3 - Storefront/docs/specs/`. Site Overseer state lives in `__LAUNCH_PLAN_DRAFT__/site-overseer/`. Master rule book: `CLAUDE.md`.
+- **§ Knowledge Map — Sources of truth.** SPEC slugs live in `modules/Module 3 - Storefront/docs/specs/`. Site Overseer state lives in `roles/site-overseer/`. Master rule book: `CLAUDE.md`.
 - **§ Frequently asked questions** (1-line each, with cross-references to the answer location).
 
 ### Out of scope
@@ -154,9 +154,9 @@ ERP repo only:
 3. `modules/Module 3 - Storefront/docs/specs/M3_WP_BLOG_POST_MAPPING/CRAWL_LOG_BLOG.md`
 4. `modules/Module 3 - Storefront/docs/specs/M3_WP_BLOG_POST_MAPPING/redirects/ru-blog-improved.csv`
 5. `modules/Module 3 - Storefront/docs/specs/M3_WP_BLOG_POST_MAPPING/redirects/en-blog-improved.csv`
-6. `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_SKILL.md` (create)
-7. `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md` (overwrite — log REC-SITE-015 closed)
-8. `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md` (append)
+6. `roles/site-overseer/SITE_OVERSEER_SKILL.md` (create)
+7. `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (overwrite — log REC-SITE-015 closed)
+8. `roles/site-overseer/DECISIONS_LOG.md` (append)
 
 Live external mutations authorized by this SPEC (NOT files in repo):
 - Delete & re-import redirects on `ru.prizma-optic.co.il` (same plugin already configured)
@@ -274,9 +274,9 @@ git add modules/Module\ 3\ -\ Storefront/docs/specs/M3_WP_BLOG_POST_MAPPING/FIND
 git add modules/Module\ 3\ -\ Storefront/docs/specs/M3_WP_BLOG_POST_MAPPING/CRAWL_LOG_BLOG.md
 git add modules/Module\ 3\ -\ Storefront/docs/specs/M3_WP_BLOG_POST_MAPPING/redirects/ru-blog-improved.csv
 git add modules/Module\ 3\ -\ Storefront/docs/specs/M3_WP_BLOG_POST_MAPPING/redirects/en-blog-improved.csv
-git add __LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_SKILL.md
-git add __LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md
-git add __LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md
+git add roles/site-overseer/SITE_OVERSEER_SKILL.md
+git add roles/site-overseer/SITE_OVERSEER_HANDOFF.md
+git add roles/site-overseer/DECISIONS_LOG.md
 ```
 
 ---

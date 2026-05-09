@@ -8,7 +8,7 @@ Two-stage. First load `opticup-strategic` (Foreman) to author the SPEC. Then loa
 
 1. `modules/Module 4 - CRM/docs/specs/BROADCAST_1000_CAP_FIX/SUPERVISOR_DECISION.md` — the binding architectural verdict from the Main Strategic Chat. The SPEC must follow §SPEC scope verbatim.
 2. `modules/Module 4 - CRM/docs/specs/BROADCAST_1000_CAP_FIX/SUPERVISOR_BRIEF.md` — the Campaign Overseer's original problem statement + 3 options analysis.
-3. `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md` REC-010 — the Overseer's logged recommendation.
+3. `roles/campaign-overseer/DECISIONS_LOG.md` REC-010 — the Overseer's logged recommendation.
 
 ## Background (the bug, in one paragraph)
 
@@ -114,7 +114,7 @@ The Foreman writes `FOREMAN_REVIEW.md` AFTER Daniel verifies — that step is po
 
 - Supervisor decision (binding): `modules/Module 4 - CRM/docs/specs/BROADCAST_1000_CAP_FIX/SUPERVISOR_DECISION.md`
 - Supervisor brief (analysis): same folder, `SUPERVISOR_BRIEF.md`
-- Overseer recommendation: REC-010 in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md`
+- Overseer recommendation: REC-010 in `roles/campaign-overseer/DECISIONS_LOG.md`
 - Iron Rules: `CLAUDE.md` §4–§6
 - Folder-per-SPEC protocol: `CLAUDE.md` §7
 

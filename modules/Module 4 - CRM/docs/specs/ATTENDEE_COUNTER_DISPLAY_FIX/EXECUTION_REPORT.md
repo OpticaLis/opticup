@@ -35,7 +35,7 @@ Shipped the SPEC end-to-end with no questions to the dispatcher. All 5 file edit
 - Blocked by `rule-21-orphans` violation on `var sent` shared between detail.js (line 312) and detail-charts.js (line 194). Both pre-existing, neither touched by my edits. Resolved by splitting into commits 2 + 3 per the M4 P12 precedent. Reset and recommitted cleanly.
 
 **Final state:**
-- `git status --short` → only `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` (pre-existing, Daniel said leave alone)
+- `git status --short` → only `roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` (pre-existing, Daniel said leave alone)
 - `git log origin/develop..HEAD` → empty after push
 - All 4 commits pushed to `origin/develop`
 - Iron Rule 31 integrity gate: clean (exit 0)

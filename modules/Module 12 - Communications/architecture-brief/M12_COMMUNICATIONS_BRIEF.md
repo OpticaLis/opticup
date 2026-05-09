@@ -298,8 +298,8 @@ The Module Strategist should answer these during SPEC authoring, escalating to M
 **Decision sources:**
 - `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md` — 2026-05-09 entries (decisions 1-13).
 - Auto-memory: `project_messaging_architecture_v2.md` (decided 2026-04-22).
-- `__LAUNCH_PLAN_DRAFT__/MASTER_LIVE_PLAN.md` §4 (M12 requirements).
-- `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M12_HANDOFF.md` (this brief's predecessor handoff).
+- `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md` §4 (M12 requirements).
+- `modules/Module 12 - Communications/architecture-brief/M12_HANDOFF.md` (this brief's predecessor handoff).
 
 **Cross-module briefs that depend on M12:**
 - M4 (CRM) — already lives; M12 generalizes its messaging.

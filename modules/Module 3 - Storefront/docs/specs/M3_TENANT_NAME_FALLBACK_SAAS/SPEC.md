@@ -184,8 +184,8 @@ The audit found 13 instances total — 8 in HE root and 5 in the `/en/` and `/ru
 **ERP repo (`opticup`):**
 7. CREATE `modules/Module 3 - Storefront/docs/specs/M3_TENANT_NAME_FALLBACK_SAAS/EXECUTION_REPORT.md`
 8. CREATE `modules/Module 3 - Storefront/docs/specs/M3_TENANT_NAME_FALLBACK_SAAS/FINDINGS.md`
-9. UPDATE `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md` (mark REC-SITE-006 closed)
-10. APPEND `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md`
+9. UPDATE `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (mark REC-SITE-006 closed)
+10. APPEND `roles/site-overseer/DECISIONS_LOG.md`
 
 No DB writes (the script is SELECT-only). No deploys beyond standard Vercel-on-merge.
 

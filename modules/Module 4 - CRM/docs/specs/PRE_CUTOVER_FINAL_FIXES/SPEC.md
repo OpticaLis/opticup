@@ -131,7 +131,7 @@ Default expectation: Path A. Path B only if Path A breaks something.
 ### Docs updated (MUST include)
 - `modules/Module 4 - CRM/docs/SESSION_CONTEXT.md` — append entry
 - `modules/Module 4 - CRM/docs/CHANGELOG.md` — new section
-- `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` §15 — add closure note for both Q2 + Q3
+- `roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` §15 — add closure note for both Q2 + Q3
 
 ---
 

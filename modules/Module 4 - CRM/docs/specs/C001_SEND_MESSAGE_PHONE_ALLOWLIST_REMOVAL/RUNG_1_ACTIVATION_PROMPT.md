@@ -19,7 +19,7 @@ The SPEC and FOREMAN_REVIEW live at `modules/Module 4 - CRM/docs/specs/C001_SEND
 2. **Load Iron Rules 1–23 + 31** — top of mind throughout.
 3. **Tenant scope:** all QA in this Rung uses **prizma** tenant — UUID `6ad0781b-37f0-47a9-92e3-be9ed1477e1c`. Any curl test, any DB write verification, any post-deploy check is on prizma. **NOT demo.**
 4. **Phone allowlist for any SMS-triggering test:** ONLY `0537889878` and `0503348349` (Daniel's two personal lines). The third historical phone `0507168471` IS in the existing hardcoded list and IS in the new pre-populated `tenants.test_mode_sms_allowlist` JSONB array — but you MUST NOT use it for live test sends in this Rung. If a test would reach any phone other than the two allowlisted-for-testing, abort.
-5. **Selective `git add` only** — the repo has pre-existing intentional WIP from prior Cowork sessions (5 untracked draft files at repo root + the `__LAUNCH_PLAN_DRAFT__/` tree). Daniel has authorized those as WIP. **Do NOT `git add -A` or `git add .` ever.** Add only the files this Rung touches by explicit name.
+5. **Selective `git add` only** — the repo has pre-existing intentional WIP from prior Cowork sessions (5 untracked draft files at repo root + the `[retired-2026-05-09:LAUNCH_PLAN_DRAFT]/` tree). Daniel has authorized those as WIP. **Do NOT `git add -A` or `git add .` ever.** Add only the files this Rung touches by explicit name.
 6. **Read these files end-to-end before writing any code:**
    - `modules/Module 4 - CRM/docs/specs/C001_SEND_MESSAGE_PHONE_ALLOWLIST_REMOVAL/SPEC.md`
    - `modules/Module 4 - CRM/docs/specs/C001_SEND_MESSAGE_PHONE_ALLOWLIST_REMOVAL/FOREMAN_REVIEW.md`
@@ -323,7 +323,7 @@ Both files at `modules/Module 4 - CRM/docs/specs/C001_SEND_MESSAGE_PHONE_ALLOWLI
 - `apply_migration` returns an error → STOP.
 - Step 8 Test B returns `ok:true` (guardrail broken for non-allowlisted phone) → CRITICAL STOP.
 - Step 8 Test A does not deliver SMS to Daniel within 60 seconds → STOP, the EF is broken.
-- Any unexpected file change appears in `git status` beyond what this prompt scoped → STOP. The 5 pre-existing untracked draft files at repo root + `__LAUNCH_PLAN_DRAFT__/` tree are intentional WIP — DO NOT touch them.
+- Any unexpected file change appears in `git status` beyond what this prompt scoped → STOP. The 5 pre-existing untracked draft files at repo root + `[retired-2026-05-09:LAUNCH_PLAN_DRAFT]/` tree are intentional WIP — DO NOT touch them.
 - A null-byte ERROR (exit 1) from the integrity gate at any point → STOP and escalate.
 - Pre-flight Step 1 reveals `tenants.test_mode_sms_allowlist` already exists → STOP, reconcile with Foreman.
 

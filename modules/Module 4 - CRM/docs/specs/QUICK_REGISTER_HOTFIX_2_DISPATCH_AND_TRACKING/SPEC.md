@@ -177,7 +177,7 @@ Sweep: 0 collisions / 5 names.
 
 ## 12. Captured for backlog (NOT this SPEC)
 
-- **Daniel feature request 2026-05-04:** ability to revive cancelled attendee → registered (when a slot opens up). Logged in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/POST_CUTOVER_TECH_DEBT.md` (Overseer logs this immediately, NOT executor's job).
+- **Daniel feature request 2026-05-04:** ability to revive cancelled attendee → registered (when a slot opens up). Logged in `roles/campaign-overseer/POST_CUTOVER_TECH_DEBT.md` (Overseer logs this immediately, NOT executor's job).
 - Rule-21 unification of dispatch helpers across `event-register`, `quick-register` (and future `whatsapp-catalog-flow` if any) — future SPEC.
 - Locking the `?tenant=` storefront param after M4 closes (already in HANDOFF as M4-cleanup task).
 

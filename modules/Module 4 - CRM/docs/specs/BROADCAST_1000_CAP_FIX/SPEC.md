@@ -9,7 +9,7 @@
 > **Source documents:**
 > - Supervisor binding decision: `SUPERVISOR_DECISION.md` (this folder)
 > - Supervisor brief / 3-options analysis: `SUPERVISOR_BRIEF.md` (this folder)
-> - Overseer recommendation: `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md` REC-010
+> - Overseer recommendation: `roles/campaign-overseer/DECISIONS_LOG.md` REC-010
 
 ---
 

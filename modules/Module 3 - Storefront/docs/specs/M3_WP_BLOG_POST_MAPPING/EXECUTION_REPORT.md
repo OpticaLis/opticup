@@ -28,9 +28,9 @@ Phase A+B (single-shot) of `M3_WP_BLOG_POST_MAPPING` improved REC-SITE-015's bul
 - `modules/Module 3 - Storefront/docs/specs/M3_WP_BLOG_POST_MAPPING/CRAWL_LOG_BLOG.md` (~22KB, full per-post mapping table)
 - `modules/Module 3 - Storefront/docs/specs/M3_WP_BLOG_POST_MAPPING/redirects/ru-blog-improved.csv` (42 rows, surgical replace)
 - `modules/Module 3 - Storefront/docs/specs/M3_WP_BLOG_POST_MAPPING/redirects/en-blog-improved.csv` (1,610 rows, full import — see §3 Deviation 2)
-- `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_SKILL.md` (created v0.2)
-- `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-015 marked CLOSED)
-- `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md` (appended 2026-05-08 entry)
+- `roles/site-overseer/SITE_OVERSEER_SKILL.md` (created v0.2)
+- `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-015 marked CLOSED)
+- `roles/site-overseer/DECISIONS_LOG.md` (appended 2026-05-08 entry)
 
 **Live mutations executed (NOT files in repo, authorized by SPEC §6):**
 - `ru.prizma-optic.co.il`: bulk-deleted 42 post-tier redirects + imported 42 improved + cleaned 1 header-junk = net 1,610 (delta 0).
@@ -90,7 +90,7 @@ Phase A+B (single-shot) of `M3_WP_BLOG_POST_MAPPING` improved REC-SITE-015's bul
 | 14 — tenant_id on tables | N/A — no new tables | | |
 | 15 — RLS on tables | N/A — no new tables; read against existing `blog_posts` (tenant_id-scoped per Iron Rule 14, with canonical RLS pattern) | | |
 | 18 — UNIQUE includes tenant_id | N/A | | |
-| 21 — no orphans / duplicates | ✅ | Pre-flight grep for SPEC slug `M3_WP_BLOG_POST_MAPPING` confirmed 0 prior collisions (SPEC §11 verified). New file `SITE_OVERSEER_SKILL.md` is unique under `__LAUNCH_PLAN_DRAFT__/site-overseer/` namespace. Live-mutation cleanup of header junk avoided 2 new duplicates per import. |
+| 21 — no orphans / duplicates | ✅ | Pre-flight grep for SPEC slug `M3_WP_BLOG_POST_MAPPING` confirmed 0 prior collisions (SPEC §11 verified). New file `SITE_OVERSEER_SKILL.md` is unique under `roles/site-overseer/` namespace. Live-mutation cleanup of header junk avoided 2 new duplicates per import. |
 | 22 — defense in depth | N/A — no app DB writes | | |
 | 23 — no secrets in code/docs | ⚠️ See note | Application Password tokens (`daniel:3Dzz...` and `daniel:pVKX...`) exist in: SPEC.md §2 (untracked, not in this commit), throwaway `/c/tmp/blog-map/*.json` (NOT in repo). NONE appear in any committed file. Rotated post-session per SPEC §4-D — Daniel handles. |
 | 31 — integrity gate | ✅ | `npm run verify:integrity` ran at First Action (clean) and pre-commit (clean) |

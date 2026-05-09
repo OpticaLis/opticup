@@ -123,8 +123,8 @@ M11 הוא יותר אינטרני — לא דורש מחקר-שוק נרחב. �
 
 ## קישורים מרכזיים
 
-- **Master Plan:** `__LAUNCH_PLAN_DRAFT__/MASTER_LIVE_PLAN.md` (§4 — דרישות M11)
-- **Briefs קודמים:** `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M5 - Customers/`, `M6 - Prescriptions/`, `M7 - Orders/`, `M8 - Payments/`
+- **Master Plan:** `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md` (§4 — דרישות M11)
+- **Briefs קודמים:** `modules/Module 5 - Customers/architecture-brief/`, `M6 - Prescriptions/`, `M7 - Orders/`, `M8 - Payments/`
 - **DECISIONS_LOG:** `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md`
 - **SKILL:** `.claude/skills/opticup-main-strategic/SKILL.md`
 

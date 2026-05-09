@@ -45,8 +45,8 @@ Whitelist of write paths (storefront):
 Whitelist (ERP):
 - modules/Module 3 - Storefront/docs/specs/M3_TENANT_NAME_FALLBACK_SAAS/
   EXECUTION_REPORT.md + FINDINGS.md (CREATE)
-- __LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md (UPDATE)
-- __LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md (APPEND)
+- roles/site-overseer/SITE_OVERSEER_HANDOFF.md (UPDATE)
+- roles/site-overseer/DECISIONS_LOG.md (APPEND)
 
 NO DB writes. NO Astro renderer changes. NO touching submit.ts (out-of-
 scope per REC-SITE-005). NEVER hardcode tenant-specific strings in the

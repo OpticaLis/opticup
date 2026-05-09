@@ -102,7 +102,7 @@ URLs לבדיקת מדגם:
 
 לאחר שגם `ru.csv` וגם `en.csv` יובאו והבדיקה ידנית עברה:
 
-1. עדכן את הסטטוס בקובץ `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md`
+1. עדכן את הסטטוס בקובץ `roles/site-overseer/SITE_OVERSEER_HANDOFF.md`
    — REC-SITE-015 → **Phase B done, awaiting Google reindex**.
 2. תזכורת ביומן ל-`+30 days` כדי לפתוח SPEC להסרת ה-WP (Phase C).
 

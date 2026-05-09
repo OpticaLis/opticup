@@ -196,7 +196,7 @@ Source-of-truth: per-subdomain sitemap_index.xml + REST API.
 | `docs/GLOBAL_SCHEMA.sql` | Authoritative DB schema |
 | `docs/DB_TABLES_REFERENCE.md` | Quick lookup: T-constant → table → key columns |
 | `modules/Module 3 - Storefront/docs/SESSION_CONTEXT.md` | Current Module 3 phase status (ERP-side authoritative for Module 3) |
-| `__LAUNCH_PLAN_DRAFT__/site-overseer/` | Site Overseer's own state: SITE_MAP.md (live structure), HANDOFF.md (current task), DECISIONS_LOG.md (Daniel approvals), LEARNINGS.md (methodology rules), this file (knowledge map) |
+| `roles/site-overseer/` | Site Overseer's own state: SITE_MAP.md (live structure), HANDOFF.md (current task), DECISIONS_LOG.md (Daniel approvals), LEARNINGS.md (methodology rules), this file (knowledge map) |
 | `modules/Module 3 - Storefront/docs/specs/{SPEC_SLUG}/` | Per-SPEC plan + execution + retrospective (folder-per-SPEC since 2026-04-14) |
 
 ## 10. Where this knowledge map should grow next

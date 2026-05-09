@@ -117,8 +117,8 @@ M13 דורש research-first (P23) באזורים מוגבלים:
 
 ## קישורים מרכזיים
 
-- **Master Plan:** `__LAUNCH_PLAN_DRAFT__/MASTER_LIVE_PLAN.md` (§4 — דרישות M13)
-- **Briefs קודמים:** כולם ב-`__LAUNCH_PLAN_DRAFT__/architecture-briefs/`
+- **Master Plan:** `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md` (§4 — דרישות M13)
+- **Briefs קודמים:** כל אחד ב-`modules/Module N - Name/architecture-brief/`
 - **DECISIONS_LOG:** `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md` (כולל 13 החלטות חדשות מ-2026-05-09)
 - **SKILL:** `.claude/skills/opticup-main-strategic/SKILL.md`
 

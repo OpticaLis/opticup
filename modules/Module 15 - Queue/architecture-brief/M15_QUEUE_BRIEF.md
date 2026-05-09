@@ -191,7 +191,7 @@ queue_removal_reasons ◄──FK── queue_entries.removal_reason_id (NULL-ab
 
 ## 7. UX / Screens
 
-**Mockup:** `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M15_QUEUE_MOCKUP.html`.
+**Mockup:** `modules/Module 15 - Queue/architecture-brief/M15_QUEUE_MOCKUP.html`.
 
 **עיקרון-עיצוב:** Queue הוא **פאנל מוטבע** במסך-היומן של M14, צד-ימין. רוחב 340px, height auto עד מקסימום של מסך-היומן.
 

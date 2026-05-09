@@ -130,8 +130,8 @@ M12 דורש research-first (P23) כי:
 
 ## קישורים מרכזיים
 
-- **Master Plan:** `__LAUNCH_PLAN_DRAFT__/MASTER_LIVE_PLAN.md` (§4 — דרישות M12)
-- **Briefs קודמים:** `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M5 - Customers/`, `M6 - Prescriptions/`, `M7 - Orders/`, `M8 - Payments/`, `M11 - Reports/`, `M14 - Appointments/`, `M15 - Queue/`
+- **Master Plan:** `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md` (§4 — דרישות M12)
+- **Briefs קודמים:** `modules/Module 5 - Customers/architecture-brief/`, `M6 - Prescriptions/`, `M7 - Orders/`, `M8 - Payments/`, `M11 - Reports/`, `M14 - Appointments/`, `M15 - Queue/`
 - **DECISIONS_LOG:** `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md`
 - **SKILL:** `.claude/skills/opticup-main-strategic/SKILL.md`
 

@@ -52,8 +52,8 @@ ERP artefacts:
 - **CREATED** `qa/03-robots.txt` — production response (canonical www Sitemap line)
 - **CREATED** `qa/04-branches-http-status.txt` — 6/6 branch URLs returning 200
 - **CREATED** `qa/05-verify-sitemap-output.txt` — full PASS log (9 checks)
-- **UPDATED** `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md` — REC-SITE-011 marked closed; REC follow-up `M3-DATA-01` added for brand-slug 404 cleanup
-- **APPENDED** `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md`
+- **UPDATED** `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` — REC-SITE-011 marked closed; REC follow-up `M3-DATA-01` added for brand-slug 404 cleanup
+- **APPENDED** `roles/site-overseer/DECISIONS_LOG.md`
 
 ### Live mutations executed
 

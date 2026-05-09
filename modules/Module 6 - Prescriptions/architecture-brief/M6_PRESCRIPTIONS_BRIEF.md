@@ -295,10 +295,10 @@ staff/users                  ◄──FK── prescriptions_*  (optometrist_id,
 ## 7. Entry Points ל-Module Strategist של M6
 
 1. קורא קובץ זה.
-2. קורא `__LAUNCH_PLAN_DRAFT__/access-audit/ACCESS_AUDIT_REPORT.md` (פירוט שדות `tb_bdika`, `tb_lenses`, `tb_sapaktav`).
+2. קורא `_archive/access-audit/ACCESS_AUDIT_REPORT.md` (פירוט שדות `tb_bdika`, `tb_lenses`, `tb_sapaktav`).
 3. קורא Master Plan §4 (M6).
 4. קורא M5 brief — להבין את חוזה ה-customer.
-5. **קורא את הסקיצה של מסך-המרשם** (`__LAUNCH_PLAN_DRAFT__/architecture-briefs/M6_PRESCRIPTION_EDITOR_MOCKUP.html`).
+5. **קורא את הסקיצה של מסך-המרשם** (`modules/Module 6 - Prescriptions/architecture-brief/M6_PRESCRIPTION_EDITOR_MOCKUP.html`).
 6. כותב `modules/Module 6 - Prescriptions/MODULE_6_ROADMAP.md` (Phases מומלצות: A — schema + RLS + Views, B — state-machines + RPCs, C — recall-engine 3 וריאנטים, D — migration, E — UI prescription editor, F — UI integration ב-M5 customer card lashonit-3).
 7. כותב `modules/Module 6 - Prescriptions/docs/MODULE_SPEC.md`.
 8. SPEC נפרד למיגרציה.
@@ -345,7 +345,7 @@ staff/users                  ◄──FK── prescriptions_*  (optometrist_id,
 
 ## 9. Prescription Editor Screen (חדש v2)
 
-**Mockup:** `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M6_PRESCRIPTION_EDITOR_MOCKUP.html`
+**Mockup:** `modules/Module 6 - Prescriptions/architecture-brief/M6_PRESCRIPTION_EDITOR_MOCKUP.html`
 
 ### 9.1 Layout כללי
 

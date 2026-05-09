@@ -89,14 +89,14 @@
 
 ## קישורים מרכזיים
 
-- Master Plan: `__LAUNCH_PLAN_DRAFT__/MASTER_LIVE_PLAN.md`
-- Customer Card mockup: `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M5_CUSTOMER_CARD_MOCKUP.html`
-- M5 Brief v2: `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M5_CUSTOMERS_BRIEF.md`
-- M6 Brief v1: `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M6_PRESCRIPTIONS_BRIEF.md`
-- M7 Brief v1: `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M7_ORDERS_BRIEF.md`
-- M7 main mockup: `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M7_ORDERS_FULL_MOCKUP_V6.html`
+- Master Plan: `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md`
+- Customer Card mockup: `modules/Module 5 - Customers/architecture-brief/M5_CUSTOMER_CARD_MOCKUP.html`
+- M5 Brief v2: `modules/Module 5 - Customers/architecture-brief/M5_CUSTOMERS_BRIEF.md`
+- M6 Brief v1: `modules/Module 6 - Prescriptions/architecture-brief/M6_PRESCRIPTIONS_BRIEF.md`
+- M7 Brief v1: `modules/Module 7 - Orders/architecture-brief/M7_ORDERS_BRIEF.md`
+- M7 main mockup: `modules/Module 7 - Orders/architecture-brief/M7_ORDERS_FULL_MOCKUP_V6.html`
 - M7 5 forms: `M7_FORM_*_MOCKUP.html`
-- M7 forms catalog: `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M7_ORDERS_PRINT_FORMS.md`
+- M7 forms catalog: `modules/Module 7 - Orders/architecture-brief/M7_ORDERS_PRINT_FORMS.md`
 - DECISIONS_LOG: `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md`
 
 ---

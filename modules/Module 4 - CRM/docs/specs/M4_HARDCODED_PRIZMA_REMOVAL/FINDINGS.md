@@ -57,12 +57,12 @@
 - **Severity:** INFO
 - **Discovered during:** Reading `event-register.css` lines 1-6 before editing
 - **Location:** `modules/crm/public/event-register.css:1-6` (the file header comment).
-- **Description:** The CSS file's header read: *"Restyled 2026-05-01 per Prizma Design System Canon v1.1 (sealed 2026-04-28). See `__LAUNCH_PLAN_DRAFT__/campaign-overseer/PRIZMA_DESIGN_SYSTEM_CANONICAL.md`. Canon values inlined directly (Daniel pre-authorized Option a in SPEC §1.5)."* This was the pre-cutover (single-tenant) decision: explicitly inline canon gold values in CSS for simplicity, accept the Iron Rule 9 violation in exchange for source-of-truth clarity. This SPEC supersedes that decision as part of the post-cutover SaaS-readiness pivot. The header has been rewritten to reflect the new architecture.
+- **Description:** The CSS file's header read: *"Restyled 2026-05-01 per Prizma Design System Canon v1.1 (sealed 2026-04-28). See `roles/campaign-overseer/PRIZMA_DESIGN_SYSTEM_CANONICAL.md`. Canon values inlined directly (Daniel pre-authorized Option a in SPEC §1.5)."* This was the pre-cutover (single-tenant) decision: explicitly inline canon gold values in CSS for simplicity, accept the Iron Rule 9 violation in exchange for source-of-truth clarity. This SPEC supersedes that decision as part of the post-cutover SaaS-readiness pivot. The header has been rewritten to reflect the new architecture.
 - **Reproduction:** N/A — historical context.
 - **Expected vs Actual:**
   - Expected (post-SaaS-pivot): canon values come from `tenants.ui_config.brand`, code is tenant-neutral.
   - Actual (pre-this-SPEC): canon values inlined in CSS per Option a.
-- **Suggested next action:** DISMISS — this SPEC's header rewrite already records the architectural-context shift. For the broader project: the `__LAUNCH_PLAN_DRAFT__/campaign-overseer/PRIZMA_DESIGN_SYSTEM_CANONICAL.md` doc may also reference Option a as a still-active decision; it should be updated with a "superseded by M4_HARDCODED_PRIZMA_REMOVAL" note.
+- **Suggested next action:** DISMISS — this SPEC's header rewrite already records the architectural-context shift. For the broader project: the `roles/campaign-overseer/PRIZMA_DESIGN_SYSTEM_CANONICAL.md` doc may also reference Option a as a still-active decision; it should be updated with a "superseded by M4_HARDCODED_PRIZMA_REMOVAL" note.
 - **Foreman override:** { }
 
 ---

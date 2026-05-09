@@ -91,8 +91,8 @@ If any check deviates → STOP. Especially: if step 2 shows ANY import in `src/`
 **ERP repo** (`opticup`):
 5. CREATE `modules/Module 3 - Storefront/docs/specs/M3_PHONE_434_LEGACY_CLEANUP/EXECUTION_REPORT.md`
 6. CREATE `modules/Module 3 - Storefront/docs/specs/M3_PHONE_434_LEGACY_CLEANUP/FINDINGS.md`
-7. UPDATE `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md` (mark REC-SITE-002 closed)
-8. APPEND to `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md`
+7. UPDATE `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (mark REC-SITE-002 closed)
+8. APPEND to `roles/site-overseer/DECISIONS_LOG.md`
 
 No DB writes. No deploys (file-level cleanup only; no live runtime change since these files weren't referenced by live code).
 

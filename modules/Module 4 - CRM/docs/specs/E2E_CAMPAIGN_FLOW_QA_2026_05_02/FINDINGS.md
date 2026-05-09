@@ -70,7 +70,7 @@ Whenever a cutover-critical UI flow is being verified shortly after a `main` dep
 3. Confirm the new code is loaded (e.g. via a known new symbol — for cd2b2f7, `typeof window.CrmAutomationRecipients !== 'undefined'` and a test invocation returning a known shape).
 4. Only then run the verify step.
 
-This is a one-paragraph addition to a runbook, not a SPEC. Could go in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CUTOVER_ROADMAP.md` or the V10 SPEC's lessons-learned section.
+This is a one-paragraph addition to a runbook, not a SPEC. Could go in `roles/campaign-overseer/CUTOVER_ROADMAP.md` or the V10 SPEC's lessons-learned section.
 
 ### Recommended re-test
 

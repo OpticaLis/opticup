@@ -4,7 +4,7 @@
 > **Authored on:** 2026-05-04 (evening)
 > **Module:** 4 — CRM
 > **Phase:** Post-cutover follow-up
-> **Source:** REC-009 (`__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md`) — Daniel agreed verbally 2026-05-04 evening.
+> **Source:** REC-009 (`roles/campaign-overseer/DECISIONS_LOG.md`) — Daniel agreed verbally 2026-05-04 evening.
 > **Production discipline:** Prizma is LIVE post-cutover (2026-05-03). All testing on demo (`8d8cfa7e-ef58-49af-9702-a862d459cccb`). No prizma writes from this SPEC's execution.
 
 ---
@@ -216,8 +216,8 @@ On demo tenant only:
 
 The executor's first action — BEFORE ANY OTHER STEP — is to commit pending Campaign Overseer artifacts. This SPEC was authored in a Cowork session that updated 4 files outside git:
 
-- `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md`
-- `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md`
+- `roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md`
+- `roles/campaign-overseer/DECISIONS_LOG.md`
 - `modules/Module 4 - CRM/docs/specs/QUICK_REGISTER_QR_FLOW/EXECUTION_REPORT.md`
 - `modules/Module 4 - CRM/docs/specs/QUICK_REGISTER_QR_FLOW/FINDINGS.md`
 

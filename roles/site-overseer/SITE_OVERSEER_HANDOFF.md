@@ -11,8 +11,8 @@
 The promised Mode A discovery scan has been executed. SPEC `M3_SITE_COMPREHENSIVE_REVIEW` ran a comprehensive read-only audit of `https://prizma-optic.co.il`, produced:
 
 1. `modules/Module 3 - Storefront/docs/specs/M3_SITE_COMPREHENSIVE_REVIEW/SITE_AUDIT_REPORT.md` — 44 findings (4 CRITICAL, 11 HIGH, 16 MEDIUM, 7 LOW, 6 INFO).
-2. `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_MAP.md` — first-version site map (Mode A baseline).
-3. `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md` — empty stub for Mode B accumulating decisions.
+2. `roles/site-overseer/SITE_MAP.md` — first-version site map (Mode A baseline).
+3. `roles/site-overseer/DECISIONS_LOG.md` — empty stub for Mode B accumulating decisions.
 
 Site Overseer formally transitions Mode A → Mode B with this HANDOFF.
 
@@ -61,7 +61,7 @@ Site Overseer formally transitions Mode A → Mode B with this HANDOFF.
 | REC-SITE-010 | (closed) | M3_COOKIE_CONSENT_OPT_IN — closed 2026-05-09. Tenant-config-driven Opt-In banner on production. All 5 trackers (GTM, GA4, FB Pixel, Hotjar, TikTok) wrapped in `consentGate()`. Pre-script stamps `window.__consent` before tracker payloads evaluate. SaaS-clean: `tenants.ui_config.cookie_consent` (v1 schema) drives banner; future tenant onboarding requires only DB seed. Live tests 6/6 PASS via Chrome DevTools MCP — Reject all → 0 tracker requests; Accept all → FB Pixel fires; UTMs unaffected; revoke from footer works. View extension `v_public_tenant.ui_config` added (Daniel-authorized Level 3 mid-flow). 6 findings logged. | — |
 | REC-SITE-011 | (closed) | M3_SITEMAP_CONSOLIDATION — closed 2026-05-09. Single source of truth: `sitemap-dynamic.xml` (364 `<loc>` + 986 hreflang alternates, 100% canonical-www). Removed `@astrojs/sitemap` integration → `sitemap-0.xml` returns 404 (consolidated; no longer duplicated). astro.config.mjs `site:` switched apex → www. robots.txt Sitemap directive updated. /branches/ + /branches/ashkelon/ × 3 langs now in sitemap (6 variants, all 200). normalizeSlug() helper fixes pre-existing malformed-URL bug ("supersale" → "/supersale/"). verify-sitemap.mjs PASS 9/9 on production. Pre-existing brand-slug 404s logged for follow-up REC. | — |
 | REC-SITE-012 | MEDIUM | WP-drift sweep beyond phone+email — pre-2024 dates, "online checkout" verbiage in legal pages, third-party shortcodes. May benefit from Israeli consumer-law attorney engagement, not a Claude SPEC. | Daniel decides scope. |
-| REC-SITE-013 | MEDIUM | Run Lighthouse + axe-core on the 5 anchor pages (`/`, `/supersale/`, `/products/`, `/brands/`, `/about/`); install tooling under `__LAUNCH_PLAN_DRAFT__/site-overseer/tools/`; archive scores; nightly cron. | 1 SPEC, tooling-bootstrap + scheduled task. |
+| REC-SITE-013 | MEDIUM | Run Lighthouse + axe-core on the 5 anchor pages (`/`, `/supersale/`, `/products/`, `/brands/`, `/about/`); install tooling under `roles/site-overseer/tools/`; archive scores; nightly cron. | 1 SPEC, tooling-bootstrap + scheduled task. |
 | REC-SITE-014 | LOW | Cleanup: delete orphan `poweredBy` i18n keys (3 langs), delete `_deprecated/` folder if not already removed in REC-SITE-002, delete `/test-shortcodes/` archived rows or have route-handler skip them. | 1 SPEC, cosmetic, 30 min. |
 | REC-SITE-015 | HIGH | **CLOSED 2026-05-08.** Phase A done; Phase B executed live for both subdomains via REST API; blog-post titles fuzzy-matched to specific Astro destinations (M3_WP_BLOG_POST_MAPPING). Final state: ru. and en. each have 1,610 live 301 redirects, 42-43 of them per-post specific (HIGH or LOW confidence) with `/blog/` index fallback for the ~3 unmatched. Phase C (WP decomm ~30 days post-Google-reindex) deferred. | Phase C: 1 SPEC, 1-2 hours. |
 | REC-SITE-016 | LOW | Astro slug `/multi/` is too short; substring-matched `/multifocal/` (ru) and `/multifocal-glasses/` (en) WP slugs but is risky for future SEO collisions. Consider rename to `/multifocal-glasses/` with self-redirect — but only if SEO benefit is measured to outweigh the rename cost. | Investigation SPEC. Source: M3_WP_SUBDOMAINS_REDIRECT/FINDINGS.md M3-SEO-03. |
@@ -93,7 +93,7 @@ Site Overseer formally transitions Mode A → Mode B with this HANDOFF.
 
 ### Tooling bootstrap (Mode B prerequisites)
 
-- **Lighthouse / lhci CLI** — needed for Mode B perf audits. Install plan: `__LAUNCH_PLAN_DRAFT__/site-overseer/tools/lighthouse/` (npm install, no global). REC-SITE-013.
+- **Lighthouse / lhci CLI** — needed for Mode B perf audits. Install plan: `roles/site-overseer/tools/lighthouse/` (npm install, no global). REC-SITE-013.
 - **axe-core CLI / pa11y** — needed for Mode B a11y audits. Same install location. REC-SITE-013.
 - **Chrome DevTools MCP / Playwright** — already available via MCP. Use for rendered-DOM checks in next Mode B run.
 - **Visual regression DOM-hash baseline** — `scripts/visual-regression.mjs` (per docs/AUTONOMOUS_MODE.md). Snapshot Tier-1 anchor pages once DNS migrations are stable.

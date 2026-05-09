@@ -128,9 +128,9 @@ ERP repo only:
 4. `modules/Module 3 - Storefront/docs/specs/M3_WP_SUBDOMAINS_REDIRECT/redirects/en.csv`
 5. `modules/Module 3 - Storefront/docs/specs/M3_WP_SUBDOMAINS_REDIRECT/redirects/IMPORT_INSTRUCTIONS.md`
 6. `modules/Module 3 - Storefront/docs/specs/M3_WP_SUBDOMAINS_REDIRECT/CRAWL_LOG.md` (raw URL list with per-URL classification + mapping decision)
-7. `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md` (update existing — log REC-SITE-002 / new REC-SITE-015)
-8. `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md` (append decision)
-9. `__LAUNCH_PLAN_DRAFT__/site-overseer/LEARNINGS.md` (create if missing — append L-SITE-001)
+7. `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (update existing — log REC-SITE-002 / new REC-SITE-015)
+8. `roles/site-overseer/DECISIONS_LOG.md` (append decision)
+9. `roles/site-overseer/LEARNINGS.md` (create if missing — append L-SITE-001)
 
 No DB writes. No deploys. No edits to either repo's source code. No edits to WP.
 
@@ -241,9 +241,9 @@ git add modules/Module\ 3\ -\ Storefront/docs/specs/M3_WP_SUBDOMAINS_REDIRECT/CR
 git add modules/Module\ 3\ -\ Storefront/docs/specs/M3_WP_SUBDOMAINS_REDIRECT/redirects/ru.csv
 git add modules/Module\ 3\ -\ Storefront/docs/specs/M3_WP_SUBDOMAINS_REDIRECT/redirects/en.csv
 git add modules/Module\ 3\ -\ Storefront/docs/specs/M3_WP_SUBDOMAINS_REDIRECT/redirects/IMPORT_INSTRUCTIONS.md
-git add __LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md
-git add __LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md
-git add __LAUNCH_PLAN_DRAFT__/site-overseer/LEARNINGS.md
+git add roles/site-overseer/SITE_OVERSEER_HANDOFF.md
+git add roles/site-overseer/DECISIONS_LOG.md
+git add roles/site-overseer/LEARNINGS.md
 ```
 
 ---
@@ -313,7 +313,7 @@ LEARNINGS L-SITE-001 codifies the rule so it cannot recur. Future Site Overseer 
 Performed 2026-05-07:
 - No prior SPEC under `modules/Module 3 - Storefront/docs/specs/` named `M3_WP_SUBDOMAINS_REDIRECT` or similar — slug unique. ✓
 - No conflict with M3_SITE_COMPREHENSIVE_REVIEW or M3_PHONE_TEMPLATING_AND_CLEANUP — they touch different surfaces (Astro source / CMS rows; this SPEC produces CSVs only). ✓
-- LEARNINGS file does NOT yet exist for Site Overseer namespace — this SPEC creates it (`__LAUNCH_PLAN_DRAFT__/site-overseer/LEARNINGS.md`). Doesn't conflict with the project-wide `docs/LEARNINGS.md` (different scope). ✓
+- LEARNINGS file does NOT yet exist for Site Overseer namespace — this SPEC creates it (`roles/site-overseer/LEARNINGS.md`). Doesn't conflict with the project-wide `docs/LEARNINGS.md` (different scope). ✓
 
 **0 collisions.** SPEC ready for dispatch.
 

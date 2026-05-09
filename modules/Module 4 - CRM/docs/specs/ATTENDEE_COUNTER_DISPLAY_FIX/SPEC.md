@@ -31,7 +31,7 @@ Every criterion has an exact expected value. Executor captures actuals in EXECUT
 
 | # | Criterion | Expected value | Verify command |
 |---|-----------|----------------|----------------|
-| 1 | Branch state at start | On `develop`, working tree clean except pre-existing `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` (Daniel said leave alone, use selective `git add` by filename) | `git status` |
+| 1 | Branch state at start | On `develop`, working tree clean except pre-existing `roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` (Daniel said leave alone, use selective `git add` by filename) | `git status` |
 | 2 | Constant defined | `REGISTERED_STATUSES` array exported on `window.CrmHelpers.REGISTERED_STATUSES` AND on `window.REGISTERED_STATUSES` (mirrors TIER1_STATUSES/TIER2_STATUSES export pattern in crm-helpers.js lines 233–234), value `['registered','confirmed','attended']` | grep + DevTools console: `window.REGISTERED_STATUSES.join(',')` → `registered,confirmed,attended` |
 | 3 | Helper defined | `CrmHelpers.countRegistered(attendees)` returns `attendees.filter(a => REGISTERED_STATUSES.indexOf(a.status) !== -1).length` (treat `null`/`undefined` input as 0) | Unit-style sanity in DevTools console (see §13) |
 | 4 | Callsites updated | All 4 "נרשמו" callsites use the helper (or a value computed from it), NOT `stats.total_registered` / `s.total_registered` / `r.total_registered` for the נרשמו counter only | `grep -n "total_registered" modules/crm/crm-events-tab.js modules/crm/crm-events-detail.js modules/crm/crm-events-detail-charts.js modules/crm/crm-event-day.js` — any remaining hits must NOT power the נרשמו counter (capacity-bar `cap` math, sparkline trend calc, etc. are allowed to keep using it as a heuristic baseline as long as the displayed "נרשמו" number is computed via the helper). EXECUTION_REPORT must list each remaining hit and explain why it's not the נרשמו counter. |
@@ -203,7 +203,7 @@ A separate docs commit for SESSION_CONTEXT + CHANGELOG (1-line additions) is acc
 ## 10. Dependencies / Preconditions
 
 - Repo on branch `develop`, pulled to latest.
-- Pre-existing `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` is modified-untracked-by-design (Daniel said leave alone). Selective `git add` only.
+- Pre-existing `roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` is modified-untracked-by-design (Daniel said leave alone). Selective `git add` only.
 - Demo tenant accessible.
 - Demo event #11 ("אירוע המותגים טסט") exists in state Daniel described (1 invited + 1 new). Executor verifies via Level-1 SELECT before relying on it for QA criteria 5–9.
 - Iron Rule 31 integrity gate is clean at start (verified by Foreman before SPEC dispatch — exit 0).

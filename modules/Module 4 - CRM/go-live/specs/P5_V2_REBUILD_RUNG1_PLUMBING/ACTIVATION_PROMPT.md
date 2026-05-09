@@ -14,7 +14,7 @@ You are opticup-executor for Module 4 — CRM. Execute SPEC P5_V2_REBUILD_RUNG1_
 **Context (read before starting):**
 - Parent SPEC: `modules/Module 4 - CRM/go-live/specs/P5_V2_TEMPLATE_REBUILD/SPEC.md` (the multi-rung umbrella).
 - The 22 V2 message bodies you'll load are LOCKED in `campaigns/supersale/MESSAGES_V2/`. Do NOT edit any of them.
-- Copy rationale: `__LAUNCH_PLAN_DRAFT__/campaign-overseer/COPY_DECISIONS_LOG.md` (read-only — do NOT re-litigate copy).
+- Copy rationale: `roles/campaign-overseer/COPY_DECISIONS_LOG.md` (read-only — do NOT re-litigate copy).
 - Variable-wiring checklist: `campaigns/supersale/MESSAGES_V2/NEW_SYSTEM_VARIABLES_REQUIRED.md`.
 
 **Critical Daniel directive (Pattern P12):** when `tenants.payment_links[<fee>]` is missing for a template that references `%payment_url_<fee>%`, the send MUST fail loudly. No fallback URL, no silent substitution. "עדיף לא לשלוח מאשר לשלוח שבור."

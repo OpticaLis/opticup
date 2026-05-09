@@ -24,9 +24,9 @@ M7 מורכב משאר המודולים:
 
 הסשן החדש פותח כ-Main Strategic. הוא צריך לקרוא:
 
-1. **`__LAUNCH_PLAN_DRAFT__/MASTER_LIVE_PLAN.md`** — תוכנית-אם.
-2. **`__LAUNCH_PLAN_DRAFT__/architecture-briefs/M5_CUSTOMERS_BRIEF.md` (v2)** — חוזה M7→M5.
-3. **`__LAUNCH_PLAN_DRAFT__/architecture-briefs/M6_PRESCRIPTIONS_BRIEF.md` (v1)** — חוזה M7→M6 (הזמנה ממשת מרשם).
+1. **`_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md`** — תוכנית-אם.
+2. **`modules/Module 5 - Customers/architecture-brief/M5_CUSTOMERS_BRIEF.md` (v2)** — חוזה M7→M5.
+3. **`modules/Module 6 - Prescriptions/architecture-brief/M6_PRESCRIPTIONS_BRIEF.md` (v1)** — חוזה M7→M6 (הזמנה ממשת מרשם).
 4. **קובץ זה** — להבין מאיפה ממשיכים.
 5. **סקיצת-Miro של Daniel** (URL נשמר בצ'אט הקודם) — צריך לראות את התמונה לפני התחלה. אם אין גישה → לבקש צילום-מסך.
 6. **`.claude/skills/opticup-main-strategic/SKILL.md`** — לקרוא את **כל הפטרנים P1–P22**, במיוחד:
@@ -71,10 +71,10 @@ M7 מורכב משאר המודולים:
 אתה האחראי על כל הפרוייקט. אתה ה-Main Strategic.
 
 קרא:
-1. __LAUNCH_PLAN_DRAFT__/MASTER_LIVE_PLAN.md
-2. __LAUNCH_PLAN_DRAFT__/architecture-briefs/M5_CUSTOMERS_BRIEF.md (v2)
-3. __LAUNCH_PLAN_DRAFT__/architecture-briefs/M6_PRESCRIPTIONS_BRIEF.md (v1)
-4. __LAUNCH_PLAN_DRAFT__/architecture-briefs/M7_ORDERS_HANDOFF.md (הקובץ הזה)
+1. _archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md
+2. modules/Module 5 - Customers/architecture-brief/M5_CUSTOMERS_BRIEF.md (v2)
+3. modules/Module 6 - Prescriptions/architecture-brief/M6_PRESCRIPTIONS_BRIEF.md (v1)
+4. modules/Module 7 - Orders/architecture-brief/M7_ORDERS_HANDOFF.md (הקובץ הזה)
 5. .claude/skills/opticup-main-strategic/SKILL.md — את כל הפטרנים, במיוחד P22 (פורמט-קשיח לשאלות).
 6. .claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md (היסטוריה).
 

@@ -145,5 +145,5 @@ Will capture: 4-round history, hypotheses, diagnostic checklist (F + D' + signat
 - Round 2 (Option D — pre-flight failed): `SUPERVISOR_DECISION_ROUND_2.md` (if exists)
 - Round 3 (Option B — broke worse): `SUPERVISOR_DECISION_ROUND_3.md` (if exists)
 - Round 4 (Option E — current): `SUPERVISOR_DECISION_ROUND_4.md`
-- Overseer recommendation: REC-016 in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md`
+- Overseer recommendation: REC-016 in `roles/campaign-overseer/DECISIONS_LOG.md`
 - Iron Rules: `CLAUDE.md` §4–§6

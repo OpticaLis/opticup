@@ -21,8 +21,8 @@ EXECUTION ORDER:
 0. PRE-FLIGHT (per SPEC §14):
    a. First Action protocol per CLAUDE.md §1 — verify branch=develop, pull latest, integrity gate clean.
    b. Run `git status`. If any of these 4 files appear untracked or modified:
-        - __LAUNCH_PLAN_DRAFT__/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md
-        - __LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md
+        - roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md
+        - roles/campaign-overseer/DECISIONS_LOG.md
         - modules/Module 4 - CRM/docs/specs/QUICK_REGISTER_QR_FLOW/EXECUTION_REPORT.md
         - modules/Module 4 - CRM/docs/specs/QUICK_REGISTER_QR_FLOW/FINDINGS.md
       THEN: `git add` those 4 files explicitly + commit `chore(overseer): close QUICK_REGISTER_QR_FLOW + open REC-009` + push origin develop.

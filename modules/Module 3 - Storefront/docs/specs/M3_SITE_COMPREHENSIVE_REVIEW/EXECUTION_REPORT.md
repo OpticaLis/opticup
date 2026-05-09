@@ -12,7 +12,7 @@
 
 ## 1. Summary
 
-Read-only audit of `https://prizma-optic.co.il` and its `storefront_pages` CMS executed end-to-end. Produced 44 findings (4 CRITICAL, 11 HIGH, 16 MEDIUM, 7 LOW, 6 INFO) into `SITE_AUDIT_REPORT.md`, plus the first-ever `SITE_MAP.md` baseline at `__LAUNCH_PLAN_DRAFT__/site-overseer/`. Site Overseer transitioned Mode A → Mode B via updated `SITE_OVERSEER_HANDOFF.md`. Empty `DECISIONS_LOG.md` stub created. **Zero DB writes, zero EF deploys, zero code changes** — confirmed via SPEC §5 criterion #7 (read-only invariant). Major surprise: a SECOND phantom phone number (`053-434-7265`) is rendered on every homepage as the contact phone, identical incident class to the `050-717-5675` event that triggered this audit — provenance unconfirmed, blocking-class CRITICAL finding. Tooling gap: Lighthouse / axe-core / pa11y not installed in this environment, so Categories C1 and D1 are partial; logged in the report and as follow-up REC-SITE-013.
+Read-only audit of `https://prizma-optic.co.il` and its `storefront_pages` CMS executed end-to-end. Produced 44 findings (4 CRITICAL, 11 HIGH, 16 MEDIUM, 7 LOW, 6 INFO) into `SITE_AUDIT_REPORT.md`, plus the first-ever `SITE_MAP.md` baseline at `roles/site-overseer/`. Site Overseer transitioned Mode A → Mode B via updated `SITE_OVERSEER_HANDOFF.md`. Empty `DECISIONS_LOG.md` stub created. **Zero DB writes, zero EF deploys, zero code changes** — confirmed via SPEC §5 criterion #7 (read-only invariant). Major surprise: a SECOND phantom phone number (`053-434-7265`) is rendered on every homepage as the contact phone, identical incident class to the `050-717-5675` event that triggered this audit — provenance unconfirmed, blocking-class CRITICAL finding. Tooling gap: Lighthouse / axe-core / pa11y not installed in this environment, so Categories C1 and D1 are partial; logged in the report and as follow-up REC-SITE-013.
 
 ---
 
@@ -60,7 +60,7 @@ Read-only audit of `https://prizma-optic.co.il` and its `storefront_pages` CMS e
 
 ## 5. What Would Have Helped Me Go Faster
 
-- **Pre-installed audit tooling.** `lighthouse`, `pa11y`, `axe-core` CLI under `__LAUNCH_PLAN_DRAFT__/site-overseer/tools/` (or via a dedicated `npm audit:setup` script). Cost me 0 minutes during *this* run (because I deferred to follow-up), but cost the *audit* a whole category's worth of depth (C1 + D1 are partial).
+- **Pre-installed audit tooling.** `lighthouse`, `pa11y`, `axe-core` CLI under `roles/site-overseer/tools/` (or via a dedicated `npm audit:setup` script). Cost me 0 minutes during *this* run (because I deferred to follow-up), but cost the *audit* a whole category's worth of depth (C1 + D1 are partial).
 - **Pre-built page-fetch harness with parallel execution.** I built ad-hoc loops via bash. A pre-existing `scripts/audit-fetch.mjs` reading a URL list and writing a status matrix would have saved ~10 minutes of curl-loop tweaking.
 - **Reference: where each Astro route's render handler lives.** I had to grep `[...slug].astro` and `tenant.ts` to verify CMS-string-body rendering hypothesis. A pre-existing route → handler map (probably belongs in `SITE_MAP.md` §1) would have closed the loop on FIND-002 faster (right now FIND-002 has the symptom + hypothesis, but I didn't pinpoint the exact handler bug).
 - **Confirmed phone-number whitelist.** Daniel's voice-channel "the only Prizma phone is 053-3645404" would have promoted FIND-003 from CRITICAL-conditional ("provenance unconfirmed") to plain CRITICAL. Right now the report has to phrase the phantom phone hypothetically until Daniel confirms.

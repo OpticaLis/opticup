@@ -119,7 +119,7 @@ just record this finding for the project's executive vocabulary.
 **Location:** N/A — feature request anchor.
 
 **Description:** Daniel opened REC-010 during smoke test (recorded by
-the Campaign Overseer in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md`):
+the Campaign Overseer in `roles/campaign-overseer/DECISIONS_LOG.md`):
 "add restore-deleted-event UI via the activity-logs screen." Use case:
 operators occasionally delete the wrong event (oversight cleanup), and
 the current restore path is admin-via-SQL (`UPDATE crm_events SET

@@ -335,7 +335,7 @@ LTV מאחד M5 + M7 + M8. ביום-1 = JOIN חי של 3 ה-Views, חישוב-ב
 - סקיצה 1: [רשימת דוחות](M11_REPORTS_LIST_MOCKUP.html)
 - סקיצה 2: [עריכת דוח](M11_REPORT_EDITOR_MOCKUP.html)
 - סקיצה 3: [תצוגת דוח](M11_REPORT_VIEW_MOCKUP.html)
-- Master Plan: `__LAUNCH_PLAN_DRAFT__/MASTER_LIVE_PLAN.md` §4 (M11 requirements)
+- Master Plan: `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md` §4 (M11 requirements)
 - Decisions Log: `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md` — 2026-05-09 M11 entry
 - חוזי-views קודמים: M7 Brief §4 + M8 Brief §4.3-4.4
 - M11 handoff (this session's source): `M11_HANDOFF.md`

@@ -112,6 +112,6 @@ Daniel runs the 5 acceptance criteria on demo (or production after PR-merge). If
 
 - Supervisor decision (binding): `../AUTOMATION_FLOW_BUGS_TRIPLE/SUPERVISOR_DECISION.md`
 - Sibling SPEC (bugs 1+2): `../ATOMIC_CONFIRMATION_FLOW/`
-- Overseer recommendation: REC-018 in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md`
+- Overseer recommendation: REC-018 in `roles/campaign-overseer/DECISIONS_LOG.md`
 - Iron Rules: `CLAUDE.md` §4–§6
 - Production discipline: auto-memory `feedback_production_discipline_post_cutover.md`

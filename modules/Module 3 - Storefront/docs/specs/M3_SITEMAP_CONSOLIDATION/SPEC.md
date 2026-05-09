@@ -191,8 +191,8 @@ The executor saves a screenshot per page check + the curl outputs for the canoni
 6. CREATE `modules/Module 3 - Storefront/docs/specs/M3_SITEMAP_CONSOLIDATION/EXECUTION_REPORT.md`
 7. CREATE `modules/Module 3 - Storefront/docs/specs/M3_SITEMAP_CONSOLIDATION/FINDINGS.md`
 8. CREATE `modules/Module 3 - Storefront/docs/specs/M3_SITEMAP_CONSOLIDATION/qa/*.png` (screenshots from §E live verification)
-9. UPDATE `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md`
-10. APPEND `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md`
+9. UPDATE `roles/site-overseer/SITE_OVERSEER_HANDOFF.md`
+10. APPEND `roles/site-overseer/DECISIONS_LOG.md`
 
 No DB writes (read-only queries from generator). No deploys beyond Vercel-on-merge.
 

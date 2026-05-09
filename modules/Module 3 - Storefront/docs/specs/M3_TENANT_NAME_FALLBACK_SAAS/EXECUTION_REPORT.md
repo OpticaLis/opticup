@@ -43,8 +43,8 @@ Storefront artefacts created/modified:
 ERP artefacts:
 - **CREATED** `modules/Module 3 - Storefront/docs/specs/M3_TENANT_NAME_FALLBACK_SAAS/EXECUTION_REPORT.md` (this file)
 - **CREATED** `modules/Module 3 - Storefront/docs/specs/M3_TENANT_NAME_FALLBACK_SAAS/FINDINGS.md` (5 findings)
-- **MODIFIED** `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-006 marked closed)
-- **MODIFIED** `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md` (appended 2026-05-08 entry)
+- **MODIFIED** `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-006 marked closed)
+- **MODIFIED** `roles/site-overseer/DECISIONS_LOG.md` (appended 2026-05-08 entry)
 
 **Verify-script results:**
 - Storefront `verify.mjs` (pre-commit hook): "1 violations, 3 warnings across 32 files" but commit succeeded. Could not determine which rule produced the violation count after the fact (re-run on empty staged set returned 0/0). Logged as Finding M3-INFRA-05 (INFO).

@@ -32,9 +32,9 @@ Production hot-fix executed cleanly in ~30 minutes. Step 0 surfaced a SPEC count
 - `modules/Module 3 - Storefront/docs/specs/M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL/migrations/2026_05_08_blocks_check_constraint_up.sql`
 - `modules/Module 3 - Storefront/docs/specs/M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL/migrations/2026_05_08_blocks_check_constraint_down.sql`
 - `docs/LEARNINGS.md` (appended L-PROJECT-002)
-- `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_SKILL.md` (v0.2 → v0.3, added §5b + §5c)
-- `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-003 closed)
-- `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md` (appended 2026-05-08 entry)
+- `roles/site-overseer/SITE_OVERSEER_SKILL.md` (v0.2 → v0.3, added §5b + §5c)
+- `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-003 closed)
+- `roles/site-overseer/DECISIONS_LOG.md` (appended 2026-05-08 entry)
 
 **Live mutations executed (Supabase MCP `apply_migration`, authorized by SPEC §6):**
 - `m3_cms_blocks_restore_2026_05_08_v2` — 4 UPDATE statements affecting 16 rows on `blocks` + 13 rows on `previous_blocks`. Tagged `updated_by='M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL'`, `updated_via='api'`.

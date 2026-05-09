@@ -49,7 +49,7 @@ under `opticup/modules/Module N - .../`.
 
 ## 2.5 Architecture Briefs Status (pre-LIVE planning)
 
-Each module that needs to ship to LIVE day gets an Architecture Brief (cross-module decisions, entity boundaries, contracts, sketches) **before** Module Strategist starts writing SPECs. Briefs live in `__LAUNCH_PLAN_DRAFT__/architecture-briefs/<MODULE>/`.
+Each module that needs to ship to LIVE day gets an Architecture Brief (cross-module decisions, entity boundaries, contracts, sketches) **before** Module Strategist starts writing SPECs. Briefs live in `modules/Module N - Name/architecture-brief/` (per-module home, established by MODULES_HOME_UNIFICATION SPEC, 2026-05-09).
 
 | Module | Brief Status | Sketches | Decisions Logged |
 |--------|--------------|----------|-------------------|
@@ -66,7 +66,7 @@ Each module that needs to ship to LIVE day gets an Architecture Brief (cross-mod
 
 **Sequence to LIVE:** M13 → M9 (depends on third audit). After all Briefs sealed → Module Strategists write SPECs → Executors build → cutover.
 
-**Deferred LIVE-plan content:** Master Plan v1 history (cutover plan, risks, decisions Q1-Q8) is preserved in `__LAUNCH_PLAN_DRAFT__/_archive/MASTER_LIVE_PLAN_v1.md` for historical reference.
+**Deferred LIVE-plan content:** Master Plan v1 history (cutover plan, risks, decisions Q1-Q8) is preserved in `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md` for historical reference.
 
 ---
 

@@ -222,8 +222,8 @@ Brief paragraph linking the current consent system. Daniel may want a lawyer to 
 7. CREATE `modules/Module 3 - Storefront/docs/specs/M3_COOKIE_CONSENT_OPT_IN/migrations/2026_05_08_cookie_consent_seed_up.sql`
 8. CREATE `modules/Module 3 - Storefront/docs/specs/M3_COOKIE_CONSENT_OPT_IN/migrations/2026_05_08_cookie_consent_seed_down.sql`
 9. CREATE `EXECUTION_REPORT.md` + `FINDINGS.md` in SPEC folder
-10. UPDATE `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md`
-11. APPEND `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md`
+10. UPDATE `roles/site-overseer/SITE_OVERSEER_HANDOFF.md`
+11. APPEND `roles/site-overseer/DECISIONS_LOG.md`
 
 **Supabase production:**
 12. APPLY 2 Level-2 UPDATEs: prizma + demo `tenants.ui_config` to add `cookie_consent` key.

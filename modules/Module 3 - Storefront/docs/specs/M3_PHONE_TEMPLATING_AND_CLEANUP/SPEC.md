@@ -155,8 +155,8 @@ The component that renders `blocks` (likely under `src/components/blocks/` or `s
 **ERP repo (`opticup`) — branch `develop`:**
 12. `modules/Module 3 - Storefront/docs/specs/M3_PHONE_TEMPLATING_AND_CLEANUP/EXECUTION_REPORT.md` (create)
 13. `modules/Module 3 - Storefront/docs/specs/M3_PHONE_TEMPLATING_AND_CLEANUP/FINDINGS.md` (create)
-14. `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md` (modify — close REC-SITE-002, log decision)
-15. `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md` (append decision)
+14. `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (modify — close REC-SITE-002, log decision)
+15. `roles/site-overseer/DECISIONS_LOG.md` (append decision)
 16. `modules/Module 3 - Storefront/docs/specs/M3_PHONE_TEMPLATING_AND_CLEANUP/migrations/2026_05_07_phone_channels_up.sql` (create — Level 2 UPDATE on tenants.ui_config + v_public_tenant view extension)
 17. `modules/Module 3 - Storefront/docs/specs/M3_PHONE_TEMPLATING_AND_CLEANUP/migrations/2026_05_07_phone_channels_down.sql` (create — rollback)
 

@@ -289,7 +289,7 @@ The seed populates HE fields with Daniel's exact text. EN + RU fields are left N
 
 **F. Site Overseer skill v0.4 update:**
 
-18. UPDATE `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_SKILL.md` — add `tenant_branches` table + `v_storefront_branches` view to the knowledge-map section. So future Mode B audits know about branches without re-discovery.
+18. UPDATE `roles/site-overseer/SITE_OVERSEER_SKILL.md` — add `tenant_branches` table + `v_storefront_branches` view to the knowledge-map section. So future Mode B audits know about branches without re-discovery.
 
 ### Out of scope
 

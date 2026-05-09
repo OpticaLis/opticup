@@ -107,5 +107,5 @@ If pass → trigger PR-merge to main. Foreman writes FOREMAN_REVIEW.md with prop
 ## References
 
 - Originating SPEC: `modules/Module 4 - CRM/docs/specs/CRM_REALTIME_INCOMING_PILOT/`
-- Overseer recommendation: REC-012 in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md`
+- Overseer recommendation: REC-012 in `roles/campaign-overseer/DECISIONS_LOG.md`
 - Iron Rules: `CLAUDE.md` §4–§6

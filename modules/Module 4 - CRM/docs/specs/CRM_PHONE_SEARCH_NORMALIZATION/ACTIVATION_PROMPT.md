@@ -81,7 +81,7 @@ The Foreman writes `FOREMAN_REVIEW.md` AFTER Daniel verifies — that step is po
 
 ## References
 
-- Overseer recommendation: REC-009 in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md`.
+- Overseer recommendation: REC-009 in `roles/campaign-overseer/DECISIONS_LOG.md`.
 - Backlog source: `project_post_cutover_backlog.md` POST-7 (auto-memory).
 - Iron Rules: `CLAUDE.md` §4–§6.
 - Folder-per-SPEC protocol: `CLAUDE.md` §7 Authority Matrix.

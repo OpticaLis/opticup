@@ -342,7 +342,7 @@ quote ──→ active ──→ (זרימת-מעבדה) ──→ ready ──�
 - Feature Inventory: `M7_ORDERS_FEATURE_INVENTORY.md`
 - 5 טפסים: `M7_FORM_*_MOCKUP.html`
 - קטלוג טפסים: `M7_ORDERS_PRINT_FORMS.md`
-- Master Plan: `__LAUNCH_PLAN_DRAFT__/MASTER_LIVE_PLAN.md`
+- Master Plan: `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md`
 - Briefs קודמים: M5_CUSTOMERS_BRIEF.md, M6_PRESCRIPTIONS_BRIEF.md
 - DECISIONS_LOG: `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md`
 

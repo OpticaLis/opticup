@@ -28,9 +28,9 @@ Whitelist of files you may CREATE (everything else is out of scope):
 4. modules/Module 3 - Storefront/docs/specs/M3_WP_SUBDOMAINS_REDIRECT/redirects/ru.csv
 5. modules/Module 3 - Storefront/docs/specs/M3_WP_SUBDOMAINS_REDIRECT/redirects/en.csv
 6. modules/Module 3 - Storefront/docs/specs/M3_WP_SUBDOMAINS_REDIRECT/redirects/IMPORT_INSTRUCTIONS.md
-7. __LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md (overwrite ok)
-8. __LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md (append)
-9. __LAUNCH_PLAN_DRAFT__/site-overseer/LEARNINGS.md (create)
+7. roles/site-overseer/SITE_OVERSEER_HANDOFF.md (overwrite ok)
+8. roles/site-overseer/DECISIONS_LOG.md (append)
+9. roles/site-overseer/LEARNINGS.md (create)
 
 Crawl politely: 2-5 req/sec max. Use sitemap_index.xml as authoritative
 source of URLs (do NOT HTML-crawl). Use Supabase MCP read-only queries

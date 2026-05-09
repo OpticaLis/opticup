@@ -100,17 +100,17 @@ the bootstrap entry for `Campaign Overseer (auto-bootstrap)`.
 
 ### Step 2 — Read the four constitution files in order
 
-1. `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` — live state
+1. `roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` — live state
    file: active campaign, current KPIs, open recommendations, recent decisions, pending
    issues.
-2. `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md` — full decision history.
+2. `roles/campaign-overseer/DECISIONS_LOG.md` — full decision history.
    **Compute the rolling 90% rate from the last 30 decided entries** (when ≥10 exist).
-3. `__LAUNCH_PLAN_DRAFT__/campaign-overseer/LEARNINGS.md` — binding rules captured from
+3. `roles/campaign-overseer/LEARNINGS.md` — binding rules captured from
    prior sessions. Currently includes: L-001 (verify infrastructure before QA dispatch),
    L-002 (load `opticup-strategic` in-session for SPEC authoring), L-003 (verify ground
    truth before trusting HANDOFF), L-004 (probe schema before SPEC writes), L-005
    (Rule A live-flow check + Rule B REC class-tagging — Daniel-approved 2026-05-04).
-4. `__LAUNCH_PLAN_DRAFT__/campaign-overseer/POST_CUTOVER_TECH_DEBT.md` — open tech-debts.
+4. `roles/campaign-overseer/POST_CUTOVER_TECH_DEBT.md` — open tech-debts.
 
 ### Step 3 — Read CLAUDE.md and Module 4 SESSION_CONTEXT
 
@@ -309,10 +309,10 @@ the SPEC ships by continuing the conversation in this skill's normal pattern.
 
 | File | Authority | What I do |
 |---|---|---|
-| `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` | Live state | Read first, update as I go |
-| `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DECISIONS_LOG.md` | History + 90% gate | Read all, append RECs + Self-Reviews |
-| `__LAUNCH_PLAN_DRAFT__/campaign-overseer/LEARNINGS.md` | Binding rules | Read at start, append L-NNN entries when Daniel approves |
-| `__LAUNCH_PLAN_DRAFT__/campaign-overseer/POST_CUTOVER_TECH_DEBT.md` | Tech-debt log | Append-only; mark RESOLVED with SPEC slug + date when shipped |
+| `roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` | Live state | Read first, update as I go |
+| `roles/campaign-overseer/DECISIONS_LOG.md` | History + 90% gate | Read all, append RECs + Self-Reviews |
+| `roles/campaign-overseer/LEARNINGS.md` | Binding rules | Read at start, append L-NNN entries when Daniel approves |
+| `roles/campaign-overseer/POST_CUTOVER_TECH_DEBT.md` | Tech-debt log | Append-only; mark RESOLVED with SPEC slug + date when shipped |
 | `CLAUDE.md` (repo root) | Iron Rules | Read-only; rules apply to others (executor, Foreman) |
 | `MEMORY.md` (auto-memory) | Bootstrap entry | Read at start; updates persist across conversations |
 | `modules/Module 4 - CRM/docs/SESSION_CONTEXT.md` | M4 state | Read for context; do NOT modify (Foreman owns) |
@@ -332,7 +332,7 @@ measurement.
 This skill file IS the constitution. Until the eventual `cowork-campaign-overseer` plugin
 is built (post-MVP), this local skill at `.claude/skills/opticup-campaign-overseer/SKILL.md` is
 authoritative. The HANDOFF + DECISIONS_LOG + LEARNINGS files in
-`__LAUNCH_PLAN_DRAFT__/campaign-overseer/` are the live state and history; this SKILL.md
+`roles/campaign-overseer/` are the live state and history; this SKILL.md
 is the stable knowledge.
 
 ---

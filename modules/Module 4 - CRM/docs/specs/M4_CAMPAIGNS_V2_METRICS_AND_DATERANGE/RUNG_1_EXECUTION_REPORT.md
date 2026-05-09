@@ -141,8 +141,8 @@ The migration file content matches `RUNG_1_ACTIVATION_PROMPT.md` §3 byte-for-by
 
 Per dispatcher instruction (option (b)): the post-commit working tree is NOT clean, but the residue is the project's pre-existing baseline, NOT produced by this session. Categories left untouched:
 
-- `M __LAUNCH_PLAN_DRAFT__/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` — Cowork-managed, prior session.
-- `?? __LAUNCH_PLAN_DRAFT__/` (entire tree) — prior planning work for site-overseer / campaign-overseer / supervisor-system / cutover-roadmap. Multiple sessions accumulated.
+- `M roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` — Cowork-managed, prior session.
+- `?? [retired-2026-05-09:LAUNCH_PLAN_DRAFT]/` (entire tree) — prior planning work for site-overseer / campaign-overseer / supervisor-system / cutover-roadmap. Multiple sessions accumulated.
 - `?? LAUNCH_DECISION_BRIEF.md`, `?? OVERNIGHT_BACKLOG_BUILD_PROMPT.md`, `?? OVERNIGHT_MASTER_PLAN_PROMPT.md` at repo root — prior session prompts.
 - `?? event-open-email.html` at repo root — prior session asset.
 - `?? campaigns/supersale/__NIGHT_RUN_2026-04-27__/` — prior overnight-run output.

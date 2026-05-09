@@ -179,8 +179,8 @@ The executor saves a screenshot per page to the SPEC folder for evidence.
 8. CREATE `modules/Module 3 - Storefront/docs/specs/M3_IMAGE_PROXY_ENFORCEMENT/FINDINGS.md`
 9. CREATE `modules/Module 3 - Storefront/docs/specs/M3_IMAGE_PROXY_ENFORCEMENT/screenshots/*.png` (one per verification page)
 10. (CONDITIONAL — only if §D triggers) CREATE 2 migration files for CMS row rewrites
-11. UPDATE `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md`
-12. APPEND `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md`
+11. UPDATE `roles/site-overseer/SITE_OVERSEER_HANDOFF.md`
+12. APPEND `roles/site-overseer/DECISIONS_LOG.md`
 
 **Supabase production:**
 13. (CONDITIONAL — only if §D triggers) APPLY 1 Level-2 UPDATE per affected CMS row.

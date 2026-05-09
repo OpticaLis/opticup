@@ -44,9 +44,9 @@ Whitelist of files you may CREATE (everything else is out of scope):
 3. modules/Module 3 - Storefront/docs/specs/M3_WP_BLOG_POST_MAPPING/CRAWL_LOG_BLOG.md
 4. modules/Module 3 - Storefront/docs/specs/M3_WP_BLOG_POST_MAPPING/redirects/ru-blog-improved.csv
 5. modules/Module 3 - Storefront/docs/specs/M3_WP_BLOG_POST_MAPPING/redirects/en-blog-improved.csv
-6. __LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_SKILL.md (create)
-7. __LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md (overwrite)
-8. __LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md (append)
+6. roles/site-overseer/SITE_OVERSEER_SKILL.md (create)
+7. roles/site-overseer/SITE_OVERSEER_HANDOFF.md (overwrite)
+8. roles/site-overseer/DECISIONS_LOG.md (append)
 
 Live mutations authorized: delete + re-import redirects on both subdomains
 ONLY for post-tier (target_url ending in /blog/). Do NOT touch other tiers.

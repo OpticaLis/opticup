@@ -98,7 +98,7 @@ opticup repo:
     ACTIVATION_PROMPT.md              (sibling)
     EXECUTION_REPORT.md               (added by Overseer post-Daniel-verify)
     FINDINGS.md                       (1-line if clean)
-  __LAUNCH_PLAN_DRAFT__/campaign-overseer/MAKE_SCENARIO_NOTES.md   (NEW or appended — records the module removal date + before/after structure)
+  roles/campaign-overseer/MAKE_SCENARIO_NOTES.md   (NEW or appended — records the module removal date + before/after structure)
 ```
 
 ---
@@ -109,7 +109,7 @@ This SPEC produces **0 code commits** (Make-UI only). The opticup-repo commit is
 
 **Commit 1 — Documentation:**
 - Message: `chore(make): remove dangling Module 36 (Monday legacy) from scenario 8464122 quick-register branch`
-- Files: `__LAUNCH_PLAN_DRAFT__/campaign-overseer/MAKE_SCENARIO_NOTES.md` (new or appended) — records the module IDs, before/after wiring, smoke-test outcome.
+- Files: `roles/campaign-overseer/MAKE_SCENARIO_NOTES.md` (new or appended) — records the module IDs, before/after wiring, smoke-test outcome.
 
 **Commit 2 — Retro:**
 - Message: `chore(spec): close MAKE_8464122_MODULE_36_CLEANUP with retrospective`

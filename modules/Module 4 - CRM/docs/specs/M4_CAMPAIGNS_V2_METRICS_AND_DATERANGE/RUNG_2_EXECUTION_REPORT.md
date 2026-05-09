@@ -170,7 +170,7 @@ The intent of both PART A and PART B was achieved exactly as described in the pr
 
 ## 10. Session-end working tree state
 
-Per dispatcher instruction (option (b), same as Rung 1): the post-commit working tree is NOT clean, but the residue is the project's pre-existing baseline — NOT produced by this session. Same categories as documented in `RUNG_1_EXECUTION_REPORT.md` § 10 (`__LAUNCH_PLAN_DRAFT__/`, repo-root prompt MDs, prior-session SPEC folders across Modules 1/3/4, `event-open-email.html`, `campaigns/supersale/__NIGHT_RUN_2026-04-27__/`, etc.). These are deferred to a separate `.gitignore` SPEC for normalisation; they are NOT a CLAUDE.md §9 violation by this session — §9 governs THIS session's modifications, all of which are committed and pushed.
+Per dispatcher instruction (option (b), same as Rung 1): the post-commit working tree is NOT clean, but the residue is the project's pre-existing baseline — NOT produced by this session. Same categories as documented in `RUNG_1_EXECUTION_REPORT.md` § 10 (`[retired-2026-05-09:LAUNCH_PLAN_DRAFT]/`, repo-root prompt MDs, prior-session SPEC folders across Modules 1/3/4, `event-open-email.html`, `campaigns/supersale/__NIGHT_RUN_2026-04-27__/`, etc.). These are deferred to a separate `.gitignore` SPEC for normalisation; they are NOT a CLAUDE.md §9 violation by this session — §9 governs THIS session's modifications, all of which are committed and pushed.
 
 This session's own footprint at session end (post Commit 2 + push):
 - 2 modifications: `supabase/functions/facebook-campaigns-sync/index.ts` (+11 lines), `supabase/config.toml` (+13 lines: new `[functions.facebook-campaigns-sync]` block) — committed in `c60a12c`.

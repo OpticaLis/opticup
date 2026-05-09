@@ -48,7 +48,7 @@ ERP artefacts:
 - **CREATED** `FINDINGS.md` (6 findings)
 - **CREATED** `screenshots/jsonld-ashkelon-production.json` — captured production JSON-LD for Daniel to paste into Google's Rich Results Test if desired.
 - **CREATED** `screenshots/verify-branches-output.txt` — verification log (7/7 PASS).
-- **UPDATED** `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_SKILL.md` v0.4 — added `tenant_branches` + `v_storefront_branches` to the table/view knowledge map.
+- **UPDATED** `roles/site-overseer/SITE_OVERSEER_SKILL.md` v0.4 — added `tenant_branches` + `v_storefront_branches` to the table/view knowledge map.
 - **UPDATED** `SITE_OVERSEER_HANDOFF.md` — REC-SITE-009 closed.
 - **APPENDED** `DECISIONS_LOG.md` — 2026-05-09 branches-infra entry.
 

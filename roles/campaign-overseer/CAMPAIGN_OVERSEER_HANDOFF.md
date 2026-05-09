@@ -85,8 +85,8 @@ Module 36 (Monday legacy) intentionally left dangling for now — separate clean
 
 ## 🚦 ACTIVE WORK — Cutover & Migration Roadmap (HISTORICAL — Phases 1-4 ALL CLOSED 2026-05-03)
 
-**Source of truth:** `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CUTOVER_ROADMAP.md` (issued by Supervisor 2026-05-01).
-**Working folder:** `__LAUNCH_PLAN_DRAFT__/campaign-overseer/cutover-roadmap/`
+**Source of truth:** `roles/campaign-overseer/CUTOVER_ROADMAP.md` (issued by Supervisor 2026-05-01).
+**Working folder:** `roles/campaign-overseer/cutover-roadmap/`
 
 **Last update:** 2026-05-02 night (Israel)
 **Status:** ✅ Phase 2 COMPLETE — all 7 D-decisions logged in DECISIONS_LOG (REC-001 to REC-007). 4 agree / 3 disagree. Awaiting Daniel "advance to Phase 3" verbal trigger AND completion of pre-Phase-3 gating items (see below).
@@ -254,7 +254,7 @@ Format: `YYYY-MM-DD — REC-NNN — agree/disagree/partial — {brief Daniel rea
 
 ## 6. Pending Issues to Investigate
 
-- **2026-04-30 — supersale-stock lens size addition — ✅ SHIPPED + QA PASSED.** Added "גודל: <number>" line to product cards on /supersale-stock/. Variation 2 (separate line below model, gray, 0.66rem). Pipeline: Cowork edited 3 files → activation prompt → Claude Code on laptop did build + verify + commit + push develop (7e320aa) + merge to main (0f8e38a) → Vercel auto-deploy (dpl_3JWXAyc4cbpkaqYzmVQbWunaB3kb, READY, target=production). VISUAL QA on https://prizma-optic.co.il/supersale-stock/ (Claude in Chrome, desktop 1280px): all cards display "גודל: NN" correctly under model name in muted gray, matches approved design. Verified across multiple brands (Alexander McQueen 51-53, Balenciaga 53-55). Activation prompt saved at __LAUNCH_PLAN_DRAFT__/campaign-overseer/ACTIVATION_PROMPT_supersale_stock_size.md.
+- **2026-04-30 — supersale-stock lens size addition — ✅ SHIPPED + QA PASSED.** Added "גודל: <number>" line to product cards on /supersale-stock/. Variation 2 (separate line below model, gray, 0.66rem). Pipeline: Cowork edited 3 files → activation prompt → Claude Code on laptop did build + verify + commit + push develop (7e320aa) + merge to main (0f8e38a) → Vercel auto-deploy (dpl_3JWXAyc4cbpkaqYzmVQbWunaB3kb, READY, target=production). VISUAL QA on https://prizma-optic.co.il/supersale-stock/ (Claude in Chrome, desktop 1280px): all cards display "גודל: NN" correctly under model name in muted gray, matches approved design. Verified across multiple brands (Alexander McQueen 51-53, Balenciaga 53-55). Activation prompt saved at roles/campaign-overseer/ACTIVATION_PROMPT_supersale_stock_size.md.
 
 **Tech debt logged from this task (need follow-up SPECs by opticup-strategic):**
 - T-DEBT-A: src/styles/supersale-stock.css is 409 lines (was 396 pre-existing, +13 from this addition). CSS hard max per CLAUDE.md §5 is 250; verify script enforces 350. Split into supersale-stock-grid.css, -card.css, -mobile.css, -lightbox.css, etc. Pre-existing — not introduced by this task.
@@ -293,8 +293,8 @@ Things the current Overseer session has noticed and wants to flag to future sess
 **Context:** Daniel asked for a design system to be extracted from the existing storefront so future landing pages and emails can be built with one consistent look. Cowork session was temporarily released from Campaign Overseer role to work on this with Daniel directly.
 
 **Outcome:** A canonical design specification was sealed and saved to:
-- `__LAUNCH_PLAN_DRAFT__/campaign-overseer/PRIZMA_DESIGN_SYSTEM_CANONICAL.md` (the canon — single source of truth)
-- `__LAUNCH_PLAN_DRAFT__/campaign-overseer/DESIGN_SYSTEM_EXTRACT.md` (early extraction notes — superseded by the canon, kept for traceability)
+- `roles/campaign-overseer/PRIZMA_DESIGN_SYSTEM_CANONICAL.md` (the canon — single source of truth)
+- `roles/campaign-overseer/DESIGN_SYSTEM_EXTRACT.md` (early extraction notes — superseded by the canon, kept for traceability)
 
 **Key decisions sealed:**
 - Storefront (`prizma-optic.co.il` main pages) is the visual canon. Campaign pages and emails that diverge are wrong and must migrate.
@@ -309,7 +309,7 @@ Things the current Overseer session has noticed and wants to flag to future sess
 
 **Strategic review completed:** `DESIGN_SYSTEM_REVIEW.md` (by `opticup-strategic` on 2026-04-28) flagged 8 critical + 10 high issues in v1.0. v1.1 resolved all of them in the same Cowork session. Key v1.1 corrections: Inter retained for EN/RU; **black text on gold CTAs** (WCAG fix); `#000` named-exception for transactional surfaces (mail, event-register, unsubscribe, thank-you); warn (`#b8860b`) + info (`#4a6e8e`) status tokens added; notice-card + steps-list + spinner components defined; **SPEC #4 restructured to include Make.com scenario step** (without it the email migration produces zero customer-facing change); tenant variables defined for wordmark and all hardcoded business values; H1/CTA weight reverted from 900 to 700 to match production.
 
-**Claude Design output downloaded 2026-04-28:** `Prizma Optic Design System/` folder in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/` — contains canon mirror, README, SKILL.md, colors_and_type.css (all CSS tokens), 20 preview HTML files (one per component), 8 brand silhouette SVGs, transparent Prizma logos, and three UI kits (storefront / campaign / email). All on-brand and validated against the canon. Logos verified as PNG with alpha channel (transparent).
+**Claude Design output downloaded 2026-04-28:** `Prizma Optic Design System/` folder in `roles/campaign-overseer/` — contains canon mirror, README, SKILL.md, colors_and_type.css (all CSS tokens), 20 preview HTML files (one per component), 8 brand silhouette SVGs, transparent Prizma logos, and three UI kits (storefront / campaign / email). All on-brand and validated against the canon. Logos verified as PNG with alpha channel (transparent).
 
 **Next operational step:** when the Overseer recommends visual changes, Daniel will open Claude Design separately, paste the proposal as a brief (per SKILL §11.4), and hand off to Claude Code. The Overseer never creates visuals directly.
 

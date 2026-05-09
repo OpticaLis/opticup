@@ -19,7 +19,7 @@
 - `TECH_DEBT.md` — living debt register
 - `docs/` — canonical reference files (GLOBAL_MAP, GLOBAL_SCHEMA, FILE_STRUCTURE, CONVENTIONS, etc.)
 - `modules/` — per-module documentation + per-feature implementation
-- `__LAUNCH_PLAN_DRAFT__/` (or its successor name) — pre-LIVE planning artifacts
+- `[retired-2026-05-09:LAUNCH_PLAN_DRAFT]/` (or its successor name) — pre-LIVE planning artifacts
 - `_archive/` — single archive vault (see Category 3)
 - `migrations/`, `scripts/`, `shared/`, `js/`, `css/`, `supabase/`, `tests/` — code/infra dirs
 - `campaigns/` — Campaign Overseer working area

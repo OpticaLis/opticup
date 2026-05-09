@@ -26,8 +26,8 @@ This SPEC was authored on stale data. Storefront commit `a4723b5` (2026-05-07 11
 **Files added or updated (ERP repo only):**
 - `modules/Module 3 - Storefront/docs/specs/M3_PHONE_434_LEGACY_CLEANUP/EXECUTION_REPORT.md` (this file)
 - `modules/Module 3 - Storefront/docs/specs/M3_PHONE_434_LEGACY_CLEANUP/FINDINGS.md` (2 findings)
-- `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-002 closed, REC-SITE-003 already closed in prior SPEC)
-- `__LAUNCH_PLAN_DRAFT__/site-overseer/DECISIONS_LOG.md` (appended 2026-05-08 entry)
+- `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-002 closed, REC-SITE-003 already closed in prior SPEC)
+- `roles/site-overseer/DECISIONS_LOG.md` (appended 2026-05-08 entry)
 
 **Files NOT touched (deviation from SPEC, see §3):**
 - No storefront repo commits.

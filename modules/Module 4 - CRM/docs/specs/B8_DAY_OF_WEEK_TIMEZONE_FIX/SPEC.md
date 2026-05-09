@@ -118,7 +118,7 @@ The fix is a 1-line code change per file. Justifies a standalone hot-fix SPEC be
 ### Docs updated (MUST include)
 - `modules/Module 4 - CRM/docs/SESSION_CONTEXT.md` — append entry
 - `modules/Module 4 - CRM/docs/CHANGELOG.md` — new section
-- `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` §15 — add B8-fix-shipped note
+- `roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` §15 — add B8-fix-shipped note
 
 ---
 

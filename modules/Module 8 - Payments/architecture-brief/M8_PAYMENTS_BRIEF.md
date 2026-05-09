@@ -446,10 +446,10 @@ tenant יבקש Apple Pay או QR — זה דורש פיתוח adapter חדש (2
 
 ### 10.3 קישורים מרכזיים
 
-- **MASTER_LIVE_PLAN:** `__LAUNCH_PLAN_DRAFT__/MASTER_LIVE_PLAN.md`
+- **MASTER_LIVE_PLAN:** `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md`
 - **MASTER_ROADMAP:** `MASTER_ROADMAP.md` (Finance Hub עתידי)
-- **M8 Sketches:** 4 mockups + 4 dossiers של מחקר ב-`__LAUNCH_PLAN_DRAFT__/architecture-briefs/M8 - Payments/`
-- **M7 Brief:** `__LAUNCH_PLAN_DRAFT__/architecture-briefs/M7 - Orders/M7_ORDERS_BRIEF.md` (חוזה M7-M8)
+- **M8 Sketches:** 4 mockups + 4 dossiers של מחקר ב-`modules/Module 8 - Payments/architecture-brief/`
+- **M7 Brief:** `modules/Module 7 - Orders/architecture-brief/M7_ORDERS_BRIEF.md` (חוזה M7-M8)
 
 ---
 
