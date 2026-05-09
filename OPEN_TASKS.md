@@ -6,7 +6,7 @@
 >
 > **Scope:** Only **actionable tasks** that someone needs to do. NOT: ideas, future modules, completed work, observations.
 
-**Last updated:** 2026-05-09 (Cowork session — overnight SPEC authored)
+**Last updated:** 2026-05-09 (post-overnight-sweep — 12 of 16 items closed, 4 documented-skips; see `_archive/spec-history/OVERNIGHT_HYGIENE_SWEEP_2026_05_09/EXECUTION_REPORT.md` after Module Close Ceremony)
 
 ---
 
@@ -14,8 +14,8 @@
 
 | # | Task | Owner role | Estimated time | Why now |
 |---|---|---|---|---|
-| 1 | **OVERNIGHT_HYGIENE_SWEEP_2026_05_09 — execute** — 16-item overnight autonomous run bundling Skills audit + GITIGNORE_CLEANUP + 9 Sentinel findings + 4 TECH_DEBT items + FOREMAN_REVIEW catch-up. SPEC + ACTIVATION_PROMPT ready at `modules/Module 4 - CRM/docs/specs/OVERNIGHT_HYGIENE_SWEEP_2026_05_09/`. | Daniel → opticup-executor (Claude Code, Windows desktop) | 8-12 hours | All 16 items are independent low-risk. Daniel directive 2026-05-09: skip-not-stop, sub-agents authorized, quality > speed. Run on Windows desktop (sibling-repo storefront mount needed for items 14-15). |
-| 2 | **M13 (Loyalty Club) — Architecture Brief** — next module in build sequence per MASTER_ROADMAP §2.5. Handoff already at `modules/Module 13 - Loyalty Club/architecture-brief/M13_HANDOFF.md`. | Main Strategic | ~2-3 hours | Critical-path to LIVE. Only M13 + M9 remain before Module Strategists begin SPEC authoring. NOT in overnight run — requires Daniel-in-the-loop strategic session. |
+| 1 | **M13 (Loyalty Club) — Architecture Brief** — next module in build sequence per MASTER_ROADMAP §2.5. Handoff at `modules/Module 13 - Loyalty Club/architecture-brief/M13_HANDOFF.md`. | Main Strategic | ~2-3 hours | Critical-path to LIVE. Only M13 + M9 remain before Module Strategists begin SPEC authoring. Requires Daniel-in-the-loop strategic session. |
+| 2 | **GITIGNORE_CLEANUP follow-up** — overnight sweep Item 1 deduped `.gitignore` line 34 + added explicit local-config ignores. Verify behaviour over the next session: are `.claude/launch.json`, `.claude/settings.local.json`, etc. correctly ignored? Are new opticup-* skill files trackable WITHOUT `git add -f`? If both true → close. If not, refine. | Daniel review next session | 5 min | Item 1 of overnight sweep changed `.gitignore` semantics. One session of observation confirms the change is right. |
 
 ---
 
@@ -42,9 +42,11 @@
 
 | ID | Task | Severity | Notes |
 |---|---|---|---|
-| H-3 | 24 files exceed 350-line Iron Rule 12 limit | HIGH | Refactor candidates module-by-module |
-| M-7 | SESSION_CONTEXT files outdated in some modules | MEDIUM | Per-module cleanup |
-| M-13 | Phone source-of-truth scattered | MEDIUM | M3 cleanup partially addressed; verify |
+| H-3 | 24 files exceed 350-line Iron Rule 12 limit | HIGH | Refactor candidates module-by-module. **Note (2026-05-09):** receipt-ocr-review.js (402 lines) blocked overnight Item 12's full T.INV migration — 1 of 5 files deferred. |
+| M-1 / M-2 / M-10 / M-11 | RLS performance — 118 `auth_rls_initplan` + 67 multiple-permissive | MEDIUM | Bundle into one post-cutover RLS-perf SPEC. Out-of-scope for overnight sweep per design. |
+| M-13 | Phone source-of-truth scattered | MEDIUM | Partially addressed by M3_PHONE_TEMPLATING_AND_CLEANUP + L-21 + L-23 cleanup in overnight sweep. Verify current state next sweep. |
+
+**✅ Closed by `OVERNIGHT_HYGIENE_SWEEP_2026_05_09` (2026-05-09):** M-6 (currency hardcodes), M-7 (SESSION_CONTEXT staleness M1.5+M3), M-9 (production console.log), M-12 (DB_TABLES_REFERENCE — partial, see report), L-4 (PRIZMA_PHONE_RE rename), L-7 (HTTP 406 on meta.json), L-10 (short-link domain — already-done), L-18 (GLOBAL_SCHEMA header), L-21 (currency in receipt-form-items), L-22 (5 oldest M3 FOREMAN_REVIEWs caught up), L-23 ('inventory' → T.INV — partial), L-24 (SMS double-suffix — already-done).
 
 ### Storefront / overseer queues
 
@@ -76,6 +78,7 @@ After M9 → Module Strategists write SPECs → Executors build → cutover.
 - STRUCTURE_PROTECTIONS SPEC executed (10 commits) — 3 enforcement layers active
 - Merged develop → main via PR (~40 commits)
 - POST_MERGE_QA: 🟢 GREEN
+- **OVERNIGHT_HYGIENE_SWEEP_2026_05_09 — 12 of 16 items CLOSED, 4 documented-skips. ~17 commits across ERP + storefront repos.** Skills audit report, M3 SESSION_CONTEXT 445→95 lines, 5 oldest M3 FOREMAN_REVIEWs caught up, formatMoney refactor, console.log cleanup, T.INV migration (4/5), 'inventory'→T.INV in goods-receipts, IL_PHONE_RE rename, GLOBAL_SCHEMA header fix, scripts/README split, tenant-fallback-map regen (storefront), HTTP 406 fix (storefront). Skipped: Item 3 (CRM tables not in GLOBAL_SCHEMA as DDL + no T-constants), Item 6 (already fixed), Item 9 (already done by M4_CLOSURE), Item 16 (already fixed). Full retrospective in `_archive/spec-history/OVERNIGHT_HYGIENE_SWEEP_2026_05_09/EXECUTION_REPORT.md` after Module Close Ceremony.
 - 8 patterns added to opticup-main-strategic SKILL.md (P24-P31)
 - DECISIONS_LOG reorganized to hybrid (index + per-module)
 - `__LAUNCH_PLAN_DRAFT__/` retired; `roles/` created; `_archive/` consolidated
