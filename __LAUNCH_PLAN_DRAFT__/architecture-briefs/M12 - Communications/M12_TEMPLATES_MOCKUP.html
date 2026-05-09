@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M12 — ניהול תבניות הודעה</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --panel: #ffffff;
+    --header: #f0f2f5;
+    --border: #e5e7eb;
+    --text: #111b21;
+    --text-muted: #667781;
+    --gold: #c9a555;
+    --gold-dark: #a98740;
+    --whatsapp: #25d366;
+    --whatsapp-dark: #075e54;
+    --sms: #6c8ebf;
+    --sms-dark: #4a6fa5;
+    --email: #b85450;
+    --email-dark: #a04340;
+    --hover: #f5f6f6;
+    --selected: #fff8e1;
+    --transactional: #e8f5e9;
+    --transactional-text: #2e7d32;
+    --marketing: #fff3e0;
+    --marketing-text: #e65100;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Rubik', Arial, sans-serif;
+    background: var(--bg);
+    margin: 0;
+    color: var(--text);
+    overflow: hidden;
+  }
+  .app-container {
+    display: grid;
+    grid-template-columns: 320px 1fr 380px;
+    height: 100vh;
+    background: var(--panel);
+    direction: rtl;
+  }
+
+  /* ---------- TOP HEADER (across full width — sub-app) ---------- */
+  .top-bar {
+    grid-column: 1 / -1;
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .top-bar .breadcrumb {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .top-bar .title {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 4px 0 0;
+    color: var(--text);
+  }
+  .new-template-btn {
+    background: var(--gold);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .new-template-btn:hover { background: var(--gold-dark); }
+
+  /* re-grid for the remaining 3 columns */
+  .app-container { grid-template-rows: auto 1fr; }
+  .templates-list, .editor-panel, .preview-panel { grid-row: 2; }
+
+  /* ---------- LEFT: Templates list ---------- */
+  .templates-list {
+    border-left: 1px solid var(--border);
+    background: var(--panel);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .list-search {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .list-search input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+  }
+  .list-filters {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .filter-pill {
+    padding: 4px 10px;
+    background: var(--header);
+    border-radius: 12px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text-muted);
+    border: 1px solid transparent;
+  }
+  .filter-pill.active {
+    background: #fff8e1;
+    color: var(--gold-dark);
+    border-color: var(--gold);
+  }
+
+  .category-header {
+    padding: 12px 16px 6px;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    background: var(--bg);
+  }
+
+  .template-row {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+  }
+  .template-row:hover { background: var(--hover); }
+  .template-row.selected { background: var(--selected); border-right: 3px solid var(--gold); }
+
+  .tpl-name {
+    font-weight: 500;
+    font-size: 14px;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  .tpl-meta {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .channel-icon {
+    width: 22px; height: 22px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+  }
+  .channel-icon.wa { background: var(--whatsapp); }
+  .channel-icon.sms { background: var(--sms); }
+  .channel-icon.email { background: var(--email); }
+  .channel-icon.disabled { background: #d4d4d4; color: #999; }
+
+  .type-badge {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .type-badge.transactional { background: var(--transactional); color: var(--transactional-text); }
+  .type-badge.marketing { background: var(--marketing); color: var(--marketing-text); }
+
+  .tpl-row-stats {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* ---------- CENTER: Editor ---------- */
+  .editor-panel {
+    overflow-y: auto;
+    background: var(--bg);
+    padding: 20px 28px;
+  }
+  .editor-section {
+    background: white;
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .editor-section h3 {
+    margin: 0 0 14px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 14px;
+  }
+  .form-row label {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .form-row input, .form-row select {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    width: 100%;
+    outline: none;
+  }
+  .form-row input:focus, .form-row select:focus { border-color: var(--gold); }
+
+  .channel-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 14px;
+  }
+  .channel-tab {
+    padding: 10px 18px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+  }
+  .channel-tab.active {
+    color: var(--whatsapp-dark);
+    border-bottom-color: var(--whatsapp);
+  }
+  .channel-tab .toggle {
+    width: 32px; height: 18px;
+    background: var(--whatsapp);
+    border-radius: 9px;
+    position: relative;
+  }
+  .channel-tab .toggle::after {
+    content: '';
+    width: 14px; height: 14px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    right: 2px;
+  }
+  .channel-tab.disabled .toggle {
+    background: #d4d4d4;
+  }
+  .channel-tab.disabled .toggle::after {
+    right: auto;
+    left: 2px;
+  }
+
+  .body-textarea {
+    width: 100%;
+    min-height: 180px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.6;
+    resize: vertical;
+    outline: none;
+  }
+  .body-textarea:focus { border-color: var(--whatsapp); }
+
+  .variable-chips {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--bg);
+    border-radius: 6px;
+    border: 1px dashed var(--border);
+  }
+  .variable-chips .label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .var-chips-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .var-chip {
+    background: white;
+    border: 1px solid var(--gold);
+    color: var(--gold-dark);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .var-chip:hover { background: var(--selected); }
+
+  .char-counter {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: end;
+  }
+
+  /* Subject only for email */
+  .email-subject-row {
+    margin-bottom: 12px;
+  }
+
+  .footer-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 4px;
+  }
+  .left-actions { display: flex; gap: 8px; }
+  .save-btn {
+    background: var(--gold);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .save-btn:hover { background: var(--gold-dark); }
+  .secondary-btn {
+    background: white;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .danger-btn {
+    background: white;
+    color: #c62828;
+    border: 1px solid #ef9a9a;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* Type radio */
+  .type-toggle {
+    display: flex;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .type-option {
+    flex: 1;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: center;
+  }
+  .type-option.selected.transactional {
+    background: var(--transactional);
+    border-color: #66bb6a;
+  }
+  .type-option.selected.marketing {
+    background: var(--marketing);
+    border-color: #ffa726;
+  }
+  .type-option .opt-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .type-option .opt-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* ---------- RIGHT: Preview ---------- */
+  .preview-panel {
+    border-right: 1px solid var(--border);
+    background: var(--panel);
+    overflow-y: auto;
+    padding: 18px;
+  }
+  .preview-section {
+    margin-bottom: 22px;
+  }
+  .preview-section h3 {
+    margin: 0 0 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .preview-frame {
+    background: #ece5dd;
+    border-radius: 12px;
+    padding: 14px 12px;
+    min-height: 100px;
+  }
+  .wa-preview-bubble {
+    background: #d9fdd3;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border-top-right-radius: 0;
+    margin-right: auto;
+    margin-left: 0;
+    max-width: 90%;
+    font-size: 13px;
+    line-height: 1.5;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.08);
+  }
+  .wa-preview-bubble .meta {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-align: end;
+    margin-top: 4px;
+  }
+  .var-highlight {
+    background: var(--selected);
+    color: var(--gold-dark);
+    padding: 0 3px;
+    border-radius: 3px;
+    font-weight: 500;
+  }
+
+  .sms-preview-frame {
+    background: #2e7d32;
+    border-radius: 24px;
+    padding: 18px 12px;
+    color: white;
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: start;
+    max-width: 240px;
+    margin: 0 auto;
+  }
+  .sms-from {
+    font-size: 11px;
+    text-align: center;
+    margin-bottom: 4px;
+    opacity: 0.85;
+  }
+
+  .email-preview-frame {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 13px;
+  }
+  .email-from {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .email-subject {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .email-body { line-height: 1.5; }
+
+  .preview-disabled {
+    background: var(--bg);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 18px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  .test-send-section {
+    margin-top: 14px;
+    padding: 14px;
+    background: var(--bg);
+    border-radius: 8px;
+  }
+  .test-send-section .label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .test-send-row {
+    display: flex;
+    gap: 8px;
+  }
+  .test-send-row input {
+    flex: 1;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+  }
+  .test-send-btn {
+    background: var(--whatsapp);
+    color: white;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- ============ TOP BAR (full-width) ============ -->
+  <div class="top-bar">
+    <div>
+      <div class="breadcrumb">M12 · Communications  ▸  ניהול תבניות</div>
+      <div class="title">📋 ניהול תבניות הודעה</div>
+    </div>
+    <div>
+      <button class="new-template-btn">+ תבנית חדשה</button>
+    </div>
+  </div>
+
+  <!-- ============ LEFT: Templates List ============ -->
+  <aside class="templates-list">
+    <div class="list-search">
+      <input type="text" placeholder="🔍 חיפוש תבנית...">
+    </div>
+    <div class="list-filters">
+      <div class="filter-pill active">הכל (17)</div>
+      <div class="filter-pill">שירותיות (11)</div>
+      <div class="filter-pill">שיווקיות (6)</div>
+      <div class="filter-pill">WA</div>
+      <div class="filter-pill">SMS</div>
+      <div class="filter-pill">Email</div>
+    </div>
+
+    <div class="category-header">📦 הזמנות</div>
+
+    <div class="template-row selected">
+      <div class="tpl-name">המשקפיים מוכנים לאיסוף</div>
+      <div class="tpl-meta">
+        <span class="type-badge transactional">שירותית</span>
+        <div class="channel-icon wa">WA</div>
+        <div class="channel-icon sms">SMS</div>
+        <div class="channel-icon disabled">Em</div>
+      </div>
+      <div class="tpl-row-stats">נשלח 247 פעמים החודש · אישור Meta ✓</div>
+    </div>
+
+    <div class="template-row">
+      <div class="tpl-name">אישור הזמנה</div>
+      <div class="tpl-meta">
+        <span class="type-badge transactional">שירותית</span>
+        <div class="channel-icon wa">WA</div>
+        <div class="channel-icon sms">SMS</div>
+        <div class="channel-icon email">Em</div>
+      </div>
+      <div class="tpl-row-stats">נשלח 198 פעמים החודש</div>
+    </div>
+
+    <div class="template-row">
+      <div class="tpl-name">המשקפיים נשלחו למעבדה</div>
+      <div class="tpl-meta">
+        <span class="type-badge transactional">שירותית</span>
+        <div class="channel-icon wa">WA</div>
+        <div class="channel-icon disabled">SMS</div>
+        <div class="channel-icon disabled">Em</div>
+      </div>
+      <div class="tpl-row-stats">נשלח 156 פעמים החודש</div>
+    </div>
+
+    <div class="category-header">📅 תורים</div>
+
+    <div class="template-row">
+      <div class="tpl-name">תזכורת תור — יום מראש</div>
+      <div class="tpl-meta">
+        <span class="type-badge transactional">שירותית</span>
+        <div class="channel-icon wa">WA</div>
+        <div class="channel-icon sms">SMS</div>
+      </div>
+      <div class="tpl-row-stats">נשלח 89 פעמים החודש</div>
+    </div>
+
+    <div class="template-row">
+      <div class="tpl-name">תור נקבע — אישור</div>
+      <div class="tpl-meta">
+        <span class="type-badge transactional">שירותית</span>
+        <div class="channel-icon wa">WA</div>
+        <div class="channel-icon disabled">SMS</div>
+      </div>
+      <div class="tpl-row-stats">נשלח 67 פעמים החודש</div>
+    </div>
+
+    <div class="category-header">🔔 Recall</div>
+
+    <div class="template-row">
+      <div class="tpl-name">תוקף מרשם פג בקרוב</div>
+      <div class="tpl-meta">
+        <span class="type-badge transactional">שירותית</span>
+        <div class="channel-icon wa">WA</div>
+        <div class="channel-icon sms">SMS</div>
+        <div class="channel-icon email">Em</div>
+      </div>
+      <div class="tpl-row-stats">נשלח 34 פעמים החודש</div>
+    </div>
+
+    <div class="template-row">
+      <div class="tpl-name">בדיקת עיניים מומלצת</div>
+      <div class="tpl-meta">
+        <span class="type-badge transactional">שירותית</span>
+        <div class="channel-icon wa">WA</div>
+        <div class="channel-icon sms">SMS</div>
+      </div>
+      <div class="tpl-row-stats">נשלח 28 פעמים החודש</div>
+    </div>
+
+    <div class="category-header">💰 קמפיינים</div>
+
+    <div class="template-row">
+      <div class="tpl-name">הזמנה ל-SuperSale</div>
+      <div class="tpl-meta">
+        <span class="type-badge marketing">שיווקית</span>
+        <div class="channel-icon wa">WA</div>
+        <div class="channel-icon sms">SMS</div>
+        <div class="channel-icon email">Em</div>
+      </div>
+      <div class="tpl-row-stats">נשלח 1,847 ב-קמפיין האחרון</div>
+    </div>
+
+    <div class="template-row">
+      <div class="tpl-name">מבצע סוף עונה — Ray-Ban</div>
+      <div class="tpl-meta">
+        <span class="type-badge marketing">שיווקית</span>
+        <div class="channel-icon wa">WA</div>
+        <div class="channel-icon disabled">SMS</div>
+        <div class="channel-icon email">Em</div>
+      </div>
+      <div class="tpl-row-stats">נשלח 423 פעמים החודש</div>
+    </div>
+
+    <div class="template-row">
+      <div class="tpl-name">ברכת יום הולדת + 10% הנחה</div>
+      <div class="tpl-meta">
+        <span class="type-badge marketing">שיווקית</span>
+        <div class="channel-icon wa">WA</div>
+        <div class="channel-icon disabled">SMS</div>
+        <div class="channel-icon email">Em</div>
+      </div>
+      <div class="tpl-row-stats">deferred — להפעיל בעתיד</div>
+    </div>
+
+  </aside>
+
+  <!-- ============ CENTER: Editor ============ -->
+  <main class="editor-panel">
+
+    <div class="editor-section">
+      <h3>פרטי תבנית</h3>
+
+      <div class="form-row">
+        <label>שם התבנית:</label>
+        <input type="text" value="המשקפיים מוכנים לאיסוף">
+      </div>
+
+      <div class="form-row">
+        <label>קטגוריה:</label>
+        <select>
+          <option>הזמנות</option>
+          <option>תורים</option>
+          <option>Recall</option>
+          <option>קמפיינים</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label>שפה:</label>
+        <select>
+          <option>עברית</option>
+          <option>English</option>
+          <option>Русский</option>
+        </select>
+      </div>
+
+      <div class="form-row" style="grid-template-columns: 140px 1fr; align-items: start;">
+        <label>סוג ההודעה:</label>
+        <div class="type-toggle">
+          <div class="type-option selected transactional">
+            <div class="opt-title">📦 שירותית</div>
+            <div class="opt-desc">לא דורש הסכמה (אישורים, התראות)</div>
+          </div>
+          <div class="type-option">
+            <div class="opt-title">📢 שיווקית</div>
+            <div class="opt-desc">דורש consent_&lt;channel&gt;=true</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="editor-section">
+      <h3>תוכן ההודעה לפי ערוץ</h3>
+
+      <div class="channel-tabs">
+        <div class="channel-tab active">
+          <div class="channel-icon wa">WA</div>
+          <span>WhatsApp</span>
+          <div class="toggle"></div>
+        </div>
+        <div class="channel-tab">
+          <div class="channel-icon sms">SMS</div>
+          <span>SMS</span>
+          <div class="toggle"></div>
+        </div>
+        <div class="channel-tab disabled">
+          <div class="channel-icon disabled">Em</div>
+          <span>Email</span>
+          <div class="toggle"></div>
+        </div>
+      </div>
+
+      <textarea class="body-textarea">היי %customer_name%! 👓
+
+המשקפיים שהזמנת מוכנים לאיסוף בחנות שלנו.
+מס' הזמנה: %order_number%
+פרטי איסוף: רחוב הרצל 32, אשקלון
+שעות פעילות: א-ה 09:00-19:00, ו 09:00-13:00
+
+נשמח לראותך,
+פריזמה אופטיק 😊</textarea>
+
+      <div class="char-counter">156 תווים · ~1 הודעה (WhatsApp template)</div>
+
+      <div class="variable-chips">
+        <div class="label">משתנים זמינים — לחץ להוסיף לטקסט:</div>
+        <div class="var-chips-row">
+          <span class="var-chip">שם לקוח</span>
+          <span class="var-chip">מס׳ הזמנה</span>
+          <span class="var-chip">תאריך הזמנה</span>
+          <span class="var-chip">תאריך מסירה</span>
+          <span class="var-chip">סכום</span>
+          <span class="var-chip">קישור-ניהול</span>
+          <span class="var-chip">קוד קופון</span>
+          <span class="var-chip">הסר-מרשימה</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="editor-section">
+      <h3>הגדרות שליחה</h3>
+      <div class="form-row">
+        <label>ערוץ ברירת-מחדל:</label>
+        <select>
+          <option>WhatsApp ראשי (PrizmaOptic — 053-434-7265)</option>
+          <option>WhatsApp שני</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Sender ID (SMS):</label>
+        <select>
+          <option>PrizmaOptic</option>
+          <option>050-1234567</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>שולח (Email):</label>
+        <select>
+          <option>info@prizma-optic.co.il</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>אישור Meta:</label>
+        <span style="color: #2e7d32; font-weight: 500;">✓ אושר 23.04.26 (קטגוריה: Utility)</span>
+      </div>
+    </div>
+
+    <div class="footer-actions">
+      <div class="left-actions">
+        <button class="danger-btn">🗑 מחק</button>
+        <button class="secondary-btn">📋 שכפל</button>
+      </div>
+      <div>
+        <button class="secondary-btn">בטל</button>
+        <button class="save-btn">💾 שמור שינויים</button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ============ RIGHT: Preview ============ -->
+  <aside class="preview-panel">
+
+    <div class="preview-section">
+      <h3>📱 תצוגה מקדימה — WhatsApp</h3>
+      <div class="preview-frame">
+        <div class="wa-preview-bubble">
+          היי <span class="var-highlight">רחל לוי</span>! 👓<br><br>
+          המשקפיים שהזמנת מוכנים לאיסוף בחנות שלנו.<br>
+          מס' הזמנה: <span class="var-highlight">2418</span><br>
+          פרטי איסוף: רחוב הרצל 32, אשקלון<br>
+          שעות פעילות: א-ה 09:00-19:00, ו 09:00-13:00<br><br>
+          נשמח לראותך,<br>
+          פריזמה אופטיק 😊
+          <div class="meta">15:42 ✓✓</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-section">
+      <h3>📲 תצוגה מקדימה — SMS</h3>
+      <div class="sms-preview-frame">
+        <div class="sms-from">PrizmaOptic</div>
+        היי <span class="var-highlight" style="background: rgba(255,255,255,0.3); color: white;">רחל לוי</span>! המשקפיים מוכנים לאיסוף בחנות (הרצל 32, אשקלון). מס׳ הזמנה <span class="var-highlight" style="background: rgba(255,255,255,0.3); color: white;">2418</span>. נשמח לראותך — פריזמה
+      </div>
+      <div style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 6px;">
+        SMS: 142 תווים (UCS-2) · 1 segment
+      </div>
+    </div>
+
+    <div class="preview-section">
+      <h3>✉️ תצוגה מקדימה — Email</h3>
+      <div class="preview-disabled">
+        ערוץ Email לא פעיל לתבנית זו<br>
+        <span style="font-size: 11px;">(הפעל את ה-toggle בעורך כדי להוסיף)</span>
+      </div>
+    </div>
+
+    <div class="test-send-section">
+      <div class="label">🧪 שלח הודעת בדיקה לעצמך:</div>
+      <div class="test-send-row">
+        <input type="text" placeholder="053-7889878" value="053-7889878">
+        <button class="test-send-btn">שלח טסט</button>
+      </div>
+    </div>
+
+  </aside>
+
+</div>
+
+</body>
+</html>

@@ -1,4 +1,21 @@
-# תוכנית מעבר ל-LIVE — Master Plan
+# ⚠️ DEPRECATED — Use `/MASTER_ROADMAP.md` instead
+
+> **This file is deprecated as of 2026-05-09 (M12 close).**
+>
+> It's been superseded by `/MASTER_ROADMAP.md` (repo root) §2.5 which now holds
+> the cross-module Architecture Brief tracker. A historical copy is preserved
+> at `__LAUNCH_PLAN_DRAFT__/_archive/MASTER_LIVE_PLAN_v1.md`.
+>
+> **Do NOT update this file.** Update `/MASTER_ROADMAP.md` instead.
+>
+> **Why deprecated:** the project had two `MASTER_*` files which created drift.
+> Daniel directed (2026-05-09): "single MASTER_ROADMAP file in root, organized
+> folders for everything else." This file is kept temporarily for safe transition
+> and will be removed in a future cleanup pass.
+
+---
+
+# תוכנית מעבר ל-LIVE — Master Plan (היסטורי, אל תעדכן)
 
 **גרסה:** v1 (טיוטה, 2026-05-06)
 **סטטוס:** Draft — מבוסס על שני audits (back-end + front-end) + Launch Decisions Apr 27/28 + cutover memory.
@@ -118,12 +135,17 @@ M13 (Loyalty) — אחרי M5+M7+M8
 - [ ] היסטוריית עדכוני-מלאי (~20K רשומות) — מועברת ל-`activity_log` של M1.5
 
 ### M11 — Reports
-- [ ] **LTV per-customer** — חישוב מתועדכן (קיים ב-OpticPlus כ-`tb_ltv*` + queries)
-- [ ] LTV-multifocal segment
-- [ ] מכירות חודשי / שנתי (לרואה-חשבון)
-- [ ] דוחות מלאי: חוסרים / לא-נמכרים / עודף / barcode-errors
-- [ ] **ייצוא Excel נורמטיבי לכל view** — קריטי, הצוות חי בעולם של 14 macros של xls
-- [ ] תבניות PDF גמישות לכל דוח (מחליף 25 וריאנטים של rp_order_*)
+- [x] **Architecture Brief נסגר 2026-05-09.** ראה `architecture-briefs/M11 - Reports/M11_REPORTS_BRIEF.md`.
+- [ ] **LTV per-customer** — חישוב חי על JOIN של Views (M5+M7+M8), בלי cache ביום-1
+- [ ] LTV-multifocal segment — deferred ל-post-LIVE
+- [ ] מכירות חודשי / שנתי (לרואה-חשבון) — בתוך 5-10 דוחות-default
+- [ ] דוחות מלאי: חוסרים / לא-נמכרים / עודף / barcode-errors — דורש `v_inventory_for_reports` מ-M1
+- [ ] **ייצוא Excel פורמט-עשיר** — header מעוצב, סיכומי-סוף, pivot-headers
+- [ ] **תבנית PDF אחידה data-driven** — תבנית-יחידה ממותגת tenant ביום-1, להחליף 25 וריאנטי rp_order_*
+- [ ] טבלאות-תשתית: 9 טבלאות (reports, report_categories, report_columns, report_filters, report_grouping, report_actions, report_role_access, report_role_overrides) + RLS
+- [ ] חוזה: M5/M6/M1/M4/M9/M13 חייבים לחשוף `v_<module>_for_reports`
+- [ ] חוזה: עדכון-מתוך-דוח רק דרך RPC של מודול-המקור (M8 חושף `mark_payment_deducted`)
+- [ ] קיצור-דרך מתוך כל מודול-מקורי: כפתור "📊 דוחות" שפותח M11 עם הקטגוריה הרלוונטית
 
 ### M12 — Communications
 - [ ] **WhatsApp Business API פעיל ביום-1** — קריטי, אסור פספס
@@ -235,10 +257,21 @@ T+30 days:  Post-mortem + lessons-learned.
 
 ## 9. הצעדים הבאים (מיידיים)
 
-1. **Audit שלישי** — `optic_dt_all.accdb` (קובץ המעבדה) — light, 1-2 שעות. → משלים את התמונה לסיכון #4.
-2. **החלטות פתוחות** — סעיף 7. אסיף תשובות מ-Daniel + מהצוות (לשאלות 1-3 על workflow אמיתי).
-3. **הסכמה על Timeline** — האם 14-18 שבועות parallel מתאים? או דורש scope reduction?
-4. **התחלת SPEC ל-M5** — אחרי שה-audit השלישי סגור והחלטות פתוחות נסגרות, M5 הוא ה-quick-win הבא.
+**עדכון 2026-05-06 ערב:** Audit שלישי הושלם. Timeline אושר. מתחילה עבודת Architecture Briefs cross-module.
+
+**סטטוס Architecture Briefs (את החלטות-העל לכל מודול לפני SPECs):**
+- ✅ M5 (Customers) — `architecture-briefs/M5_CUSTOMERS_BRIEF.md` **v3** + סקיצת מסך-לקוח `M5_CUSTOMER_CARD_MOCKUP.html` + סקיצת מסך-לקוחות `M5_CUSTOMERS_LIST_MOCKUPS.html` (Sketch 2 — Split Workspace approved). כולל: composite customer number, Iron Rule 32 (sequence cancellation), customer-list display preferences (configurable per-tenant).
+- ✅ M6 (Prescriptions) — `architecture-briefs/M6_PRESCRIPTIONS_BRIEF.md` **v2** + סקיצת מסך-מרשם `M6_PRESCRIPTION_EDITOR_MOCKUP.html` (sidebar+center, glasses↔contacts toggle, multi-axis recall, comprehensive field inventory).
+- ✅ M7 (Orders) — `architecture-briefs/M7 - Orders/M7_ORDERS_BRIEF.md` v1 + 6 סקיצות (1 ראשית + 5 טפסים) + קטלוג-טפסים + Feature Inventory v0.3.
+- ✅ M8 (Payments) — `architecture-briefs/M8 - Payments/M8_PAYMENTS_BRIEF.md` v1 + 4 סקיצות (Checkout, Pipeline-צ'קים, סוף-יום-קופה, Provider Config) + 4 dossiers של מחקר. Provider Adapter Pattern עם 3 שכבות (Adapter/Manifest/Tenant Config). Optic Up=ERP, קופה חיצונית=הנפקת-קבלה. צ'ק-דחוי=חריג חוקי. ירד-ממשכורת=סטטוס פנימי + סימון בדוח-M11.
+- ⬜ M9 (Lab)
+- ✅ M11 (Reports) — `architecture-briefs/M11 - Reports/M11_REPORTS_BRIEF.md` v1 + 3 סקיצות (רשימת-דוחות, עריכת-דוח, תצוגת-דוח). שכבת-תצוגה אחידה (לא בעל-נתונים), קוראת מ-Views של כל מודול-מקורי. 22 החלטות נעולות + 5 חיזוקי-מודולריות (view_type הרחבה, View metadata חובה, RPC-action פלטפורמה, PDF data-driven, 2-שכבות הרשאה). דורש View `v_<module>_for_reports` ממודולים M5/M6/M1/M4/M9/M13 (M7+M8 כבר נעולים).
+- ✅ M12 (Communications) — `architecture-briefs/M12 - Communications/M12_COMMUNICATIONS_BRIEF.md` v1 + 4 סקיצות (Inbox, תבניות, היסטוריה בכרטיס-לקוח, ערוצי-tenant). 15 החלטות נעולות (DECISIONS_LOG 2026-05-09): 360dialog Coexistence + Edge Function ישיר ל-WA, GLOBAL SMS נשאר, Gmail דרך Make נשאר, ארכיטקטורה היברידית (platform-default + tenant-override), WhatsApp Inbox ביום-1 + AI slot שמור, consent per-channel חובה משפטית. 8 entities חדשות + 2 שמורות ל-AI עתידי. WhatsApp = day-1 critical-path.
+- ⬜ M13 (Loyalty)
+- ✅ M14 (Appointments) — `architecture-briefs/M14_APPOINTMENTS_BRIEF.md` v1 + 2 קבצי-mockup (1 מסך-יומן ראשי + 3 מסכי-משנה: הגדרות, public-booking, ניהול-תור-לקוח). dual-color system (type+status), Pattern 13 (system+tenant rows), display-hours ≠ booking-hours.
+- ✅ M15 (Queue) — `architecture-briefs/M15_QUEUE_BRIEF.md` v1 + `M15_QUEUE_MOCKUP.html` (פאנל מוטבע ב-M14 calendar). Pattern 14 חדש (cross-module atomic state sync). 4 states, queue-אחד-משותף עם preferred_resource_id, ספי-זמן configurable.
+
+**אחרי שכל ה-Briefs נכתבו → Module Strategists מתחילים לכתוב SPECs (M5 ראשון).**
 
 ---
 

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M12 — ערוצי תקשורת (פר-tenant)</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --panel: #ffffff;
+    --header: #f0f2f5;
+    --border: #e5e7eb;
+    --text: #111b21;
+    --text-muted: #667781;
+    --gold: #c9a555;
+    --gold-dark: #a98740;
+    --whatsapp: #25d366;
+    --whatsapp-dark: #075e54;
+    --sms: #6c8ebf;
+    --sms-dark: #4a6fa5;
+    --email: #b85450;
+    --email-dark: #a04340;
+    --hover: #f5f6f6;
+    --danger: #c62828;
+    --warning: #e65100;
+    --success: #2e7d32;
+    --upgrade: #6366f1;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Rubik', Arial, sans-serif;
+    background: var(--bg);
+    margin: 0;
+    color: var(--text);
+    direction: rtl;
+  }
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: white;
+    min-height: 100vh;
+    box-shadow: 0 0 20px rgba(0,0,0,0.05);
+  }
+
+  .top-bar {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 18px 30px;
+  }
+  .top-bar .breadcrumb {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .top-bar .title {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0;
+  }
+  .top-bar .sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  .context-strip {
+    background: #f5f6f8;
+    padding: 8px 30px;
+    font-size: 12px;
+    color: #667781;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .context-strip strong { color: #075e54; }
+
+  .content {
+    padding: 28px 30px;
+  }
+
+  /* Section title */
+  .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 14px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+  }
+
+  /* ---------- Channel cards ---------- */
+  .channels-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+  .channel-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+    display: grid;
+    grid-template-columns: 64px 1fr 220px;
+    gap: 20px;
+    align-items: center;
+  }
+  .channel-card.shared {
+    border-style: dashed;
+    background: #fafafa;
+  }
+  .channel-card.own {
+    border: 2px solid var(--gold);
+    background: linear-gradient(to right, white, #fffaf0);
+  }
+
+  .channel-bigicon {
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+  }
+  .channel-bigicon.wa { background: var(--whatsapp); }
+  .channel-bigicon.sms { background: var(--sms); }
+  .channel-bigicon.email { background: var(--email); }
+
+  .channel-details .ch-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .channel-details .ch-meta {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+  .channel-details .ch-features {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 12px;
+  }
+  .feature-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--bg);
+    padding: 4px 10px;
+    border-radius: 4px;
+    color: var(--text-muted);
+  }
+  .feature-pill.enabled {
+    background: #e8f5e9;
+    color: var(--success);
+    font-weight: 500;
+  }
+  .feature-pill.disabled {
+    background: #f0f0f0;
+    color: #999;
+  }
+  .feature-pill .icon { font-size: 13px; }
+
+  /* Status badges */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .status-badge.shared-tag {
+    background: #f0f0f0;
+    color: var(--text-muted);
+  }
+  .status-badge.own-tag {
+    background: var(--gold);
+    color: white;
+  }
+  .status-badge.active-tag {
+    background: #e8f5e9;
+    color: var(--success);
+  }
+
+  /* Action area on right of card */
+  .channel-action {
+    text-align: center;
+  }
+  .channel-action .price {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .channel-action .price .currency {
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 400;
+  }
+  .channel-action .price-note {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  .upgrade-btn {
+    background: var(--upgrade);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+  }
+  .upgrade-btn:hover { background: #4f46e5; }
+  .manage-btn {
+    background: white;
+    border: 1px solid var(--gold);
+    color: var(--gold-dark);
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+  }
+  .manage-btn:hover { background: #fffaf0; }
+
+  /* Test message section */
+  .test-section {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 32px;
+  }
+  .test-section .test-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .test-section .test-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  .test-row {
+    display: grid;
+    grid-template-columns: 200px 1fr auto;
+    gap: 10px;
+    align-items: center;
+  }
+  .test-row select, .test-row input {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+  }
+  .test-row .send-test-btn {
+    background: var(--whatsapp);
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  /* Help / info box */
+  .info-box {
+    background: #fff8e1;
+    border: 1px solid var(--gold);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #5d4e08;
+  }
+  .info-box strong { color: var(--text); }
+  .info-box .icon { font-size: 20px; margin-left: 8px; }
+
+  /* Stats footer */
+  .usage-stats {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .usage-cell {
+    border-left: 1px solid var(--border);
+    padding-right: 16px;
+  }
+  .usage-cell:first-child { border-left: none; padding-right: 0; }
+  .usage-cell .num {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+  .usage-cell .label {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* Upgrade modal placeholder */
+  .upgrade-explainer {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 10px;
+    padding: 20px 24px;
+    color: white;
+    margin-bottom: 24px;
+    display: none;
+  }
+  .upgrade-explainer.shown { display: block; }
+  .upgrade-explainer h3 {
+    margin: 0 0 8px;
+    font-size: 16px;
+  }
+  .upgrade-explainer p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    opacity: 0.95;
+    line-height: 1.5;
+  }
+  .upgrade-explainer .features-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 14px;
+    font-size: 13px;
+  }
+  .upgrade-explainer .features-list li {
+    padding: 4px 0;
+  }
+  .upgrade-explainer .contact-btn {
+    background: white;
+    color: var(--upgrade);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ============ Top Bar ============ -->
+  <div class="top-bar">
+    <div class="breadcrumb">הגדרות פריזמה אופטיק ▸ ערוצי תקשורת</div>
+    <h1 class="title">📡 ערוצי התקשורת שלך</h1>
+    <div class="sub">איך הלקוחות שלך מקבלים הודעות מהמערכת — WhatsApp, SMS, ואימייל. ברירת-מחדל = משותף עם כל לקוחות Optic Up. שדרוג למספר משלך = פותח שיחות דו-כיווניות + Inbox.</div>
+  </div>
+
+  <div class="context-strip">
+    📍 הגדרות tenant ▸ <strong>ערוצי תקשורת</strong> · המסך הזה רואה רק את הערוצים של פריזמה. לא חשוף ל-tenants אחרים.
+  </div>
+
+  <!-- ============ Main Content ============ -->
+  <div class="content">
+
+    <div class="info-box">
+      <span class="icon">💡</span>
+      <strong>איך זה עובד:</strong> כל מודול במערכת (CRM, הזמנות, תורים) שולח הודעות אוטומטיות דרך הערוצים האלה. ברירת-המחדל היא שכולן יוצאות ממספר/אימייל משותף של Optic Up — בלי שאתה צריך להגדיר כלום. אם תרצה שההודעות יצאו <strong>מהמספר שלך</strong>, ושלקוחות יוכלו <strong>לכתוב לך בחזרה</strong> — תוכל לשדרג ערוץ ספציפי.
+    </div>
+
+    <h2 class="section-title">📨 הערוצים שלך</h2>
+
+    <div class="channels-grid">
+
+      <!-- WhatsApp — UPGRADED (own number, like Prizma actually has) -->
+      <div class="channel-card own">
+        <div class="channel-bigicon wa">WA</div>
+        <div class="channel-details">
+          <div class="ch-title">
+            WhatsApp
+            <span class="status-badge own-tag">⭐ המספר שלך</span>
+            <span class="status-badge active-tag">● פעיל</span>
+          </div>
+          <div class="ch-meta">
+            הלקוחות מקבלים הודעות מ-<strong>053-434-7265</strong> (אופטיקה פריזמה).<br>
+            הצוות יכול לקבל הודעות חזרה ולענות מתוך מסך ה-Inbox במערכת.
+          </div>
+          <div class="ch-features">
+            <span class="feature-pill enabled"><span class="icon">📤</span>שליחה אוטומטית</span>
+            <span class="feature-pill enabled"><span class="icon">📥</span>קבלת הודעות מלקוחות</span>
+            <span class="feature-pill enabled"><span class="icon">💬</span>Inbox במערכת</span>
+            <span class="feature-pill enabled"><span class="icon">📱</span>ממשיך לעבוד באפליקציה בטלפון</span>
+          </div>
+        </div>
+        <div class="channel-action">
+          <button class="manage-btn">⚙️ ניהול</button>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">פעיל מאז 09.05.26</div>
+        </div>
+      </div>
+
+      <!-- SMS — UPGRADED (PrizmaOptic Sender ID) -->
+      <div class="channel-card own">
+        <div class="channel-bigicon sms">SMS</div>
+        <div class="channel-details">
+          <div class="ch-title">
+            SMS
+            <span class="status-badge own-tag">⭐ Sender ID משלך</span>
+            <span class="status-badge active-tag">● פעיל</span>
+          </div>
+          <div class="ch-meta">
+            הלקוחות מקבלים SMS משם השולח <strong>"PrizmaOptic"</strong>.<br>
+            ערוץ חד-כיווני (לא ניתן לקבל הודעות חזרה — מגבלה של SMS אלפאנומרי בארץ).
+          </div>
+          <div class="ch-features">
+            <span class="feature-pill enabled"><span class="icon">📤</span>שליחה אוטומטית</span>
+            <span class="feature-pill disabled"><span class="icon">📥</span>קבלת הודעות (לא נתמך)</span>
+          </div>
+        </div>
+        <div class="channel-action">
+          <button class="manage-btn">⚙️ ניהול</button>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">פעיל מאז 2024</div>
+        </div>
+      </div>
+
+      <!-- Email — UPGRADED (own domain) -->
+      <div class="channel-card own">
+        <div class="channel-bigicon email">Em</div>
+        <div class="channel-details">
+          <div class="ch-title">
+            Email
+            <span class="status-badge own-tag">⭐ הדומיין שלך</span>
+            <span class="status-badge active-tag">● פעיל</span>
+          </div>
+          <div class="ch-meta">
+            הלקוחות מקבלים אימיילים מ-<strong>info@prizma-optic.co.il</strong>.<br>
+            תשובות לקוחות מגיעות לתיבת המייל הקיימת שלך — לא אל המערכת (כיום).
+          </div>
+          <div class="ch-features">
+            <span class="feature-pill enabled"><span class="icon">📤</span>שליחה אוטומטית</span>
+            <span class="feature-pill enabled"><span class="icon">↩️</span>תשובות ל-info@</span>
+            <span class="feature-pill disabled"><span class="icon">💬</span>Inbox במערכת (בעתיד)</span>
+          </div>
+        </div>
+        <div class="channel-action">
+          <button class="manage-btn">⚙️ ניהול</button>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">פעיל מאז 2024</div>
+        </div>
+      </div>
+
+      <!-- Sample SHARED card (how it would look for a NEW tenant who hasn't upgraded) -->
+      <div style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed var(--border);">
+        <h2 class="section-title" style="margin-bottom: 12px;">📦 דוגמה: איך זה נראה ל-tenant שלא שדרג</h2>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px; font-style: italic;">
+          (לקוח חדש שמצטרף ל-Optic Up רואה את הערוצים במצב "משותף" — עובד אוטומטית מהיום הראשון, אפס-קונפיגורציה)
+        </p>
+      </div>
+
+      <div class="channel-card shared">
+        <div class="channel-bigicon wa">WA</div>
+        <div class="channel-details">
+          <div class="ch-title">
+            WhatsApp
+            <span class="status-badge shared-tag">משותף</span>
+            <span class="status-badge active-tag">● פעיל</span>
+          </div>
+          <div class="ch-meta">
+            הלקוחות מקבלים הודעות מ-<strong>053-XXX-XXXX (Optic Up)</strong>.<br>
+            ערוץ חד-כיווני בלבד — לקוחות לא יכולים לכתוב לך בחזרה למספר הזה.
+          </div>
+          <div class="ch-features">
+            <span class="feature-pill enabled"><span class="icon">📤</span>שליחה אוטומטית</span>
+            <span class="feature-pill disabled"><span class="icon">📥</span>קבלת הודעות (דורש שדרוג)</span>
+            <span class="feature-pill disabled"><span class="icon">💬</span>Inbox (דורש שדרוג)</span>
+          </div>
+        </div>
+        <div class="channel-action">
+          <div class="price">₪150<span class="currency">/חודש</span></div>
+          <div class="price-note">+ עלות הודעות לפי שימוש</div>
+          <button class="upgrade-btn">⭐ שדרג למספר משלי</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============ Test Message Section ============ -->
+    <h2 class="section-title">🧪 שליחת הודעת בדיקה</h2>
+
+    <div class="test-section">
+      <div class="test-title">בדיקת הערוצים שלך</div>
+      <div class="test-desc">שלח הודעת בדיקה לטלפון/אימייל שלך כדי לראות איך הלקוחות יראו את ההודעות.</div>
+      <div class="test-row">
+        <select>
+          <option>WhatsApp (053-434-7265)</option>
+          <option>SMS (PrizmaOptic)</option>
+          <option>Email (info@prizma-optic.co.il)</option>
+        </select>
+        <input type="text" placeholder="053-7889878 / your-email@example.com" value="053-7889878">
+        <button class="send-test-btn">שלח בדיקה</button>
+      </div>
+    </div>
+
+    <!-- ============ Usage Statistics ============ -->
+    <h2 class="section-title">📊 שימוש החודש</h2>
+
+    <div class="usage-stats">
+      <div class="usage-cell">
+        <div class="num">2,847</div>
+        <div class="label">סה"כ הודעות</div>
+      </div>
+      <div class="usage-cell">
+        <div class="num">1,594</div>
+        <div class="label">WhatsApp</div>
+      </div>
+      <div class="usage-cell">
+        <div class="num">1,071</div>
+        <div class="label">SMS</div>
+      </div>
+      <div class="usage-cell">
+        <div class="num">182</div>
+        <div class="label">Email</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>
