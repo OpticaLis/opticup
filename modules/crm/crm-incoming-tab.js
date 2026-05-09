@@ -285,7 +285,7 @@
               if (!newRow || newRow.tenant_id !== tid) return;
               reloadIncomingFromRealtime(newRow.id, 'bg-amber-100');
             })
-        .subscribe(function (status, err) { console.log('[Realtime] subscribe status:', status, err); });
+        .subscribe(function (status, err) { if (err) console.warn('[Realtime] subscribe error:', status, err); });
     } catch (e) { console.warn('CrmIncomingRealtime subscribe failed:', e && e.message); _rtChannel = null; }
   }
   function stopRealtime() {
@@ -326,7 +326,6 @@
     _pollIntervalId = setInterval(function () {
       var wrap = document.getElementById('crm-incoming-table-wrap');
       if (document.hidden || !wrap || wrap.offsetParent === null) return;
-      console.log('[Polling] refresh fired');
       reloadIncomingFromRealtime(null, null);
     }, POLL_INTERVAL_MS);
   }
