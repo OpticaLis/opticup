@@ -6,6 +6,39 @@
 
 ---
 
+## 0.5 Root Discipline Rule (added 2026-05-09)
+
+**Every file or directory at repo root MUST belong to one of these 3 categories. No exceptions.**
+
+**Category 1 — Technical Infrastructure (no choice, required by tooling):**
+- `CLAUDE.md`, `README.md`, `package.json`, `package-lock.json`, `.gitignore`, `.mcp.json`, `.nojekyll`, `CNAME`, `favicon.ico`
+- Hidden infra dirs: `.git/`, `.github/`, `.husky/`, `.vscode/`, `.claude/`, `node_modules/`
+
+**Category 2 — Live Sources of Truth (actively maintained, referenced by current sessions):**
+- `MASTER_ROADMAP.md` — cross-module roadmap + decisions log
+- `TECH_DEBT.md` — living debt register
+- `docs/` — canonical reference files (GLOBAL_MAP, GLOBAL_SCHEMA, FILE_STRUCTURE, CONVENTIONS, etc.)
+- `modules/` — per-module documentation + per-feature implementation
+- `__LAUNCH_PLAN_DRAFT__/` (or its successor name) — pre-LIVE planning artifacts
+- `_archive/` — single archive vault (see Category 3)
+- `migrations/`, `scripts/`, `shared/`, `js/`, `css/`, `supabase/`, `tests/` — code/infra dirs
+- `campaigns/` — Campaign Overseer working area
+- `watcher-deploy/` — Watcher service installer (Windows desktop only)
+
+**Category 3 — Application Entrypoints (required for GitHub Pages routing):**
+- `index.html` (mandatory at root)
+- 17 other ERP HTML pages (`admin.html`, `crm.html`, `inventory.html`, `settings.html`, `shipments.html`, `employees.html`, `error.html`, `landing.html`, `r.html`, `storefront-*.html`, `suppliers-debt.html`)
+
+**Anything not in Categories 1-3 → must move to `_archive/<subfolder>/`.** This includes legacy onboarding docs, old prompts, completed phase summaries, single-session handoffs, project-genesis snapshots.
+
+**When adding a new file at root, ask: "Which category?"** If none → it doesn't belong at root.
+
+**Maintaining the rule:** Every Module Close Ceremony (per `opticup-main-strategic` skill) must include a 30-second root scan. Anything new not in Categories 1-3 → archive immediately.
+
+This rule prevents drift forever after.
+
+---
+
 ## 1. First Action — Session Start Protocol
 
 When starting a new Claude Code session, do these steps in order. No exceptions.
