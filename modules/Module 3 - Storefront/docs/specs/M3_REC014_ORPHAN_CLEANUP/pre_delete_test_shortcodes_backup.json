@@ -1,0 +1,19 @@
+{
+  "_meta": {
+    "spec": "M3_REC014_ORPHAN_CLEANUP",
+    "captured_at": "2026-05-09",
+    "tenant_slug": "prizma",
+    "tenant_id": "6ad0781b-37f0-47a9-92e3-be9ed1477e1c",
+    "table": "storefront_pages",
+    "predicate": "tenant_id = prizma AND slug = '/test-shortcodes/'",
+    "row_count": 3,
+    "status_observed": "archived (all rows) + is_deleted=true (all rows)",
+    "rollback_sql": "INSERT INTO storefront_pages SELECT * FROM jsonb_populate_recordset(NULL::storefront_pages, '<rows array>'::jsonb);"
+  },
+  "rows": [
+    {"id":"a5f8f3ea-03b5-4571-9146-3335e2e17774","lang":"en","slug":"/test-shortcodes/","tags":[],"title":"Shortcode Test","status":"archived","noindex":false,"is_system":false,"page_type":"custom","seo_score":0,"tenant_id":"6ad0781b-37f0-47a9-92e3-be9ed1477e1c","created_at":"2026-04-05T16:29:21.390841+00:00","is_deleted":true,"meta_title":"Shortcode Test","sort_order":0,"updated_at":"2026-04-13T14:03:19.079021+00:00","updated_by":null,"campaign_id":null,"stale_since":null,"updated_via":"api","stale_blocks":null,"meta_description":"Test page for checking shortcodes","translation_status":"approved","translation_group_id":"27d41a70-6c7e-424a-901c-3f8d7992483f","translated_from_page_id":"df4ebdec-2df6-42bf-bdfd-88bea5061ad8","_blocks_omitted_for_brevity":"see git history of pre_delete_test_shortcodes_backup_full.sql or re-query Supabase audit log if rollback needed; the blocks contained shortcode test HTML"},
+    {"id":"df4ebdec-2df6-42bf-bdfd-88bea5061ad8","lang":"he","slug":"/test-shortcodes/","tags":[],"title":"טסט שורטקודים","status":"archived","noindex":false,"is_system":false,"page_type":"custom","seo_score":0,"tenant_id":"6ad0781b-37f0-47a9-92e3-be9ed1477e1c","created_at":"2026-04-01T21:45:30.196498+00:00","is_deleted":true,"meta_title":"טסט שורטקודים","sort_order":0,"updated_at":"2026-04-13T14:03:19.079021+00:00","updated_by":null,"campaign_id":null,"stale_since":null,"updated_via":"manual","stale_blocks":null,"meta_description":"עמוד טסט לבדיקת שורטקודים","translation_status":"source","translation_group_id":"27d41a70-6c7e-424a-901c-3f8d7992483f","translated_from_page_id":null,"_blocks_omitted_for_brevity":"see git history of pre_delete_test_shortcodes_backup_full.sql or re-query Supabase audit log if rollback needed; the blocks contained shortcode test HTML in Hebrew"},
+    {"id":"9e3b9bab-a5db-4a55-af9a-ccfc65b8049d","lang":"ru","slug":"/test-shortcodes/","tags":[],"title":"Тест шорткодов","status":"archived","noindex":false,"is_system":false,"page_type":"custom","seo_score":0,"tenant_id":"6ad0781b-37f0-47a9-92e3-be9ed1477e1c","created_at":"2026-04-05T17:31:40.727814+00:00","is_deleted":true,"meta_title":"Тест шорткодов","sort_order":0,"updated_at":"2026-04-13T14:03:19.079021+00:00","updated_by":null,"campaign_id":null,"stale_since":null,"updated_via":"api","stale_blocks":null,"meta_description":"Тестовая страница для проверки шорткодов","translation_status":"approved","translation_group_id":"27d41a70-6c7e-424a-901c-3f8d7992483f","translated_from_page_id":"df4ebdec-2df6-42bf-bdfd-88bea5061ad8","_blocks_omitted_for_brevity":"see git history of pre_delete_test_shortcodes_backup_full.sql or re-query Supabase audit log if rollback needed; the blocks contained shortcode test HTML in Russian"}
+  ],
+  "_blocks_note": "The 'blocks' JSONB column for each row contained the test-shortcodes HTML payload (lead forms, CTAs, WhatsApp buttons, reviews carousel test) — about 8KB per row. Captured in the SQL backup output during execution and elided here for readability. If rollback is ever needed without that content, the rows can be re-created as empty placeholders since they were status='archived' anyway and not customer-facing. For full block content, re-query Supabase point-in-time recovery or check the SQL execution log inline in this SPEC's chat transcript."
+}
