@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>Mockup A — Table-First | מסך מדידת קמפיינים</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: 'Heebo', sans-serif; }
+    .num { font-variant-numeric: tabular-nums; direction: ltr; text-align: end; display: inline-block; }
+    .group-row { background: linear-gradient(90deg, #eef2ff 0%, #faf5ff 100%); }
+    .sum-row { background: #f8fafc; font-weight: 600; }
+    .pulse-live { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+    th { position: sticky; top: 0; background: #1e293b; color: white; z-index: 10; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+  <header class="bg-gradient-to-l from-indigo-700 to-violet-700 text-white px-6 py-5 shadow-md">
+    <div class="max-w-[1600px] mx-auto flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <h1 class="text-2xl font-bold flex items-center gap-2">
+          <i data-lucide="bar-chart-3" class="w-7 h-7"></i>
+          Mockup A — Table-First
+        </h1>
+        <p class="text-indigo-100 text-sm mt-1">מסך מדידת קמפיינים בפייסבוק — תצוגת טבלה רחבה עם קיבוץ אוטומטי לפי סטטוס</p>
+      </div>
+      <div class="flex items-center gap-2 text-sm">
+        <span class="bg-white/15 px-3 py-1.5 rounded-md">סנכרון אחרון: לפני 12 דקות</span>
+        <button class="bg-white text-indigo-700 px-4 py-1.5 rounded-md font-medium hover:bg-indigo-50">סנכרן עכשיו</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filter / control bar -->
+  <div class="bg-white border-b border-slate-200 px-6 py-3 sticky top-0 z-20 shadow-sm">
+    <div class="max-w-[1600px] mx-auto flex items-center gap-3 flex-wrap">
+      <div class="flex items-center gap-2">
+        <i data-lucide="filter" class="w-4 h-4 text-slate-500"></i>
+        <span class="text-sm font-medium text-slate-700">סינון:</span>
+      </div>
+      <select class="border border-slate-300 rounded-md px-3 py-1.5 text-sm">
+        <option>כל הסטטוסים</option>
+        <option>Live & Scaling</option>
+        <option>Paused</option>
+        <option>Stopped</option>
+      </select>
+      <select class="border border-slate-300 rounded-md px-3 py-1.5 text-sm">
+        <option>כל סוגי האירועים</option>
+        <option>SuperSale</option>
+        <option>MultiSale</option>
+      </select>
+      <select class="border border-slate-300 rounded-md px-3 py-1.5 text-sm">
+        <option>כל ההחלטות</option>
+        <option>SCALE</option>
+        <option>TEST</option>
+        <option>STOP</option>
+      </select>
+      <input type="text" placeholder="חפש קמפיין..." class="border border-slate-300 rounded-md px-3 py-1.5 text-sm flex-1 min-w-[200px]">
+      <span class="text-xs text-slate-500 ms-auto">10 קמפיינים מוצגים</span>
+    </div>
+  </div>
+
+  <main class="max-w-[1600px] mx-auto p-4">
+    <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr>
+              <th class="px-3 py-2.5 text-start font-semibold whitespace-nowrap">שם הקמפיין</th>
+              <th class="px-3 py-2.5 text-start font-semibold whitespace-nowrap">סוג</th>
+              <th class="px-3 py-2.5 text-center font-semibold whitespace-nowrap">החלטה</th>
+              <th class="px-3 py-2.5 text-end font-semibold whitespace-nowrap">תקציב יומי</th>
+              <th class="px-3 py-2.5 text-end font-semibold whitespace-nowrap">ספנד</th>
+              <th class="px-3 py-2.5 text-end font-semibold whitespace-nowrap">לידים</th>
+              <th class="px-3 py-2.5 text-end font-semibold whitespace-nowrap">CPL</th>
+              <th class="px-3 py-2.5 text-end font-semibold whitespace-nowrap">קונים</th>
+              <th class="px-3 py-2.5 text-end font-semibold whitespace-nowrap">CAC</th>
+              <th class="px-3 py-2.5 text-end font-semibold whitespace-nowrap">Kill / Scale CAC</th>
+              <th class="px-3 py-2.5 text-end font-semibold whitespace-nowrap">הכנסות</th>
+              <th class="px-3 py-2.5 text-end font-semibold whitespace-nowrap">רווח גולמי</th>
+              <th class="px-3 py-2.5 text-end font-semibold whitespace-nowrap">ROAS</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <p class="text-xs text-slate-500 mt-4 leading-relaxed">
+      <strong>למה הסגנון הזה טוב:</strong> מתאים למי שכבר רגיל למאנדיי ורוצה את כל הנתונים בעין אחת — צפיפות מקסימלית, השוואה מהירה בין שורות, סינון/מיון בכותרות. <strong>חסרון:</strong> דורש הסתכלות פעילה — אם רק רוצים "מה המצב היום בקצרה", זה יותר מדי.
+    </p>
+  </main>
+
+  <script>
+    const ue = {
+      SuperSale: { gm: 0.20, killCAC: 800, scalingCAC: 400 },
+      MultiSale: { gm: 0.50, killCAC: 1200, scalingCAC: 600 },
+    };
+
+    const campaigns = [
+      { name: 'קמפיין לידים | SuperSale אשקלון | קץ | 60 יום | UGC', type: 'SuperSale', status: 'Live & Scaling', dailyBudget: 200, spend: 3200, leads: 120, buyers: 25, revenue: 12500 },
+      { name: 'קמפיין לידים | SuperSale תל אביב | UGC', type: 'SuperSale', status: 'Live & Scaling', dailyBudget: 300, spend: 4800, leads: 180, buyers: 36, revenue: 18000 },
+      { name: 'קמפיין לידים | SuperSale אילת | UGC', type: 'SuperSale', status: 'Live & Scaling', dailyBudget: 200, spend: 2800, leads: 110, buyers: 28, revenue: 14000 },
+      { name: 'קמפיין מודעות | רמת גן | UGC', type: 'MultiSale', status: 'Live & Scaling', dailyBudget: 150, spend: 1900, leads: 70, buyers: 14, revenue: 8500 },
+      { name: 'קמפיין מודעות | קרית גת | טסט', type: 'MultiSale', status: 'Live & Scaling', dailyBudget: 120, spend: 2400, leads: 50, buyers: 3, revenue: 1500 },
+      { name: 'קמפיין לידים | SuperSale חיפה | UGC', type: 'SuperSale', status: 'Paused', dailyBudget: 180, spend: 2400, leads: 80, buyers: 12, revenue: 5500 },
+      { name: 'קמפיין לידים | MultiSale ירושלים', type: 'MultiSale', status: 'Paused', dailyBudget: 150, spend: 1800, leads: 50, buyers: 8, revenue: 3500 },
+      { name: 'קמפיין לידים | MultiSale רחובות', type: 'MultiSale', status: 'Paused', dailyBudget: 100, spend: 2400, leads: 35, buyers: 3, revenue: 2400 },
+      { name: 'קמפיין לידים | SuperSale באר שבע | סטטיק', type: 'SuperSale', status: 'Stopped', dailyBudget: 250, spend: 3600, leads: 75, buyers: 4, revenue: 2200 },
+      { name: 'קמפיין לידים | SuperSale נתניה | סטטיק', type: 'SuperSale', status: 'Stopped', dailyBudget: 300, spend: 4500, leads: 85, buyers: 5, revenue: 4200 },
+    ];
+
+    function compute(c) {
+      const u = ue[c.type];
+      const cac = c.buyers > 0 ? c.spend / c.buyers : Infinity;
+      const cpl = c.leads > 0 ? c.spend / c.leads : 0;
+      const grossProfit = Math.round(c.revenue * u.gm) - c.spend;
+      const roas = c.spend > 0 ? c.revenue / c.spend : 0;
+      let decision = 'TEST';
+      if (cac === Infinity || cac > u.killCAC) decision = 'STOP';
+      else if (cac < u.scalingCAC) decision = 'SCALE';
+      return { ...c, ...u, cac: Math.round(cac), cpl: Math.round(cpl), grossProfit, roas, decision };
+    }
+
+    const computed = campaigns.map(compute);
+
+    const groups = [
+      { key: 'Live & Scaling', label: 'Live & Scaling', icon: 'play-circle', color: 'emerald', accent: 'bg-emerald-50' },
+      { key: 'Paused', label: 'Paused', icon: 'pause-circle', color: 'amber', accent: 'bg-amber-50' },
+      { key: 'Stopped', label: 'Stopped', icon: 'stop-circle', color: 'rose', accent: 'bg-rose-50' },
+    ];
+
+    function fmt(n) { return n.toLocaleString('he-IL'); }
+    function money(n) { return '₪' + fmt(Math.round(n)); }
+
+    function decisionBadge(d) {
+      const map = {
+        SCALE: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+        TEST: 'bg-slate-100 text-slate-700 border-slate-300',
+        STOP: 'bg-rose-100 text-rose-800 border-rose-300',
+      };
+      const icon = { SCALE: 'trending-up', TEST: 'flask-conical', STOP: 'octagon-x' }[d];
+      return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold border ${map[d]}">
+        <i data-lucide="${icon}" class="w-3 h-3"></i>${d}
+      </span>`;
+    }
+
+    function statusDot(s) {
+      const map = {
+        'Live & Scaling': 'bg-emerald-500 pulse-live',
+        'Paused': 'bg-amber-500',
+        'Stopped': 'bg-rose-500',
+      };
+      return `<span class="inline-block w-2 h-2 rounded-full ${map[s]}"></span>`;
+    }
+
+    const tbody = document.getElementById('tbody');
+    let html = '';
+
+    for (const g of groups) {
+      const items = computed.filter(c => c.status === g.key);
+      if (items.length === 0) continue;
+
+      const sumSpend = items.reduce((a, c) => a + c.spend, 0);
+      const sumLeads = items.reduce((a, c) => a + c.leads, 0);
+      const sumBuyers = items.reduce((a, c) => a + c.buyers, 0);
+      const sumRevenue = items.reduce((a, c) => a + c.revenue, 0);
+      const sumGP = items.reduce((a, c) => a + c.grossProfit, 0);
+      const avgCAC = sumBuyers > 0 ? Math.round(sumSpend / sumBuyers) : 0;
+      const avgCPL = sumLeads > 0 ? Math.round(sumSpend / sumLeads) : 0;
+      const avgROAS = sumSpend > 0 ? (sumRevenue / sumSpend).toFixed(2) : '0';
+
+      html += `
+        <tr class="group-row">
+          <td colspan="13" class="px-3 py-2.5 text-sm font-bold text-${g.color}-800 flex items-center gap-2">
+            <i data-lucide="${g.icon}" class="w-5 h-5 text-${g.color}-600"></i>
+            ${g.label} <span class="text-${g.color}-600 font-normal">(${items.length})</span>
+          </td>
+        </tr>`;
+
+      for (const c of items) {
+        html += `
+          <tr class="border-b border-slate-100 hover:bg-slate-50">
+            <td class="px-3 py-2 max-w-[280px] truncate" title="${c.name}">
+              ${statusDot(c.status)} <span class="ms-1">${c.name}</span>
+            </td>
+            <td class="px-3 py-2"><span class="text-xs px-2 py-0.5 rounded ${c.type === 'SuperSale' ? 'bg-violet-100 text-violet-800' : 'bg-indigo-100 text-indigo-800'}">${c.type}</span></td>
+            <td class="px-3 py-2 text-center">${decisionBadge(c.decision)}</td>
+            <td class="px-3 py-2"><span class="num">${money(c.dailyBudget)}</span></td>
+            <td class="px-3 py-2"><span class="num font-medium">${money(c.spend)}</span></td>
+            <td class="px-3 py-2"><span class="num">${fmt(c.leads)}</span></td>
+            <td class="px-3 py-2"><span class="num text-slate-600">${money(c.cpl)}</span></td>
+            <td class="px-3 py-2"><span class="num">${fmt(c.buyers)}</span></td>
+            <td class="px-3 py-2"><span class="num font-bold ${c.decision === 'STOP' ? 'text-rose-700' : c.decision === 'SCALE' ? 'text-emerald-700' : 'text-slate-700'}">${money(c.cac)}</span></td>
+            <td class="px-3 py-2 text-xs text-slate-500"><span class="num">${money(c.killCAC)}</span> / <span class="num">${money(c.scalingCAC)}</span></td>
+            <td class="px-3 py-2"><span class="num text-emerald-700 font-medium">${money(c.revenue)}</span></td>
+            <td class="px-3 py-2"><span class="num ${c.grossProfit > 0 ? 'text-emerald-700' : 'text-rose-700'} font-bold">${money(c.grossProfit)}</span></td>
+            <td class="px-3 py-2"><span class="num">${c.roas.toFixed(2)}x</span></td>
+          </tr>`;
+      }
+
+      html += `
+        <tr class="sum-row border-b-2 border-${g.color}-200">
+          <td class="px-3 py-2 text-sm font-bold text-${g.color}-800">סה"כ ${g.label}</td>
+          <td></td><td></td>
+          <td class="px-3 py-2 text-xs text-slate-500">—</td>
+          <td class="px-3 py-2"><span class="num">${money(sumSpend)}</span></td>
+          <td class="px-3 py-2"><span class="num">${fmt(sumLeads)}</span></td>
+          <td class="px-3 py-2"><span class="num">${money(avgCPL)}</span></td>
+          <td class="px-3 py-2"><span class="num">${fmt(sumBuyers)}</span></td>
+          <td class="px-3 py-2"><span class="num">${money(avgCAC)}</span></td>
+          <td></td>
+          <td class="px-3 py-2"><span class="num">${money(sumRevenue)}</span></td>
+          <td class="px-3 py-2"><span class="num ${sumGP > 0 ? 'text-emerald-700' : 'text-rose-700'}">${money(sumGP)}</span></td>
+          <td class="px-3 py-2"><span class="num">${avgROAS}x</span></td>
+        </tr>`;
+    }
+
+    tbody.innerHTML = html;
+    lucide.createIcons();
+  </script>
+</body>
+</html>
