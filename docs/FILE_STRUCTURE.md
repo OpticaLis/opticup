@@ -11,19 +11,104 @@
 
 ## Repo Root
 
+> **Discipline:** every file/directory at root must fall into one of the 3 categories defined in `CLAUDE.md` §0.5 (Root Discipline Rule). Anything outside these categories belongs in `_archive/<subfolder>/`.
+
+**Category 1 — Technical Infrastructure** (`CLAUDE.md`, `README.md`, `package.json`, `package-lock.json`, `.gitignore`, `.mcp.json`, `.nojekyll`, `CNAME`, `favicon.ico`, plus hidden infra dirs `.git/`, `.github/`, `.husky/`, `.vscode/`, `.claude/`, `node_modules/`).
+
+**Category 2 — Live Sources of Truth** (`MASTER_ROADMAP.md`, `TECH_DEBT.md`, `docs/`, `modules/`, `__LAUNCH_PLAN_DRAFT__/`, `_archive/`, `migrations/`, `scripts/`, `shared/`, `js/`, `css/`, `supabase/`, `tests/`, `campaigns/`, `watcher-deploy/`, `opticup-skills.plugin`, `serve.js`).
+
+**Category 3 — Application Entrypoints (HTML at root, GitHub Pages routing):**
+
 ```
 opticup/
 ├── index.html                  — home screen: PIN login + module cards
+├── admin.html                  — platform admin entry (Module 2)
+├── crm.html                    — CRM module entry (Module 4)
 ├── inventory.html              — inventory management module (full app)
 ├── suppliers-debt.html         — supplier debt tracking module
 ├── employees.html              — standalone employee management page
 ├── shipments.html              — shipments & box management module
 ├── settings.html               — tenant settings (business info, financial config, display prefs)
+├── error.html                  — generic error page
+├── landing.html                — public landing page
+├── r.html                      — short-link redirect handler
 ├── storefront-settings.html    — storefront config: WhatsApp, booking, notifications (Phase 4B)
 ├── storefront-products.html    — storefront product overrides + bulk select (Phase 4B)
 ├── storefront-glossary.html    — translation glossary management (Phase 6)
 ├── storefront-studio.html      — CMS block editor for storefront pages (CMS-2)
-└── CLAUDE.md                   — project constitution (navigation hub)
+├── storefront-blog.html        — storefront blog management (CMS-3)
+├── storefront-content.html     — storefront content overrides (CMS-3)
+└── storefront-landing-content.html — storefront landing-page content editor (CMS-3)
+```
+
+## _archive/ (Single archive vault — added 2026-05-09)
+
+```
+_archive/
+├── README.md                   — explains structure + add/recover policy
+├── root-onboarding/            — 7 legacy onboarding/prompt files superseded by .claude/skills/
+│   (DANIEL_QUICK_REFERENCE, STRATEGIC_CHAT_ONBOARDING, MODULE_DOCUMENTATION_SCHEMA,
+│    UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT, UNIVERSAL_SECONDARY_CHAT_PROMPT,
+│    PHASE_0_PROGRESS, handoff-next-session)
+│
+├── project-genesis/            — March 2026 era files (consolidated from old archive/, data/, ---QA---/)
+│   (CLAUDE10-3, index_V1.1A→V1.7A + index_backup, MASTER_ROADMAP March-era,
+│    contacts/customers/frames/lenses/sunglasses/suppliers/test_data JSONs,
+│    schema.json, table_fields.json, QA.md + Hebrew QA file)
+│
+├── launch-plan-versions/       — historical MASTER_LIVE_PLAN versions
+│   (MASTER_LIVE_PLAN_v1.md — current truth lives in /MASTER_ROADMAP.md)
+│
+└── session-outputs/            — 53 historical session prompts/handoffs from old outputs/
+    (PROMPT_*.md, INSTRUCTIONS_*.md, HANDOFF_*.md, NIGHT_HANDOFF.md,
+     campaign-mockups/, campaign-screen-screenshots/)
+```
+
+**Discipline:** files arrive here only via the Root Discipline Rule (CLAUDE.md §0.5). They are git-tracked but not actively maintained. Recover via `git log --follow <path>` / `git show <hash>:<path>`.
+
+## __LAUNCH_PLAN_DRAFT__/ (Pre-LIVE planning artifacts)
+
+```
+__LAUNCH_PLAN_DRAFT__/
+├── README.md                   — overview of planning artifacts
+├── MASTER_LIVE_PLAN.md         — DEPRECATED (moved to /MASTER_ROADMAP.md, archived in _archive/launch-plan-versions/)
+├── access-audit/               — Access permission audit artifacts
+├── architecture-briefs/        — module architecture briefs + mockups
+│   ├── PROJECT_STRUCTURE_AUDIT_2026-05-09.md
+│   ├── PROJECT_STRUCTURE_CLEANUP_SPEC.md
+│   ├── PROJECT_STRUCTURE_CLEANUP_ACTIVATION.md
+│   ├── _pass3_4_findings.md / _pass8_9_findings.md / _pass10_findings.md   — audit pass details
+│   ├── M5 - Customers/         — brief + mockups + handoff
+│   ├── M6 - Prescriptions/     — brief + editor mockup
+│   ├── M7 - Orders/            — brief + 5 form mockups + variants + feature inventory
+│   ├── M8 - Payments/          — brief + checkout/checks/daily-close/provider mockups + research
+│   ├── M11 - Reports/          — brief + 3 report mockups + handoff
+│   ├── M12 - Communications/   — brief + 4 channel/customer/templates/whatsapp mockups
+│   ├── M14 - Appointments/     — brief + appointments mockups
+│   └── M15 - Queue/            — brief + queue mockup
+├── campaign-overseer/          — Campaign Overseer session artifacts
+├── handoffs/                   — cross-module module-to-module handoffs (M12_HANDOFF, M13_HANDOFF, ...)
+├── site-overseer/              — Site Overseer session artifacts
+└── supervisor-system/          — Supervisor pattern documentation
+```
+
+**Note:** the `_archive/` subfolder previously here was consolidated into root `_archive/launch-plan-versions/` per Root Discipline Rule (2026-05-09).
+
+## .claude/ (Claude Code skills + local config)
+
+```
+.claude/
+├── skills/                     — Optic Up project skills (TRACKED via .gitignore negation)
+│   ├── opticup-main-strategic/ — Main Strategic chat skill (orchestrator)
+│   │   ├── SKILL.md
+│   │   └── references/
+│   │       ├── DECISIONS_LOG.md             — index of cross-module decisions
+│   │       ├── MODULE_BRIEF_TEMPLATE.md
+│   │       └── decisions/                   — per-module decision logs (M5, M6, M7, M8, M11, M12, CROSS) (added 2026-05-09)
+│   ├── opticup-strategic/      — Module Strategic / Foreman skill
+│   ├── opticup-executor/       — Code Executor skill
+│   └── (other opticup-* skills)
+└── (other .claude/* paths are gitignored — local config, transcripts, settings)
 ```
 
 ## css/
