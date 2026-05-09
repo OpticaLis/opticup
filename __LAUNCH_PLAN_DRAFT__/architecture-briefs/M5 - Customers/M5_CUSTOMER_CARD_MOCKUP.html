@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M5 — Customer Card · 5 tabs</title>
+<style>
+  :root{
+    --bg:#FAFAF7; --surface:#FFFFFF; --soft:#F1EFE8;
+    --border:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
+    --text:#1F1F1E; --text-2:#5F5E5A;
+    --purple:#534AB7; --purple-soft:#EEEDFE; --purple-deep:#26215C; --purple-mid:#7F77DD;
+    --teal:#0F6E56; --teal-soft:#E1F5EE; --teal-deep:#04342C; --teal-mid:#5DCAA5;
+    --amber:#BA7517; --amber-soft:#FAEEDA; --amber-deep:#412402; --amber-mid:#FAC775;
+    --blue:#185FA5; --blue-soft:#E6F1FB; --blue-deep:#0C447C;
+    --coral:#993C1D; --coral-soft:#FAECE7;
+    --green:#3B6D11; --green-soft:#EAF3DE;
+    --gray:#5F5E5A; --gray-soft:#F1EFE8;
+    --red:#A32D2D;
+    --r-md:6px; --r-lg:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;padding:18px;background:var(--bg);color:var(--text);
+    font-family:-apple-system,'Segoe UI',Rubik,sans-serif;font-size:12px;direction:rtl;
+  }
+  h1{font-size:18px;font-weight:500;margin:0 0 4px;}
+  h2{font-size:14px;font-weight:500;margin:14px 0 8px;}
+  .lede{color:var(--text-2);margin:0 0 14px;font-size:12px;max-width:1100px;}
+
+  .app{
+    background:var(--surface);border:0.5px solid var(--border);
+    border-radius:var(--r-lg);overflow:hidden;max-width:1500px;margin:0 auto;
+  }
+
+  /* HEADER */
+  .header{
+    background:var(--purple-deep);color:#EEEDFE;padding:8px 14px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .header .left{display:flex;align-items:center;gap:10px;}
+  .avatar{
+    width:32px;height:32px;border-radius:50%;background:var(--purple-mid);color:#FFF;
+    display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;
+  }
+  .cust-name{font-size:14px;font-weight:500;}
+  .cust-meta{font-size:10px;color:#CECBF6;}
+  .header button{background:var(--purple-mid);color:#FFF;border:0;font-size:11px;padding:5px 10px;border-radius:var(--r-md);cursor:pointer;}
+  .header button.edit{background:var(--amber);}
+  .pill{display:inline-block;font-size:10px;padding:1px 6px;border-radius:var(--r-md);font-weight:500;}
+  .pill-amber{background:var(--amber-mid);color:var(--amber-deep);}
+  .pill-purple{background:var(--purple-soft);color:var(--purple-deep);}
+  .pill-teal{background:var(--teal-soft);color:var(--teal-deep);}
+  .pill-blue{background:var(--blue-soft);color:var(--blue-deep);}
+  .pill-green{background:var(--green-soft);color:var(--green-deep);}
+  .pill-coral{background:var(--coral-soft);color:var(--coral);}
+
+  /* TABS */
+  .tabs{
+    background:var(--surface);border-bottom:0.5px solid var(--border);
+    display:flex;align-items:center;
+  }
+  .tab{
+    padding:10px 18px;font-size:12px;color:var(--text-2);cursor:pointer;
+    border-left:0.5px solid var(--border);border-bottom:2px solid transparent;
+  }
+  .tab:hover{background:var(--soft);}
+  .tab.active{background:var(--purple-soft);color:var(--purple-deep);font-weight:500;border-bottom-color:var(--purple);}
+  .tabs .right{margin-right:auto;padding:0 14px;font-size:11px;color:var(--text-2);}
+
+  /* CONTENT */
+  .content{padding:14px 16px;background:var(--bg);min-height:520px;}
+
+  /* === Details === */
+  .col-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  .col-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:14px;}
+  .field-block{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);padding:11px 13px;}
+  .field-block h3{font-size:13px;font-weight:500;margin:0 0 8px;color:var(--purple-deep);}
+  .field-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:0.5px dashed var(--border);}
+  .field-row:last-child{border-bottom:0;}
+  .field-row .lbl{color:var(--text-2);}
+  .field-row .val{font-weight:500;}
+  .field-row.empty .val{color:var(--text-2);font-style:italic;}
+
+  .auto-tag{
+    background:var(--amber-soft);color:var(--amber-deep);
+    border-right:3px solid var(--amber);padding:6px 10px;border-radius:var(--r-md);
+    font-size:10px;margin-top:6px;
+  }
+
+  .medical-area{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    padding:11px 13px;margin-top:14px;
+  }
+  .medical-tabs{display:flex;gap:4px;margin-bottom:8px;}
+  .medical-tab{
+    padding:5px 12px;font-size:11px;background:var(--soft);
+    border:0.5px solid var(--border-strong);border-radius:var(--r-md);cursor:pointer;
+  }
+  .medical-tab.active{background:var(--blue);color:#FFF;border-color:var(--blue);}
+  .medical-body{
+    background:#FFF;border:0.5px solid var(--border);padding:7px 10px;min-height:60px;font-size:11px;
+  }
+  .note-line{padding:5px 0;border-bottom:0.5px dashed var(--border);font-size:11px;}
+  .note-line:last-child{border-bottom:0;}
+  .note-line .ts{color:var(--purple-deep);font-weight:500;}
+  .note-line .actor{color:var(--text-2);}
+
+  .bottom-flags{
+    display:flex;gap:14px;align-items:center;margin-top:14px;padding:8px 13px;
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+  }
+  .flag{display:inline-flex;align-items:center;gap:4px;font-size:11px;}
+  .flag .box{width:13px;height:13px;border:1px solid var(--border-strong);border-radius:3px;background:#FFF;}
+  .flag .box.checked{background:var(--purple);border-color:var(--purple);}
+  .auto-save{
+    margin-right:auto;font-size:10px;color:var(--teal);
+  }
+
+  /* === Vision Function === */
+  table{width:100%;border-collapse:collapse;font-size:11px;background:var(--surface);}
+  table th, table td{border:0.5px solid var(--border);padding:5px 8px;text-align:right;}
+  table th{background:var(--soft);font-weight:500;}
+  table tbody tr:hover{background:var(--purple-soft);}
+  .table-toolbar{
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;
+  }
+
+  /* === Eye Care selector === */
+  .eyecare-selector{
+    display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;
+  }
+  .eyecare-btn{
+    padding:14px 18px;background:var(--surface);border:1.5px solid var(--border-strong);
+    border-radius:var(--r-md);cursor:pointer;text-align:center;
+    display:flex;flex-direction:column;align-items:center;gap:5px;
+  }
+  .eyecare-btn:hover{border-color:var(--purple);background:var(--purple-soft);}
+  .eyecare-btn.active{background:var(--purple);color:#FFF;border-color:var(--purple);}
+  .eyecare-btn .ico{font-size:24px;}
+  .eyecare-btn .ttl{font-weight:500;font-size:14px;}
+  .eyecare-btn .sub{font-size:10px;opacity:0.75;}
+
+  /* === Orders summary === */
+  .orders-banner{
+    background:var(--amber-soft);border:0.5px solid var(--amber);
+    border-radius:var(--r-md);padding:14px;text-align:center;
+  }
+  .orders-banner .ttl{font-size:14px;font-weight:500;margin-bottom:6px;color:var(--amber-deep);}
+  .orders-banner button.go{
+    background:var(--purple);color:#FFF;border:0;padding:8px 16px;
+    border-radius:var(--r-md);cursor:pointer;font-size:12px;
+  }
+
+  /* === Docs === */
+  .docs-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .docs-filters{display:flex;gap:6px;}
+  .docs-filter{
+    padding:4px 10px;font-size:11px;background:var(--surface);
+    border:0.5px solid var(--border-strong);border-radius:var(--r-md);cursor:pointer;
+  }
+  .docs-filter.active{background:var(--blue);color:#FFF;border-color:var(--blue);}
+  .docs-table{margin-top:6px;}
+  .docs-table th{font-weight:500;}
+  .docs-action{display:flex;gap:3px;justify-content:center;}
+  .docs-action button{
+    padding:3px 7px;font-size:10px;background:var(--surface);border:0.5px solid var(--border-strong);
+    border-radius:var(--r-md);cursor:pointer;
+  }
+  .docs-action button.danger{color:var(--red);}
+  .upload-zone{
+    background:var(--purple-soft);border:1.5px dashed var(--purple);
+    border-radius:var(--r-md);padding:14px;text-align:center;font-size:11px;color:var(--purple-deep);
+    margin-top:8px;
+  }
+  .upload-zone strong{color:var(--purple-deep);}
+
+  /* legend */
+  .legend{
+    margin-top:14px;padding:14px;background:var(--surface);border:0.5px solid var(--border);
+    border-radius:var(--r-md);font-size:12px;color:var(--text-2);max-width:1500px;margin-right:auto;margin-left:auto;
+  }
+  .legend strong{color:var(--text);font-weight:500;}
+  .legend ul{margin:6px 0 0;padding-right:18px;}
+  .legend li{margin-bottom:4px;}
+  .legend h2{margin-top:0;}
+
+  /* tab content show/hide */
+  .pane{display:none;}
+  .pane.active{display:block;}
+
+  .stage-h{
+    background:var(--purple-deep);color:#FFF;padding:5px 14px;margin:18px 0 4px;
+    border-radius:var(--r-md);font-size:11px;font-weight:500;
+  }
+</style>
+</head>
+<body>
+
+<h1>M5 — כרטיס לקוח · 5 לשוניות</h1>
+<p class="lede">
+  כרטיס-לקוח מאחד מודולים: M5 (פרטי-לקוח), M6 (תפקודי ראייה + בדיקות ראייה — מודול-נפרד עם תצוגת-תקציר כאן), M7 (הזמנות), M14 (Queue), Docs (מסמכים-רפואיים).
+  שמירה אוטומטית, מצב-עריכה מהכותרת. מטה אצל כל לשונית — סקיצה.
+</p>
+
+<!-- ============ TAB 1 — DETAILS ============ -->
+<div class="stage-h">לשונית 1 · Details · פרטי-לקוח</div>
+<div class="app">
+  <div class="header">
+    <div class="left">
+      <div class="avatar">לד</div>
+      <div>
+        <div class="cust-name">ליסקר דניאל · 30</div>
+        <div class="cust-meta">📱 053-788-9878 · 3 הזמנות ב-12 חודשים · ₪4,250 בשנה האחרונה · אשקלון</div>
+      </div>
+      <span class="pill pill-amber">VIP</span>
+      <span class="pill pill-teal">חבר-מועדון</span>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <button class="edit">✎ ערוך</button>
+      <button>📞 התקשר</button>
+      <button>💬 WhatsApp</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active">פרטים</div>
+    <div class="tab">תפקודי ראייה</div>
+    <div class="tab">בדיקות ראייה</div>
+    <div class="tab">הזמנות</div>
+    <div class="tab">מסמכים</div>
+    <div class="right">לקוח #10478 · נוצר 14.05.24</div>
+  </div>
+
+  <div class="content">
+    <div class="col-3">
+      <!-- Personal -->
+      <div class="field-block">
+        <h3>פרטים אישיים</h3>
+        <div class="field-row"><span class="lbl">שם פרטי</span><span class="val">דניאל</span></div>
+        <div class="field-row"><span class="lbl">שם משפחה</span><span class="val">ליסקר</span></div>
+        <div class="field-row"><span class="lbl">ת"ז</span><span class="val">123123123</span></div>
+        <div class="field-row"><span class="lbl">תאריך-לידה</span><span class="val">14.03.1996</span></div>
+        <div class="field-row"><span class="lbl">מין</span><span class="val">זכר</span></div>
+        <div class="field-row"><span class="lbl">שפה</span><span class="val">עברית</span></div>
+        <div class="auto-tag">
+          🎂 ביום-הולדת תישלח אוטומטית הודעת-WhatsApp + קופון 10% חד-פעמי. <strong>(עתיד — מודול-תקשורת/אוטומציות. כרגע ידני.)</strong>
+        </div>
+      </div>
+
+      <!-- Address -->
+      <div class="field-block">
+        <h3>כתובת</h3>
+        <div class="field-row"><span class="lbl">עיר</span><span class="val">אשקלון</span></div>
+        <div class="field-row"><span class="lbl">שכונה</span><span class="val">עיר היין</span></div>
+        <div class="field-row"><span class="lbl">רחוב + מספר</span><span class="val">דרך ארץ 2</span></div>
+        <div class="field-row empty"><span class="lbl">מיקוד</span><span class="val">—</span></div>
+        <div class="field-row"><span class="lbl">משפחה</span><span class="val">— (אופציונלי)</span></div>
+      </div>
+
+      <!-- Contact -->
+      <div class="field-block">
+        <h3>תקשורת</h3>
+        <div class="field-row"><span class="lbl">נייד</span><span class="val">053-788-9878</span></div>
+        <div class="field-row empty"><span class="lbl">טלפון-עבודה</span><span class="val">—</span></div>
+        <div class="field-row"><span class="lbl">אימייל</span><span class="val">daniel@…</span></div>
+        <div class="field-row empty"><span class="lbl">אחר</span><span class="val">—</span></div>
+      </div>
+    </div>
+
+    <div class="col-2">
+      <!-- Additional info -->
+      <div class="field-block">
+        <h3>מידע נוסף</h3>
+        <div class="field-row"><span class="lbl">קופ"ח</span><span class="val">מכבי</span></div>
+        <div class="field-row"><span class="lbl">מקצוע</span><span class="val">מהנדס תוכנה</span></div>
+        <div class="field-row"><span class="lbl">קבוצת-הנחה</span><span class="val">VIP clients</span></div>
+        <div class="field-row"><span class="lbl">מקור</span><span class="val">המלצה · 2024</span></div>
+      </div>
+
+      <!-- Notes (general business notes) -->
+      <div class="field-block">
+        <h3>הערות-עסקיות</h3>
+        <div class="medical-body">
+          <div class="note-line"><span class="ts">14:32 · 18.03.26</span> · <span class="actor">Ilya:</span> רוצה לקנות זוג-נוסף בשנה הבאה</div>
+          <div class="note-line"><span class="ts">11:00 · 04.01.26</span> · <span class="actor">Yossi:</span> בחר מסגרת יקרה ביותר בחנות</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="medical-area">
+      <h3 style="margin:0 0 8px;font-size:13px;font-weight:500;color:var(--coral);">🩺 הערות-רפואיות (פנימי — לא נשלח ללקוח)</h3>
+      <div class="medical-tabs">
+        <div class="medical-tab active">Medical Q.</div>
+        <div class="medical-tab">Diagnostics</div>
+      </div>
+      <div class="medical-body">
+        <div class="note-line"><span class="ts">10:15 · 10.10.25</span> · <span class="actor">Naama:</span> הלקוח דיווח על תרופות ל-DM type-2 (Metformin). לא שינוי משמעותי בראיה.</div>
+        <div class="note-line"><span class="ts">14:20 · 02.02.24</span> · <span class="actor">Naama:</span> סיפור-משפחתי של גלאוקומה (אבא). מומלץ בדיקת לחץ-תוך-עיני שנתית.</div>
+      </div>
+    </div>
+
+    <!-- QUEUE — eye-exam waiting list -->
+    <div style="background:var(--teal-soft);border:1px solid var(--teal);border-radius:var(--r-md);padding:11px 14px;margin-top:14px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <strong style="color:var(--teal-deep);font-size:13px;">📋 תור לבדיקת-ראיה</strong>
+        <div style="font-size:10px;color:var(--text-2);margin-top:2px;">
+          לחץ "הוסף לתור" כשהלקוח מגיע ומחכה לאופטומטריסט. הלקוח יופיע ברשימת-ההמתנה במסך-הראשי של האופטומטריסט.
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="pill pill-teal" style="font-size:13px;padding:4px 12px;">תור #2 · ממתין 12 דקות</span>
+        <button style="background:var(--teal);color:#FFF;border:0;padding:6px 14px;border-radius:var(--r-md);cursor:pointer;font-size:11px;">↑ קדם בתור</button>
+        <button style="background:var(--surface);border:0.5px solid var(--red);color:var(--red);padding:6px 14px;border-radius:var(--r-md);cursor:pointer;font-size:11px;">✕ הסר מהתור</button>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--text-2);margin-top:5px;font-style:italic;text-align:center;">
+      ⌥ Queue מנוהל ב-M14 (תורים) · במצב לא-בתור יוצג כפתור-יחיד "+ הוסף לתור-בדיקה"
+    </div>
+
+    <div class="bottom-flags">
+      <span class="flag"><span class="box"></span> Inactive</span>
+      <span class="flag"><span class="box checked"></span> Subscription</span>
+      <span class="flag"><span class="box"></span> Locked</span>
+      <span class="auto-save">✓ נשמר אוטומטית · 14:32:08</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TAB 2 — VISION FUNCTION ============ -->
+<div class="stage-h">לשונית 2 · תפקודי ראייה · Vision Function (M6)</div>
+<div class="app">
+  <div class="header">
+    <div class="left">
+      <div class="avatar">לד</div>
+      <div>
+        <div class="cust-name">ליסקר דניאל · 30</div>
+        <div class="cust-meta">📱 053-788-9878 · בדיקה אחרונה: 10.10.25 · Naama</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <button>+ בדיקה חדשה</button>
+      <button>🖨 הדפס</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab">פרטים</div>
+    <div class="tab active">בדיקת ראיה</div>
+    <div class="tab">טיפול-עיניים</div>
+    <div class="tab">הזמנות</div>
+    <div class="tab">מסמכים</div>
+  </div>
+
+  <div class="content">
+    <div style="background:var(--blue-soft);border:0.5px solid var(--blue);border-radius:var(--r-md);padding:8px 12px;margin-bottom:10px;font-size:11px;color:var(--blue-deep);">
+      📋 <strong>תפקודי ראייה</strong> = הבדיקה-המורחבת של האופטומטריסט. רשימת-בדיקות מקיפה — לקוח יכול להיות עם מספר בדיקות לאורך השנים.
+    </div>
+
+    <div class="table-toolbar">
+      <div>
+        <strong>תאריך בדיקה:</strong> <span style="background:var(--amber-soft);padding:2px 7px;border-radius:3px;">10.10.2025</span>
+        · אופטומטריסט: <strong>Naama</strong>
+        ·
+        <select style="font-size:11px;padding:3px 7px;">
+          <option>הצג בדיקה: 10.10.25</option>
+          <option>02.02.24</option>
+          <option>15.06.22</option>
+        </select>
+      </div>
+      <span style="font-size:10px;color:var(--text-2);">⌥ בורר-למעלה לבחירת בדיקה היסטורית · "+ בדיקה חדשה" בכותרת ליצירת בדיקה חדשה</span>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>סוג בדיקה</th><th>תוצאה צפויה</th><th>ממצאים</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Covet Test D</td><td>ortho</td><td>ortho</td></tr>
+        <tr><td>Covet Test N</td><td>4 exo</td><td>3 exo</td></tr>
+        <tr><td>AC/A</td><td>4 / 1</td><td>4 / 1</td></tr>
+        <tr><td>Van Graefe</td><td>Blur / Break / Recovery</td><td></td></tr>
+        <tr><td>Bo (6m)</td><td>9 / 19 / 10</td><td></td></tr>
+        <tr><td>Bi (6m)</td><td>x / 7 / 4</td><td></td></tr>
+        <tr><td>Bo (40cm)</td><td>17 / 21 / 11</td><td></td></tr>
+        <tr><td>Bi (40cm)</td><td>13 / 21 / 13</td><td></td></tr>
+        <tr><td>Near Point of Convergence</td><td>Break / Recovery</td><td></td></tr>
+        <tr><td>Accommodative Target</td><td>2.5 / 4.5 cm</td><td></td></tr>
+        <tr><td>Penlight</td><td>3 / 5 cm</td><td></td></tr>
+        <tr><td>W4D</td><td>4</td><td></td></tr>
+        <tr><td>Amplitude of Accommodation</td><td></td><td></td></tr>
+        <tr><td>Push Up</td><td>15 − 1/4 (age)</td><td></td></tr>
+        <tr><td>Fused X Cylinder − FCC</td><td>+0.5D</td><td></td></tr>
+        <tr><td>NRA</td><td>+2.00</td><td>+1.75</td></tr>
+        <tr><td>PRA</td><td>−2.37</td><td></td></tr>
+        <tr><td>MEM Retinscopy</td><td>+0.5D</td><td></td></tr>
+        <tr><td>Binocular Accom. Facility</td><td>+ / −2.00 D</td><td></td></tr>
+        <tr><td>Age 8−12</td><td>5 cpm</td><td></td></tr>
+        <tr><td>Age 13−40</td><td>8 cpm</td><td></td></tr>
+        <tr><td>Stereopsis</td><td></td><td>3000"</td></tr>
+        <tr><td>O.M</td><td></td><td></td></tr>
+      </tbody>
+    </table>
+
+    <div style="display:flex;gap:6px;margin-top:14px;justify-content:flex-end;">
+      <button class="docs-filter">📤 ייצא Excel</button>
+      <button class="docs-filter">🖨 הדפס</button>
+      <button class="docs-filter" style="background:var(--teal);color:#FFF;border-color:var(--teal);">→ צור מרשם מהתוצאות</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TAB 3 — PRESCRIPTIONS (M6 read-only summary) ============ -->
+<div class="stage-h">לשונית 3 · בדיקות ראייה · תצוגת-תקציר על מודול-בדיקות ראייה נפרד (M6)</div>
+<div class="app">
+  <div class="header">
+    <div class="left">
+      <div class="avatar">לד</div>
+      <div>
+        <div class="cust-name">ליסקר דניאל · 30</div>
+        <div class="cust-meta">📱 053-788-9878 · 5 בדיקות ראייה סך-הכל · פעילים: משקפיים 10.10.25 + עדשות-מגע 02.02.26</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button>+ מרשם חדש</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab">פרטים</div>
+    <div class="tab">תפקודי ראייה</div>
+    <div class="tab active">בדיקות ראייה</div>
+    <div class="tab">הזמנות</div>
+    <div class="tab">מסמכים</div>
+  </div>
+
+  <div class="content">
+    <div style="background:var(--blue-soft);border:0.5px solid var(--blue);border-radius:var(--r-md);padding:9px 13px;margin-bottom:12px;font-size:11px;color:var(--blue-deep);">
+      📋 <strong>תצוגת-תקציר על מודול-בדיקות ראייה נפרד (M6).</strong>
+      כאן רואים רק רשימה של כל הבדיקות ראייה-של-הלקוח. ליצירה / עריכה / פירוט מלא — לחיצה על "פתח ב-M6" עוברת למסך-מרשם המלא, בדומה ללשונית-הזמנות שפותחת את מסך-M7.
+      <br/>
+      <em>למה מודול-בדיקות ראייה נפרד מהלקוח: scaling לעוד ענפים בעתיד (רפואת-שיניים, ווטרינריה — כל אחד עם מודול-בדיקות ראייה-משלו, מודול-הלקוחות נשאר זהה).</em>
+    </div>
+
+    <div class="docs-toolbar">
+      <div class="docs-filters">
+        <button class="docs-filter active">הכל (5)</button>
+        <button class="docs-filter">משקפיים (3)</button>
+        <button class="docs-filter">עדשות-מגע (2)</button>
+        <button class="docs-filter">פעילים בלבד (2)</button>
+      </div>
+      <div style="font-size:10px;color:var(--text-2);">⌥ סינון לפי סוג / מצב</div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:90px;">תאריך</th>
+          <th style="width:90px;">סוג</th>
+          <th style="width:80px;">מצב</th>
+          <th style="width:110px;">אופטומטריסט</th>
+          <th>תקציר R / L</th>
+          <th style="width:95px;">תוקף-עד</th>
+          <th style="width:90px;">הערות</th>
+          <th style="width:140px;">פעולות</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background:var(--green-soft);">
+          <td>10.10.25</td>
+          <td><span class="pill pill-purple">משקפיים</span></td>
+          <td><span class="pill pill-green">פעיל</span></td>
+          <td>Naama</td>
+          <td>R: −2.00 / −0.75 · L: −3.00 / +0.50 · ADD +2.00</td>
+          <td>10.10.27</td>
+          <td>2 הערות</td>
+          <td class="docs-action">
+            <button>פתח ב-M6 ←</button>
+            <button>📦 הזמנה</button>
+          </td>
+        </tr>
+        <tr style="background:var(--green-soft);">
+          <td>02.02.26</td>
+          <td><span class="pill pill-coral">עדשות-מגע</span></td>
+          <td><span class="pill pill-green">פעיל</span></td>
+          <td>Naama</td>
+          <td>R: −2.00 BC 8.4 DIA 14.0 · L: −2.25 BC 8.4 DIA 14.0</td>
+          <td>02.02.27</td>
+          <td>—</td>
+          <td class="docs-action">
+            <button>פתח ב-M6 ←</button>
+            <button>📦 הזמנה</button>
+          </td>
+        </tr>
+        <tr>
+          <td>15.06.22</td>
+          <td><span class="pill pill-purple">משקפיים</span></td>
+          <td><span class="pill pill-gray">ישן</span></td>
+          <td>Naama</td>
+          <td>R: −1.75 / −0.75 · L: −2.75 / +0.50</td>
+          <td>15.06.24</td>
+          <td>1 הערה</td>
+          <td class="docs-action">
+            <button>פתח ב-M6 ←</button>
+          </td>
+        </tr>
+        <tr>
+          <td>14.05.24</td>
+          <td><span class="pill pill-coral">עדשות-מגע</span></td>
+          <td><span class="pill pill-gray">ישן</span></td>
+          <td>Naama</td>
+          <td>R: −1.75 BC 8.6 DIA 14.0 · L: −2.00 BC 8.6 DIA 14.0</td>
+          <td>14.05.26</td>
+          <td>—</td>
+          <td class="docs-action">
+            <button>פתח ב-M6 ←</button>
+          </td>
+        </tr>
+        <tr>
+          <td>14.05.24</td>
+          <td><span class="pill pill-purple">משקפיים</span></td>
+          <td><span class="pill pill-gray">ישן</span></td>
+          <td>Naama</td>
+          <td>R: −1.50 / −0.50 · L: −2.50 / +0.50</td>
+          <td>14.05.26</td>
+          <td>—</td>
+          <td class="docs-action">
+            <button>פתח ב-M6 ←</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="background:var(--soft);padding:10px 13px;border-radius:var(--r-md);margin-top:14px;font-size:11px;">
+      <strong>תזכורות (Recall) — מודולה ב-M6:</strong>
+      בדיקת-ראיה הבאה — <strong>10.10.26</strong> · חידוש-מגע — <strong>02.02.27</strong> · המרשם הפעיל למשקפיים פג תוקף — <strong>10.10.27</strong>
+      <span style="margin-right:14px;color:var(--text-2);font-size:10px;">⌥ ניהול-תזכורות מלא + שליחת-WhatsApp במודולה של M6</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TAB 4 — ORDERS (banner only, links to M7) ============ -->
+<div class="stage-h">לשונית 4 · Orders · הזמנות (M7) — פותח את מסך-M7 שכבר תוכנן</div>
+<div class="app">
+  <div class="header">
+    <div class="left">
+      <div class="avatar">לד</div>
+      <div>
+        <div class="cust-name">ליסקר דניאל · 30</div>
+        <div class="cust-meta">📱 053-788-9878 · 3 הזמנות ב-12 חודשים</div>
+      </div>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab">פרטים</div>
+    <div class="tab">תפקודי ראייה</div>
+    <div class="tab">בדיקות ראייה</div>
+    <div class="tab active">הזמנות</div>
+    <div class="tab">מסמכים</div>
+  </div>
+
+  <div class="content">
+    <div class="orders-banner">
+      <div class="ttl">📦 לשונית הזמנות = מסך-M7 המלא</div>
+      <p style="margin:6px 0;font-size:11px;color:var(--text-2);">
+        זו לשונית-מיוחדת — בלחיצה עליה המסך עובר ל-layout-מלא של מסך-M7 (3 טורים, רכבת תת-הזמנות, עד 8 תת-הזמנות).
+        מסך-M7 כבר תוכנן בנפרד — ראה <code>M7_ORDERS_FULL_MOCKUP_V6.html</code>.
+      </p>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;">
+        <button class="go">+ הזמנה חדשה</button>
+        <button class="go" style="background:var(--teal);">→ פתח מסך-M7 (3 הזמנות פעילות)</button>
+      </div>
+    </div>
+
+    <h2>תקציר הזמנות (3)</h2>
+    <table>
+      <thead>
+        <tr><th>מספר</th><th>תאריך</th><th>תוכן</th><th>סכום</th><th>סטטוס</th><th></th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>1-9362</strong></td><td>18.03.26</td><td>4 תת-הזמנות (מסגרת+עדשות, מסגרת+עדשות, מגע, אביזרים)</td><td>₪3,190</td><td><span class="pill pill-amber">בעבודה</span></td><td><button class="docs-filter">פתח</button></td></tr>
+        <tr><td><strong>1-9201</strong></td><td>04.01.26</td><td>1 תת-הזמנה (עדשות-מגע)</td><td>₪450</td><td><span class="pill pill-green">נמסר</span></td><td><button class="docs-filter">פתח</button></td></tr>
+        <tr><td><strong>1-7821</strong></td><td>14.05.24</td><td>1 תת-הזמנה (מסגרת+עדשות)</td><td>₪2,400</td><td><span class="pill pill-green">נמסר</span></td><td><button class="docs-filter">פתח</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============ TAB 5 — DOCS ============ -->
+<div class="stage-h">לשונית 5 · Docs · מסמכים (במקום "Update")</div>
+<div class="app">
+  <div class="header">
+    <div class="left">
+      <div class="avatar">לד</div>
+      <div>
+        <div class="cust-name">ליסקר דניאל · 30</div>
+        <div class="cust-meta">📱 053-788-9878 · 7 מסמכים</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button>📤 העלה מסמך</button>
+      <button>📷 סרוק מסמך</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab">פרטים</div>
+    <div class="tab">תפקודי ראייה</div>
+    <div class="tab">בדיקות ראייה</div>
+    <div class="tab">הזמנות</div>
+    <div class="tab active">מסמכים</div>
+  </div>
+
+  <div class="content">
+    <div class="docs-toolbar">
+      <div class="docs-filters">
+        <button class="docs-filter active">הכל (7)</button>
+        <button class="docs-filter">מרשם-רופא (2)</button>
+        <button class="docs-filter">בדיקה-חיצונית (1)</button>
+        <button class="docs-filter">קופ"ח (3)</button>
+        <button class="docs-filter">אחר (1)</button>
+      </div>
+      <div style="font-size:10px;color:var(--text-2);">⌥ קונפיגורבילי — אדמין יכול להוסיף קטגוריות</div>
+    </div>
+
+    <table class="docs-table">
+      <thead>
+        <tr><th style="width:90px;">תאריך</th><th style="width:120px;">קטגוריה</th><th>תיאור</th><th>שם הקובץ</th><th style="width:90px;">גודל</th><th style="width:130px;">פעולות</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>15.02.26</td>
+          <td><span class="pill pill-purple">מרשם-רופא</span></td>
+          <td>מרשם-משקפיים מד"ר Cohen (אופטומטריסט פרטי)</td>
+          <td>cohen_glasses_15feb26.pdf</td>
+          <td>240 KB</td>
+          <td class="docs-action">
+            <button>פתח</button>
+            <button>הורד</button>
+            <button class="danger">🗑</button>
+          </td>
+        </tr>
+        <tr>
+          <td>10.01.26</td>
+          <td><span class="pill pill-blue">קופ"ח</span></td>
+          <td>אישור-קופ"ח להחזר על משקפיים — מכבי</td>
+          <td>maccabi_refund_jan26.pdf</td>
+          <td>180 KB</td>
+          <td class="docs-action">
+            <button>פתח</button>
+            <button>הורד</button>
+            <button class="danger">🗑</button>
+          </td>
+        </tr>
+        <tr>
+          <td>22.10.25</td>
+          <td><span class="pill pill-green">בדיקה-חיצונית</span></td>
+          <td>בדיקת לחץ-תוך-עיני (גלאוקומה — מעקב משפחתי)</td>
+          <td>iop_22oct25.pdf</td>
+          <td>520 KB</td>
+          <td class="docs-action">
+            <button>פתח</button>
+            <button>הורד</button>
+            <button class="danger">🗑</button>
+          </td>
+        </tr>
+        <tr>
+          <td>05.08.25</td>
+          <td><span class="pill pill-blue">קופ"ח</span></td>
+          <td>אישור החזר עדשות-מגע — מכבי</td>
+          <td>maccabi_contacts_aug25.pdf</td>
+          <td>165 KB</td>
+          <td class="docs-action">
+            <button>פתח</button>
+            <button>הורד</button>
+            <button class="danger">🗑</button>
+          </td>
+        </tr>
+        <tr>
+          <td>14.05.24</td>
+          <td><span class="pill pill-purple">מרשם-רופא</span></td>
+          <td>מרשם ראשון — רופא-עיניים</td>
+          <td>first_rx_may24.pdf</td>
+          <td>310 KB</td>
+          <td class="docs-action">
+            <button>פתח</button>
+            <button>הורד</button>
+            <button class="danger">🗑</button>
+          </td>
+        </tr>
+        <tr>
+          <td>12.05.24</td>
+          <td><span class="pill pill-coral">אחר</span></td>
+          <td>תמונה של מסגרת הקודמת (לפני נשברה)</td>
+          <td>old_frame_photo.jpg</td>
+          <td>1.2 MB</td>
+          <td class="docs-action">
+            <button>פתח</button>
+            <button>הורד</button>
+            <button class="danger">🗑</button>
+          </td>
+        </tr>
+        <tr>
+          <td>10.05.24</td>
+          <td><span class="pill pill-blue">קופ"ח</span></td>
+          <td>טופס פרטי-חבר במכבי</td>
+          <td>maccabi_member.pdf</td>
+          <td>95 KB</td>
+          <td class="docs-action">
+            <button>פתח</button>
+            <button>הורד</button>
+            <button class="danger">🗑</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="upload-zone">
+      <strong>📤 גרור-לכאן קובץ או לחץ להעלאה</strong> · תומך PDF/JPG/PNG · מקסימום 10MB
+      <div style="font-size:10px;margin-top:5px;color:var(--text-2);">לכל מסמך: קטגוריה (חובה) · תיאור (חובה) · מי-העלה + תאריך נשמרים אוטומטית</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ LEGEND ============ -->
+<div class="legend">
+  <h2>החלטות-עיצוב במסך-לקוח</h2>
+  <ul>
+    <li><strong>5 לשוניות:</strong> פרטים · תפקודי ראייה · בדיקות ראייה · הזמנות · מסמכים. (Update הוחלף ב-Docs, Glasses+Contacts אוחדו לתצוגת-תקציר על M6.)</li>
+    <li><strong>תפקודי ראייה</strong> — לשונית-עצמאית עם רשימת-בדיקות-מקיפה (24 בדיקות-תפקוד: ortho/exo, AC/A, Bo/Bi בכל מרחק, NRA, PRA, Push-Up, Stereopsis, MEM וכו'). בורר-תאריכים — לקוח יכול להיות עם מספר בדיקות לאורך השנים.</li>
+    <li><strong>בדיקות ראייה = תצוגת-תקציר על M6 בלבד.</strong> רשימת-בדיקות ראייה בשורות (תאריך · סוג · סטטוס · אופטומטריסט · תקציר R/L · תוקף · הערות · פעולה). לחיצה על "פתח ב-M6" עוברת למסך-מרשם המלא של מודול-M6 — בדומה לאיך שלשונית-הזמנות פותחת את מסך-M7. <strong>מודול-בדיקות ראייה נפרד</strong> מאפשר scaling לעוד ענפים בעתיד (שיניים, ווטרינריה).</li>
+    <li><strong>"ערוך" כפתור-בכותרת</strong>, לא לשונית. לחיצה מפעילה מצב-עריכה גלובלי בכל הלשוניות.</li>
+    <li><strong>שמירה אוטומטית</strong> בכל המסך — כמו ב-M7. אין כפתור "שמור".</li>
+    <li><strong>Queue ב-Details</strong> — בלוק טורקיז מציג את מצב-התור הנוכחי (תור #2 · ממתין 12 דקות) או כפתור "+ הוסף לתור-בדיקה". מנוהל ב-M14, חשוף בכרטיס-הלקוח.</li>
+    <li><strong>Medical Q. + Diagnostics</strong> אוחדו לבלוק "הערות-רפואיות" עם 2 sub-tabs בתוך Details.</li>
+    <li><strong>Birthday auto-message</strong> מסומן כ"עתיד — מודול-תקשורת/אוטומציות". כרגע ידני.</li>
+    <li><strong>Orders = מסך-M7 מלא</strong> — בלחיצה על הלשונית עוברים ל-layout-מלא של M7. הסקיצה כאן מציגה רק תקציר + כפתור-מעבר.</li>
+    <li><strong>Docs עם קטגוריות</strong> — מרשם-רופא / בדיקה-חיצונית / קופ"ח / אחר. קונפיגורבילי פר-tenant.</li>
+    <li><strong>כותרת-עליונה אחידה</strong> בכל הלשוניות — שם + גיל + טלפון + פעולות-מהירות.</li>
+  </ul>
+
+  <div style="background:#FCEBEB;border-right:3px solid var(--red);padding:10px 14px;margin-top:14px;border-radius:3px;">
+    <strong style="color:var(--red);">דרישות-מערכת (חוצה-מודולים):</strong>
+    <ul>
+      <li><strong>M5 (Customers):</strong> Birthday auto-message — שדה <code>birthday_message_consent</code> + טריגר עתידי. Notes (business + medical) — טבלה <code>customer_notes</code> עם <code>note_type</code> enum.</li>
+      <li><strong>M6 (Prescriptions — מודול-עצמאי):</strong> בעלות מלאה על eye_exams (תפקודי ראייה) + prescriptions (משקפיים + עדשות-מגע, שתי טבלאות נפרדות). View <code>v_customer_prescriptions_summary(customer_id)</code> משרתת את לשונית-3 בכרטיס-הלקוח. View <code>v_customer_vision_function_history</code> משרתת את לשונית-2.</li>
+      <li><strong>M14 (Appointments + Queue):</strong> בעלות על תור-החנות. View <code>v_customer_queue_position(customer_id)</code> + RPCs: <code>add_to_queue</code>, <code>remove_from_queue</code>, <code>promote_in_queue</code>. כרטיס-הלקוח קורא דרך View, לא נוגע בטבלה ישירות.</li>
+      <li><strong>Docs (חלק מ-M5):</strong> Supabase Storage Bucket פר-tenant. Path בתבנית <code>tenant_id/customer_id/...</code> — ללא עברית בנתיב. קטגוריות = טבלה קונפיגורבילית פר-tenant (Iron Rule 19) עם flags (e.g. <code>is_medical</code>).</li>
+      <li><strong>Edit-mode:</strong> הרשאות פר-תפקיד (Iron Rule תהיה במקום). רק מנהל יכול לערוך פרטי-תקשורת או לשנות-קופ"ח.</li>
+      <li><strong>Scaling-עתידי לענפים:</strong> כשנכנס ענף חדש (שיניים/ווטרינריה) — M5 (Customers) נשאר זהה, M6 מוחלף במודול-בדיקות ראייה-של-אותו-ענף. הלשונית-3 בכרטיס-הלקוח טוענת view שמתאים לענף הפעיל. כל מודול-ענף מספק את אותם 3 contracts: רשימת-בדיקות ראייה-לקוח, מסך-מרשם-מלא, רשימת-תפקודים (אופציונלי).</li>
+    </ul>
+  </div>
+</div>
+
+</body>
+</html>

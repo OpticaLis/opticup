@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M11 — עריכת דוח · בחירת עמודות, סינונים, פילוחים</title>
+<style>
+  :root{
+    --bg:#FAFAF7; --surface:#FFFFFF; --soft:#F1EFE8;
+    --border:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
+    --text:#1F1F1E; --text-2:#5F5E5A; --text-3:#888780;
+    --purple:#534AB7; --purple-soft:#EEEDFE; --purple-deep:#26215C;
+    --teal:#0F6E56; --teal-soft:#E1F5EE; --teal-deep:#04342C;
+    --amber:#BA7517; --amber-soft:#FAEEDA; --amber-deep:#412402;
+    --blue:#185FA5; --blue-soft:#E6F1FB; --blue-deep:#0C447C;
+    --green:#3B6D11; --green-soft:#EAF3DE;
+    --gray:#5F5E5A; --gray-soft:#F1EFE8;
+    --red:#A32D2D;
+    --r-md:6px; --r-lg:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;font-family:-apple-system,'Segoe UI',Rubik,sans-serif;
+    background:var(--bg);color:var(--text);font-size:12px;line-height:1.4;direction:rtl;
+  }
+  .page{max-width:1640px;margin:0 auto;padding:18px;}
+  h1{font-size:18px;font-weight:500;margin:0 0 4px;}
+  .lede{color:var(--text-2);margin:0 0 14px;font-size:12px;}
+
+  /* Top header strip */
+  .editor-header{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:14px;
+  }
+  .editor-header .title-block{flex:1;}
+  .editor-header h2{font-size:14px;font-weight:500;margin:0 0 4px;display:flex;align-items:center;gap:8px;}
+  .editor-header .breadcrumb{font-size:11px;color:var(--text-3);}
+  .badge-row{display:flex;gap:6px;align-items:center;}
+  .badge{font-size:10.5px;padding:2px 8px;border-radius:10px;font-weight:500;}
+  .badge.modified{background:var(--blue-soft);color:var(--blue-deep);}
+  .badge.modified::before{content:"●";margin-inline-end:3px;color:var(--blue);}
+
+  .header-actions{display:flex;gap:8px;}
+  .btn{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+    padding:8px 14px;font-size:12px;cursor:pointer;color:var(--text);
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .btn:hover{border-color:var(--border-strong);}
+  .btn.primary{background:var(--purple);color:#fff;border-color:var(--purple);}
+  .btn.primary:hover{background:var(--purple-deep);}
+  .btn.warn{background:var(--surface);color:var(--amber-deep);border-color:var(--amber);}
+  .btn.danger{background:var(--surface);color:var(--red);border-color:var(--red);}
+
+  /* Layout */
+  .layout{display:grid;grid-template-columns:1fr 360px;gap:16px;}
+
+  /* Editor panels */
+  .panel{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px 16px;margin-bottom:14px;
+  }
+  .panel h3{font-size:12.5px;font-weight:600;margin:0 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .panel h3 .num{
+    display:inline-block;background:var(--purple);color:#fff;width:20px;height:20px;
+    border-radius:50%;text-align:center;line-height:20px;font-size:11px;
+    font-weight:600;margin-inline-end:7px;
+  }
+  .panel h3 .help{font-size:10.5px;color:var(--text-3);font-weight:400;}
+
+  /* Section 1 — basic info */
+  .form-row{display:grid;grid-template-columns:140px 1fr;gap:14px;margin-bottom:10px;align-items:flex-start;}
+  .form-row label{font-size:11.5px;color:var(--text-2);padding-top:7px;}
+  .form-row input, .form-row textarea, .form-row select{
+    width:100%;border:1px solid var(--border);border-radius:var(--r-md);padding:7px 10px;
+    font-size:12px;background:var(--surface);direction:rtl;
+  }
+  .form-row textarea{min-height:50px;resize:vertical;}
+  .form-row .toggle-grp{display:flex;gap:14px;font-size:11.5px;padding-top:6px;}
+  .form-row .toggle-grp label{padding-top:0;color:var(--text);}
+
+  /* Section 2 — columns */
+  .cols-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .col-pool{
+    background:var(--soft);border:1px solid var(--border);border-radius:var(--r-md);padding:10px;min-height:230px;
+  }
+  .col-pool h4{font-size:11px;font-weight:600;color:var(--text-2);margin:0 0 8px;
+    text-transform:uppercase;letter-spacing:0.4px;}
+  .col-search{
+    width:100%;border:1px solid var(--border);border-radius:4px;padding:6px 8px;font-size:11px;
+    margin-bottom:8px;direction:rtl;background:var(--surface);
+  }
+  .col-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:3px;
+    max-height:200px;overflow-y:auto;}
+  .col-list li{
+    background:var(--surface);border:1px solid var(--border);border-radius:4px;
+    padding:6px 9px;font-size:11.5px;display:flex;align-items:center;gap:6px;cursor:grab;
+  }
+  .col-list li:hover{border-color:var(--purple);}
+  .col-list li .ico{color:var(--text-3);font-size:13px;}
+  .col-list li .source-tag{
+    margin-inline-start:auto;font-size:9.5px;padding:1px 6px;border-radius:8px;
+    background:var(--soft);color:var(--text-3);
+  }
+  .col-list li.selected{background:var(--purple-soft);border-color:var(--purple);}
+  .col-list li.selected .source-tag{background:var(--purple);color:#fff;}
+  .col-actions{
+    display:flex;gap:6px;margin-top:6px;
+  }
+  .col-actions button{
+    flex:1;border:1px solid var(--border);background:var(--surface);
+    border-radius:4px;padding:5px;font-size:11px;cursor:pointer;
+  }
+  .col-actions button:hover{background:var(--soft);}
+
+  /* Section 3 — filters */
+  .filter-row{
+    display:grid;grid-template-columns:1fr 130px 1fr 30px;gap:8px;margin-bottom:8px;align-items:center;
+  }
+  .filter-row select, .filter-row input{
+    border:1px solid var(--border);border-radius:var(--r-md);padding:6px 9px;font-size:11.5px;
+    background:var(--surface);direction:rtl;
+  }
+  .filter-row .del{
+    background:transparent;border:none;color:var(--text-3);cursor:pointer;font-size:14px;
+  }
+  .filter-row .del:hover{color:var(--red);}
+  .add-filter{
+    background:transparent;border:1px dashed var(--border);border-radius:var(--r-md);
+    padding:7px 10px;font-size:11.5px;color:var(--text-2);cursor:pointer;width:100%;margin-top:5px;
+  }
+  .add-filter:hover{color:var(--purple);border-color:var(--purple);}
+
+  /* Section 4 — grouping & summary */
+  .grouping-row{display:flex;gap:14px;align-items:center;margin-bottom:10px;}
+  .grouping-row label{font-size:11.5px;color:var(--text-2);}
+  .grouping-row select{
+    border:1px solid var(--border);border-radius:var(--r-md);padding:6px 9px;font-size:11.5px;background:var(--surface);
+  }
+  .summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;}
+  .summary-cell{
+    background:var(--soft);border:1px solid var(--border);border-radius:var(--r-md);padding:7px 10px;
+    font-size:11px;display:flex;align-items:center;justify-content:space-between;
+  }
+  .summary-cell .col-name{font-weight:500;}
+  .summary-cell select{
+    border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:10.5px;background:var(--surface);
+  }
+
+  /* Right rail — preview & meta */
+  .right-rail{display:flex;flex-direction:column;gap:14px;}
+  .preview{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px 16px;
+  }
+  .preview h3{font-size:12.5px;font-weight:600;margin:0 0 10px;}
+  .preview-table{
+    background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);
+    padding:8px;font-size:10.5px;color:var(--text-2);
+  }
+  .preview-table .row{padding:4px 0;border-bottom:1px dashed var(--border);}
+  .preview-table .row:last-child{border-bottom:none;}
+  .preview-table .header-row{font-weight:600;color:var(--text);}
+
+  .meta-block{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px 16px;font-size:11.5px;
+  }
+  .meta-block h3{font-size:12.5px;font-weight:600;margin:0 0 10px;}
+  .meta-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--border);}
+  .meta-row:last-child{border-bottom:none;}
+  .meta-row .lbl{color:var(--text-2);}
+
+  .source-block{
+    background:var(--blue-soft);border:1px solid var(--blue);border-radius:var(--r-lg);
+    padding:12px 16px;font-size:11.5px;color:var(--blue-deep);
+  }
+  .source-block strong{color:var(--text);}
+
+  .danger-block{
+    background:var(--amber-soft);border:1px solid var(--amber);border-radius:var(--r-lg);
+    padding:12px 16px;font-size:11.5px;color:var(--amber-deep);
+  }
+  .danger-block strong{color:var(--text);}
+
+  /* Bottom save bar */
+  .save-bar{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px 18px;margin-top:6px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .save-bar .left{font-size:11.5px;color:var(--text-2);}
+  .save-bar .left strong{color:var(--text);}
+  .save-bar .right{display:flex;gap:8px;}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>M11 · עריכת דוח — בחירת עמודות, סינונים, פילוחים</h1>
+  <p class="lede">המסך שבו טננט יוצר דוח חדש או עורך עותק של דוח-מערכת. שכבת-תצוגה — שואב נתונים מ-Views של מודולים אחרים.</p>
+
+  <!-- Editor header -->
+  <div class="editor-header">
+    <div class="title-block">
+      <h2>📊 ירד-ממשכורת חודשי <span class="badge modified">ערוך-טננט</span></h2>
+      <div class="breadcrumb">דוחות · מכירות וכספים · ירד-ממשכורת חודשי · עריכה</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn">👁 תצוגה מקדימה</button>
+      <button class="btn warn">↺ החזר ל-default</button>
+      <button class="btn">בטל</button>
+      <button class="btn primary">💾 שמור</button>
+    </div>
+  </div>
+
+  <!-- Two columns -->
+  <div class="layout">
+
+    <!-- LEFT — main editor -->
+    <div>
+
+      <!-- Section 1 — Basic info -->
+      <div class="panel">
+        <h3>
+          <span><span class="num">1</span>פרטי-דוח</span>
+          <span class="help">שם, תיאור, קטגוריה, סוג-תצוגה</span>
+        </h3>
+        <div class="form-row">
+          <label>שם דוח</label>
+          <input type="text" value="ירד-ממשכורת חודשי">
+        </div>
+        <div class="form-row">
+          <label>תיאור</label>
+          <textarea>תשלומי-עובדים שמחכים לחיוב-משכורת. כולל ✓ נוכה לסימון קבוצתי.</textarea>
+        </div>
+        <div class="form-row">
+          <label>קטגוריה</label>
+          <select>
+            <option>💰 מכירות וכספים</option>
+            <option>👥 לקוחות ו-LTV</option>
+            <option>📦 מלאי</option>
+            <option>🔬 מעבדה</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>נראות</label>
+          <div class="toggle-grp">
+            <label><input type="radio" name="vis" checked> 👥 משותף-לטננט</label>
+            <label><input type="radio" name="vis"> 🔒 פרטי שלי בלבד</label>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>סוג-תצוגה</label>
+          <select disabled>
+            <option>📊 טבלה (יחיד ביום-1)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Section 2 — Columns -->
+      <div class="panel">
+        <h3>
+          <span><span class="num">2</span>בחירת עמודות</span>
+          <span class="help">גרור משמאל-לימין או לחץ ➕</span>
+        </h3>
+        <div class="cols-layout">
+
+          <!-- Available columns -->
+          <div class="col-pool">
+            <h4>זמין · 47 עמודות</h4>
+            <input type="text" class="col-search" placeholder="🔍 חיפוש שם עמודה...">
+            <ul class="col-list">
+              <li>📅 תאריך-תשלום <span class="source-tag">M8</span></li>
+              <li>👤 שם-עובד <span class="source-tag">M5</span></li>
+              <li>📞 טלפון <span class="source-tag">M5</span></li>
+              <li>💰 סכום <span class="source-tag">M8</span></li>
+              <li>🏪 סניף <span class="source-tag">M2</span></li>
+              <li>👤 שם-קופאית <span class="source-tag">M2</span></li>
+              <li>🗓 חודש-חיוב-משכורת <span class="source-tag">M8</span></li>
+              <li>🛍 מספר-הזמנה <span class="source-tag">M7</span></li>
+              <li>📦 פריטי-הזמנה <span class="source-tag">M7</span></li>
+              <li>🏷 סוג-מועדון <span class="source-tag">M13</span></li>
+            </ul>
+          </div>
+
+          <!-- Selected columns -->
+          <div class="col-pool">
+            <h4>נבחרו · 7 עמודות</h4>
+            <ul class="col-list">
+              <li class="selected">⠿ תאריך-תשלום <span class="source-tag">M8</span></li>
+              <li class="selected">⠿ שם-עובד <span class="source-tag">M5</span></li>
+              <li class="selected">⠿ מספר-הזמנה <span class="source-tag">M7</span></li>
+              <li class="selected">⠿ סכום <span class="source-tag">M8</span></li>
+              <li class="selected">⠿ חודש-חיוב-משכורת <span class="source-tag">M8</span></li>
+              <li class="selected">⠿ סטטוס (ממתין / נוכה) <span class="source-tag">M8</span></li>
+              <li class="selected">⠿ ✓ נוכה (סימון) <span class="source-tag">M8</span></li>
+            </ul>
+            <div class="col-actions">
+              <button>↑ מעלה</button>
+              <button>↓ מטה</button>
+              <button>✕ הסר</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section 3 — Filters -->
+      <div class="panel">
+        <h3>
+          <span><span class="num">3</span>סינונים</span>
+          <span class="help">מה להוציא מהדוח</span>
+        </h3>
+        <div class="filter-row">
+          <select><option>תאריך-תשלום</option></select>
+          <select><option>בין</option></select>
+          <input type="text" value="01/04/2026 – 30/04/2026">
+          <button class="del">✕</button>
+        </div>
+        <div class="filter-row">
+          <select><option>סטטוס</option></select>
+          <select><option>שווה ל</option></select>
+          <select><option>ממתין-לחיוב-משכורת</option></select>
+          <button class="del">✕</button>
+        </div>
+        <div class="filter-row">
+          <select><option>סניף</option></select>
+          <select><option>אחד מ-</option></select>
+          <input type="text" value="פריזמה ראשי">
+          <button class="del">✕</button>
+        </div>
+        <button class="add-filter">+ הוסף סינון</button>
+      </div>
+
+      <!-- Section 4 — Grouping & Summary -->
+      <div class="panel">
+        <h3>
+          <span><span class="num">4</span>פילוח וסיכומים</span>
+          <span class="help">קיבוץ לפי + סיכומי-עמודות</span>
+        </h3>
+        <div class="grouping-row">
+          <label>קבץ לפי:</label>
+          <select>
+            <option>(ללא פילוח)</option>
+            <option selected>חודש-חיוב-משכורת</option>
+            <option>שם-עובד</option>
+            <option>סניף</option>
+          </select>
+          <label>מיון:</label>
+          <select>
+            <option>תאריך — חדש-לישן</option>
+            <option>סכום — גבוה-לנמוך</option>
+            <option>שם-עובד — א-ב</option>
+          </select>
+        </div>
+        <div style="font-size:11.5px;color:var(--text-2);margin-top:6px;">סיכומי-סוף:</div>
+        <div class="summary-grid">
+          <div class="summary-cell">
+            <span class="col-name">סכום</span>
+            <select><option selected>סך-הכל</option><option>ממוצע</option><option>אין</option></select>
+          </div>
+          <div class="summary-cell">
+            <span class="col-name">מספר-הזמנה</span>
+            <select><option selected>ספירה</option><option>אין</option></select>
+          </div>
+          <div class="summary-cell">
+            <span class="col-name">שם-עובד</span>
+            <select><option>אין</option><option selected>ספירה-ייחודית</option></select>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT rail -->
+    <aside class="right-rail">
+
+      <!-- Live preview -->
+      <div class="preview">
+        <h3>👁 תצוגה מקדימה (5 שורות)</h3>
+        <div class="preview-table">
+          <div class="row header-row">תאריך · שם-עובד · הזמנה · סכום · סטטוס · נוכה</div>
+          <div class="row">02/04 · אסף ל. · 12345 · 450₪ · ממתין · ☐</div>
+          <div class="row">08/04 · רותם ב. · 12389 · 280₪ · ממתין · ☐</div>
+          <div class="row">15/04 · אסף ל. · 12456 · 670₪ · ממתין · ☐</div>
+          <div class="row">22/04 · נועה ק. · 12503 · 320₪ · ממתין · ☐</div>
+          <div class="row">28/04 · אסף ל. · 12555 · 540₪ · ממתין · ☐</div>
+          <div class="row" style="font-weight:600;color:var(--text);border-top:2px solid var(--border);padding-top:5px;">
+            סך 5 שורות · 2,260₪ · 3 עובדים
+          </div>
+        </div>
+      </div>
+
+      <!-- Source -->
+      <div class="source-block">
+        <strong>מקורות-נתונים</strong><br>
+        הדוח שואב מ-3 מודולים: M5 (לקוחות) · M7 (הזמנות) · M8 (תשלומים).<br>
+        חישוב חי מ-Views — אין caching.
+      </div>
+
+      <!-- Meta -->
+      <div class="meta-block">
+        <h3>פרטי-מערכת</h3>
+        <div class="meta-row"><span class="lbl">מקור:</span><span>דוח-מערכת (ערוך)</span></div>
+        <div class="meta-row"><span class="lbl">נוצר:</span><span>03/03/2026</span></div>
+        <div class="meta-row"><span class="lbl">עודכן:</span><span>09/05/2026 · אופיר</span></div>
+        <div class="meta-row"><span class="lbl">פתחו השבוע:</span><span>4 פעמים</span></div>
+        <div class="meta-row"><span class="lbl">ייצוא אחרון:</span><span>אתמול · Excel</span></div>
+      </div>
+
+      <!-- Reset warning -->
+      <div class="danger-block">
+        <strong>↺ החזר ל-default</strong><br>
+        ימחק את העריכות שלך ויחזיר את הדוח-המקורי שמגיע עם הפלטפורמה. לא ניתן לבטל.
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- Bottom save bar -->
+  <div class="save-bar">
+    <div class="left">📝 <strong>נשמר אוטומטית</strong> · עריכה אחרונה לפני 12 שניות</div>
+    <div class="right">
+      <button class="btn danger">🗑 מחק דוח</button>
+      <button class="btn">📄 העתק כדוח-חדש</button>
+      <button class="btn primary">💾 שמור וסגור</button>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<title>Repair Form — Sketch · 2 modes × 2 client types</title>
+<style>
+  body{
+    margin:0;padding:24px;background:#EEEEEC;
+    font-family:Arial,'Segoe UI',sans-serif;color:#000;font-size:11px;
+  }
+  h1{font-size:18px;margin:0 0 4px;}
+  .lede{color:#666;margin:0 0 18px;font-size:12px;max-width:1100px;}
+
+  .grid{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:24px;
+    max-width:1700px;margin:0 auto;
+  }
+  .grid > .full{grid-column:1 / -1;}
+
+  .variant-h{
+    background:#04342C;color:#FFF;padding:7px 12px;border-radius:6px 6px 0 0;
+    font-size:13px;font-weight:500;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .variant-h .tag{font-size:10px;background:#0F6E56;padding:2px 7px;border-radius:4px;}
+
+  .paper{
+    background:#FFF;border:1px solid #000;border-radius:0 0 6px 6px;
+    padding:14px 18px 18px;
+  }
+  .paper-h-row{
+    border:1px solid #000;padding:5px 8px;font-size:10px;
+    display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+  }
+  .paper-title{
+    text-align:center;font-size:22px;font-weight:700;margin:8px 0 4px;
+  }
+  .paper-sub{
+    text-align:center;font-size:10px;color:#888;margin-bottom:8px;font-style:italic;
+  }
+
+  .barcode{
+    background:repeating-linear-gradient(90deg,#000 0 2px,#FFF 2px 4px,#000 4px 5px,#FFF 5px 8px);
+    height:30px;border:1px solid #000;
+  }
+  .barcode.tall{
+    height:120px;width:24px;
+    background:repeating-linear-gradient(0deg,#000 0 2px,#FFF 2px 4px,#000 4px 5px,#FFF 5px 8px);
+  }
+  .barcode.wide{width:160px;}
+
+  .inline-bcode-row{
+    display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin:5px 0;
+  }
+  .barcode-block{display:flex;flex-direction:row;gap:3px;align-items:center;}
+  .barcode-block .lbl{
+    writing-mode:vertical-rl;transform:rotate(180deg);
+    font-size:8px;text-align:center;font-weight:500;
+  }
+
+  .cust-row{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:10px;margin:6px 0;
+  }
+  .cust-row .field{display:flex;gap:4px;}
+  .cust-row .field .lbl{font-weight:700;}
+  .cust-row .field.redacted{color:#999;font-style:italic;}
+
+  .lead-flag{
+    background:#FAEEDA;color:#412402;padding:4px 8px;font-size:10px;
+    border:1px solid #BA7517;border-radius:4px;display:inline-block;
+    margin:4px 0;font-weight:700;
+  }
+
+  .repair-meta{
+    background:#E1F5EE;border:2px solid #0F6E56;border-radius:4px;
+    padding:8px 10px;margin:10px 0;
+  }
+  .repair-meta .head{
+    font-weight:700;font-size:13px;color:#04342C;margin-bottom:6px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .repair-meta .head .pill-mode{
+    font-size:11px;background:#0F6E56;color:#FFF;padding:2px 8px;border-radius:4px;
+  }
+  .repair-meta .row-fields{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:10px;
+  }
+  .repair-meta .field{display:flex;flex-direction:column;}
+  .repair-meta .lbl{font-size:9px;color:#666;font-weight:700;}
+  .repair-meta .val{font-size:11px;font-weight:500;}
+  .repair-meta .desc-row{
+    margin-top:6px;background:#FFF;border:1px solid #000;padding:6px 8px;
+    font-size:11px;line-height:1.4;min-height:36px;
+  }
+  .repair-meta .desc-lbl{
+    font-size:9px;color:#666;font-weight:700;margin-bottom:3px;
+  }
+
+  .origin-row{
+    margin:8px 0;padding:5px 10px;background:#FAEEDA;
+    border:1px solid #BA7517;border-radius:4px;font-size:10px;
+    display:flex;gap:14px;align-items:center;
+  }
+  .origin-row strong{color:#412402;}
+  .origin-row .chk{display:inline-flex;align-items:center;gap:4px;}
+  .origin-row .chk .box{width:11px;height:11px;border:1px solid #000;display:inline-block;}
+
+  .prod-block{margin-top:10px;border:1px solid #000;}
+  .prod-block .head{
+    background:#F1EFE8;padding:4px 8px;font-weight:700;font-size:11px;
+    display:flex;justify-content:space-between;align-items:center;
+    border-bottom:1px solid #000;
+  }
+  .prod-block .head .ord-num{font-weight:400;font-size:10px;color:#444;}
+
+  table{width:100%;border-collapse:collapse;font-size:10px;}
+  table th, table td{border:1px solid #000;padding:3px 5px;text-align:center;}
+  table th{background:#FAFAF7;font-weight:700;}
+  table .sidecell{background:#F1EFE8;font-weight:700;width:24px;}
+  table.wide td{height:18px;}
+
+  .rx-block{margin-top:10px;border:1px solid #000;padding:6px 8px;}
+  .rx-block .head{
+    font-weight:700;font-size:11px;display:flex;gap:14px;
+    border-bottom:1px solid #000;padding-bottom:3px;margin-bottom:5px;
+  }
+  .rx-block .head .pill-yellow{background:#FAEEDA;padding:1px 6px;border-radius:3px;font-size:10px;}
+
+  .signers{
+    margin-top:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+    font-size:10px;border-top:1px dashed #888;padding-top:8px;
+  }
+  .signers .sub{font-size:9px;color:#666;font-style:italic;}
+
+  .totals{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px;}
+  .totals .box{border:1px solid #000;padding:5px 7px;}
+  .totals .box .lbl{font-size:9px;color:#666;}
+
+  .shop-footer{
+    margin-top:12px;padding-top:8px;border-top:1px solid #888;font-size:10px;
+  }
+
+  .ann{
+    margin-top:6px;padding:6px 10px;background:#FFF8DD;border-right:3px solid #FAC775;
+    font-size:11px;color:#412402;border-radius:3px;
+  }
+  .ann strong{color:#993C1D;}
+
+  .legend-box{
+    grid-column:1 / -1;background:#FFF;border:1px solid #888;border-radius:6px;
+    padding:14px 18px;font-size:12px;line-height:1.6;
+  }
+  .legend-box h2{font-size:14px;margin:0 0 8px;}
+  .legend-box ul{margin:5px 0;padding-right:18px;}
+  .legend-box .imp{
+    background:#FCEBEB;border-right:3px solid #A32D2D;
+    padding:8px 12px;border-radius:3px;margin-top:8px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Repair Form — Sketch · 2 Modes × Variants</h1>
+<p class="lede">
+  טופס תיקון. נוצר כשלקוח/ליד מביא מסגרת שבורה (או משקפיים שלמים) לתיקון. <strong>פר-תת-הזמנה</strong>, דגל <code>is_repair=true</code> על תת-הזמנה רגילה.
+  שני מצבי-הדפסה: <strong>Internal Repair</strong> (תיקון פנימי במעבדה — עם פרטי-לקוח) ו-<strong>Outside Repair</strong> (נשלח לחברה — ללא פרטי-לקוח).
+  <br/>
+  המסגרת השבורה צריכה להיות בשקית עם הטופס. שדה Location הקיים פר-תת-הזמנה משמש לעקוב איפה המסגרת (אצל הלקוח / בחנות / בבית-מלאכה).
+</p>
+
+<div class="grid">
+
+  <!-- ======================================================== -->
+  <!-- VARIANT 1: INTERNAL REPAIR — existing client -->
+  <!-- ======================================================== -->
+  <div>
+    <div class="variant-h">
+      <span>Variant 1 · Internal Repair · לקוח-קיים</span>
+      <span class="tag">תיקון במעבדה הפנימית</span>
+    </div>
+    <div class="paper">
+      <div class="paper-h-row">
+        <div><strong>Date:</strong> 18.03.26</div>
+        <div><strong>Optic:</strong> Prizma</div>
+        <div><strong>Branch:</strong> 1 · Ashkelon</div>
+      </div>
+
+      <div class="paper-title">Repair Form</div>
+      <div class="paper-sub">תיקון פנימי · במעבדה</div>
+
+      <div class="inline-bcode-row">
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-A</div></div>
+        <div style="flex:1;">
+          <div class="barcode wide" style="margin:0 auto;"></div>
+          <div style="text-align:center;font-size:9px;margin-top:2px;">1-9362-A</div>
+        </div>
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-A</div></div>
+      </div>
+
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Client:</span> John Johnson</div>
+        <div class="field"><span class="lbl">Repair #:</span> 1-9362-A</div>
+        <div class="field"><span class="lbl">Client #:</span> 52484</div>
+      </div>
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Phone:</span> 050-0000000</div>
+        <div class="field"><span class="lbl">ID:</span> 205452555</div>
+        <div class="field"><span class="lbl">H.C provider:</span> Maccabi</div>
+      </div>
+
+      <!-- REPAIR META -->
+      <div class="repair-meta">
+        <div class="head">
+          <span>🔧 פרטי תיקון</span>
+          <span class="pill-mode">Internal Repair</span>
+        </div>
+        <div class="row-fields">
+          <div class="field"><span class="lbl">נפתח:</span><span class="val">18.03 14:22 · Ilya</span></div>
+          <div class="field"><span class="lbl">אחראי:</span><span class="val">מנהל-מעבדה</span></div>
+          <div class="field"><span class="lbl">יעד:</span><span class="val">22.03.26</span></div>
+        </div>
+        <div class="desc-lbl">תיאור התיקון:</div>
+        <div class="desc-row">
+          ציר ימני רופף — להחליף בורג + להדק. בנוסף — לבדוק מצב משענת-אף.
+        </div>
+      </div>
+
+      <!-- ORIGIN OF FRAME -->
+      <div class="origin-row">
+        <strong>מקור המסגרת:</strong>
+        <span class="chk"><span class="box" style="background:#000;"></span> נקנתה אצלנו (הזמנה 1-7821 · 14.05.24)</span>
+        <span class="chk"><span class="box"></span> נקנתה במקום אחר</span>
+      </div>
+
+      <!-- LOCATION -->
+      <div class="origin-row" style="background:#E6F1FB;border-color:#185FA5;">
+        <strong>מיקום נוכחי:</strong>
+        <span class="chk"><span class="box" style="background:#000;"></span> בחנות (במעבדה הפנימית)</span>
+        <span class="chk"><span class="box"></span> אצל הלקוח (יחזור עם החלק)</span>
+        <span class="chk"><span class="box"></span> בבית-מלאכה חיצוני</span>
+      </div>
+
+      <!-- FRAME -->
+      <div class="prod-block">
+        <div class="head">
+          <span>Frame · בשקית</span>
+          <span class="ord-num">1-9362-A</span>
+        </div>
+        <table class="wide">
+          <thead><tr><th>Brand</th><th>Model</th><th>Size</th><th>Color</th><th>Note</th></tr></thead>
+          <tbody><tr><td>Cazal</td><td>1280</td><td>52</td><td>03</td><td>ציר ימני רופף</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- LENSES (kept as-is) -->
+      <div class="prod-block">
+        <div class="head">
+          <span>Lenses · להחזיר ללקוח (ללא שינוי)</span>
+          <span class="ord-num">1-9362-A</span>
+        </div>
+        <table class="wide">
+          <thead><tr><th>R/L</th><th>Category</th><th>Company</th><th>Lens type</th><th>Index</th><th>Coating</th></tr></thead>
+          <tbody>
+            <tr><td class="sidecell">R</td><td>Multifocal</td><td>Optimize</td><td>Standard</td><td>1.56</td><td>AR</td></tr>
+            <tr><td class="sidecell">L</td><td>Multifocal</td><td>Optimize</td><td>Standard</td><td>1.56</td><td>AR</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PRESCRIPTION (for reference) -->
+      <div class="rx-block">
+        <div class="head">
+          <span>Prescription (להפניה)</span>
+          <span class="pill-yellow">10.10.25 · Naama</span>
+        </div>
+        <table>
+          <thead><tr><th>Eye</th><th>SPH</th><th>CYL</th><th>Axis</th><th>Add</th><th>PD</th></tr></thead>
+          <tbody>
+            <tr><td class="sidecell">R</td><td>−2.00</td><td>−0.75</td><td>140</td><td>+2.00</td><td>32</td></tr>
+            <tr><td class="sidecell">L</td><td>−3.00</td><td>+0.50</td><td>146</td><td>+2.00</td><td>32</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="signers">
+        <div><strong>פתח:</strong> Ilya</div>
+        <div><strong>אחראי:</strong> מנהל-מעבדה</div>
+        <div><strong>סגר:</strong> ________</div>
+      </div>
+
+      <div class="totals">
+        <div class="box"><div class="lbl">Total bill:</div><div>₪50</div></div>
+        <div class="box"><div class="lbl">Paid:</div><div>₪0</div></div>
+        <div class="box"><div class="lbl">Missing:</div><div>₪50</div></div>
+      </div>
+
+      <div style="margin-top:8px;text-align:center;">
+        <div class="barcode wide" style="margin:0 auto;"></div>
+      </div>
+
+      <div class="shop-footer">
+        Herzl 32, Ashkelon · Phone: 05-131313
+      </div>
+    </div>
+
+    <div class="ann">
+      <strong>Variant 1:</strong> תיקון פנימי. כל פרטי-הלקוח גלויים. בלוקי מסגרת+עדשות+מרשם, בלוק מקור-מסגרת ובלוק מיקום.
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- VARIANT 2: OUTSIDE REPAIR — same data, redacted client -->
+  <!-- ======================================================== -->
+  <div>
+    <div class="variant-h">
+      <span>Variant 2 · Outside Repair · נשלח לחברה</span>
+      <span class="tag">ללא פרטי-לקוח</span>
+    </div>
+    <div class="paper">
+      <div class="paper-h-row">
+        <div><strong>Date:</strong> 18.03.26</div>
+        <div><strong>Optic:</strong> Prizma</div>
+        <div><strong>Branch:</strong> 1 · Ashkelon</div>
+      </div>
+
+      <div class="paper-title">Repair Form</div>
+      <div class="paper-sub">תיקון חיצוני · נשלח לחברה</div>
+
+      <div class="inline-bcode-row">
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-B</div></div>
+        <div style="flex:1;">
+          <div class="barcode wide" style="margin:0 auto;"></div>
+          <div style="text-align:center;font-size:9px;margin-top:2px;">1-9362-B</div>
+        </div>
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-B</div></div>
+      </div>
+
+      <div class="cust-row">
+        <div class="field redacted">━━ Client name redacted ━━</div>
+        <div class="field"><span class="lbl">Repair #:</span> 1-9362-B</div>
+        <div class="field redacted">━━ Client # redacted ━━</div>
+      </div>
+      <div class="cust-row">
+        <div class="field redacted">━━ Phone redacted ━━</div>
+        <div class="field redacted">━━ ID redacted ━━</div>
+        <div class="field redacted">━━ H.C redacted ━━</div>
+      </div>
+
+      <div class="repair-meta">
+        <div class="head">
+          <span>🔧 פרטי תיקון</span>
+          <span class="pill-mode" style="background:#993C1D;">Outside Repair</span>
+        </div>
+        <div class="row-fields">
+          <div class="field"><span class="lbl">נפתח:</span><span class="val">18.03</span></div>
+          <div class="field"><span class="lbl">חברת-יעד:</span><span class="val">SHALDAG</span></div>
+          <div class="field"><span class="lbl">יעד:</span><span class="val">25.03.26</span></div>
+        </div>
+        <div class="desc-lbl">תיאור התיקון לחברה:</div>
+        <div class="desc-row">
+          סדק במשענת-אף ימין. לבדוק אחריות-יצרן (מסגרת בת 4 חודשים). אם לא תחת אחריות — בקשת תיקון בתשלום.
+        </div>
+      </div>
+
+      <div class="origin-row">
+        <strong>מקור המסגרת:</strong>
+        <span class="chk"><span class="box" style="background:#000;"></span> נקנתה אצלנו (תאריך-קנייה: 14.11.25)</span>
+      </div>
+
+      <div class="origin-row" style="background:#E6F1FB;border-color:#185FA5;">
+        <strong>מיקום נוכחי:</strong>
+        <span class="chk"><span class="box"></span> בחנות</span>
+        <span class="chk"><span class="box" style="background:#000;"></span> בבית-מלאכה חיצוני (SHALDAG)</span>
+      </div>
+
+      <div class="prod-block">
+        <div class="head">
+          <span>Frame · בשקית</span>
+          <span class="ord-num">1-9362-B</span>
+        </div>
+        <table class="wide">
+          <thead><tr><th>Brand</th><th>Model</th><th>Size</th><th>Color</th><th>Note</th></tr></thead>
+          <tbody><tr><td>SHALDAG</td><td>Aviator-7</td><td>54</td><td>Gold</td><td>סדק במשענת-אף ימין</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- NO LENSES BLOCK / NO PRESCRIPTION (frame-only repair) -->
+
+      <div class="signers">
+        <div><strong>פתח:</strong> Ilya</div>
+        <div><strong>חברה:</strong> SHALDAG</div>
+        <div><strong>סגר:</strong> ________</div>
+      </div>
+
+      <div style="margin-top:8px;text-align:center;">
+        <div class="barcode wide" style="margin:0 auto;"></div>
+      </div>
+
+      <div class="shop-footer">
+        Herzl 32, Ashkelon · Phone: 05-131313
+      </div>
+    </div>
+
+    <div class="ann">
+      <strong>Variant 2:</strong> תיקון חיצוני — אותו תיקון אבל ללא פרטי-לקוח (פרטיות). שדות-לקוח מוצגים כ"redacted" — לא נדפסים בפועל. רק מספר-תיקון נשאר. תיקון מסגרת בלבד = ללא בלוק-עדשות וללא מרשם.
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- VARIANT 3: INTERNAL REPAIR — LEAD (frame bought elsewhere) -->
+  <!-- ======================================================== -->
+  <div class="full">
+    <div class="variant-h">
+      <span>Variant 3 · Internal Repair · ליד · מסגרת מבחוץ</span>
+      <span class="tag">תיקון בתשלום למישהו שלא קונה אצלנו</span>
+    </div>
+    <div class="paper" style="max-width:600px;margin:0 auto;">
+      <div class="paper-h-row">
+        <div><strong>Date:</strong> 18.03.26</div>
+        <div><strong>Optic:</strong> Prizma</div>
+        <div><strong>Branch:</strong> 1 · Ashkelon</div>
+      </div>
+
+      <div class="paper-title">Repair Form</div>
+      <div class="paper-sub">תיקון פנימי · במעבדה</div>
+
+      <div class="inline-bcode-row">
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-C</div></div>
+        <div style="flex:1;">
+          <div class="barcode wide" style="margin:0 auto;"></div>
+          <div style="text-align:center;font-size:9px;margin-top:2px;">1-9362-C</div>
+        </div>
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-C</div></div>
+      </div>
+
+      <span class="lead-flag">⚠ ליד · Lead # 1289 · נוצר היום</span>
+
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Lead:</span> Sarah Cohen</div>
+        <div class="field"><span class="lbl">Repair #:</span> 1-9362-C</div>
+        <div class="field"><span class="lbl">Lead #:</span> 1289</div>
+      </div>
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Phone:</span> 052-9876543</div>
+        <div class="field"><span class="lbl">ID:</span> ________</div>
+        <div class="field"><span class="lbl">H.C provider:</span> ________</div>
+      </div>
+
+      <div class="repair-meta">
+        <div class="head">
+          <span>🔧 פרטי תיקון</span>
+          <span class="pill-mode">Internal Repair</span>
+        </div>
+        <div class="row-fields">
+          <div class="field"><span class="lbl">נפתח:</span><span class="val">18.03 16:30 · Yossi</span></div>
+          <div class="field"><span class="lbl">אחראי:</span><span class="val">Yossi</span></div>
+          <div class="field"><span class="lbl">יעד:</span><span class="val">21.03.26</span></div>
+        </div>
+        <div class="desc-lbl">תיאור התיקון:</div>
+        <div class="desc-row">
+          זרוע ימנית נשברה (מסגרת פלסטיק). הלקוחה הביאה את החלק השבור.
+          לנסות הדבקה במעבדה — אם לא הולך, להציע ללקוחה החלפה למסגרת חדשה.
+        </div>
+      </div>
+
+      <div class="origin-row">
+        <strong>מקור המסגרת:</strong>
+        <span class="chk"><span class="box"></span> נקנתה אצלנו</span>
+        <span class="chk"><span class="box" style="background:#000;"></span> נקנתה במקום אחר</span>
+      </div>
+
+      <div class="origin-row" style="background:#E6F1FB;border-color:#185FA5;">
+        <strong>מיקום נוכחי:</strong>
+        <span class="chk"><span class="box" style="background:#000;"></span> בחנות (במעבדה הפנימית)</span>
+        <span class="chk"><span class="box"></span> אצל הלקוח</span>
+      </div>
+
+      <div class="prod-block">
+        <div class="head">
+          <span>Frame · בשקית (מסגרת של הלקוחה — נקנתה במקום אחר)</span>
+          <span class="ord-num">1-9362-C</span>
+        </div>
+        <table class="wide">
+          <thead><tr><th>Brand</th><th>Model</th><th>Note</th></tr></thead>
+          <tbody><tr><td>Lacoste</td><td>L-2856 (לפי הלקוחה)</td><td>זרוע ימנית שבורה — חלק בשקית</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="signers">
+        <div><strong>פתח:</strong> Yossi</div>
+        <div><strong>אחראי:</strong> Yossi</div>
+        <div><strong>סגר:</strong> ________</div>
+      </div>
+
+      <div class="totals">
+        <div class="box"><div class="lbl">Total bill:</div><div>₪80</div></div>
+        <div class="box"><div class="lbl">Paid:</div><div>₪0</div></div>
+        <div class="box"><div class="lbl">Missing:</div><div>₪80</div></div>
+      </div>
+
+      <div style="margin-top:8px;text-align:center;">
+        <div class="barcode wide" style="margin:0 auto;"></div>
+      </div>
+
+      <div class="shop-footer">
+        Herzl 32, Ashkelon · Phone: 05-131313
+      </div>
+    </div>
+
+    <div class="ann">
+      <strong>Variant 3:</strong> ליד-חדש מביא מסגרת שנקנתה במקום אחר. לידים גם נכנסים לזרימה — אין מרשם, אין עדשות (תיקון-מסגרת בלבד). מקור-מסגרת = "במקום אחר", שטרם הוזמנה אצלנו.
+    </div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend-box">
+    <h2>הכללים מאחורי הסקיצה</h2>
+    <ul>
+      <li><strong>גרעין:</strong> פר-תת-הזמנה. דגל <code>is_repair=true</code> על תת-הזמנה רגילה (סוג מסגרת / עדשות / מסגרת+עדשות / מגע) — לא סוג חמישי.</li>
+      <li><strong>ללא הורדה ממלאי:</strong> תיקון לא מקטין מלאי (אלא אם קונים חלק-חילוף ספציפי במהלך התיקון — אז הוא יורד).</li>
+      <li><strong>שני מצבי-הדפסה לטופס זהה:</strong>
+        <ul>
+          <li><strong>Internal Repair:</strong> כל פרטי-הלקוח גלויים. נשאר בחנות.</li>
+          <li><strong>Outside Repair:</strong> אותם נתונים — אבל פרטי-הלקוח לא מודפסים (פרטיות, נשלח לחברה חיצונית). רק מספר-התיקון נשאר.</li>
+        </ul>
+      </li>
+      <li><strong>מקור-המסגרת:</strong> שדה חובה — "נקנתה אצלנו" / "נקנתה במקום אחר". אם אצלנו — מציג קישור להזמנה המקורית.</li>
+      <li><strong>מיקום-המסגרת:</strong> משתמש בשדה Location הקיים פר-תת-הזמנה (בחנות / אצל הלקוח / בבית-מלאכה חיצוני). לא שדה חדש.</li>
+      <li><strong>בלוק תיאור-התיקון:</strong> ירוק-בולט. מתאר מה לעשות. ב-Outside Repair הניסוח מותאם לחברה (לא ללקוח).</li>
+      <li><strong>בלוקי-מוצר:</strong> מודפסים רק אלה הרלוונטיים. תיקון-מסגרת-בלבד = בלוק-מסגרת + שורת "להחזיר עדשות ללא שינוי" אם רלוונטי.</li>
+      <li><strong>מרשם:</strong> מודפס רק אם יש עדשות בתת-ההזמנה ויש מרשם מחובר. תיקון-מסגרת-בלבד לא דורש מרשם.</li>
+      <li><strong>לידים:</strong> ליד יכול לפתוח תיקון בלי להיות לקוח-קיים. אותו פלואו, דגל "⚠ ליד" בולט. תשלום ראשון יהפוך אותו ללקוח.</li>
+      <li><strong>3 חתימות:</strong> פתח / אחראי / סגר (כמו ב-Task Form). תיקון הוא תהליך עם תחילה-טיפול-סוף.</li>
+      <li><strong>ברקודים:</strong> 4 מיקומים. מזהה תת-הזמנה (1-9362-A) בכולם.</li>
+    </ul>
+
+    <div class="imp">
+      <strong>בנוסף לטופס — דרישות-מערכת ב-M7 (לא בטופס עצמו):</strong>
+      <ul>
+        <li>שדות בתת-ההזמנה: <code>is_repair</code>, <code>repair_mode</code> (internal/outside), <code>repair_description</code>, <code>repair_origin</code> (own_shop/elsewhere), <code>repair_origin_order_id</code> (FK להזמנה המקורית אם נקנתה אצלנו), <code>repair_external_company</code> (אם outside).</li>
+        <li>כשיוצרים תיקון מהזמנה-קודמת ("Duplicate as Repair") — תת-הזמנה החדשה מקושרת ל-original_order_id ויורש מנתוני המסגרת והעדשות.</li>
+        <li><strong>גישה-מהירה מהמסך-הראשי:</strong> כפתור "+ תיקון מהיר" יחיה במסך-הבית של ה-ERP. נתעד בעתיד כשנגיע למסך-הראשי. כרגע: רק בעורך-ההזמנה.</li>
+        <li>מסך "כל-התיקונים-הפעילים" — סינון לפי מצב/אחראי/יעד/מקור-מסגרת.</li>
+        <li>הדפסה: שני כפתורים נפרדים — Internal-mode ו-Outside-mode. אותם נתונים, רק מצב-ה-redaction שונה.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

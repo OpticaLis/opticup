@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<title>Order Inspection — Sketch · 5 variants</title>
+<style>
+  body{
+    margin:0;padding:24px;background:#EEEEEC;
+    font-family:Arial,'Segoe UI',sans-serif;color:#000;font-size:11px;
+  }
+  h1{font-size:18px;margin:0 0 4px;}
+  .lede{color:#666;margin:0 0 18px;font-size:12px;}
+
+  .grid{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:24px;
+    max-width:1700px;margin:0 auto;
+  }
+  .grid > .full{grid-column:1 / -1;}
+
+  .variant-h{
+    background:#26215C;color:#FFF;padding:7px 12px;border-radius:6px 6px 0 0;
+    font-size:13px;font-weight:500;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .variant-h .tag{font-size:10px;background:#7F77DD;padding:2px 7px;border-radius:4px;}
+
+  /* paper */
+  .paper{
+    background:#FFF;border:1px solid #000;border-radius:0 0 6px 6px;
+    padding:14px 18px 18px;
+  }
+  .paper-h-row{
+    border:1px solid #000;padding:5px 8px;font-size:10px;
+    display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+  }
+  .paper-title{
+    text-align:center;font-size:22px;font-weight:700;margin:8px 0 4px;
+  }
+  .paper-sub{
+    text-align:center;font-size:10px;color:#888;margin-bottom:8px;font-style:italic;
+  }
+  .barcode{
+    background:repeating-linear-gradient(90deg,#000 0 2px,#FFF 2px 4px,#000 4px 5px,#FFF 5px 8px);
+    height:30px;border:1px solid #000;
+  }
+  .barcode.tall{
+    height:120px;width:24px;
+    background:repeating-linear-gradient(0deg,#000 0 2px,#FFF 2px 4px,#000 4px 5px,#FFF 5px 8px);
+  }
+  .barcode.tall .lbl-vertical{
+    writing-mode:vertical-rl;transform:rotate(180deg);
+    font-size:8px;text-align:center;
+  }
+  .barcode.wide{width:160px;}
+
+  .inline-bcode-row{
+    display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin:5px 0;
+  }
+  .barcode-block{display:flex;flex-direction:row;gap:3px;align-items:center;}
+  .barcode-block .lbl{
+    writing-mode:vertical-rl;transform:rotate(180deg);
+    font-size:8px;text-align:center;font-weight:500;
+  }
+
+  /* customer block */
+  .cust-row{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:10px;
+    margin:6px 0;
+  }
+  .cust-row .field{display:flex;gap:4px;}
+  .cust-row .field .lbl{font-weight:700;}
+
+  /* product table block */
+  .prod-block{
+    margin-top:10px;border:1px solid #000;
+  }
+  .prod-block .head{
+    background:#F1EFE8;padding:4px 8px;font-weight:700;font-size:11px;
+    display:flex;justify-content:space-between;align-items:center;
+    border-bottom:1px solid #000;
+  }
+  .prod-block .head .ord-num{font-weight:400;font-size:10px;color:#444;}
+  .prod-block .status-row{
+    padding:4px 8px;font-size:10px;display:flex;gap:14px;align-items:center;
+    border-bottom:1px solid #000;
+  }
+  .prod-block .status-row .chk{display:inline-flex;align-items:center;gap:4px;}
+  .prod-block .status-row .chk .box{
+    width:10px;height:10px;border:1px solid #000;display:inline-block;
+  }
+
+  table{
+    width:100%;border-collapse:collapse;font-size:10px;
+  }
+  table th, table td{
+    border:1px solid #000;padding:3px 5px;text-align:center;
+  }
+  table th{background:#FAFAF7;font-weight:700;}
+  table .sidecell{background:#F1EFE8;font-weight:700;width:24px;}
+  table.wide td{height:18px;}
+
+  /* prescription block */
+  .rx-block{
+    margin-top:10px;border:1px solid #000;padding:6px 8px;
+  }
+  .rx-block .head{
+    font-weight:700;font-size:11px;display:flex;gap:14px;
+    border-bottom:1px solid #000;padding-bottom:3px;margin-bottom:5px;
+  }
+  .rx-block .head .pill-yellow{background:#FAEEDA;padding:1px 6px;border-radius:3px;font-size:10px;}
+
+  .rx-types{display:flex;gap:14px;font-size:10px;margin-bottom:5px;}
+  .rx-types .chk{display:inline-flex;align-items:center;gap:4px;}
+  .rx-types .chk .box{width:10px;height:10px;border:1px solid #000;display:inline-block;}
+
+  /* footer block */
+  .signers{
+    margin-top:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+    font-size:10px;border-top:1px dashed #888;padding-top:8px;
+  }
+  .signers .sub{font-size:9px;color:#666;font-style:italic;}
+
+  /* tear-off receipt */
+  .tearoff{
+    margin-top:14px;border-top:2px dashed #000;padding-top:10px;font-size:10px;
+  }
+  .tearoff .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:6px;}
+  .tearoff .thanks{margin:8px 0;line-height:1.5;}
+  .tearoff .totals{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px;
+  }
+  .tearoff .totals .box{
+    border:1px solid #000;padding:5px 7px;
+  }
+  .tearoff .totals .box .lbl{font-size:9px;color:#666;}
+
+  /* shop footer */
+  .shop-footer{
+    margin-top:12px;padding-top:8px;border-top:1px solid #888;font-size:10px;
+  }
+
+  /* annotation */
+  .ann{
+    margin-top:6px;padding:6px 10px;background:#FFF8DD;border-right:3px solid #FAC775;
+    font-size:11px;color:#412402;border-radius:3px;
+  }
+  .ann strong{color:#993C1D;}
+
+  .legend-box{
+    grid-column:1 / -1;background:#FFF;border:1px solid #888;border-radius:6px;
+    padding:14px 18px;font-size:12px;line-height:1.6;
+  }
+  .legend-box h2{font-size:14px;margin:0 0 8px;}
+  .legend-box ul{margin:5px 0;padding-right:18px;}
+</style>
+</head>
+<body>
+
+<h1>Order Inspection — Sketch · 5 Variants</h1>
+<p class="lede">
+  טופס פנימי. מודפס פר-תת-הזמנה. נכנס לשקית עם המוצרים → לסלסלת "ממתינים למסגור".
+  הטבלה במרכז משתנה לפי תוכן תת-ההזמנה. בלוק-מרשם מודפס רק אם יש עדשות (משקפיים או מגע) ויש מרשם מחובר.
+</p>
+
+<div class="grid">
+
+  <!-- ======================================================== -->
+  <!-- VARIANT 1: FRAME + LENSES (most common) -->
+  <!-- ======================================================== -->
+  <div>
+    <div class="variant-h">
+      <span>Variant 1 · מסגרת + עדשות</span>
+      <span class="tag">המקרה הנפוץ ביותר</span>
+    </div>
+    <div class="paper">
+      <div class="paper-h-row">
+        <div><strong>Date:</strong> 18.03.26</div>
+        <div><strong>Optic:</strong> Prizma</div>
+        <div><strong>Branch:</strong> 1 · Ashkelon</div>
+      </div>
+
+      <div class="paper-title">Order Inspection</div>
+      <div class="paper-sub">Internal · For lab basket</div>
+
+      <div class="inline-bcode-row">
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-A</div></div>
+        <div style="flex:1;">
+          <div class="barcode wide" style="margin:0 auto;"></div>
+          <div style="text-align:center;font-size:9px;margin-top:2px;">1-9362-A</div>
+        </div>
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-A</div></div>
+      </div>
+
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Client:</span> John Johnson</div>
+        <div class="field"><span class="lbl">Order:</span> 1-9362-A</div>
+        <div class="field"><span class="lbl">Client #:</span> 52484</div>
+      </div>
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Phone:</span> 050-0000000</div>
+        <div class="field"><span class="lbl">ID:</span> 205452555</div>
+        <div class="field"><span class="lbl">H.C provider:</span> Maccabi</div>
+      </div>
+
+      <!-- FRAME -->
+      <div class="prod-block">
+        <div class="head">
+          <span>Frame</span>
+          <span class="ord-num">1-9362-A</span>
+        </div>
+        <table class="wide">
+          <thead><tr>
+            <th>Brand</th><th>Model</th><th>Size</th><th>Color</th><th>Pupil Height</th><th>Note</th>
+          </tr></thead>
+          <tbody><tr>
+            <td>Cazal</td><td>1280</td><td>52</td><td>03</td><td>25</td><td></td>
+          </tr></tbody>
+        </table>
+      </div>
+
+      <!-- LENSES -->
+      <div class="prod-block">
+        <div class="head">
+          <span>Lenses</span>
+          <span class="ord-num">1-9362-A</span>
+        </div>
+        <div class="status-row">
+          <strong>Lens Status:</strong>
+          <span class="chk"><span class="box"></span> Sent for framing</span>
+          <span class="chk"><span class="box"></span> Lenses Ordered</span>
+          <span class="chk"><span class="box"></span> Shelf-Stock lenses</span>
+        </div>
+        <table class="wide">
+          <thead><tr>
+            <th>R/L</th><th>Category</th><th>Company</th><th>Lens type</th><th>Index</th><th>Diam</th><th>Coating</th><th>Note</th>
+          </tr></thead>
+          <tbody>
+            <tr><td class="sidecell">R</td><td>Multifocal</td><td>Optimize</td><td>Progressive</td><td>1.56</td><td>—</td><td>AR</td><td></td></tr>
+            <tr><td class="sidecell">L</td><td>Multifocal</td><td>Optimize</td><td>Progressive</td><td>1.56</td><td>—</td><td>AR</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PRESCRIPTION -->
+      <div class="rx-block">
+        <div class="head">
+          <span>Prescription</span>
+          <span class="pill-yellow">Date: 10.10.25 · Optometrist: Naama</span>
+        </div>
+        <div class="rx-types">
+          <span class="chk"><span class="box" style="background:#000;"></span> Multifocal</span>
+          <span class="chk"><span class="box"></span> Reading</span>
+          <span class="chk"><span class="box"></span> Distance</span>
+          <span class="chk"><span class="box"></span> Office</span>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Eye</th><th>SPH</th><th>CYL</th><th>Axis</th><th>Prism</th><th>Base</th><th>V/Acc</th><th>PD</th><th>Height</th><th>PR-D</th><th>Va Vt</th><th>Pd-N</th><th>Notes</th>
+          </tr></thead>
+          <tbody>
+            <tr><td class="sidecell">R</td><td>−2.00</td><td>−0.75</td><td>140</td><td></td><td></td><td></td><td>32</td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td class="sidecell">L</td><td>−3.00</td><td>+0.50</td><td>146</td><td></td><td></td><td></td><td>32</td><td></td><td></td><td></td><td>34</td><td></td></tr>
+          </tbody>
+        </table>
+        <div style="font-size:9px;margin-top:5px;color:#444;">Notes: ___________________________________________</div>
+      </div>
+
+      <!-- SIGNERS -->
+      <div class="signers">
+        <div><strong>Optometrist:</strong> Naama<br/><span class="sub">(eye exam)</span></div>
+        <div><strong>Employee:</strong> Ilya<br/><span class="sub">(order)</span></div>
+        <div><strong>Optician:</strong> ________<br/><span class="sub">(framing-lab)</span></div>
+      </div>
+
+      <div style="margin-top:8px;text-align:center;">
+        <div class="barcode wide" style="margin:0 auto;"></div>
+        <div style="font-size:9px;margin-top:2px;">1-9362-A</div>
+      </div>
+
+      <div class="shop-footer">
+        Herzl 32, Ashkelon · Phone: 05-131313
+      </div>
+    </div>
+
+    <div class="ann">
+      <strong>Variant 1:</strong> מסגרת + עדשות. שני בלוקי-מוצר (Frame, Lenses) — עם שורת-סטטוס רק על העדשות. בלוק מרשם מודפס. ללא תלוש-לקוח (טופס פנימי בלבד).
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- VARIANT 2: FRAME ONLY -->
+  <!-- ======================================================== -->
+  <div>
+    <div class="variant-h">
+      <span>Variant 2 · רק מסגרת</span>
+      <span class="tag">Frame Reservation או מסגרת-בלבד</span>
+    </div>
+    <div class="paper">
+      <div class="paper-h-row">
+        <div><strong>Date:</strong> 18.03.26</div>
+        <div><strong>Optic:</strong> Prizma</div>
+        <div><strong>Branch:</strong> 1 · Ashkelon</div>
+      </div>
+
+      <div class="paper-title">Order Inspection</div>
+      <div class="paper-sub">Internal · For lab basket</div>
+
+      <div class="inline-bcode-row">
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-B</div></div>
+        <div style="flex:1;">
+          <div class="barcode wide" style="margin:0 auto;"></div>
+          <div style="text-align:center;font-size:9px;margin-top:2px;">1-9362-B</div>
+        </div>
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-B</div></div>
+      </div>
+
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Client:</span> John Johnson</div>
+        <div class="field"><span class="lbl">Order:</span> 1-9362-B</div>
+        <div class="field"><span class="lbl">Client #:</span> 52484</div>
+      </div>
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Phone:</span> 050-0000000</div>
+        <div class="field"><span class="lbl">ID:</span> 205452555</div>
+        <div class="field"><span class="lbl">H.C provider:</span> Maccabi</div>
+      </div>
+
+      <!-- FRAME -->
+      <div class="prod-block">
+        <div class="head">
+          <span>Frame</span>
+          <span class="ord-num">1-9362-B</span>
+        </div>
+        <table class="wide">
+          <thead><tr>
+            <th>Brand</th><th>Model</th><th>Size</th><th>Color</th><th>Pupil Height</th><th>Note</th>
+          </tr></thead>
+          <tbody><tr>
+            <td>Ray-Ban</td><td>RB-2140</td><td>50</td><td>902</td><td>—</td><td>שמירה ל-7 ימים</td>
+          </tr></tbody>
+        </table>
+      </div>
+
+      <div class="signers">
+        <div><strong>Optometrist:</strong> ________<br/><span class="sub">(לא רלוונטי — רק מסגרת)</span></div>
+        <div><strong>Employee:</strong> Ilya<br/><span class="sub">(order)</span></div>
+        <div><strong>Optician:</strong> ________<br/><span class="sub">(framing-lab)</span></div>
+      </div>
+
+      <div style="margin-top:8px;text-align:center;">
+        <div class="barcode wide" style="margin:0 auto;"></div>
+        <div style="font-size:9px;margin-top:2px;">1-9362-B</div>
+      </div>
+
+      <div class="shop-footer">
+        Herzl 32, Ashkelon · Phone: 05-131313
+      </div>
+    </div>
+
+    <div class="ann">
+      <strong>Variant 2:</strong> רק מסגרת. בלוק-מסגרת בלבד. <strong>אין מרשם, אין שורת-סטטוס.</strong>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- VARIANT 3: LENSES ONLY -->
+  <!-- ======================================================== -->
+  <div>
+    <div class="variant-h">
+      <span>Variant 3 · רק עדשות (למסגרת קיימת)</span>
+      <span class="tag">החלפת-עדשות / תיקון</span>
+    </div>
+    <div class="paper">
+      <div class="paper-h-row">
+        <div><strong>Date:</strong> 18.03.26</div>
+        <div><strong>Optic:</strong> Prizma</div>
+        <div><strong>Branch:</strong> 1 · Ashkelon</div>
+      </div>
+
+      <div class="paper-title">Order Inspection</div>
+      <div class="paper-sub">Internal · For lab basket</div>
+
+      <div class="inline-bcode-row">
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-C</div></div>
+        <div style="flex:1;">
+          <div class="barcode wide" style="margin:0 auto;"></div>
+          <div style="text-align:center;font-size:9px;margin-top:2px;">1-9362-C</div>
+        </div>
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-C</div></div>
+      </div>
+
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Client:</span> John Johnson</div>
+        <div class="field"><span class="lbl">Order:</span> 1-9362-C</div>
+        <div class="field"><span class="lbl">Client #:</span> 52484</div>
+      </div>
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Phone:</span> 050-0000000</div>
+        <div class="field"><span class="lbl">ID:</span> 205452555</div>
+        <div class="field"><span class="lbl">H.C provider:</span> Maccabi</div>
+      </div>
+
+      <!-- LENSES -->
+      <div class="prod-block">
+        <div class="head">
+          <span>Lenses</span>
+          <span class="ord-num">1-9362-C · למסגרת של הלקוח</span>
+        </div>
+        <div class="status-row">
+          <strong>Lens Status:</strong>
+          <span class="chk"><span class="box"></span> Sent for framing</span>
+          <span class="chk"><span class="box"></span> Lenses Ordered</span>
+          <span class="chk"><span class="box"></span> Shelf-Stock lenses</span>
+        </div>
+        <table class="wide">
+          <thead><tr>
+            <th>R/L</th><th>Category</th><th>Company</th><th>Lens type</th><th>Index</th><th>Diam</th><th>Coating</th><th>Note</th>
+          </tr></thead>
+          <tbody>
+            <tr><td class="sidecell">R</td><td>Single Vision</td><td>Hoya</td><td>Standard</td><td>1.50</td><td>65</td><td>HMC</td><td></td></tr>
+            <tr><td class="sidecell">L</td><td>Single Vision</td><td>Hoya</td><td>Standard</td><td>1.50</td><td>65</td><td>HMC</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PRESCRIPTION -->
+      <div class="rx-block">
+        <div class="head">
+          <span>Prescription</span>
+          <span class="pill-yellow">Date: 10.10.25 · Optometrist: Naama</span>
+        </div>
+        <div class="rx-types">
+          <span class="chk"><span class="box"></span> Multifocal</span>
+          <span class="chk"><span class="box"></span> Reading</span>
+          <span class="chk"><span class="box" style="background:#000;"></span> Distance</span>
+          <span class="chk"><span class="box"></span> Office</span>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Eye</th><th>SPH</th><th>CYL</th><th>Axis</th><th>Prism</th><th>Base</th><th>V/Acc</th><th>PD</th><th>Height</th><th>PR-D</th><th>Va Vt</th><th>Pd-N</th><th>Notes</th>
+          </tr></thead>
+          <tbody>
+            <tr><td class="sidecell">R</td><td>−1.50</td><td>—</td><td>—</td><td></td><td></td><td></td><td>32</td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td class="sidecell">L</td><td>−1.75</td><td>—</td><td>—</td><td></td><td></td><td></td><td>32</td><td></td><td></td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="signers">
+        <div><strong>Optometrist:</strong> Naama</div>
+        <div><strong>Employee:</strong> Ilya</div>
+        <div><strong>Optician:</strong> ________</div>
+      </div>
+
+      <div style="margin-top:8px;text-align:center;">
+        <div class="barcode wide" style="margin:0 auto;"></div>
+      </div>
+
+      <div class="shop-footer">
+        Herzl 32, Ashkelon · Phone: 05-131313
+      </div>
+    </div>
+
+    <div class="ann">
+      <strong>Variant 3:</strong> רק עדשות. בלוק-עדשות עם שורת-סטטוס + בלוק-מרשם. <strong>אין מסגרת.</strong>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- VARIANT 4: CONTACT LENSES -->
+  <!-- ======================================================== -->
+  <div>
+    <div class="variant-h">
+      <span>Variant 4 · עדשות-מגע</span>
+      <span class="tag">סוג אחד · qty חופשי</span>
+    </div>
+    <div class="paper">
+      <div class="paper-h-row">
+        <div><strong>Date:</strong> 18.03.26</div>
+        <div><strong>Optic:</strong> Prizma</div>
+        <div><strong>Branch:</strong> 1 · Ashkelon</div>
+      </div>
+
+      <div class="paper-title">Order Inspection</div>
+      <div class="paper-sub">Internal · For lab basket</div>
+
+      <div class="inline-bcode-row">
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-D</div></div>
+        <div style="flex:1;">
+          <div class="barcode wide" style="margin:0 auto;"></div>
+          <div style="text-align:center;font-size:9px;margin-top:2px;">1-9362-D</div>
+        </div>
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-D</div></div>
+      </div>
+
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Client:</span> John Johnson</div>
+        <div class="field"><span class="lbl">Order:</span> 1-9362-D</div>
+        <div class="field"><span class="lbl">Client #:</span> 52484</div>
+      </div>
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Phone:</span> 050-0000000</div>
+        <div class="field"><span class="lbl">ID:</span> 205452555</div>
+        <div class="field"><span class="lbl">H.C provider:</span> Maccabi</div>
+      </div>
+
+      <!-- CONTACT LENSES -->
+      <div class="prod-block">
+        <div class="head">
+          <span>Contact Lenses</span>
+          <span class="ord-num">1-9362-D</span>
+        </div>
+        <div class="status-row">
+          <strong>Status:</strong>
+          <span class="chk"><span class="box"></span> Ordered from supplier</span>
+          <span class="chk"><span class="box" style="background:#000;"></span> Shelf-stock</span>
+        </div>
+        <table class="wide">
+          <thead><tr>
+            <th>R/L</th><th>Brand</th><th>Model</th><th>Type</th><th>BC</th><th>DIA</th><th>Qty</th><th>Note</th>
+          </tr></thead>
+          <tbody>
+            <tr><td class="sidecell">R</td><td>Acuvue</td><td>Oasys</td><td>Daily</td><td>8.4</td><td>14.0</td><td>30 pairs</td><td></td></tr>
+            <tr><td class="sidecell">L</td><td>Acuvue</td><td>Oasys</td><td>Daily</td><td>8.4</td><td>14.0</td><td>30 pairs</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PRESCRIPTION (contact lens prescription) -->
+      <div class="rx-block">
+        <div class="head">
+          <span>Contact Lens Prescription</span>
+          <span class="pill-yellow">Date: 02.02.26 · Optometrist: Naama</span>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Eye</th><th>SPH</th><th>CYL</th><th>Axis</th><th>BC</th><th>DIA</th><th>Add</th><th>Notes</th>
+          </tr></thead>
+          <tbody>
+            <tr><td class="sidecell">R</td><td>−2.00</td><td>—</td><td>—</td><td>8.4</td><td>14.0</td><td>—</td><td></td></tr>
+            <tr><td class="sidecell">L</td><td>−2.25</td><td>—</td><td>—</td><td>8.4</td><td>14.0</td><td>—</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="signers">
+        <div><strong>Optometrist:</strong> Naama</div>
+        <div><strong>Employee:</strong> Ilya</div>
+        <div><strong>Optician:</strong> ________<br/><span class="sub">(לא רלוונטי — אין מסגור)</span></div>
+      </div>
+
+      <div style="margin-top:8px;text-align:center;">
+        <div class="barcode wide" style="margin:0 auto;"></div>
+      </div>
+
+      <div class="shop-footer">
+        Herzl 32, Ashkelon · Phone: 05-131313
+      </div>
+    </div>
+
+    <div class="ann">
+      <strong>Variant 4:</strong> עדשות-מגע. בלוק-מגע (טבלה שונה: BC/DIA/Qty במקום Index/Diam/Coating). מרשם-עדשות-מגע מודפס. <strong>אין מסגרת, אין שורת Sent-for-framing.</strong>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- VARIANT 5: ACCESSORIES -->
+  <!-- ======================================================== -->
+  <div class="full">
+    <div class="variant-h">
+      <span>Variant 5 · אביזרים</span>
+      <span class="tag">פריטים-יחידים · ללא מרשם</span>
+    </div>
+    <div class="paper" style="max-width:600px;margin:0 auto;">
+      <div class="paper-h-row">
+        <div><strong>Date:</strong> 18.03.26</div>
+        <div><strong>Optic:</strong> Prizma</div>
+        <div><strong>Branch:</strong> 1 · Ashkelon</div>
+      </div>
+
+      <div class="paper-title">Order Inspection</div>
+      <div class="paper-sub">Internal · For lab basket</div>
+
+      <div class="inline-bcode-row">
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-E</div></div>
+        <div style="flex:1;">
+          <div class="barcode wide" style="margin:0 auto;"></div>
+          <div style="text-align:center;font-size:9px;margin-top:2px;">1-9362-E</div>
+        </div>
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-E</div></div>
+      </div>
+
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Client:</span> John Johnson</div>
+        <div class="field"><span class="lbl">Order:</span> 1-9362-E</div>
+        <div class="field"><span class="lbl">Client #:</span> 52484</div>
+      </div>
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Phone:</span> 050-0000000</div>
+        <div class="field"><span class="lbl">ID:</span> 205452555</div>
+        <div class="field"><span class="lbl">H.C provider:</span> Maccabi</div>
+      </div>
+
+      <!-- ACCESSORIES -->
+      <div class="prod-block">
+        <div class="head">
+          <span>Accessories</span>
+          <span class="ord-num">1-9362-E</span>
+        </div>
+        <table class="wide">
+          <thead><tr>
+            <th>#</th><th>Product</th><th>Code</th><th>Qty</th><th>Note</th>
+          </tr></thead>
+          <tbody>
+            <tr><td class="sidecell">1</td><td>Lens Cleaning Liquid</td><td>ACC-001</td><td>1</td><td></td></tr>
+            <tr><td class="sidecell">2</td><td>Microfiber Cloth</td><td>ACC-014</td><td>2</td><td></td></tr>
+            <tr><td class="sidecell">3</td><td>Glasses Case (hard)</td><td>ACC-022</td><td>1</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- NO PRESCRIPTION BLOCK — accessories don't need it -->
+
+      <div class="signers">
+        <div><strong>Optometrist:</strong> ________<br/><span class="sub">(לא רלוונטי)</span></div>
+        <div><strong>Employee:</strong> Ilya</div>
+        <div><strong>Optician:</strong> ________<br/><span class="sub">(לא רלוונטי)</span></div>
+      </div>
+
+      <div style="margin-top:8px;text-align:center;">
+        <div class="barcode wide" style="margin:0 auto;"></div>
+      </div>
+
+      <div class="shop-footer">
+        Herzl 32, Ashkelon · Phone: 05-131313
+      </div>
+    </div>
+
+    <div class="ann">
+      <strong>Variant 5:</strong> אביזרים. בלוק-אביזרים בלבד. <strong>אין מרשם, אין שורת-סטטוס מעבדה</strong> — אביזר נמסר ללקוח ישר, לא עובר בית-מלאכה.
+    </div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend-box">
+    <h2>הכללים מאחורי הסקיצה</h2>
+    <ul>
+      <li><strong>גרעין:</strong> פר-תת-הזמנה. תת-הזמנה אחת = טופס אחד. עד 8 טפסים מודפסים פר-הזמנה.</li>
+      <li><strong>בלוקי-מוצר:</strong> מוצגים רק אלה שנמצאים בתת-ההזמנה. מסגרת+עדשות = שני בלוקים. רק-מסגרת = בלוק אחד. וכו'.</li>
+      <li><strong>שורת-סטטוס "Sent / Ordered / Shelf":</strong> מודפסת רק על בלוק-עדשות (וריאנטים 1, 3) ועל בלוק-עדשות-מגע (וריאנט 4). מסגרת ואביזרים — אין סטטוס-מעבדה. הסימון ידני.</li>
+      <li><strong>בלוק-מרשם:</strong> מודפס רק כשיש עדשות (משקפיים או מגע) ויש מרשם מחובר להזמנה. מסגרת-בלבד / אביזרים = אין מרשם.</li>
+      <li><strong>סוג-מרשם (Multifocal / Reading / Distance / Office):</strong> ה-checkbox המתאים נסמן אוטומטית לפי הסוג שמחובר. השאר ריקים.</li>
+      <li><strong>ברקודים:</strong> 4 מיקומים בעמוד (פינות + מרכז) — כולם אותו מזהה (1-9362-A). חיתוך/קיפול לא ישבש סריקה.</li>
+      <li><strong>חתימות:</strong> Optometrist / Employee / Optician — שדות לא-רלוונטיים מסומנים מפורשות (למשל אביזרים = "לא רלוונטי" בכל שלושה).</li>
+      <li><strong>טופס פנימי בלבד</strong> — אין תלוש-לקוח. קבלה/חשבונית מודפסות ע"י הקופה (כיום ידנית, בעתיד דרך API לקופה חיצונית).</li>
+    </ul>
+  </div>
+
+</div>
+
+</body>
+</html>

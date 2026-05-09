@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<title>Task Form — Sketch · 4 variants</title>
+<style>
+  body{
+    margin:0;padding:24px;background:#EEEEEC;
+    font-family:Arial,'Segoe UI',sans-serif;color:#000;font-size:11px;
+  }
+  h1{font-size:18px;margin:0 0 4px;}
+  .lede{color:#666;margin:0 0 18px;font-size:12px;max-width:1100px;}
+
+  .grid{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:24px;
+    max-width:1700px;margin:0 auto;
+  }
+  .grid > .full{grid-column:1 / -1;}
+
+  .variant-h{
+    background:#0C447C;color:#FFF;padding:7px 12px;border-radius:6px 6px 0 0;
+    font-size:13px;font-weight:500;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .variant-h .tag{font-size:10px;background:#185FA5;padding:2px 7px;border-radius:4px;}
+
+  .paper{
+    background:#FFF;border:1px solid #000;border-radius:0 0 6px 6px;
+    padding:14px 18px 18px;
+  }
+  .paper-h-row{
+    border:1px solid #000;padding:5px 8px;font-size:10px;
+    display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+  }
+  .paper-title{
+    text-align:center;font-size:22px;font-weight:700;margin:8px 0 4px;
+  }
+  .paper-sub{
+    text-align:center;font-size:10px;color:#888;margin-bottom:8px;font-style:italic;
+  }
+
+  .barcode{
+    background:repeating-linear-gradient(90deg,#000 0 2px,#FFF 2px 4px,#000 4px 5px,#FFF 5px 8px);
+    height:30px;border:1px solid #000;
+  }
+  .barcode.tall{
+    height:120px;width:24px;
+    background:repeating-linear-gradient(0deg,#000 0 2px,#FFF 2px 4px,#000 4px 5px,#FFF 5px 8px);
+  }
+  .barcode.wide{width:160px;}
+
+  .inline-bcode-row{
+    display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin:5px 0;
+  }
+  .barcode-block{display:flex;flex-direction:row;gap:3px;align-items:center;}
+  .barcode-block .lbl{
+    writing-mode:vertical-rl;transform:rotate(180deg);
+    font-size:8px;text-align:center;font-weight:500;
+  }
+
+  .cust-row{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:10px;margin:6px 0;
+  }
+  .cust-row .field{display:flex;gap:4px;}
+  .cust-row .field .lbl{font-weight:700;}
+
+  /* TASK DESCRIPTION — the heart of the form */
+  .task-desc{
+    background:#FCEBEB;border:2px solid #A32D2D;border-radius:4px;
+    padding:8px 12px;margin:10px 0;
+  }
+  .task-desc .head{
+    font-weight:700;font-size:13px;color:#A32D2D;margin-bottom:4px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .task-desc .head .urgency{
+    font-size:10px;background:#A32D2D;color:#FFF;padding:2px 7px;border-radius:4px;
+  }
+  .task-desc .body{
+    background:#FFF;border:1px solid #000;padding:6px 8px;min-height:50px;
+    font-size:11px;line-height:1.4;
+  }
+  .task-desc .body.placeholder{color:#888;font-style:italic;}
+  .task-desc .meta{font-size:9px;color:#666;margin-top:4px;}
+
+  .task-status{
+    margin:10px 0;padding:6px 10px;background:#FAEEDA;
+    border:1px solid #BA7517;border-radius:4px;
+    display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:10px;
+  }
+  .task-status .field{display:flex;flex-direction:column;}
+  .task-status .lbl{font-size:9px;color:#666;font-weight:700;}
+  .task-status .val{font-size:11px;font-weight:500;}
+  .task-status .chk-line{display:flex;gap:14px;align-items:center;}
+  .task-status .chk{display:inline-flex;align-items:center;gap:4px;}
+  .task-status .chk .box{width:11px;height:11px;border:1px solid #000;display:inline-block;}
+
+  .prod-block{margin-top:10px;border:1px solid #000;}
+  .prod-block .head{
+    background:#F1EFE8;padding:4px 8px;font-weight:700;font-size:11px;
+    display:flex;justify-content:space-between;align-items:center;
+    border-bottom:1px solid #000;
+  }
+  .prod-block .head .ord-num{font-weight:400;font-size:10px;color:#444;}
+
+  table{width:100%;border-collapse:collapse;font-size:10px;}
+  table th, table td{border:1px solid #000;padding:3px 5px;text-align:center;}
+  table th{background:#FAFAF7;font-weight:700;}
+  table .sidecell{background:#F1EFE8;font-weight:700;width:24px;}
+  table.wide td{height:18px;}
+
+  .rx-block{
+    margin-top:10px;border:1px solid #000;padding:6px 8px;
+  }
+  .rx-block .head{
+    font-weight:700;font-size:11px;display:flex;gap:14px;
+    border-bottom:1px solid #000;padding-bottom:3px;margin-bottom:5px;
+  }
+  .rx-block .head .pill-yellow{background:#FAEEDA;padding:1px 6px;border-radius:3px;font-size:10px;}
+
+  .signers{
+    margin-top:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+    font-size:10px;border-top:1px dashed #888;padding-top:8px;
+  }
+  .signers .sub{font-size:9px;color:#666;font-style:italic;}
+
+  .resolution{
+    margin-top:10px;padding:7px 10px;
+    background:#EAF3DE;border:1.5px dashed #3B6D11;border-radius:4px;
+  }
+  .resolution .head{
+    font-weight:700;font-size:11px;color:#173404;margin-bottom:4px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .resolution .body{
+    background:#FFF;border:1px solid #000;padding:6px 8px;min-height:35px;
+    font-size:11px;color:#888;font-style:italic;
+  }
+  .resolution .closed-row{
+    display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:5px;font-size:10px;
+  }
+
+  .totals{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px;}
+  .totals .box{border:1px solid #000;padding:5px 7px;}
+  .totals .box .lbl{font-size:9px;color:#666;}
+
+  .shop-footer{
+    margin-top:12px;padding-top:8px;border-top:1px solid #888;font-size:10px;
+  }
+
+  .ann{
+    margin-top:6px;padding:6px 10px;background:#FFF8DD;border-right:3px solid #FAC775;
+    font-size:11px;color:#412402;border-radius:3px;
+  }
+  .ann strong{color:#993C1D;}
+
+  .legend-box{
+    grid-column:1 / -1;background:#FFF;border:1px solid #888;border-radius:6px;
+    padding:14px 18px;font-size:12px;line-height:1.6;
+  }
+  .legend-box h2{font-size:14px;margin:0 0 8px;}
+  .legend-box ul{margin:5px 0;padding-right:18px;}
+  .legend-box .imp{
+    background:#FCEBEB;border-right:3px solid #A32D2D;
+    padding:8px 12px;border-radius:3px;margin-top:8px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Task Form — Sketch · 4 Variants</h1>
+<p class="lede">
+  טופס משימה למעבדה. נוצר כשצריך לבדוק/לטפל במשהו שלא ניתן לסגור באותו הרגע: החזר עדשות-מגע, אי-הסתגלות-מולטיפוקל, מסגרת-פגומה, שאלת-לקוח שדורשת בדיקה. מדפיסים → שמים את המוצר בשקית עם הטופס → אחראי-המעבדה מטפל.
+  <br/>
+  <strong>פר-תת-הזמנה בלבד.</strong> תרחיש משימה-כללית-ללא-הזמנה (לידים, חוזרים-לקוח-בלי-מוצר) שייך למודול-CRM (M4), לא ל-M7.
+</p>
+
+<div class="grid">
+
+  <!-- ======================================================== -->
+  <!-- VARIANT 1: Multifocal non-adaptation -->
+  <!-- ======================================================== -->
+  <div>
+    <div class="variant-h">
+      <span>Variant 1 · אי-הסתגלות מולטיפוקל</span>
+      <span class="tag">החזר/החלפה לחברה</span>
+    </div>
+    <div class="paper">
+      <div class="paper-h-row">
+        <div><strong>Date:</strong> 18.03.26</div>
+        <div><strong>Optic:</strong> Prizma</div>
+        <div><strong>Branch:</strong> 1 · Ashkelon</div>
+      </div>
+
+      <div class="paper-title">Task Form</div>
+      <div class="paper-sub">משימה לבדיקה / טיפול במעבדה</div>
+
+      <div class="inline-bcode-row">
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-A</div></div>
+        <div style="flex:1;">
+          <div class="barcode wide" style="margin:0 auto;"></div>
+          <div style="text-align:center;font-size:9px;margin-top:2px;">1-9362-A</div>
+        </div>
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-A</div></div>
+      </div>
+
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Client:</span> John Johnson</div>
+        <div class="field"><span class="lbl">Task #:</span> 1-9362-A</div>
+        <div class="field"><span class="lbl">Client #:</span> 52484</div>
+      </div>
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Phone:</span> 050-0000000</div>
+        <div class="field"><span class="lbl">ID:</span> 205452555</div>
+        <div class="field"><span class="lbl">H.C provider:</span> Maccabi</div>
+      </div>
+
+      <!-- TASK DESCRIPTION — the heart -->
+      <div class="task-desc">
+        <div class="head">
+          <span>📋 תיאור המשימה</span>
+          <span class="urgency">דחוף · יעד 22.03</span>
+        </div>
+        <div class="body">
+          לקוח לא הסתגל לעדשות מולטיפוקל אחרי 14 יום. מתלונן על סחרחורות בקריאה ועל גבול מטושטש בין הגזרות.
+          <strong>לבדוק עם Optimize:</strong> האם אפשר להחליף לעדשות מאותה חברה אבל בקטגוריית-מולטיפוקל מתקדמת יותר (Premium במקום Standard) במסגרת תקופת-ההסתגלות (60 יום).
+          המסגרת והעדשות בשקית.
+        </div>
+        <div class="meta">⌥ נכתב ע"י: Yossi · 18.03 14:22 · משויך לתת-הזמנה 1-9362-A</div>
+      </div>
+
+      <!-- TASK STATUS -->
+      <div class="task-status">
+        <div class="field">
+          <span class="lbl">סטטוס:</span>
+          <div class="chk-line">
+            <span class="chk"><span class="box"></span> פתוח</span>
+            <span class="chk"><span class="box"></span> בטיפול</span>
+            <span class="chk"><span class="box"></span> ממתין-לתשובה</span>
+            <span class="chk"><span class="box"></span> סגור</span>
+          </div>
+        </div>
+        <div class="field">
+          <span class="lbl">אחראי:</span>
+          <span class="val">Naama (אופטיקאי)</span>
+        </div>
+        <div class="field">
+          <span class="lbl">יעד-טיפול:</span>
+          <span class="val">22.03.26</span>
+        </div>
+      </div>
+
+      <!-- FRAME -->
+      <div class="prod-block">
+        <div class="head">
+          <span>Frame · בשקית</span>
+          <span class="ord-num">1-9362-A</span>
+        </div>
+        <table class="wide">
+          <thead><tr><th>Brand</th><th>Model</th><th>Size</th><th>Color</th><th>Note</th></tr></thead>
+          <tbody><tr><td>Cazal</td><td>1280</td><td>52</td><td>03</td><td></td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- LENSES -->
+      <div class="prod-block">
+        <div class="head">
+          <span>Lenses · בשקית</span>
+          <span class="ord-num">1-9362-A</span>
+        </div>
+        <table class="wide">
+          <thead><tr><th>R/L</th><th>Category</th><th>Company</th><th>Lens type</th><th>Index</th><th>Coating</th></tr></thead>
+          <tbody>
+            <tr><td class="sidecell">R</td><td>Multifocal</td><td>Optimize</td><td>Standard</td><td>1.56</td><td>AR</td></tr>
+            <tr><td class="sidecell">L</td><td>Multifocal</td><td>Optimize</td><td>Standard</td><td>1.56</td><td>AR</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PRESCRIPTION -->
+      <div class="rx-block">
+        <div class="head">
+          <span>Prescription</span>
+          <span class="pill-yellow">10.10.25 · Naama</span>
+        </div>
+        <table>
+          <thead><tr><th>Eye</th><th>SPH</th><th>CYL</th><th>Axis</th><th>Add</th><th>PD</th></tr></thead>
+          <tbody>
+            <tr><td class="sidecell">R</td><td>−2.00</td><td>−0.75</td><td>140</td><td>+2.00</td><td>32</td></tr>
+            <tr><td class="sidecell">L</td><td>−3.00</td><td>+0.50</td><td>146</td><td>+2.00</td><td>32</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- RESOLUTION (filled when task closes) -->
+      <div class="resolution">
+        <div class="head">
+          <span>✓ סיכום-טיפול / Resolution</span>
+          <span style="font-size:10px;color:#666;">למילוי בסגירת-המשימה</span>
+        </div>
+        <div class="body">_____________________________________________________________</div>
+        <div class="closed-row">
+          <div><strong>נסגר ע"י:</strong> ________</div>
+          <div><strong>תאריך-סגירה:</strong> ________</div>
+        </div>
+      </div>
+
+      <div class="signers">
+        <div><strong>פתח:</strong> Yossi</div>
+        <div><strong>אחראי:</strong> Naama</div>
+        <div><strong>סגר:</strong> ________</div>
+      </div>
+
+      <div style="margin-top:8px;text-align:center;">
+        <div class="barcode wide" style="margin:0 auto;"></div>
+      </div>
+
+      <div class="shop-footer">
+        Herzl 32, Ashkelon · Phone: 05-131313
+      </div>
+    </div>
+
+    <div class="ann">
+      <strong>Variant 1:</strong> מולטיפוקל אי-הסתגלות. בלוקי מסגרת+עדשות+מרשם, בלוק תיאור-משימה, סטטוס וסיכום-טיפול.
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- VARIANT 2: Defective frame check with supplier -->
+  <!-- ======================================================== -->
+  <div>
+    <div class="variant-h">
+      <span>Variant 2 · מסגרת פגומה</span>
+      <span class="tag">בדיקה עם הספק</span>
+    </div>
+    <div class="paper">
+      <div class="paper-h-row">
+        <div><strong>Date:</strong> 18.03.26</div>
+        <div><strong>Optic:</strong> Prizma</div>
+        <div><strong>Branch:</strong> 1 · Ashkelon</div>
+      </div>
+
+      <div class="paper-title">Task Form</div>
+      <div class="paper-sub">משימה לבדיקה / טיפול במעבדה</div>
+
+      <div class="inline-bcode-row">
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-B</div></div>
+        <div style="flex:1;">
+          <div class="barcode wide" style="margin:0 auto;"></div>
+          <div style="text-align:center;font-size:9px;margin-top:2px;">1-9362-B</div>
+        </div>
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-B</div></div>
+      </div>
+
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Client:</span> Sarah Levi</div>
+        <div class="field"><span class="lbl">Task #:</span> 1-9362-B</div>
+        <div class="field"><span class="lbl">Client #:</span> 12048</div>
+      </div>
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Phone:</span> 052-1234567</div>
+        <div class="field"><span class="lbl">ID:</span> 301122334</div>
+        <div class="field"><span class="lbl">H.C provider:</span> Clalit</div>
+      </div>
+
+      <div class="task-desc">
+        <div class="head">
+          <span>📋 תיאור המשימה</span>
+          <span class="urgency" style="background:#BA7517;">בינוני · יעד 25.03</span>
+        </div>
+        <div class="body">
+          מסגרת חזרה לאחר 3 שבועות שימוש — סדק במשענת-האף. הלקוח טוען שלא נפלה.
+          <strong>לבדוק עם SHALDAG:</strong> אחריות-יצרן? החלפה? אם לא — תיקון פנימי במעבדה.
+        </div>
+        <div class="meta">⌥ נכתב ע"י: Ilya · 18.03 11:40 · משויך לתת-הזמנה 1-9362-B</div>
+      </div>
+
+      <div class="task-status">
+        <div class="field">
+          <span class="lbl">סטטוס:</span>
+          <div class="chk-line">
+            <span class="chk"><span class="box" style="background:#000;"></span> פתוח</span>
+            <span class="chk"><span class="box"></span> בטיפול</span>
+            <span class="chk"><span class="box"></span> ממתין-לתשובה</span>
+            <span class="chk"><span class="box"></span> סגור</span>
+          </div>
+        </div>
+        <div class="field">
+          <span class="lbl">אחראי:</span>
+          <span class="val">מנהל-מעבדה</span>
+        </div>
+        <div class="field">
+          <span class="lbl">יעד-טיפול:</span>
+          <span class="val">25.03.26</span>
+        </div>
+      </div>
+
+      <!-- FRAME ONLY (no lenses on this task) -->
+      <div class="prod-block">
+        <div class="head">
+          <span>Frame · בשקית (פגום)</span>
+          <span class="ord-num">1-9362-B</span>
+        </div>
+        <table class="wide">
+          <thead><tr><th>Brand</th><th>Model</th><th>Size</th><th>Color</th><th>Note</th></tr></thead>
+          <tbody><tr><td>SHALDAG</td><td>Aviator-7</td><td>54</td><td>Gold</td><td>סדק במשענת-אף ימין</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- NO PRESCRIPTION (frame-only task, no lenses involved) -->
+
+      <div class="resolution">
+        <div class="head">
+          <span>✓ סיכום-טיפול / Resolution</span>
+          <span style="font-size:10px;color:#666;">למילוי בסגירת-המשימה</span>
+        </div>
+        <div class="body">_____________________________________________________________</div>
+        <div class="closed-row">
+          <div><strong>נסגר ע"י:</strong> ________</div>
+          <div><strong>תאריך-סגירה:</strong> ________</div>
+        </div>
+      </div>
+
+      <div class="signers">
+        <div><strong>פתח:</strong> Ilya</div>
+        <div><strong>אחראי:</strong> מנהל-מעבדה</div>
+        <div><strong>סגר:</strong> ________</div>
+      </div>
+
+      <div style="margin-top:8px;text-align:center;">
+        <div class="barcode wide" style="margin:0 auto;"></div>
+      </div>
+
+      <div class="shop-footer">
+        Herzl 32, Ashkelon · Phone: 05-131313
+      </div>
+    </div>
+
+    <div class="ann">
+      <strong>Variant 2:</strong> מסגרת בלבד פגומה. אין עדשות, אין מרשם בטופס. הסטטוס נדלק "פתוח".
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- VARIANT 3: Contact-lens non-adaptation refund -->
+  <!-- ======================================================== -->
+  <div>
+    <div class="variant-h">
+      <span>Variant 3 · עדשות-מגע — אי-הסתגלות</span>
+      <span class="tag">בדיקת-החזר עם ספק</span>
+    </div>
+    <div class="paper">
+      <div class="paper-h-row">
+        <div><strong>Date:</strong> 18.03.26</div>
+        <div><strong>Optic:</strong> Prizma</div>
+        <div><strong>Branch:</strong> 1 · Ashkelon</div>
+      </div>
+
+      <div class="paper-title">Task Form</div>
+      <div class="paper-sub">משימה לבדיקה / טיפול במעבדה</div>
+
+      <div class="inline-bcode-row">
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-C</div></div>
+        <div style="flex:1;">
+          <div class="barcode wide" style="margin:0 auto;"></div>
+          <div style="text-align:center;font-size:9px;margin-top:2px;">1-9362-C</div>
+        </div>
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-C</div></div>
+      </div>
+
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Client:</span> Daniel Cohen</div>
+        <div class="field"><span class="lbl">Task #:</span> 1-9362-C</div>
+        <div class="field"><span class="lbl">Client #:</span> 33421</div>
+      </div>
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Phone:</span> 053-9988776</div>
+        <div class="field"><span class="lbl">ID:</span> 027766554</div>
+        <div class="field"><span class="lbl">H.C provider:</span> Maccabi</div>
+      </div>
+
+      <div class="task-desc">
+        <div class="head">
+          <span>📋 תיאור המשימה</span>
+          <span class="urgency">דחוף · יעד 21.03</span>
+        </div>
+        <div class="body">
+          לקוח קיבל קופסת Acuvue Oasys — דיווח על יובש וחוסר-נוחות אחרי שעה. החזיר 28 מתוך 30 זוגות סגורות.
+          <strong>לבדוק עם Acuvue:</strong> פוליסת-החזר ל-קופסה-פתוחה. אם מאושר — לבצע החזר ללקוח (₪420 על 28 מהזוגות).
+        </div>
+        <div class="meta">⌥ נכתב ע"י: Yossi · 18.03 09:30 · משויך לתת-הזמנה 1-9362-C</div>
+      </div>
+
+      <div class="task-status">
+        <div class="field">
+          <span class="lbl">סטטוס:</span>
+          <div class="chk-line">
+            <span class="chk"><span class="box"></span> פתוח</span>
+            <span class="chk"><span class="box" style="background:#000;"></span> בטיפול</span>
+            <span class="chk"><span class="box"></span> ממתין-לתשובה</span>
+            <span class="chk"><span class="box"></span> סגור</span>
+          </div>
+        </div>
+        <div class="field">
+          <span class="lbl">אחראי:</span>
+          <span class="val">Yossi</span>
+        </div>
+        <div class="field">
+          <span class="lbl">יעד-טיפול:</span>
+          <span class="val">21.03.26</span>
+        </div>
+      </div>
+
+      <!-- CONTACT LENSES -->
+      <div class="prod-block">
+        <div class="head">
+          <span>Contact Lenses · בשקית (28 זוגות סגורים)</span>
+          <span class="ord-num">1-9362-C</span>
+        </div>
+        <table class="wide">
+          <thead><tr><th>R/L</th><th>Brand</th><th>Model</th><th>BC</th><th>DIA</th><th>Qty returned</th></tr></thead>
+          <tbody>
+            <tr><td class="sidecell">R</td><td>Acuvue</td><td>Oasys</td><td>8.4</td><td>14.0</td><td>14 / 30</td></tr>
+            <tr><td class="sidecell">L</td><td>Acuvue</td><td>Oasys</td><td>8.4</td><td>14.0</td><td>14 / 30</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Contact lens prescription -->
+      <div class="rx-block">
+        <div class="head">
+          <span>Contact Lens Prescription</span>
+          <span class="pill-yellow">02.02.26 · Naama</span>
+        </div>
+        <table>
+          <thead><tr><th>Eye</th><th>SPH</th><th>CYL</th><th>BC</th><th>DIA</th></tr></thead>
+          <tbody>
+            <tr><td class="sidecell">R</td><td>−2.00</td><td>—</td><td>8.4</td><td>14.0</td></tr>
+            <tr><td class="sidecell">L</td><td>−2.25</td><td>—</td><td>8.4</td><td>14.0</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="resolution">
+        <div class="head">
+          <span>✓ סיכום-טיפול / Resolution</span>
+          <span style="font-size:10px;color:#666;">למילוי בסגירת-המשימה</span>
+        </div>
+        <div class="body">_____________________________________________________________</div>
+        <div class="closed-row">
+          <div><strong>נסגר ע"י:</strong> ________</div>
+          <div><strong>תאריך-סגירה:</strong> ________</div>
+        </div>
+      </div>
+
+      <div class="signers">
+        <div><strong>פתח:</strong> Yossi</div>
+        <div><strong>אחראי:</strong> Yossi</div>
+        <div><strong>סגר:</strong> ________</div>
+      </div>
+
+      <div style="margin-top:8px;text-align:center;">
+        <div class="barcode wide" style="margin:0 auto;"></div>
+      </div>
+
+      <div class="shop-footer">
+        Herzl 32, Ashkelon · Phone: 05-131313
+      </div>
+    </div>
+
+    <div class="ann">
+      <strong>Variant 3:</strong> עדשות-מגע אי-הסתגלות. בלוק עדשות-מגע + מרשם-עדשות-מגע. סטטוס "בטיפול".
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- VARIANT 4: Customer asks about replacing lenses in existing frame -->
+  <!-- ======================================================== -->
+  <div>
+    <div class="variant-h">
+      <span>Variant 4 · שאלת-לקוח על החלפת-עדשות</span>
+      <span class="tag">בדיקת-התאמה</span>
+    </div>
+    <div class="paper">
+      <div class="paper-h-row">
+        <div><strong>Date:</strong> 18.03.26</div>
+        <div><strong>Optic:</strong> Prizma</div>
+        <div><strong>Branch:</strong> 1 · Ashkelon</div>
+      </div>
+
+      <div class="paper-title">Task Form</div>
+      <div class="paper-sub">משימה לבדיקה / טיפול במעבדה</div>
+
+      <div class="inline-bcode-row">
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-D</div></div>
+        <div style="flex:1;">
+          <div class="barcode wide" style="margin:0 auto;"></div>
+          <div style="text-align:center;font-size:9px;margin-top:2px;">1-9362-D</div>
+        </div>
+        <div class="barcode-block"><div class="barcode tall"></div><div class="lbl">1-9362-D</div></div>
+      </div>
+
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Client:</span> Miriam Azulay</div>
+        <div class="field"><span class="lbl">Task #:</span> 1-9362-D</div>
+        <div class="field"><span class="lbl">Client #:</span> 28774</div>
+      </div>
+      <div class="cust-row">
+        <div class="field"><span class="lbl">Phone:</span> 054-1122334</div>
+        <div class="field"><span class="lbl">ID:</span> 045566778</div>
+        <div class="field"><span class="lbl">H.C provider:</span> Maccabi</div>
+      </div>
+
+      <div class="task-desc">
+        <div class="head">
+          <span>📋 תיאור המשימה</span>
+          <span class="urgency" style="background:#3B6D11;">רגיל · יעד 28.03</span>
+        </div>
+        <div class="body">
+          לקוחה הביאה משקפיים ישנים שלה (Persol שנת-2018). שואלת אם אפשר להחליף עדשות לעדשות-מולטיפוקל לפי המרשם החדש שלה.
+          <strong>לבדוק:</strong> (1) האם המסגרת מחזיקה למסגור-נוסף — בדיקת-מצב-מתכת + צירים. (2) האם רוחב-המסגרת מתאים לעדשות-המולטיפוקל המתאימות. אם כן — להציע ללקוחה הצעת-מחיר לעדשות-בלבד.
+        </div>
+        <div class="meta">⌥ נכתב ע"י: Ilya · 18.03 16:10 · משויך לתת-הזמנה 1-9362-D</div>
+      </div>
+
+      <div class="task-status">
+        <div class="field">
+          <span class="lbl">סטטוס:</span>
+          <div class="chk-line">
+            <span class="chk"><span class="box" style="background:#000;"></span> פתוח</span>
+            <span class="chk"><span class="box"></span> בטיפול</span>
+            <span class="chk"><span class="box"></span> ממתין-לתשובה</span>
+            <span class="chk"><span class="box"></span> סגור</span>
+          </div>
+        </div>
+        <div class="field">
+          <span class="lbl">אחראי:</span>
+          <span class="val">Naama</span>
+        </div>
+        <div class="field">
+          <span class="lbl">יעד-טיפול:</span>
+          <span class="val">28.03.26</span>
+        </div>
+      </div>
+
+      <!-- FRAME ONLY (her own existing frame, brought in for inspection) -->
+      <div class="prod-block">
+        <div class="head">
+          <span>Frame · בשקית (מסגרת של הלקוחה)</span>
+          <span class="ord-num">1-9362-D</span>
+        </div>
+        <table class="wide">
+          <thead><tr><th>Brand</th><th>Model</th><th>שייך-ללקוחה</th><th>Note</th></tr></thead>
+          <tbody><tr><td>Persol</td><td>649 (2018)</td><td>✓</td><td>לבדוק חוזק-מתכת + מצב-צירים</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- PRESCRIPTION (the new one she wants to use) -->
+      <div class="rx-block">
+        <div class="head">
+          <span>Prescription (החדש)</span>
+          <span class="pill-yellow">15.02.26 · Naama</span>
+        </div>
+        <table>
+          <thead><tr><th>Eye</th><th>SPH</th><th>CYL</th><th>Axis</th><th>Add</th><th>PD</th></tr></thead>
+          <tbody>
+            <tr><td class="sidecell">R</td><td>−1.50</td><td>−0.50</td><td>175</td><td>+1.75</td><td>30</td></tr>
+            <tr><td class="sidecell">L</td><td>−1.75</td><td>—</td><td>—</td><td>+1.75</td><td>30</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="resolution">
+        <div class="head">
+          <span>✓ סיכום-טיפול / Resolution</span>
+          <span style="font-size:10px;color:#666;">למילוי בסגירת-המשימה</span>
+        </div>
+        <div class="body">_____________________________________________________________</div>
+        <div class="closed-row">
+          <div><strong>נסגר ע"י:</strong> ________</div>
+          <div><strong>תאריך-סגירה:</strong> ________</div>
+        </div>
+      </div>
+
+      <div class="signers">
+        <div><strong>פתח:</strong> Ilya</div>
+        <div><strong>אחראי:</strong> Naama</div>
+        <div><strong>סגר:</strong> ________</div>
+      </div>
+
+      <div style="margin-top:8px;text-align:center;">
+        <div class="barcode wide" style="margin:0 auto;"></div>
+      </div>
+
+      <div class="shop-footer">
+        Herzl 32, Ashkelon · Phone: 05-131313
+      </div>
+    </div>
+
+    <div class="ann">
+      <strong>Variant 4:</strong> שאלת-לקוחה על החלפת-עדשות במסגרת קיימת. בלוק-מסגרת (שלה) + מרשם חדש. ללא עדשות בשקית — היא צריכה להחליט אחרי הבדיקה.
+    </div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend-box">
+    <h2>הכללים מאחורי הסקיצה</h2>
+    <ul>
+      <li><strong>גרעין:</strong> פר-תת-הזמנה. תרחישים-של-ליד-בלי-מוצר שייכים ל-M4 (CRM), לא ל-M7.</li>
+      <li><strong>מה הופך טופס-משימה ל-טופס-משימה:</strong> בלוק "תיאור-המשימה" אדום-בולט בראש-הטופס. בלעדיו אחראי-המעבדה לא יודע מה לעשות.</li>
+      <li><strong>בלוק-סטטוס:</strong> פתוח / בטיפול / ממתין-לתשובה / סגור. ניתן לסמן ידנית בנייר וגם בעורך-המחשב.</li>
+      <li><strong>אחראי + יעד-טיפול:</strong> חובה למלא בעת יצירת-המשימה.</li>
+      <li><strong>בלוקי-מוצר:</strong> מודפסים רק אלה שרלוונטיים לבעיה. מסגרת-פגומה = בלוק-מסגרת בלבד. אי-הסתגלות-עדשות = מסגרת+עדשות+מרשם. עדשות-מגע = בלוק-מגע+מרשם-מגע.</li>
+      <li><strong>בלוק "סיכום-טיפול":</strong> ירוק-מקווקו בתחתית. למילוי בסגירת-המשימה. שדה-טקסט גדול + מי-סגר + מתי. נשמר בהיסטוריה כדי לזכור מה הסתיים בכל משימה דומה בעבר.</li>
+      <li><strong>3 חתימות:</strong> פתח / אחראי / סגר. שונה מהטפסים האחרים — כי משימה היא תהליך עם 3 צמתים.</li>
+      <li><strong>ברקודים:</strong> 4 מיקומים. מזהה תת-הזמנה (1-9362-A) בכולם.</li>
+      <li><strong>סף-דחיפות:</strong> צבעים: ירוק=רגיל · כתום=בינוני · אדום=דחוף. מבוסס על יעד-הטיפול.</li>
+    </ul>
+
+    <div class="imp">
+      <strong>בנוסף לטופס — דרישות-מערכת ב-M7 (לא בטופס עצמו):</strong>
+      <ul>
+        <li>שדות בתת-ההזמנה: <code>task_description</code>, <code>task_status</code>, <code>task_assignee</code>, <code>task_due_date</code>, <code>task_resolution</code>, <code>task_closed_at</code>, <code>task_closed_by</code>.</li>
+        <li>מסך "כל-המשימות-הפתוחות" — סינון לפי סטטוס / אחראי / יעד / לקוח / תאריך.</li>
+        <li>התראה כשמשימה עוברת יעד-טיפול ועדיין פתוחה.</li>
+        <li>היסטוריה: סיכום-טיפול נשמר בלוג-תת-ההזמנה. ניתן לחפש "אילו משימות-מולטיפוקל-Optimize טיפלנו השנה?" → דאטה לוועדת-איכות-ספקים.</li>
+        <li>פתיחת-משימה: כפתור "⚑ פתח-משימה" כבר קיים בעורך M7 (CMD bar). לחיצה תפתח דיאלוג מילוי-תיאור-משימה ויעד.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

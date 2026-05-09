@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M8 — Pipeline-צ'קים-דחויים · v1</title>
+<style>
+  :root{
+    --bg:#FAFAF7; --surface:#FFFFFF; --soft:#F1EFE8;
+    --border:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
+    --text:#1F1F1E; --text-2:#5F5E5A; --text-3:#888780;
+    --purple:#534AB7; --purple-soft:#EEEDFE; --purple-deep:#26215C;
+    --teal:#0F6E56; --teal-soft:#E1F5EE; --teal-deep:#04342C;
+    --amber:#BA7517; --amber-soft:#FAEEDA; --amber-deep:#412402;
+    --blue:#185FA5; --blue-soft:#E6F1FB; --blue-deep:#0C447C;
+    --coral:#993C1D; --coral-soft:#FAECE7; --coral-deep:#4A1B0C;
+    --green:#3B6D11; --green-soft:#EAF3DE; --green-deep:#173404;
+    --gray:#5F5E5A; --gray-soft:#F1EFE8;
+    --red:#A32D2D; --red-soft:#FBE6E6;
+    --r-md:6px; --r-lg:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;font-family:-apple-system,'Segoe UI',Rubik,sans-serif;
+    background:var(--bg);color:var(--text);font-size:12px;line-height:1.4;direction:rtl;
+  }
+  .page{max-width:1640px;margin:0 auto;padding:18px;}
+  h1{font-size:18px;font-weight:500;margin:0 0 4px;}
+  .lede{color:var(--text-2);margin:0 0 14px;font-size:12px;}
+
+  .panel{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px 16px;margin-bottom:14px;
+  }
+  .panel h3{font-size:13px;font-weight:500;margin:0 0 8px;}
+
+  /* Top KPIs */
+  .kpis{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;
+  }
+  .kpi{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:12px 14px;
+  }
+  .kpi .lbl{font-size:11px;color:var(--text-2);}
+  .kpi .val{font-size:20px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums;}
+  .kpi .sub{font-size:10.5px;color:var(--text-3);margin-top:3px;}
+  .kpi.urgent .val{color:var(--coral-deep);}
+  .kpi.warn .val{color:var(--amber-deep);}
+  .kpi.ok .val{color:var(--green-deep);}
+  .kpi.info .val{color:var(--blue-deep);}
+
+  /* Today urgency banner */
+  .today-banner{
+    background:var(--coral-soft);border:1px solid var(--coral);border-radius:var(--r-lg);
+    padding:12px 16px;margin-bottom:14px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .today-banner .ttl{font-size:13px;font-weight:600;color:var(--coral-deep);}
+  .today-banner .desc{font-size:11.5px;color:var(--coral-deep);margin-top:3px;}
+  .today-banner button{
+    background:var(--coral-deep);color:#fff;border:none;border-radius:var(--r-md);
+    padding:8px 14px;font-size:12px;font-weight:500;cursor:pointer;
+  }
+
+  /* Filter bar */
+  .filter-bar{
+    display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;
+    padding:10px 14px;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--r-lg);
+  }
+  .filter-bar .grp{display:flex;gap:3px;background:var(--soft);padding:3px;border-radius:var(--r-md);}
+  .filter-bar .grp button{
+    background:transparent;border:none;padding:5px 10px;font-size:11px;
+    border-radius:4px;cursor:pointer;color:var(--text-2);
+  }
+  .filter-bar .grp button.on{background:var(--purple);color:#fff;font-weight:500;}
+  .filter-bar input[type="search"]{
+    flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r-md);
+    font-size:11.5px;background:var(--surface);min-width:200px;
+  }
+  .filter-bar .lbl{font-size:11px;color:var(--text-2);}
+
+  /* Status legend */
+  .legend{
+    display:flex;gap:14px;font-size:10.5px;color:var(--text-2);margin:8px 0 4px;
+    padding:0 4px;
+  }
+  .legend span{display:flex;align-items:center;gap:4px;}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .dot.future{background:var(--blue);}
+  .dot.due-today{background:var(--coral);}
+  .dot.in-bank{background:var(--amber);}
+  .dot.cleared{background:var(--green);}
+  .dot.bounced{background:var(--red);}
+
+  /* Main table */
+  .checks-table{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    overflow:hidden;
+  }
+  .checks-table .head{
+    display:grid;grid-template-columns:90px 100px 130px 1fr 100px 80px 130px 140px;
+    gap:8px;padding:10px 14px;background:var(--soft);font-size:11px;color:var(--text-2);
+    font-weight:500;border-bottom:1px solid var(--border-strong);
+    text-transform:uppercase;letter-spacing:.04em;
+  }
+  .check-row{
+    display:grid;grid-template-columns:90px 100px 130px 1fr 100px 80px 130px 140px;
+    gap:8px;padding:10px 14px;align-items:center;
+    border-bottom:1px dashed var(--border);font-size:11.5px;
+  }
+  .check-row:last-child{border-bottom:none;}
+  .check-row:hover{background:var(--soft);}
+  .check-row.due-today{background:var(--coral-soft);}
+  .check-row.due-today:hover{background:#FBE0D8;}
+  .check-row.bounced{background:var(--red-soft);}
+
+  .pay-date{font-weight:500;font-variant-numeric:tabular-nums;}
+  .pay-date.today{color:var(--coral-deep);}
+  .pay-date.this-week{color:var(--amber-deep);}
+  .check-num{font-family:monospace;font-size:10.5px;color:var(--text-2);}
+  .customer-link{color:var(--purple-deep);cursor:pointer;text-decoration:underline;text-decoration-style:dotted;}
+  .order-link{color:var(--blue-deep);font-family:monospace;font-size:10.5px;cursor:pointer;}
+  .amount{font-weight:500;font-variant-numeric:tabular-nums;text-align:start;}
+
+  .status-pill{
+    display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500;
+    white-space:nowrap;
+  }
+  .status-future{background:var(--blue-soft);color:var(--blue-deep);}
+  .status-due-today{background:var(--coral-soft);color:var(--coral-deep);font-weight:600;}
+  .status-in-bank{background:var(--amber-soft);color:var(--amber-deep);}
+  .status-cleared{background:var(--green-soft);color:var(--green-deep);}
+  .status-bounced{background:var(--red-soft);color:var(--red);}
+
+  /* Action buttons */
+  .actions{display:flex;gap:4px;}
+  .btn-action{
+    background:var(--surface);border:1px solid var(--border);
+    padding:5px 9px;font-size:10.5px;border-radius:4px;cursor:pointer;
+    color:var(--text);font-weight:500;
+  }
+  .btn-action:hover{background:var(--soft);}
+  .btn-primary{background:var(--purple);color:#fff;border-color:var(--purple);}
+  .btn-primary:hover{background:var(--purple-deep);}
+  .btn-deposit{background:var(--green-soft);color:var(--green-deep);border-color:var(--green);}
+  .btn-deposit:hover{background:#D8E8C5;}
+  .btn-bounce{background:var(--red-soft);color:var(--red);border-color:var(--red);}
+
+  /* Owner-task placeholder */
+  .owner-cell{
+    font-size:10.5px;color:var(--text-2);
+  }
+  .owner-pill{
+    display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;
+    background:var(--purple-soft);color:var(--purple-deep);font-weight:500;
+  }
+
+  /* Cash-flow forward summary */
+  .cashflow-summary{
+    background:var(--blue-soft);border:1px solid var(--blue);border-radius:var(--r-lg);
+    padding:14px 16px;margin-top:14px;
+  }
+  .cashflow-summary h3{margin:0 0 10px;color:var(--blue-deep);font-size:13px;}
+  .cashflow-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}
+  .month-cell{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+    padding:8px 10px;text-align:center;
+  }
+  .month-cell .m{font-size:11px;color:var(--text-2);}
+  .month-cell .v{font-size:13px;font-weight:600;margin-top:3px;color:var(--text);font-variant-numeric:tabular-nums;}
+  .month-cell .c{font-size:10px;color:var(--text-3);margin-top:2px;}
+
+  /* Action modal preview */
+  .modal-preview{
+    background:var(--surface);border:2px solid var(--purple);border-radius:var(--r-lg);
+    padding:16px;margin-top:14px;
+  }
+  .modal-preview h3{margin:0 0 12px;color:var(--purple-deep);font-size:13px;}
+  .modal-preview .check-info{
+    background:var(--soft);padding:10px 14px;border-radius:var(--r-md);margin-bottom:12px;font-size:11.5px;
+  }
+  .modal-preview .info-row{display:flex;justify-content:space-between;padding:3px 0;}
+  .modal-preview .info-row span:first-child{color:var(--text-2);}
+  .modal-preview .info-row span:last-child{font-weight:500;}
+  .modal-preview .step-flow{
+    display:grid;grid-template-columns:1fr 24px 1fr;gap:8px;align-items:stretch;margin:12px 0;
+  }
+  .modal-preview .step{
+    background:var(--purple-soft);border:1px solid var(--purple);border-radius:var(--r-md);
+    padding:10px 12px;
+  }
+  .modal-preview .step .num{
+    display:inline-block;width:20px;height:20px;border-radius:50%;
+    background:var(--purple);color:#fff;text-align:center;line-height:20px;
+    font-size:10px;font-weight:600;margin-inline-end:6px;
+  }
+  .modal-preview .step .title{font-weight:500;font-size:12px;display:inline-block;}
+  .modal-preview .step .desc{color:var(--text-2);font-size:10.5px;margin-top:6px;}
+  .modal-preview .arrow{display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:18px;}
+  .modal-preview .receipt-input{
+    background:var(--surface);border:1px dashed var(--purple);border-radius:var(--r-md);
+    padding:10px 12px;margin-top:8px;
+  }
+  .modal-preview .receipt-input input{
+    width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r-md);
+    font-family:monospace;font-size:12px;
+  }
+  .modal-preview .actions-row{display:flex;gap:8px;margin-top:14px;}
+  .modal-preview .actions-row button{
+    flex:1;padding:10px 14px;font-size:12px;font-weight:500;
+    border:none;border-radius:var(--r-md);cursor:pointer;
+  }
+  .modal-preview .btn-deposit-big{background:var(--green);color:#fff;}
+  .modal-preview .btn-bounce-big{background:var(--red);color:#fff;}
+  .modal-preview .btn-cancel-big{background:var(--surface);color:var(--text);border:1px solid var(--border);}
+
+  /* Annotations */
+  .annotations{
+    margin-top:24px;padding:16px 18px;
+    background:var(--soft);border-radius:var(--r-lg);
+  }
+  .annotations h2{font-size:14px;font-weight:500;margin:0 0 10px;}
+  .annotations ol{margin:0;padding-inline-start:20px;color:var(--text);font-size:11.5px;line-height:1.6;}
+  .annotations li{margin:5px 0;}
+  .annotations li strong{color:var(--purple-deep);}
+
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <h1>M8 — Pipeline צ'קים דחויים · v1</h1>
+  <p class="lede">מסך-עבודה יומי לאחראי-חשבונות + תזרים-צ'קים-עתידי לבעל-עסק. כל צ'ק שנכנס דרך Checkout (M8) מופיע פה. יום-הפרעון של כל צ'ק → באנר-התראה במסך-הראשי. לחיצה על "הופקד" → שולח לקופה → סוגר. צר במטרתו: רק צ'קים. תזרים-מלא + הוצאות = מודול-Finance עתידי, לא ב-LIVE.</p>
+
+  <!-- Today's urgency banner -->
+  <div class="today-banner">
+    <div>
+      <div class="ttl">⚠️ 4 צ'קים מגיעים לפרעון היום (8.5)</div>
+      <div class="desc">סה"כ ₪3,847 · אחרי הפקדה בבנק → לחץ על "הופקד" כדי להעביר לקופה</div>
+    </div>
+    <button>📋 הצג רק צ'קים-של-היום</button>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi urgent">
+      <div class="lbl">להיום</div>
+      <div class="val money">₪3,847</div>
+      <div class="sub">4 צ'קים</div>
+    </div>
+    <div class="kpi warn">
+      <div class="lbl">השבוע (עד 14.5)</div>
+      <div class="val money">₪12,200</div>
+      <div class="sub">14 צ'קים</div>
+    </div>
+    <div class="kpi info">
+      <div class="lbl">החודש (מאי)</div>
+      <div class="val money">₪38,500</div>
+      <div class="sub">42 צ'קים · ממוצע ₪917</div>
+    </div>
+    <div class="kpi ok">
+      <div class="lbl">סה"כ עתידי (כל החודשים)</div>
+      <div class="val money">₪127,300</div>
+      <div class="sub">168 צ'קים פתוחים · עד ספט'</div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <span class="lbl">תקופה:</span>
+    <div class="grp">
+      <button class="on">היום</button>
+      <button>השבוע</button>
+      <button>החודש</button>
+      <button>הכל</button>
+    </div>
+
+    <span class="lbl" style="margin-inline-start:8px;">סטטוס:</span>
+    <div class="grp">
+      <button class="on">הכל</button>
+      <button>ממתין-לפרעון</button>
+      <button>בבנק</button>
+      <button>נפרע</button>
+      <button>חזר</button>
+    </div>
+
+    <input type="search" placeholder="🔍 חפש לפי לקוח / מס' צ'ק / מס' הזמנה..."/>
+    <button class="btn-action">📥 ייצא Excel</button>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <span><span class="dot due-today"></span> לפרעון היום</span>
+    <span><span class="dot future"></span> עתידי</span>
+    <span><span class="dot in-bank"></span> הופקד-בבנק (מחכה לפדיון)</span>
+    <span><span class="dot cleared"></span> נפרע</span>
+    <span><span class="dot bounced"></span> חזר</span>
+  </div>
+
+  <!-- Main checks table -->
+  <div class="checks-table" style="margin-top:8px;">
+    <div class="head">
+      <span>תאריך-פרעון</span>
+      <span>מס' צ'ק</span>
+      <span>בנק / סניף</span>
+      <span>לקוח</span>
+      <span>סכום</span>
+      <span>סטטוס</span>
+      <span>בעלות</span>
+      <span>פעולה</span>
+    </div>
+
+    <!-- DUE TODAY -->
+    <div class="check-row due-today">
+      <span class="pay-date today">היום · 8.5</span>
+      <span class="check-num">0987601</span>
+      <span class="check-num">12 / 415</span>
+      <span><span class="customer-link">Naama Cohen</span> · <span class="order-link">#9362-A</span></span>
+      <span class="amount money">₪1,200</span>
+      <span><span class="status-pill status-due-today">לפרעון היום</span></span>
+      <span class="owner-cell"><span class="owner-pill">חשבונאות</span></span>
+      <span class="actions">
+        <button class="btn-action btn-deposit">✓ הופקד</button>
+        <button class="btn-action btn-bounce">✗ חזר</button>
+      </span>
+    </div>
+    <div class="check-row due-today">
+      <span class="pay-date today">היום · 8.5</span>
+      <span class="check-num">0987602</span>
+      <span class="check-num">10 / 200</span>
+      <span><span class="customer-link">דוד לוי</span> · <span class="order-link">#9358</span></span>
+      <span class="amount money">₪890</span>
+      <span><span class="status-pill status-due-today">לפרעון היום</span></span>
+      <span class="owner-cell"><span class="owner-pill">חשבונאות</span></span>
+      <span class="actions">
+        <button class="btn-action btn-deposit">✓ הופקד</button>
+        <button class="btn-action btn-bounce">✗ חזר</button>
+      </span>
+    </div>
+    <div class="check-row due-today">
+      <span class="pay-date today">היום · 8.5</span>
+      <span class="check-num">0987603</span>
+      <span class="check-num">12 / 415</span>
+      <span><span class="customer-link">שרה אברהם</span> · <span class="order-link">#9341-B</span></span>
+      <span class="amount money">₪547</span>
+      <span><span class="status-pill status-due-today">לפרעון היום</span></span>
+      <span class="owner-cell"><span class="owner-pill">חשבונאות</span></span>
+      <span class="actions">
+        <button class="btn-action btn-deposit">✓ הופקד</button>
+        <button class="btn-action btn-bounce">✗ חזר</button>
+      </span>
+    </div>
+    <div class="check-row due-today">
+      <span class="pay-date today">היום · 8.5</span>
+      <span class="check-num">0987604</span>
+      <span class="check-num">14 / 712</span>
+      <span><span class="customer-link">משה גרינברג</span> · <span class="order-link">#9329</span></span>
+      <span class="amount money">₪1,210</span>
+      <span><span class="status-pill status-due-today">לפרעון היום</span></span>
+      <span class="owner-cell"><span class="owner-pill">חשבונאות</span></span>
+      <span class="actions">
+        <button class="btn-action btn-deposit">✓ הופקד</button>
+        <button class="btn-action btn-bounce">✗ חזר</button>
+      </span>
+    </div>
+
+    <!-- THIS WEEK -->
+    <div class="check-row">
+      <span class="pay-date this-week">מחר · 9.5</span>
+      <span class="check-num">0987605</span>
+      <span class="check-num">12 / 415</span>
+      <span><span class="customer-link">רחל ישראלי</span> · <span class="order-link">#9320</span></span>
+      <span class="amount money">₪780</span>
+      <span><span class="status-pill status-future">ממתין-לפרעון</span></span>
+      <span class="owner-cell"><span class="owner-pill">חשבונאות</span></span>
+      <span class="actions">
+        <button class="btn-action">פרטים</button>
+      </span>
+    </div>
+    <div class="check-row">
+      <span class="pay-date this-week">12.5</span>
+      <span class="check-num">0987606</span>
+      <span class="check-num">10 / 200</span>
+      <span><span class="customer-link">אבי כהן</span> · <span class="order-link">#9301-A</span></span>
+      <span class="amount money">₪1,100</span>
+      <span><span class="status-pill status-future">ממתין-לפרעון</span></span>
+      <span class="owner-cell"><span class="owner-pill">חשבונאות</span></span>
+      <span class="actions">
+        <button class="btn-action">פרטים</button>
+      </span>
+    </div>
+    <div class="check-row">
+      <span class="pay-date this-week">14.5</span>
+      <span class="check-num">0987607</span>
+      <span class="check-num">31 / 821</span>
+      <span><span class="customer-link">לאה מזרחי</span> · <span class="order-link">#9285</span></span>
+      <span class="amount money">₪650</span>
+      <span><span class="status-pill status-future">ממתין-לפרעון</span></span>
+      <span class="owner-cell"><span class="owner-pill">חשבונאות</span></span>
+      <span class="actions">
+        <button class="btn-action">פרטים</button>
+      </span>
+    </div>
+
+    <!-- THIS MONTH -->
+    <div class="check-row">
+      <span class="pay-date">22.5</span>
+      <span class="check-num">0987608</span>
+      <span class="check-num">12 / 415</span>
+      <span><span class="customer-link">יוסי שטרן</span> · <span class="order-link">#9265-A</span></span>
+      <span class="amount money">₪2,300</span>
+      <span><span class="status-pill status-future">ממתין-לפרעון</span></span>
+      <span class="owner-cell"><span class="owner-pill">חשבונאות</span></span>
+      <span class="actions">
+        <button class="btn-action">פרטים</button>
+      </span>
+    </div>
+
+    <!-- IN BANK (already deposited, awaiting clearing) -->
+    <div class="check-row">
+      <span class="pay-date">5.5 (לפני 3 ימים)</span>
+      <span class="check-num">0987595</span>
+      <span class="check-num">12 / 415</span>
+      <span><span class="customer-link">ענת לב</span> · <span class="order-link">#9252</span></span>
+      <span class="amount money">₪890</span>
+      <span><span class="status-pill status-in-bank">בבנק (יום 3)</span></span>
+      <span class="owner-cell"><span class="owner-pill">חשבונאות</span></span>
+      <span class="actions">
+        <button class="btn-action btn-deposit">✓ נפרע</button>
+        <button class="btn-action btn-bounce">✗ חזר</button>
+      </span>
+    </div>
+
+    <!-- BOUNCED -->
+    <div class="check-row bounced">
+      <span class="pay-date">3.5</span>
+      <span class="check-num">0987592</span>
+      <span class="check-num">10 / 200</span>
+      <span><span class="customer-link">מאיר חיים</span> · <span class="order-link">#9244</span></span>
+      <span class="amount money">₪1,420</span>
+      <span><span class="status-pill status-bounced">חזר · אין-כיסוי</span></span>
+      <span class="owner-cell"><span class="owner-pill">חשבונאות</span></span>
+      <span class="actions">
+        <button class="btn-action">📞 צור קשר</button>
+        <button class="btn-action">📋 פתח החזרה</button>
+      </span>
+    </div>
+
+    <!-- CLEARED -->
+    <div class="check-row">
+      <span class="pay-date">1.5</span>
+      <span class="check-num">0987588</span>
+      <span class="check-num">12 / 415</span>
+      <span><span class="customer-link">תמר ארז</span> · <span class="order-link">#9210</span></span>
+      <span class="amount money">₪750</span>
+      <span><span class="status-pill status-cleared">נפרע · קבלה #7711</span></span>
+      <span class="owner-cell"><span class="owner-pill">חשבונאות</span></span>
+      <span class="actions">
+        <button class="btn-action">פרטים</button>
+      </span>
+    </div>
+
+  </div><!-- /checks-table -->
+
+  <!-- Cash-flow forward summary (PER MONTH for next 6 months) -->
+  <div class="cashflow-summary">
+    <h3>📈 תזרים-צ'קים-עתידי לפי חודש (6 חודשים קדימה)</h3>
+    <div class="cashflow-grid">
+      <div class="month-cell">
+        <div class="m">מאי 26</div>
+        <div class="v money">₪38,500</div>
+        <div class="c">42 צ'קים</div>
+      </div>
+      <div class="month-cell">
+        <div class="m">יוני 26</div>
+        <div class="v money">₪29,200</div>
+        <div class="c">31 צ'קים</div>
+      </div>
+      <div class="month-cell">
+        <div class="m">יולי 26</div>
+        <div class="v money">₪24,800</div>
+        <div class="c">28 צ'קים</div>
+      </div>
+      <div class="month-cell">
+        <div class="m">אוג' 26</div>
+        <div class="v money">₪18,400</div>
+        <div class="c">22 צ'קים</div>
+      </div>
+      <div class="month-cell">
+        <div class="m">ספט' 26</div>
+        <div class="v money">₪12,100</div>
+        <div class="c">15 צ'קים</div>
+      </div>
+      <div class="month-cell">
+        <div class="m">אוק' 26</div>
+        <div class="v money">₪4,300</div>
+        <div class="c">5 צ'קים</div>
+      </div>
+    </div>
+    <div style="font-size:10.5px;color:var(--blue-deep);margin-top:8px;font-style:italic;">
+      ⌥ זה תזרים-צ'קים-בלבד. תזרים-מלא (כולל אשראי-בתשלומים, הוצאות-קבועות, יתרות-בנק) יבוא במודול-Finance בעתיד.
+    </div>
+  </div>
+
+  <!-- ACTION MODAL — what happens when "הופקד" is clicked -->
+  <div class="modal-preview">
+    <h3>🪟 מודאל: לחיצה על "✓ הופקד" (תצוגה מוקדמת)</h3>
+
+    <div class="check-info">
+      <div class="info-row"><span>לקוח:</span><span>Naama Cohen</span></div>
+      <div class="info-row"><span>הזמנה:</span><span>#9362-A</span></div>
+      <div class="info-row"><span>מס' צ'ק:</span><span>0987601</span></div>
+      <div class="info-row"><span>בנק / סניף:</span><span>12 / 415</span></div>
+      <div class="info-row"><span>סכום:</span><span style="font-weight:600;">₪1,200</span></div>
+      <div class="info-row"><span>תאריך-פרעון:</span><span>היום, 8.5.26</span></div>
+    </div>
+
+    <div class="step-flow">
+      <div class="step">
+        <div><span class="num">1</span><span class="title">אישור-הפקדה</span></div>
+        <div class="desc">סמן שהצ'ק הופקד בבנק היום. אפשר לציין תאריך-הפקדה אחר אם הופקד מאוחר.</div>
+      </div>
+      <div class="arrow">←</div>
+      <div class="step">
+        <div><span class="num">2</span><span class="title">שליחה לקופת-Linet</span></div>
+        <div class="desc">Optic Up ישלח את כל הפרטים (לקוח, סכום, מס'-הזמנה) ל-Linet. הקופה תנפיק קבלה. הקלד את מספר-הקבלה למטה.</div>
+      </div>
+    </div>
+
+    <div class="receipt-input">
+      <div style="font-size:11px;color:var(--text-2);font-weight:500;margin-bottom:6px;">
+        מספר-קבלה מ-Linet (אחרי שהקופה הנפיקה):
+      </div>
+      <input placeholder="#____"/>
+    </div>
+
+    <div class="actions-row">
+      <button class="btn-deposit-big">✓ אישור — סמן כנפרע</button>
+      <button class="btn-cancel-big">ביטול</button>
+    </div>
+
+    <div style="font-size:10.5px;color:var(--text-2);margin-top:10px;font-style:italic;">
+      ⌥ אם בעתיד יהיה Linet API חוזר → הקלדת מספר-הקבלה תיהיה אוטומטית.
+    </div>
+  </div>
+
+  <div class="annotations">
+    <h2>החלטות שמופיעות במסך הזה</h2>
+    <ol>
+      <li><strong>שני קהלים — מסך אחד.</strong> אחראי-חשבונות (פעולה יומיומית) + בעל-עסק (תזרים-עתידי). KPIs בראש לבעל-עסק, רשימה+פעולות לאחראי-חשבונות. אין כפל-מסכים.</li>
+      <li><strong>סדר הברירת-מחדל = תאריך-פרעון עולה.</strong> צ'קים-של-היום למעלה (חיוב-קוראלי). השבוע אחר-כך. החודש אחר-כך. הכל מתחת.</li>
+      <li><strong>באנר-התראה אדום-לראש.</strong> 4 צ'קים מגיעים לפרעון היום, סה"כ ₪3,847. כפתור "הצג רק צ'קים-של-היום" מסנן.</li>
+      <li><strong>4 KPIs בראש.</strong> להיום (אדום) · השבוע (כתום) · החודש (כחול) · סה"כ-עתידי (ירוק). מטרה אחת — בעל-עסק רואה תמונת-תזרים בלי לגלול.</li>
+      <li><strong>5 סטטוסים אפשריים.</strong> לפרעון-היום (קוראל) · ממתין-לפרעון (כחול) · בבנק (כתום) · נפרע (ירוק) · חזר (אדום). רגעים בלבד שמועידים על אותו צ'ק.</li>
+      <li><strong>פעולה דו-לחיצתית.</strong> "הופקד" → מודאל → אישור + מספר-קבלה → שליחה-ל-Linet → סטטוס "בבנק" אם הצ'ק הופקד אך לא נפרע, או "נפרע" אם זה אותו יום.</li>
+      <li><strong>"חזר" = flow נפרד.</strong> סטטוס "חזר" נפתח גם בלי הפקדה (אם הבנק החזיר), עם סיבה (אין-כיסוי / חתימה / חשבון-סגור / בלי-סיבה). פותח משימה ב-CRM להתקשר ללקוח. ההזמנה נפתחת-מחדש (יתרה חוזרת).</li>
+      <li><strong>בעלות "חשבונאות".</strong> כל צ'ק מסומן כשייך לבעלות-תפקיד. ב-day-1 כולם רואים את כל הצ'קים. בעתיד — שינוי ב-tenant settings → רק תפקיד-חשבונאות יראה. בלי שינוי-קוד.</li>
+      <li><strong>חישוב תזרים-עתידי 6 חודשים.</strong> סיכום-בלבד. לא חיבור-לבנק, לא AI, לא פירוט-יומי. זה תזרים-צ'קים, לא תזרים-מלא. בעתיד יוטמע במודול-Finance.</li>
+      <li><strong>קישור ללקוח / להזמנה.</strong> כל שורה מקושרת ללקוח (M5) ולהזמנה (M7). לחיצה על שם-לקוח → פותח כרטיס-לקוח. לחיצה על מס'-הזמנה → פותח M7.</li>
+      <li><strong>ייצוא Excel.</strong> בכל סינון, ניתן לייצא לקובץ. מבנה-Excel בסיסי, יישתמש לרואה-חשבון או לכלים-אחרים (ביזיבוקס וכו') עד שיהיה מודול-Finance.</li>
+      <li><strong>חיפוש חופשי.</strong> שם-לקוח, מס'-צ'ק, מס'-הזמנה — שלושת השדות הנפוצים.</li>
+    </ol>
+
+    <h2 style="margin-top:18px;">מה לא בסקיצה הזאת ויידון בנפרד</h2>
+    <ol>
+      <li><strong>תזרים-מלא (אשראי-בתשלומים-רגילים, הוצאות-קבועות, יתרות-בנק).</strong> מודול-Finance עתידי — לא ב-LIVE.</li>
+      <li><strong>חיבור לבנק / חברות-סליקה.</strong> מודול-Finance עתידי.</li>
+      <li><strong>AI להתאמת חשבוניות-נכנסות.</strong> מודול-Finance עתידי.</li>
+      <li><strong>תקציב-הוצאות חודשי/שנתי.</strong> מודול-Finance עתידי.</li>
+      <li><strong>היסטוריית-צ'קים-של-לקוח</strong> (כמה חזרו לו, אחוז-החזרה). מסך נפרד או טאב בכרטיס-לקוח M5.</li>
+      <li><strong>מסך-הראשי-של-Optic-Up + באנר-התראה.</strong> ייסקר במסך-נפרד אחרי שיוסכם המבנה הכללי של מסך-הראשי.</li>
+      <li><strong>אינטגרציה Linet חוזרת.</strong> כל לחיצה על "הופקד" כרגע דורשת הקלדת מספר-קבלה ידנית. בעתיד אם יהיה API חוזר — ייסגר אוטומטית.</li>
+    </ol>
+  </div>
+
+</div>
+
+</body>
+</html>

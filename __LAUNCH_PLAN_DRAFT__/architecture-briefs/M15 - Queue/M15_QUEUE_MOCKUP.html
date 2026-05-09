@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M15 — Queue · תור-נוכחי-בחנות</title>
+<style>
+  :root{
+    --bg:#FAFAF7; --surface:#FFFFFF; --soft:#F1EFE8;
+    --border:rgba(0,0,0,0.12);
+    --text:#1F1F1E; --text-2:#5F5E5A; --text-3:#8A8884;
+    --purple:#534AB7; --purple-soft:#EEEDFE; --purple-deep:#26215C; --purple-mid:#7F77DD;
+    --teal:#0F6E56; --teal-soft:#E1F5EE; --teal-deep:#04342C; --teal-mid:#5DCAA5;
+    --amber:#BA7517; --amber-soft:#FAEEDA; --amber-deep:#412402; --amber-mid:#FAC775;
+    --blue:#185FA5; --blue-soft:#E6F1FB; --blue-deep:#0C447C;
+    --coral:#993C1D; --coral-soft:#FAECE7;
+    --green:#3B6D11; --green-soft:#EAF3DE;
+    --gray:#5F5E5A; --gray-soft:#F1EFE8;
+    --red:#A32D2D; --red-soft:#FBEAEA;
+    --r-md:6px; --r-lg:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;padding:18px;background:var(--bg);color:var(--text);
+    font-family:-apple-system,'Segoe UI',Rubik,sans-serif;font-size:12px;direction:rtl;
+  }
+  h1{font-size:18px;font-weight:500;margin:0 0 4px;}
+  .lede{color:var(--text-2);margin:0 0 14px;font-size:12px;max-width:1100px;line-height:1.5;}
+
+  .layout{
+    display:grid;grid-template-columns:1fr 340px;gap:14px;max-width:1500px;margin:0 auto;
+  }
+
+  /* CALENDAR PLACEHOLDER (M14) */
+  .cal-placeholder{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);
+    padding:14px;min-height:600px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    color:var(--text-3);font-size:12px;text-align:center;
+    background-image:repeating-linear-gradient(45deg,#FAFAF7,#FAFAF7 12px,#F1EFE8 12px,#F1EFE8 24px);
+  }
+  .cal-placeholder .ttl{font-size:14px;color:var(--text-2);font-weight:500;margin-bottom:6px;}
+
+  /* QUEUE PANEL */
+  .queue-panel{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);
+    overflow:hidden;display:flex;flex-direction:column;height:fit-content;max-height:780px;
+  }
+
+  /* HEADER */
+  .qp-head{
+    background:linear-gradient(135deg,var(--teal-deep) 0%,var(--teal) 100%);
+    color:#FFF;padding:14px;
+  }
+  .qp-head .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .qp-head .ttl{font-size:14px;font-weight:500;}
+  .qp-head .live{
+    background:rgba(255,255,255,0.18);font-size:9px;padding:2px 8px;border-radius:8px;
+    display:inline-flex;align-items:center;gap:4px;
+  }
+  .qp-head .live .dot{
+    width:6px;height:6px;background:#7DCAA5;border-radius:50%;animation:pulse 1.5s infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+  .qp-head .stats{display:flex;gap:14px;margin-top:8px;}
+  .qp-head .stat{font-size:10px;color:#B7E3D2;}
+  .qp-head .stat .v{display:block;color:#FFF;font-size:18px;font-weight:500;line-height:1;}
+
+  /* TOOLBAR */
+  .qp-toolbar{
+    padding:9px 12px;background:var(--soft);border-bottom:0.5px solid var(--border);
+    display:flex;gap:6px;align-items:center;
+  }
+  .qp-toolbar select{
+    flex:1;border:0.5px solid var(--border);border-radius:4px;padding:5px 8px;
+    font-size:11px;font-family:inherit;background:var(--surface);
+  }
+  .qp-toolbar .add-btn{
+    background:var(--green);color:#FFF;border:0;padding:6px 12px;border-radius:4px;
+    font-size:11px;cursor:pointer;font-family:inherit;font-weight:500;
+  }
+
+  /* SECTIONS */
+  .qp-section{padding:0;}
+  .sec-head{
+    padding:8px 12px;background:var(--surface);border-bottom:0.5px solid var(--border);
+    display:flex;justify-content:space-between;align-items:center;font-size:10px;
+    color:var(--text-3);text-transform:uppercase;letter-spacing:0.4px;font-weight:500;
+  }
+  .sec-head .ct{
+    background:var(--soft);color:var(--text-2);padding:1px 7px;border-radius:8px;font-size:10px;
+  }
+
+  /* ENTRY */
+  .entry{
+    padding:10px 12px;border-bottom:0.5px solid var(--border);display:flex;gap:10px;align-items:center;
+    cursor:pointer;
+  }
+  .entry:hover{background:var(--purple-soft);}
+  .entry .pos{
+    width:30px;height:30px;border-radius:50%;background:var(--soft);color:var(--text-2);
+    display:inline-flex;align-items:center;justify-content:center;font-weight:500;font-size:13px;
+    flex-shrink:0;
+  }
+  .entry.in-progress .pos{background:var(--blue);color:#FFF;}
+  .entry.urgent .pos{background:var(--red);color:#FFF;}
+  .entry.has-appt .pos{background:var(--green);color:#FFF;}
+
+  .entry .body{flex:1;min-width:0;}
+  .entry .nm{font-weight:500;font-size:12px;display:flex;align-items:center;gap:6px;}
+  .entry .meta{font-size:10px;color:var(--text-3);margin-top:2px;}
+  .entry .meta .badge{
+    display:inline-block;padding:1px 6px;border-radius:6px;font-size:9px;font-weight:500;margin-inline-start:4px;
+  }
+  .b-appt{background:var(--green-soft);color:var(--green);}
+  .b-walkin{background:var(--blue-soft);color:var(--blue-deep);}
+  .b-vip{background:var(--coral-soft);color:var(--coral);}
+  .b-resource{background:var(--purple-soft);color:var(--purple-deep);}
+
+  .entry .wait{
+    text-align:center;font-variant-numeric:tabular-nums;font-size:11px;font-weight:500;
+    flex-shrink:0;min-width:54px;
+  }
+  .entry .wait .min{font-size:14px;}
+  .entry .wait .sec{font-size:9px;color:var(--text-3);text-transform:uppercase;}
+
+  .entry.urgent .wait{color:var(--red);}
+  .entry.urgent{background:var(--red-soft);}
+  .entry.warning{background:var(--amber-soft);}
+  .entry.warning .wait{color:var(--amber-deep);}
+  .entry.in-progress{background:var(--blue-soft);}
+
+  .entry .actions{display:flex;gap:3px;flex-shrink:0;}
+  .entry .actions button{
+    background:var(--surface);border:0.5px solid var(--border);width:26px;height:26px;
+    border-radius:4px;cursor:pointer;font-size:12px;
+  }
+  .entry .actions button:hover{background:var(--purple-soft);border-color:var(--purple-mid);}
+  .entry .actions button.cta{background:var(--green);color:#FFF;border-color:var(--green);}
+  .entry .actions button.danger{color:var(--red);}
+
+  /* PRIORITY MARKER */
+  .priority-strip{
+    background:linear-gradient(90deg,var(--green) 0%,var(--green) 4px,transparent 4px);
+  }
+
+  /* EMPTY */
+  .empty-state{
+    padding:18px 14px;text-align:center;color:var(--text-3);font-size:11px;
+  }
+
+  /* THRESHOLD INDICATOR */
+  .threshold-info{
+    padding:8px 12px;background:var(--blue-soft);font-size:10px;color:var(--blue-deep);
+    display:flex;justify-content:space-between;align-items:center;
+    border-top:0.5px solid var(--border);
+  }
+
+  /* LEGEND */
+  .legend{
+    max-width:1500px;margin:18px auto 0;padding:14px;background:var(--surface);
+    border:0.5px solid var(--border);border-radius:var(--r-md);
+  }
+  .legend h2{font-size:14px;font-weight:500;margin:0 0 10px;}
+  .legend p{font-size:11px;color:var(--text-2);line-height:1.6;margin:0 0 6px;}
+</style>
+</head>
+<body>
+
+<h1>M15 — Queue · תור-נוכחי-בחנות</h1>
+<p class="lede">
+  פאנל מוטבע במסך-היומן של M14, צד-ימין. מנהל את התור-הנוכחי בחנות. הוספה ידנית בלבד (Daniel directive). 4 states. תור-אחד-משותף עם <code>preferred_resource_id</code> אופציונלי. לקוחות עם תור-מראש מסומנים בעדיפות-עליונה. זמן-המתנה מחושב אוטומטית, מסגרת אדומה כשעובר את הסף הקונפיגורבילי (ברירת-מחדל 30 דקות).
+</p>
+
+<div class="layout">
+
+  <!-- M14 calendar placeholder -->
+  <div class="cal-placeholder">
+    <div class="ttl">📅 מסך-היומן של M14</div>
+    <div>(הסקיצה הזו מתמקדת בפאנל-Queue בצד-ימין → )</div>
+    <div style="font-size:10px;margin-top:10px;">M14 calendar layout כפי שכבר תוכנן ב-M14_APPOINTMENTS_MOCKUP.html</div>
+  </div>
+
+  <!-- M15 Queue panel -->
+  <div class="queue-panel">
+
+    <!-- Header -->
+    <div class="qp-head">
+      <div class="top">
+        <div class="ttl">🚥 תור-נוכחי</div>
+        <span class="live"><span class="dot"></span>LIVE · עדכון אוטומטי</span>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="v">5</span>בתור</div>
+        <div class="stat"><span class="v">2</span>בבדיקה</div>
+        <div class="stat"><span class="v">14</span>הסתיימו היום</div>
+        <div class="stat"><span class="v">12'</span>המתנה ממוצעת</div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="qp-toolbar">
+      <select>
+        <option>הצג: כל הצוות</option>
+        <option>ד"ר נועה כהן</option>
+        <option>ד"ר עידן רוזן</option>
+      </select>
+      <button class="add-btn">+ הוסף לתור</button>
+    </div>
+
+    <!-- Section: in_progress -->
+    <div class="qp-section">
+      <div class="sec-head">
+        <span>🔵 בבדיקה כעת</span>
+        <span class="ct">2</span>
+      </div>
+
+      <div class="entry in-progress">
+        <div class="pos">N</div>
+        <div class="body">
+          <div class="nm">דוד מזרחי</div>
+          <div class="meta">
+            04-03-00321 · ד"ר נועה
+            <span class="badge b-appt">תור 09:00</span>
+          </div>
+        </div>
+        <div class="wait">
+          <div class="min">8'</div>
+          <div class="sec">בבדיקה</div>
+        </div>
+        <div class="actions">
+          <button class="cta" title="סיים בדיקה">✓</button>
+          <button title="פתח כרטיס">📋</button>
+        </div>
+      </div>
+
+      <div class="entry in-progress">
+        <div class="pos">E</div>
+        <div class="body">
+          <div class="nm">איתי רובין</div>
+          <div class="meta">
+            04-03-01142 · ד"ר עידן
+            <span class="badge b-appt">תור 09:30</span>
+          </div>
+        </div>
+        <div class="wait">
+          <div class="min">3'</div>
+          <div class="sec">בבדיקה</div>
+        </div>
+        <div class="actions">
+          <button class="cta">✓</button>
+          <button>📋</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: waiting (with appointments first) -->
+    <div class="qp-section">
+      <div class="sec-head">
+        <span>⏳ ממתינים</span>
+        <span class="ct">5</span>
+      </div>
+
+      <!-- Has appointment + VIP, urgent (32 min wait) -->
+      <div class="entry has-appt urgent">
+        <div class="pos">1</div>
+        <div class="body">
+          <div class="nm">⭐ מירי דהן</div>
+          <div class="meta">
+            04-03-00545 · מולטיפוקל
+            <span class="badge b-appt">תור 10:30</span>
+            <span class="badge b-resource">ד"ר נועה</span>
+            <span class="badge b-vip">VIP</span>
+          </div>
+        </div>
+        <div class="wait">
+          <div class="min">32'</div>
+          <div class="sec">ממתינה</div>
+        </div>
+        <div class="actions">
+          <button class="cta" title="העבר לבדיקה">→</button>
+          <button>📋</button>
+          <button class="danger" title="הסר מהתור">✕</button>
+        </div>
+      </div>
+
+      <!-- Has appointment, warning (22 min wait) -->
+      <div class="entry has-appt warning">
+        <div class="pos">2</div>
+        <div class="body">
+          <div class="nm">גליה בר</div>
+          <div class="meta">
+            04-03-00892 · בדיקת מבוגרים
+            <span class="badge b-appt">תור 10:45</span>
+            <span class="badge b-resource">ד"ר עידן</span>
+          </div>
+        </div>
+        <div class="wait">
+          <div class="min">22'</div>
+          <div class="sec">ממתינה</div>
+        </div>
+        <div class="actions">
+          <button class="cta">→</button>
+          <button>📋</button>
+          <button class="danger">✕</button>
+        </div>
+      </div>
+
+      <!-- Has appointment, normal (12 min wait) -->
+      <div class="entry has-appt">
+        <div class="pos">3</div>
+        <div class="body">
+          <div class="nm">תמר עמר</div>
+          <div class="meta">
+            04-03-01287 · בדיקת מבוגרים
+            <span class="badge b-appt">תור 11:00</span>
+          </div>
+        </div>
+        <div class="wait">
+          <div class="min">12'</div>
+          <div class="sec">ממתינה</div>
+        </div>
+        <div class="actions">
+          <button class="cta">→</button>
+          <button>📋</button>
+          <button class="danger">✕</button>
+        </div>
+      </div>
+
+      <!-- Walk-in (no appointment) -->
+      <div class="entry">
+        <div class="pos">4</div>
+        <div class="body">
+          <div class="nm">חיים לוי</div>
+          <div class="meta">
+            04-03-00731 · ללא תור-מראש
+            <span class="badge b-walkin">walk-in</span>
+          </div>
+        </div>
+        <div class="wait">
+          <div class="min">8'</div>
+          <div class="sec">ממתין</div>
+        </div>
+        <div class="actions">
+          <button class="cta">→</button>
+          <button>📋</button>
+          <button class="danger">✕</button>
+        </div>
+      </div>
+
+      <!-- Walk-in, just arrived -->
+      <div class="entry">
+        <div class="pos">5</div>
+        <div class="body">
+          <div class="nm">נטע פרץ</div>
+          <div class="meta">
+            04-03-00977 · ללא תור-מראש
+            <span class="badge b-walkin">walk-in</span>
+          </div>
+        </div>
+        <div class="wait">
+          <div class="min">2'</div>
+          <div class="sec">ממתינה</div>
+        </div>
+        <div class="actions">
+          <button class="cta">→</button>
+          <button>📋</button>
+          <button class="danger">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Threshold info -->
+    <div class="threshold-info">
+      <span>⚠️ סף-המתנה: 30 דקות (אדום) · 20 דקות (כתום)</span>
+      <span style="cursor:pointer;color:var(--purple);">⚙️ שנה</span>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+  <h2>איך לקרוא את ה-Queue</h2>
+  <p>
+    <strong>3 סקציות:</strong> "בבדיקה כעת" (state=in_progress) למעלה, "ממתינים" (state=waiting) באמצע. "הסתיימו היום" (state=done/removed) — לא מוצג ב-UI הראשי, נגיש דרך כפתור "היסטוריה".
+  </p>
+  <p>
+    <strong>סדר ב-"ממתינים":</strong> ראשית, מי שיש לו תור-מראש (badge ירוק "תור HH:MM"), ממוין לפי-זמן-המתנה (הוותיק ביותר ראשון). אחר-כך walk-ins, ממוין לפי-זמן-הצטרפות. הוספה-ידנית של כל מי שמגיע, גם בעלי-תור.
+  </p>
+  <p>
+    <strong>צבעי-המתנה:</strong> רגיל (לבן) → אזהרה-כתומה אחרי 20 דק' → דחוף-אדום אחרי 30 דק'. ספי-זמן קונפיגורביליים פר-tenant. "חיווי דחוף" אומר לצוות "טפל מיד".
+  </p>
+  <p>
+    <strong>פעולות בשורה:</strong> ✓ ירוק (סיים בבדיקה) / → (העבר ל-in_progress) / 📋 (פתח כרטיס-לקוח של M5) / ✕ (הסר-מהתור עם סיבה: התחרט / יצא / שגיאה).
+  </p>
+  <p>
+    <strong>סנכרון עם M14:</strong> כש-entry עובר ל-`in_progress` ויש לו `appointment_id`, גם ה-appointment עובר ל-`in_progress`. סיום → `done` בשניהם. הסנכרון אטומי דרך RPC.
+  </p>
+</div>
+
+</body>
+</html>

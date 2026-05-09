@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M7 — Orders Center Column · 3 Variants</title>
+<style>
+  :root{
+    --bg:#FAFAF7; --surface:#FFFFFF; --soft:#F1EFE8;
+    --border:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
+    --text:#1F1F1E; --text-2:#5F5E5A; --text-3:#888780;
+    --purple:#534AB7; --purple-soft:#EEEDFE; --purple-deep:#26215C;
+    --teal:#0F6E56; --teal-soft:#E1F5EE; --teal-deep:#04342C;
+    --amber:#BA7517; --amber-soft:#FAEEDA; --amber-deep:#412402;
+    --blue:#185FA5; --blue-soft:#E6F1FB; --blue-deep:#0C447C;
+    --coral:#993C1D; --coral-soft:#FAECE7; --coral-deep:#4A1B0C;
+    --pink:#993556; --pink-soft:#FBEAF0; --pink-deep:#4B1528;
+    --green:#3B6D11; --green-soft:#EAF3DE; --green-deep:#173404;
+    --gray:#5F5E5A; --gray-soft:#F1EFE8;
+    --red:#A32D2D;
+    --r-md:8px; --r-lg:12px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;font-family:-apple-system,'Segoe UI',Rubik,sans-serif;
+    background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;
+    direction:rtl;
+  }
+  .page{max-width:1280px;margin:0 auto;padding:32px 24px;}
+  h1{font-size:22px;font-weight:500;margin:0 0 4px;}
+  h2{font-size:18px;font-weight:500;margin:32px 0 12px;}
+  h3{font-size:16px;font-weight:500;margin:0 0 8px;}
+  .lede{color:var(--text-2);margin:0 0 24px;}
+
+  .variant-card{
+    background:var(--surface);border:0.5px solid var(--border);
+    border-radius:var(--r-lg);padding:20px;margin-bottom:32px;
+  }
+  .variant-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+  .variant-rationale{color:var(--text-2);font-size:13px;margin:0 0 14px;}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:var(--r-md);font-weight:500;}
+  .pill-purple{background:var(--purple-soft);color:var(--purple-deep);}
+  .pill-teal{background:var(--teal-soft);color:var(--teal-deep);}
+  .pill-amber{background:var(--amber-soft);color:var(--amber-deep);}
+  .pill-blue{background:var(--blue-soft);color:var(--blue-deep);}
+  .pill-coral{background:var(--coral-soft);color:var(--coral-deep);}
+  .pill-pink{background:var(--pink-soft);color:var(--pink-deep);}
+  .pill-green{background:var(--green-soft);color:var(--green-deep);}
+  .pill-gray{background:var(--gray-soft);color:var(--gray);}
+  .pill-red{background:#FCEBEB;color:var(--red);}
+
+  /* shared frame around the center column */
+  .center{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    padding:16px;
+  }
+  .row{display:flex;align-items:center;gap:8px;}
+  .row-between{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .mini{font-size:11px;color:var(--text-2);}
+  .h-line{font-size:14px;font-weight:500;}
+  .money{font-variant-numeric:tabular-nums;font-weight:500;}
+  button{
+    font-family:inherit;font-size:12px;padding:6px 10px;
+    background:var(--surface);border:0.5px solid var(--border-strong);
+    border-radius:var(--r-md);cursor:pointer;color:var(--text);
+  }
+  button:hover{background:var(--soft);}
+  button.primary{background:var(--purple);color:#FFF;border:0;}
+  button.primary:hover{background:var(--purple-deep);}
+  button.success{background:var(--teal);color:#FFF;border:0;}
+  button.ghost{background:transparent;border:0;color:var(--blue);font-size:12px;padding:4px 6px;}
+  button.danger-ghost{background:transparent;border:0;color:var(--red);font-size:11px;padding:4px 6px;}
+  input[type=text],input[type=search]{
+    font-family:inherit;font-size:13px;padding:8px 12px;
+    border:0.5px solid var(--border-strong);border-radius:var(--r-md);
+    background:var(--surface);color:var(--text);
+  }
+
+  /* prescription strip */
+  .rx{
+    background:var(--amber-soft);border-radius:var(--r-md);
+    padding:8px 12px;display:flex;justify-content:space-between;align-items:center;
+    font-size:12px;color:var(--amber-deep);margin-bottom:14px;
+  }
+  .rx strong{font-weight:500;}
+
+  /* sub-order title bar */
+  .so-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .so-badge{
+    background:var(--purple);color:#FFF;border-radius:50%;
+    width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;
+    font-size:13px;font-weight:500;
+  }
+
+  /* ========= variant 1: catalog tabs ========= */
+  .v1-cattabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:0.5px solid var(--border);}
+  .v1-cattab{
+    padding:8px 14px;font-size:13px;color:var(--text-2);cursor:pointer;
+    border-bottom:2px solid transparent;display:flex;align-items:center;gap:6px;
+  }
+  .v1-cattab.active{color:var(--purple-deep);border-bottom-color:var(--purple);font-weight:500;}
+  .v1-cattab .ico{font-size:14px;}
+  .v1-search{display:flex;gap:6px;margin-bottom:10px;}
+  .v1-search input{flex:1;}
+
+  .item-card{
+    background:var(--surface);border:0.5px solid var(--border);
+    border-radius:var(--r-md);padding:10px 12px;margin-bottom:6px;
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+  }
+  .item-card .info{display:flex;align-items:center;gap:10px;flex:1;}
+  .item-card .label{font-size:13px;font-weight:500;}
+  .item-card .meta{font-size:11px;color:var(--text-2);}
+  .item-card .actions{display:flex;align-items:center;gap:6px;}
+  .item-fields{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;
+  }
+  .field{
+    background:var(--soft);border-radius:var(--r-md);padding:5px 9px;font-size:12px;
+  }
+  .field .k{font-size:10px;color:var(--text-2);}
+  .field.req{background:var(--amber-soft);}
+  .field.req .k{color:var(--amber-deep);}
+
+  .empty-add{
+    border:1px dashed var(--border-strong);border-radius:var(--r-md);
+    padding:14px;text-align:center;color:var(--text-2);font-size:12px;
+  }
+
+  /* ========= variant 2: scan-first with quick picker ========= */
+  .v2-scan{
+    background:var(--purple-soft);border:1.5px solid var(--purple);
+    border-radius:var(--r-md);padding:14px;margin-bottom:14px;
+  }
+  .v2-scan input{width:100%;font-size:14px;padding:10px 14px;border:0.5px solid var(--purple);}
+  .v2-scan .hint{font-size:11px;color:var(--purple-deep);margin-top:6px;display:flex;justify-content:space-between;align-items:center;}
+  .v2-quickbtns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;}
+  .v2-quickbtns button{
+    display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;
+    font-size:11px;background:var(--surface);
+  }
+  .v2-quickbtns .ico{font-size:18px;}
+  .v2-section{margin-top:14px;}
+  .v2-section-h{
+    font-size:12px;color:var(--text-2);margin-bottom:6px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+
+  /* ========= variant 3: timeline-driven sections ========= */
+  .v3-stage{
+    background:var(--surface);border:0.5px solid var(--border);
+    border-radius:var(--r-md);margin-bottom:8px;overflow:hidden;
+  }
+  .v3-stage.active{border-color:var(--purple);border-width:1px;}
+  .v3-stage-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 12px;background:var(--surface);cursor:pointer;
+  }
+  .v3-stage.active .v3-stage-head{background:var(--purple-soft);}
+  .v3-stage-num{
+    width:22px;height:22px;border-radius:50%;background:var(--soft);
+    display:inline-flex;align-items:center;justify-content:center;font-size:12px;
+    color:var(--text-2);font-weight:500;
+  }
+  .v3-stage.active .v3-stage-num{background:var(--purple);color:#FFF;}
+  .v3-stage.done .v3-stage-num{background:var(--teal);color:#FFF;}
+  .v3-stage-title{font-size:13px;font-weight:500;}
+  .v3-stage-sub{font-size:11px;color:var(--text-2);}
+  .v3-stage-body{padding:12px;border-top:0.5px solid var(--border);background:var(--soft);}
+
+  .v3-pickers{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px;}
+  .v3-picker{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    padding:10px;text-align:center;cursor:pointer;
+  }
+  .v3-picker:hover{border-color:var(--purple);}
+  .v3-picker .ico{font-size:20px;display:block;margin-bottom:4px;}
+  .v3-picker .ttl{font-size:12px;font-weight:500;}
+  .v3-picker .sub{font-size:10px;color:var(--text-2);margin-top:2px;}
+
+  /* picker modal preview block */
+  .picker-modal{
+    margin-top:10px;background:var(--surface);border:0.5px solid var(--border);
+    border-radius:var(--r-md);padding:12px;
+  }
+  .picker-modal-head{
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;
+  }
+  .picker-search{
+    display:flex;gap:6px;margin-bottom:8px;
+  }
+  .picker-search input{flex:1;font-size:12px;}
+  .picker-filters{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;}
+  .picker-filter{
+    font-size:11px;padding:3px 8px;border:0.5px solid var(--border);border-radius:var(--r-md);
+    background:var(--surface);cursor:pointer;
+  }
+  .picker-filter.active{background:var(--purple);color:#FFF;border-color:var(--purple);}
+  .picker-list{max-height:160px;overflow:auto;}
+  .picker-row{
+    display:flex;justify-content:space-between;align-items:center;padding:6px 8px;
+    border-bottom:0.5px dashed var(--border);font-size:12px;cursor:pointer;
+  }
+  .picker-row:hover{background:var(--purple-soft);}
+  .picker-row .info{display:flex;flex-direction:column;}
+  .picker-row .name{font-weight:500;}
+  .picker-row .meta{font-size:10px;color:var(--text-2);}
+
+  .legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;}
+
+  .footer-note{
+    margin-top:40px;padding-top:20px;border-top:0.5px solid var(--border);
+    font-size:12px;color:var(--text-2);
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <h1>M7 — מסך-הזמנה · 3 וריאציות לטור-האמצעי</h1>
+  <p class="lede">
+    הטור-הימני (רכבת A/B/C) והטור-השמאלי (WhatsApp + משימות + audit) זהים בכולן.
+    משתנה רק ה-flow של הטור-האמצעי + 4 הקטלוגים: מסגרות / עדשות / עדשות-מגע / אביזרים.
+  </p>
+
+  <!-- ============================================================ -->
+  <!-- VARIANT 1 — CATEGORY TABS                                      -->
+  <!-- ============================================================ -->
+  <div class="variant-card">
+    <div class="variant-head">
+      <h2 style="margin:0;">וריאציה 1 — Tabs לפי קטלוג</h2>
+      <span class="pill pill-blue">קלאסי · נקי · ניווט-בקליק</span>
+    </div>
+    <p class="variant-rationale">
+      4 הקטלוגים הם 4 טאבים אופקיים בראש הטור. כל טאב פותח עורך-נפרד עם הפריטים מאותו-סוג.
+      העובד יודע תמיד באיזה קטלוג הוא נמצא. הסריקה עובדת בכל-טאב — סורק ברקוד-מסגרת
+      → המערכת מזהה את הסוג ומדלגת אוטומטית לטאב הנכון.
+    </p>
+
+    <div class="center">
+
+      <!-- prescription strip -->
+      <div class="rx">
+        <div><strong>מרשם 10.10.25:</strong>
+          R: SPH −2.00 / CYL −0.75 · L: SPH −3.00 / CYL +0.5 · ADD +2.00 · PD 32/32</div>
+        <button class="ghost">ערוך מרשם ←</button>
+      </div>
+
+      <!-- sub-order title -->
+      <div class="so-title">
+        <div class="row">
+          <span class="so-badge">A</span>
+          <h3 style="margin:0;">משקפיים — ראייה רחוק</h3>
+          <span class="pill pill-purple">מולטיפוקל</span>
+          <span class="pill pill-gray">רגיל</span>
+        </div>
+        <div class="row">
+          <button>📞 השאר הודעה</button>
+          <button>⚑ למנהל</button>
+        </div>
+      </div>
+
+      <!-- catalog tabs -->
+      <div class="v1-cattabs">
+        <div class="v1-cattab active"><span class="ico">🕶</span> מסגרות <span class="pill pill-purple">1</span></div>
+        <div class="v1-cattab"><span class="ico">👁</span> עדשות <span class="pill pill-teal">1</span></div>
+        <div class="v1-cattab"><span class="ico">⊙</span> עדשות-מגע</div>
+        <div class="v1-cattab"><span class="ico">🧴</span> אביזרים <span class="pill pill-blue">1</span></div>
+        <div style="margin-right:auto;align-self:center;">
+          <button class="ghost">+ פריט-חופשי 🔒</button>
+        </div>
+      </div>
+
+      <!-- search inside active tab -->
+      <div class="v1-search">
+        <input type="search" placeholder="🔍 סרוק ברקוד-מסגרת או חפש לפי דגם / חברה / צבע..."/>
+        <button>סנן ▾</button>
+      </div>
+
+      <!-- frames tab content -->
+      <div class="item-card">
+        <div class="info">
+          <span class="pill pill-purple">מסגרת</span>
+          <div>
+            <div class="label">Cazal 1280 · 52 / 001 · שחור</div>
+            <div class="meta">SHALDAG · במלאי (3) · ברקוד 0312287</div>
+          </div>
+        </div>
+        <div class="actions">
+          <span class="money">₪1,800</span>
+          <button class="ghost">⋯</button>
+          <button class="danger-ghost">🗑</button>
+        </div>
+      </div>
+
+      <div class="empty-add">+ סרוק ברקוד נוסף או הוסף-ידנית</div>
+
+      <!-- a teaser of the lens tab content (locked, just to show structure) -->
+      <div style="margin-top:18px;padding-top:14px;border-top:0.5px dashed var(--border);">
+        <div class="mini" style="margin-bottom:6px;">תצוגה מקדימה של טאב <strong>עדשות</strong>:</div>
+        <div class="item-card">
+          <div class="info" style="flex-direction:column;align-items:flex-start;width:100%;">
+            <div class="row-between" style="width:100%;">
+              <div class="row">
+                <span class="pill pill-teal">עדשות</span>
+                <div>
+                  <div class="label">Optimize Multifocal · 1.56 · AR</div>
+                  <div class="meta">Progressive · מקור: הזמנה · מסונן ל−SPH-2/-3</div>
+                </div>
+              </div>
+              <span class="money">כלול</span>
+            </div>
+            <div class="item-fields">
+              <div class="field"><div class="k">גובה R</div>22mm</div>
+              <div class="field"><div class="k">גובה L</div>22mm</div>
+              <div class="field req"><div class="k">Corridor *</div>14mm</div>
+              <div class="field"><div class="k">הערה</div><span style="color:var(--text-2);">+ הוסף</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- discounts row -->
+      <div style="margin-top:14px;background:var(--soft);border-radius:var(--r-md);padding:10px 12px;">
+        <div class="row-between" style="margin-bottom:6px;">
+          <span class="h-line" style="font-size:13px;">הנחות</span>
+          <span class="mini">לא ניתן לצבור · קופון פעיל אחד</span>
+        </div>
+        <div class="row" style="flex-wrap:wrap;gap:6px;">
+          <span class="pill pill-green">SUMMER10 · −₪150 · עדשות בלבד</span>
+          <button>+ קופון</button>
+          <button>+ קופ״ח / מועדון</button>
+          <button>+ ידנית 🔒</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span class="pill pill-blue">✓ נקי וברור</span>
+      <span class="pill pill-blue">✓ סריקה אוטומטית מדלגת לטאב הנכון</span>
+      <span class="pill pill-blue">✓ מתאים לעובד-חדש</span>
+      <span class="pill pill-amber">✗ צריך לחיצה למעבר בין סוגי-פריט</span>
+      <span class="pill pill-amber">✗ פחות יעיל כשיש 4 סוגי-פריט בהזמנה אחת</span>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- VARIANT 2 — SCAN-FIRST + QUICK ADD                             -->
+  <!-- ============================================================ -->
+  <div class="variant-card">
+    <div class="variant-head">
+      <h2 style="margin:0;">וריאציה 2 — סריקה במרכז + 4 כפתורי-קטלוג</h2>
+      <span class="pill pill-purple">מהיר · עובד-מנוסה · cash-register</span>
+    </div>
+    <p class="variant-rationale">
+      שדה-הסריקה הוא ה-hero של המסך. מתחתיו 4 כפתורים גדולים לפתיחה-ידנית של כל-קטלוג.
+      כל הפריטים זורמים לרשימה אחת מסודרת מתחת — קבוצה לכל-סוג. שני-משטחי-קלט במקום
+      טאבים: סריקה (ה-95% מהמקרים) + picker-ידני (ה-5%). דומה ל-POS של חנויות מהירות.
+    </p>
+
+    <div class="center">
+
+      <div class="rx">
+        <div><strong>מרשם 10.10.25:</strong>
+          R: −2.00 −0.75 · L: −3.00 +0.5 · ADD +2.00</div>
+        <button class="ghost">ערוך ←</button>
+      </div>
+
+      <div class="so-title">
+        <div class="row">
+          <span class="so-badge">A</span>
+          <h3 style="margin:0;">משקפיים — ראייה רחוק</h3>
+          <span class="pill pill-purple">מולטיפוקל</span>
+        </div>
+        <button>⚑ למנהל</button>
+      </div>
+
+      <!-- big scan zone -->
+      <div class="v2-scan">
+        <input type="search" placeholder="🔍 סרוק ברקוד או הקלד שם / דגם / קוד..."/>
+        <div class="hint">
+          <span>⌥ Enter = הוסף · ⌥ ⇥ = פריט-הבא · המערכת מזהה אוטומטית את סוג-הפריט</span>
+          <span>0 פריטים בתור</span>
+        </div>
+      </div>
+
+      <!-- 4 quick category buttons -->
+      <div class="v2-quickbtns">
+        <button>
+          <span class="ico">🕶</span>
+          <span>קטלוג מסגרות</span>
+          <span class="mini">847 דגמים</span>
+        </button>
+        <button>
+          <span class="ico">👁</span>
+          <span>קטלוג עדשות</span>
+          <span class="mini">סינון לפי מרשם</span>
+        </button>
+        <button>
+          <span class="ico">⊙</span>
+          <span>עדשות-מגע</span>
+          <span class="mini">גם הזמנה לספק</span>
+        </button>
+        <button>
+          <span class="ico">🧴</span>
+          <span>אביזרים</span>
+          <span class="mini">132 פריטים</span>
+        </button>
+      </div>
+
+      <!-- items grouped by type -->
+      <div class="v2-section">
+        <div class="v2-section-h">
+          <span><span class="pill pill-purple">מסגרת</span></span>
+          <span>1 פריט</span>
+        </div>
+        <div class="item-card">
+          <div class="info">
+            <div>
+              <div class="label">Cazal 1280 · 52 / 001 · שחור</div>
+              <div class="meta">SHALDAG · במלאי · ברקוד 0312287</div>
+            </div>
+          </div>
+          <div class="actions">
+            <span class="money">₪1,800</span>
+            <button class="ghost">⋯</button>
+            <button class="danger-ghost">🗑</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="v2-section">
+        <div class="v2-section-h">
+          <span><span class="pill pill-teal">עדשות</span></span>
+          <span>1 פריט · גובה R/L חובה</span>
+        </div>
+        <div class="item-card" style="flex-direction:column;align-items:stretch;">
+          <div class="row-between">
+            <div>
+              <div class="label">Optimize Multifocal · 1.56 · AR</div>
+              <div class="meta">Progressive · הזמנה לספק</div>
+            </div>
+            <div class="actions">
+              <span class="money">כלול</span>
+              <button class="ghost">⋯</button>
+            </div>
+          </div>
+          <div class="item-fields">
+            <div class="field"><div class="k">גובה R</div>22mm</div>
+            <div class="field"><div class="k">גובה L</div>22mm</div>
+            <div class="field req"><div class="k">Corridor *</div>14mm</div>
+            <div class="field"><div class="k">הערה</div><span style="color:var(--text-2);">+ הוסף</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="v2-section">
+        <div class="v2-section-h">
+          <span><span class="pill pill-blue">אביזרים</span></span>
+          <span>1 פריט</span>
+        </div>
+        <div class="item-card">
+          <div class="info">
+            <div>
+              <div class="label">נוזל-עדשות 100ml × 1</div>
+              <div class="meta">במלאי</div>
+            </div>
+          </div>
+          <div class="actions">
+            <span class="money">₪40</span>
+            <button class="ghost">⋯</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- empty section examples -->
+      <div class="v2-section">
+        <div class="v2-section-h">
+          <span><span class="pill pill-coral">עדשות-מגע</span></span>
+          <span class="mini">אין · לחץ על הכפתור למעלה להוסיף</span>
+        </div>
+      </div>
+
+      <!-- discounts row -->
+      <div style="margin-top:14px;background:var(--soft);border-radius:var(--r-md);padding:10px 12px;">
+        <div class="row-between" style="margin-bottom:6px;">
+          <span class="h-line" style="font-size:13px;">הנחות</span>
+          <span class="mini">לא ניתן לצבור</span>
+        </div>
+        <div class="row" style="flex-wrap:wrap;gap:6px;">
+          <span class="pill pill-green">SUMMER10 · −₪150 · עדשות בלבד</span>
+          <button>+ קופון</button>
+          <button>+ קופ״ח / מועדון</button>
+          <button>+ ידנית 🔒</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span class="pill pill-blue">✓ הסריקה היא ה-hero — מהירות-מקסימלית</span>
+      <span class="pill pill-blue">✓ הכל גלוי בו-זמנית</span>
+      <span class="pill pill-blue">✓ POS-feel מוכר לעובדים</span>
+      <span class="pill pill-amber">✗ דורש גלילה כשיש הרבה פריטים</span>
+      <span class="pill pill-amber">✗ הפחות מובנה לעובד-חדש</span>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- VARIANT 3 — STAGED CHECKLIST                                   -->
+  <!-- ============================================================ -->
+  <div class="variant-card">
+    <div class="variant-head">
+      <h2 style="margin:0;">וריאציה 3 — checklist מדורג עם pickers</h2>
+      <span class="pill pill-teal">מודרך · ללא-טעויות · מתאים לעובדים מתחלפים</span>
+    </div>
+    <p class="variant-rationale">
+      ה-flow של בניית-הזמנה הופך לשלבים מדורגים, ולכל שלב יש כפתור-Picker שפותח את הקטלוג
+      המתאים. עובד-חדש לא יכול לפספס שדה-חובה — השלב הבא לא נפתח עד שהקודם הושלם.
+      עובד-מנוסה יכול לפתוח כל שלב במקביל וללחוץ-Tab בין שלבים.
+    </p>
+
+    <div class="center">
+
+      <div class="rx">
+        <div><strong>מרשם 10.10.25:</strong>
+          R: −2.00 −0.75 · L: −3.00 +0.5 · ADD +2.00</div>
+        <button class="ghost">ערוך ←</button>
+      </div>
+
+      <div class="so-title">
+        <div class="row">
+          <span class="so-badge">A</span>
+          <h3 style="margin:0;">משקפיים — ראייה רחוק</h3>
+        </div>
+        <span class="mini">3 מתוך 5 שלבים הושלמו</span>
+      </div>
+
+      <!-- stage 1: type/category - DONE -->
+      <div class="v3-stage done">
+        <div class="v3-stage-head">
+          <div class="row">
+            <span class="v3-stage-num">✓</span>
+            <div>
+              <div class="v3-stage-title">סוג + קטגוריה</div>
+              <div class="v3-stage-sub">הזמנת-מכירה רגילה · משקפיים-ראייה · מולטיפוקל</div>
+            </div>
+          </div>
+          <button class="ghost">ערוך</button>
+        </div>
+      </div>
+
+      <!-- stage 2: frame - DONE -->
+      <div class="v3-stage done">
+        <div class="v3-stage-head">
+          <div class="row">
+            <span class="v3-stage-num">✓</span>
+            <div>
+              <div class="v3-stage-title">מסגרת</div>
+              <div class="v3-stage-sub">Cazal 1280 · 52 / 001 · שחור · ₪1,800 · במלאי</div>
+            </div>
+          </div>
+          <button class="ghost">ערוך</button>
+        </div>
+      </div>
+
+      <!-- stage 3: lenses - ACTIVE with picker open -->
+      <div class="v3-stage active">
+        <div class="v3-stage-head">
+          <div class="row">
+            <span class="v3-stage-num">3</span>
+            <div>
+              <div class="v3-stage-title">עדשות</div>
+              <div class="v3-stage-sub">בחר עדשות לפי המרשם · הסינון פעיל אוטומטית</div>
+            </div>
+          </div>
+          <button class="primary">בחר עדשות</button>
+        </div>
+
+        <div class="v3-stage-body">
+          <!-- 4 picker buttons - choose source -->
+          <div class="v3-pickers">
+            <div class="v3-picker">
+              <span class="ico">👁</span>
+              <div class="ttl">מקטלוג עדשות</div>
+              <div class="sub">מסונן למרשם · 47 דגמים</div>
+            </div>
+            <div class="v3-picker">
+              <span class="ico">📦</span>
+              <div class="ttl">ממלאי-מדף</div>
+              <div class="sub">stock lenses · 12 דגמים</div>
+            </div>
+            <div class="v3-picker">
+              <span class="ico">🔍</span>
+              <div class="ttl">סרוק ברקוד</div>
+              <div class="sub">אם העדשות מולך</div>
+            </div>
+            <div class="v3-picker">
+              <span class="ico">📋</span>
+              <div class="ttl">העתק מהזמנה קודמת</div>
+              <div class="sub">9201 · 04.01.26</div>
+            </div>
+          </div>
+
+          <!-- catalog picker preview (after clicking first option) -->
+          <div class="picker-modal">
+            <div class="picker-modal-head">
+              <h3 style="margin:0;font-size:14px;">קטלוג עדשות · מסונן למרשם הנוכחי</h3>
+              <button class="ghost">סגור ✕</button>
+            </div>
+            <div class="picker-search">
+              <input type="search" placeholder="חפש לפי שם / מותג / index..."/>
+            </div>
+            <div class="picker-filters">
+              <span class="picker-filter active">מולטיפוקל</span>
+              <span class="picker-filter">Single Vision</span>
+              <span class="picker-filter">Office</span>
+              <span class="picker-filter">Index 1.56</span>
+              <span class="picker-filter">Index 1.6</span>
+              <span class="picker-filter">+ AR</span>
+              <span class="picker-filter">Blue-light</span>
+            </div>
+            <div class="picker-list">
+              <div class="picker-row" style="background:var(--purple-soft);">
+                <div class="info">
+                  <span class="name">Optimize Multifocal · 1.56 · AR</span>
+                  <span class="meta">Progressive · הזמנה לספק · ₪0 (כלול)</span>
+                </div>
+                <button class="primary" style="font-size:11px;">הוסף</button>
+              </div>
+              <div class="picker-row">
+                <div class="info">
+                  <span class="name">Hoya iD MyStyle · 1.6 · AR Premium</span>
+                  <span class="meta">Progressive · הזמנה לספק · ₪+450</span>
+                </div>
+                <button style="font-size:11px;">הוסף</button>
+              </div>
+              <div class="picker-row">
+                <div class="info">
+                  <span class="name">Essilor Varilux X · 1.67 · AR</span>
+                  <span class="meta">Progressive · הזמנה · ₪+850</span>
+                </div>
+                <button style="font-size:11px;">הוסף</button>
+              </div>
+              <div class="picker-row">
+                <div class="info">
+                  <span class="name">Zeiss Precision Pure · 1.5</span>
+                  <span class="meta">Progressive · במלאי · ₪+200</span>
+                </div>
+                <button style="font-size:11px;">הוסף</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- stage 4: accessories - PENDING -->
+      <div class="v3-stage">
+        <div class="v3-stage-head">
+          <div class="row">
+            <span class="v3-stage-num">4</span>
+            <div>
+              <div class="v3-stage-title">אביזרים <span class="mini" style="font-weight:400;">(אופציונלי)</span></div>
+              <div class="v3-stage-sub">נוזלים · מטליות · מארזים · ביטוח</div>
+            </div>
+          </div>
+          <button>+ הוסף אביזר</button>
+        </div>
+      </div>
+
+      <!-- stage 5: discounts + payment - PENDING -->
+      <div class="v3-stage">
+        <div class="v3-stage-head">
+          <div class="row">
+            <span class="v3-stage-num">5</span>
+            <div>
+              <div class="v3-stage-title">הנחות + תשלום</div>
+              <div class="v3-stage-sub">קופון · קופ״ח · מועדון · מקדמה-מינ׳ 50%</div>
+            </div>
+          </div>
+          <button>פתח</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="legend">
+      <span class="pill pill-blue">✓ אי-אפשר לפספס שדה-חובה</span>
+      <span class="pill pill-blue">✓ pickers מובנים לכל קטלוג</span>
+      <span class="pill pill-blue">✓ מתאים לעובדים מתחלפים</span>
+      <span class="pill pill-amber">✗ איטי לעובד-מנוסה (אם לא מקפיצים שלבים)</span>
+      <span class="pill pill-amber">✗ אורך-מסך גדל</span>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- THE 4 CATALOG PICKERS — DETAILED                                -->
+  <!-- ============================================================ -->
+
+  <h2>4 הקטלוגים — מה כל picker מציג</h2>
+  <p class="lede">
+    בכל וריאציה הקטלוגים-עצמם נראים אותו-דבר. השוני הוא רק בכפתור-הכניסה.
+    זה מה שנפתח בלחיצה.
+  </p>
+
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;">
+
+    <!-- frames picker -->
+    <div class="picker-modal" style="margin:0;">
+      <div class="picker-modal-head">
+        <h3 style="margin:0;">🕶 קטלוג מסגרות</h3>
+        <span class="mini">847 דגמים</span>
+      </div>
+      <div class="picker-search">
+        <input type="search" placeholder="חפש: חברה · דגם · צבע · ברקוד"/>
+      </div>
+      <div class="picker-filters">
+        <span class="picker-filter active">הכל</span>
+        <span class="picker-filter">אופטיות</span>
+        <span class="picker-filter">שמש</span>
+        <span class="picker-filter">ילדים</span>
+        <span class="picker-filter">VIP</span>
+        <span class="picker-filter">מבצע</span>
+        <span class="picker-filter">במלאי בלבד</span>
+      </div>
+      <div class="picker-list">
+        <div class="picker-row">
+          <div class="info"><span class="name">Cazal 1280 · 52 / שחור</span><span class="meta">SHALDAG · במלאי 3 · ₪1,800</span></div>
+          <button style="font-size:11px;">בחר</button>
+        </div>
+        <div class="picker-row">
+          <div class="info"><span class="name">Ray-Ban RB5285 · 53 / חום</span><span class="meta">Luxottica · במלאי 1 · ₪750</span></div>
+          <button style="font-size:11px;">בחר</button>
+        </div>
+        <div class="picker-row">
+          <div class="info"><span class="name">Persol PO3019 · 50 / כחול</span><span class="meta">Luxottica · הזמנה · ₪1,200</span></div>
+          <button style="font-size:11px;">בחר</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- lenses picker -->
+    <div class="picker-modal" style="margin:0;">
+      <div class="picker-modal-head">
+        <h3 style="margin:0;">👁 קטלוג עדשות</h3>
+        <span class="pill pill-amber">סינון אוטומטי לפי מרשם</span>
+      </div>
+      <div class="picker-search">
+        <input type="search" placeholder="חפש: מותג · index · ציפוי"/>
+      </div>
+      <div class="picker-filters">
+        <span class="picker-filter active">מולטיפוקל</span>
+        <span class="picker-filter">Single Vision</span>
+        <span class="picker-filter">Office</span>
+        <span class="picker-filter">stock</span>
+        <span class="picker-filter">Index ≥ 1.6</span>
+        <span class="picker-filter">+ AR</span>
+        <span class="picker-filter">Photochromic</span>
+      </div>
+      <div class="picker-list">
+        <div class="picker-row">
+          <div class="info"><span class="name">Optimize Multifocal · 1.56 · AR</span><span class="meta">Progressive · הזמנה · כלול</span></div>
+          <button style="font-size:11px;">בחר</button>
+        </div>
+        <div class="picker-row">
+          <div class="info"><span class="name">Hoya iD MyStyle · 1.6</span><span class="meta">Progressive · הזמנה · +₪450</span></div>
+          <button style="font-size:11px;">בחר</button>
+        </div>
+        <div class="picker-row">
+          <div class="info"><span class="name">Essilor Varilux X · 1.67</span><span class="meta">Progressive · הזמנה · +₪850</span></div>
+          <button style="font-size:11px;">בחר</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- contact lenses picker -->
+    <div class="picker-modal" style="margin:0;">
+      <div class="picker-modal-head">
+        <h3 style="margin:0;">⊙ קטלוג עדשות-מגע</h3>
+        <span class="mini">3 ספקים</span>
+      </div>
+      <div class="picker-search">
+        <input type="search" placeholder="חפש: ספק · מותג · דגם"/>
+      </div>
+      <div class="picker-filters">
+        <span class="picker-filter active">הכל</span>
+        <span class="picker-filter">יומיות</span>
+        <span class="picker-filter">חודשיות</span>
+        <span class="picker-filter">3-חודשים</span>
+        <span class="picker-filter">שנתיות</span>
+        <span class="picker-filter">צבעוניות</span>
+        <span class="picker-filter">טוריות</span>
+      </div>
+      <div class="picker-list">
+        <div class="picker-row">
+          <div class="info"><span class="name">Acuvue Oasys · יומיות · 30 זוגות</span><span class="meta">Steuer · במלאי · ₪450</span></div>
+          <button style="font-size:11px;">בחר</button>
+        </div>
+        <div class="picker-row">
+          <div class="info"><span class="name">Bausch+Lomb Ultra · חודשיות · 6</span><span class="meta">B+L ישראל · הזמנה · ₪320</span></div>
+          <button style="font-size:11px;">בחר</button>
+        </div>
+        <div class="picker-row">
+          <div class="info"><span class="name">Air Optix Colors · 3-חודשים</span><span class="meta">Alcon · הזמנה · ₪380</span></div>
+          <button style="font-size:11px;">בחר</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- accessories picker -->
+    <div class="picker-modal" style="margin:0;">
+      <div class="picker-modal-head">
+        <h3 style="margin:0;">🧴 קטלוג אביזרים</h3>
+        <span class="mini">132 פריטים</span>
+      </div>
+      <div class="picker-search">
+        <input type="search" placeholder="חפש: שם פריט"/>
+      </div>
+      <div class="picker-filters">
+        <span class="picker-filter active">הכל</span>
+        <span class="picker-filter">נוזלים</span>
+        <span class="picker-filter">מארזים</span>
+        <span class="picker-filter">מטליות</span>
+        <span class="picker-filter">שירותים</span>
+        <span class="picker-filter">ביטוח</span>
+      </div>
+      <div class="picker-list">
+        <div class="picker-row">
+          <div class="info"><span class="name">נוזל ניקוי לעדשות · 100ml</span><span class="meta">במלאי · ₪40</span></div>
+          <button style="font-size:11px;">בחר</button>
+        </div>
+        <div class="picker-row">
+          <div class="info"><span class="name">מארז עור · קלאסי</span><span class="meta">במלאי · ₪80</span></div>
+          <button style="font-size:11px;">בחר</button>
+        </div>
+        <div class="picker-row">
+          <div class="info"><span class="name">ביטוח שבר · שנה</span><span class="meta">שירות · ₪150</span></div>
+          <button style="font-size:11px;">בחר</button>
+        </div>
+        <div class="picker-row">
+          <div class="info"><span class="name">בדיקת ראייה נוספת · 3 חודשים</span><span class="meta">שירות · ₪0 (מתנה)</span></div>
+          <button style="font-size:11px;">בחר</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer-note">
+    <strong>איך לקרוא את הסקיצות:</strong> זה לא קוד אמיתי, רק תצוגה ויזואלית להחלטה
+    איזה <em>flow של עורך-הזמנה</em> מתאים. הטור-הימני (רכבת A/B/C) והשמאלי (WhatsApp + audit)
+    יצורפו לאחר-מכן בלי שינוי. בחר וריאציה — או צור הכלאה (למשל "וריאציה 2 כברירת-מחדל +
+    pickers של וריאציה 3 בלחיצה").
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M8 — סוף-יום-קופה · v2</title>
+<style>
+  :root{
+    --bg:#FAFAF7; --surface:#FFFFFF; --soft:#F1EFE8;
+    --border:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
+    --text:#1F1F1E; --text-2:#5F5E5A; --text-3:#888780;
+    --purple:#534AB7; --purple-soft:#EEEDFE; --purple-deep:#26215C;
+    --teal:#0F6E56; --teal-soft:#E1F5EE; --teal-deep:#04342C;
+    --amber:#BA7517; --amber-soft:#FAEEDA; --amber-deep:#412402;
+    --blue:#185FA5; --blue-soft:#E6F1FB; --blue-deep:#0C447C;
+    --coral:#993C1D; --coral-soft:#FAECE7; --coral-deep:#4A1B0C;
+    --green:#3B6D11; --green-soft:#EAF3DE; --green-deep:#173404;
+    --gray:#5F5E5A; --gray-soft:#F1EFE8;
+    --red:#A32D2D; --red-soft:#FBE6E6;
+    --r-md:6px; --r-lg:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;font-family:-apple-system,'Segoe UI',Rubik,sans-serif;
+    background:var(--bg);color:var(--text);font-size:12px;line-height:1.4;direction:rtl;
+  }
+  .page{max-width:1640px;margin:0 auto;padding:18px;}
+  h1{font-size:18px;font-weight:500;margin:0 0 4px;}
+  .lede{color:var(--text-2);margin:0 0 14px;font-size:12px;}
+
+  .panel{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px 16px;margin-bottom:14px;
+  }
+  .panel h3{font-size:13px;font-weight:500;margin:0 0 8px;display:flex;align-items:center;gap:8px;}
+
+  /* v2 changes banner */
+  .changes{
+    background:#FFF8E1;border:1px solid var(--amber);border-radius:var(--r-lg);
+    padding:14px 16px;margin-bottom:14px;
+  }
+  .changes h2{font-size:13px;font-weight:500;margin:0 0 8px;color:var(--amber-deep);}
+  .changes ul{margin:0;padding-inline-start:18px;color:var(--text);font-size:11.5px;}
+  .changes li{margin:3px 0;}
+  .changes li strong{color:var(--amber-deep);}
+
+  /* Header */
+  .header-bar{
+    display:flex;justify-content:space-between;align-items:center;
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px 18px;margin-bottom:14px;
+  }
+  .header-bar .left{display:flex;align-items:baseline;gap:14px;}
+  .header-bar .date-big{font-size:18px;font-weight:600;}
+  .header-bar .date-small{font-size:11.5px;color:var(--text-2);}
+  .header-bar .status-tag{
+    background:var(--amber-soft);color:var(--amber-deep);
+    padding:5px 14px;border-radius:14px;font-size:11.5px;font-weight:500;
+  }
+  .header-bar .status-tag.closed{background:var(--green-soft);color:var(--green-deep);}
+  .header-bar .actions{display:flex;gap:8px;}
+  .header-bar button{
+    padding:8px 14px;font-size:12px;border-radius:var(--r-md);cursor:pointer;
+    border:1px solid var(--border);background:var(--surface);
+  }
+  .header-bar button:hover{background:var(--soft);}
+  .header-bar .btn-print{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:500;}
+  .header-bar .btn-close{background:var(--green);color:#fff;border-color:var(--green);font-weight:500;}
+
+  /* Three steps */
+  .steps{
+    display:grid;grid-template-columns:1fr 24px 1fr 24px 1fr;gap:8px;align-items:stretch;
+    margin-bottom:14px;
+  }
+  .step{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+    padding:10px 14px;
+  }
+  .step.done{background:var(--green-soft);border-color:var(--green);}
+  .step.active{background:var(--purple-soft);border-color:var(--purple);}
+  .step .num{
+    display:inline-block;width:22px;height:22px;border-radius:50%;
+    background:var(--text-3);color:#fff;text-align:center;line-height:22px;
+    font-size:11px;font-weight:600;margin-inline-end:6px;
+  }
+  .step.done .num{background:var(--green);}
+  .step.active .num{background:var(--purple);}
+  .step .title{font-weight:500;font-size:12.5px;display:inline-block;}
+  .step .desc{color:var(--text-2);font-size:10.5px;margin-top:6px;}
+  .arrow-step{display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:18px;}
+
+  /* KPI strip */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;}
+  .kpi{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:12px 14px;
+  }
+  .kpi .lbl{font-size:11px;color:var(--text-2);}
+  .kpi .val{font-size:18px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums;}
+  .kpi .sub{font-size:10.5px;color:var(--text-3);margin-top:3px;}
+
+  /* Two-column main: comparison left, drawer count right */
+  .main-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;}
+
+  /* Channel reconciliation block — ONE per channel */
+  .channel-block{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    margin-bottom:14px;overflow:hidden;
+  }
+  .channel-header{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:12px 16px;background:var(--blue-soft);border-bottom:1px solid var(--border-strong);
+  }
+  .channel-header.gama{background:var(--purple-soft);}
+  .channel-name{font-size:14px;font-weight:600;}
+  .channel-name .sub{font-size:11px;color:var(--text-2);font-weight:400;margin-inline-start:8px;}
+  .channel-totals{display:flex;gap:18px;align-items:baseline;font-size:11.5px;}
+  .channel-totals .ttl{color:var(--text-2);}
+  .channel-totals .vv{font-weight:600;font-variant-numeric:tabular-nums;}
+
+  .recon-row{
+    display:grid;grid-template-columns:1.4fr 100px 100px 90px 100px;
+    gap:10px;padding:10px 16px;align-items:center;font-size:11.5px;
+    border-bottom:1px dashed var(--border);
+  }
+  .recon-row.head{
+    background:var(--soft);font-size:10.5px;color:var(--text-2);
+    text-transform:uppercase;letter-spacing:.04em;font-weight:500;
+  }
+  .recon-row:last-child{border-bottom:none;}
+  .recon-row.match{background:var(--surface);}
+  .recon-row.mismatch{background:#FBE6E6;}
+  .recon-row.mismatch .delta{color:var(--coral-deep);font-weight:600;}
+  .recon-row.match .delta{color:var(--green-deep);}
+  .recon-row .label{color:var(--text);font-weight:500;}
+  .recon-row .label .meta{color:var(--text-2);font-size:10.5px;display:block;margin-top:2px;font-weight:400;}
+  .recon-row .opticup-amt{
+    text-align:start;font-weight:500;font-variant-numeric:tabular-nums;
+    background:var(--soft);padding:5px 10px;border-radius:var(--r-md);
+  }
+  .recon-row .input-amt input{
+    width:100%;padding:5px 10px;border:1px solid var(--border);border-radius:var(--r-md);
+    font-variant-numeric:tabular-nums;font-weight:500;background:var(--surface);
+    text-align:start;font-size:11.5px;
+  }
+  .recon-row .input-amt input:focus{border-color:var(--purple);outline:none;}
+  .recon-row .delta{text-align:center;font-variant-numeric:tabular-nums;font-size:11px;}
+  .recon-row .status-cell{text-align:center;}
+  .status-tag-ok{background:var(--green-soft);color:var(--green-deep);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500;}
+  .status-tag-warn{background:var(--coral-soft);color:var(--coral-deep);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500;}
+
+  .channel-summary{
+    display:grid;grid-template-columns:1.4fr 100px 100px 90px 100px;
+    gap:10px;padding:12px 16px;align-items:center;font-size:12.5px;
+    background:var(--soft);font-weight:600;border-top:2px solid var(--border-strong);
+  }
+  .channel-summary .opticup-amt,.channel-summary .input-amt{
+    background:transparent;font-size:13px;font-weight:600;text-align:start;
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* Cash drawer count card */
+  .cash-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:16px 18px;
+  }
+  .cash-card h3{margin:0 0 12px;font-size:13px;display:flex;align-items:center;gap:8px;}
+  .cash-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:8px 0;border-bottom:1px dashed var(--border);font-size:12px;
+  }
+  .cash-row:last-child{border-bottom:none;}
+  .cash-row .lbl{color:var(--text-2);}
+  .cash-row .val{font-variant-numeric:tabular-nums;font-weight:500;}
+  .cash-input{
+    background:var(--purple-soft);border:1px solid var(--purple);border-radius:var(--r-md);
+    padding:10px 14px;margin-top:12px;
+  }
+  .cash-input label{font-size:11px;color:var(--purple-deep);font-weight:500;display:block;margin-bottom:4px;}
+  .cash-input input{
+    width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r-md);
+    font-family:monospace;font-size:14px;font-weight:500;
+  }
+  .cash-result{margin-top:10px;padding:10px 14px;border-radius:var(--r-md);}
+  .cash-result.ok{background:var(--green-soft);color:var(--green-deep);}
+  .cash-result.short{background:var(--red-soft);color:var(--red);}
+  .cash-result.over{background:var(--amber-soft);color:var(--amber-deep);}
+  .cash-result strong{font-size:14px;font-weight:600;}
+
+  .info-note{
+    background:var(--blue-soft);border-inline-start:3px solid var(--blue);
+    padding:8px 12px;border-radius:var(--r-md);font-size:11px;color:var(--blue-deep);
+    margin-bottom:14px;
+  }
+  .info-note strong{color:var(--blue-deep);}
+
+  /* Per-cashier breakdown */
+  .cashier-row{
+    display:grid;grid-template-columns:1fr 80px 80px 80px 80px 90px;
+    gap:8px;padding:9px 14px;align-items:center;font-size:11.5px;
+    border-bottom:1px dashed var(--border);
+  }
+  .cashier-row.head{background:var(--soft);font-size:10.5px;color:var(--text-2);
+    text-transform:uppercase;letter-spacing:.04em;font-weight:500;}
+  .cashier-row .name{font-weight:500;}
+  .cashier-row .num{text-align:start;font-variant-numeric:tabular-nums;}
+  .cashier-row .total{font-weight:600;color:var(--purple-deep);}
+
+  /* Health-fund */
+  .hf-row{
+    display:grid;grid-template-columns:1fr 80px 100px;
+    gap:8px;padding:8px 14px;align-items:center;font-size:11.5px;
+    border-bottom:1px dashed var(--border);
+  }
+  .hf-row.head{background:var(--soft);font-size:10.5px;color:var(--text-2);
+    text-transform:uppercase;letter-spacing:.04em;font-weight:500;}
+  .hf-row .num{text-align:start;font-variant-numeric:tabular-nums;}
+
+  /* Print preview */
+  .print-preview{
+    background:#FFFEF7;border:2px dashed var(--text-3);border-radius:var(--r-lg);
+    padding:24px 28px;margin-top:14px;font-family:'Courier New',monospace;font-size:12px;
+  }
+  .print-preview h4{margin:0 0 10px;font-size:14px;font-weight:600;text-align:center;}
+  .print-preview .line{
+    display:grid;grid-template-columns:20px 1fr 100px 100px;
+    gap:8px;padding:5px 0;border-bottom:1px dotted #999;align-items:center;
+  }
+  .print-preview .line.section{font-weight:600;background:#F5F2DD;padding:7px 8px;margin:8px -8px 4px;}
+  .print-preview .check-box{
+    width:14px;height:14px;border:1.5px solid #333;display:inline-block;border-radius:2px;
+  }
+  .print-preview .signature{
+    margin-top:24px;padding-top:14px;border-top:1px dashed #999;
+    display:grid;grid-template-columns:1fr 1fr;gap:30px;
+  }
+  .print-preview .signature .sig{font-size:11px;color:#555;}
+  .print-preview .signature .sig .line-sig{
+    border-bottom:1px solid #333;height:30px;margin-top:8px;
+  }
+  .cash-line{font-weight:600;background:#FFF3D6;padding:8px 8px;margin:6px -8px;}
+
+  /* Annotations */
+  .annotations{
+    margin-top:24px;padding:16px 18px;
+    background:var(--soft);border-radius:var(--r-lg);
+  }
+  .annotations h2{font-size:14px;font-weight:500;margin:0 0 10px;}
+  .annotations ol{margin:0;padding-inline-start:20px;color:var(--text);font-size:11.5px;line-height:1.6;}
+  .annotations li{margin:5px 0;}
+  .annotations li strong{color:var(--purple-deep);}
+
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <h1>M8 — סוף-יום-קופה · v2</h1>
+  <p class="lede">מתוקן אחרי שיחת-בירור: אחראי-המשמרת מקליד ידנית את הסכומים מ-Linet ומ-Gama Pay, Optic Up מציג את שלו, פערים מודגשים. שלושה צעדים: (1) השוואה פר-ערוץ, (2) ספירת-מזומנים-במגירה, (3) אישור-וסגירה. כפתור הדפסה בולט.</p>
+
+  <div class="changes">
+    <h2>שינויים מ-v1 → v2</h2>
+    <ul>
+      <li><strong>הסכום של Linet/Gama Pay מוקלד ידנית.</strong> אחראי-המשמרת מסתכל על הדוח-המודפס של כל קופה ומקליד את הסכומים ב-Optic Up. ב-v1 חשבתי שזה מגיע אוטומטית — שגיאה, Linet לא חושף API פתוח.</li>
+      <li><strong>בלוק-נפרד לכל ערוץ-סליקה.</strong> Linet בלוק-אחד עם הקלדה של 5 קטגוריות (אשראי/מזומן/ביט/העברה/צ'קים-נפרעו). Gama Pay בלוק-נפרד עם אותן 5 קטגוריות. כל-תא ניתן-להקלדה.</li>
+      <li><strong>שורה הופכת אדומה</strong> אם יש פער בין מה ש-Optic Up רשם למה שהקופה רשמה.</li>
+      <li><strong>הוסר "עסקאות בהמתנה" (T+1).</strong> זה לא שייך לסוף-יום-קופה — סוף-יום משווה רישומים, לא נוחתות-בנק.</li>
+      <li><strong>ספירת-מזומנים-במגירה</strong> נשארת כמו ב-v1.</li>
+    </ul>
+  </div>
+
+  <!-- Header -->
+  <div class="header-bar">
+    <div class="left">
+      <div class="date-big">8 במאי 2026 (יום ו')</div>
+      <div class="date-small">תחילה: 09:00 · סוף-יום מוצע: 19:30</div>
+    </div>
+    <span class="status-tag">⏳ פתוח לסגירה</span>
+    <div class="actions">
+      <button class="btn-print">🖨 הדפס לסגירת-יום</button>
+      <button class="btn-close">✓ סגור יום</button>
+    </div>
+  </div>
+
+  <!-- Three steps -->
+  <div class="steps">
+    <div class="step active">
+      <div><span class="num">1</span><span class="title">הקלדת סכומים מהקופות</span></div>
+      <div class="desc">Linet + Gama Pay — מקליד את כל הסכומים מהדוחות-המודפסים. Optic Up מציג מה הוא רשם. שורות אדומות = פער.</div>
+    </div>
+    <div class="arrow-step">←</div>
+    <div class="step">
+      <div><span class="num">2</span><span class="title">ספירת-מזומנים-במגירה</span></div>
+      <div class="desc">סופר פיזית את המזומן במגירה ומקליד. Optic Up משווה לסכום-הצפוי. סטיה = הסבר ידני.</div>
+    </div>
+    <div class="arrow-step">←</div>
+    <div class="step">
+      <div><span class="num">3</span><span class="title">אישור-וסגירה</span></div>
+      <div class="desc">חתימה + סגירה. אחרי-זה: עריכת תשלום-של-היום דורשת הרשאת-מנהל.</div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi">
+      <div class="lbl">סה"כ-יומי (Optic Up)</div>
+      <div class="val money">₪32,547</div>
+      <div class="sub">31 עסקאות · 2 ערוצים</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">Linet (Optic Up)</div>
+      <div class="val money">₪29,847</div>
+      <div class="sub">28 עסקאות</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">Gama Pay (Optic Up)</div>
+      <div class="val money">₪2,700</div>
+      <div class="sub">3 עסקאות</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">קופות תאמו?</div>
+      <div class="val" style="color:var(--coral-deep);">1 / 2</div>
+      <div class="sub">Gama Pay יש פער</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">צ'קים-נפרעו-היום</div>
+      <div class="val money">₪3,350</div>
+      <div class="sub">4 צ'קים · נכלל ב-Linet</div>
+    </div>
+  </div>
+
+  <div class="info-note">
+    <strong>איך זה עובד:</strong> הצעד הראשון של סגירת-יום הוא הקלדה ידנית של מה שכתוב בדוחות-המודפסים של ערוצי-הסליקה. Optic Up מציג את הסכומים שלו (קריאה-בלבד, מתוך התשלומים שנרשמו ביום), ואחראי-המשמרת ממלא את העמודה "בקופה". פערים מסומנים אדום אוטומטית. אחרי שאין פערים — עוברים לספירת-מזומן.
+  </div>
+
+  <div class="info-note" style="background:var(--purple-soft);border-inline-start-color:var(--purple);color:var(--purple-deep);">
+    <strong>📌 הבלוקים דינמיים פר-tenant.</strong> פריזמה מגדירה ב-settings שני ערוצי-סליקה (Linet + Gama Pay), לכן יש שני בלוקים. tenant-אחר שיגדיר ערוצים שונים (Z Credit / Tranzila / CardCom) יראה בלוקים שונים — אותו מבנה, שמות אחרים. הוספת ערוץ-שלישי = שורה חדשה ב-settings, אפס שינוי-קוד. (Iron Rule 19, configuration over code.)
+  </div>
+
+  <!-- Main two-column layout -->
+  <div class="main-grid">
+
+    <!-- LEFT: Channel reconciliation -->
+    <div>
+
+      <!-- LINET CHANNEL -->
+      <div class="channel-block">
+        <div class="channel-header">
+          <div class="channel-name">📟 Linet <span class="sub">ברירת-מחדל · 28 עסקאות</span></div>
+          <div class="channel-totals">
+            <div><span class="ttl">Optic Up:</span> <span class="vv money">₪29,847</span></div>
+            <div><span class="ttl">בקופה:</span> <span class="vv money" style="color:var(--green-deep);">₪29,847</span></div>
+            <div><span class="ttl">פער:</span> <span class="vv" style="color:var(--green-deep);">₪0</span></div>
+          </div>
+        </div>
+
+        <div class="recon-row head">
+          <span>סוג-תשלום</span>
+          <span>Optic Up</span>
+          <span>בקופה</span>
+          <span>פער</span>
+          <span>סטטוס</span>
+        </div>
+        <div class="recon-row match">
+          <span class="label">💳 אשראי <span class="meta">15 עסקאות</span></span>
+          <span class="opticup-amt money">₪19,500</span>
+          <span class="input-amt"><input value="₪19,500"/></span>
+          <span class="delta">₪0</span>
+          <span class="status-cell"><span class="status-tag-ok">✓</span></span>
+        </div>
+        <div class="recon-row match">
+          <span class="label">💵 מזומן <span class="meta">8 עסקאות</span></span>
+          <span class="opticup-amt money">₪3,347</span>
+          <span class="input-amt"><input value="₪3,347"/></span>
+          <span class="delta">₪0</span>
+          <span class="status-cell"><span class="status-tag-ok">✓</span></span>
+        </div>
+        <div class="recon-row match">
+          <span class="label">📱 ביט <span class="meta">1 עסקה (ב-Linet כ"מזומן")</span></span>
+          <span class="opticup-amt money">₪700</span>
+          <span class="input-amt"><input value="₪700"/></span>
+          <span class="delta">₪0</span>
+          <span class="status-cell"><span class="status-tag-ok">✓</span></span>
+        </div>
+        <div class="recon-row match">
+          <span class="label">🏦 העברה <span class="meta">1 עסקה</span></span>
+          <span class="opticup-amt money">₪2,000</span>
+          <span class="input-amt"><input value="₪2,000"/></span>
+          <span class="delta">₪0</span>
+          <span class="status-cell"><span class="status-tag-ok">✓</span></span>
+        </div>
+        <div class="recon-row match">
+          <span class="label">📄 צ'קים-נפרעו <span class="meta">3 צ'קים</span></span>
+          <span class="opticup-amt money">₪4,300</span>
+          <span class="input-amt"><input value="₪4,300"/></span>
+          <span class="delta">₪0</span>
+          <span class="status-cell"><span class="status-tag-ok">✓</span></span>
+        </div>
+
+        <div class="channel-summary">
+          <span>סה"כ Linet</span>
+          <span class="opticup-amt money">₪29,847</span>
+          <span class="input-amt money">₪29,847</span>
+          <span class="delta">₪0</span>
+          <span><span class="status-tag-ok">✓ תואם</span></span>
+        </div>
+      </div>
+
+      <!-- GAMA PAY CHANNEL -->
+      <div class="channel-block">
+        <div class="channel-header gama">
+          <div class="channel-name">📟 Gama Pay <span class="sub">ערוץ-חלופי · 3 עסקאות</span></div>
+          <div class="channel-totals">
+            <div><span class="ttl">Optic Up:</span> <span class="vv money">₪2,700</span></div>
+            <div><span class="ttl">בקופה:</span> <span class="vv money" style="color:var(--coral-deep);">₪2,650</span></div>
+            <div><span class="ttl">פער:</span> <span class="vv" style="color:var(--coral-deep);">−₪50</span></div>
+          </div>
+        </div>
+
+        <div class="recon-row head">
+          <span>סוג-תשלום</span>
+          <span>Optic Up</span>
+          <span>בקופה</span>
+          <span>פער</span>
+          <span>סטטוס</span>
+        </div>
+        <div class="recon-row match">
+          <span class="label">💳 אשראי <span class="meta">2 עסקאות</span></span>
+          <span class="opticup-amt money">₪2,200</span>
+          <span class="input-amt"><input value="₪2,200"/></span>
+          <span class="delta">₪0</span>
+          <span class="status-cell"><span class="status-tag-ok">✓</span></span>
+        </div>
+        <div class="recon-row mismatch">
+          <span class="label">💵 מזומן <span class="meta">1 עסקה</span></span>
+          <span class="opticup-amt money">₪500</span>
+          <span class="input-amt"><input value="₪450"/></span>
+          <span class="delta">−₪50</span>
+          <span class="status-cell"><span class="status-tag-warn">⚠ פער</span></span>
+        </div>
+        <div class="recon-row">
+          <span class="label">📱 ביט <span class="meta">0 עסקאות</span></span>
+          <span class="opticup-amt money">₪0</span>
+          <span class="input-amt"><input value="₪0"/></span>
+          <span class="delta">₪0</span>
+          <span class="status-cell"><span class="status-tag-ok">✓</span></span>
+        </div>
+        <div class="recon-row">
+          <span class="label">🏦 העברה <span class="meta">0 עסקאות</span></span>
+          <span class="opticup-amt money">₪0</span>
+          <span class="input-amt"><input value="₪0"/></span>
+          <span class="delta">₪0</span>
+          <span class="status-cell"><span class="status-tag-ok">✓</span></span>
+        </div>
+        <div class="recon-row">
+          <span class="label">📄 צ'קים-נפרעו <span class="meta">0 צ'קים</span></span>
+          <span class="opticup-amt money">₪0</span>
+          <span class="input-amt"><input value="₪0"/></span>
+          <span class="delta">₪0</span>
+          <span class="status-cell"><span class="status-tag-ok">✓</span></span>
+        </div>
+
+        <div class="channel-summary" style="background:#FBE6E6;">
+          <span>סה"כ Gama Pay</span>
+          <span class="opticup-amt money">₪2,700</span>
+          <span class="input-amt money">₪2,650</span>
+          <span class="delta" style="color:var(--coral-deep);">−₪50</span>
+          <span><span class="status-tag-warn">⚠ פער ₪50</span></span>
+        </div>
+      </div>
+
+      <!-- Per cashier -->
+      <div class="panel" style="margin-top:14px;">
+        <h3>👤 פילוח לפי אופטומטריסט</h3>
+        <div>
+          <div class="cashier-row head">
+            <span>אופטומטריסט</span>
+            <span>אשראי</span>
+            <span>מזומן</span>
+            <span>ביט/העברה</span>
+            <span>צ'קים</span>
+            <span>סה"כ</span>
+          </div>
+          <div class="cashier-row">
+            <span class="name">שירה כהן</span>
+            <span class="num money">₪14,400</span>
+            <span class="num money">₪2,100</span>
+            <span class="num money">₪800</span>
+            <span class="num money">₪2,200</span>
+            <span class="num money total">₪19,500</span>
+          </div>
+          <div class="cashier-row">
+            <span class="name">דניאל לוי</span>
+            <span class="num money">₪7,300</span>
+            <span class="num money">₪1,747</span>
+            <span class="num money">₪1,900</span>
+            <span class="num money">₪2,100</span>
+            <span class="num money total">₪13,047</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Health funds -->
+      <div class="panel">
+        <h3>🏥 פילוח לפי קופ"ח (להחזרים)</h3>
+        <div class="hf-row head">
+          <span>קופת-חולים</span>
+          <span>עסקאות</span>
+          <span>סה"כ-להחזר</span>
+        </div>
+        <div class="hf-row">
+          <span class="label">לאומית — פלטינום</span>
+          <span class="num">12</span>
+          <span class="num money">₪14,200</span>
+        </div>
+        <div class="hf-row">
+          <span class="label">מכבי</span>
+          <span class="num">7</span>
+          <span class="num money">₪6,300</span>
+        </div>
+        <div class="hf-row">
+          <span class="label">כללית</span>
+          <span class="num">3</span>
+          <span class="num money">₪2,800</span>
+        </div>
+        <div class="hf-row">
+          <span class="label">ללא קופ"ח</span>
+          <span class="num">9</span>
+          <span class="num money">₪9,247</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Cash drawer count -->
+    <div>
+      <div class="cash-card">
+        <h3>💵 ספירת-מזומנים-במגירה</h3>
+
+        <div class="cash-row">
+          <span class="lbl">פתיחת-יום (קופה-קטנה)</span>
+          <span class="val money">₪500</span>
+        </div>
+        <div class="cash-row">
+          <span class="lbl">+ מזומן ב-Linet</span>
+          <span class="val money">₪3,347</span>
+        </div>
+        <div class="cash-row">
+          <span class="lbl">+ מזומן ב-Gama Pay</span>
+          <span class="val money">₪500</span>
+        </div>
+        <div class="cash-row">
+          <span class="lbl">− הוצאות-מזומן</span>
+          <span class="val money">₪0</span>
+        </div>
+        <div class="cash-row" style="font-size:13px;">
+          <span class="lbl"><strong>סה"כ-צפוי במגירה</strong></span>
+          <span class="val money" style="font-size:14px;font-weight:600;">₪4,347</span>
+        </div>
+
+        <div class="cash-input">
+          <label>סכום-בפועל-במגירה (אחרי ספירה):</label>
+          <input value="₪4,347" placeholder="₪___"/>
+        </div>
+
+        <div class="cash-result ok">
+          <strong>✓ תואם.</strong> הספירה תואמת לסכום-הצפוי.
+        </div>
+
+        <details style="margin-top:14px;font-size:11px;color:var(--text-2);">
+          <summary style="cursor:pointer;">🪟 איך נראה סימון-של-סטייה</summary>
+          <div class="cash-result short" style="margin-top:8px;">
+            <strong>− ₪150 חוסר.</strong> הסכום-בפועל קטן מהצפוי. נדרש הסבר ידני.
+          </div>
+          <div class="cash-result over" style="margin-top:8px;">
+            <strong>+ ₪50 עודף.</strong> הסכום-בפועל גדול מהצפוי. נדרש הסבר ידני.
+          </div>
+        </details>
+      </div>
+    </div>
+
+  </div><!-- /main-grid -->
+
+  <!-- Print preview -->
+  <div class="panel" style="margin-top:14px;">
+    <h3>🖨 תצוגה-מוקדמת של הדף-המודפס (לסגירת-יום)</h3>
+    <div style="font-size:11.5px;color:var(--text-2);margin-bottom:10px;">
+      הצוות מסמן ✓ בכל שורה אחרי השוואה למקור (Linet / Gama / מגירה). שורת-מזומן בולטת בסוף — שם הצוות עוטף את המזומן בדף ומעביר למפקיד.
+    </div>
+
+    <div class="print-preview">
+      <h4>אופטיקת פריזמה — סגירת יום · 8.5.2026</h4>
+
+      <div class="line section">
+        <span></span>
+        <span>📟 Linet · 28 עסקאות</span>
+        <span style="text-align:start;">סכום</span>
+        <span style="text-align:start;">סימון ✓</span>
+      </div>
+      <div class="line">
+        <span><span class="check-box"></span></span>
+        <span>💳 אשראי · 15 עסקאות</span>
+        <span style="font-weight:500;">₪19,500</span>
+        <span></span>
+      </div>
+      <div class="line">
+        <span><span class="check-box"></span></span>
+        <span>💵 מזומן · 8 עסקאות</span>
+        <span style="font-weight:500;">₪3,347</span>
+        <span></span>
+      </div>
+      <div class="line">
+        <span><span class="check-box"></span></span>
+        <span>📱 ביט · 1 עסקה</span>
+        <span style="font-weight:500;">₪700</span>
+        <span></span>
+      </div>
+      <div class="line">
+        <span><span class="check-box"></span></span>
+        <span>🏦 העברה · 1 עסקה</span>
+        <span style="font-weight:500;">₪2,000</span>
+        <span></span>
+      </div>
+      <div class="line">
+        <span><span class="check-box"></span></span>
+        <span>📄 צ'קים-נפרעו · 3 צ'קים</span>
+        <span style="font-weight:500;">₪4,300</span>
+        <span></span>
+      </div>
+      <div class="line" style="font-weight:600;">
+        <span></span>
+        <span>סה"כ Linet</span>
+        <span style="font-weight:700;">₪29,847</span>
+        <span></span>
+      </div>
+
+      <div class="line section" style="margin-top:14px;">
+        <span></span>
+        <span>📟 Gama Pay · 3 עסקאות</span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="line">
+        <span><span class="check-box"></span></span>
+        <span>💳 אשראי · 2 עסקאות</span>
+        <span style="font-weight:500;">₪2,200</span>
+        <span></span>
+      </div>
+      <div class="line">
+        <span><span class="check-box"></span></span>
+        <span>💵 מזומן · 1 עסקה</span>
+        <span style="font-weight:500;">₪500</span>
+        <span></span>
+      </div>
+      <div class="line" style="font-weight:600;">
+        <span></span>
+        <span>סה"כ Gama Pay</span>
+        <span style="font-weight:700;">₪2,700</span>
+        <span></span>
+      </div>
+
+      <div class="cash-line">
+        <div style="display:flex;justify-content:space-between;">
+          <span>💵 סה"כ-מזומן (Linet+Gama)</span>
+          <span style="font-weight:600;">₪3,847</span>
+        </div>
+        <div style="margin-top:6px;font-size:11px;">
+          <span class="check-box"></span> ספור · עוטף בדף · מעביר למפקיד · &nbsp;<span class="check-box"></span> אישר-מפקיד &nbsp;
+          <span style="float:left;">סה"כ-במגירה: ____________</span>
+        </div>
+      </div>
+
+      <div class="line section" style="margin-top:14px;">
+        <span></span>
+        <span>סה"כ יום (כל הערוצים)</span>
+        <span style="font-weight:700;font-size:14px;">₪32,547</span>
+        <span></span>
+      </div>
+
+      <div class="signature">
+        <div class="sig">
+          חתימת אחראי-משמרת:
+          <div class="line-sig"></div>
+          <div style="margin-top:4px;font-size:10.5px;">תאריך: ___________</div>
+        </div>
+        <div class="sig">
+          חתימת מקבל-מזומן:
+          <div class="line-sig"></div>
+          <div style="margin-top:4px;font-size:10.5px;">תאריך: ___________</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="annotations">
+    <h2>החלטות שמופיעות במסך הזה</h2>
+    <ol>
+      <li><strong>ההשוואה היא הקלדה-ידנית, לא API.</strong> Linet לא חושף API פתוח. Gama יש לו, אבל לעקביות אחראי-המשמרת מקליד את שניהם. בעתיד, אם API ייפתח — שדות-הקלט הופכים readonly עם מקור-API. אותו מסך, אותם שדות.</li>
+      <li><strong>בלוק-נפרד לכל ערוץ-סליקה.</strong> Linet בלוק-אחד, Gama Pay בלוק-נפרד. כל בלוק עם 5 קטגוריות (אשראי/מזומן/ביט/העברה/צ'קים-נפרעו). זה המבנה ש-Daniel ביקש: "בלינט יהיה 10 אלף באשראי ועוד 5 אלף במזומן, ובגמא יהיה 5 אלף באשראי ועוד 3 אלף מזומן".</li>
+      <li><strong>שורה אדומה בפער.</strong> ברגע שהקופאי מקליד מספר שלא תואם ל-Optic Up — השורה הופכת ל-rgb-אדום + delta-קוראלי + סטטוס "⚠ פער". העלת-תשומת-לב מיידית.</li>
+      <li><strong>סיכום-ערוץ בתחתית כל בלוק.</strong> שורת-סגול עם סה"כ Optic Up + סה"כ בקופה + פער. אם הפער ₪0 — הבלוק תואם. אם לא — בלוק אדום.</li>
+      <li><strong>הוסר "עסקאות בהמתנה".</strong> זה היה בלבול שלי — סוף-יום מודד רישומים, לא נוחתות-בנק. T+1 של Linet שייך לדוח-בנק, לא לסוף-יום-קופה.</li>
+      <li><strong>ספירת-מזומנים-במגירה משתמשת בסכום-הקופה.</strong> סה"כ-צפוי במגירה = פתיחת-יום + מזומן-ב-Linet + מזומן-ב-Gama − הוצאות-מזומן. אם Gama רושם פחות מ-Optic Up (כמו בדוגמה: -₪50), זה ישפיע גם על המזומן-הצפוי.</li>
+      <li><strong>4 KPIs בראש כוללים פילוח פר-ערוץ.</strong> סה"כ-יומי + סכום ב-Linet + סכום ב-Gama + ספירה "קופות תאמו". מהיר לראות אם יש בעיה.</li>
+      <li><strong>הדפסה משקפת את המבנה הדו-ערוצי.</strong> בלוק לכל ערוץ עם תיבות-וי לכל קטגוריה, סיכום-ערוץ, ואז שורת-מזומן-מסוכמת בולטת. סוף — סה"כ-יום ושני מקומות-לחתימה.</li>
+      <li><strong>פילוח לפי אופטומטריסט וקופ"ח</strong> נשארים מ-v1. שניהם מתחת לבלוקי-הערוצים. לא משנים בין ערוצים — אותו אופטומטריסט יכול לעבוד גם ב-Linet וגם ב-Gama.</li>
+      <li><strong>"סגור יום" = lock.</strong> אחרי לחיצה — אי-אפשר לערוך תשלום-של-היום בלי הרשאת-מנהל. snapshot נשמר.</li>
+    </ol>
+
+    <h2 style="margin-top:18px;">מה לא בסקיצה הזאת ויידון בנפרד</h2>
+    <ol>
+      <li><strong>מסך-Settlement-Pipeline (T+1).</strong> מתי-באמת-נכנס-כסף-לבנק. שייך למודול-Finance עתידי, לא ל-M8.</li>
+      <li><strong>דוחות-תקופתיים</strong> (שבועי/חודשי/רבעוני). M11 (Reports), לא M8.</li>
+      <li><strong>חישוב-עמלות-לאופטומטריסטים.</strong> פר-משמרת זה כן כאן, החישוב-החודשי ב-M11.</li>
+      <li><strong>חישובי-החזר-קופ"ח אוטומטיים.</strong> סכומים גולמיים כאן. החישוב-הסופי ב-M11.</li>
+      <li><strong>מצב-יום-עבר (snapshot).</strong> יום שנסגר → להציג היסטורית. iteration הבא.</li>
+      <li><strong>סטיה-עם-הסבר.</strong> טקסט-הסבר לפערים. flow מלא של "מי-מאשר-סטייה" בסיבוב-נוסף.</li>
+      <li><strong>הוצאות-מזומן-באמצע-יום.</strong> "₪0" כעת. flow-של-הוצאה-קטנה בעתיד.</li>
+    </ol>
+  </div>
+
+</div>
+
+</body>
+</html>
