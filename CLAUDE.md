@@ -18,9 +18,9 @@
 - `MASTER_ROADMAP.md` — cross-module roadmap + decisions log
 - `TECH_DEBT.md` — living debt register
 - `docs/` — canonical reference files (GLOBAL_MAP, GLOBAL_SCHEMA, FILE_STRUCTURE, CONVENTIONS, etc.)
-- `modules/` — per-module documentation + per-feature implementation
-- `[retired-2026-05-09:LAUNCH_PLAN_DRAFT]/` (or its successor name) — pre-LIVE planning artifacts
-- `_archive/` — single archive vault (see Category 3)
+- `modules/` — per-module documentation + per-feature implementation (per the **One Home Per Module** rule, every module — Brief / SPECs / Code / Production — lives here regardless of life stage; established by `MODULES_HOME_UNIFICATION` SPEC, 2026-05-09)
+- `roles/` — operational role artifacts (Campaign Overseer, Site Overseer, etc.). Roles are NOT modules; each subfolder is one role with its own handoff + decisions log + learnings.
+- `_archive/` — single archive vault (see also: §10 archival policy)
 - `migrations/`, `scripts/`, `shared/`, `js/`, `css/`, `supabase/`, `tests/` — code/infra dirs
 - `campaigns/` — Campaign Overseer working area
 - `watcher-deploy/` — Watcher service installer (Windows desktop only)
