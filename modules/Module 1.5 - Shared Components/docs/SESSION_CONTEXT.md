@@ -1,6 +1,22 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
 ## Current Status
+- **Phase:** 6 complete ✅. Module 1.5 DONE (including UI facelift). MAINTENANCE phase.
+- **Branch:** develop
+- **Last updated:** 2026-05-09 (overnight hygiene sweep — Sentinel M-7 stale-doc refresh)
+
+## 2026-05-09 — Status refresh
+
+Module 1.5 has remained stable since 2026-03-19. Maintenance touches landed via cross-cutting SPECs (not M1.5-internal):
+- `M1_5_SAAS_FORMAT_MONEY` (overnight hybrid, ~late-April) — `formatMoney()` helper added to `js/shared.js`; consumers in M1, M3 Studio adopted it. Module 1.5's `shared/js/table-builder.js currency` renderer now soft-deps on `formatMoney` (added 2026-05-09 by `OVERNIGHT_HYGIENE_SWEEP_2026_05_09` Item 4 — Sentinel M-6).
+- `STRUCTURE_PROTECTIONS_SPEC` (2026-05-09) — added pre-commit `check-root-discipline.mjs` for repo-level discipline; no M1.5 internals touched.
+- `MODULES_HOME_UNIFICATION_SPEC` (2026-05-09) — moved in-design module Briefs (M5–M15) into `modules/Module N - Name/architecture-brief/`. M1.5 is in `modules/`; was not affected.
+
+No Module 1.5–internal SPEC has shipped since Phase 6 closed. The shared-components platform (Modal, Toast, TableBuilder, DB wrapper, ActivityLog, PIN modal, theme-loader) is feature-complete relative to current consumer needs. Future M1.5 work is reactive: when M5–M15 SPECs need a new shared component, they request it through Module 1.5.
+
+---
+
+## Original Status (pre-2026-05-09)
 - **Phase:** 6 complete ✅. Module 1.5 DONE (including UI facelift).
 - **Branch:** develop
 - **Last session:** 2026-03-19
