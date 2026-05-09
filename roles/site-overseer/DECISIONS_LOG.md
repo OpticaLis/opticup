@@ -24,6 +24,21 @@
 
 ## Entries
 
+### 2026-05-09 — getbaseurl-canonical-www (REC-SITE-018)
+
+- **Context:** REC-SITE-018 — `getBaseUrl(tenant, request)` returns apex (no www) for any tenant whose `storefront_config.custom_domain` is set without `www`. Source: M3_SITEMAP_CONSOLIDATION FINDINGS.md M3-DATA-04. Severity LOW because `astro.config.mjs site:` was already canonical-www so the sitemap was already correct, but every other consumer of `getBaseUrl` (OG meta tags, Schema.org JSON-LD canonical URLs, Twitter cards, image proxy URLs in OG, hreflang alternates, etc.) inherits the apex value from the DB.
+- **Question (asked offline, "אתה האחראי על האתר. מה עוד יש לעשות?"):** Daniel directed Site Overseer to execute the trivial 1-SQL-UPDATE path now and continue to REC-SITE-017 next.
+- **Decision:** Daniel-authorized Level 2 SQL UPDATE for prizma tenant. No code refactor of `getBaseUrl`. Other tenants (e.g. demo) keep their current value; rule only applies to prizma now.
+- **Rationale:** Single-row UPDATE is reversible in <30s if anything regressed; full code refactor would be 30+ min and require deploy + re-test. Going with the simpler path first; if other tenants ever need www-canonical, that's a SaaS-readiness SPEC for later.
+- **Operational action:**
+  - Pre-flight SELECT confirmed current value: `prizma-optic.co.il`.
+  - Executed: `UPDATE storefront_config SET custom_domain='www.prizma-optic.co.il' WHERE tenant_id=(SELECT id FROM tenants WHERE slug='prizma');`
+  - Live re-fetch on production via `curl`: `/` returns 200, `/brands/` returns 200, `/branches/ashkelon/` returns 200. All `og:url`, `canonical`, `og:image`, `twitter:image`, `hreflang` meta tags now serve `https://www.prizma-optic.co.il/...` — zero apex leaks anywhere on the probed pages.
+  - Updated HANDOFF: REC-SITE-018 → (closed). Added decisions row.
+- **Cross-refs:** REC-SITE-018 (this), `modules/Module 3 - Storefront/docs/specs/M3_SITEMAP_CONSOLIDATION/FINDINGS.md` M3-DATA-04, `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` table row REC-SITE-018.
+
+---
+
 ### 2026-05-09 — sitemap-consolidation (M3_SITEMAP_CONSOLIDATION)
 
 - **Context:** REC-SITE-011 — two competing sitemaps (sitemap-0.xml 28 URLs all duplicated by sitemap-dynamic.xml 362 URLs), both apex-domain (307→www waste), branches missing. Step 0 also surfaced a pre-existing malformed-URL bug (`https://prizma-optic.co.ilsupersale` — slug missing leading slash).

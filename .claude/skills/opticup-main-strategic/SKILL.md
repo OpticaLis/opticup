@@ -467,6 +467,34 @@ When designing a feature that lives inside a larger context (a tab inside a cust
 
 **The rule:** "What is the smallest meaningful unit that conveys this change?" That's the unit you sketch. Provide a one-line orientation note ("📍 Lives inside <host>") if location ambiguity could exist; otherwise let the unit speak for itself.
 
+### P31 — Rules need 3 enforcement layers, not just documentation. Culture decays; infrastructure stands.
+
+**Promoted to skill 2026-05-09 (STRUCTURE_PROTECTIONS close).** Originated from Daniel directive: "I want infrastructure, not culture. Culture decays. Infrastructure stands."
+
+When establishing any project rule (Root Discipline, Module Close Ceremony, Iron Rules, etc.), do NOT stop at "documented in CLAUDE.md." A doc-only rule erodes session by session. The proven enforcement pattern is **three independent layers**:
+
+**Layer 1 — Prevention (pre-commit):** A hook that physically refuses to allow a commit that violates the rule. The user (or executor) cannot bypass without explicit `--no-verify`. Examples: `verify.mjs --staged` blocks Iron Rule 14/15/18 violations; `check-root-discipline.mjs` blocks new disallowed root files.
+
+**Layer 2 — Detection (periodic audit):** A scheduled scan that catches drift even when prevention is bypassed (intentionally or not). Reports go somewhere visible (`GUARDIAN_ALERTS.md`). Examples: Sentinel's 10 missions; daily Mission 10 for structure compliance.
+
+**Layer 3 — Reminder (session-start):** When a relevant skill or session bootstraps, it self-audits the rule state and surfaces backlog. Examples: opticup-main-strategic Step 4.5 (Module Close Ceremony backlog audit at every Cowork session start).
+
+**The pattern's strength is independence.** Each layer can fail without the others failing too. Hook bypassed? Audit catches within 24h. Audit missed a class? Bootstrap reminds at next session. Bootstrap skipped? The next hook attempt blocks.
+
+**The cost** is real but bounded: one-time SPEC of ~45-75 minutes per rule. The savings are unbounded — every future session inherits the protection without needing to remember the rule.
+
+**The anti-pattern to avoid:** writing a rule into CLAUDE.md and considering the work done. That is "culture not infrastructure" — and Daniel's directive is explicit on this. Every time I write a new rule, ask: "what's Layer 1 / Layer 2 / Layer 3 for this rule?" If any layer is "not yet built" → it's a follow-up SPEC, not optional polish.
+
+**Existing rules with full 3-layer enforcement:**
+- Root Discipline Rule (CLAUDE.md §0.5) — Layer 1 + 2 + 3 ✅ (as of 2026-05-09)
+- Iron Rules 14/15/18 — Layer 1 only via `verify.mjs` (Layers 2+3 are partial via Sentinel Mission 1).
+- Iron Rule 31 (integrity gate) — Layer 1 + Layer 1.5 (regression test) ✅
+
+**Existing rules without full 3-layer enforcement (candidates for future SPECs):**
+- Iron Rule 21 (No Orphans, No Duplicates) — Layer 1 only (`rule-21-orphans.mjs`)
+- Iron Rule 23 (No Secrets) — Layer 1 only
+- Module Close Ceremony — Layer 3 only (Step 4.5); no Layer 1 or 2 yet
+
 ### P29 — When a SPEC includes a "sweep references" commit, pre-flight MUST count actual reference patterns.
 
 **Promoted to skill 2026-05-09 (MODULES_HOME_UNIFICATION close).** Direct extension of P28.

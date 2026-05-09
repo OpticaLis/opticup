@@ -31,6 +31,9 @@ Format for full entries (in `decisions/<MODULE>.md`): situation → my recommend
 | 8 | 2026-05-09 | Daniel question: why are in-design modules in `__LAUNCH_PLAN_DRAFT__/` when built modules are in `modules/`? | Author-blindspot — historical accident I never noticed. Fixed by MODULES_HOME_UNIFICATION SPEC. **Pattern: Daniel asks structural questions from a clean-thinker perspective; my job is to listen, not defend the status quo.** |
 | 9 | 2026-05-09 | MODULES_HOME_UNIFICATION SPEC executed (12 commits) | One Home Per Module rule established. `__LAUNCH_PLAN_DRAFT__/` retired entirely. 8 in-design module Briefs moved to `modules/Module N - Name/architecture-brief/`. New `roles/` at repo root for operational personas. 99 files updated for path-reference rewriting. |
 | 10 | 2026-05-09 | Module Close Ceremony for MODULES_HOME_UNIFICATION | Lessons P29 (sweep-references pre-flight) + P30 ([retired-YYYY-MM-DD:NAME] marker for closed-SPEC narrative refs) promoted to SKILL.md. F1/F2/F3 also documented for `opticup-executor` SKILL update (separate session). |
+| 11 | 2026-05-09 | Daniel directive: "I want infrastructure, not culture. Culture decays." | Triggered STRUCTURE_PROTECTIONS SPEC. Pattern: when documenting a rule, ask "where's the enforcement?" If only a doc, it will erode. |
+| 12 | 2026-05-09 | STRUCTURE_PROTECTIONS SPEC executed (10 commits) | 3 protection layers active: pre-commit hook (check-root-discipline) + Sentinel Mission 10 (daily audit) + main-strategic Step 4.5 (bootstrap auto-check). Smoke-tested: a FORBIDDEN_TEST.md was correctly blocked. |
+| 13 | 2026-05-09 | Module Close Ceremony for STRUCTURE_PROTECTIONS | Lesson P31 (3-layer enforcement) promoted to SKILL.md. F1 (auto-load vs spawn) + F2 (.gitignore line 34 — 3rd occurrence, MUST FIX next session) documented. |
 
 ---
 
@@ -162,6 +165,7 @@ When a module's Architecture Brief is sealed:
 - **M12 — 2026-05-09** — promoted P24, P25, P26 to SKILL.md.
 - **Project Structure Cleanup — 2026-05-09** — promoted P27 (sketch-the-feature) + P28 (executor-pre-flight) to SKILL.md.
 - **MODULES_HOME_UNIFICATION — 2026-05-09** — promoted P29 (sweep-references pre-flight) + P30 (retired-marker policy) to SKILL.md.
+- **STRUCTURE_PROTECTIONS — 2026-05-09** — promoted P31 (3-layer enforcement: prevent + detect + remind) to SKILL.md.
 
 **Modules pending Module Close Ceremony retroactively** (skipped at the time):
 - M5, M6, M7, M8, M11 — these closed without ceremony. Catch-up sweep done 2026-05-09 (this index).
