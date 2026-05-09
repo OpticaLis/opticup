@@ -25,6 +25,9 @@ Format for full entries (in `decisions/<MODULE>.md`): situation → my recommend
 | 2 | 2026-05-06 | Verbose audit summary | Bullet-list overload in chat; learned to compress to 3-line P22 format. |
 | 3 | 2026-05-06 | STRICT 3-line format (P22) | Replaced P20 with hard-coded chat format rules. |
 | 4 | 2026-05-06 | Daniel does not want technical detail in chat | Confirmed: tables/fields/RPC names = file content, NOT chat content. |
+| 5 | 2026-05-09 | Project Structure Cleanup SPEC executed (11 commits) | Root Discipline Rule installed in CLAUDE.md §0.5; 4 archive locations consolidated; Module 1 duplicate resolved; per-tenant chat onboarding docs archived. |
+| 6 | 2026-05-09 | SPEC's pre-flight caught 5 author bugs | Executor's pre-flight check found 5 SPEC defects (data/+---QA--- omitted, git mv vs mv, MASTER_LIVE_PLAN modification at risk, Pre-SPEC commits needed, JWT in archived files). All resolved inline. **Author was Cowork; executor was Claude Code with full repo state visibility.** |
+| 7 | 2026-05-09 | Module Close Ceremony performed for Project Structure Cleanup | Lessons P27 (sketch-the-feature) + P28 (executor pre-flight beats author intent) promoted to SKILL.md. |
 
 ---
 
@@ -133,8 +136,9 @@ When a pattern surfaces in 3 or more independent decisions across modules, forma
 | **Don't flow with everything Daniel says** | M7 (Frame Reservation), M8 (settlement mode mid-correction), M12 (channel admin split correction) | ✅ 3 strikes — promoted to **P24** |
 | **Verify existing vendor before recommending switch** | M8 (Linet vs Z Credit), M12 (SMS vs Inforu), M12 (Email vs Resend) | ✅ 3 strikes — promoted to **P25** |
 | **Hybrid model > pure flexibility OR pure control** | M5 (active marketing consent), M8 (settlement mode tenant-config), M12 (channel ownership) | ✅ 3 strikes — promoted to **P26** |
-| **Sketch the feature, not the host screen** | M5 (customer card), M12 (customer history mockup) | ⚠️ 2 strikes — watch for 3rd in M13 |
+| **Sketch the feature, not the host screen** | M5 (customer card), M12 (customer history mockup), Project Cleanup (no UI but same lesson — write the change, not the entire host) | ✅ 3 strikes — promoted to **P27** |
 | **Lock infrastructure, defer UX** | M5 (consent), M12 (consent UX) | ⚠️ 2 strikes — watch for 3rd in M13 |
+| **Executor pre-flight catches author blindspots** | Project Cleanup SPEC (5 author bugs caught by executor pre-flight) | ✅ 1 strike but transformational — promoted to **P28** |
 | **Research subagents are 6-12 months stale** | M12 (WhatsApp Coexistence not in initial research) | 🆕 1 strike — watch |
 | **Read-only mode promise for Chrome MCP** | M12 (Meta Business audit) | 🆕 1 strike — watch |
 | **Make = one-way, Edge Function = two-way** | M12 (WhatsApp routing decision) | 🆕 1 strike — watch |
@@ -153,6 +157,7 @@ When a module's Architecture Brief is sealed:
 
 **Last Module Close ceremonies performed:**
 - **M12 — 2026-05-09** — promoted P24, P25, P26 to SKILL.md.
+- **Project Structure Cleanup — 2026-05-09** — promoted P27 (sketch-the-feature) + P28 (executor-pre-flight) to SKILL.md.
 
 **Modules pending Module Close Ceremony retroactively** (skipped at the time):
 - M5, M6, M7, M8, M11 — these closed without ceremony. Catch-up sweep done 2026-05-09 (this index).

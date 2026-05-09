@@ -445,6 +445,50 @@ When designing any tenant-facing config decision, the choice is rarely "fully se
 **Default question to ask when facing a config decision:**
 > "Could platform-default + tenant-override solve this? If yes — that's almost certainly the answer."
 
+### P27 — Sketch the feature, not the host screen.
+
+**Promoted to skill 2026-05-09 (Project Structure Cleanup close).** 3 strikes from M5 + M12 + Project Cleanup SPEC.
+
+When designing a feature that lives inside a larger context (a tab inside a customer card, a row inside a table, a section inside a page, a SPEC change inside a larger document), the artifact you produce should show **only the change in context**, not the entire host.
+
+**Examples of getting this right:**
+- M12 customer-card "תקשורת" tab sketch — show only the new tab, not all 5 tabs of M5.
+- Project Cleanup SPEC — write only the changes, not the entire CLAUDE.md.
+- A SPEC for renaming a function — show the diff, not the whole file.
+
+**Examples of getting this wrong:**
+- Showing a full M5 customer card sketch "with the new M12 tab highlighted" — clutters the discussion with 5 unrelated tabs.
+- A SPEC that includes the full target file content — invites mid-execution drift on unrelated lines.
+
+**Why this matters:** the user (Daniel) has limited cognitive budget per artifact. Every irrelevant element is friction. Showing the host context with one feature highlighted forces the user to mentally subtract everything else; showing only the feature in context lets them focus.
+
+**The rule:** "What is the smallest meaningful unit that conveys this change?" That's the unit you sketch. Provide a one-line orientation note ("📍 Lives inside <host>") if location ambiguity could exist; otherwise let the unit speak for itself.
+
+### P28 — Executor pre-flight catches author blindspots. Trust it, don't bypass it.
+
+**Promoted to skill 2026-05-09 (Project Structure Cleanup close).** Single instance but transformational — the Project Cleanup SPEC executor caught **5 author bugs** in pre-flight that would have caused real damage if the SPEC ran as written.
+
+**The 5 bugs the executor caught:**
+1. SPEC §7 Commit 2 listed only 2 of 4 tracked-but-gitignored dirs (missed `data/`, `---QA---/`).
+2. SPEC §7 Commit 4 used `git mv` for an untracked source file — would have failed.
+3. Pre-existing 55-line uncommitted modification in `MASTER_LIVE_PLAN.md` would have been lost by SPEC's `git rm`.
+4. ~20 untracked SPEC files from prior Module Strategist sessions needed staging before SPEC could run cleanly.
+5. JWT pattern in archived prompt files would trigger Rule 23 pre-commit block.
+
+**Root cause of all 5 bugs:** I authored the SPEC in Cowork without **live repo state visibility**. Cowork has read-only access to a snapshot; Claude Code has the actual working tree. There are classes of facts Cowork cannot know without explicitly probing.
+
+**The pattern that emerges:**
+- **SPEC author (Cowork or any planner)** captures intent + structural design.
+- **SPEC executor (Claude Code)** has live state — and MUST do an explicit pre-flight pass against actual files before any change.
+- **Pre-flight is non-negotiable.** Even when the SPEC looks "obvious," run grep + ls + check actual file contents + check git status against SPEC assumptions. If any divergence — STOP and report.
+
+**What this means for me as Main Strategic when authoring SPECs:**
+1. **Add a Pre-Flight section to every SPEC** that lists the explicit checks the executor must run before Commit 1.
+2. **Acknowledge in §2 Background that Cowork's view may be stale** — invite the executor to challenge any assumption that doesn't match live state.
+3. **Don't get defensive when executor reports bugs in my SPECs.** Each catch is a free win — the alternative is a corrupted commit that's expensive to revert.
+
+**The cultural rule:** "the executor that catches my bug saves me hours of recovery work." Treat every executor pre-flight finding as a positive signal, not a delay.
+
 ### P18 — Audit is the field-list. Brief is the structure. Don't relitigate fields.
 Daniel directive 2026-05-06 (with OpticPlus customer-card screenshot): "אני לא מבין למה אתה שואל את כל השאלות האלה?! זה כרטיס הלקוח בתוכנת אקסס הבסיסי". Architecture Brief is NOT the place to ask field-by-field if a column should exist. Default for all M5–M14 entities: everything in the OpticPlus equivalent screen carries over unless I have a specific reason to change it.
 
