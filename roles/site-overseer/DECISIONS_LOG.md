@@ -24,6 +24,42 @@
 
 ## Entries
 
+### 2026-05-09 — rec014-orphan-cleanup (M3_REC014_ORPHAN_CLEANUP / REC-SITE-014)
+
+- **Context:** REC-SITE-014 — three independent cosmetic-cleanup items left over from earlier sessions: (A) 3 archived `/test-shortcodes/` rows in `storefront_pages` for prizma; (B) `_deprecated/` folder in storefront repo (possibly already removed by `a4723b5`); (C) 3 orphan `poweredBy` i18n keys (he/en/ru) — leftover WP-era footer string no longer rendered. All LOW severity, none customer-blocking.
+- **Question (asked offline):** Daniel directed Site Overseer to author SPEC and dispatch.
+- **Decision:** Foreman authored SPEC using all 6 freshly-applied SPEC_TEMPLATE improvements (commit `74922cd`, applied 2026-05-09): subset-relationships marked "not applicable" in §7, build-side-effect file expectations declared for `tenant-fallback-map.json` in §8 ("NOT touched: restore before staging"), browser-readiness skip-line in §10 ("SPEC's QA is HTTP/SQL/script-based — no browser required"). Three execution steps gated on per-item Step 0 / Step 0b pre-flight; up to 3 commits (1 ERP, 2 storefront); SPEC §6 mandated SELECT→JSON-backup→DELETE for item A. First SPEC to exercise the full updated SPEC_TEMPLATE.
+- **Rationale:** Hygiene + greppability; eliminate references that confuse future readers ("is this live?"). The SPEC's 30-min cosmetic scope justified Daniel-pre-authorized DELETE on archived test data (Level 2 SQL, framed as authorized in §4) without needing mid-execution re-confirmation.
+- **Operational action:**
+  - Step 0 SQL: confirmed exactly 3 archived rows (en/he/ru), all with `status='archived'` and `is_deleted=true`. Backup JSON written to SPEC folder.
+  - Step 0b storefront pre-flight: `_deprecated/` already gone (Item B → SKIP); `grep -rn poweredBy src/` returned matches only inside the 3 i18n JSON files themselves (Item C → safe to delete).
+  - Item A: DELETE executed via Supabase MCP — 3 rows deleted, post-fresh-SELECT count = 0 (SC #1 met). Commit `e84acd2` in ERP repo with backup JSON.
+  - Item C: 3 i18n JSON edits removing `"poweredBy": "..."` line + trailing-comma adjustment on adjacent `"rights"` key. `npm run build` PASS (5.98s); image-proxy guard clean (9 dist files, 0 violations). `tenant-fallback-map.json` build-drift restored per SPEC §8 guidance. Commit `2e2dd1b` in storefront `develop`.
+  - Daniel pending: open PR for storefront `2e2dd1b` and merge to main. ERP commit needs no PR (DB + SPEC docs only).
+  - Self-improvement loop continued: this SPEC's smooth execution (no AskUserQuestion fired, no §4-vs-§7 tension to resolve) validates that the 6 SPEC_TEMPLATE/skill improvements applied at `74922cd` are working as designed.
+- **Cross-refs:** REC-SITE-014 (closed in HANDOFF), `modules/Module 3 - Storefront/docs/specs/M3_REC014_ORPHAN_CLEANUP/` (SPEC + backup + EXECUTION_REPORT + FINDINGS), commit `74922cd` (skill improvements applied earlier same day), commit `a4723b5` (storefront, 2026-05-07, retroactively credited with closing item B).
+
+---
+
+### 2026-05-09 — sitemap-brand-404-cleanup (M3_SITEMAP_BRAND_404_CLEANUP / REC-SITE-017)
+
+- **Context:** REC-SITE-017 — `sitemap-dynamic.xml` brand block emitted 155 `/brands/{slug}/` URLs (every row of `v_storefront_brands`) but only ~45 had a working detail page. The 110 unbacked URLs returned 404, wasting Google crawl budget. Source: M3_SITEMAP_CONSOLIDATION/FINDINGS.md M3-DATA-01.
+- **Question (asked offline, "אתה האחראי על האתר. מה עוד יש לעשות?"):** Daniel directed Site Overseer to author SPEC for REC-SITE-017 (next in queue after 018), then dispatch.
+- **Decision:** Foreman authored SPEC under `modules/Module 3 - Storefront/docs/specs/M3_SITEMAP_BRAND_404_CLEANUP/`. Filter predicate: `brand_page_enabled = true AND product_count > 0` (yields 45 — strict subset of route's 47, intentional under-emit). Two-file change (sitemap-dynamic.xml.ts + verify-sitemap.mjs), zero DB/view/robots/astro.config changes. Cross-repo: code in `opticup-storefront`, SPEC docs in `opticup`.
+- **Rationale:** Mirror the predicate already used by 3 peer surfaces (`studio-brands.js`, `studio-translations.js` post-M3_STUDIO_TRANSLATIONS_BRAND_FILTER, public `lib/brands.ts`). Route's filter is slightly looser (47) — the 2 brands difference is intentional out-of-scope per SPEC §7 (Daniel can flip `brand_page_enabled` in Studio if he wants those 2 published).
+- **Operational action:**
+  - Step 0 SQL pre-flight: 155 view rows → 45 with both filters (measured live).
+  - Live HTTP probe pre-fix: 155 brand URLs in sitemap; sample 21 known-bad slugs from M3-DATA-01 → all 404.
+  - SPEC §3 ships with 9 measurable SCs + SQL-equivalent for SC #1 inline (per A1 from M3_STUDIO_TRANSLATIONS_BRAND_FILTER review — first SPEC to use the new convention).
+  - Executor (Claude Code on Windows desktop): 2 commits on storefront `develop` (`20eece1` + `4d0413f`); resolved §4-vs-§7 tension correctly (intent over guardrail); restored `tenant-fallback-map.json` build-side-effect drift; logged 2 findings.
+  - Daniel merged storefront PR + Vercel deployed.
+  - Foreman post-deploy verification: 45 unique brand slugs (exact SC #1), 15/15 random-sample 200, total `<loc>` 254 (in band), `verify-sitemap.mjs` 10/10 PASS.
+  - Bonus: general-sample probe (verify check #8) returned 30/30 200 — M3_SITEMAP_CONSOLIDATION leftover "pre-existing data-quality issue" was entirely brand-block-driven, now fully closed.
+  - 2 findings dispositioned to TECH_DEBT: M3-DEBT-12 (tenant-fallback-map.json drift), M3-OBS-01 (verify check #8 stale warn). Both LOW priority.
+- **Cross-refs:** REC-SITE-017 (closed in HANDOFF), `modules/Module 3 - Storefront/docs/specs/M3_SITEMAP_BRAND_404_CLEANUP/` (SPEC + EXECUTION_REPORT + FINDINGS + FOREMAN_REVIEW), `M3_SITEMAP_CONSOLIDATION/FINDINGS.md` M3-DATA-01 (now resolved), `TECH_DEBT.md` (2 new entries).
+
+---
+
 ### 2026-05-09 — getbaseurl-canonical-www (REC-SITE-018)
 
 - **Context:** REC-SITE-018 — `getBaseUrl(tenant, request)` returns apex (no www) for any tenant whose `storefront_config.custom_domain` is set without `www`. Source: M3_SITEMAP_CONSOLIDATION FINDINGS.md M3-DATA-04. Severity LOW because `astro.config.mjs site:` was already canonical-www so the sitemap was already correct, but every other consumer of `getBaseUrl` (OG meta tags, Schema.org JSON-LD canonical URLs, Twitter cards, image proxy URLs in OG, hreflang alternates, etc.) inherits the apex value from the DB.
