@@ -57,10 +57,11 @@ Auto-memory file `project_supervisor_system.md` (in user's auto-memory) also poi
 
 Do these, in order:
 
-1. **Read** `MASTER_ROADMAP.md` (repo root) — your single-source-of-truth for cross-module roadmap + decisions.
-2. **Read** `references/DECISIONS_LOG.md` — INDEX of decisions (lightweight, ~150 lines). Module-specific detail in `references/decisions/<MODULE>.md` — load on demand only when working in that module.
-3. **Skim** `CLAUDE.md` §4-§7 — Iron Rules + Authority Matrix (NOT the full constitution).
-4. **Skim** auto-memory `MEMORY.md` — relevant project state entries.
+1. **Read** `OPEN_TASKS.md` (repo root) — single source of truth for "what's open right now." When user asks "מה פתוח?" / "what are the open tasks?" — this file is the answer. If a question like "ממשיכים מאיפה?" arrives, the "Active" section is your answer. **Do not guess from MASTER_ROADMAP / DECISIONS_LOG / Sentinel — they show different views; OPEN_TASKS is the canonical merge.**
+2. **Read** `MASTER_ROADMAP.md` (repo root) — cross-module roadmap + post-cutover state + Architecture Briefs status (§2.5).
+3. **Read** `references/DECISIONS_LOG.md` — INDEX of decisions (lightweight, ~150 lines). Module-specific detail in `references/decisions/<MODULE>.md` — load on demand only when working in that module.
+4. **Skim** `CLAUDE.md` §4-§7 — Iron Rules + Authority Matrix (NOT the full constitution).
+4.1. **Skim** auto-memory `MEMORY.md` — relevant project state entries.
 4.5. **Module Close Ceremony self-audit** (added 2026-05-09 by `STRUCTURE_PROTECTIONS` SPEC) — while reading `references/DECISIONS_LOG.md` in step 2, check the "Pattern Recurrence Tracker" + "Module Close Ceremonies performed" sections (or equivalent). For every module with a sealed Brief (per the index tables) that has NO recorded close ceremony → flag in the bootstrap acknowledgment line.
    - **If clean** → standard ack: "Main Strategic Online. קראתי את ה-Master Roadmap. המוקד: [module/phase]. סטטוס: [one line]. ממתין להוראה."
    - **If backlog detected** → ack with warning: "Main Strategic Online. ⚠️ [N] modules with sealed Brief but no ceremony — ממליץ להריץ Close Ceremony לפני עבודה חדשה. המוקד: [module/phase]. ממתין להוראה."
@@ -641,10 +642,11 @@ When a module's Architecture Brief is sealed (e.g. "M12 Brief locked"), execute 
 
 Before ending:
 
-1. Master Roadmap + DECISIONS_LOG up to date? If not, update now.
-2. Open question logged? If you're waiting on Daniel for something, write it explicitly.
-3. Hand-off ready? If next step is a module brief, write it now.
-4. Module Close Ceremony performed if a Brief was sealed in this session?
+1. **`OPEN_TASKS.md` updated?** If any task changed state (active → done, backlog → active, new task added, "completed today" needs an entry) — update + commit. Pattern: `docs(open-tasks): <what changed>`. **This is the single most important close-step — it's how the next session knows what's open.**
+2. Master Roadmap + DECISIONS_LOG up to date? If not, update now.
+3. Open question logged? If you're waiting on Daniel for something, write it explicitly in OPEN_TASKS "Active" section.
+4. Hand-off ready? If next step is a module brief, write it now and reference it from OPEN_TASKS.
+5. Module Close Ceremony performed if a Brief was sealed in this session?
 
 A clean close means the next session starts with full context, not "where were we".
 

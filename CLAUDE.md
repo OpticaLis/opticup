@@ -16,6 +16,7 @@
 
 **Category 2 — Live Sources of Truth (actively maintained, referenced by current sessions):**
 - `MASTER_ROADMAP.md` — cross-module roadmap + decisions log
+- `OPEN_TASKS.md` — current open work across all roles (read FIRST in every session — answers "what's open?" / "מה פתוח?")
 - `TECH_DEBT.md` — living debt register
 - `docs/` — canonical reference files (GLOBAL_MAP, GLOBAL_SCHEMA, FILE_STRUCTURE, CONVENTIONS, etc.)
 - `modules/` — per-module documentation + per-feature implementation (per the **One Home Per Module** rule, every module — Brief / SPECs / Code / Production — lives here regardless of life stage; established by `MODULES_HOME_UNIFICATION` SPEC, 2026-05-09)
