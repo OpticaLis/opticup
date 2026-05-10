@@ -15,7 +15,6 @@
 | # | Task | Owner role | Estimated time | Why now |
 |---|---|---|---|---|
 | 1 | **M9 (Lab/KDS) — Architecture Brief** — last remaining Brief before LIVE. Depends on third Access audit being complete. After M9 sealed → all Briefs done → Module Strategists begin SPEC authoring. | Main Strategic | ~2-3 hours | Critical-path to LIVE. Only Brief remaining. |
-| 2 | **GITIGNORE_CLEANUP follow-up** — overnight sweep Item 1 deduped `.gitignore` line 34 + added explicit local-config ignores. Verify behaviour over the next session: are `.claude/launch.json`, `.claude/settings.local.json`, etc. correctly ignored? Are new opticup-* skill files trackable WITHOUT `git add -f`? If both true → close. If not, refine. | Daniel review next session | 5 min | Item 1 of overnight sweep changed `.gitignore` semantics. One session of observation confirms the change is right. |
 
 ---
 
@@ -72,7 +71,8 @@ After M9 → Module Strategists write SPECs → Executors build → cutover.
 ## ✅ Completed recently — for context
 
 **2026-05-10:**
-- **M13 (Loyalty Club) Architecture Brief sealed** — 5 sketches, 13 locked decisions, 6 entities, 4 engines, contracts with M5/M7/M8/M11/M12/M3
+- **M13 (Loyalty Club) Architecture Brief sealed** — 5 sketches, 13 locked decisions, 6 entities, 4 engines, contracts with M5/M7/M8/M11/M12/M3 (commits 7cafa9e + 6022da2)
+- **GITIGNORE_CLEANUP follow-up CLOSED** — verified: new `decisions/M13.md` showed as `??` in git status (not silently ignored), confirming the dedupe + explicit-ignores fix from overnight sweep works as intended
 - OVERNIGHT_HYGIENE_SWEEP_2026_05_09 Module Close Ceremony complete (commit eaf4f72)
 
 **2026-05-09:**
