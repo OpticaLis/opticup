@@ -557,6 +557,161 @@ When a structural SPEC retires a directory or major file, references to that ret
 
 **The cultural rule:** "the executor that catches my bug saves me hours of recovery work." Treat every executor pre-flight finding as a positive signal, not a delay.
 
+### P32 — Anti-Legacy-Pattern Check. Don't replicate workarounds for tech limitations we don't have.
+
+**Promoted to skill 2026-05-10 (M13 Module Close).** Source: M13 D13 (family balance — Daniel raised legacy Access "manual code-passing" mechanism for family-credit redemption).
+
+When the user describes a process from a legacy system (Access, Excel, paper, old POS), classify the design choice into one of two buckets BEFORE recommending the new system replicate it:
+
+- **(a) Genuine business requirement** — the workflow exists because the business actually needs it (legal, customer-facing, revenue-protecting, compliance, etc.). The new system MUST honor it, possibly with a more modern shape.
+- **(b) Workaround for legacy tech limitation** — the workflow exists because the legacy tool couldn't do better (no concurrency, no row-locking, no audit trail, no multi-user, no API, no soft-delete, etc.). The new system MUST NOT replicate it; instead, solve the underlying problem properly.
+
+**M13 D13 was textbook:** Daniel proposed replicating Access's "head-of-family hands a code to a family member who then redeems credit at checkout" pattern. Real reason for that workflow in Access: no atomic balance updates, no row-locking, no audit trail per actor. In OpticUp we have all three (FOR UPDATE locks, transaction audit table, RPCs). My counter: shared household pool + two-tag traceability (source_customer_id + spending_customer_id) + optional per-member cap with head-approval — gives the SAME safety the manual code provided, without the friction.
+
+**The rule:** for every legacy process the user describes, ask internally — "is this a real business need, or a workaround for old-tech limitation?" If the latter, push back politely with the modern alternative.
+
+**The trap:** "It's how they're used to working" is NOT sufficient reason to replicate. Comfort with the legacy mechanism is real (and worth UX work to ease the transition), but the mechanism itself is often pure workaround.
+
+### P33 — Any Brief that uses Pattern P19 (config-driven tables) MUST include a settings-panel sketch.
+
+**Promoted to skill 2026-05-10 (M13 Module Close).** Source: M13 sketches expanded from 4 to 5 only after Daniel pushed: "shouldn't every tenant be able to change these numbers?"
+
+Whenever a Brief introduces tenant-configurable values via Pattern P19 (table-per-tenant with capability flags — e.g. loyalty_tier, payment_methods, prescription_types), the Brief's sketch deliverables list MUST include a tenant settings panel sketch showing where those values are edited, by whom, with what UI.
+
+**Why mandatory, not optional:**
+- Pattern P19 is meaningless without a UI to edit it. Otherwise tenants need engineering work to change a number — defeats the SaaS-clean promise.
+- Daniel pushed for it explicitly in M13. Pattern that recurs: D1 (per-tenant pricing model) + D3 (per-tenant grace period) + D4 (per-tenant credit expiry) + D6 (per-tenant family policy) — every tenant-configurable value in the Brief needs a UI home.
+- Module Strategist receiving the Brief sees the settings sketch → knows from day-1 that "Settings" is a deliverable, not a P2 polish.
+
+**What a settings-panel sketch shows:**
+- Which sections (one per logical group: pricing, tiers, family rules, expiry windows, etc.)
+- Which fields are tenant-editable vs read-only
+- Who has permission to edit (admin / business-owner / accountant)
+- Where the panel lives (in-app under /settings/<module>/, or under Platform Admin)
+
+**Self-check before sealing any Brief:** Does the Brief use Pattern P19? If yes — is there a settings-panel sketch in the deliverables list? If no — add one, OR explicitly justify why deferring it is safe.
+
+### P34 — Sketches BEFORE Brief, not after.
+
+**Promoted to skill 2026-05-10 (M9 Brief authoring, Daniel directive).**
+
+When authoring an Architecture Brief, the order of operations is:
+
+1. Strategic decisions locked with Daniel (the Q1-QN sequence).
+2. **Sketches built FIRST** — saved as a navigable HTML file (see P35).
+3. Daniel reviews sketches, picks one, optionally requests revisions.
+4. **Only after sketch is approved** — the Brief document is written.
+
+**The Brief is a freeze of decisions already made + a sketch already approved.** It does NOT introduce new design ideas. If the Brief surfaces a question that wasn't sketched — that's a sign the sketch step was skipped or rushed; back up.
+
+**Why:** the Brief is a 10+ page document with entity lists, contracts, risks, to-dos. Daniel doesn't read 10 pages to decide whether the screen layout is right. He decides from one HTML file with 3 visual options. Building the Brief first and then sketching means the Brief gets rewritten when the sketch reveals a different shape — wasted work.
+
+**Self-check before writing any Brief content:** Is there an approved `MN_SKETCHES.html` for this module? If no — STOP, build the sketches.
+
+### P35 — Sketches = HTML file with tab-navigation, in `modules/Module N - Name/architecture-brief/MN_SKETCHES.html`.
+
+**Promoted to skill 2026-05-10 (M9 Brief authoring, Daniel directive).**
+
+Architecture-Brief sketches are NEVER widgets shown inline in chat. They are ALWAYS a self-contained HTML file in the module's `architecture-brief/` folder, that Daniel opens in his browser via a `computer://` link.
+
+**Required structure:**
+
+- File path: `modules/Module N - Name/architecture-brief/MN_SKETCHES.html`
+- Tab-style navigation at top: buttons to switch between sketches (3-6 sketches typical)
+- Sticky top nav bar so tabs stay visible while scrolling
+- Each sketch has: title, subtitle, rationale block (יתרון/חיסרון), then the visual mockup itself
+- A recommendation banner at the very top that names the recommended sketch + reason — Pattern P22 format applied to layout choice
+- Hebrew RTL (`<html lang="he" dir="rtl">`)
+- Self-contained: no external dependencies beyond Google Fonts; all CSS inline in `<style>`
+- Reference implementation: `modules/Module 13 - Loyalty Club/architecture-brief/M13_SKETCHES.html` (5 sketches, ~700 lines, single-file)
+
+**Cowork limitation:** the `Write` tool may be blocked by Cowork file-protection on the `.claude/skills/` folder. Use the `bash` tool with `cat > path << 'EOF'` heredoc to create the file instead. The `modules/` folder is writable from both tools.
+
+**Why a file and not widgets:** (a) Daniel can re-open the sketches between sessions without re-running the Cowork chat; (b) the file lives alongside the Brief in version control, so the historical record of "what we sketched and chose" is permanent; (c) widgets in chat get stale and lose context once chat scrolls; (d) Daniel can show the sketches to others outside the chat.
+
+### P36 — Always provide a `computer://` link when saving a file Daniel needs to open.
+
+**Promoted to skill 2026-05-10 (M9 Brief authoring, Daniel directive).**
+
+Every time I save a file Daniel is expected to open (sketches, briefs, drafts, reports, anything), my message MUST include a `computer://` clickable link in the form:
+
+```
+[short description in Hebrew](computer://C:\Users\User\opticup\path\to\file.html)
+```
+
+**Forbidden alternatives:**
+- Describing the path in plain text only ("השמרתי ב-modules/Module 9.../sketches.html")
+- Showing the path in a code block
+- Saying "תפתח את הקובץ" without giving him the link
+
+**Why:** Daniel works on Windows; the `computer://` URL scheme is what Cowork translates into a real file-open. Without the link he has to navigate manually. Without it the value of saving the file is half-lost.
+
+**The pattern:** the link goes IN the message body, on its own line, immediately after I announce the save. One link per file. Use Hebrew description text inside the link brackets.
+
+**Note for non-Windows machines:** Daniel works on Windows desktop, Windows laptop, and Mac. The `computer://` scheme works on all three — Cowork handles the path translation. Always use the Windows path form (`C:\Users\User\opticup\...`) regardless of which machine he's on.
+
+### P37 — When user reframes scope dramatically, automatically reopen previously-locked architectural decisions.
+
+**Promoted to skill 2026-05-10 (M9 Module Close).** Source: M9 D2 — "M9 extends shipments table" had been a locked architectural decision since Mar 2026. Daniel reframed M9's scope from "shipping-tracker" to "McDonalds System" (operational-control-center for full satisfaction). The locked decision became obsolete in light of the new framing.
+
+**The trap:** Locked decisions are easy to leave alone when designing a new module — that's the point of locking. But locked decisions presuppose a particular *understanding* of the problem. When that understanding shifts, the lock no longer applies.
+
+**The rule:** When the user reframes scope (different framing, expanded responsibility, integration of previously-separate concerns), **explicitly list every locked decision that touches the new scope** and ask whether each should still hold. Don't assume continued relevance.
+
+**Trigger phrases that should activate this rule:**
+- "We're going to make this bigger than I thought"
+- "Actually, the goal is X, not Y"
+- "Let me reframe — this module also needs to handle Z"
+- Showing a diagram/sketch of a model significantly different from the current one
+- Naming the module differently or with different metaphor (here: "lab" → "McDonalds system")
+
+**Example response:**
+> "Given the reframe, the following locked decisions deserve a fresh look:
+> 1. [decision A] — assumed scope was X, now scope is Y → reopen?
+> 2. [decision B] — assumed integration via channel C, now C may be irrelevant → reopen?
+> Recommend: explicitly resolve each before proceeding to entities."
+
+### P38 — Build the Settings sketch BEFORE the operational sketch when the module is config-heavy (P19 + P33).
+
+**Promoted to skill 2026-05-10 (M9 Module Close).** Source: M9 had 7 categories × 5 thresholds × 2 clocks = 70 config values + shipping types + damage reasons + courier list + supplier sync. I built operational first (KDS sketch) and Settings last; the Settings sketch surfaced the M1 ↔ M9 supplier-sync question that should have been visible from Day-0.
+
+**The rule:** When a module is **config-heavy** (uses Pattern P19 — table-per-tenant — for 3+ types of values, AND uses Pattern P33 — settings panel mandatory), build the Settings sketch FIRST, before any operational sketch. This forces explicit articulation of:
+- What values are configurable per-tenant
+- Which values come from other modules (sync direction)
+- Which values are user-editable vs locked-by-cross-module-FK
+- What permissions guard each section
+- Which Day-N expansions are anticipated
+
+The operational sketches (KDS, dashboard, etc.) then naturally fall into place because their data sources are already clear.
+
+**Test for "config-heavy":**
+- Module has 3+ config tables (`*_categories`, `*_types`, `*_thresholds`, etc.) → config-heavy
+- Module has 2+ FK dependencies on data from another module → config-heavy
+- Module has user-tunable thresholds/limits → config-heavy
+
+If config-heavy: Settings sketch FIRST.
+
+### P39 — "Max addition" caps are additive, not absolute, when user gives a limit on subordinate's authority.
+
+**Promoted to skill 2026-05-10 (M9 Module Close).** Source: M9 D9 (compensation matrix). Daniel corrected my interpretation of "manager max compensation = ₪500" from absolute (₪500 total) to additive (₪500 over the system-recommended amount). When recommended compensation is ₪200, max becomes ₪200 + ₪500 = ₪700. When recommended is ₪300, max becomes ₪800.
+
+**The pattern:** When an owner authorizes a subordinate (manager) to override a system recommendation, the limit is almost always expressed as **"how much more or less than recommendation"**, not as **"absolute amount"**.
+
+**Why:**
+- The system recommendation already accounts for context (severity, category, customer history). Hard absolute caps would penalize legitimate cases where the recommendation itself is high.
+- Owners think in terms of "trust the system, allow X% slack for human judgment".
+- The additive cap aligns with how managers actually think when overriding.
+
+**Application:**
+Whenever the design includes "manager can override system recommendation":
+- Default: cap = additive ("manager can add up to ₪X to system recommendation").
+- Sub-default: same cap downward ("manager can subtract up to ₪X from recommendation").
+- Both directions: cap = "manager can deviate by up to ±₪X from recommendation".
+- Absolute cap: only in special cases like total tenant credit liability cap (regulatory).
+
+**UI implication:**
+The settings field should be labeled "תוספת מקסימלית" / "max addition", not "מקסימום" / "max amount". Avoid ambiguity in the data model — store the field as `max_addition_amount`, not `max_total_amount`.
+
 ### P18 — Audit is the field-list. Brief is the structure. Don't relitigate fields.
 Daniel directive 2026-05-06 (with OpticPlus customer-card screenshot): "אני לא מבין למה אתה שואל את כל השאלות האלה?! זה כרטיס הלקוח בתוכנת אקסס הבסיסי". Architecture Brief is NOT the place to ask field-by-field if a column should exist. Default for all M5–M14 entities: everything in the OpticPlus equivalent screen carries over unless I have a specific reason to change it.
 
@@ -635,6 +790,8 @@ When a module's Architecture Brief is sealed (e.g. "M12 Brief locked"), execute 
 
 ### Last ceremonies performed:
 - **M12 — 2026-05-09** — promoted P24 (don't flow), P25 (verify vendor), P26 (hybrid model).
+- **M13 — 2026-05-10** — promoted P32 (anti-legacy-pattern) + P33 (settings sketch mandatory with P19).
+- **M9 — 2026-05-10** — promoted P34 (sketches before brief) + P35 (HTML sketch file format) + P36 (computer:// links) + P37 (reframe → reopen locks) + P38 (settings sketch first for config-heavy) + P39 (additive max caps).
 
 ---
 
