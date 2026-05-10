@@ -220,6 +220,42 @@ The SPEC author SHOULD pre-declare expected side-effects per the SPEC_TEMPLATE �
 - Batch approval for homogeneous template-based operations
 - Red-list keywords auto-escalate to Daniel
 
+### SQL footgun — CTE-with-DML snapshot semantics
+
+When verifying a `DELETE … RETURNING` (or `UPDATE … RETURNING`, or
+`INSERT … RETURNING`) result, ALWAYS run a SEPARATE `SELECT COUNT(*)`
+statement after the data-modifying statement. NEVER rely on inline
+`(SELECT COUNT(*) FROM same_table WHERE same_predicate)` subqueries
+embedded inside a `WITH (DELETE …)` CTE.
+
+**Why:** Postgres data-modifying-WITH semantics — the sub-statement and
+the main query execute concurrently, and inline non-CTE-references see
+the snapshot BEFORE the modification. The inline post-count returns
+the pre-DELETE count, which looks like the DELETE didn't run.
+
+**Correct pattern (2 statements):**
+```sql
+-- Statement 1: do the work + count what got modified
+WITH d AS (
+  DELETE FROM storefront_pages
+  WHERE tenant_id = $1 AND slug = '/test-shortcodes/'
+  RETURNING id
+)
+SELECT (SELECT COUNT(*) FROM d) AS rows_deleted;
+
+-- Statement 2: verify SC by querying the live table state
+SELECT COUNT(*) AS rows_remaining
+FROM storefront_pages
+WHERE tenant_id = $1 AND slug = '/test-shortcodes/';
+-- Expected: 0
+```
+
+Total: 2 statements, never 1.
+
+(Source: improvement #1 from M3_REC014_ORPHAN_CLEANUP FOREMAN_REVIEW, 2026-05-09.
+Cost: 30 seconds of "did the DELETE run?" anxiety in that SPEC; this rule
+shortcuts every future cleanup-with-verification SPEC.)
+
 ### Level 3 — Schema/RLS changes (NEVER autonomous):
 - CREATE/ALTER TABLE, CREATE/ALTER/DROP POLICY, DISABLE RLS, GRANT/REVOKE
 - Always stops at Daniel. No exceptions.

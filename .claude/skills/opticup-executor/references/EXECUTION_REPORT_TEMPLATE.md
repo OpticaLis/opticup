@@ -80,7 +80,30 @@ For every Iron Rule that touches this SPEC's scope, state whether it was followe
 
 ---
 
-## 7. Self-Assessment (1–10 each, with justification)
+## 7. SPEC_TEMPLATE Version Footprint
+
+If this SPEC was authored against an updated SPEC_TEMPLATE that introduced
+new sub-sections / authoring conventions, enumerate which improvements were
+exercised by THIS SPEC and how they performed:
+
+| Improvement (commit ref) | Used by SPEC | Worked as designed? |
+|---|---|---|
+| §X new convention | Yes/No — describe how | ✅ worked / ⚠️ partial / ❌ didn't help |
+| ... | ... | ... |
+
+If no SPEC_TEMPLATE updates have been adopted since the prior SPEC, write
+"No new template improvements to footprint this run" and skip the table.
+
+This section helps the Foreman trace which improvements are paying off vs
+gathering dust over a portfolio of SPECs. Without the table, the signal is
+lost — over time, useless improvements accumulate and useful ones get
+re-discovered.
+
+(Source: improvement #2 from M3_REC014_ORPHAN_CLEANUP FOREMAN_REVIEW, 2026-05-09.)
+
+---
+
+## 8. Self-Assessment (1–10 each, with justification)
 
 | Dimension | Score | Justification |
 |-----------|-------|---------------|
@@ -98,7 +121,7 @@ justification is more valuable to the Foreman than a 10 with hand-waving.
 
 ---
 
-## 8. Executor-Skill Improvement Proposals (opticup-executor)
+## 9. Executor-Skill Improvement Proposals (opticup-executor)
 
 Exactly 2. Each must be specific and actionable. Derived from pain points above.
 
@@ -116,7 +139,7 @@ Exactly 2. Each must be specific and actionable. Derived from pain points above.
 
 ---
 
-## 9. Next Steps
+## 10. Next Steps
 
 - Commit this report + FINDINGS.md in a single `chore(spec): close {SPEC_SLUG} with retrospective` commit.
 - Signal Foreman: "SPEC closed. Awaiting Foreman review."
@@ -124,7 +147,7 @@ Exactly 2. Each must be specific and actionable. Derived from pain points above.
 
 ---
 
-## 10. Raw Command Log (optional, for post-mortem)
+## 11. Raw Command Log (optional, for post-mortem)
 
 If anything went unexpectedly wrong, paste the relevant command + output here.
 Omit if everything was smooth.

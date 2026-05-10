@@ -24,6 +24,22 @@ within a 15-minute window with a verified rollback plan."
 2–4 sentences. Why now? What previous work does this depend on? Link to
 relevant commits / SPECs / FOREMAN_REVIEWs.
 
+### Already-done discovery contingency
+
+When the SPEC's background table cites items that may have been independently
+closed by other commits since the source REC was filed, include a per-item
+"if already done, action" column or sentence in the table. Example:
+
+> "Item B: `_deprecated/` folder — possibly already deleted by storefront
+> commit `a4723b5`. If already gone (Step 0b confirms), skip this item and
+> report. If present, `git rm -rf`."
+
+This pre-authorizes the executor to skip without an AskUserQuestion when
+reality has already moved past the SPEC's premise. Without the contingency,
+the executor either stops (wasted time) or proceeds anyway (wrong action).
+
+(Source: improvement A1 from M3_REC014_ORPHAN_CLEANUP FOREMAN_REVIEW, 2026-05-09.)
+
 ---
 
 ## 3. Success Criteria (Measurable)
@@ -80,6 +96,22 @@ If the SPEC fails partway through and must be reverted:
 - `git reset --hard {START_COMMIT}` — where START_COMMIT = `{hash before any change}`
 - Restore DB state via: {specific queries or "no DB changes in this SPEC"}
 - Notify Foreman; SPEC is marked REOPEN, not CLOSED.
+
+### Backup format guidance for DB-DELETE SPECs
+
+When prescribing a pre-DELETE backup JSON, specify in §8 whether the backup
+should include heavy payload columns verbatim (e.g. `blocks` JSONB on
+`storefront_pages`) or substitute a `_field_omitted_for_brevity` flag.
+
+**Default rule:**
+- Include all metadata columns verbatim.
+- Substitute heavy payloads (>2KB per row) only when:
+  - The data is recoverable from PG point-in-time recovery, AND
+  - The SPEC explicitly authorizes the trade-off (state in §8: "Backup may omit `blocks` column; recoverable from PITR").
+- Otherwise, include payloads verbatim regardless of size — readability of
+  diffs trades against the rare rollback need.
+
+(Source: improvement A2 from M3_REC014_ORPHAN_CLEANUP FOREMAN_REVIEW, 2026-05-09.)
 
 ---
 
