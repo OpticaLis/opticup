@@ -795,6 +795,56 @@ filter/sort/tab state are required to test the dynamic-introduction case.
 **Applies to:** any SPEC introducing a state variable that filters or
 groups a list whose contents can grow at runtime.
 
+#### Step 1.5p — URL existence verification (MANDATORY for URL-naming SPECs)
+
+When the SPEC will name specific URLs — Tier 1 page lists, sitemap entries,
+redirect destinations, API endpoints, OG meta tag URLs, anything that ends
+up as a literal URL string in §8 or §10 — the SPEC author MUST probe each
+URL at author time and document the live HTTP status alongside the URL.
+
+**Do NOT delegate URL probing to the executor's Step 0.** By the time the
+executor runs, the SPEC has already named slugs that may not exist. The
+executor then either logs-don't-block (drift accumulates as SKIP_404
+forever) or stops (wasted authoring time). Probe at author time; document
+status; treat 404/5xx as a SPEC-defining signal, not an executor-side
+discovery.
+
+**Concrete example:** If the SPEC names 30 URLs (10 routes × 3 langs),
+run `for path; for lang; curl -sI -o /dev/null -w "%{http_code}\n"` once
+during authoring (~15 seconds). For any 404, decide BEFORE writing §8:
+(a) replace the URL with an existing equivalent, (b) explicitly authorize
+building the route as a SPEC prerequisite, OR (c) clarify with Daniel
+before naming the URL.
+
+(Source: improvement A1 from M3_LIGHTHOUSE_NIGHTLY_CRON FOREMAN_REVIEW,
+2026-05-10. The cost-of-skip example: Lighthouse cron now SKIP_404s 6
+URLs every daily run forever until REC-SITE-019 is built — a follow-up
+SPEC that could have been avoided with 30 seconds of author-time probing.)
+
+#### Step 1.5q — Threshold values must come from measured baselines
+
+When the SPEC's autonomy envelope (§4) or stop triggers (§5) cite a
+numeric threshold (file size MB, package count, line count, runtime
+budget, row count, score delta), the threshold value MUST come from the
+Step-1 baseline measurement, not an estimate.
+
+**Format:**
+> "Baseline measured 2026-05-10: current = X. Threshold: X * 1.2 = Y."
+
+A threshold without a measured baseline forces the executor into a
+real-time judgment call when reality lands within ±20% of the guess.
+With a measured baseline + explicit margin, the executor either passes
+the threshold cleanly or fails on a clearly-significant deviation.
+
+(Source: improvement A2 from M3_LIGHTHOUSE_NIGHTLY_CRON FOREMAN_REVIEW,
+2026-05-10. Cost example: SPEC set 200 MB npm install threshold without
+measuring; actual was 222 MB (11% over) — forced AskUserQuestion to
+choose cache vs install-each-run. Baseline-driven threshold would have
+pre-decided. Locate placement note: source instruction referenced
+"Step 0.1 Pre-Authoring Sweep Checklist" which doesn't exist by that
+literal name in this SKILL; placed here as 1.5q in the existing
+1.5e-1.5o sub-section sequence — closest semantic analog.)
+
 ### Step 2 — Create the SPEC Folder
 
 Location pattern (folder, NOT file):

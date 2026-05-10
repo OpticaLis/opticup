@@ -64,6 +64,16 @@ Before touching any file, do these steps. No exceptions.
 
    (Source: improvement #1 from M3_STUDIO_TRANSLATIONS_BRAND_FILTER FOREMAN_REVIEW, 2026-05-09. Symmetric to opticup-strategic improvement A2 in SPEC_TEMPLATE §10.)
 
+4c. **gh CLI readiness check.** Scan the SPEC's §10 QA Steps and §3 Success Criteria for `gh ` commands (workflow run, pr create, run watch, secret set, etc.). If found, run `gh auth status`. If not authenticated, surface the gap in the readiness sentence at session start:
+
+   > "SPEC §X.Y cites `gh` commands but gh CLI not authenticated — please `gh auth login` before I reach that step, or I'll fall back to manual UI instructions for that SC."
+
+   Continue execution; just front-load the gap. Don't discover it mid-execution at the QA step.
+
+   If absent, no readiness sentence needed — the gap doesn't apply.
+
+   (Source: improvement #1 from M3_LIGHTHOUSE_NIGHTLY_CRON FOREMAN_REVIEW, 2026-05-10. **3-occurrence threshold reached:** gh-auth fallback hit in M3_SITEMAP_BRAND_404_CLEANUP + M3_REC014_ORPHAN_CLEANUP + M3_LIGHTHOUSE_NIGHTLY_CRON. Per opticup-strategic SKILL §"Self-Improvement Mandate", rule promotion is mandatory.)
+
 5. **Read CLAUDE.md** — the constitution for this repo. Contains the Iron Rules.
 
 5.5. **Skill-reference file lookup rule (E1 — added 2026-04-16):** When a SPEC
@@ -187,6 +197,23 @@ If any name appears as a duplicate, the `rule-21-orphans` pre-commit hook will b
 The mechanical workaround is well-established (precedents: M4 P12 `info`/`phone`/`email`, M4 ATTENDEE_COUNTER_DISPLAY_FIX `var sent`, M4 ATOMIC_CONFIRMATION_FLOW `var doFinalCleanup`). Pre-empting this saves ~3 minutes per affected commit and removes the recurring "is this a real bug?" cognitive load. Document the pre-emptive split in your EXECUTION_REPORT §2 (commit table) so the Foreman doesn't have to re-derive the reason.
 
 Applied to opticup-executor via FOREMAN_REVIEW for ATOMIC_CONFIRMATION_FLOW (3rd-cycle trigger from prior reviews).
+
+**Generalization (added 2026-05-10):**
+
+This pattern applies to **ANY directory with multiple sibling scripts that share helper-function names** — not just `modules/crm/`. Examples now in the wild:
+
+- `modules/crm/` — original case (CRM secondary-chat scripts).
+- `roles/site-overseer/tools/lighthouse/scripts/` — `run-tier1.mjs` + `run-full.mjs` shared `main()`, `round`, `totalElapsed`, `elapsedSec`. Hook flagged 4 violations on commit-2 attempt; fixed via `_lib.mjs` extraction + entry-point renames (`runTier1Main` / `runFullMain`).
+
+**Standing rule for new tool clusters:** When creating a NEW directory with multiple sibling scripts, BEFORE the first commit:
+
+1. Identify functions that would otherwise be duplicated across scripts (helper utilities, shared constants, common error handlers, common logging).
+2. Pre-emptively extract them into a `_lib.mjs` (underscore prefix marks the file as internal — not part of the public script API).
+3. Use UNIQUE entry-point names per script (`runFooMain` / `runBarMain`, not `main()` in both).
+
+This avoids the fix-and-retry cycle on the first commit. Saves ~10 minutes per affected SPEC.
+
+(Source: improvement #2 from M3_LIGHTHOUSE_NIGHTLY_CRON FOREMAN_REVIEW, 2026-05-10.)
 
 #### Build-side-effect file restoration
 
