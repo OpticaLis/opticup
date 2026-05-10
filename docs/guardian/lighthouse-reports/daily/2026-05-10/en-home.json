@@ -5,13 +5,13 @@
   "label": "homepage",
   "http": 200,
   "scores": {
-    "performance": 94,
+    "performance": 87,
     "accessibility": 95,
     "seo": 100,
     "best-practices": 100
   },
   "axeViolationCount": 2,
-  "capturedAt": "2026-05-10T08:47:50.794Z",
-  "fetchTime": "2026-05-10T08:47:36.215Z",
+  "capturedAt": "2026-05-10T10:06:28.670Z",
+  "fetchTime": "2026-05-10T10:06:14.369Z",
   "lighthouseVersion": "12.8.2"
 }

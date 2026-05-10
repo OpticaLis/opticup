@@ -5,13 +5,13 @@
   "label": "supersale",
   "http": 200,
   "scores": {
-    "performance": 81,
+    "performance": 92,
     "accessibility": 96,
     "seo": 100,
     "best-practices": 79
   },
   "axeViolationCount": 1,
-  "capturedAt": "2026-05-10T08:49:23.742Z",
-  "fetchTime": "2026-05-10T08:49:11.231Z",
+  "capturedAt": "2026-05-10T10:09:17.730Z",
+  "fetchTime": "2026-05-10T10:09:05.452Z",
   "lighthouseVersion": "12.8.2"
 }

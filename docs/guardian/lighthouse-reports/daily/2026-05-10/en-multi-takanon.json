@@ -5,13 +5,13 @@
   "label": "multi-takanon",
   "http": 200,
   "scores": {
-    "performance": 82,
+    "performance": 84,
     "accessibility": 95,
     "seo": 100,
     "best-practices": 100
   },
   "axeViolationCount": 2,
-  "capturedAt": "2026-05-10T08:51:12.310Z",
-  "fetchTime": "2026-05-10T08:51:03.419Z",
+  "capturedAt": "2026-05-10T10:10:59.254Z",
+  "fetchTime": "2026-05-10T10:10:50.372Z",
   "lighthouseVersion": "12.8.2"
 }

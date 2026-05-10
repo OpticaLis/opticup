@@ -24,6 +24,24 @@
 
 ## Entries
 
+### 2026-05-10 — rec019-tier1-slug-fix (M3_TIER1_CATEGORY_SLUG_FIX / REC-SITE-019)
+
+- **Context:** REC-SITE-019 — the Lighthouse cron's Tier 1 list (config in `roles/site-overseer/tools/lighthouse/config/tier1-pages.json`) cited `/categories/sunglasses/` and `/categories/eyeglasses/` (plural + trailing slash) which 404'd. Daniel discovered live 2026-05-10 that the actual routes are `/category/sunglasses` and `/category/eyeglasses` (singular, no trailing slash). M3-DATA-03 originally framed three closure paths (build dedicated routes / replace with equivalents / accept SKIP_404).
+- **Question (asked offline 2026-05-10):** Daniel chose **Option B (replace, not build)** — `/category/{singular}` is the canonical storefront convention; building parallel `/categories/{plural}/` routes would be redundant. Site Overseer authored the 4-line config-fix SPEC.
+- **Decision:** Replace the 2 path strings + 2 tier1_reason strings in `tier1-pages.json`. Optional local re-run to verify 30 OK / 0 SKIP. ERP repo only, no PR to main (monitoring config, not production code).
+- **Rationale:** The build-dedicated-routes path (Option A) was a content/SEO project that would have taken hours and produced a parallel URL surface to maintain forever. Option B is a 30-second config fix that captures the same data Daniel cares about (sunglasses + eyeglasses category perf + a11y scores) using URLs that already exist + are already linked from the storefront's navigation.
+- **Operational action:**
+  - Step 0: re-probed all 6 URLs (`/category/{slug}` × 3 langs) → all 200; HANDOFF still showed REC-019 OPEN; tier1-pages.json still had wrong slugs at lines 12-13.
+  - Edited 4 lines in `tier1-pages.json`.
+  - Ran `node scripts/run-tier1.mjs` locally — 6.5 minutes for 30 LH probes; output: `30 OK / 0 SKIP, avg perf 86, avg a11y 95`. The 6 category cells now have real numbers (perf 80-88, a11y 95, axe 2 each).
+  - Cleaned 6 stale `categories-{plural}` SKIP_404 JSONs from `docs/guardian/lighthouse-reports/daily/2026-05-10/` (slugify produces different filenames for `/categories/sunglasses/` vs `/category/sunglasses` so the post-fix run added new files alongside the stale ones; SUMMARY counted 36 rows initially).
+  - Regenerated SUMMARY.md + GUARDIAN_ALERTS section after cleanup. Final baseline: 30 OK / 0 SKIP.
+  - Single commit: config + reports + HANDOFF + DECISIONS_LOG + retrospective trio.
+- **Self-improvement validation:** This SPEC is the immediate proof that the **Step 1.5p URL existence verification (MANDATORY)** rule applied to the strategic SKILL on 2026-05-10 (commit `0b00c9c`) is paying off. The parent M3_LIGHTHOUSE_NIGHTLY_CRON SPEC's URL probe was cursory ("do these 6 URLs return 200?") instead of exhaustive ("what are the actual category URLs on this storefront?"); had the new rule been in force at parent-author time, this REC and this SPEC would not have been needed. The same rule applied to THIS SPEC produced a complete §2 probe table covering both the wrong slugs (404) AND the right slugs (200) AND the WP-era `/product-category/{Hebrew}/` legacy URLs (out-of-scope but logged for visibility).
+- **Cross-refs:** REC-SITE-019 (closed in HANDOFF), `modules/Module 3 - Storefront/docs/specs/M3_TIER1_CATEGORY_SLUG_FIX/` (SPEC + EXECUTION_REPORT + FINDINGS + new baseline reports), `M3_LIGHTHOUSE_NIGHTLY_CRON/FINDINGS.md` M3-DATA-03 (effectively resolved), strategic SKILL Step 1.5p (commit `0b00c9c`, self-validated by this SPEC).
+
+---
+
 ### 2026-05-10 — lighthouse-cron (M3_LIGHTHOUSE_NIGHTLY_CRON / REC-SITE-013)
 
 - **Context:** REC-SITE-013 — no automated perf/a11y monitoring of the storefront existed. Manual checks were sporadic; regressions were caught only when noticed. Site Overseer Mode B operating procedure explicitly listed Lighthouse as the missing tool gating targeted Mode-B perf audits. Production has been LIVE since 2026-05-03; perf/a11y regressions now affect real customers.
