@@ -57,14 +57,14 @@ Each module that needs to ship to LIVE day gets an Architecture Brief (cross-mod
 | M6 (Prescriptions) | ✅ v2 | Prescription Editor (sidebar+center, glasses↔contacts toggle) | `decisions/M6.md` |
 | M7 (Orders) | ✅ v1 | Main mockup + 5 forms + catalog | `decisions/M7.md` |
 | M8 (Payments) | ✅ v1 | Checkout + Pipeline + EOD + Provider Config | `decisions/M8.md` |
-| M9 (Lab) | ⬜ Next up — depends on third audit | — | — |
+| **M9 (Lab/KDS)** | ✅ v1 (closed 2026-05-10) | 4 sketch files: KDS + Shipments + Dashboard + Settings | `decisions/M9.md` |
 | **M11 (Reports)** | ✅ v1 (closed 2026-05-09) | Reports List + Editor + View | `decisions/M11.md` |
 | **M12 (Communications)** | ✅ v1 (closed 2026-05-09) | Inbox + Templates + Customer History + Channel Configs | `decisions/M12.md` |
 | **M13 (Loyalty Club)** | ✅ v1 (closed 2026-05-10) | 5 sketches: Customer Tab + Admin Dashboard + Checkout Block + Storefront Enrollment + Tenant Settings | `decisions/M13.md` |
 | M14 (Appointments) | ✅ v1 | Calendar + 3 sub-screens | included in cross |
 | M15 (Queue) | ✅ v1 | Queue panel embedded in M14 calendar | included in cross |
 
-**Sequence to LIVE:** M9 (last remaining — depends on third audit). After all Briefs sealed → Module Strategists write SPECs → Executors build → cutover.
+**Sequence to LIVE:** ✅ All Briefs sealed 2026-05-10. Module Strategists write SPECs → Executors build → cutover. **Blocker:** M1-extension SPEC (3 inventory tables — lenses/contact-lenses/accessories) must be written first before M7/M9.
 
 **Deferred LIVE-plan content:** Master Plan v1 history (cutover plan, risks, decisions Q1-Q8) is preserved in `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md` for historical reference.
 
