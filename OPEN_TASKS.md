@@ -14,7 +14,7 @@
 
 | # | Task | Owner role | Estimated time | Why now |
 |---|---|---|---|---|
-| 1 | **M13 (Loyalty Club) — Architecture Brief** — next module in build sequence per MASTER_ROADMAP §2.5. Handoff at `modules/Module 13 - Loyalty Club/architecture-brief/M13_HANDOFF.md`. | Main Strategic | ~2-3 hours | Critical-path to LIVE. Only M13 + M9 remain before Module Strategists begin SPEC authoring. Requires Daniel-in-the-loop strategic session. |
+| 1 | **M9 (Lab/KDS) — Architecture Brief** — last remaining Brief before LIVE. Depends on third Access audit being complete. After M9 sealed → all Briefs done → Module Strategists begin SPEC authoring. | Main Strategic | ~2-3 hours | Critical-path to LIVE. Only Brief remaining. |
 | 2 | **GITIGNORE_CLEANUP follow-up** — overnight sweep Item 1 deduped `.gitignore` line 34 + added explicit local-config ignores. Verify behaviour over the next session: are `.claude/launch.json`, `.claude/settings.local.json`, etc. correctly ignored? Are new opticup-* skill files trackable WITHOUT `git add -f`? If both true → close. If not, refine. | Daniel review next session | 5 min | Item 1 of overnight sweep changed `.gitignore` semantics. One session of observation confirms the change is right. |
 
 ---
@@ -69,8 +69,13 @@ After M9 → Module Strategists write SPECs → Executors build → cutover.
 
 ---
 
-## ✅ Completed today (2026-05-09) — for context
+## ✅ Completed recently — for context
 
+**2026-05-10:**
+- **M13 (Loyalty Club) Architecture Brief sealed** — 5 sketches, 13 locked decisions, 6 entities, 4 engines, contracts with M5/M7/M8/M11/M12/M3
+- OVERNIGHT_HYGIENE_SWEEP_2026_05_09 Module Close Ceremony complete (commit eaf4f72)
+
+**2026-05-09:**
 - M11 (Reports) Architecture Brief sealed
 - M12 (Communications) Architecture Brief sealed (4 mockups, 15 locked decisions)
 - PROJECT_STRUCTURE_CLEANUP SPEC executed (11 commits)
