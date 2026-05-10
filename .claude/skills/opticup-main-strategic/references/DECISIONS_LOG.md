@@ -133,6 +133,16 @@ Format for full entries (in `decisions/<MODULE>.md`): situation → my recommend
 
 ---
 
+## M13 — Loyalty Club
+
+→ Full detail: [`decisions/M13.md`](decisions/M13.md)
+
+| # | Date | Topic | One-liner |
+|---|---|---|---|
+| 1 | 2026-05-10 | M13 Architecture Brief sealed | 13 locked decisions, 5 sketches, 6 entities, 4 engines; D13 anti-Access-pattern was textbook (Daniel raised legacy Access manual-code workaround → rejected as "workaround for concurrency limitations we don't have. Don't replicate."). |
+
+---
+
 ## Pattern Recurrence Tracker (3-strike rule)
 
 When a pattern surfaces in 3 or more independent decisions across modules, formalize it as a `Pattern Pn` in `SKILL.md`. Patterns currently tracked:
