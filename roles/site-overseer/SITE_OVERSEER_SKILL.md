@@ -1,11 +1,11 @@
-# Site Overseer — SKILL knowledge map (v0.4)
+# Site Overseer — SKILL knowledge map (v0.5)
 
 > **Purpose:** Drop-in knowledge so future Site Overseer Mode B sessions can answer
 > common questions about the Optic Up storefront without re-discovering structure
 > each time. This file is loaded BEFORE running any Mode B audit.
 >
 > **Created:** 2026-05-08 during M3_WP_BLOG_POST_MAPPING execution.
-> **Version:** 0.4 — added `tenant_branches` + `v_storefront_branches` to the table/view knowledge map (M3_BRANCHES_INFRA_AND_ASHKELON, 2026-05-09).
+> **Version:** 0.5 — added Lighthouse + axe-core nightly/weekly monitoring infra (M3_LIGHTHOUSE_NIGHTLY_CRON, 2026-05-10) closing REC-SITE-013. Section 5d details the tooling, paths, and trigger model.
 > **Authority for canonical truth:** the live system (Supabase + Vercel + WP). When
 > this file disagrees with the live system, the live system wins — and this file
 > needs an update.
@@ -125,6 +125,38 @@ The CHECK constraint on `storefront_pages.blocks` (and `.previous_blocks`) added
 
 **LEARNINGS:** L-PROJECT-002 codifies the rule project-wide; this skill file's §5b is the operational checklist.
 
+## 5d. Lighthouse + axe-core monitoring (added v0.5, REC-SITE-013 closed)
+
+**SPEC:** `modules/Module 3 - Storefront/docs/specs/M3_LIGHTHOUSE_NIGHTLY_CRON/`
+
+**What runs:**
+- `lighthouse-daily.yml` — GitHub Actions cron at 03:00 IDT (00:00 UTC) every day. Tier 1 sweep: 10 base routes × 3 langs = 30 URLs. ~6-15 min.
+- `lighthouse-weekly.yml` — cron at 03:00 IDT every Sunday. Full sitemap sweep: ~255 URLs. Up to ~2 hr.
+- Both also support `workflow_dispatch` for manual UI triggering.
+
+**What gets written (auto-committed by `OpticaLis [bot]` to develop):**
+- `docs/guardian/lighthouse-reports/{daily,weekly}/{date}/` — per-URL JSON + SUMMARY.md table.
+- `docs/guardian/GUARDIAN_ALERTS.md` — appended ALL CLEAR / REGRESSION sections below the `LIGHTHOUSE-CRON-APPEND-MARKER`.
+
+**Tooling location:**
+- `roles/site-overseer/tools/lighthouse/` — local-install; not root npm. ~222 MB node_modules (gitignored).
+- `package.json` declares `lighthouse@^12`, `chrome-launcher@^1`, `@axe-core/cli@^4`. Node ≥ 18 required.
+- 6 scripts: `_lib.mjs` (shared helpers), `run-tier1.mjs`, `run-full.mjs`, `detect-regressions.mjs`, `write-summary.mjs`, `append-alert.mjs`.
+
+**Regression rules (`config/thresholds.json`):**
+- perf: -5 pts day-over-day OR < 80 absolute → REGRESSION.
+- a11y: -3 pts day-over-day → REGRESSION.
+- seo / best-practices: -5 pts → REGRESSION.
+- axe-violation count: any increase → REGRESSION.
+
+**Manual run (local):** `cd roles/site-overseer/tools/lighthouse && npm ci && npm run tier1` (or `npm run full`).
+
+**Manual run (CI):** GitHub UI → Actions → "lighthouse-daily" → Run workflow → Branch: develop. (Or `gh workflow run lighthouse-daily.yml --ref develop` if gh authenticated.)
+
+**Coexistence with Sentinel (M3-INFRA-04 caveat):** GUARDIAN_ALERTS.md has two writers — Sentinel rewrites locally, cron appends in CI. The `LIGHTHOUSE-CRON-APPEND-MARKER` line keeps cron entries below it stable across Sentinel local regenerations. Don't delete the marker.
+
+**Baseline as of 2026-05-10 (first run):** avg perf 87, avg a11y 95, avg seo 100, avg best-practices ~97. 6 of 30 Tier 1 URLs SKIP_404 (categories/sunglasses + categories/eyeglasses × 3 langs — see M3-DATA-03 finding).
+
 ## 6. WordPress legacy — cPanel + REST API
 
 ### Access points
@@ -201,14 +233,15 @@ Source-of-truth: per-subdomain sitemap_index.xml + REST API.
 
 ## 10. Where this knowledge map should grow next
 
-- **Lighthouse / a11y baselines** (pending REC-SITE-013 tooling install) → §"Performance & accessibility budgets".
+- ~~**Lighthouse / a11y baselines** (pending REC-SITE-013 tooling install)~~ — DONE (v0.5, see §5d).
 - **Live-vs-build field map** — exhaustive list of which `tenants.*` and `storefront_config.*` fields require redeploy vs are DB-live.
 - **CMS block schema** — `storefront_pages.blocks` JSON taxonomy (rich-text, hero, gallery, etc.).
 - **Edge Function inventory** — list and purpose of `supabase/functions/*` that the storefront calls.
 - **Tracker config** — GA4, GTM, Meta Pixel — which tenants enable which.
+- **Sentinel vs Cron coexistence formalization** — M3-INFRA-04 follow-up: either teach Sentinel to respect the LIGHTHOUSE-CRON-APPEND-MARKER, or split the alerts file into two (Sentinel local-only, Cron committed).
 
 When any future Mode B SPEC surfaces a piece of structural knowledge that "should have been here," add it. The cost of re-discovery has dropped from ~20 min/session to <2 min lookup, and the marginal cost of adding a new section is ~5 min — keep that ratio favorable.
 
 ---
 
-*End of SITE_OVERSEER_SKILL.md v0.2.*
+*End of SITE_OVERSEER_SKILL.md v0.5.*

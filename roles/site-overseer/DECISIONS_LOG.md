@@ -24,6 +24,23 @@
 
 ## Entries
 
+### 2026-05-10 — lighthouse-cron (M3_LIGHTHOUSE_NIGHTLY_CRON / REC-SITE-013)
+
+- **Context:** REC-SITE-013 — no automated perf/a11y monitoring of the storefront existed. Manual checks were sporadic; regressions were caught only when noticed. Site Overseer Mode B operating procedure explicitly listed Lighthouse as the missing tool gating targeted Mode-B perf audits. Production has been LIVE since 2026-05-03; perf/a11y regressions now affect real customers.
+- **Question (asked offline 2026-05-09):** Daniel directed Site Overseer (after closing REC-SITE-017, REC-SITE-018, REC-SITE-014 the same day) to author a SPEC for REC-SITE-013 next, with these constraints: Tier 1 pages = "עמוד מותגים, עמוד משקפי שמש ומסגרות ראייה לפחות העמוד הראשון, סופרסייל, התקנונים"; cron + reports under `docs/guardian/`; tooling under `roles/site-overseer/tools/`; alerts to `GUARDIAN_ALERTS.md`; pure ERP-repo work (no storefront, no DB).
+- **Decision:** Foreman authored 269-line SPEC `M3_LIGHTHOUSE_NIGHTLY_CRON` exercising all 9 freshly-applied SPEC_TEMPLATE improvements (already-done contingency in §2, backup format guidance N/A in §6, subset-relationships N/A in §7, build-side-effect declaration in §8, browser-readiness skip in §10). 10 base routes × 3 langs = 30 Tier 1 URLs. Daily cron 03:00 IDT, weekly cron Sunday 03:00 IDT. Auto-commit by `OpticaLis [bot]`. Daniel mid-execution decision: chose `actions/cache` for npm modules when executor surfaced 222 MB > 200 MB threshold (SPEC §4 rule).
+- **Rationale:** Production deployment makes silent perf regressions a customer-impact risk. Catching them in CI before they accumulate (or before the next manual audit randomly notices) is high-leverage. AI-summarized digest deferred to a clean follow-up SPEC after ≥2 weeks of raw output (SPEC §7 explicit out-of-scope).
+- **Operational action:**
+  - Step 0: live HTTP probe of all 30 Tier 1 URLs → 24/30 200, 6/30 404. Logged the 6 404s as M3-DATA-03 finding (categories/sunglasses + categories/eyeglasses × 3 langs). Tools dir confirmed missing; existing workflows: only `verify.yml`. Node v24.14, sufficient for Lighthouse v12+. `gh auth status`: not authenticated → SC #17 deferred to Daniel UI.
+  - Commit 1 (`40fdbbc`): scaffolded `roles/site-overseer/tools/lighthouse/` with package.json + lockfile (264 packages, 222 MB), README, config/{tier1-pages,thresholds}.json, `.gitignore` un-ignore exceptions for `docs/guardian/lighthouse-reports/**` + `GUARDIAN_ALERTS.md` (replacing directory-level ignore with subdir-only so children are reachable).
+  - Commit 2 (`b7300fc`): 6 scripts under `scripts/` — first attempt blocked by Rule 21 hook (duplicate `main`/`round`/`totalElapsed` across run-tier1 + run-full); resolved without `--no-verify` by extracting `_lib.mjs` (shared helpers) + renaming entry-points to `runTier1Main`/`runFullMain`.
+  - Commit 3 (`071e771`): two workflow YAMLs with cron + workflow_dispatch + actions/cache + auto-commit-as-`OpticaLis [bot]` step.
+  - Commit 4 (`83e5d9f`): first local baseline run (gh CLI not auth'd → CI deferred). 30 URLs probed, 24 OK + 6 SKIP_404. Avg perf 87, avg a11y 95. ALL CLEAR appended to GUARDIAN_ALERTS.md below LIGHTHOUSE-CRON-APPEND-MARKER. Two script fixes folded in (chrome.kill EPERM on Windows → safeKillChrome wrapper; process.argv[1] undefined under `node -e` import → guard).
+  - Commit 5 (this retro): EXECUTION_REPORT + FINDINGS + HANDOFF + DECISIONS_LOG + SITE_OVERSEER_SKILL.md bumped to v0.5 with new §5d documenting the cron infra.
+- **Cross-refs:** REC-SITE-013 (closed in HANDOFF), `modules/Module 3 - Storefront/docs/specs/M3_LIGHTHOUSE_NIGHTLY_CRON/` (SPEC + EXECUTION_REPORT + FINDINGS + first-baseline reports), 5 findings logged (M3-DATA-03 MEDIUM = NEW_SPEC for missing category routes; M3-EXEC-DEBT-04/05/06 LOW already-fixed; M3-INFRA-04 LOW Sentinel-vs-Cron coexistence as TECH_DEBT).
+
+---
+
 ### 2026-05-09 — rec014-orphan-cleanup (M3_REC014_ORPHAN_CLEANUP / REC-SITE-014)
 
 - **Context:** REC-SITE-014 — three independent cosmetic-cleanup items left over from earlier sessions: (A) 3 archived `/test-shortcodes/` rows in `storefront_pages` for prizma; (B) `_deprecated/` folder in storefront repo (possibly already removed by `a4723b5`); (C) 3 orphan `poweredBy` i18n keys (he/en/ru) — leftover WP-era footer string no longer rendered. All LOW severity, none customer-blocking.
