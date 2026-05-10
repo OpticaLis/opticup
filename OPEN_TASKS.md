@@ -6,7 +6,7 @@
 >
 > **Scope:** Only **actionable tasks** that someone needs to do. NOT: ideas, future modules, completed work, observations.
 
-**Last updated:** 2026-05-10 (M9 Brief sealed — last Brief before LIVE. Module Close Ceremony performed: P37+P38+P39 promoted to skill via pending-merge files. All 10 Briefs done. Path now clear for Module Strategists to write SPECs.)
+**Last updated:** 2026-05-10 (Safety infra Task 1 ✅ COMPLETED — opticup-localhost-tester skill + start-local.ps1 + baseline.test.mjs (7/7 PASS) + snapshot.mjs + AGENT_CHAIN_PROTOCOL.md all built and tested. SKILL_PENDING files merged: P32-P39 promoted to opticup-main-strategic SKILL.md. Path open for Task 2 (design system).)
 
 ---
 
@@ -14,12 +14,11 @@
 
 | # | Task | Owner role | Estimated time | Why now |
 |---|---|---|---|---|
-| 1 | **🛡️ Safety infrastructure (BEFORE any module work)** — Build: (a) `opticup-localhost-tester` skill (4th agent in chain, runs after Reviewer, validates localhost:3000+:4321 with smoke-tests on demo tenant), (b) `start-local.ps1` PowerShell script that auto-launches both servers, (c) baseline smoke-tests (login / create-customer / create-order / cross-module flows), (d) Snapshot+rollback workflow (git tag + Supabase branch before each SPEC, auto-rollback on failure). **All future SPEC executions depend on this layer.** Without it, multi-agent autonomous chain is unsafe on a live system. | Main Strategic + Executor | 2-3 days | First — prerequisite for everything else. |
-| 2 | **🎨 Unified design system across all modules** — Design tokens (colors, typography, spacing, shadows, border-radius), component library (buttons, modals, tables, forms, cards), accessibility standards. Build via Claude Designs. Replaces ad-hoc styling across modules. Sketches per module then conform to this system. | Main Strategic (Daniel involved) | 1-2 days | Second — locks the visual contract before any UI is built. |
-| 3 | **📦 Module Repo Split** — Decision Apr 2026 finally executed: split `opticalis/opticup` into per-module repos + `opticup-shared` (npm package or git submodule with shared.js + design tokens + components). Enables 3-4 parallel Claude Code sessions + onboarding additional contributors. | Main Strategic + Executor | 1-2 days | Third — enables parallel SPEC execution downstream. |
-| 4 | **M1 expansion — 3 missing inventory tables: lenses (משקפיים), contact-lenses (עדשות-מגע), accessories (אביזרים)** — Sketches first (Daniel involved — no sketches done yet), then Brief, then SPECs. Currently M1 only handles frames. **BLOCKER for M7 + M9 implementation.** | Main Strategic (Daniel) → M1 Module Strategist | 1 week | Fourth — Daniel-involved sketches required first; then unblocks M7/M9. |
-| 5 | **M13 Brief amendment** — add basic-free membership type (auto-created on first compensation/Referral, no-fee, no-bonus, but receives credits). Edit `modules/Module 13 - Loyalty Club/architecture-brief/M13_LOYALTY_BRIEF.md` D5 + add new entity slot. Surfaced 2026-05-10 during M9 D24. | Main Strategic (Daniel) | ~30 min | Required for M9 Brief execution — can run anytime before M9 SPECs start. |
-| 6 | **🚀 Module SPEC authoring + execution (parallel)** — After tasks 1-4 complete: 3-agent chain (Foreman → Executor → Reviewer → Localhost-Tester → back to Foreman) on each module in parallel across split repos. Order: M5/M6/M7 (foundation) first, then M8/M9/M11/M12/M13 in parallel. Foreman escalates blockers to Main Strategic (me); Main Strategic escalates non-resolvable issues to Daniel; every Daniel-resolved issue → SKILL.md update so it never repeats. | Module Strategists + Executors + Reviewer + Tester | 6-8 weeks | Final — critical path to LIVE. |
+| 1 | **🎨 Unified design system across all modules** — Design tokens (colors, typography, spacing, shadows, border-radius), component library (buttons, modals, tables, forms, cards), accessibility standards. Build via Claude Designs. Replaces ad-hoc styling across modules. Sketches per module then conform to this system. | Main Strategic (Daniel involved) | 1-2 days | First (after safety-infra ✅) — locks the visual contract before any UI is built. |
+| 2 | **📦 Module Repo Split** — Decision Apr 2026 finally executed: split `opticalis/opticup` into per-module repos + `opticup-shared` (npm package or git submodule with shared.js + design tokens + components). Enables 3-4 parallel Claude Code sessions + onboarding additional contributors. | Main Strategic + Executor | 1-2 days | Second — enables parallel SPEC execution downstream. |
+| 3 | **M1 expansion — 3 missing inventory tables: lenses (משקפיים), contact-lenses (עדשות-מגע), accessories (אביזרים)** — Sketches first (Daniel involved — no sketches done yet), then Brief, then SPECs. Currently M1 only handles frames. **BLOCKER for M7 + M9 implementation.** | Main Strategic (Daniel) → M1 Module Strategist | 1 week | Third — Daniel-involved sketches required first; then unblocks M7/M9. |
+| 4 | **M13 Brief amendment** — add basic-free membership type (auto-created on first compensation/Referral, no-fee, no-bonus, but receives credits). Edit `modules/Module 13 - Loyalty Club/architecture-brief/M13_LOYALTY_BRIEF.md` D5 + add new entity slot. Surfaced 2026-05-10 during M9 D24. | Main Strategic (Daniel) | ~30 min | Required for M9 Brief execution — can run anytime before M9 SPECs start. |
+| 5 | **🚀 Module SPEC authoring + execution (parallel)** — After tasks 1-3 complete: 4-agent chain (Foreman → Executor → Reviewer → Localhost-Tester → back to Foreman) on each module in parallel across split repos. Order: M5/M6/M7 (foundation) first, then M8/M9/M11/M12/M13 in parallel. Foreman escalates blockers to Main Strategic (me); Main Strategic escalates non-resolvable issues to Daniel; every Daniel-resolved issue → SKILL.md update so it never repeats. | Module Strategists + Executors + Reviewer + Tester | 6-8 weeks | Final — critical path to LIVE. |
 
 ---
 
@@ -73,6 +72,17 @@ After M9 → Module Strategists write SPECs → Executors build → cutover.
 ---
 
 ## ✅ Completed recently — for context
+
+**2026-05-10 (later session):**
+- **🛡️ Safety Infrastructure ✅ COMPLETED** (was Active task #1):
+  - `opticup-localhost-tester` skill (4th agent in chain) ← `.claude/skills/opticup-localhost-tester/SKILL.md`
+  - `scripts/start-local.ps1` (auto-launch ERP + Storefront, idempotent, dual-stack health check)
+  - `tests/smoke/baseline.test.mjs` — **7/7 PASS** on demo tenant (PIN/CRM/inventory/storefront/RLS/5xx)
+  - `scripts/snapshot.mjs` — git-tag pre-SPEC + rollback (Supabase branch deferred to v2)
+  - `docs/AGENT_CHAIN_PROTOCOL.md` (full 5-agent chain documented)
+  - CLAUDE.md §11 updated to reflect new layer + `npm run dev` / `npm run smoke` shortcuts
+  - 3 bugs caught in first test: Start-Job→Start-Process, IPv4-only TcpClient→Invoke-WebRequest, /contact→/supersale
+- SKILL_PENDING merge: P32-P39 promoted from 3 side-cars into opticup-main-strategic SKILL.md (M13 + M9 Module Close Ceremonies finalized)
 
 **2026-05-10:**
 - **M13 (Loyalty Club) Architecture Brief sealed** — 5 sketches, 13 locked decisions, 6 entities, 4 engines, contracts with M5/M7/M8/M11/M12/M3 (commits 7cafa9e + 6022da2)
