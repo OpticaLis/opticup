@@ -1,0 +1,18 @@
+{
+  "_meta": {
+    "spec": "M3_LIGHTHOUSE_NIGHTLY_CRON",
+    "purpose": "Regression detection thresholds. A REGRESSION entry is appended to GUARDIAN_ALERTS.md when ANY of these triggers fires for ANY URL vs. its prior baseline. Tighter values = more alerts; looser = quieter. v1 values come from SPEC §3 SC #6 + #11."
+  },
+  "perf_score_drop_min": 5,
+  "perf_score_floor": 80,
+  "a11y_score_drop_min": 3,
+  "seo_score_drop_min": 5,
+  "best_practices_drop_min": 5,
+  "axe_violation_increase_alert": true,
+  "_notes": {
+    "perf_score_drop_min": "Drop of 5+ points day-over-day fires a REGRESSION. Lighthouse perf scores have ~3-pt CDN/cold-start variance; 5 catches real regressions without flap.",
+    "perf_score_floor": "Even without a day-over-day drop, ANY page scoring below 80 fires a REGRESSION. Surfaces persistent perf debt.",
+    "a11y_score_drop_min": "a11y is more deterministic than perf — 3 points is a real change.",
+    "axe_violation_increase_alert": "Any new axe-core violation count > prior baseline fires a REGRESSION."
+  }
+}

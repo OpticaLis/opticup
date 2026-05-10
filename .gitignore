@@ -50,7 +50,15 @@ modules/Module 4 - CRM/go-live/_rung1-*/
 
 # Sentinel auto-writes — regenerated every scan, no archival value
 docs/guardian/*.md
-docs/guardian/
+docs/guardian/*/
+# Lighthouse cron — committed reports + alerts (M3_LIGHTHOUSE_NIGHTLY_CRON)
+# Note: directory-level ignore (`docs/guardian/`) was replaced with subdir-only
+# (`docs/guardian/*/`) because git skips ignored directories entirely and
+# wouldn't reach un-ignore patterns inside them. The un-ignore lines below
+# now actually take effect.
+!docs/guardian/lighthouse-reports/
+!docs/guardian/lighthouse-reports/**
+!docs/guardian/GUARDIAN_ALERTS.md
 
 # Cowork session prompt artifacts — per-session, transient
 outputs/
