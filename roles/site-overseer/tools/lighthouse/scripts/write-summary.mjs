@@ -59,7 +59,7 @@ export async function writeSummary(reportDir) {
   return { rowCount: rows.length, okCount: okRows.length, skipCount: skipRows.length, avgPerf, avgA11y };
 }
 
-if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`) {
+if (process.argv[1] && import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`) {
   const reportDir = process.argv[2];
   if (!reportDir) {
     console.error('Usage: node write-summary.mjs <report-dir>');

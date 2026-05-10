@@ -14,6 +14,17 @@ export async function launchChrome() {
   return launch({ chromeFlags: CHROME_FLAGS });
 }
 
+// Safe kill — chrome-launcher's destroyTmp() can throw EPERM on Windows
+// when the runtime profile dir still has open handles (Chrome's own cleanup
+// is racy). Swallow it; the OS reaps the temp on logoff anyway.
+export async function safeKillChrome(chrome) {
+  try {
+    await chrome.kill();
+  } catch (e) {
+    console.warn('[chrome.kill] non-fatal:', e.code || e.name || e.message);
+  }
+}
+
 export async function probeStatus(url) {
   try {
     const r = await fetch(url, { method: 'HEAD', redirect: 'follow', signal: AbortSignal.timeout(15000) });

@@ -1,0 +1,12 @@
+{
+  "url": "https://www.prizma-optic.co.il/en/categories/sunglasses/",
+  "lang": "en",
+  "path": "/categories/sunglasses/",
+  "label": "sunglasses-cat",
+  "http": 404,
+  "skip": true,
+  "skipKind": "SKIP_404",
+  "scores": null,
+  "axeViolationCount": null,
+  "capturedAt": "2026-05-10T08:48:47.449Z"
+}

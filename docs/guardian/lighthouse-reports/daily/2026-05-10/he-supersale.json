@@ -1,0 +1,17 @@
+{
+  "url": "https://www.prizma-optic.co.il/supersale/",
+  "lang": "he",
+  "path": "/supersale/",
+  "label": "supersale",
+  "http": 200,
+  "scores": {
+    "performance": 88,
+    "accessibility": 97,
+    "seo": 100,
+    "best-practices": 79
+  },
+  "axeViolationCount": 1,
+  "capturedAt": "2026-05-10T08:49:08.893Z",
+  "fetchTime": "2026-05-10T08:48:56.263Z",
+  "lighthouseVersion": "12.8.2"
+}

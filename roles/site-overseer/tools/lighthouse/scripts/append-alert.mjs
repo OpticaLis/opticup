@@ -66,7 +66,7 @@ export async function appendAlert(alertsFilePath, runMeta) {
   return { wroteSection: true, regressionCount: runMeta.regressions.length };
 }
 
-if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`) {
+if (process.argv[1] && import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`) {
   const [alertsPath, metaJsonPath] = process.argv.slice(2);
   if (!alertsPath || !metaJsonPath) {
     console.error('Usage: node append-alert.mjs <GUARDIAN_ALERTS.md> <run-meta.json>');

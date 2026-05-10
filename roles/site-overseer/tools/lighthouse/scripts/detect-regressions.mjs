@@ -114,7 +114,7 @@ export async function detectRegressions(todayDir, priorDir, thresholds) {
   return { regressions, comparisonsRun, baselineDate: path.basename(priorDir) };
 }
 
-if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`) {
+if (process.argv[1] && import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`) {
   const [todayDir, priorDir, thresholdsPath] = process.argv.slice(2);
   if (!todayDir || !thresholdsPath) {
     console.error('Usage: node detect-regressions.mjs <today-dir> <prior-dir|""> <thresholds.json>');

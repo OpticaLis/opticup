@@ -6,7 +6,7 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { REPO_ROOT, launchChrome, probeStatus, runLighthouse, extractScores, countAxeViolations, classifySkip } from './_lib.mjs';
+import { REPO_ROOT, launchChrome, safeKillChrome, probeStatus, runLighthouse, extractScores, countAxeViolations, classifySkip } from './_lib.mjs';
 import { writeSummary } from './write-summary.mjs';
 import { detectRegressions } from './detect-regressions.mjs';
 import { appendAlert } from './append-alert.mjs';
@@ -90,7 +90,7 @@ async function runTier1Main() {
       }
     }
   } finally {
-    await chrome.kill();
+    await safeKillChrome(chrome);
   }
 
   const summaryStats = await writeSummary(reportDir);
