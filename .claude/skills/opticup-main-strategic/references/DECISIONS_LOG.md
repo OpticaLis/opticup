@@ -34,6 +34,9 @@ Format for full entries (in `decisions/<MODULE>.md`): situation → my recommend
 | 11 | 2026-05-09 | Daniel directive: "I want infrastructure, not culture. Culture decays." | Triggered STRUCTURE_PROTECTIONS SPEC. Pattern: when documenting a rule, ask "where's the enforcement?" If only a doc, it will erode. |
 | 12 | 2026-05-09 | STRUCTURE_PROTECTIONS SPEC executed (10 commits) | 3 protection layers active: pre-commit hook (check-root-discipline) + Sentinel Mission 10 (daily audit) + main-strategic Step 4.5 (bootstrap auto-check). Smoke-tested: a FORBIDDEN_TEST.md was correctly blocked. |
 | 13 | 2026-05-09 | Module Close Ceremony for STRUCTURE_PROTECTIONS | Lesson P31 (3-layer enforcement) promoted to SKILL.md. F1 (auto-load vs spawn) + F2 (.gitignore line 34 — 3rd occurrence, MUST FIX next session) documented. |
+| 14 | 2026-05-10 | Module Close Ceremony for M13 (Loyalty Club) | Lessons P32 (anti-legacy-pattern) + P33 (settings sketch mandatory with P19) promoted to SKILL.md via SKILL_PENDING_M13_CLOSE.md. |
+| 15 | 2026-05-10 | M9 (Lab/KDS) Architecture Brief sealed | 25 decisions, 8 entities, 5 engines, 4 sketches (KDS + Shipments + Dashboard + Settings). M9 framed as "McDonalds System" not "shipping extension"; old shipping module deprecated; major hybrid with M1+M5+M7+M8+M11+M12+M13. **All 10 Briefs sealed** — clear path to SPECs. |
+| 16 | 2026-05-10 | Module Close Ceremony for M9 | Lessons P34 (sketches before brief) + P35 (HTML sketch file format) + P36 (computer:// links) + P37 (reframe → reopen locks) + P38 (settings sketch first for config-heavy) + P39 (additive max caps) promoted to SKILL.md via SKILL_PENDING_M9_PATTERNS.md + SKILL_PENDING_M9_CLOSE.md. |
 
 ---
 
@@ -139,7 +142,30 @@ Format for full entries (in `decisions/<MODULE>.md`): situation → my recommend
 
 | # | Date | Topic | One-liner |
 |---|---|---|---|
-| 1 | 2026-05-10 | M13 Architecture Brief sealed | 13 locked decisions, 5 sketches, 6 entities, 4 engines; D13 anti-Access-pattern was textbook (Daniel raised legacy Access manual-code workaround → rejected as "workaround for concurrency limitations we don't have. Don't replicate."). |
+| 1 | 2026-05-10 | M13 Architecture Brief sealed | 13 locked decisions, 5 sketches, 6 entities, 4 engines; D13 anti-Access-pattern was textbook. |
+| 2 | 2026-05-10 | M13 Brief amendment surfaced (during M9 D24) | Add basic-free membership type — auto-created on first compensation/Referral. Pending Daniel update. |
+
+---
+
+## M9 — Lab/KDS
+
+→ Full detail: [`decisions/M9.md`](decisions/M9.md)
+
+| # | Date | Topic | One-liner |
+|---|---|---|---|
+| 1 | 2026-05-10 | Sub-agent research (P23) | 78 sources; optical-industry KDS standards; Israeli labs = manual integration only. |
+| 2 | 2026-05-10 | Scope reframe: M9 = "McDonalds System" not shipping extension | Old "M9 extends shipments" decision OVERTURNED — major reframe. |
+| 3 | 2026-05-10 | M1's old shipments module deprecated; absorbed into M9 | Single source of truth for all shipping/tracking. |
+| 4 | 2026-05-10 | Two clocks: processing + pickup (separate metrics) | Processing has 3 thresholds (yellow/red/comp), pickup has 2 (yellow/red, no comp). |
+| 5 | 2026-05-10 | Threshold = per-category, not per-flow | Daniel directive — flow is internal. |
+| 6 | 2026-05-10 | M1 extension blocker surfaced | 3 inventory tables (lenses/contact-lenses/accessories) needed before M7/M9. |
+| 7 | 2026-05-10 | KDS sketch C v2 chosen | Priority-split + sub-row drawer + 3 tabs. |
+| 8 | 2026-05-10 | Shipping boxes — many-to-many in/out | Outbound box returns split across multiple inbound boxes. |
+| 9 | 2026-05-10 | Incoming box = full entity, 3 types (return/stock/inter-branch) | Mid-discussion change from placeholder to full entity. |
+| 10 | 2026-05-10 | Compensation matrix per (category × delay tier) + manager additive cap | Manager max-addition is additive over recommendation, not absolute (Daniel correction). |
+| 11 | 2026-05-10 | Loyalty connection — basic-free membership auto-created on first compensation | M13 amendment pending. |
+| 12 | 2026-05-10 | Settings sidebar v2 (8 active + 3 external links) | Sidebar pattern for config-heavy modules. |
+| 13 | 2026-05-10 | M9 Architecture Brief sealed | 25 decisions, 8 entities, 5 engines, 4 sketch files. **Last Brief before LIVE.** |
 
 ---
 
@@ -152,12 +178,16 @@ When a pattern surfaces in 3 or more independent decisions across modules, forma
 | **Don't flow with everything Daniel says** | M7 (Frame Reservation), M8 (settlement mode mid-correction), M12 (channel admin split correction) | ✅ 3 strikes — promoted to **P24** |
 | **Verify existing vendor before recommending switch** | M8 (Linet vs Z Credit), M12 (SMS vs Inforu), M12 (Email vs Resend) | ✅ 3 strikes — promoted to **P25** |
 | **Hybrid model > pure flexibility OR pure control** | M5 (active marketing consent), M8 (settlement mode tenant-config), M12 (channel ownership) | ✅ 3 strikes — promoted to **P26** |
-| **Sketch the feature, not the host screen** | M5 (customer card), M12 (customer history mockup), Project Cleanup (no UI but same lesson — write the change, not the entire host) | ✅ 3 strikes — promoted to **P27** |
-| **Lock infrastructure, defer UX** | M5 (consent), M12 (consent UX) | ⚠️ 2 strikes — watch for 3rd in M13 |
-| **Executor pre-flight catches author blindspots** | Project Cleanup SPEC (5 author bugs caught by executor pre-flight) | ✅ 1 strike but transformational — promoted to **P28** |
-| **Research subagents are 6-12 months stale** | M12 (WhatsApp Coexistence not in initial research) | 🆕 1 strike — watch |
-| **Read-only mode promise for Chrome MCP** | M12 (Meta Business audit) | 🆕 1 strike — watch |
-| **Make = one-way, Edge Function = two-way** | M12 (WhatsApp routing decision) | 🆕 1 strike — watch |
+| **Sketch the feature, not the host screen** | M5 (customer card), M12 (customer history mockup), Project Cleanup | ✅ 3 strikes — promoted to **P27** |
+| **Executor pre-flight catches author blindspots** | Project Cleanup SPEC | ✅ 1 strike but transformational — promoted to **P28** |
+| **Anti-Legacy-Pattern Check** | M13 D13 (family-credit code-passing), M9 D2 (overturning shipping extension) | ✅ promoted to **P32** |
+| **Settings panel mandatory under Pattern P19** | M13 (4 configurable groups), M9 (8 active sidebar tabs) | ✅ promoted to **P33** |
+| **Sketches BEFORE Brief** | M9 (4 sketch documents created before Brief; multiple iterations per Daniel feedback) | ✅ promoted to **P34** |
+| **HTML sketch file format** | M9 (4 separate HTML files in architecture-brief folder) | ✅ promoted to **P35** |
+| **computer:// links for files Daniel must open** | M9 (every sketch delivery used computer:// link) | ✅ promoted to **P36** |
+| **Reframe scope → reopen previously-locked decisions** | M9 D2 (M9 reframe overturned year-old shipping-extension decision) | ✅ promoted to **P37** |
+| **Settings sketch FIRST when config-heavy** | M9 (operational-first led to late surfacing of M1 ↔ M9 supplier sync question) | ✅ promoted to **P38** |
+| **Manager max-addition is additive, not absolute** | M9 D9 (compensation matrix manager cap) | ✅ promoted to **P39** |
 
 ---
 
@@ -173,12 +203,13 @@ When a module's Architecture Brief is sealed:
 
 **Last Module Close ceremonies performed:**
 - **M12 — 2026-05-09** — promoted P24, P25, P26 to SKILL.md.
-- **Project Structure Cleanup — 2026-05-09** — promoted P27 (sketch-the-feature) + P28 (executor-pre-flight) to SKILL.md.
-- **MODULES_HOME_UNIFICATION — 2026-05-09** — promoted P29 (sweep-references pre-flight) + P30 (retired-marker policy) to SKILL.md.
-- **STRUCTURE_PROTECTIONS — 2026-05-09** — promoted P31 (3-layer enforcement: prevent + detect + remind) to SKILL.md.
+- **Project Structure Cleanup — 2026-05-09** — promoted P27 + P28 to SKILL.md.
+- **MODULES_HOME_UNIFICATION — 2026-05-09** — promoted P29 + P30 to SKILL.md.
+- **STRUCTURE_PROTECTIONS — 2026-05-09** — promoted P31 to SKILL.md.
+- **M13 — 2026-05-10** — promoted P32 + P33 (pending merge: SKILL_PENDING_M13_CLOSE.md).
+- **M9 — 2026-05-10** — promoted P34 + P35 + P36 + P37 + P38 + P39 (pending merge: SKILL_PENDING_M9_PATTERNS.md + SKILL_PENDING_M9_CLOSE.md).
 
-**Modules pending Module Close Ceremony retroactively** (skipped at the time):
-- M5, M6, M7, M8, M11 — these closed without ceremony. Catch-up sweep done 2026-05-09 (this index).
+**Post-LIVE Action:** ALL Architecture Briefs sealed (M5/M6/M7/M8/M9/M11/M12/M13/M14/M15). Module Strategists begin SPEC authoring with M1-extension as first blocker.
 
 ---
 
