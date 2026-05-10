@@ -2,6 +2,34 @@
 
 ---
 
+## OVERNIGHT_HYGIENE_SWEEP_2026_05_09 — cross-cutting hygiene sweep (16 items, 12 closed) 🟡
+
+| Hash | Message |
+|------|---------|
+| `a6fef92` | `docs(spec): add OVERNIGHT_HYGIENE_SWEEP_2026_05_09 SPEC + ACTIVATION` |
+| `b9fced1` | `docs(eod): update OPEN_TASKS + TECH_DEBT (Cowork EOD)` |
+| `14769aa` | `docs(m3): close M3_SITEMAP_BRAND_404_CLEANUP with FOREMAN_REVIEW + SKILL_IMPROVEMENTS (parallel-sync)` |
+| `fe01f5e` | `docs(qa): POST_MERGE_QA report (read-only)` |
+| `67db6d9` | `chore(cleanup): item 1 — gitignore dedupe + 8 explicit local-config ignores; remove -p/ + M3 recursive backup` |
+| `35bcaf1` | `docs(skills): item 2 — add skills audit report (1392 words)` |
+| `13a35d1` | `refactor(saas): item 4 — replace ILS hardcodes with formatMoney() (M-6, L-21)` |
+| `d2f352c` | `chore(production): item 5 — remove production console.log in CRM realtime + debt OCR (M-9)` |
+| `5a3c8b6` | `docs(modules): item 7 — refresh M1.5 + M3 SESSION_CONTEXT (M-7)` |
+| `7edde37` | `docs(m3): item 8 — backfill 5 oldest M3 FOREMAN_REVIEWs (L-22)` |
+| `81f6c9d` | `docs(schema): item 10 — fix GLOBAL_SCHEMA header 84→113 base tables (L-18)` |
+| `ac35be4` | `refactor(saas): item 11 — rename PRIZMA_PHONE_RE → IL_PHONE_RE (L-4)` |
+| `db042c0` | `refactor(saas): item 12 — replace 'inventory' with T.INV in goods-receipts (4 of 5 files; L-23)` |
+| `c623dd0` | `docs(scripts): item 13 — split scripts/README into sync-watcher + verify (TECH_DEBT #2)` |
+| `334db0e` | `docs(spec): close OVERNIGHT_HYGIENE_SWEEP_2026_05_09 with retrospective + OPEN_TASKS update` |
+
+Plus 2 commits in `opticup-storefront`: `2dc9827` (item 14 — tenant-fallback-map regen), `4425476` (item 15 — HTTP 406 fix on /meta.json).
+
+**Outcome:** 12 of 16 items CLOSED, 4 SKIPPED with FINDINGS (all 4 were Sentinel findings already-fixed before run, OR premise-invalid). 17 commits in ERP + 2 in storefront = 19 total. Sentinel findings closed: M-6, M-7, M-9, L-4, L-7, L-10, L-18, L-21, L-22, L-23, L-24 + M-12 partial (Item 3 documented as needing T-constants prerequisite). 2 doc-drift gaps (CHANGELOG entry + TECH_DEBT #2 → Resolved) closed in Module Close Ceremony — verdict 🟡 CLOSED WITH FOLLOW-UPS. 5 followups in `FOREMAN_REVIEW.md`: 2 new SPEC stubs (`M4_T_CONSTANTS_BACKFILL`, `SENTINEL_STALE_FINDING_AUTOREMOVE`), 2 SKILL updates (opticup-strategic + opticup-executor), 1 new M4-DEBT-01 entry.
+
+See `modules/Module 4 - CRM/docs/specs/OVERNIGHT_HYGIENE_SWEEP_2026_05_09/`.
+
+---
+
 ## M4_CLOSURE_AND_INTEGRATION_CEREMONY — administrative closure of the audit cycle (2026-05-06) ✅
 
 | Hash | Message |

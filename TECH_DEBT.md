@@ -32,25 +32,6 @@ horizon.
 
 **Effort:** ~4-6 hours design + implementation when the time comes.
 
-### #2 — 🟢 scripts/README.md mixes two unrelated topics
-
-**Where:** `scripts/README.md` currently contains InventorySync watcher docs
-(pre-existing, ~77 lines) appended with verify system docs (~65 lines) = 142
-lines mixed.
-
-**Why it's debt:** Two unrelated systems in one doc file violates the "one
-responsibility per file" spirit of Iron Rule 12, and makes the doc harder to
-scan.
-
-**Why not fixed now:** Phase 0 is additive. Splitting is pure cleanup, out of
-0A/0B scope.
-
-**Planned fix:** Split into `scripts/README-sync-watcher.md` (legacy content) +
-`scripts/README-verify.md` (verify system), delete `scripts/README.md`, update
-any references.
-
-**Effort:** ~15 min.
-
 ### #3 — 🟢 Phase 0A baseline violations snapshot (not to be fixed in Phase 0)
 
 **Where:** ERP repo at commit `4849d6f` (Phase 0A complete), run of
@@ -301,7 +282,33 @@ Block counts match (all 3 = 8), but block TYPES and ORDER diverge. R1 removed ti
 
 ---
 
+### M4-DEBT-01 — 🟢 receipt-ocr-review.js T.INV migration deferred (blocked by H-3 file-size hard max)
+
+**Where:** `modules/goods-receipts/receipt-ocr-review.js` (402 lines — pre-commit file-size check blocks at 350 hard max).
+
+**Why it's debt:** OVERNIGHT_HYGIENE_SWEEP_2026_05_09 Item 12 migrated `'inventory'` → `T.INV` across 5 goods-receipts files. 4 of 5 committed cleanly. The 5th (this file) was already 402 lines — Sentinel H-3 (24 oversized files); staging ANY change trips the file-size hook. The 1-line T.INV change was reverted; commit `db042c0` closed Item 12 partial.
+
+**Why not fixed now:** Cannot stage any change until file is decomposed. Decomposition is its own SPEC (per H-3 plan: `MISC_OVERSIZED_FILES_SPLIT`).
+
+**Planned fix:** When the H-3 cleanup SPEC ships and decomposes receipt-ocr-review.js into smaller modules, complete the residual T.INV migration (1 line — replace one `'inventory'` raw string with `T.INV`). 5-minute follow-up.
+
+**Effort:** ~5 min after H-3 file-split SPEC ships.
+
+**Source:** `modules/Module 4 - CRM/docs/specs/OVERNIGHT_HYGIENE_SWEEP_2026_05_09/FINDINGS.md` Finding F4 (executor-discovered 2026-05-09).
+
+---
+
 ## Resolved Debt
+
+### #2 — 🟢 scripts/README.md mixes two unrelated topics ✅ RESOLVED
+
+**Resolved by commit `c623dd0` on 2026-05-09 — OVERNIGHT_HYGIENE_SWEEP_2026_05_09 Item 13.**
+
+**Original state:** `scripts/README.md` mixed InventorySync watcher docs (~77 lines) with verify system docs (~65 lines) = 142 lines, two unrelated systems in one file (Iron Rule 12 spirit violation).
+
+**Fix applied:** Split into `scripts/README-sync-watcher.md` (78 lines) + `scripts/README-verify.md` (~75 lines, expanded to include null-bytes + check-root-discipline checks). Original `scripts/README.md` deleted. Zero references in live code.
+
+---
 
 ### #7 — 🟢 verify.mjs warnings exit policy inconsistent between ERP and Storefront ✅ RESOLVED
 
