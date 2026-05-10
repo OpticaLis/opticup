@@ -1,6 +1,6 @@
 # M8 Payments — Legal Requirements Research (Israel)
 
-**Source:** general-purpose subagent, dispatched 2026-05-08 by Main Strategic.
+**Source:** general-purpose subagent, dispatched 2026-05-08 by Architect.
 **Question answered:** Are ALL payment methods (including cash and checks) legally required to pass through a certified POS in Israel?
 **Verdict:** **YES.** Every payment — cash, checks, transfers, cards — must be recorded in a certified קופה-רושמת that issues the legal receipt. The ERP records the receipt-number; it does NOT issue the receipt itself.
 
@@ -64,4 +64,4 @@ Or — if POS supports forward-API (Linet does): Optic Up dispatches the payment
 
 ---
 
-*Saved 2026-05-08 by Main Strategic. Source: subagent dispatch.*
+*Saved 2026-05-08 by Architect. Source: subagent dispatch.*

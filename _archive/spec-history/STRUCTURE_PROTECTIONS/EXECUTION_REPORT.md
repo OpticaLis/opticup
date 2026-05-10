@@ -9,20 +9,20 @@
 
 ## 1. Summary
 
-The SPEC ran end-to-end under Bounded Autonomy in ~30 minutes (10 commits between 19:58 and 20:04). Installed three independent structural-discipline protection layers: (1) a pre-commit hook check (`scripts/checks/check-root-discipline.mjs`) that blocks new disallowed root files, (2) Sentinel Mission 10 for daily detection of drift past the hook, (3) a Step 4.5 in `opticup-main-strategic` skill bootstrap that surfaces Module Close Ceremony backlog at session start. Pre-flight caught one author-anticipation gap immediately: the SPEC's Commit 2/3 wiring assumed `spawnSync` subprocess invocation, but `verify.mjs` actually uses ES-module auto-load from `scripts/checks/`. Adapted the implementation to fit the existing pattern; documented the deviation. Both protection mechanisms now active: live smoke-test confirmed exit 1 for disallowed root file, exit 2 for new root directory, exit 0 for clean adds. Regression test (`test-root-discipline.mjs`) covers all 4 cases and passes 4/4.
+The SPEC ran end-to-end under Bounded Autonomy in ~30 minutes (10 commits between 19:58 and 20:04). Installed three independent structural-discipline protection layers: (1) a pre-commit hook check (`scripts/checks/check-root-discipline.mjs`) that blocks new disallowed root files, (2) Sentinel Mission 10 for daily detection of drift past the hook, (3) a Step 4.5 in `opticup-architect` skill bootstrap that surfaces Module Close Ceremony backlog at session start. Pre-flight caught one author-anticipation gap immediately: the SPEC's Commit 2/3 wiring assumed `spawnSync` subprocess invocation, but `verify.mjs` actually uses ES-module auto-load from `scripts/checks/`. Adapted the implementation to fit the existing pattern; documented the deviation. Both protection mechanisms now active: live smoke-test confirmed exit 1 for disallowed root file, exit 2 for new root directory, exit 0 for clean adds. Regression test (`test-root-discipline.mjs`) covers all 4 cases and passes 4/4.
 
 ## 2. What was done — 10 commits on `develop`, all pushed
 
 | # | Hash | Message | Time | Files |
 |---|---|---|---|---|
-| Pre-A | `0f4c236` | feat(skills): main-strategic — Cowork session updates from parallel work | 19:58 | 2 |
+| Pre-A | `0f4c236` | feat(skills): architect — Cowork session updates from parallel work | 19:58 | 2 |
 | Pre-B | `34b1853` | feat(planning): add STRUCTURE_PROTECTIONS SPEC + activation (temp location) | 19:59 | 2 |
 | C1 | `03d1e0e` | feat(checks): add root-allowlist.json — data-driven Root Discipline allowlist | 19:59 | 1 |
 | C2 | `5ca47a2` | feat(checks): add check-root-discipline.mjs — enforces CLAUDE.md §0.5 via verify.mjs auto-load | 19:59 | 1 |
 | C3 | `3ff286c` | feat(verify): document check-root-discipline auto-load + smoke-tested block exit 1 | 20:00 | 1 |
 | C4 | `a9d5625` | feat(tests): add test-root-discipline regression suite (4 cases) + npm script | 20:02 | 2 |
 | C5 | `3dd82de` | feat(sentinel): add Mission 10 — Structure Discipline daily audit | 20:03 | 2 |
-| C6 | `f57e782` | feat(skill): add Step 4.5 to main-strategic bootstrap — auto-audit Module Close Ceremony backlog | 20:04 | 1 |
+| C6 | `f57e782` | feat(skill): add Step 4.5 to architect bootstrap — auto-audit Module Close Ceremony backlog | 20:04 | 1 |
 | C7 | `abb0ac9` | docs(rules): document §0.5 enforcement layer (pre-commit + sentinel + bootstrap) | 20:04 | 1 |
 
 **Time taken:** ~35 minutes elapsed (pre-flight + 9 commits + final verification + retrospective writing).
@@ -32,7 +32,7 @@ The SPEC ran end-to-end under Bounded Autonomy in ~30 minutes (10 commits betwee
 ### D1 — Pre-SPEC commits (matching previous 2 SPECs' pattern)
 
 **SPEC said:** Begin with Commit 1 on a clean tree.
-**Reality:** 2 modified files (Cowork main-strategic SKILL + DECISIONS_LOG) + 2 untracked SPEC files. Same pattern as PROJECT_STRUCTURE_CLEANUP and MODULES_HOME_UNIFICATION.
+**Reality:** 2 modified files (Cowork architect SKILL + DECISIONS_LOG) + 2 untracked SPEC files. Same pattern as PROJECT_STRUCTURE_CLEANUP and MODULES_HOME_UNIFICATION.
 **Resolution:** Pre-SPEC A + B committed cleanly. Daniel pre-locked the pattern in the dispatch directive.
 
 ### D2 — Wiring pattern: auto-load instead of spawn
@@ -106,7 +106,7 @@ verify.mjs integration: ✓ (grep "check-root-discipline" → 1 hit in scripts/v
 scripts/test-root-discipline.mjs: ✓ (122 lines, no git stash)
 npm run test:root-discipline: exit 0 ✓ (4/4 tests pass: A, B-skipped, C, D)
 Sentinel Mission 10 added to SKILL.md + missions/: ✓ (10-structure-discipline.md, "The Ten Missions" header, daily schedule)
-opticup-main-strategic Step 4.5 added: ✓ (2 grep hits — body + CLAUDE.md cross-reference)
+opticup-architect Step 4.5 added: ✓ (2 grep hits — body + CLAUDE.md cross-reference)
 CLAUDE.md §0.5 enforcement note added: ✓ (1 grep hit on "Enforcement")
 git status: clean ✓ (only 2 parallel-sync site-overseer items + 3 agreed leave-alone tests/*.accdb — all outside SPEC scope)
 verify:integrity: exit 0 ✓
@@ -122,7 +122,7 @@ test:root-discipline: exit 0 ✓
 | Adherence to SPEC | 9 | All 8 success criteria met. 5 deviations (D1–D5) all resolved per Daniel's pre-locked dispatch directives or via principled adaptation (auto-load vs spawn). The §11 block matches SPEC verbatim. |
 | Adherence to Iron Rules | 10 | No rule violations across 9 commits. Rule 31 integrity gate clean throughout. Rule 12 file-size: all new files well under limits. Rule 23 hook clean (no secrets surfaced). |
 | Commit hygiene | 10 | All 9 commits scoped, conventional message format, no `git add -A`/`.`, no `--no-verify`, no force pushes. Each commit pushes before next starts. C2 (the new check) was smoke-tested before commit. |
-| Documentation currency | 9 | `CLAUDE.md` §0.5 has the enforcement note. `verify.mjs` has the auto-load comment. `opticup-sentinel` SKILL has Mission 10. `opticup-main-strategic` SKILL has Step 4.5. Did NOT update `docs/FILE_STRUCTURE.md` for `scripts/checks/root-allowlist.json` — a minor gap, but the file lives at a path the structure doc doesn't enumerate (`scripts/checks/` isn't broken out). |
+| Documentation currency | 9 | `CLAUDE.md` §0.5 has the enforcement note. `verify.mjs` has the auto-load comment. `opticup-sentinel` SKILL has Mission 10. `opticup-architect` SKILL has Step 4.5. Did NOT update `docs/FILE_STRUCTURE.md` for `scripts/checks/root-allowlist.json` — a minor gap, but the file lives at a path the structure doc doesn't enumerate (`scripts/checks/` isn't broken out). |
 
 ## 9. Two proposals to improve `opticup-executor` SKILL
 
@@ -153,4 +153,4 @@ test:root-discipline: exit 0 ✓
 
 ---
 
-*EXECUTION_REPORT complete. Awaiting Cowork Main Strategic's Module Close Ceremony.*
+*EXECUTION_REPORT complete. Awaiting Cowork Architect's Module Close Ceremony.*

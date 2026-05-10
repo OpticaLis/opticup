@@ -1,7 +1,7 @@
 # M13 Decisions — for copy into DECISIONS_LOG
 
-> **Where this goes:** `.claude/skills/opticup-main-strategic/references/decisions/M13.md` (Cowork can't write there directly — Claude Code on Daniel's machine should copy this content there)
-> **Also update:** `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md` with index entry
+> **Where this goes:** `.claude/skills/opticup-architect/references/decisions/M13.md` (Cowork can't write there directly — Claude Code on Daniel's machine should copy this content there)
+> **Also update:** `.claude/skills/opticup-architect/references/DECISIONS_LOG.md` with index entry
 
 ---
 
@@ -80,7 +80,7 @@
 
 ---
 
-## Skill improvement proposals (apply to opticup-main-strategic SKILL.md)
+## Skill improvement proposals (apply to opticup-architect SKILL.md)
 
 **Proposal 1 — Anti-Legacy-Pattern Check:**
 When user describes a legacy process from old system (Access/Excel/paper), classify: (a) genuine business requirement or (b) limitation of legacy tech. If (b), do NOT replicate. Cite M13 D13 as canonical example.

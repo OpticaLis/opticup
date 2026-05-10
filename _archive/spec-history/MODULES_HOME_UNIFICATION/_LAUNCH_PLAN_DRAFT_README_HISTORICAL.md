@@ -45,9 +45,9 @@ __LAUNCH_PLAN_DRAFT__/
 | **Architecture Briefs (cross-module decisions)** | `architecture-briefs/<MODULE>/<MODULE>_*_BRIEF.md` |
 | **Module sketches (HTML mockups)** | `architecture-briefs/<MODULE>/*_MOCKUP.html` |
 | **Session-to-session handoffs** | `handoffs/<MODULE>_HANDOFF.md` |
-| **Strategic decisions log (index)** | `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md` |
-| **Per-module decisions detail** | `.claude/skills/opticup-main-strategic/references/decisions/<MODULE>.md` |
-| **Skill self-improvement patterns** | `.claude/skills/opticup-main-strategic/SKILL.md` |
+| **Strategic decisions log (index)** | `.claude/skills/opticup-architect/references/DECISIONS_LOG.md` |
+| **Per-module decisions detail** | `.claude/skills/opticup-architect/references/decisions/<MODULE>.md` |
+| **Skill self-improvement patterns** | `.claude/skills/opticup-architect/SKILL.md` |
 | **Iron Rules + Authority Matrix** | `/CLAUDE.md` (repo root) |
 
 ---
@@ -70,8 +70,8 @@ When opening a new Architecture Brief:
    - `M{N}_*_MOCKUP.html` — sketches (one HTML per screen)
 3. Write the next module's `M{N+1}_HANDOFF.md` inside `handoffs/` (NOT inside the architecture-briefs folder).
 4. Update `/MASTER_ROADMAP.md` §2.5 with the new brief status.
-5. Run **Module Close Ceremony** — see `.claude/skills/opticup-main-strategic/SKILL.md`.
+5. Run **Module Close Ceremony** — see `.claude/skills/opticup-architect/SKILL.md`.
 
 ---
 
-*Maintained by the Main Strategic skill. Reorganized 2026-05-09.*
+*Maintained by the Architect skill. Reorganized 2026-05-09.*

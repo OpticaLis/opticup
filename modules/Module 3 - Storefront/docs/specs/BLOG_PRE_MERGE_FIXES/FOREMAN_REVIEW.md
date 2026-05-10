@@ -127,7 +127,7 @@ All 3 spot-checks pass. No verdict downgrade.
 | `TECH_DEBT.md` (or module equivalent) | YES | **VERIFY** | Finding #5 (4 lost images) needs a TECH_DEBT row. |
 | `docs/guardian/GUARDIAN_ALERTS.md` | Only if any alert was blocked on this fix | Not applicable — no active alert was specifically blog-content-related | — |
 
-**Pending Foreman-side verification:** MASTER_ROADMAP §3 line; TECH_DEBT entry for 4 lost images. Both are trivial surgical edits; Main Strategic Chat can do them in <2 minutes. Capping the verdict at 🟡 until those land is consistent with the Hard-Fail rule and the usual Integration Ceremony discipline.
+**Pending Foreman-side verification:** MASTER_ROADMAP §3 line; TECH_DEBT entry for 4 lost images. Both are trivial surgical edits; Architect can do them in <2 minutes. Capping the verdict at 🟡 until those land is consistent with the Hard-Fail rule and the usual Integration Ceremony discipline.
 
 ---
 

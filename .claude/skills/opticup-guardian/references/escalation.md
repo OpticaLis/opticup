@@ -3,7 +3,7 @@
 ## The Chain
 
 ```
-Code Writer → Secondary → Module Strategic → Main Strategic → Daniel
+Code Writer → Secondary → Module Strategic → Architect → Daniel
 ```
 
 Every escalation moves UP one level. Never skip levels. Never escalate sideways.
@@ -23,13 +23,13 @@ Every escalation moves UP one level. Never skip levels. Never escalate sideways.
 - "Code Writer hit a deviation I can't resolve from the SPEC" (unresolvable deviation)
 - "Phase step X completed but step Y has unclear success criteria" (SPEC ambiguity)
 
-### Module Strategic → Main Strategic
+### Module Strategic → Architect
 - "This decision affects another module" (cross-module impact)
 - "I need a rule interpretation" (rule ambiguity)
 - "The SPEC needs architectural input" (design decision)
 - "Phase completion — here's the integration ceremony checklist" (phase boundary)
 
-### Main Strategic → Daniel
+### Architect → Daniel
 **Only these categories reach Daniel:**
 - Scope changes (adding/removing features or modules)
 - Business direction (which module next, product priorities)
@@ -94,8 +94,8 @@ Any role can trigger an emergency stop if:
 - A destructive git operation is about to happen
 - Cross-tenant data leakage is possible
 
-Emergency stop = halt all work, report to Main Strategic immediately.
-Main Strategic decides whether to escalate to Daniel.
+Emergency stop = halt all work, report to Architect immediately.
+Architect decides whether to escalate to Daniel.
 
 ---
 

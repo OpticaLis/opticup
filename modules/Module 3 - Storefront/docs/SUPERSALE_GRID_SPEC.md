@@ -2,7 +2,7 @@
 
 **Repo:** `opticalis/opticup-storefront` (develop)
 **Page:** `/supersale/` (he) — block at index 4
-**Author:** Daniel (via Main Strategic Chat)
+**Author:** Daniel (via Architect)
 **Date:** 2026-04-13
 **Type:** Content edit (no code changes anticipated) + Full site QA
 

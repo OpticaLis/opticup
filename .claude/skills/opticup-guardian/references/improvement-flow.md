@@ -57,12 +57,12 @@ When you hit a trigger, log it immediately. Don't wait for the task to finish.
 **Priority:** [CRITICAL — blocks work | HIGH — slows work | MEDIUM — friction | LOW — nice to have]
 ```
 
-### Step 2: REVIEW (Main Strategic)
+### Step 2: REVIEW (Architect)
 
-Main Strategic reviews improvement entries and decides:
+Architect reviews improvement entries and decides:
 
 - **Accept** — the proposed fix is correct, proceed to implement
-- **Modify** — the fix needs adjustment (Main Strategic provides direction)
+- **Modify** — the fix needs adjustment (Architect provides direction)
 - **Defer** — valid but not now (add to backlog with reason)
 - **Reject** — not a system problem, was a one-time event (with explanation)
 
@@ -73,11 +73,11 @@ For MEDIUM and LOW: review at next phase boundary.
 
 | Fix Type | Who Implements | What Changes |
 |---|---|---|
-| rule | Main Strategic proposes to Daniel | CLAUDE.md updated, guardian skill updated |
-| skill | Main Strategic or Module Strategic | Skill files updated |
+| rule | Architect proposes to Daniel | CLAUDE.md updated, guardian skill updated |
+| skill | Architect or Module Strategic | Skill files updated |
 | doc | The role closest to the documentation | Relevant .md files updated |
 | hook | Code Writer (with Module Strategic approval) | Pre-commit hooks or verify scripts updated |
-| process | Main Strategic | Escalation protocol, role definitions, or flow updated |
+| process | Architect | Escalation protocol, role definitions, or flow updated |
 | tool | Code Writer (with Module Strategic approval) | New script or automation added |
 
 Every implementation includes:
@@ -85,7 +85,7 @@ Every implementation includes:
 - Update to the guardian skill if rules or roles are affected
 - A note in the improvement log that the fix was applied
 
-### Step 4: VERIFY (QA Reviewer or Main Strategic)
+### Step 4: VERIFY (QA Reviewer or Architect)
 
 After implementation, verify:
 

@@ -2,7 +2,7 @@
 
 **גרסה:** v1
 **תאריך:** 2026-05-07
-**מחבר:** Main Strategic (skill `opticup-main-strategic`)
+**מחבר:** Architect (skill `opticup-architect`)
 **יעד:** Module Strategist של M15.
 
 > זה לא SPEC. שכבת-ביניים בין Master Plan ל-SPEC.

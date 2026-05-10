@@ -2,7 +2,7 @@
 
 **גרסה:** v3 (2026-05-07 — תוספות UX/screens מהסשן של 2026-05-07)
 **תאריך:** 2026-05-07
-**מחבר:** Main Strategic (skill `opticup-main-strategic`)
+**מחבר:** Architect (skill `opticup-architect`)
 **יעד:** Module Strategist של M5 (סקיל `opticup-strategic`) שיכתוב על בסיס המסמך הזה את ה-`MODULE_5_ROADMAP.md`, את ה-MODULE_SPEC, ואת ה-SPECs הפרטיים.
 
 > **שינויים מ-v2 (סשן 2026-05-07):**
@@ -348,7 +348,7 @@ UI:
 
 ---
 
-## 8. רשימת-החלטות-נסגרות (מתועד גם ב-DECISIONS_LOG.md של Main Strategic)
+## 8. רשימת-החלטות-נסגרות (מתועד גם ב-DECISIONS_LOG.md של Architect)
 
 ### החלטות מ-v1/v2:
 

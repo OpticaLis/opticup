@@ -40,7 +40,7 @@ Process:
 
 If anything diverges from the SPEC's assumptions → STOP and report. The previous SPEC taught us that pre-flight catches author bugs; trust the catches.
 
-After completion, return clean to Daniel and standby. Cowork Main Strategic will run Module Close Ceremony for this SPEC.
+After completion, return clean to Daniel and standby. Cowork Architect will run Module Close Ceremony for this SPEC.
 ```
 
 ---
@@ -51,8 +51,8 @@ After completion, return clean to Daniel and standby. Cowork Main Strategic will
 - **Commits:** 9 SPEC commits + possibly 1-3 Pre-SPEC commits if pre-existing work exists.
 - **Risk:** Medium — many file moves, but all tracked moves use `git mv` (preserves history).
 
-When done, come back to Cowork Main Strategic with: "executor finished MODULES_HOME_UNIFICATION SPEC, all commits + verification clean."
+When done, come back to Cowork Architect with: "executor finished MODULES_HOME_UNIFICATION SPEC, all commits + verification clean."
 
 ---
 
-*Authored 2026-05-09 by Main Strategic. Successor to PROJECT_STRUCTURE_CLEANUP_SPEC (executed earlier today).*
+*Authored 2026-05-09 by Architect. Successor to PROJECT_STRUCTURE_CLEANUP_SPEC (executed earlier today).*

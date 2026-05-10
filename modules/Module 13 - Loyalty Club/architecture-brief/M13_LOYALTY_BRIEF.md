@@ -356,7 +356,7 @@ M13 קורא ל-M12 `send_message_by_template`. ערוץ נקבע ב-M12 לפי 
 
 (Foreman self-review — to apply before next module's Brief)
 
-### Author-skill (opticup-strategic / opticup-main-strategic)
+### Author-skill (opticup-strategic / opticup-architect)
 
 **Proposal 1:** Add a "Patterns from prior Briefs" pre-step at the start of any new module's Brief authoring — explicitly grep the prior Briefs for: (a) Pattern P19 (config-table not enum), (b) per-tenant override slots, (c) JSONB extension points. Currently each module redo's this discovery; should be canonical checklist.
 

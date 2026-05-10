@@ -55,14 +55,14 @@ The executor handled this correctly (substituted Test 3 security-boundary verifi
 - Iron Rule 22 (defense in depth): DB layer (RLS) + application layer (`.eq('tenant_id',...)` on every EF query) both active. ✓
 - Step 1.5 Pre-Flight executed: pg_policy, pg_class, pg_proc all queried; the wrong-premise on Test 2 surfaced exactly here.
 - Whitelist enforcement: 0 prizma writes outside the migration DDL itself. ✓
-- All 5 in-scope files committed; 2 out-of-scope `.claude/skills/opticup-main-strategic/*` modifications correctly excluded via explicit `git add`. ✓
+- All 5 in-scope files committed; 2 out-of-scope `.claude/skills/opticup-architect/*` modifications correctly excluded via explicit `git add`. ✓
 
 ### Deviations (4 documented in §3 of EXECUTION_REPORT)
 
 1. **Test 2 unrunnable as written → substituted security-boundary verification + logged Finding 1.** Correct discipline: SPEC's INTENT (verify legitimate writers still work) was verified differently (no live writers exist anymore; security boundary closure verified instead). ✓
 2. **`_up.sql/_down.sql` naming vs SPEC's `_rollback` suffix.** Functionally equivalent; matches recent convention. ✓
 3. **DDL via MCP without per-step Daniel approval (SPEC §4 vs SKILL.md "Level 3 SQL never autonomous").** SPEC explicitly authorized this; Bounded Autonomy resolves in favor of explicit SPEC authorization. Executor flagged the resolution explicitly at session opening. ✓
-4. **Out-of-scope `.claude/skills/opticup-main-strategic/*` modifications appeared mid-session, NOT committed.** Correctly excluded; logged Finding 2.
+4. **Out-of-scope `.claude/skills/opticup-architect/*` modifications appeared mid-session, NOT committed.** Correctly excluded; logged Finding 2.
 
 ### Real-time decisions (§4 of EXECUTION_REPORT)
 
@@ -85,7 +85,7 @@ The executor handled this correctly (substituted Test 3 security-boundary verifi
 | Code | Severity | Description | Foreman decision | Rationale |
 |------|----------|-------------|------------------|-----------|
 | M4-DOC-05 | LOW | SPEC §10 cited `submit_storefront_lead` as cms_leads writer; that RPC writes to `storefront_leads` instead | **APPLY immediately — 3-occurrence rule triggered** | This is the 3rd consecutive SPEC where the author cited a DB-object's role from memory and the live DB disagreed. Per Self-Improvement Mandate, the next opticup-strategic session MUST add the `pg_proc.prosrc` source-search check to Step 1.5 BEFORE authoring any new SPEC. See §5 Proposal 1. |
-| M4-INFRA-06 | LOW | 2 `.claude/skills/opticup-main-strategic/*` files appeared modified mid-session, NOT touched by executor | **DISMISS for this SPEC; investigate in next session** | No impact on the SPEC's outcome. Likely a parallel session, hook, or background process. The executor correctly excluded them from the commit via explicit `git add`. Investigation belongs in the next opticup-strategic session opening. |
+| M4-INFRA-06 | LOW | 2 `.claude/skills/opticup-architect/*` files appeared modified mid-session, NOT touched by executor | **DISMISS for this SPEC; investigate in next session** | No impact on the SPEC's outcome. Likely a parallel session, hook, or background process. The executor correctly excluded them from the commit via explicit `git add`. Investigation belongs in the next opticup-strategic session opening. |
 | M4-VIEW-01 | INFO | `v_crm_campaign_performance` shows 0 rows under service_role but 7 under authenticated/demo (anomaly is pre-existing, not migration-caused) | **DISMISS for this SPEC; defer to view-audit follow-up** | Not a regression caused by this migration (the pattern existed pre-migration). The view's SQL likely has a LATERAL join or subquery that interacts with the security context oddly. Not a security finding (the data demo sees IS demo's tenant slice). Worth a future view-audit SPEC, not blocking. |
 
 **No findings re-opened the SPEC.** Migration applied, verified, deployed.
@@ -167,7 +167,7 @@ The executor proposed 2 of its own. Both are good. I'm forwarding both with my e
 1. **APPLY Proposal 1 NOW** (Step 1.5 `pg_proc.prosrc` source-search). 3-occurrence rule triggered. Edit `.claude/skills/opticup-strategic/SKILL.md` directly before authoring the next SPEC.
 2. **APPLY Proposal 2 NOW** (`_up.sql`/`_down.sql` migration naming) to SPEC_TEMPLATE.md.
 3. **APPLY executor Proposals 1+2** to opticup-executor SKILL: same `pg_proc.prosrc` check + create `scripts/verify-view-rls.mjs`.
-4. **Investigate Finding M4-INFRA-06:** what process modified `.claude/skills/opticup-main-strategic/*` mid-session? Likely a hook or parallel session.
+4. **Investigate Finding M4-INFRA-06:** what process modified `.claude/skills/opticup-architect/*` mid-session? Likely a hook or parallel session.
 5. **Author PART 2 SPEC** (`M4_TENANT_ISOLATION_HARDENING_PART2`): the 12 anon-callable SECURITY DEFINER RPCs. Each needs caller-classification (legitimate-anon vs anon-debt) and tenant validation in body where kept. Pre-flight using the new Step 1.5 source-search will catch caller classifications correctly this time.
 6. Daniel-only: merge `develop` → `main` after morning monitoring confirms cms_leads behavior + CRM tabs stable.
 

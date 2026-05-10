@@ -2,7 +2,7 @@
 
 **Brief version:** v1
 **Date:** 2026-05-09
-**Author:** Main Strategic Architect
+**Author:** Architect
 **Hand-off to:** Module Strategist (`opticup-strategic` skill)
 **Status:** Locked. Ready for Module Strategist to begin SPEC authoring.
 
@@ -83,7 +83,7 @@ M12 is the **outbound + inbound communication backbone** for Optic Up. Every cus
 
 ## 4. Locked Decisions
 
-These are pre-locked from the 2026-05-09 strategic session. Do not relitigate without Main Strategic consultation.
+These are pre-locked from the 2026-05-09 strategic session. Do not relitigate without Architect consultation.
 
 | # | Decision | Source |
 |---|---|---|
@@ -275,7 +275,7 @@ Before M12 SPECs are dispatched, verify these dependencies are met (or flag as b
 
 ## 11. Open questions for Module Strategist (non-blocking)
 
-The Module Strategist should answer these during SPEC authoring, escalating to Main Strategic only if the answer requires cross-module impact:
+The Module Strategist should answer these during SPEC authoring, escalating to Architect only if the answer requires cross-module impact:
 
 1. Should `internal_notes` support @-mentions of teammates day-1 (with notification badge in Inbox), or defer? → suggest **defer**.
 2. Conversation auto-close after N days of no activity — N = ? Default suggestion: 30 days, configurable per-tenant.
@@ -296,7 +296,7 @@ The Module Strategist should answer these during SPEC authoring, escalating to M
 - `M12_CHANNEL_CONFIGS_MOCKUP.html` — tenant channel admin (own vs shared).
 
 **Decision sources:**
-- `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md` — 2026-05-09 entries (decisions 1-13).
+- `.claude/skills/opticup-architect/references/DECISIONS_LOG.md` — 2026-05-09 entries (decisions 1-13).
 - Auto-memory: `project_messaging_architecture_v2.md` (decided 2026-04-22).
 - `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md` §4 (M12 requirements).
 - `modules/Module 12 - Communications/architecture-brief/M12_HANDOFF.md` (this brief's predecessor handoff).
@@ -313,9 +313,9 @@ The Module Strategist should answer these during SPEC authoring, escalating to M
 
 ---
 
-## 13. Self-improvement notes (Main Strategic → SKILL.md)
+## 13. Self-improvement notes (Architect → SKILL.md)
 
-This brief was authored after a strategic session in which Daniel corrected the Main Strategic 4 times. The lessons (logged in DECISIONS_LOG.md 2026-05-09) are candidates for SKILL.md update at module-close:
+This brief was authored after a strategic session in which Daniel corrected the Architect 4 times. The lessons (logged in DECISIONS_LOG.md 2026-05-09) are candidates for SKILL.md update at module-close:
 
 1. **Don't flow** — when user asks clarifying question, stop & restate the goal before proposing fix.
 2. **Verify existing vendor before recommending switch** (twice in one session: SMS, Email).
@@ -328,7 +328,7 @@ This brief was authored after a strategic session in which Daniel corrected the 
 9. **Read-only mode promise for Chrome MCP** on auth/billing surfaces.
 10. **Connection-direction test for Make vs Edge Function** (one-way → Make; two-way → Edge Function direct).
 
-These lessons will be applied to the Main Strategic SKILL.md after M12 module-close ceremony.
+These lessons will be applied to the Architect SKILL.md after M12 module-close ceremony.
 
 ---
 

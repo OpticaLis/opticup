@@ -78,12 +78,12 @@
 משפט-יחיד מספיק:
 
 ```
-אתה ה-Main Strategic של פרוייקט Optic Up. ממשיכים מ-M5_HANDOFF.md.
+אתה ה-Architect של פרוייקט Optic Up. ממשיכים מ-M5_HANDOFF.md.
 ```
 
-הסקיל `opticup-main-strategic` ייטען אוטומטית (trigger על "Main Strategic / האסטרטג הראשי / האחראי על כל הפרוייקט"). ה-bootstrap שלו קורא לבד את: MASTER_LIVE_PLAN + DECISIONS_LOG + CLAUDE.md + MEMORY.md. ה-handoff (הקובץ הזה) יוביל אותו לכל היתר.
+הסקיל `opticup-architect` ייטען אוטומטית (trigger על "Architect / הארכיטקט / האחראי על כל הפרוייקט"). ה-bootstrap שלו קורא לבד את: MASTER_LIVE_PLAN + DECISIONS_LOG + CLAUDE.md + MEMORY.md. ה-handoff (הקובץ הזה) יוביל אותו לכל היתר.
 
-**אם הסקיל לא נטען אוטומטית** (קרה בסשן הקודם) — תזכיר לו: "טען את הסקיל opticup-main-strategic". הוא יקרא את ה-SKILL.md ויפעל לפיו.
+**אם הסקיל לא נטען אוטומטית** (קרה בסשן הקודם) — תזכיר לו: "טען את הסקיל opticup-architect". הוא יקרא את ה-SKILL.md ויפעל לפיו.
 
 ---
 
@@ -97,7 +97,7 @@
 - M7 main mockup: `modules/Module 7 - Orders/architecture-brief/M7_ORDERS_FULL_MOCKUP_V6.html`
 - M7 5 forms: `M7_FORM_*_MOCKUP.html`
 - M7 forms catalog: `modules/Module 7 - Orders/architecture-brief/M7_ORDERS_PRINT_FORMS.md`
-- DECISIONS_LOG: `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md`
+- DECISIONS_LOG: `.claude/skills/opticup-architect/references/DECISIONS_LOG.md`
 
 ---
 

@@ -68,10 +68,10 @@
    - **Reality anchor:** Module 3 is the active module, Phase A complete. The foundation docs treat it as if it does not yet exist.
 
 3. **Chat-hierarchy terminology split.**
-   - `docs/Templates/UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT.md:31-35` — uses **4 layers: Main Strategic → Module Strategic → Secondary Chat → Claude Code**.
-   - `STRATEGIC_CHAT_ONBOARDING.md:43-48` — uses different naming: "Main Strategic Chat ↔ Module Strategic Chat ↔ **צ'אט מפקח** (Supervisor chat) ↔ Claude Code". Layer 3 is called "Supervisor" / "Foreman" instead of "Secondary Chat".
+   - `docs/Templates/UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT.md:31-35` — uses **4 layers: Architect → Module Strategic → Secondary Chat → Claude Code**.
+   - `STRATEGIC_CHAT_ONBOARDING.md:43-48` — uses different naming: "Architect ↔ Module Strategic Chat ↔ **צ'אט מפקח** (Supervisor chat) ↔ Claude Code". Layer 3 is called "Supervisor" / "Foreman" instead of "Secondary Chat".
    - `MASTER_ROADMAP.md:53-60` — uses yet another variation: "🔧 צ'אט מפקח (מנהל עבודה)" = Supervisor / Work manager.
-   - `CLAUDE.md` — does not document the 4-layer hierarchy at all. No mention of Main Strategic, Module Strategic, or Secondary/Supervisor chats.
+   - `CLAUDE.md` — does not document the 4-layer hierarchy at all. No mention of Architect, Module Strategic, or Secondary/Supervisor chats.
    - **Impact:** Three different naming systems for the same concept across foundation docs.
 
 4. **Iron Rules numbering range inconsistent.**
@@ -164,7 +164,7 @@
 - **EXPECTED:** Explicit cross-repo rule declaration. **WHERE:** `CLAUDE.md` Section 4–6. **REFERENCED BY:** UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT.md:150 ("חוקים 1-30"). CLAUDE.md defines 1–23 and is silent on the existence of Rules 24–30 in the storefront repo. A missing acknowledgement line, not a missing file.
 - **EXPECTED:** Module 3.1 entry in `docs/GLOBAL_MAP.md §6 Module Registry`. **WHERE:** line 701-920. **REFERENCED BY:** the prompt file at `modules/Module 3.1 - Project Reconstruction/docs/PHASE_1A_FOUNDATION_AUDIT_SPEC.md` (this audit's own scope).
 - **EXPECTED:** Phase 0 entries in `docs/TROUBLESHOOTING.md`. **WHERE:** any category. **REFERENCED BY:** TECH_DEBT.md items 3, 5, 6, 7 (all have concrete symptoms that would fit a TROUBLESHOOTING entry template).
-- **EXPECTED:** Template for Strategic/Secondary Chat sessions in `docs/Templates/`. **WHERE:** `docs/Templates/` folder. **REFERENCED BY:** UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT.md is the Module Strategic layer template but there is no Main Strategic template or Secondary Chat template here. The folder contains one file. Incomplete scaffold.
+- **EXPECTED:** Template for Strategic/Secondary Chat sessions in `docs/Templates/`. **WHERE:** `docs/Templates/` folder. **REFERENCED BY:** UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT.md is the Module Strategic layer template but there is no Architect template or Secondary Chat template here. The folder contains one file. Incomplete scaffold.
 
 ---
 
@@ -196,7 +196,7 @@ Bridges to Phase 1B (Modules 1/2 audit) and Phase 1C (Module 3 dual-repo audit):
 
 2. **[REWRITE]** `README.md` — replace Prizma-specific single-tenant inventory description with the Optic Up SaaS identity. Point to CLAUDE.md and MASTER_ROADMAP.md as the entry-point documents. Reason: README is the first file a newcomer opens; currently it sets up a mental model that every subsequent file contradicts.
 
-3. **[REWRITE]** `STRATEGIC_CHAT_ONBOARDING.md` — harmonize chat-layer terminology with UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT.md ("Secondary Chat" canonical, not "צ'אט מפקח"), delete references to the dangling `PROJECT_GUIDE.md`, update "what exists now" section to reflect April 2026, update "what doesn't exist" to remove Modules 1.5 / 2 and list actual gaps instead. Reason: this file is meant to prime new Main Strategic Chats, so drift here corrupts every strategic session that loads it.
+3. **[REWRITE]** `STRATEGIC_CHAT_ONBOARDING.md` — harmonize chat-layer terminology with UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT.md ("Secondary Chat" canonical, not "צ'אט מפקח"), delete references to the dangling `PROJECT_GUIDE.md`, update "what exists now" section to reflect April 2026, update "what doesn't exist" to remove Modules 1.5 / 2 and list actual gaps instead. Reason: this file is meant to prime new Architects, so drift here corrupts every strategic session that loads it.
 
 4. **[REWRITE]** `CLAUDE.md` §4–§6 — add a short explicit acknowledgement that Rules 24–30 live in `opticup-storefront/CLAUDE.md` and apply only to storefront work, so readers see the full rule set scope at a glance. Add one-line "for the chat hierarchy see STRATEGIC_CHAT_ONBOARDING.md / UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT.md". Reason: keeps CLAUDE.md as the authoritative constitution without making it longer than 400 lines, while closing the rule-numbering gap.
 

@@ -1,7 +1,7 @@
 # Site Overseer — DECISIONS_LOG
 
 > **Purpose:** Append-only log of Site-Overseer-related decisions Daniel makes.
-> Mirrors the format of `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md`.
+> Mirrors the format of `.claude/skills/opticup-architect/references/DECISIONS_LOG.md`.
 > Each entry is timestamped, dated, and lists: the question, Daniel's call, the rationale (if shared), and the operational action taken.
 > **Created:** 2026-05-07 (empty stub, Mode B baseline).
 

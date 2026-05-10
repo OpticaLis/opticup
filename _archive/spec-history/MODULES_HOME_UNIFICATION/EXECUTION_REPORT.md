@@ -15,7 +15,7 @@ The SPEC ran end-to-end. Established the **One Home Per Module** rule: every mod
 
 | # | Hash | Message | Time | Files |
 |---|---|---|---|---|
-| Pre-A | `65fa0c0` | feat(skills): main-strategic + site-overseer pending updates from parallel sessions | 19:02 | 3 |
+| Pre-A | `65fa0c0` | feat(skills): architect + site-overseer pending updates from parallel sessions | 19:02 | 3 |
 | Pre-B | `231c5b0` | feat(planning): add MODULES_HOME_UNIFICATION SPEC + activation; M3_STUDIO_TRANSLATIONS_BRAND_FILTER foreman review | 19:02 | 3 |
 | C1 | `40b4fb3` | feat(modules): create homes for in-design modules M5-M15 (One Home Per Module rule) | 19:02 | 8 |
 | C2 | `db6922d` | chore(modules): move 8 in-design Briefs into modules/Module N - Name/architecture-brief/ | 19:04 | ~50 (renames) |
@@ -34,7 +34,7 @@ The SPEC ran end-to-end. Established the **One Home Per Module** rule: every mod
 ### D1 — Pre-SPEC commits A+B added (matching previous SPEC's pattern)
 
 **SPEC said:** Begin with Commit 1 on a clean tree.
-**Reality:** Working tree had 4 modified files (Cowork main-strategic + Site Overseer parallel edits) + 3 untracked SPEC artifacts (the SPEC itself + ACTIVATION + new M3 SPEC FOREMAN_REVIEW).
+**Reality:** Working tree had 4 modified files (Cowork architect + Site Overseer parallel edits) + 3 untracked SPEC artifacts (the SPEC itself + ACTIVATION + new M3 SPEC FOREMAN_REVIEW).
 **Resolution:** Daniel pre-locked the answer in dispatch ("If §6 reveals pre-existing uncommitted work → handle with PRE-SPEC commits first (same pattern as previous SPEC)"). Two Pre-SPEC commits ran cleanly. No mid-flight question needed — pattern from the previous SPEC carried over.
 
 ### D2 — Commit 4 split into C4a + C4b (git mv on directories quirk)
@@ -96,7 +96,7 @@ References to __LAUNCH_PLAN_DRAFT__/ remaining outside _archive/: 0 ✓
 CLAUDE.md §0.5 updated: ✓ (`__LAUNCH_PLAN_DRAFT__/` removed from Category 2; `roles/` added)
 MASTER_ROADMAP.md §2.5 updated: ✓
 docs/FILE_STRUCTURE.md updated: ✓ (new sections for `_archive/`, `roles/`, `modules/Module N - Name/architecture-brief/`)
-.claude/skills/opticup-main-strategic/SKILL.md updated: ✓
+.claude/skills/opticup-architect/SKILL.md updated: ✓
 git status: clean ✓ (only the 3 agreed leave-alone tests/optic*.accdb fixtures)
 verify:integrity: exit 0 ✓
 ```
@@ -135,4 +135,4 @@ verify:integrity: exit 0 ✓
 
 ---
 
-*EXECUTION_REPORT complete. Awaiting Cowork Main Strategic's Module Close Ceremony.*
+*EXECUTION_REPORT complete. Awaiting Cowork Architect's Module Close Ceremony.*

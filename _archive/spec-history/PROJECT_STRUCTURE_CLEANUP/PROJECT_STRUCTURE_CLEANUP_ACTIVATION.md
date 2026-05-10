@@ -46,8 +46,8 @@ The SPEC is the authority. If you find ambiguity in the SPEC, STOP and ask Danie
 - **Stops:** if anything unexpected (collision in Module 1 SPECs, source code reference to a moved path, integrity gate failure) — it will stop and report.
 - **At end:** a verification block per SPEC §10 with all checks passing.
 
-When done, come back to the Cowork Main Strategic session with: "executor finished cleanup SPEC, all 7 commits + verification clean."
+When done, come back to the Cowork Architect session with: "executor finished cleanup SPEC, all 7 commits + verification clean."
 
 ---
 
-*Authored 2026-05-09 by Main Strategic.*
+*Authored 2026-05-09 by Architect.*

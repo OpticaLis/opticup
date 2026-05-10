@@ -2,7 +2,7 @@
 
 **גרסה:** v1
 **תאריך:** 2026-05-07
-**מחבר:** Main Strategic (skill `opticup-main-strategic`)
+**מחבר:** Architect (skill `opticup-architect`)
 **יעד:** Module Strategist של M7 (skill `opticup-strategic`).
 
 > זה לא SPEC. שכבת-ביניים בין Master Plan ל-SPEC. מגדיר ישויות, חוזים, דפוסים, סיכונים — לא acceptance criteria, לא שדות-מלאים, לא phases.
@@ -344,7 +344,7 @@ quote ──→ active ──→ (זרימת-מעבדה) ──→ ready ──�
 - קטלוג טפסים: `M7_ORDERS_PRINT_FORMS.md`
 - Master Plan: `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md`
 - Briefs קודמים: M5_CUSTOMERS_BRIEF.md, M6_PRESCRIPTIONS_BRIEF.md
-- DECISIONS_LOG: `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md`
+- DECISIONS_LOG: `.claude/skills/opticup-architect/references/DECISIONS_LOG.md`
 
 ---
 

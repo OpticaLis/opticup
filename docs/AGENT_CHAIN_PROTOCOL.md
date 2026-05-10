@@ -27,8 +27,8 @@
                        (Foreman: FOREMAN_REVIEW.md + skill self-improvement)
                                 │
                                 ▼
-                    opticup-main-strategic
-                    (Main Strategic — escalation only)
+                    opticup-architect
+                    (Architect — escalation only)
 ```
 
 ## What Each Agent Owns
@@ -39,7 +39,7 @@
 | opticup-executor | code changes, EXECUTION_REPORT.md, FINDINGS.md | both | n/a — every SPEC produces both |
 | opticup-reviewer | review notes (in EXECUTION_REPORT or sibling file) | review notes | when SPEC is doc-only with no code change |
 | opticup-localhost-tester | TEST_REPORT.md | TEST_REPORT.md | when SPEC is doc-only OR cannot reach localhost |
-| opticup-main-strategic | escalation ladder (Tier 2 in 3-tier autonomy) | DECISIONS_LOG entries | when nothing escalates above the Foreman |
+| opticup-architect | escalation ladder (Tier 2 in 3-tier autonomy) | DECISIONS_LOG entries | when nothing escalates above the Foreman |
 
 ## Hand-off Rules
 
@@ -61,11 +61,11 @@ Executor (not to Tester).
   opticup-strategic skill) extracts 1–2 self-improvement proposals.
 - Status RED → Foreman triages: was it env (start-local.ps1), data
   (demo tenant), or code (Executor missed something)? Foreman either
-  re-opens the SPEC for Executor or escalates upward to Main Strategic.
+  re-opens the SPEC for Executor or escalates upward to Architect.
 
-**Foreman → Main Strategic:** only when the issue cannot be resolved at
+**Foreman → Architect:** only when the issue cannot be resolved at
 Foreman level (cross-module decision, brief deviation, blocker that
-needs Daniel). Main Strategic stays out of single-module loops.
+needs Daniel). Architect stays out of single-module loops.
 
 ## Escalation Triggers
 
@@ -77,7 +77,7 @@ The Tester escalates to the Foreman when ANY of these happens:
 - A cleanup operation fails (e.g. test-2 record cannot be deleted).
 - TEST_REPORT.md cannot be written (write permission, disk space).
 
-The Foreman escalates to Main Strategic when ANY of these happens:
+The Foreman escalates to Architect when ANY of these happens:
 
 - Smoke failure root-cause crosses module boundaries (touches contracts).
 - Cumulative deviation from the Brief / Master Plan exceeds the SPEC's
@@ -118,7 +118,7 @@ These rules cross every agent in the chain:
 
 | Skill | Path |
 |-------|------|
-| opticup-main-strategic | `.claude/skills/opticup-main-strategic/SKILL.md` |
+| opticup-architect | `.claude/skills/opticup-architect/SKILL.md` |
 | opticup-strategic (Foreman) | `.claude/skills/opticup-strategic/SKILL.md` |
 | opticup-executor | `.claude/skills/opticup-executor/SKILL.md` |
 | opticup-reviewer | `.claude/skills/opticup-reviewer/SKILL.md` |

@@ -9,7 +9,7 @@
 
 | # | Layer | Who | When to use | Lifetime |
 |---|---|---|---|---|
-| 1 | **Main Strategic Chat** | One long-running chat at the project level | Project-wide decisions, MASTER_ROADMAP changes, cross-module rules, opening new modules, locking architectural principles | Persistent — only replaced when context fills up |
+| 1 | **Architect** | One long-running chat at the project level | Project-wide decisions, MASTER_ROADMAP changes, cross-module rules, opening new modules, locking architectural principles | Persistent — only replaced when context fills up |
 | 2 | **Module Strategic Chat** | One per module | Phase planning inside one module, writing PHASE SPECs, reviewing handbacks, deciding the order of phases | Lives for the lifetime of the module |
 | 3 | **Secondary Chat** | One per phase | Executing one PHASE SPEC, writing Claude Code prompts, verifying outputs against success criteria | **Dies at the end of each phase** — open a new one for the next phase |
 | 4 | **Claude Code (terminal)** | The CLI tool | Reads `CLAUDE.md`, runs SPECs, edits files, commits to `develop` | Per session; reads project state from disk every time |
@@ -22,7 +22,7 @@
 
 | Scenario | What to do |
 |---|---|
-| **Start a new module** | Open Main Strategic. Paste `MASTER_ROADMAP.md`. Decide on the new module's scope with Main, then open a new Module Strategic Chat for it. |
+| **Start a new module** | Open Architect. Paste `MASTER_ROADMAP.md`. Decide on the new module's scope with Main, then open a new Module Strategic Chat for it. |
 | **Start a new phase in an existing module** | Open a **new** Module Strategic Chat with `UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT.md` + the module's `ROADMAP.md`. Don't reuse the previous strategic chat across modules. |
 | **A phase needs a secondary chat** | Open a new chat. Paste `UNIVERSAL_SECONDARY_CHAT_PROMPT.md` **as text** (NOT as an attachment). Wait for it to ask for the SPEC. Then send the SPEC. One file at a time. |
 | **Run code Claude Code wrote** | Open a terminal in the **correct repo**. Verify branch = `develop`. Paste the prompt. |
@@ -61,7 +61,7 @@ This is the rule you care about most. It applies to:
 
 - Module Strategic Chats during phase planning
 - Secondary Chats when something contradicts the SPEC
-- Main Strategic Chat when locking decisions
+- Architect when locking decisions
 - Any chat at any time that wants to ask you something
 
 **If a chat batches questions, your response is one sentence:**
@@ -161,7 +161,7 @@ If any of the above is missing — push back to the secondary chat. Don't close 
 
 **Secondary chat went rogue** → Copy §3 (Forbidden Behaviors) into the chat. Tell it which forbidden behavior it just did. Tell it to start over from the universal template.
 
-**You're not sure who owns a decision** → If it affects only one module → Module Strategic Chat. If it affects multiple modules or MASTER_ROADMAP → Main Strategic Chat. If you're unsure → ask Main; over-escalating is cheap, under-escalating is expensive.
+**You're not sure who owns a decision** → If it affects only one module → Module Strategic Chat. If it affects multiple modules or MASTER_ROADMAP → Architect. If you're unsure → ask Main; over-escalating is cheap, under-escalating is expensive.
 
 **A chat asks "should I X?"** → "Follow the SPEC." (You will say this many times. It is correct every time.)
 

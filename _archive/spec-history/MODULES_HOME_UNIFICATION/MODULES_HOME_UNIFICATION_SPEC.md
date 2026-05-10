@@ -1,6 +1,6 @@
 # SPEC — Modules Home Unification (One Home Per Module, For Life)
 
-**Author:** Main Strategic (Cowork session, 2026-05-09)
+**Author:** Architect (Cowork session, 2026-05-09)
 **Executor target:** Claude Code on 🖥️ Windows desktop
 **Skill required:** `opticup-executor`
 **Estimated time:** 60-90 minutes
@@ -56,8 +56,8 @@ After this SPEC executes, ALL of these must be true:
 9. **CLAUDE.md §0.5 Root Discipline Rule updated** to reflect that `__LAUNCH_PLAN_DRAFT__/` no longer exists; `roles/` added as Category 2.
 10. **`docs/FILE_STRUCTURE.md` refreshed.**
 11. **`MASTER_ROADMAP.md` §2.5 updated** — paths to briefs now point to `modules/Module N - Name/architecture-brief/` (no longer `__LAUNCH_PLAN_DRAFT__/...`).
-12. **`.claude/skills/opticup-main-strategic/SKILL.md` First Action updated** — bootstrap reads `MASTER_ROADMAP.md`, no reference to `__LAUNCH_PLAN_DRAFT__/MASTER_LIVE_PLAN.md` (already deprecated).
-13. **`.claude/skills/opticup-main-strategic/references/decisions/M5.md`–`M12.md`** updated — any path references to `__LAUNCH_PLAN_DRAFT__/` rewritten.
+12. **`.claude/skills/opticup-architect/SKILL.md` First Action updated** — bootstrap reads `MASTER_ROADMAP.md`, no reference to `__LAUNCH_PLAN_DRAFT__/MASTER_LIVE_PLAN.md` (already deprecated).
+13. **`.claude/skills/opticup-architect/references/decisions/M5.md`–`M12.md`** updated — any path references to `__LAUNCH_PLAN_DRAFT__/` rewritten.
 14. **`git status --short`** clean at end.
 15. **`npm run verify:integrity`** exit 0 at end.
 16. **No tracked file content destroyed** — all moves use `git mv` where source is tracked, plain `mv` + `git add` where source is untracked.
@@ -70,7 +70,7 @@ After this SPEC executes, ALL of these must be true:
 - `git rm` for files explicitly listed in §7.
 - `mkdir` to create the new target directories.
 - `mv` (plain) for untracked files explicitly listed in §7.
-- Edit `CLAUDE.md`, `docs/FILE_STRUCTURE.md`, `MASTER_ROADMAP.md`, `.claude/skills/opticup-main-strategic/SKILL.md`, and per-module `decisions/` files per §7.
+- Edit `CLAUDE.md`, `docs/FILE_STRUCTURE.md`, `MASTER_ROADMAP.md`, `.claude/skills/opticup-architect/SKILL.md`, and per-module `decisions/` files per §7.
 - Commit per §7 commit plan with exact messages provided.
 - Push to develop after each commit.
 
@@ -310,8 +310,8 @@ Use the grep output from §6 pre-flight to identify every file that references t
 # - CLAUDE.md (§0.5 Root Discipline Rule + any other mentions)
 # - MASTER_ROADMAP.md (§2.5 Architecture Briefs Status — paths)
 # - docs/FILE_STRUCTURE.md
-# - .claude/skills/opticup-main-strategic/SKILL.md (First Action protocol)
-# - .claude/skills/opticup-main-strategic/references/decisions/M5.md, M6.md, M7.md, M8.md, M11.md, M12.md
+# - .claude/skills/opticup-architect/SKILL.md (First Action protocol)
+# - .claude/skills/opticup-architect/references/decisions/M5.md, M6.md, M7.md, M8.md, M11.md, M12.md
 # - Any README files inside the moved Brief folders (now in modules/) that self-reference
 
 # Specific path rewrites:
@@ -336,8 +336,8 @@ grep -rln "__LAUNCH_PLAN_DRAFT__" --include="*.md" --include="*.js" --include="*
 # Expected: empty output
 
 git add CLAUDE.md MASTER_ROADMAP.md docs/FILE_STRUCTURE.md \
-        .claude/skills/opticup-main-strategic/SKILL.md \
-        .claude/skills/opticup-main-strategic/references/decisions/
+        .claude/skills/opticup-architect/SKILL.md \
+        .claude/skills/opticup-architect/references/decisions/
 # Plus any other files identified in pre-flight grep
 git commit -m "docs(refs): update all references to __LAUNCH_PLAN_DRAFT__/ → new homes (modules/, roles/, _archive/)"
 git push origin develop

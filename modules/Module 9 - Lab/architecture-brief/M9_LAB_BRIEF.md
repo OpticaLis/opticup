@@ -395,7 +395,7 @@ M9 קורא ל-M12 `send_message_by_template` בנקודות:
 
 (Foreman self-review — to apply before next module's Brief)
 
-### Author-skill (opticup-main-strategic)
+### Author-skill (opticup-architect)
 
 **Proposal 1:** When user describes a process from a legacy system (Access in Prizma's case), apply Pattern P32 (Anti-Legacy-Pattern Check) automatically. Don't replicate workarounds for tech limitations we don't have. M9 had 3 instances: cumbersome lab-tracking in Access (only 7.4% recorded `dworka` start dates) → M9 now enforces logging from box-creation; manual code-passing to family-redemption (M13 D13) → shared household pool; 5 ספים on every event manually → automated clock engine.
 

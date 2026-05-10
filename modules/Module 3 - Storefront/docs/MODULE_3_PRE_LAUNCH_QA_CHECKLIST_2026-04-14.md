@@ -46,7 +46,7 @@
 
 - **Run tests in order.** Each test depends on the environment from the previous ones.
 - **Fill in the checkbox + evidence for each test.** Evidence = screenshot filename or short note.
-- **If something fails:** write WHAT failed (not just "failed"), stop on that row, and message me (Main Strategic).
+- **If something fails:** write WHAT failed (not just "failed"), stop on that row, and message me (Architect).
 - **If a test is ambiguous:** err on the side of FAIL with a note — I'd rather re-verify than ship a broken launch.
 
 **Result legend:**

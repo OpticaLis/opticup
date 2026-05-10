@@ -21,7 +21,7 @@
     │   └── references/
     ├── opticup-guardian/
     │   └── references/
-    ├── opticup-main-strategic/
+    ├── opticup-architect/
     │   └── references/decisions/  (NEW as of May 9)
     ├── opticup-reviewer/
     ├── opticup-sentinel/
@@ -40,14 +40,14 @@
 | opticup-campaign-overseer | 352 | 9581f15 | 2026-05-04 22:30 | ✓ | No references/ |
 | opticup-executor | 649 | 949d6e3 | 2026-05-06 21:35 | ✓ | 3 templates in references/ |
 | opticup-guardian | 325 | de51684 | 2026-04-14 19:14 | ✓ | 4 ref docs |
-| opticup-main-strategic | 543 | faa9de6 | 2026-05-06 19:43 | ✓ | decisions/ with 7 module files |
+| opticup-architect | 543 | faa9de6 | 2026-05-06 19:43 | ✓ | decisions/ with 7 module files |
 | opticup-reviewer | 231 | de51684 | 2026-04-14 19:14 | ✓ | No references/ |
 | opticup-sentinel | 177 | de51684 | 2026-04-14 19:14 | ✓ | missions/ subfolder |
 | opticup-strategic | 1008 | 949d6e3 | 2026-05-06 21:35 | ⚠️ | 5 pattern files; test_write orphan |
 
 ---
 
-## Section C: opticup-main-strategic Reorg Check
+## Section C: opticup-architect Reorg Check
 
 **Status:** ✓ CLEAN & CONSISTENT
 
@@ -135,14 +135,14 @@ Error path: error.html (js/shared.js guards)
 
 ### Green ✓
 - All 7 skills committed & functional
-- opticup-main-strategic reorg CLEAN (decisions in-flight)
+- opticup-architect reorg CLEAN (decisions in-flight)
 - All 18 HTML files actively used (no dead code)
 - Storefront modular (easy refactor candidate)
 - SPA routing avoids GitHub Pages complexity
 
 ### Yellow ⚠️
 - Worktrees STALE (Apr 23–24): `git worktree prune` needed
-- opticup-strategic 1008 lines vs opticup-main-strategic 543: skill overlap unclear
+- opticup-strategic 1008 lines vs opticup-architect 543: skill overlap unclear
 - inventory.html 1046 lines (monolith candidate for M5–M7 split)
 - r.html undocumented
 
@@ -163,7 +163,7 @@ Error path: error.html (js/shared.js guards)
 5. Move storefront to pages/storefront/ (7-file refactor, 4 hrefs each)
 
 **Post-Phase-0:**
-6. Clarify opticup-strategic vs opticup-main-strategic (consolidate?)
+6. Clarify opticup-strategic vs opticup-architect (consolidate?)
 
 ---
 

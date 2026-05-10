@@ -2,7 +2,7 @@
 
 **גרסה:** v1
 **תאריך:** 2026-05-07
-**מחבר:** Main Strategic (skill `opticup-main-strategic`)
+**מחבר:** Architect (skill `opticup-architect`)
 **יעד:** Module Strategist של M14 (סקיל `opticup-strategic`).
 
 > זה לא SPEC. שכבת-ביניים בין Master Plan ל-SPEC. מגדיר ישויות, חוזים, דפוסים וסיכונים — לא Acceptance Criteria, לא שדות מלאים, לא Phases.

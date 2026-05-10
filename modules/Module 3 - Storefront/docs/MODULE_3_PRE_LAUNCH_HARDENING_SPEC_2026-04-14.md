@@ -1,7 +1,7 @@
 # Module 3 — Pre-Launch Hardening SPEC
 
 **Date:** 2026-04-14
-**Author:** Main Strategic
+**Author:** Architect
 **Executor:** Secondary Chat (משני)
 **Module:** Module 3 — Storefront
 **Status:** APPROVED PLAN — execute end-to-end under Bounded Autonomy
@@ -129,7 +129,7 @@ Secondary operates per `CLAUDE.md §9` Bounded Autonomy + `opticup-guardian` rol
 | Flag unrelated issues in the final summary | Fix issues outside this SPEC's scope |
 | Stop on deviation and escalate to Strategic | Continue past a deviation "because it seems fine" |
 
-**Escalate to Strategic (Main Strategic Chat) — not to Daniel — when:**
+**Escalate to Strategic (Architect) — not to Daniel — when:**
 See §7 Escalation Rails. Read that section before beginning.
 
 ---
@@ -592,7 +592,7 @@ If ANY test fails → STOP. Do not attempt to fix failing QA items inside this S
 
 ## 7. Escalation Rails
 
-**STOP immediately and escalate to Strategic (Main Strategic Chat) when any of the following occur.** These are non-negotiable. Do NOT proceed "because it seems fine" after any of these.
+**STOP immediately and escalate to Strategic (Architect) when any of the following occur.** These are non-negotiable. Do NOT proceed "because it seems fine" after any of these.
 
 ### 7.1 Rule-violation triggers
 
@@ -782,7 +782,7 @@ List everything outside scope that Secondary noticed during execution. Do NOT fi
 
 ## 9. Next step ownership
 
-- Merge-to-main: DEFERRED — awaits Daniel's approval after Main Strategic reviews this summary.
+- Merge-to-main: DEFERRED — awaits Daniel's approval after Architect reviews this summary.
 - DNS switch: DEFERRED — same gate.
 - Any follow-up SPECs suggested: <list>
 ```
@@ -791,9 +791,9 @@ List everything outside scope that Secondary noticed during execution. Do NOT fi
 
 ## 11. Skill-Creator Deliverable — "SPEC Executor" Skill Spec
 
-**Context:** Daniel's stated goal is a reusable skill for the role that executes SPECs at the highest quality — minimum token waste, thorough testing, no bugs, by-the-book. This SPEC is the first disciplined instance. After Secondary returns the §10 summary, Main Strategic uses the summary to author the skill.
+**Context:** Daniel's stated goal is a reusable skill for the role that executes SPECs at the highest quality — minimum token waste, thorough testing, no bugs, by-the-book. This SPEC is the first disciplined instance. After Secondary returns the §10 summary, Architect uses the summary to author the skill.
 
-**To be drafted by Main Strategic using the skill-creator skill AFTER this SPEC closes.** Target path:
+**To be drafted by Architect using the skill-creator skill AFTER this SPEC closes.** Target path:
 `.claude/skills/opticup-spec-executor/SKILL.md`
 
 **Skill must include:**
@@ -833,7 +833,7 @@ To prevent scope creep, this SPEC explicitly does **NOT** include:
 - Any QA on Prizma production data
 - Any schema changes other than the pre-authorized `add_tenant_access_sync_enabled_flag` migration in §3.2.2 Part B Step 1
 
-Each of these is a separate work package, to be specified separately by Main Strategic when prioritized.
+Each of these is a separate work package, to be specified separately by Architect when prioritized.
 
 ---
 

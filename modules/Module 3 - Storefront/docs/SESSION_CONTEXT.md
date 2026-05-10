@@ -82,7 +82,7 @@ If a new M3 session opens without explicit direction, the natural next step is a
 | ERP-side commit history | `modules/Module 3 - Storefront/docs/CHANGELOG.md` |
 | Per-SPEC retrospectives | `modules/Module 3 - Storefront/docs/specs/{SLUG}/EXECUTION_REPORT.md` + `FOREMAN_REVIEW.md` |
 | Storefront working state | `[sibling]/opticup-storefront/SESSION_CONTEXT.md` (different repo) |
-| Cross-module decisions | `MASTER_ROADMAP.md` + `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md` |
+| Cross-module decisions | `MASTER_ROADMAP.md` + `.claude/skills/opticup-architect/references/DECISIONS_LOG.md` |
 | Site Overseer (operational) | `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` + `SITE_OVERSEER_SKILL.md` + `SITE_MAP.md` |
 
 ---

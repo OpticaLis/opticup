@@ -1,6 +1,6 @@
 # SPEC — Structure Protections (3 Defenses Against Drift)
 
-**Author:** Main Strategic (Cowork session, 2026-05-09 — final SPEC of the day)
+**Author:** Architect (Cowork session, 2026-05-09 — final SPEC of the day)
 **Executor target:** Claude Code on 🖥️ Windows desktop
 **Skill required:** `opticup-executor`
 **Estimated time:** 45-75 minutes
@@ -17,7 +17,7 @@ Install three independent protection mechanisms so that the structural cleanup w
 
 1. **Pre-commit hook** that auto-blocks any commit which adds a disallowed file at repo root.
 2. **Sentinel mission #10** that audits root + module-home compliance once a day and surfaces violations to `GUARDIAN_ALERTS.md`.
-3. **Bootstrap auto-check** in the `opticup-main-strategic` skill that runs a Module Close Ceremony self-audit at every session start — surfacing modules that closed without ceremony.
+3. **Bootstrap auto-check** in the `opticup-architect` skill that runs a Module Close Ceremony self-audit at every session start — surfacing modules that closed without ceremony.
 
 After this SPEC: the structural rules are no longer "documented suggestions" — they are **enforced at three layers** (pre-commit prevention, periodic detection, session-start reminder).
 
@@ -50,7 +50,7 @@ After execution, ALL of these must be true:
    - Audits: root directory contents vs CLAUDE.md §0.5; presence of `architecture-brief/` in any in-design `modules/Module N -` folder; `_archive/` consolidation (no fragmented `archive` dirs elsewhere); `roles/` integrity.
    - Writes findings to `GUARDIAN_REPORT.md` + (if violations found) opens an alert in `GUARDIAN_ALERTS.md`.
 
-4. **`opticup-main-strategic` SKILL.md First Action gets a new step:**
+4. **`opticup-architect` SKILL.md First Action gets a new step:**
    - Step 4.5 (between current 4 and 5): "Self-check Module Close Ceremony backlog" — query the Pattern Recurrence Tracker in DECISIONS_LOG.md for any module that closed since the last logged ceremony.
    - If backlog detected → flag to Daniel in the bootstrap acknowledgment line.
    - If clean → proceed normally.
@@ -73,7 +73,7 @@ After execution, ALL of these must be true:
 **Executor MAY (without asking):**
 - Read all files for context.
 - Create new files: `scripts/checks/root-allowlist.json`, `scripts/checks/check-root-discipline.mjs`, `scripts/test-root-discipline.mjs`, `.claude/skills/opticup-sentinel/references/missions/mission-10-structure-discipline.md`.
-- Edit: `scripts/verify.mjs` (add checkModule), `package.json` (add `test:root-discipline` script), `.claude/skills/opticup-sentinel/SKILL.md` (add Mission 10), `.claude/skills/opticup-main-strategic/SKILL.md` (add Step 4.5), `CLAUDE.md` §0.5 (1-line note).
+- Edit: `scripts/verify.mjs` (add checkModule), `package.json` (add `test:root-discipline` script), `.claude/skills/opticup-sentinel/SKILL.md` (add Mission 10), `.claude/skills/opticup-architect/SKILL.md` (add Step 4.5), `CLAUDE.md` §0.5 (1-line note).
 - Run all verify + test scripts to validate.
 - Commit per §7 in the listed order.
 - Push to develop after each commit.
@@ -99,7 +99,7 @@ After execution, ALL of these must be true:
 2. **Enumerate current repo root contents** — every file/dir there must either be on the allowlist OR documented as a pre-existing exception (legacy item not yet cleaned up).
 3. **Read `scripts/verify.mjs`** — understand the current checkModules pattern so the new one fits in cleanly.
 4. **Read `.claude/skills/opticup-sentinel/SKILL.md`** — understand the mission file format used by missions 1-9.
-5. **Read `.claude/skills/opticup-main-strategic/SKILL.md` First Action section** — confirm where Step 4.5 fits.
+5. **Read `.claude/skills/opticup-architect/SKILL.md` First Action section** — confirm where Step 4.5 fits.
 6. **Verify pre-commit hook is operational:** `cat .husky/pre-commit` — confirm it calls `scripts/verify.mjs --staged`.
 
 ## §7 Execution Plan
@@ -511,7 +511,7 @@ Verify `roles/` exists and contains at least: `campaign-overseer/`, `site-overse
 
 ### Check 10.5 — Module Close Ceremony backlog
 
-Read `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md`. Compare:
+Read `.claude/skills/opticup-architect/references/DECISIONS_LOG.md`. Compare:
 - The list of modules with sealed Briefs (per the index tables there).
 - The "Last Module Close ceremonies performed" log entries.
 
@@ -572,9 +572,9 @@ git commit -m "feat(sentinel): add Mission 10 — Structure Discipline daily aud
 git push origin develop
 ```
 
-### Commit 6 — Add bootstrap auto-check to opticup-main-strategic
+### Commit 6 — Add bootstrap auto-check to opticup-architect
 
-Edit `.claude/skills/opticup-main-strategic/SKILL.md` First Action section. Insert a new Step 4.5 between current 4 and 5:
+Edit `.claude/skills/opticup-architect/SKILL.md` First Action section. Insert a new Step 4.5 between current 4 and 5:
 
 ```bash
 # Edit SKILL.md First Action section:
@@ -583,12 +583,12 @@ Edit `.claude/skills/opticup-main-strategic/SKILL.md` First Action section. Inse
 # 4.5. **Module Close Ceremony self-audit** — read `references/DECISIONS_LOG.md` "Pattern Recurrence Tracker"
 #       + "Last Module Close ceremonies performed" sections. If any module has a sealed Brief
 #       (per the index tables) but no recorded ceremony → flag in the bootstrap acknowledgment line.
-#       Example: "Main Strategic Online. Bootstrap clean. ⚠️ M9 Brief sealed but no ceremony performed
+#       Example: "Architect Online. Bootstrap clean. ⚠️ M9 Brief sealed but no ceremony performed
 #       — recommend running ceremony before new work."
 # 5. **Acknowledge briefly in Hebrew:** ...
 
-git add .claude/skills/opticup-main-strategic/SKILL.md
-git commit -m "feat(skill): add Step 4.5 to main-strategic bootstrap — auto-audit Module Close Ceremony backlog"
+git add .claude/skills/opticup-architect/SKILL.md
+git commit -m "feat(skill): add Step 4.5 to architect bootstrap — auto-audit Module Close Ceremony backlog"
 git push origin develop
 ```
 
@@ -600,7 +600,7 @@ git push origin develop
 # **Enforcement (added 2026-05-09 by STRUCTURE_PROTECTIONS SPEC):**
 # - **Pre-commit prevention:** `scripts/checks/check-root-discipline.mjs` runs as part of `verify.mjs --staged`. Adding a non-allowlisted root file blocks the commit.
 # - **Daily detection:** Sentinel Mission 10 (Structure Discipline) audits root + module-home compliance daily. Violations surface in `docs/guardian/GUARDIAN_ALERTS.md`.
-# - **Session-start reminder:** `opticup-main-strategic` skill bootstrap (Step 4.5) checks for Module Close Ceremony backlog.
+# - **Session-start reminder:** `opticup-architect` skill bootstrap (Step 4.5) checks for Module Close Ceremony backlog.
 # - **Allowlist:** `scripts/checks/root-allowlist.json` (data-driven; update when CLAUDE.md §0.5 changes).
 
 git add CLAUDE.md
@@ -624,7 +624,7 @@ git status --short
 ls scripts/checks/                                                    # check-root-discipline.mjs + root-allowlist.json
 grep "check-root-discipline" scripts/verify.mjs                       # wired into verify
 ls .claude/skills/opticup-sentinel/references/missions/                # mission-10-*.md
-grep "Step 4.5" .claude/skills/opticup-main-strategic/SKILL.md          # bootstrap auto-check
+grep "Step 4.5" .claude/skills/opticup-architect/SKILL.md          # bootstrap auto-check
 grep "Enforcement" CLAUDE.md                                          # documented in §0.5
 ```
 
@@ -656,7 +656,7 @@ verify.mjs integration: ✓ (grep found "check-root-discipline" reference)
 scripts/test-root-discipline.mjs: ✓
 npm run test:root-discipline: exit 0 ✓
 Sentinel Mission 10 added to SKILL.md + missions/: ✓
-opticup-main-strategic Step 4.5 added: ✓
+opticup-architect Step 4.5 added: ✓
 CLAUDE.md §0.5 enforcement note added: ✓
 git status: clean ✓
 verify:integrity: exit 0 ✓
@@ -667,4 +667,4 @@ test:root-discipline: exit 0 ✓
 
 ---
 
-*End of SPEC. After execution, Cowork Main Strategic runs the Module Close Ceremony for this SPEC. Then the day is fully closed.*
+*End of SPEC. After execution, Cowork Architect runs the Module Close Ceremony for this SPEC. Then the day is fully closed.*

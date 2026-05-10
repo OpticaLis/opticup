@@ -2,7 +2,7 @@
 
 **גרסה:** v2 (תוספות UX/screens 2026-05-07)
 **תאריך:** 2026-05-07
-**מחבר:** Main Strategic (skill `opticup-main-strategic`)
+**מחבר:** Architect (skill `opticup-architect`)
 **יעד:** Module Strategist של M6 (סקיל `opticup-strategic`).
 
 > **שינויים מ-v1 (סשן 2026-05-07):**

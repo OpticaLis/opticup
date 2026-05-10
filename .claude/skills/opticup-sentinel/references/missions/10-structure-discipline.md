@@ -13,7 +13,7 @@ This mission verifies that the **Root Discipline Rule** (CLAUDE.md §0.5) and th
 
 - **Pre-commit hooks** (`scripts/checks/check-root-discipline.mjs` via `verify.mjs --staged`) prevent NEW violations.
 - **This mission** catches drift that accumulates despite hooks (e.g., locally-staged changes that bypass hooks via `--no-verify`, or items that pre-date the hook).
-- **Bootstrap auto-check** (Step 4.5 in `opticup-main-strategic` SKILL.md) reminds at every session start.
+- **Bootstrap auto-check** (Step 4.5 in `opticup-architect` SKILL.md) reminds at every session start.
 
 Three independent layers — culture turned into infrastructure.
 
@@ -111,12 +111,12 @@ done
 
 ### Check 10.5 — Module Close Ceremony backlog
 
-Read `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md`. Find:
+Read `.claude/skills/opticup-architect/references/DECISIONS_LOG.md`. Find:
 
 - Sealed-Brief modules (per the index tables there).
 - "Last Module Close ceremonies performed" entries (or equivalent log section).
 
-For every sealed-Brief module that has NO recorded close ceremony, log a finding (severity LOW — reminder, not violation). The bootstrap auto-check (Step 4.5 in `opticup-main-strategic` SKILL) also catches this; this mission provides redundancy.
+For every sealed-Brief module that has NO recorded close ceremony, log a finding (severity LOW — reminder, not violation). The bootstrap auto-check (Step 4.5 in `opticup-architect` SKILL) also catches this; this mission provides redundancy.
 
 ---
 

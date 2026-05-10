@@ -107,7 +107,7 @@ In-design modules (M5–M15) each have a sealed Brief in their `architecture-bri
 ```
 .claude/
 ├── skills/                     — Optic Up project skills (TRACKED via .gitignore negation)
-│   ├── opticup-main-strategic/ — Main Strategic chat skill (orchestrator)
+│   ├── opticup-architect/ — Architect chat skill (orchestrator)
 │   │   ├── SKILL.md
 │   │   └── references/
 │   │       ├── DECISIONS_LOG.md             — index of cross-module decisions

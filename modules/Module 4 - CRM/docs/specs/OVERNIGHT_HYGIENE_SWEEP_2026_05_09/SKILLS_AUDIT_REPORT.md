@@ -8,7 +8,7 @@
 
 | Skill | Purpose (1 line) | Lines | Triggers |
 |---|---|---|---|
-| `opticup-main-strategic` | Tier-2 architect — cross-module Master Plan, briefs to Module Strategists | 656 | 13 Hebrew/English phrases naming "Main Strategic / Architect / Lead" |
+| `opticup-architect` | Tier-2 architect — cross-module Master Plan, briefs to Module Strategists | 656 | 13 Hebrew/English phrases naming "Architect / Architect / Lead" |
 | `opticup-strategic` | SPEC author (Foreman) + post-execution review | 1008 | 3 mandatory triggers: SPEC authoring, post-execution review, strategy discussion |
 | `opticup-executor` | Code writer under Bounded Autonomy + retrospective writer | 682 | 3 triggers: SPEC execution, hands-on dev, EXECUTION_REPORT writing |
 | `opticup-reviewer` | Read-only QA + Iron Rule compliance checklist | 231 | "review", "audit", "verify", "validate", "check" — code-quality trigger words |
@@ -20,19 +20,19 @@
 
 ## Per-skill analysis
 
-### `opticup-main-strategic` (656 lines)
+### `opticup-architect` (656 lines)
 **Purpose:** Tier-2 strategic architect — owns the cross-module Master Plan, dispatches briefs to Tier-3 Module Strategists, runs Module Close Ceremonies, maintains `references/DECISIONS_LOG.md`.
 
-**Overlap:** Significant overlap with `opticup-strategic`. Both call themselves "Main Strategic Architect" in their body text (line 26 of main-strategic; line 18 of strategic). The 3-tier autonomy model (Daniel → Main → Module Strategist → Executor) is documented in `opticup-main-strategic`'s description but `opticup-strategic`'s description still says it acts as "BOTH the Main Strategic Chat AND the Foreman role" — reflecting the older 2-tier model. **The two skills describe overlapping responsibilities** (cross-module decisions, lessons harvesting, decision logs with Daniel) without a clean boundary in the skill text.
+**Overlap:** Significant overlap with `opticup-strategic`. Both call themselves "Architect" in their body text (line 26 of architect; line 18 of strategic). The 3-tier autonomy model (Daniel → Main → Module Strategist → Executor) is documented in `opticup-architect`'s description but `opticup-strategic`'s description still says it acts as "BOTH the Architect AND the Foreman role" — reflecting the older 2-tier model. **The two skills describe overlapping responsibilities** (cross-module decisions, lessons harvesting, decision logs with Daniel) without a clean boundary in the skill text.
 
 **Gaps:** Step 4.5 (Module Close Ceremony self-audit) was added 2026-05-09 by STRUCTURE_PROTECTIONS SPEC and works, but the rest of First Action references `MASTER_ROADMAP.md` for current truth — good. However, the Decision Map (lines 105–115) still routes 4 of 8 row destinations through `MASTER_LIVE_PLAN.md` — a file that **was retired 2026-05-09** and now lives at `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md`. This is **stale routing** post-cleanup.
 
 **Duplication with project docs:** Re-states the Daniel communication pattern (lines 71–98) which is also present (slightly differently) in `opticup-strategic` lines 49–82 and `opticup-campaign-overseer` lines 67–80. The "lead with recommendation, one question at a time, plain Hebrew" rule is in 3 separate skill files.
 
 ### `opticup-strategic` (1008 lines)
-**Purpose:** Author SPECs (Foreman role), then post-execution review them with `FOREMAN_REVIEW.md`. Also handles "main strategic chat" architectural questions.
+**Purpose:** Author SPECs (Foreman role), then post-execution review them with `FOREMAN_REVIEW.md`. Also handles "architect chat" architectural questions.
 
-**Overlap:** Substantial with `opticup-main-strategic` — both author cross-module decisions, both maintain decision logs, both speak directly to Daniel in plain Hebrew. Description claims to act as BOTH Main Strategic AND Foreman, but `opticup-main-strategic` exists as a separate Tier-2 skill for the architect layer. The boundary between "Tier 2 Main Strategic" and "Tier 3 Module Strategic" is documented in `opticup-main-strategic` but not echoed clearly in `opticup-strategic`.
+**Overlap:** Substantial with `opticup-architect` — both author cross-module decisions, both maintain decision logs, both speak directly to Daniel in plain Hebrew. Description claims to act as BOTH Architect AND Foreman, but `opticup-architect` exists as a separate Tier-2 skill for the architect layer. The boundary between "Tier 2 Architect" and "Tier 3 Module Strategic" is documented in `opticup-architect` but not echoed clearly in `opticup-strategic`.
 
 **Gaps:** Largest skill at 1008 lines (3× the average). Combines 3 distinct roles (architect, foreman, daniel-comms) without internal navigation. A consumer loading the skill cannot easily find the relevant section. The CRM-module commit-split anticipation block (lines 177–189) is excellent context but buried.
 
@@ -77,7 +77,7 @@
 ### `opticup-campaign-overseer` (352 lines)
 **Purpose:** Recommend-Only specialist for the Prizma SuperSale campaign. Operates in v1 (recommend-only) until 90%-acceptance gate graduates to v2 (autonomous).
 
-**Overlap:** Daniel communication rules (lines 67–80) overlap `opticup-main-strategic` + `opticup-strategic`.
+**Overlap:** Daniel communication rules (lines 67–80) overlap `opticup-architect` + `opticup-strategic`.
 
 **Gaps:** Self-improvement mechanism (90% gate) is unique and well-defined.
 
@@ -89,11 +89,11 @@
 
 **1. Iron Rules appear in 4 places** — `CLAUDE.md` §4–§6 (canonical), `opticup-guardian` (full), `opticup-executor` (abbreviated 14 of 30), `opticup-reviewer` Level 1 (checklist by file type). When CLAUDE.md was updated 2026-05-09 with §0.5 Root Discipline Rule, none of the skills auto-updated. Drift risk is real.
 
-**2. Daniel communication pattern in 3 skills** — `opticup-main-strategic`, `opticup-strategic`, `opticup-campaign-overseer` all restate "lead with recommendation, one question, plain Hebrew, no tech detail." Candidate for promotion to a single shared reference (`.claude/skills/_shared/daniel-comms.md`) and `@import` from each.
+**2. Daniel communication pattern in 3 skills** — `opticup-architect`, `opticup-strategic`, `opticup-campaign-overseer` all restate "lead with recommendation, one question, plain Hebrew, no tech detail." Candidate for promotion to a single shared reference (`.claude/skills/_shared/daniel-comms.md`) and `@import` from each.
 
-**3. `opticup-main-strategic` ↔ `opticup-strategic` boundary is unclear** — Both describe themselves as "Main Strategic Architect". Tier-2 vs Tier-3 model is documented but body text predates the model.
+**3. `opticup-architect` ↔ `opticup-strategic` boundary is unclear** — Both describe themselves as "Architect". Tier-2 vs Tier-3 model is documented but body text predates the model.
 
-**4. Stalest content: `opticup-main-strategic` Decision Map** — 9 references to `MASTER_LIVE_PLAN.md` (retired 2026-05-09). 4 of 8 Decision Map rows route to a non-existent file.
+**4. Stalest content: `opticup-architect` Decision Map** — 9 references to `MASTER_LIVE_PLAN.md` (retired 2026-05-09). 4 of 8 Decision Map rows route to a non-existent file.
 
 **5. Sentinel chain-loads guardian; others don't** — Inconsistent dependency declarations. Either all 4 audit-related skills should chain-load guardian, or none should (and guardian becomes implicit context).
 
@@ -101,8 +101,8 @@
 
 ## Recommendations (ordered by impact)
 
-1. **Resolve the `MASTER_LIVE_PLAN.md` staleness in `opticup-main-strategic`** — replace 9 references with `MASTER_ROADMAP.md` (current canonical). 5-minute edit. **Highest impact, lowest cost.**
+1. **Resolve the `MASTER_LIVE_PLAN.md` staleness in `opticup-architect`** — replace 9 references with `MASTER_ROADMAP.md` (current canonical). 5-minute edit. **Highest impact, lowest cost.**
 2. **Consolidate Iron Rules into one canonical block + `@reference` from skills** — remove the duplicate full-text from `opticup-guardian` and the abbreviated copy from `opticup-executor`, replace with "see CLAUDE.md §4–§6". Removes drift risk.
-3. **Document the `opticup-main-strategic` ↔ `opticup-strategic` boundary in both skill bodies** — add 3 lines at the top of each: "Tier-2 architect (this skill) vs Tier-3 module strategist (the other)." Already documented in description; missing from body.
+3. **Document the `opticup-architect` ↔ `opticup-strategic` boundary in both skill bodies** — add 3 lines at the top of each: "Tier-2 architect (this skill) vs Tier-3 module strategist (the other)." Already documented in description; missing from body.
 4. **Apply the unfinished FOREMAN_REVIEW recommendations to `opticup-executor`** — `verify.mjs` auto-load contract documentation (P1 from PROJECT_STRUCTURE_CLEANUP and STRUCTURE_PROTECTIONS retrospectives) is now 2-cycle overdue.
 5. **Add a single `daniel-comms.md` reference and `@import` from 3 skills** — Daniel communication pattern stops drifting across 3 skill files.

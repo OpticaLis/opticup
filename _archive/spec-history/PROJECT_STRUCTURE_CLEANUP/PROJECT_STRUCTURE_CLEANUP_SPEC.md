@@ -1,6 +1,6 @@
 # SPEC — Project Structure Cleanup (Stage A+B Unified)
 
-**Author:** Main Strategic (Cowork session, 2026-05-09)
+**Author:** Architect (Cowork session, 2026-05-09)
 **Executor target:** Claude Code on 🖥️ Windows desktop
 **Skill required:** `opticup-executor`
 **Estimated time:** 75-120 minutes
@@ -100,7 +100,7 @@ Stop and report if:
 >
 > **When adding a new file at root, ask: "Which category?"** If none → it doesn't belong at root.
 >
-> **Maintaining the rule:** Every Module Close Ceremony (per `opticup-main-strategic` skill) must include a 30-second root scan. Anything new not in Categories 1-3 → archive immediately.
+> **Maintaining the rule:** Every Module Close Ceremony (per `opticup-architect` skill) must include a 30-second root scan. Anything new not in Categories 1-3 → archive immediately.
 
 This rule prevents drift forever after.
 
@@ -262,7 +262,7 @@ git push origin develop
 Read the current file. Update to reflect:
 - New `_archive/` at root (with subfolders)
 - `__LAUNCH_PLAN_DRAFT__/` updated structure (remove `_archive/` mention; add `handoffs/` mention; add `architecture-briefs/M11/`, `M12/` subfolders)
-- `.claude/skills/opticup-main-strategic/references/decisions/` subfolder
+- `.claude/skills/opticup-architect/references/decisions/` subfolder
 - Removal of `archive/`, `data/`, `---QA---/`, `outputs/` from root
 - `_archive/` mentioned with all 4 subfolders
 
@@ -344,4 +344,4 @@ Daniel will then verify in the next Cowork session.
 
 ---
 
-*End of SPEC. Authored by Main Strategic in Cowork session, 2026-05-09. Ready for opticup-executor in Claude Code.*
+*End of SPEC. Authored by Architect in Cowork session, 2026-05-09. Ready for opticup-executor in Claude Code.*

@@ -8,7 +8,7 @@
 > For the data model see `docs/GLOBAL_SCHEMA.sql`.
 >
 > If a new strategic chat is opened, paste this file and say:
-> "You are the Main Strategic Chat for Optic Up. Read this document and continue from Section 7."
+> "You are the Architect for Optic Up. Read this document and continue from Section 7."
 
 ---
 
@@ -191,7 +191,7 @@ without explicit strategic-chat approval.
 | Mar 2026 | Platform Auth (email+password) ≠ Tenant Auth (PIN) | Different trust models, different Supabase auth flows |
 | Mar 2026 | Atomic RPC for all quantity changes | Race condition prevention (Iron Rule #1, formalized as #13 for sequential numbers) |
 | Mar 2026 | activity_log central + inventory_logs preserved | Don't break Module 1; unified view in future |
-| Mar 2026 | 4-tier workflow hierarchy | Main Strategic → Module Strategic → Secondary Chat → Claude Code |
+| Mar 2026 | 4-tier workflow hierarchy | Architect → Module Strategic → Secondary Chat → Claude Code |
 | Mar 2026 | Zero coupling + contracts between modules | Modules communicate only through declared contract functions |
 | Mar 2026 | Supplier portal deferred to Module 17 | Requires external auth from Module 2 |
 | Mar 2026 | Shipments as standalone module (5.9) | Serves all send types (framing, return, repair, delivery), not just returns |

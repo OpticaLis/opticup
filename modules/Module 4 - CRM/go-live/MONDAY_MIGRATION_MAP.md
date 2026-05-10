@@ -11,7 +11,7 @@
 > **Generated:** 2026-05-02
 > **Source data:** `campaigns/supersale/exports/*.xlsx` (frozen 2026-04-21)
 > **Live target tenant:** `prizma` (UUID `6ad0781b-37f0-47a9-92e3-be9ed1477e1c`)
-> **Status:** discovery complete. Awaiting Daniel + Main Strategic chat review on `develop`.
+> **Status:** discovery complete. Awaiting Daniel + Architect chat review on `develop`.
 >
 > **READ THIS FIRST → §1 Executive Summary, §5 DANIEL_DECISION list, §11 Risks, §12 Daniel-action checklist.**
 
@@ -1057,4 +1057,4 @@ If cutover happens after 2026-05-05, re-export Monday boards via Daniel's Monday
 
 *End of MONDAY_MIGRATION_MAP.md.*
 *Generated 2026-05-02 by opticup-executor (MONDAY_MIGRATION_DISCOVERY SPEC).*
-*Next review: Daniel + Main Strategic chat on develop, before any migration script implementation.*
+*Next review: Daniel + Architect chat on develop, before any migration script implementation.*

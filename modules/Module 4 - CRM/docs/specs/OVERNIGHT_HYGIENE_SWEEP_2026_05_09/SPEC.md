@@ -173,7 +173,7 @@ The executor walks items in order. Each item is independent. Skip on failure; co
 
 **Action:**
 - Spawn ONE sub-agent (`subagent_type: "general-purpose"`) with this brief: "Read all skill files in the project's skills directories. For each skill, report: (a) name + purpose, (b) length in lines, (c) overlap with other skills (which other skills cover similar territory), (d) gaps (what should the skill do but doesn't), (e) duplication with project docs (e.g., does the skill restate Iron Rules from CLAUDE.md). Return a markdown report under 1500 words."
-- Skill list to find: `opticup-strategic`, `opticup-executor`, `opticup-reviewer`, `opticup-sentinel`, `opticup-guardian`, `opticup-main-strategic` (if present), `opticup-campaign-overseer` (if present), `opticup-site-overseer` (if present). Sub-agent should locate them.
+- Skill list to find: `opticup-strategic`, `opticup-executor`, `opticup-reviewer`, `opticup-sentinel`, `opticup-guardian`, `opticup-architect` (if present), `opticup-campaign-overseer` (if present), `opticup-site-overseer` (if present). Sub-agent should locate them.
 - Save the agent's report to `modules/Module 4 - CRM/docs/specs/OVERNIGHT_HYGIENE_SWEEP_2026_05_09/SKILLS_AUDIT_REPORT.md`
 
 **Verify:**

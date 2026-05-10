@@ -2,7 +2,7 @@
 
 **גרסה:** v1
 **תאריך:** 2026-05-09
-**מחבר:** Main Strategic (skill `opticup-main-strategic`)
+**מחבר:** Architect (skill `opticup-architect`)
 **יעד:** Module Strategist של M8 (skill `opticup-strategic`).
 
 > זה לא SPEC. שכבת-ביניים בין Master Plan ל-SPEC. מגדיר ישויות, חוזים, דפוסים, סיכונים — לא acceptance criteria, לא שדות-מלאים, לא phases.
@@ -472,4 +472,4 @@ tenant יבקש Apple Pay או QR — זה דורש פיתוח adapter חדש (2
 
 ---
 
-*סוף M8 Architecture Brief v1. כתב 2026-05-09 על-ידי Main Strategic. נמסר ל-Module Strategist לכתיבת ROADMAP + SPECs.*
+*סוף M8 Architecture Brief v1. כתב 2026-05-09 על-ידי Architect. נמסר ל-Module Strategist לכתיבת ROADMAP + SPECs.*

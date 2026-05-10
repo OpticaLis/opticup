@@ -176,7 +176,7 @@ Include a **mandatory environment pre-flight block** (§0 or within §1) that ve
 
 ## 9. Next Step Ownership
 
-- **Merge-to-main:** DEFERRED — awaits Daniel's authorization after Main Strategic reviews this summary.
+- **Merge-to-main:** DEFERRED — awaits Daniel's authorization after Architect reviews this summary.
 - **DNS switch:** DEFERRED — same gate. Also depends on full QA passing.
 - **QA execution:** Schedule on local dev machine (localhost:3000 + localhost:4321) or staging deployment with demo tenant. Target: 18/18 PASS before DNS switch decision.
 - **Suggested follow-up SPECs:**

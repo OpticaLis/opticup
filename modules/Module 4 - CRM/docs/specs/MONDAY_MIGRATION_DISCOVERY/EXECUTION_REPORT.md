@@ -5,7 +5,7 @@
 > **Started:** 2026-05-02 (single session)
 > **Branch at start:** develop, clean (per pre-existing Sentinel/launch-plan untracked allowlist)
 > **Branch at end:** develop, MAP committed
-> **Outcome:** ✅ Discovery complete. Awaiting Daniel + Main Strategic chat review.
+> **Outcome:** ✅ Discovery complete. Awaiting Daniel + Architect chat review.
 
 ---
 
@@ -213,7 +213,7 @@ deliverable structure when it's explicit; the skill should respond.
 
 - Foreman (opticup-strategic) reviews this report + FINDINGS.md and writes `FOREMAN_REVIEW.md`.
 - Daniel reads MAP §1, §5, §11, §12 and resolves D-1 through D-7.
-- Main Strategic chat (opticup-strategic) authors the next SPEC: `migrate-monday-to-optic-up.mjs` script implementation per MAP §9 blueprint.
+- Architect chat (opticup-strategic) authors the next SPEC: `migrate-monday-to-optic-up.mjs` script implementation per MAP §9 blueprint.
 - Daniel reviews + signs off on the MAP via the Ready-to-Execute Gate (§13).
 
 ---

@@ -1,6 +1,6 @@
 # Module Brief — Template
 
-> **Purpose:** Hand-off document from Main Strategic to Module Strategist. Short, scope-defining, decision-encoded.
+> **Purpose:** Hand-off document from Architect to Module Strategist. Short, scope-defining, decision-encoded.
 > **NOT a SPEC.** Module Strategist authors the SPECs from this brief.
 > **Target length:** 1-2 pages.
 
@@ -10,7 +10,7 @@
 
 **Brief version:** v1
 **Date:** {YYYY-MM-DD}
-**Author:** Main Strategic
+**Author:** Architect
 **Hand-off to:** Module Strategist (`opticup-strategic` skill)
 
 ---
@@ -28,7 +28,7 @@ What MUST be in this module for LIVE-day readiness:
 - {bullet 3}
 - ...
 
-(Pulled from `MASTER_LIVE_PLAN.md` §4. Don't add new requirements without consulting Main Strategic.)
+(Pulled from `MASTER_LIVE_PLAN.md` §4. Don't add new requirements without consulting Architect.)
 
 ## 3. Scope — Out (anti-creep)
 
@@ -40,7 +40,7 @@ What is explicitly NOT in this module:
 
 ## 4. Locked Decisions
 
-These decisions are pre-locked. Do not relitigate without consulting Main Strategic.
+These decisions are pre-locked. Do not relitigate without consulting Architect.
 
 | # | Decision | Source |
 |---|---|---|
@@ -68,7 +68,7 @@ These contracts MUST be honored. The Module Strategist may extend them but not b
 
 ## 7. Open Questions Specific to This Module
 
-Questions Main Strategic could not resolve without deeper module knowledge. Module Strategist resolves with Daniel.
+Questions Architect could not resolve without deeper module knowledge. Module Strategist resolves with Daniel.
 
 - {question 1}
 - {question 2}
@@ -103,7 +103,7 @@ Daniel takes this brief to a fresh session, activates `opticup-strategic` skill,
 3. Writes per-phase SPECs
 4. Dispatches to Executor
 
-Main Strategic stays out unless: cross-module decision, scope change, strategic blocker.
+Architect stays out unless: cross-module decision, scope change, strategic blocker.
 
 ---
 

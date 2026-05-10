@@ -108,7 +108,7 @@ M13 דורש research-first (P23) באזורים מוגבלים:
 הדבק את זה בתיבה של Cowork:
 
 ```
-אתה ה-Main Strategic של פרוייקט Optic Up. ממשיכים מ-M13_HANDOFF.md.
+אתה ה-Architect של פרוייקט Optic Up. ממשיכים מ-M13_HANDOFF.md.
 ```
 
 זה מספיק. הסקיל ייטען אוטומטית, יקרא את MASTER_LIVE_PLAN + DECISIONS_LOG (כולל הלקחים החדשים מ-M12) + MEMORY + CLAUDE.md + ה-handoff הזה.
@@ -119,8 +119,8 @@ M13 דורש research-first (P23) באזורים מוגבלים:
 
 - **Master Plan:** `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md` (§4 — דרישות M13)
 - **Briefs קודמים:** כל אחד ב-`modules/Module N - Name/architecture-brief/`
-- **DECISIONS_LOG:** `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md` (כולל 13 החלטות חדשות מ-2026-05-09)
-- **SKILL:** `.claude/skills/opticup-main-strategic/SKILL.md`
+- **DECISIONS_LOG:** `.claude/skills/opticup-architect/references/DECISIONS_LOG.md` (כולל 13 החלטות חדשות מ-2026-05-09)
+- **SKILL:** `.claude/skills/opticup-architect/SKILL.md`
 
 ---
 

@@ -22,14 +22,14 @@ M7 מורכב משאר המודולים:
 
 ## הקשר שצריך לסשן הבא
 
-הסשן החדש פותח כ-Main Strategic. הוא צריך לקרוא:
+הסשן החדש פותח כ-Architect. הוא צריך לקרוא:
 
 1. **`_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md`** — תוכנית-אם.
 2. **`modules/Module 5 - Customers/architecture-brief/M5_CUSTOMERS_BRIEF.md` (v2)** — חוזה M7→M5.
 3. **`modules/Module 6 - Prescriptions/architecture-brief/M6_PRESCRIPTIONS_BRIEF.md` (v1)** — חוזה M7→M6 (הזמנה ממשת מרשם).
 4. **קובץ זה** — להבין מאיפה ממשיכים.
 5. **סקיצת-Miro של Daniel** (URL נשמר בצ'אט הקודם) — צריך לראות את התמונה לפני התחלה. אם אין גישה → לבקש צילום-מסך.
-6. **`.claude/skills/opticup-main-strategic/SKILL.md`** — לקרוא את **כל הפטרנים P1–P22**, במיוחד:
+6. **`.claude/skills/opticup-architect/SKILL.md`** — לקרוא את **כל הפטרנים P1–P22**, במיוחד:
    - **P22** (פורמט קשיח לכל שאלה — 3 שורות, אין נתוני-אודיט בצ'אט, אין אפשרויות א'/ב', אין מילים-טכניות).
    - **P19** (configuration-driven — טבלאות עם capability flags במקום enums).
    - **P21** (pressure-test entity boundaries).
@@ -68,15 +68,15 @@ M7 מורכב משאר המודולים:
 ## הוראות פתיחה לסשן החדש (העתק לדניאל)
 
 ```
-אתה האחראי על כל הפרוייקט. אתה ה-Main Strategic.
+אתה האחראי על כל הפרוייקט. אתה ה-Architect.
 
 קרא:
 1. _archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md
 2. modules/Module 5 - Customers/architecture-brief/M5_CUSTOMERS_BRIEF.md (v2)
 3. modules/Module 6 - Prescriptions/architecture-brief/M6_PRESCRIPTIONS_BRIEF.md (v1)
 4. modules/Module 7 - Orders/architecture-brief/M7_ORDERS_HANDOFF.md (הקובץ הזה)
-5. .claude/skills/opticup-main-strategic/SKILL.md — את כל הפטרנים, במיוחד P22 (פורמט-קשיח לשאלות).
-6. .claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md (היסטוריה).
+5. .claude/skills/opticup-architect/SKILL.md — את כל הפטרנים, במיוחד P22 (פורמט-קשיח לשאלות).
+6. .claude/skills/opticup-architect/references/DECISIONS_LOG.md (היסטוריה).
 
 אנחנו ממשיכים מאיפה שעצרנו: M7 (Orders) — Architecture Brief.
 ב-M7 כבר ראיתי את סקיצת ה-Miro של Daniel ויש רעיון-מרכזי מתועד ב-handoff.

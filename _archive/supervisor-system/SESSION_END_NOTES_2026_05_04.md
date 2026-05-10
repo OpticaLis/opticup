@@ -94,9 +94,9 @@ If the next session sees any work that violates the above, surface it to Daniel 
 
 Daniel just types the standard trigger phrase (any of these):
 
-- "אתה האסטרטג הראשי של הפרוייקט"
+- "אתה הארכיטקט של הפרוייקט"
 - "אתה המפקח"
-- "You are the Main Strategic Chat for Optic Up"
+- "You are the Architect for Optic Up"
 - (or any equivalent)
 
 The auto-memory entry `project_supervisor_system.md` will fire the bootstrap. The session reads SKILL → HANDOFF → THIS FILE → the rest. No manual context dump needed from Daniel.
