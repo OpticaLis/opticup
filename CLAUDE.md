@@ -434,11 +434,19 @@ Claude Code executes approved plans end-to-end without per-step confirmation, st
 - ✅ GitHub Actions CI running `verify.mjs --full` + `schema-diff.mjs` on push/PR
 - ✅ Credentials isolation (`$HOME/.optic-up/credentials.env` — cargo stays with the product, keys stay with the environment)
 
+**Built in Safety-Infra layer (2026-05-10):**
+- ✅ 4-agent SPEC chain: Foreman → Executor → Reviewer → **Localhost-Tester** → Foreman (see `docs/AGENT_CHAIN_PROTOCOL.md`)
+- ✅ `opticup-localhost-tester` skill (`.claude/skills/opticup-localhost-tester/SKILL.md`) — runtime smoke validation on demo tenant
+- ✅ `scripts/start-local.ps1` — auto-launches ERP (:3000) + Storefront (:4321) with 30s health-check
+- ✅ `tests/smoke/baseline.test.mjs` — 7 baseline tests (PIN auth, CRM lead create+RLS, inventory read, storefront pages, no 5xx) covering M1+M4 production scope
+- ✅ `scripts/snapshot.mjs` — git-tag based pre-SPEC snapshot + rollback (`create` / `rollback` / `list`)
+
 **Not yet attempted (Phase 1+):**
 - Cowork-as-orchestrator for full-phase autonomous runs
-- Visual UI checking via Claude in Chrome
+- Visual UI checking via Claude in Chrome (Playwright in baseline.test.mjs v2)
 - Unattended overnight execution
 - Dispatch integration for phone-based approvals when a deviation occurs
+- Supabase branch snapshot in `snapshot.mjs` (currently git-tag only)
 
 ---
 
