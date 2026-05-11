@@ -1,5 +1,22 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-11 — Design System Phase 2: Component library token-only + focus-visible baseline
+
+SPEC: `M1_5_DESIGN_SYSTEM_COMPONENT_LIBRARY` ([folder](specs/M1_5_DESIGN_SYSTEM_COMPONENT_LIBRARY/))
+
+- All 7 component CSS files now use bare `var(--token)` references — no `, #fallback` literals left. 15 sites cleaned (12 hex fallbacks in modal.css digit-suffixed vars caught after SPEC criterion #4's regex bug fix; 3 stale `--g{100,300,400}` refs in table.css fixed to canonical `--color-gray-{100,300,400}`). variables.css is the only source of color truth.
+- New tokens: `--color-focus-ring` (tracks primary), `--shadow-focus` (3px near-black ring at 35% opacity). WCAG 2.4.7 baseline.
+- `:focus-visible` baseline added across components.css/forms.css/modal.css/table.css/toast.css. Existing `:focus { outline:none; border-color/box-shadow:... }` rules in components.css (.input/.select/.textarea) converted to `:focus + :focus-visible` pair pattern. Mouse-click no longer triggers a focus ring; keyboard Tab does.
+- JS APIs UNCHANGED (Modal/Toast/TableBuilder/promptPin frozen per Brief Contract B).
+
+### Commits
+- d4f5f99: add --color-focus-ring + --shadow-focus tokens
+- b8d7e8a: remove modal.css `var(--TOKEN, #hex)` hex-fallback literals (11 initial sites)
+- a37aafe: finalize hex-fallback cleanup — modal.css digit-suffixed vars + table.css stale --gN refs (15 more sites)
+- e9c555c: :focus-visible baseline across components/forms/modal/table/toast
+
+Rationale: prep for Phase 3 (3-direction mockups) — directions override `--color-focus-ring` per-direction without touching JS or component CSS.
+
 ## 2026-05-11 — Design System Phase 1: Neutral platform defaults
 
 SPEC: `M1_5_DESIGN_TOKENS_FOUNDATION` ([folder](specs/M1_5_DESIGN_TOKENS_FOUNDATION/))

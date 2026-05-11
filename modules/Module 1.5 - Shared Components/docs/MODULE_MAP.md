@@ -8,6 +8,8 @@
 
 ## 1. File Index — shared/css/
 
+> **Phase 2 design-system audit pass (2026-05-11):** All 8 component CSS files now consume bare `var(--token)` references — zero hex fallback literals (15 sites cleaned: 12 in modal.css digit-suffixed vars + 3 stale `--g{100,300,400}` refs in table.css fixed to `--color-gray-*`). `:focus-visible` baseline added across components.css / forms.css / modal.css / table.css / toast.css per WCAG 2.4.7. New tokens in variables.css: `--color-focus-ring`, `--shadow-focus`. JS component APIs UNCHANGED (Brief Contract B).
+
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
 | 1 | variables.css | shared/css/variables.css | 161 | Design tokens: colors (primary Indigo #4f46e5, semantic + dark text, neutral Slate scale, background), typography (family, sizes, weights, line-heights), spacing (6-step scale), border-radius, shadows, z-index, transitions, legacy --primary alias. Single source of truth for all visual values. |

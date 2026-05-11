@@ -1,9 +1,13 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
 ## Current Status
-- **Phase:** Design System initiative ACTIVE (Phase 1 closed 2026-05-11; Phases 2-4 SPECs authored and pending dispatch). Module 1.5 was MAINTENANCE since 2026-03-19; reopened for the Design System initiative.
+- **Phase:** Design System initiative ACTIVE (Phases 1 + 2 closed 2026-05-11; Phases 3 + 4 SPECs authored and pending dispatch). Module 1.5 was MAINTENANCE since 2026-03-19; reopened for the Design System initiative.
 - **Branch:** develop
-- **Last updated:** 2026-05-11 (Design System Phase 1: neutral defaults shipped, Prizma override migrated).
+- **Last updated:** 2026-05-11 (Design System Phase 2: component library token-only + focus-visible baseline).
+
+## 2026-05-11 — Design System Phase 2 (component library)
+
+`M1_5_DESIGN_SYSTEM_COMPONENT_LIBRARY` SPEC closed. All component CSS now consumes bare `var(--token)` (15 hex-fallback sites cleaned + 3 stale `--gN` references fixed). New tokens `--color-focus-ring` + `--shadow-focus`. `:focus-visible` baseline across 5 component files per WCAG 2.4.7. Mouse-click no longer shows focus ring; keyboard Tab does. JS APIs untouched. Unblocks Phase 3 (3-direction mockups for 13 modules).
 
 ## 2026-05-11 — Design System Phase 1 (neutral defaults)
 

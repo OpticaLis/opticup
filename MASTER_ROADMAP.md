@@ -94,9 +94,11 @@ PR-only merges to main. Read-only by default for Overseer. See
 `feedback_production_discipline_post_cutover.md`.
 
 **Design System initiative (2026-05-10 → in progress):** 4-phase platform-wide
-design system on M1.5. Phase 1 (Design Tokens Foundation) closed 2026-05-11 —
-variables.css defaults now tenant-neutral (Slate-900 near-black); Prizma's
-Indigo migrated to tenants.ui_config. Phases 2-4 SPECs authored:
+design system on M1.5. Phases 1 + 2 closed 2026-05-11 — variables.css defaults
+now tenant-neutral (Slate-900 near-black); Prizma's Indigo migrated to
+tenants.ui_config; all component CSS token-only + `:focus-visible` baseline
+across 5 files per WCAG 2.4.7; new tokens --color-focus-ring + --shadow-focus.
+Phases 3 + 4 SPECs authored:
 M1_5_DESIGN_SYSTEM_COMPONENT_LIBRARY (focus-visible + token-only audit),
 M1_5_DESIGN_SYSTEM_MOCKUPS_3_DIRECTIONS (Conservative / Modern-clean / Bold
 dense-pro-tool × 13 modules), M1_5_DESIGN_SYSTEM_PHASE_4_CLOSE (chosen
