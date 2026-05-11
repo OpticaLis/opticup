@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optic Up — Design System Mockups — Direction 3: Bold (dense-pro-tool)</title>
+  <link rel="stylesheet" href="../../../../../shared/css/variables.css">
+  <link rel="stylesheet" href="../../../../../shared/css/layout.css">
+  <link rel="stylesheet" href="../../../../../shared/css/components.css">
+  <link rel="stylesheet" href="../../../../../shared/css/components-extra.css">
+  <link rel="stylesheet" href="../../../../../shared/css/forms.css">
+  <link rel="stylesheet" href="../../../../../shared/css/modal.css">
+  <link rel="stylesheet" href="../../../../../shared/css/toast.css">
+  <link rel="stylesheet" href="../../../../../shared/css/table.css">
+  <link rel="stylesheet" href="./_tokens.css">
+  <style>
+    /* INDEX-only chrome — dense-pro-tool variant. Sharp 1px borders, tight padding,
+       smaller chrome typography to match Direction 3 tokens. */
+    html, body { height: 100%; margin: 0; }
+    body { display: grid; grid-template-rows: auto 1fr; font-family: var(--font-family-base, 'Heebo', sans-serif); background: var(--color-bg-page, #fafafa); color: var(--color-text, #0f172a); font-size: var(--font-size-md, 0.78rem); }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 6px 14px; background: var(--color-surface, #ffffff); border-bottom: 1px solid var(--color-border, #e2e8f0); }
+    .top-bar h1 { margin: 0; font-size: var(--font-size-lg, 0.92rem); font-weight: 600; letter-spacing: -0.01em; }
+    .direction-switch { display: flex; gap: 4px; }
+    .direction-switch a { padding: 4px 10px; border-radius: var(--radius-md, 2px); text-decoration: none; font-size: var(--font-size-sm, 0.72rem); background: var(--color-surface-alt, #f1f5f9); color: var(--color-text, #0f172a); border: 1px solid var(--color-border, #e2e8f0); }
+    .direction-switch a.active { background: var(--color-primary, #0f172a); color: #fff; border-color: var(--color-primary, #0f172a); }
+    .layout { display: grid; grid-template-columns: 200px 1fr; min-height: 0; }
+    .nav { background: var(--color-surface, #ffffff); border-inline-end: 1px solid var(--color-border, #e2e8f0); padding: 6px; overflow-y: auto; }
+    .nav h2 { margin: 4px 4px 6px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted, #64748b); font-weight: 600; }
+    .nav ul { list-style: none; padding: 0; margin: 0; }
+    .nav li { margin: 1px 0; }
+    .nav button { width: 100%; text-align: start; padding: 4px 8px; border: 1px solid transparent; background: transparent; border-radius: var(--radius-sm, 2px); cursor: pointer; font-size: var(--font-size-sm, 0.72rem); color: var(--color-text, #0f172a); font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; }
+    .nav button:hover { background: var(--color-surface-alt, #f1f5f9); }
+    .nav button.active { background: var(--color-primary-light, #eef2ff); color: var(--color-primary-dark, #3730a3); font-weight: 600; border-color: var(--color-border, #e2e8f0); }
+    .preview { background: var(--color-bg-page, #fafafa); padding: 6px; }
+    .preview iframe { width: 100%; height: 100%; border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-md, 2px); background: #fff; box-shadow: var(--shadow-sm, 0 0 0 1px rgba(15,23,42,0.08)); }
+    .preview-frame-wrap { height: 100%; }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <h1>Optic Up Design System — Direction 3: Bold (dense-pro-tool)</h1>
+    <div class="direction-switch" aria-label="החלפת כיוון">
+      <a href="../direction-1-conservative/INDEX.html">1. Conservative</a>
+      <a href="../direction-2-modern-clean/INDEX.html">2. Modern-clean</a>
+      <a href="../direction-3-bold-dense-pro-tool/INDEX.html" class="active">3. Bold (dense-pro-tool)</a>
+    </div>
+  </div>
+
+  <div class="layout">
+    <nav class="nav" aria-label="ניווט מודולים">
+      <h2>מודולים</h2>
+      <ul id="module-list">
+        <li><button data-src="./M1-inventory.html" class="active">M1 — Inventory</button></li>
+        <li><button data-src="./M3-storefront-studio.html">M3 — Storefront Studio</button></li>
+        <li><button data-src="./M4-crm.html">M4 — CRM</button></li>
+        <li><button data-src="./M5-customers.html">M5 — Customers</button></li>
+        <li><button data-src="./M6-prescriptions.html">M6 — Prescriptions</button></li>
+        <li><button data-src="./M7-orders.html">M7 — Orders</button></li>
+        <li><button data-src="./M8-payments.html">M8 — Payments</button></li>
+        <li><button data-src="./M9-lab-kds.html">M9 — Lab KDS</button></li>
+        <li><button data-src="./M11-reports.html">M11 — Reports</button></li>
+        <li><button data-src="./M12-communications.html">M12 — Communications</button></li>
+        <li><button data-src="./M13-loyalty.html">M13 — Loyalty</button></li>
+        <li><button data-src="./M14-appointments.html">M14 — Appointments</button></li>
+        <li><button data-src="./M15-queue.html">M15 — Queue</button></li>
+      </ul>
+    </nav>
+
+    <main class="preview">
+      <div class="preview-frame-wrap">
+        <iframe id="preview-frame" src="./M1-inventory.html" title="תצוגה מקדימה של מודול"></iframe>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Direction 3 INDEX — minimal navigation. No Prizma toggle (Direction 1 owns
+    // the per-tenant override demo). Just left-nav button → iframe src swap.
+    (function () {
+      var list = document.getElementById('module-list');
+      var frame = document.getElementById('preview-frame');
+      list.addEventListener('click', function (e) {
+        var btn = e.target.closest('button[data-src]');
+        if (!btn) return;
+        var buttons = list.querySelectorAll('button');
+        for (var i = 0; i < buttons.length; i++) buttons[i].classList.remove('active');
+        btn.classList.add('active');
+        frame.src = btn.dataset.src;
+      });
+    })();
+  </script>
+</body>
+</html>
