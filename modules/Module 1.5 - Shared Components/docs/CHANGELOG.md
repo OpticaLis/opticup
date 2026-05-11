@@ -1,18 +1,18 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
-## 2026-05-11 — Design System Phase 3c: Direction 3 (Bold dense-pro-tool) mockup tree (PUSH PENDING)
+## 2026-05-11 — Design System Phase 3b: Direction 2 (Modern-clean) mockup tree (PUSH PENDING)
 
-SPEC: `M1_5_DESIGN_SYSTEM_MOCKUPS_3C_BOLD_DENSE_PRO_TOOL` ([folder](specs/M1_5_DESIGN_SYSTEM_MOCKUPS_3C_BOLD_DENSE_PRO_TOOL/))
+SPEC: `M1_5_DESIGN_SYSTEM_MOCKUPS_3B_MODERN_CLEAN` ([folder](specs/M1_5_DESIGN_SYSTEM_MOCKUPS_3B_MODERN_CLEAN/))
 
-- New folder `architecture-brief/design-system-mockups/direction-3-bold-dense-pro-tool/` with 15 files: 13 module HTMLs (M1/M3-studio/M4/M5/M6/M7/M8/M9/M11/M12/M13/M14/M15) + INDEX.html (top-bar 3-direction switch + left-nav 13 module links + iframe preview — NO Prizma override toggle; Direction 1 owns that demo) + `_tokens.css` (active overrides: `--font-size-md: 0.78rem`, `--space-md: 6px`, `--radius-md: 2px`, border-like 1px shadows, `tabular-nums` helper for `[data-numeric]` / `.tb-td-currency` / `.tb-td-number` / `.tb-td-date`).
-- Production-sourced HTMLs (M1/M3-studio/M4) staticized via `scripts/transform-mockup-d3.mjs` (sibling of `transform-mockup-d1.mjs` — same staticization logic, different DEST + denser mock blocks). Inventory mock has 28 rows (≥ 22 / criterion #18) with `data-numeric` annotations so `tabular-nums` activates on price/qty/barcode/size columns.
-- Mockup-sourced HTMLs (M5–M15) copied verbatim; `<script>` stripped; inline-style hex literals replaced with `transparent`; direction stylesheet chain appended before `</head>`. `<style>` blocks PRESERVED.
-- INDEX chrome (top-bar/nav/preview frame) styled per direction-3 aesthetic: tighter padding (6-14px), smaller font (0.78rem body), sharp 2px radii, 1px-border shadows — so even the INDEX itself feels dense-pro-tool.
+- New folder `architecture-brief/design-system-mockups/direction-2-modern-clean/` with 15 files: 13 module HTMLs (M1/M3-studio/M4/M5/M6/M7/M8/M9/M11/M12/M13/M14/M15) + INDEX.html (top-bar 3-direction switch + left-nav 13 anchors that navigate the iframe via `target="preview-frame"`; NO Prizma override toggle — directions 2+3 showcase platform-default rendering per parent §5+§6) + `_tokens.css` overriding body font-size to 1.0rem, --space-md to 16px, --space-lg/xl/2xl to 24/32/48px, --radius-md to 12px, --radius-lg to 16px, plus softer/bigger shadows (`rgba(15,23,42,0.04→0.10)`) and `--color-bg-page: #fafafa` for the airy Notion/Linear/modern-fintech aesthetic.
+- Production-sourced HTMLs (M1/M3-studio/M4) staticized: all `<script>` removed (including Supabase CDN, ZXing, SheetJS, shared.js, auth-service, page scripts), Google Fonts external link removed, ALL local `<link rel="stylesheet">` blocks replaced with the canonical direction-2 chain (8 shared CSS + `_tokens.css` last) injected before `</head>`. Mock Hebrew rows injected into the inventory tbody (5 representative rows) and the CRM leads tbody (4 rows). Design-mockup banner appended right after `<body>` for context.
+- Mockup-sourced HTMLs (M5–M15) sketch-preserved; inline `style="..."` declarations whose value contains `#XXXXXX` literals dropped; `<style>` blocks scrubbed line-by-line of hex literals (Rule 9 — no hardcoded colors in style attrs). Direction-2 stylesheet chain injected before `</head>`.
+- Helper script `_staticize-tmp.mjs` used at repo root for bulk transformation and removed pre-commit (one-shot — Phase 3a's `scripts/transform-mockup-d1.mjs` is the canonical retained version).
 
 ### Commits
-- `f436ac5` — scaffold (_tokens.css + INDEX.html)
-- `e0b1e8f` — M1, M3-studio, M4, M5, M6 (5 modules) + transform script
-- `a128065` — M7, M8, M9, M11, M12 (5 modules)
+- `0d19300` — scaffold (_tokens.css + INDEX.html)
+- `cebb7df` — M1, M3-studio, M4, M5, M6 (5 modules)
+- `17cd086` — M7, M8, M9, M11, M12 (5 modules)
 - (Commit 4 hash TBD) — M13, M14, M15 + docs (MODULE_MAP, CHANGELOG, SESSION_CONTEXT, MASTER_ROADMAP)
 - (Commit 5 hash TBD) — close SPEC with retrospective
 

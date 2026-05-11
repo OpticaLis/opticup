@@ -2,19 +2,15 @@
 
 > Single reference document for all files, functions, and globals in the shared/ directory.
 > Updated every commit that adds/changes code in shared/.
-> Last updated: 2026-05-11 (Phase 3c — direction-3-bold-dense-pro-tool mockup tree built; Phase 3 sub-phases 3a + 3b + 3c all 🟢, Phase 4 unblocks)
+> Last updated: 2026-05-11 (Phase 3b — direction-2-modern-clean mockup tree built)
 
 ---
 
-## 0. Design System initiative — Phase 3c (2026-05-11)
-
-`M1_5_DESIGN_SYSTEM_MOCKUPS_3C_BOLD_DENSE_PRO_TOOL` SPEC closed (PUSH PENDING). Direction 3 mockup tree built at `modules/Module 1.5 - Shared Components/architecture-brief/design-system-mockups/direction-3-bold-dense-pro-tool/` — 13 module HTMLs (M1/M3-studio/M4/M5/M6/M7/M8/M9/M11/M12/M13/M14/M15) + `INDEX.html` (3-direction switcher; NO Prizma toggle — Direction 1 owns the per-tenant override demo) + `_tokens.css` overriding `--font-size-md: 0.78rem`, `--space-md: 6px`, `--radius-md: 2px`, border-like 1px shadows, and a `tabular-nums` helper for numeric cells. Bulk-transform helper: `scripts/transform-mockup-d3.mjs` (sibling of `transform-mockup-d1.mjs` — same staticization logic, different DEST + denser mocks with 28-row inventory for criterion #18 density target). With 3a + 3b + 3c all 🟢, Phase 4 (`M1_5_DESIGN_SYSTEM_PHASE_4_CLOSE`) unblocks.
-
-## 0a. Design System initiative — Phase 3b (2026-05-11)
+## 0. Design System initiative — Phase 3b (2026-05-11)
 
 `M1_5_DESIGN_SYSTEM_MOCKUPS_3B_MODERN_CLEAN` SPEC closed (PUSH PENDING). Direction 2 mockup tree built at `modules/Module 1.5 - Shared Components/architecture-brief/design-system-mockups/direction-2-modern-clean/` — 13 module HTMLs (M1/M3-studio/M4/M5/M6/M7/M8/M9/M11/M12/M13/M14/M15) + `INDEX.html` (NO Prizma toggle — directions 2+3 showcase platform-default neutral rendering per parent §5) + `_tokens.css` overriding font-size/spacing/radii/shadows for the airy SaaS-default aesthetic. Sibling sub-phase 3c (Bold dense-pro-tool) remains pending dispatch.
 
-## 0b. Design System initiative — Phase 3a (2026-05-11)
+## 0a. Design System initiative — Phase 3a (2026-05-11)
 
 `M1_5_DESIGN_SYSTEM_MOCKUPS_3A_CONSERVATIVE` SPEC closed (PUSH PENDING). Direction 1 mockup tree built at `modules/Module 1.5 - Shared Components/architecture-brief/design-system-mockups/direction-1-conservative/` — 13 module HTMLs (M1/M3-studio/M4/M5/M6/M7/M8/M9/M11/M12/M13/M14/M15) + `INDEX.html` (Prizma override toggle live in this direction only) + minimal `_tokens.css` (Conservative inherits platform defaults). Bulk-transform helper: `scripts/transform-mockup-d1.mjs` (preserved for 3c reuse).
 
