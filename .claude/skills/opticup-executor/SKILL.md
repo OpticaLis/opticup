@@ -150,6 +150,34 @@ The full text is in CLAUDE.md §4-§6. Here are the ones most relevant to execut
 - Branch/repo/path mismatch
 - Any Iron Rule would be violated
 
+### Verification order for batch transformations (added 2026-05-11)
+
+When executing a SPEC that runs a script over multiple files in a batch
+(e.g., a re-skin, mass rename, or mass token-swap):
+
+1. **Test-on-one BEFORE tag-all.** Run the transformation on the FIRST file
+   in the batch (no git tag, no commit, just the transformation + verification
+   greps). If it works, proceed to step 2. If it fails, fix the script first,
+   then return to step 1.
+2. **Create tags for the full batch.** Pre-commit tags (`pre-<op>-M{N}-{stem}`)
+   are created at the parent commit so any single file can be reverted later.
+3. **Run the transformation on all remaining files.**
+4. **Run the SPEC's success-criteria grep checks IMMEDIATELY** — before
+   `git add`. If any check returns ≥1 hit when the SPEC says 0, STOP, do not
+   stage, investigate the deviation.
+5. **`git add` + commit.**
+
+Skipping step 1 risks pre-commit tags pointing at a commit that does not
+represent the intended pre-state, because the script may abort mid-batch and
+leave most files in their original state under tags that were created
+optimistically. Skipping step 4 risks staging broken transformations that
+have to be rewound from the index. Source: `M1_5_SKETCH_RESKIN_BATCH_3/`
+FOREMAN_REVIEW.md improvement proposals #1 + #2, 2026-05-11. The reskin script
+in that batch aborted on file 1 of M12 (a `:root\s*\{` regex miss) AFTER
+4 tags had already been created at HEAD — fortunate this time because the
+fix worked, but in a different SPEC the tag placement could have damaged
+per-file revert semantics.
+
 ### Do NOT stop when:
 - A step completed exactly as expected
 - The next step is in the plan and previous matched

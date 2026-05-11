@@ -1,5 +1,24 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-11 — Sketch Revision Batch 3 (M5/M6/M8/M11/M12/M14/M15 → Hybrid+Navy)
+
+SPEC: `M1_5_SKETCH_RESKIN_BATCH_3` ([folder](specs/M1_5_SKETCH_RESKIN_BATCH_3/))
+
+Re-skins 17 architecture-brief mockup files across 7 modules from the legacy purple-deep palette to the canonical Hybrid+Navy design system. Structure-preserving: `:root` token swap only, no DOM / content / layout changes. 13 files received heavy transformation (full `:root` + dark-bg sweep + hex rewrites); 4 M12 files received light transformation (neutrals only; WhatsApp/SMS/Email semantics preserved per Brief §2.4). 17 `pre-reskin-M{N}-{stem}` git tags enable independent revert. `reskin.mjs` transformation script retained in SPEC folder as audit artifact.
+
+Final grep `#26215c|#534ab7` returns 0 hits across all 17 files. Hebrew RTL preserved on all. DOM tag count within ±5% per file.
+
+### Commits
+
+- `faaa3b2` feat(m5): reskin architecture-brief sketches to Hybrid+Navy (2 files)
+- `92c7f71` feat(m6): reskin architecture-brief sketch to Hybrid+Navy (1 file)
+- `933a582` feat(m8): reskin architecture-brief sketches to Hybrid+Navy (4 files)
+- `0ba031d` feat(m11): reskin architecture-brief sketches to Hybrid+Navy (3 files)
+- `31a0f6d` feat(m12): reskin architecture-brief sketches to Hybrid+Navy (4 files — light mode)
+- `28e94c1` feat(m14): reskin architecture-brief sketches to Hybrid+Navy (2 files)
+- `6921c1c` feat(m15): reskin architecture-brief sketch to Hybrid+Navy (1 file)
+- `<retro>` chore(spec): close M1_5_SKETCH_RESKIN_BATCH_3 with retrospective + docs + skill improvements
+
 ## 2026-05-11 — Design System Hybrid Final (consolidates v2 into one platform language)
 
 SPEC: `M1_5_DESIGN_SYSTEM_HYBRID_FINAL` ([folder](specs/M1_5_DESIGN_SYSTEM_HYBRID_FINAL/))

@@ -1,9 +1,29 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
 ## Current Status
-- **Phase:** Design System initiative — **Hybrid Final delivered** (`M1_5_DESIGN_SYSTEM_HYBRID_FINAL`, 2026-05-11). 7 new files under `architecture-brief/design-system-mockups/hybrid-final/` (Stripe-B structure × Linear-A sidebar × Navy `#1e3a8a` accent, sans-only). The Hybrid mockups are the platform's locked-in design language. Phase 3 v2 (3 authentic languages) remains as historical reference. Per-module migration of production HTML to Hybrid is a future SPEC chain.
+- **Phase:** Sketch Revision **Batch 3 CLOSED** (`M1_5_SKETCH_RESKIN_BATCH_3`, 2026-05-11). 17 architecture-brief mockup files across M5/M6/M8/M11/M12/M14/M15 re-skinned in place to Hybrid+Navy. 13 files received the heavy transformation (full `:root` swap + dark-bg `--purple-deep` → `--accent` sweep + inline legacy hex swap); 4 M12 files received the light transformation (neutral-only swap; WhatsApp/SMS/Email channel semantics preserved per Brief §2.4). 17 `pre-reskin-M{N}-{stem}` git tags enable independent revert. M7 was already on Hybrid+Navy (V7 Variant A locked separately). Remaining: M9 (no sketches exist — separate Batch with Daniel involvement) + M13 (gold-gradient → SaaS-clean — separate full-revision Batch).
 - **Branch:** develop
-- **Last updated:** 2026-05-11 (Design System Hybrid Final closed — single consolidating language).
+- **Last updated:** 2026-05-11 (Sketch Revision Batch 3 closed — 17 mockups aligned with Hybrid+Navy design system).
+
+## 2026-05-11 — Sketch Revision Batch 3 (M5/M6/M8/M11/M12/M14/M15 → Hybrid+Navy)
+
+`M1_5_SKETCH_RESKIN_BATCH_3` SPEC closed. **17 architecture-brief mockup files re-skinned in place** across 7 modules:
+
+- **M5 Customers (2 files):** `M5_CUSTOMER_CARD_MOCKUP.html`, `M5_CUSTOMERS_LIST_MOCKUPS.html` — heavy mode.
+- **M6 Prescriptions (1 file):** `M6_PRESCRIPTION_EDITOR_MOCKUP.html` — heavy mode.
+- **M8 Payments (4 files):** `M8_CHECKOUT_MOCKUP_V3`, `M8_CHECKS_PIPELINE_MOCKUP_V1`, `M8_DAILY_CLOSE_MOCKUP_V2`, `M8_PROVIDER_CONFIG_MOCKUP_V2` — heavy mode.
+- **M11 Reports (3 files):** `M11_REPORTS_LIST_MOCKUP`, `M11_REPORT_EDITOR_MOCKUP`, `M11_REPORT_VIEW_MOCKUP` — heavy mode.
+- **M12 Communications (4 files):** `M12_CHANNEL_CONFIGS_MOCKUP`, `M12_CUSTOMER_HISTORY_MOCKUP`, `M12_TEMPLATES_MOCKUP`, `M12_WHATSAPP_INBOX_MOCKUP` — **light mode** (these used channel-themed semantic palettes, not the legacy purple-deep; preserved WhatsApp green `#25d366`, SMS blue `#6c8ebf`, Email red `#b85450`, swapped only neutrals).
+- **M14 Appointments (2 files):** `M14_APPOINTMENTS_MOCKUP`, `M14_APPOINTMENTS_SCREENS` — heavy mode.
+- **M15 Queue (1 file):** `M15_QUEUE_MOCKUP` — heavy mode.
+
+Heavy mode = full `:root` token swap + dark-bg `--purple-deep` → `--accent` sweep + inline legacy hex (`#26215C`, `#534AB7`, `#7F77DD`, `#EEEDFE`, `#CECBF6`, `#B7B0FF`) rewrites. Light mode = neutral-token-only swap inside `:root` (`--bg`, `--text`, `--border`, `--gold`), semantic channel colors preserved verbatim per Brief §2.4.
+
+All 17 files: RTL Hebrew (`lang="he" dir="rtl"`) preserved, DOM tag count within ±5% (max delta +4.27% on M11_REPORTS_LIST), customer/brand/price/placeholder data verbatim. Final grep `grep -i "26215c\|534ab7"` returns 0 hits across all 17 files. Each file got a `pre-reskin-M{N}-{stem}` git tag BEFORE its commit for independent revert (`git checkout pre-reskin-M5-M5_CUSTOMER_CARD_MOCKUP -- <path>`). 7 per-module commits + 1 retrospective commit. Integrity gate exit 0 throughout.
+
+Transformation script `reskin.mjs` lives in the SPEC folder as a kept artifact (audit + re-run reference). Pipeline ran end-to-end in a single chat under Full-Auto mandate; one in-flight script extension (added `light` mode + `:root\s*\{` regex) handled the M12 deviation without escalation. 4 skill improvements harvested (2 for `opticup-strategic`, 2 for `opticup-executor`) and applied in the same closure commit.
+
+## Historical
 
 ## 2026-05-11 — Design System Hybrid Final (consolidates v2 into one language)
 

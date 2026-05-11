@@ -865,6 +865,42 @@ pre-decided. Locate placement note: source instruction referenced
 literal name in this SKILL; placed here as 1.5q in the existing
 1.5e-1.5o sub-section sequence — closest semantic analog.)
 
+#### Step 1.5r — Palette Pre-Audit (visual batch SPECs only)
+
+When the SPEC's transformation map assumes a specific source palette across
+multiple files (e.g., re-skinning N mockups from one design language to
+another), the SPEC author MUST grep each file for the assumed palette tokens
+BEFORE sealing the SPEC. Files with 0 matches do not belong in the same batch
+under the same transformation map.
+
+**Format:**
+
+```
+for f in <listed files>; do
+  echo "$f: $(grep -cE '<expected palette regex>' "$f") matches"
+done
+```
+
+If any file in the proposed batch returns 0 matches:
+
+- **(a) Carve it into a sibling Batch** with its own transformation map, OR
+- **(b) Explicitly state in §3 (Approach) how the transformation differs for
+  no-match files**, AND extend any batch script to handle the variant.
+
+Document the audit results in §11 Lessons Already Incorporated:
+
+> "Palette Pre-Audit 2026-05-11: 13/17 files contain expected legacy tokens;
+> 4 (M12_*) use channel-themed semantic palette and receive light-reskin
+> variant per §3."
+
+Rationale: M1_5_SKETCH_RESKIN_BATCH_3 SPEC assumed all 17 files used the
+legacy purple-deep palette. 4 of them (M12 channel-themed mockups) used a
+WhatsApp/SMS/Email semantic palette instead. The batch script aborted on
+file 1 of M12, requiring an in-flight extension to add a "light" mode that
+preserves semantic colors per Brief §2.4. Catching this at SPEC-author time
+would have avoided the mid-Pipeline script change. (Source: improvement
+proposal #1 from M1_5_SKETCH_RESKIN_BATCH_3 FOREMAN_REVIEW, 2026-05-11.)
+
 ### Step 2 — Create the SPEC Folder
 
 Location pattern (folder, NOT file):
@@ -887,6 +923,14 @@ Create `{SPEC_SLUG}/SPEC.md` using the template at:
 
 Every SPEC MUST include:
 - **Goal** (1–2 sentences)
+- **Pre-Authoring Reality Check** (one line) — the explicit confirmation that
+  the SPEC author globbed/queried the actual artifacts the SPEC operates on
+  and confirmed they exist at the listed paths, on the listed date. Format:
+  > "Globbed N files / N tables / N functions on YYYY-MM-DD; all N confirmed
+  > present at the listed paths."
+  This sentence is what makes the SPEC verifiably grounded in repo reality
+  rather than a notional plan against assumed state. (Source: improvement
+  proposal #2 from M1_5_SKETCH_RESKIN_BATCH_3 FOREMAN_REVIEW, 2026-05-11.)
 - **Success criteria** — measurable, each item has an exact expected value
   (file count, line count, git status, DB query result, curl exit code, etc.).
   If a criterion isn't measurable, the SPEC isn't done.

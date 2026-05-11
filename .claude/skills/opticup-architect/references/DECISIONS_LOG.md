@@ -38,6 +38,7 @@ Format for full entries (in `decisions/<MODULE>.md`): situation → my recommend
 | 15 | 2026-05-10 | M9 (Lab/KDS) Architecture Brief sealed | 25 decisions, 8 entities, 5 engines, 4 sketches (KDS + Shipments + Dashboard + Settings). M9 framed as "McDonalds System" not "shipping extension"; old shipping module deprecated; major hybrid with M1+M5+M7+M8+M11+M12+M13. **All 10 Briefs sealed** — clear path to SPECs. |
 | 16 | 2026-05-10 | Module Close Ceremony for M9 | Lessons P34 (sketches before brief) + P35 (HTML sketch file format) + P36 (computer:// links) + P37 (reframe → reopen locks) + P38 (settings sketch first for config-heavy) + P39 (additive max caps) promoted to SKILL.md via SKILL_PENDING_M9_PATTERNS.md + SKILL_PENDING_M9_CLOSE.md. |
 | 18 | 2026-05-11 | M7 V7 sketch selected (Variant A) | Daniel chose two-pane work surface + sticky tools strip over Variants B (accordion) and C (T-layout). Reason: all 9 v6 regions visible simultaneously, no clicks needed to see pricing or print actions. V6 + 2 variants archived. |
+| 19 | 2026-05-11 | Sketch Revision Batch 3 closed (M5/M6/M8/M11/M12/M14/M15) | 17 architecture-brief mockup files re-skinned in place to Hybrid+Navy via `M1_5_SKETCH_RESKIN_BATCH_3` SPEC. 13 heavy + 4 light (M12 channel semantics preserved). 17 `pre-reskin-*` git tags + 7 module commits + 1 retro. In-flight script extension handled M12 deviation; 4 skill improvements harvested + applied (2 per skill). Remaining: M13 full revision + M9 from-scratch as separate Batches. |
 
 ---
 
