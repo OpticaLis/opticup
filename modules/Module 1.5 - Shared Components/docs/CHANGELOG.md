@@ -361,3 +361,21 @@ Rationale: Design System brief (2026-05-10) — platform default must be brand-f
 - Updated CLAUDE.md with multi-module architecture, branching, authority matrix
 - Created Module 1.5 directory structure + docs
 - Created shared/ directories (css, js, tests)
+
+## 2026-05-11 — Full-Auto Pipeline bootstrap (M1_5_FULL_AUTO_PIPELINE)
+
+- 87b888f: feat(spec): scaffold M1_5_FULL_AUTO_PIPELINE — Iron Rule 32 + backup-discipline upgrade in CLAUDE.md
+- 9d3dd10: feat(scripts): add destructive-ops-declared.mjs + wire into verify.mjs (Iron Rule 32)
+- 37c095e: feat(infra): scaffold escalation folders + template in M1.5 / M3 / M4
+- 25f40e6: feat(skill): opticup-strategic — Pipeline Hand-off + Pipeline Closure + Mode Detection + Hebrew status line
+- 6d50633: feat(skill): opticup-executor — Pipeline Hand-off + auto-backups + Hebrew status line
+- 66a4bdf: feat(skill): opticup-reviewer — Pipeline Hand-off + Hebrew status line
+- 8081696: feat(skill): opticup-localhost-tester — Pipeline Hand-off + Hebrew status line; update AGENT_CHAIN_PROTOCOL Full-Auto section
+- ebd19f7: test(pipeline): run Test SPEC #1 (docs-only) end-to-end in one chat — M1_5_FULL_AUTO_TEST_1_DOCS_ONLY CLOSED 🟢
+- 576195f: test(pipeline): run Test SPEC #2 (small code) end-to-end including smoke 7/7 — M1_5_FULL_AUTO_TEST_2_CODE_CHANGE CLOSED 🟢
+
+### Summary
+- New pipeline: Full-Auto Mode (Pipeline mode: full-auto) — every new SPEC runs end-to-end in ONE Claude Code chat via skill chaining.
+- New Iron Rule 32 + enforcement script (destructive-ops-declared.mjs).
+- Backups discipline upgraded: automatic auto-trigger replaces the old "before major restructuring" guidance.
+- Escalation protocol: files + ≤60-char Hebrew status lines + Architect Decision block ingestion.

@@ -108,6 +108,9 @@ not meaningfully compare. v1 mockup folders moved (via `git mv`) to
 2-modern-clean,3-bold-dense-pro-tool}/`. v1 SPEC folders remain in place as
 historical record.
 
+**Full-Auto Pipeline: ✅ 2026-05-11 (M1.5)** — `M1_5_FULL_AUTO_PIPELINE` closed.
+The 5-chat manual SPEC dance is retired; new SPECs run end-to-end inside ONE Claude Code chat via skill chaining (Foreman → Executor → Reviewer → Localhost-Tester → Foreman-review). Iron Rule 32 (Destructive Operations Gate) live, enforced by `scripts/checks/destructive-ops-declared.mjs` in pre-commit + CI. Backups are now automatic (auto-trigger on >5 files OR >100 lines OR any rename), not discretionary. Escalation folders scaffolded in M1.5/M3/M4. Two verification SPECs (`TEST_1_DOCS_ONLY` 🟢, `TEST_2_CODE_CHANGE` 🟢 with smoke 7/7) ran end-to-end in one chat.
+
 **Phase 3 v2 CLOSED 2026-05-11** —
 `M1_5_DESIGN_SYSTEM_AUTHENTIC_LANGUAGES` shipped 21 HTML files + 3 `_tokens.css`
 under `modules/Module 1.5 - Shared Components/architecture-brief/design-system-mockups/language-{a-linear,b-stripe,c-notion}/`.

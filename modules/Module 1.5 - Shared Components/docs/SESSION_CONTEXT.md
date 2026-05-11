@@ -160,3 +160,10 @@ No Module 1.5–internal SPEC has shipped since Phase 6 closed. The shared-compo
 - **js/pin-modal.js redirect:** Cannot delete until suppliers-debt.html is migrated.
 - **styles.css:** Still loaded by suppliers-debt.html. Cannot remove yet.
 - **RLS permissive on 9 tables:** Deferred to Module 2.
+
+## Full-Auto Pipeline (2026-05-11)
+- `M1_5_FULL_AUTO_PIPELINE` CLOSED 🟢. New SPECs now run end-to-end in ONE Claude Code chat via skill chaining (Foreman → Executor → Reviewer → Localhost-Tester → Foreman-review).
+- Iron Rule 32 (Destructive Operations Gate) added; `scripts/checks/destructive-ops-declared.mjs` enforces SPEC § Destructive Operations declarations + scans staged diffs for undeclared destructive patterns (DROPs, file deletes, mass renames, --no-verify, etc.).
+- Backups upgraded to automatic (auto-trigger on >5 files OR >100 lines OR any rename) — replaces CLAUDE.md §9 #9 wording.
+- Escalation folders + 5-heading template scaffolded in M1.5 / M3 / M4.
+- Two verification test SPECs ran end-to-end in the same chat: `TEST_1_DOCS_ONLY` 🟢 (docs-only) and `TEST_2_CODE_CHANGE` 🟢 (smoke 7/7 PASS on demo).

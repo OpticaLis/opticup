@@ -97,6 +97,12 @@ function isDocFile(absPath) {
     /^modules\/[^/]+\/docs\/specs\/[^/]+\/(SPEC|FOREMAN_REVIEW|EXECUTION_REPORT|FINDINGS|TEST_REPORT)\.md$/.test(rel) ||
     /^modules\/[^/]+\/architecture-brief\//.test(rel) ||
     /^modules\/[^/]+\/escalations\//.test(rel) ||
+    // Module-scoped docs (SESSION_CONTEXT, CHANGELOG, MODULE_SPEC, etc.)
+    // routinely describe destructive-op concepts by name.
+    /^modules\/[^/]+\/docs\/[^/]+\.md$/.test(rel) ||
+    rel === 'MASTER_ROADMAP.md' ||
+    rel === 'OPEN_TASKS.md' ||
+    rel === 'TECH_DEBT.md' ||
     // Check infrastructure itself: scripts/checks/*.mjs define the
     // patterns they look for; scripts/verify.mjs comments on them.
     // Treating these as live destructive ops would block the check
