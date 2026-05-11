@@ -1,0 +1,40 @@
+{
+  "post_fix_applied_at": "2026-05-11T19:50:00Z",
+  "purpose": "Bug §3 post-fix state. SPEC: M4_DEMO_E2E_FULL_AUDIT.",
+  "demo_tenant_id": "8d8cfa7e-ef58-49af-9702-a862d459cccb",
+  "rules_after_fix": [
+    {
+      "id": "a06be5d8-4dd6-43fa-bb53-b0e3be07a548",
+      "name": "אירוע פתח להרשמה - הזמנת רשימת המתנה",
+      "action_config": {
+        "channels": ["sms", "email"],
+        "language": "he",
+        "template_slug": "event_invite_waiting_list",
+        "recipient_type": "leads_by_status",
+        "recipient_status_filter": ["waitlist"]
+      }
+    },
+    {
+      "id": "ee0a6f24-1a3e-43f4-9ea6-fc4c1d081787",
+      "name": "שינוי סטטוס: הזמנה ממתינים",
+      "action_config": {
+        "channels": ["sms", "email"],
+        "template_slug": "event_invite_waiting_list",
+        "recipient_type": "leads_by_status",
+        "recipient_status_filter": ["waitlist"]
+      }
+    }
+  ],
+  "rules_intentionally_unchanged": [
+    {
+      "id": "82aac348-2c92-4479-8821-73a2842cfb07",
+      "name": "שינוי סטטוס: הזמנה חדשה",
+      "note": "Rule 2.2 (event_invite_new / tier2_excl_registered). Auto-attach is intentional here — new-invitation flow legitimately upserts attendee as 'invited' so they can register via the link. Out of scope per Brief §3 + SPEC §8."
+    }
+  ],
+  "verification_query_result": {
+    "a06be5d8": {"recipient_type": "leads_by_status", "recipient_status_filter": ["waitlist"], "has_upsert_key": false},
+    "ee0a6f24": {"recipient_type": "leads_by_status", "recipient_status_filter": ["waitlist"], "has_upsert_key": false},
+    "82aac348": {"recipient_type": "tier2_excl_registered", "recipient_status_filter": null, "has_upsert_key": true}
+  }
+}
