@@ -5,17 +5,32 @@
 <title>M5 — Customer Card · 5 tabs</title>
 <style>
   :root{
-    --bg:#FAFAF7; --surface:#FFFFFF; --soft:#F1EFE8;
-    --border:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
-    --text:#1F1F1E; --text-2:#5F5E5A;
-    --purple:#534AB7; --purple-soft:#EEEDFE; --purple-deep:#26215C; --purple-mid:#7F77DD;
-    --teal:#0F6E56; --teal-soft:#E1F5EE; --teal-deep:#04342C; --teal-mid:#5DCAA5;
-    --amber:#BA7517; --amber-soft:#FAEEDA; --amber-deep:#412402; --amber-mid:#FAC775;
-    --blue:#185FA5; --blue-soft:#E6F1FB; --blue-deep:#0C447C;
-    --coral:#993C1D; --coral-soft:#FAECE7;
-    --green:#3B6D11; --green-soft:#EAF3DE;
-    --gray:#5F5E5A; --gray-soft:#F1EFE8;
-    --red:#A32D2D;
+    /* === Hybrid+Navy canonical tokens (Batch 3 re-skin, 2026-05-11) === */
+    --bg-page:#fafaf7; --bg-surface:#ffffff; --bg-surface-alt:#f4f4f5;
+    --accent:#1e3a8a; --accent-hover:#1e40af; --accent-soft:#e6f1fb; --accent-text:#ffffff;
+    --text-primary:#0f172a; --text-secondary:#475569; --text-tertiary:#94a3b8;
+    --border-subtle:#e2e8f0; --border-default:#cbd5e1; --border-strong-token:#94a3b8;
+    --success:#16a34a; --success-soft:#d1fae5;
+    --warning:#d97706; --warning-soft:#fef3c7;
+    --danger:#dc2626;  --danger-soft:#fee2e2;
+    --info:#0891b2;    --info-soft:#cffafe;
+    --font-sans:"Inter","Heebo",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+
+    /* === Backward-compat aliases (legacy var names resolve to Hybrid values) === */
+    --bg:var(--bg-page); --surface:var(--bg-surface); --soft:var(--bg-surface-alt);
+    --border:var(--border-subtle); --border-strong:var(--border-default);
+    --text:var(--text-primary); --text-2:var(--text-secondary); --text-3:var(--text-tertiary);
+    --purple:var(--accent); --purple-soft:var(--accent-soft);
+    --purple-deep:var(--text-primary); --purple-mid:var(--accent-hover);
+    /* Decorative legacy multi-colors → mapped to semantic equivalents */
+    --teal:var(--success); --teal-soft:var(--success-soft); --teal-deep:var(--success); --teal-mid:var(--success);
+    --amber:var(--warning); --amber-soft:var(--warning-soft); --amber-deep:var(--warning); --amber-mid:var(--warning-soft);
+    --blue:var(--info);    --blue-soft:var(--info-soft);     --blue-deep:var(--info);
+    --coral:var(--danger); --coral-soft:var(--danger-soft);
+    --pink:var(--accent-soft);
+    --green:var(--success); --green-soft:var(--success-soft);
+    --gray:var(--text-secondary); --gray-soft:var(--bg-surface-alt);
+    --red:var(--danger); --red-soft:var(--danger-soft);
     --r-md:6px; --r-lg:10px;
   }
   *{box-sizing:border-box;}
@@ -34,7 +49,7 @@
 
   /* HEADER */
   .header{
-    background:var(--purple-deep);color:#EEEDFE;padding:8px 14px;
+    background:var(--accent);color:#e6f1fb;padding:8px 14px;
     display:flex;justify-content:space-between;align-items:center;
   }
   .header .left{display:flex;align-items:center;gap:10px;}
@@ -43,7 +58,7 @@
     display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;
   }
   .cust-name{font-size:14px;font-weight:500;}
-  .cust-meta{font-size:10px;color:#CECBF6;}
+  .cust-meta{font-size:10px;color:#cbd5e1;}
   .header button{background:var(--purple-mid);color:#FFF;border:0;font-size:11px;padding:5px 10px;border-radius:var(--r-md);cursor:pointer;}
   .header button.edit{background:var(--amber);}
   .pill{display:inline-block;font-size:10px;padding:1px 6px;border-radius:var(--r-md);font-weight:500;}
@@ -189,7 +204,7 @@
   .pane.active{display:block;}
 
   .stage-h{
-    background:var(--purple-deep);color:#FFF;padding:5px 14px;margin:18px 0 4px;
+    background:var(--accent);color:#FFF;padding:5px 14px;margin:18px 0 4px;
     border-radius:var(--r-md);font-size:11px;font-weight:500;
   }
 </style>
