@@ -56,10 +56,31 @@ If the Architect does not know the URL, the right answer is "Daniel, where is de
 
 ## Architect Decision
 
-> *To be filled in by the Pipeline after Daniel pastes the Architect's response.*
-> Required format anywhere in the response: a line matching `Path:\s*[ABC]\b` (case-insensitive). Path A may carry a sub-letter (A1/A2). For Path A1, the response must also specify the target URL.
+**Path:** A2 (Strategic — defer to provisioning SPEC)
+**Decided by:** Architect, approved by Daniel, 2026-05-11
+**Pasted into Pipeline at:** 2026-05-11 (same session as diagnosis)
 
-*(empty — Pipeline is paused)*
+### Resolution
+
+Defer the demo `storefront_url` update — demo currently has no live storefront. Instead of patching `tenants.ui_config.storefront_url` to a non-functional value, provision an actual demo storefront deployment in a separate SPEC.
+
+### Reasoning
+
+Demo was disconnected from Prizma after the cutover testing phase. Daniel wants a 1:1 mirror of Prizma's supersale forms running on a separate Vercel project, hooked to demo's `tenant_id` in Supabase. This gives Daniel a clean isolated test environment for the manual test cycle he needs to run before further migrations.
+
+### Resume Instructions Issued
+
+1. Write a one-pager stub follow-up SPEC at `modules/Module 3 - Storefront/docs/specs/M3_DEMO_STOREFRONT_FORMS_DEPLOYMENT/SPEC.md`. Full SPEC to be authored separately by a fresh Foreman session (Brief incoming in parallel Cowork).
+2. Close THIS SPEC as 🟡 CLOSED-DEFERRED.
+3. Do NOT modify `tenants.ui_config`.
+4. No fix applied at any layer — strategic decision was "fix is in a different SPEC, not this one."
+
+### What This Means for SPEC Criteria
+
+- Criterion 7 (fix applied) → DEFERRED to follow-up SPEC.
+- Criteria 8/9 (TEST_REPORT URLs) → TEST_REPORT captures *current* state as evidence that nothing changed during this SPEC; intended demo URL is owned by the follow-up.
+- Criterion 11 (Prizma untouched) → automatically satisfied (no DB writes anywhere).
+- Criterion 12 (DECISIONS_LOG entry) → records root cause + Path A2 decision + reference to follow-up SPEC.
 
 ---
 
