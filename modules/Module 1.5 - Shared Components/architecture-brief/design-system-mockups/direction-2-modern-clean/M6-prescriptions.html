@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M6 — מסך מרשם · Prescription Editor v3</title>
+<style>
+  :root{
+
+    --border:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
+
+
+    --r-md:6px; --r-lg:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;padding:18px;background:var(--bg);color:var(--text);
+    font-family:-apple-system,'Segoe UI',Rubik,sans-serif;font-size:12px;direction:rtl;
+  }
+  h1{font-size:18px;font-weight:500;margin:0 0 4px;}
+  h2{font-size:14px;font-weight:500;margin:0 0 8px;}
+  .lede{color:var(--text-2);margin:0 0 14px;font-size:12px;max-width:1100px;line-height:1.5;}
+
+  .app{
+    background:var(--surface);border:0.5px solid var(--border);
+    border-radius:var(--r-lg);overflow:hidden;max-width:1600px;margin:0 auto 24px;
+  }
+
+  /* CUSTOMER HEADER */
+  .cust-header{
+
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .cust-header .left{display:flex;align-items:center;gap:12px;}
+  .cust-header .av{
+
+    display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;
+    font-variant-numeric:tabular-nums;letter-spacing:0.5px;
+  }
+  .cust-header .nm{font-size:14px;font-weight:500;}
+
+  .cust-header .right{display:flex;align-items:center;gap:8px;}
+
+
+
+  /* TYPE TOGGLE */
+  .type-bar{
+    padding:12px 16px;display:flex;gap:8px;align-items:center;
+    background:var(--soft);border-bottom:0.5px solid var(--border);
+  }
+  .type-bar .label{font-size:12px;color:var(--text-2);font-weight:500;margin-inline-end:6px;}
+  .type-btn{
+    background:var(--surface);border:0.5px solid var(--border);padding:9px 22px;
+    border-radius:var(--r-md);cursor:pointer;font-size:13px;font-weight:500;
+    display:inline-flex;align-items:center;gap:8px;font-family:inherit;
+  }
+  .type-btn:hover{border-color:var(--purple-mid);}
+
+  .type-btn .ic{font-size:16px;}
+  .type-bar .ct{font-size:10px;color:var(--text-3);margin-inline-start:auto;}
+
+  /* MAIN LAYOUT — sidebar history + center editor */
+  .main-layout{display:grid;grid-template-columns:280px 1fr;min-height:780px;}
+
+  /* SIDEBAR — history */
+  .sidebar{
+    background:var(--surface);border-inline-start:0.5px solid var(--border);
+    display:flex;flex-direction:column;
+  }
+  .sb-head{
+    padding:12px 14px;border-bottom:0.5px solid var(--border);
+    display:flex;justify-content:space-between;align-items:center;background:var(--soft);
+  }
+  .sb-head .ttl{font-size:11px;font-weight:500;color:var(--text-2);text-transform:uppercase;letter-spacing:0.4px;}
+  .sb-head .add-btn{
+
+    cursor:pointer;font-family:inherit;font-weight:500;
+  }
+  .sb-search{padding:8px 12px;border-bottom:0.5px solid var(--border);}
+  .sb-search input{
+    width:100%;border:0.5px solid var(--border);border-radius:4px;padding:6px 9px;font-size:11px;font-family:inherit;
+  }
+  .sb-filters{padding:6px 12px;display:flex;gap:5px;flex-wrap:wrap;border-bottom:0.5px solid var(--border);}
+  .sb-filters .f{
+    background:var(--soft);padding:2px 8px;border-radius:9px;font-size:10px;cursor:pointer;color:var(--text-2);
+  }
+
+
+  .sb-list{flex:1;overflow:auto;}
+  .rx-item{
+    padding:10px 14px;border-bottom:0.5px solid var(--border);cursor:pointer;
+    display:flex;flex-direction:column;gap:3px;
+  }
+  .rx-item:hover{background:var(--purple-soft);}
+  .rx-item.selected{background:var(--purple-soft);border-inline-end:3px solid var(--purple);}
+  .rx-item .top{display:flex;justify-content:space-between;align-items:center;}
+  .rx-item .when{font-size:12px;font-weight:500;font-variant-numeric:tabular-nums;}
+  .rx-item .badge{font-size:9px;padding:1px 7px;border-radius:9px;font-weight:500;}
+
+
+  .rx-item .desc{font-size:10px;color:var(--text-3);}
+  .rx-item .summary{font-size:10px;color:var(--text-2);font-variant-numeric:tabular-nums;}
+
+  .sb-footer{
+    padding:9px 14px;background:var(--soft);border-top:0.5px solid var(--border);
+    font-size:10px;color:var(--text-3);text-align:center;
+  }
+
+  /* CENTER — current Rx editor */
+  .center{
+    background:var(--bg);padding:14px;overflow:auto;
+  }
+
+  /* CONTEXT BAR — current Rx state */
+  .ctx-bar{
+    background:var(--amber-soft);padding:10px 14px;border-radius:var(--r-md);
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;
+    border:0.5px solid var(--amber);
+  }
+  .ctx-bar.committed{background:var(--green-soft);border-color:var(--green);}
+  .ctx-bar.expired{background:var(--gray-soft);border-color:var(--gray);}
+  .ctx-bar .left{display:flex;align-items:center;gap:12px;font-size:12px;}
+  .ctx-bar .left .badge{font-size:10px;padding:2px 9px;border-radius:9px;font-weight:500;}
+  .ctx-bar .left .info{color:var(--amber-deep);}
+  .ctx-bar.committed .left .info{color:var(--green);}
+  .ctx-bar.expired .left .info{color:var(--text-2);}
+  .ctx-bar .right{display:flex;gap:6px;}
+  .ctx-bar .right button{
+    background:var(--surface);border:0.5px solid var(--amber);padding:6px 12px;border-radius:4px;font-size:11px;
+    cursor:pointer;font-family:inherit;color:var(--amber-deep);
+  }
+  .ctx-bar.committed .right button{border-color:var(--green);color:var(--green);}
+
+  .ctx-bar .right button.danger{color:var(--red);border-color:var(--red);}
+
+  /* META GRID */
+  .meta-grid{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    display:grid;grid-template-columns:repeat(7,1fr);gap:0;margin-bottom:12px;overflow:hidden;
+  }
+  .meta-cell{
+    padding:9px 10px;border-inline-end:0.5px solid var(--border);
+    display:flex;flex-direction:column;gap:3px;
+  }
+  .meta-cell:last-child{border-inline-end:0;}
+  .meta-cell label{font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.3px;font-weight:500;}
+  .meta-cell .v input,
+  .meta-cell .v select{
+    width:100%;border:0.5px solid var(--border);border-radius:3px;padding:4px 6px;font-size:11px;
+    font-family:inherit;background:var(--surface);font-weight:500;
+  }
+  .meta-cell .v.read-only{font-size:11px;color:var(--text);font-weight:500;padding:4px 0;}
+
+  /* PARAM TABLE */
+  .param-section{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    margin-bottom:12px;overflow:hidden;
+  }
+  .param-section .ph{
+    padding:9px 14px;background:var(--soft);border-bottom:0.5px solid var(--border);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .param-section .ph .ttl{font-size:13px;font-weight:500;}
+  .param-section .ph .extra{font-size:10px;color:var(--text-3);}
+  .param-table{overflow-x:auto;}
+  .param-table table{width:100%;border-collapse:collapse;font-size:11px;}
+  .param-table th{
+
+    font-size:10px;letter-spacing:0.3px;border-inline-end:1px solid rgba(255,255,255,0.1);
+    white-space:nowrap;
+  }
+  .param-table th.eye-col{background:var(--purple);width:62px;}
+  .param-table th.section{
+    font-size:9px;text-transform:uppercase;
+  }
+
+  .param-table td{
+    padding:6px 4px;border:0.5px solid var(--border);text-align:center;
+    font-variant-numeric:tabular-nums;background:var(--surface);
+  }
+  .param-table td.eye-cell{
+    font-weight:500;background:var(--soft);font-size:11px;width:62px;
+  }
+  .param-table td.eye-cell.r{color:var(--blue-deep);}
+  .param-table td.eye-cell.l{color:var(--coral);}
+  .param-table td input,
+  .param-table td select{
+    width:100%;border:0;padding:3px 4px;font-size:11px;
+    font-family:inherit;background:transparent;text-align:center;
+    font-variant-numeric:tabular-nums;
+  }
+  .param-table td input:focus,
+  .param-table td select:focus{outline:1.5px solid var(--purple-mid);background:var(--purple-soft);}
+
+  /* SECTION COLORS — header row */
+
+
+
+  /* SECONDARY ROW (additions, lens type, etc.) */
+  .secondary-row{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    display:grid;gap:0;margin-bottom:12px;overflow:hidden;
+  }
+  .secondary-row .sec-cell{
+    padding:8px 10px;border-inline-end:0.5px solid var(--border);
+    display:flex;flex-direction:column;gap:3px;
+  }
+  .secondary-row .sec-cell:last-child{border-inline-end:0;}
+  .secondary-row label{font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.3px;font-weight:500;}
+  .secondary-row .v input,
+  .secondary-row .v select{
+    width:100%;border:0.5px solid var(--border);border-radius:3px;padding:4px 6px;font-size:11px;
+    font-family:inherit;background:var(--surface);
+  }
+
+  /* NOTES */
+  .notes-grid{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    display:grid;grid-template-columns:1fr 1fr;gap:0;margin-bottom:12px;overflow:hidden;
+  }
+  .notes-grid .nt{
+    padding:10px 12px;border-inline-end:0.5px solid var(--border);
+  }
+  .notes-grid .nt:last-child{border-inline-end:0;}
+  .notes-grid label{
+    font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.3px;
+    font-weight:500;display:block;margin-bottom:4px;
+  }
+  .notes-grid textarea{
+    width:100%;min-height:54px;border:0.5px solid var(--border);border-radius:4px;
+    padding:7px;font-size:12px;font-family:inherit;resize:vertical;background:var(--surface);
+  }
+
+  /* RECALL + HF — bottom strip */
+  .bottom-strip{display:grid;grid-template-columns:1.4fr 1fr;gap:12px;}
+  .bs-card{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);padding:12px;
+  }
+  .bs-card h3{
+    font-size:10px;font-weight:500;margin:0 0 8px;color:var(--text-2);
+    text-transform:uppercase;letter-spacing:0.3px;
+  }
+  .recall-axes{display:flex;gap:8px;flex-wrap:wrap;}
+  .recall-ax{
+    background:var(--blue-soft);padding:5px 10px;border-radius:14px;font-size:11px;
+    color:var(--blue-deep);display:inline-flex;align-items:center;gap:6px;
+  }
+  .recall-ax .when{color:var(--text-2);font-variant-numeric:tabular-nums;}
+  .recall-ax.off{opacity:0.45;text-decoration:line-through;}
+  .recall-ax .gear{cursor:pointer;color:var(--text-3);font-size:10px;}
+
+  .hf-info{
+    background:var(--teal-soft);padding:9px 12px;border-radius:4px;
+    color:var(--teal-deep);font-size:11px;line-height:1.6;
+  }
+  .hf-info .hf-name{font-weight:500;font-size:12px;margin-bottom:3px;}
+  .hf-info .ratio{color:var(--teal);}
+
+  /* PRINT actions strip */
+  .print-strip{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    padding:8px 10px;display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;
+  }
+  .print-strip .lab{font-size:10px;color:var(--text-3);align-self:center;font-weight:500;
+    text-transform:uppercase;letter-spacing:0.3px;margin-inline-end:6px;}
+  .print-strip button{
+    background:var(--soft);border:0;padding:6px 12px;border-radius:4px;font-size:11px;cursor:pointer;
+    font-family:inherit;
+  }
+  .print-strip button:hover:not([disabled]){background:var(--purple-soft);color:var(--purple-deep);}
+  .print-strip button[disabled]{opacity:0.4;cursor:not-allowed;}
+</style>
+<link rel="stylesheet" href="../../../../../shared/css/variables.css">
+<link rel="stylesheet" href="../../../../../shared/css/layout.css">
+<link rel="stylesheet" href="../../../../../shared/css/components.css">
+<link rel="stylesheet" href="../../../../../shared/css/components-extra.css">
+<link rel="stylesheet" href="../../../../../shared/css/forms.css">
+<link rel="stylesheet" href="../../../../../shared/css/modal.css">
+<link rel="stylesheet" href="../../../../../shared/css/toast.css">
+<link rel="stylesheet" href="../../../../../shared/css/table.css">
+<link rel="stylesheet" href="./_tokens.css">
+</head>
+<body>
+<div style="background:var(--color-surface-alt); border-bottom:1px solid var(--color-border); padding:10px 20px; font-size:0.9rem; font-weight:600; color:var(--color-text-muted); text-align:center;">DESIGN MOCKUP — Direction 2: Modern-clean · M6-prescriptions (mockup-sourced)</div>
+
+<h1>M6 — מסך מרשם · Prescription Editor v3</h1>
+<p class="lede">
+  Sidebar מימין מציג את כל ההיסטוריה של מרשמי הסוג-הנבחר (משקפיים <strong>או</strong> עדשות-מגע, לא ערבוב). האמצע מציג את המרשם-הנבחר במלואו. קליק על שורה ב-sidebar = פותח אותו במרכז. "+ מרשם חדש" יוצר draft ושם אותו ראשון. גם לקוח עם 30 מרשמים — sidebar קומפקטי, האמצע נשאר נוח.
+</p>
+
+<div class="app">
+
+  <!-- CUSTOMER HEADER -->
+  <div class="cust-header">
+    <div class="left">
+      <div class="av">04-03-00545</div>
+      <div>
+        <div class="nm">ליסקר דניאל · 30</div>
+        <div class="meta">053-788-9878 · אשקלון · עברית · קופ"ח: מכבי פלטינום · עין-דומיננטית: ימין</div>
+      </div>
+    </div>
+    <div class="right">
+      <span class="crumbs">כרטיס-לקוח / בדיקות-ראייה</span>
+      <button>← חזור לכרטיס</button>
+    </div>
+  </div>
+
+  <!-- TYPE TOGGLE -->
+  <div class="type-bar">
+    <span class="label">סוג מרשם:</span>
+    <button class="type-btn active" id="btn-glasses"><span class="ic">👓</span>משקפיים</button>
+    <button class="type-btn" id="btn-contacts"><span class="ic">👁️</span>עדשות-מגע</button>
+    <span class="ct" id="rx-count">5 מרשמי-משקפיים בהיסטוריה</span>
+  </div>
+
+  <!-- MAIN LAYOUT -->
+  <div class="main-layout">
+
+    <!-- SIDEBAR — HISTORY -->
+    <div class="sidebar">
+      <div class="sb-head">
+        <span class="ttl" id="sb-title">היסטוריית מרשמים · משקפיים</span>
+        <button class="add-btn">+ מרשם</button>
+      </div>
+      <div class="sb-search">
+        <input placeholder="חיפוש לפי תאריך / סוג / אופטומטריסט..." />
+      </div>
+      <div class="sb-filters">
+        <span class="f on">הכל (5)</span>
+        <span class="f">פעיל (1)</span>
+        <span class="f">DRAFT (1)</span>
+        <span class="f">פג (3)</span>
+      </div>
+
+      <!-- RX list — glasses -->
+      <div class="sb-list" id="list-glasses">
+        <div class="rx-item selected">
+          <div class="top">
+            <span class="when">07.05.2026</span>
+            <span class="badge badge-draft">DRAFT</span>
+          </div>
+          <div class="desc">ד"ר נועה · למרחק · נוצר היום</div>
+          <div class="summary">R: -2.50 / -0.75 × 180 · L: -2.75 / -0.50 × 175</div>
+        </div>
+        <div class="rx-item">
+          <div class="top">
+            <span class="when">12.04.2024</span>
+            <span class="badge badge-committed">פעיל</span>
+          </div>
+          <div class="desc">ד"ר נועה · פרוגרסיבי · עד 12.04.2026</div>
+          <div class="summary">R: -2.25 / -0.75 +1.50 · L: -2.50 / -0.50 +1.50</div>
+        </div>
+        <div class="rx-item">
+          <div class="top">
+            <span class="when">22.11.2022</span>
+            <span class="badge badge-expired">פג</span>
+          </div>
+          <div class="desc">ד"ר עידן · למרחק</div>
+          <div class="summary">R: -2.00 / -0.75 × 180 · L: -2.25 / -0.50 × 175</div>
+        </div>
+        <div class="rx-item">
+          <div class="top">
+            <span class="when">15.06.2021</span>
+            <span class="badge badge-expired">פג</span>
+          </div>
+          <div class="desc">ד"ר עידן · למרחק</div>
+          <div class="summary">R: -1.75 / -0.50 × 180 · L: -2.00 / -0.50 × 175</div>
+        </div>
+        <div class="rx-item">
+          <div class="top">
+            <span class="when">03.02.2019</span>
+            <span class="badge badge-expired">פג</span>
+          </div>
+          <div class="desc">ד"ר עידן · למרחק · ראשון</div>
+          <div class="summary">R: -1.50 · L: -1.75</div>
+        </div>
+      </div>
+
+      <!-- RX list — contacts -->
+      <div class="sb-list" id="list-contacts" style="display:none;">
+        <div class="rx-item selected">
+          <div class="top">
+            <span class="when">07.05.2026</span>
+            <span class="badge badge-draft">DRAFT</span>
+          </div>
+          <div class="desc">ד"ר עידן · יומיות · התאמה ראשונה</div>
+          <div class="summary">R: -2.00 / -1.00 × 90 · BC 8.40 · DIA 14.20</div>
+        </div>
+        <div class="rx-item">
+          <div class="top">
+            <span class="when">03.10.2022</span>
+            <span class="badge badge-expired">פג</span>
+          </div>
+          <div class="desc">ד"ר עידן · חודשיות · Air Optix</div>
+          <div class="summary">R: -1.75 · L: -2.00 · BC 8.60</div>
+        </div>
+      </div>
+
+      <div class="sb-footer">סה"כ: 7 מרשמים בהיסטוריה (5 משקפיים · 2 עדשות-מגע)</div>
+    </div>
+
+    <!-- CENTER — current Rx editor -->
+    <div class="center">
+
+      <!-- ============ GLASSES VIEW ============ -->
+      <div id="view-glasses">
+
+        <!-- Context bar — DRAFT -->
+        <div class="ctx-bar">
+          <div class="left">
+            <span class="badge badge-draft">DRAFT</span>
+            <span class="info">המרשם פתוח לעריכה. שמירה אוטומטית פעילה. לחץ "סגור מרשם" כשהאופטומטריסט מאשר.</span>
+          </div>
+          <div class="right">
+            <button>שכפל מרשם קודם</button>
+            <button class="danger">בטל מרשם</button>
+            <button class="cta">סגור מרשם →</button>
+          </div>
+        </div>
+
+        <!-- Meta grid -->
+        <div class="meta-grid">
+          <div class="meta-cell">
+            <label>תאריך מרשם</label>
+            <div class="v"><input type="date" value="2026-05-07" /></div>
+          </div>
+          <div class="meta-cell">
+            <label>סוג בדיקה</label>
+            <div class="v"><select><option>סופי</option><option>סובייקטיבי</option><option>אובייקטיבי</option><option>ישן</option></select></div>
+          </div>
+          <div class="meta-cell">
+            <label>סוג מרשם</label>
+            <div class="v"><select><option>למרחק</option><option>לקריאה</option><option>למחשב</option><option>פרוגרסיבי</option><option>ביפוקל</option><option>מולטיפוקל</option><option>למשקפי-שמש</option></select></div>
+          </div>
+          <div class="meta-cell">
+            <label>סיבת בדיקה</label>
+            <div class="v"><select><option>שגרתי</option><option>תלונה ראייתית</option><option>חדש</option><option>פוסט-ניתוח</option><option>בקרת-מיופיה</option></select></div>
+          </div>
+          <div class="meta-cell">
+            <label>אופטומטריסט</label>
+            <div class="v"><select><option>ד"ר נועה כהן</option><option>ד"ר עידן רוזן</option><option>אורח</option></select></div>
+          </div>
+          <div class="meta-cell">
+            <label>מקור הבדיקה</label>
+            <div class="v"><select><option>אצלנו</option><option>מתפקודי-ראייה</option><option>קופ"ח</option><option>חיצוני</option></select></div>
+          </div>
+          <div class="meta-cell">
+            <label>תוקף עד</label>
+            <div class="v"><input type="date" value="2028-05-07" /></div>
+          </div>
+        </div>
+
+        <!-- Per-eye main parameter table -->
+        <div class="param-section">
+          <div class="ph">
+            <span class="ttl">פרמטרים פר-עין · משקפיים</span>
+            <span class="extra">→ Tab בין שדות · אוטו-שמירה · ערכים שגויים מסומנים אדום</span>
+          </div>
+          <div class="param-table">
+            <table>
+              <thead>
+                <tr>
+                  <th class="eye-col" rowspan="2"></th>
+                  <th colspan="6" class="section h-refraction">רפרקציה</th>
+                  <th colspan="3" class="section h-va">חדות ראייה</th>
+                  <th colspan="3" class="section h-pd">PD · אישונים</th>
+                  <th colspan="4" class="section h-kerato">קרטומטריה</th>
+                  <th colspan="2" class="section h-axial">ביומטריה</th>
+                </tr>
+                <tr>
+                  <th>SPH<span class="sub">דיופ'</span></th>
+                  <th>CYL<span class="sub">דיופ'</span></th>
+                  <th>AXIS<span class="sub">°</span></th>
+                  <th>ADD<span class="sub">דיופ'</span></th>
+                  <th>PRISM<span class="sub">דיופ'</span></th>
+                  <th>BASE</th>
+                  <th>VAcc<span class="sub">עם תיקון</span></th>
+                  <th>VAsc<span class="sub">ללא תיקון</span></th>
+                  <th>PH<span class="sub">pinhole</span></th>
+                  <th>PD-D<span class="sub">מרחק</span></th>
+                  <th>PD-N<span class="sub">קריאה</span></th>
+                  <th>Pupil<span class="sub">קוטר mm</span></th>
+                  <th>K1</th>
+                  <th>K2</th>
+                  <th>K avg</th>
+                  <th>K axis</th>
+                  <th>אורך-גלגל<span class="sub">mm</span></th>
+                  <th>גובה<span class="sub">mm</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="eye-cell r">R · OD</td>
+                  <td><input value="-2.50" /></td>
+                  <td><input value="-0.75" /></td>
+                  <td><input value="180" /></td>
+                  <td><input placeholder="—" /></td>
+                  <td><input placeholder="—" /></td>
+                  <td><select><option>—</option><option>UP</option><option>DN</option><option>IN</option><option>OUT</option></select></td>
+                  <td><input value="6/6" /></td>
+                  <td><input value="6/9" /></td>
+                  <td><input placeholder="—" /></td>
+                  <td><input value="32" /></td>
+                  <td><input value="30" /></td>
+                  <td><input value="3.5" /></td>
+                  <td><input value="7.50" /></td>
+                  <td><input value="7.65" /></td>
+                  <td><input value="7.58" /></td>
+                  <td><input value="178" /></td>
+                  <td><input value="23.42" /></td>
+                  <td><input placeholder="—" /></td>
+                </tr>
+                <tr>
+                  <td class="eye-cell l">L · OS</td>
+                  <td><input value="-2.75" /></td>
+                  <td><input value="-0.50" /></td>
+                  <td><input value="175" /></td>
+                  <td><input placeholder="—" /></td>
+                  <td><input placeholder="—" /></td>
+                  <td><select><option>—</option><option>UP</option><option>DN</option><option>IN</option><option>OUT</option></select></td>
+                  <td><input value="6/6" /></td>
+                  <td><input value="6/12" /></td>
+                  <td><input placeholder="—" /></td>
+                  <td><input value="32" /></td>
+                  <td><input value="30" /></td>
+                  <td><input value="3.5" /></td>
+                  <td><input value="7.45" /></td>
+                  <td><input value="7.60" /></td>
+                  <td><input value="7.53" /></td>
+                  <td><input value="174" /></td>
+                  <td><input value="23.38" /></td>
+                  <td><input placeholder="—" /></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Secondary row — additions + lens type/material + BCVA -->
+        <div class="secondary-row" style="grid-template-columns:repeat(8,1fr);">
+          <div class="sec-cell">
+            <label>READ-add</label>
+            <div class="v"><input placeholder="—" /></div>
+          </div>
+          <div class="sec-cell">
+            <label>BIF-add</label>
+            <div class="v"><input placeholder="—" /></div>
+          </div>
+          <div class="sec-cell">
+            <label>MUL-add</label>
+            <div class="v"><input placeholder="—" /></div>
+          </div>
+          <div class="sec-cell">
+            <label>INT-add</label>
+            <div class="v"><input placeholder="—" /></div>
+          </div>
+          <div class="sec-cell">
+            <label>סוג עדשה</label>
+            <div class="v"><select><option>חד-מוקד</option><option>פרוגרסיבי</option><option>ביפוקל</option><option>קריאה</option><option>מחשב</option></select></div>
+          </div>
+          <div class="sec-cell">
+            <label>חומר עדשה</label>
+            <div class="v"><select><option>פלסטיק 1.50</option><option>1.60</option><option>1.67</option><option>1.74</option><option>פוליקרבונט</option></select></div>
+          </div>
+          <div class="sec-cell">
+            <label>BCVA · דו-עיני</label>
+            <div class="v"><input value="6/6" /></div>
+          </div>
+          <div class="sec-cell">
+            <label>שיטת רפרקציה</label>
+            <div class="v"><select><option>פורופטר</option><option>אוטו-רפרקטור</option><option>Wavefront</option></select></div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="notes-grid">
+          <div class="nt">
+            <label>הערות אופטומטריסט (פנימי, לא מודפס)</label>
+            <textarea>לקוח מתקשה בקריאה ארוכה. התקדמות מתונה ב-Sph. בדיקה תוך 18m אם אי-נוחות.</textarea>
+          </div>
+          <div class="nt">
+            <label>הוראות-לקוח (מודפסות במרשם)</label>
+            <textarea>להרכיב משקפיים בכל זמני העבודה ובמהלך נהיגה. לחזור לבדיקה תוך 24 חודשים.</textarea>
+          </div>
+        </div>
+
+        <!-- Treatment + Bottom strip (recall + HF) -->
+        <div class="bottom-strip">
+          <div class="bs-card">
+            <h3>תזכורות (Recall) · multi-axis</h3>
+            <div class="recall-axes">
+              <span class="recall-ax"><span>בדיקה הבאה</span><span class="when">07.05.2027 (12m)</span></span>
+              <span class="recall-ax"><span>תוקף קופ"ח</span><span class="when">07.05.2027</span></span>
+              <span class="recall-ax"><span>תוקף מרשם</span><span class="when">07.05.2028</span></span>
+              <span class="recall-ax off"><span>מסירת-משקפיים</span><span class="when">לא הופעל (אין הזמנה)</span></span>
+              <span class="recall-ax" style="background:var(--purple-soft); color:var(--purple-deep);">
+                <span>טיפול-נבחר:</span><span class="when">— ללא —</span><span class="gear">⚙️</span>
+              </span>
+            </div>
+          </div>
+          <div class="bs-card">
+            <h3>קופ"ח · השתתפות</h3>
+            <div class="hf-info">
+              <div class="hf-name">מכבי · פלטינום</div>
+              <div class="ratio">השתתפות עד ₪600 · שוטף + 90 · תוקף 24m אחרון</div>
+              <div style="font-size:10px; color:var(--text-3); margin-top:4px;">
+                חישוב מדויק יבוצע בהזמנה. תצוגה-בלבד.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Print strip (disabled in DRAFT) -->
+        <div class="print-strip">
+          <span class="lab">פעולות (זמין רק בסטטוס COMMITTED):</span>
+          <button disabled>📄 PDF · עברית</button>
+          <button disabled>📄 PDF · אנגלית</button>
+          <button disabled>💬 שלח ב-WhatsApp</button>
+          <button disabled>📧 שלח באימייל</button>
+          <button disabled>🖨️ הדפסה פר-עין</button>
+          <button disabled>➕ צור הזמנה מהמרשם</button>
+        </div>
+
+      </div>
+
+      <!-- ============ CONTACTS VIEW ============ -->
+      <div id="view-contacts" style="display:none;">
+
+        <!-- Context bar — DRAFT -->
+        <div class="ctx-bar">
+          <div class="left">
+            <span class="badge badge-draft">DRAFT</span>
+            <span class="info">התאמה ראשונה. שמירה אוטומטית. בקרת התאמה תוך חודש (recall).</span>
+          </div>
+          <div class="right">
+            <button>שכפל</button>
+            <button class="danger">בטל</button>
+            <button class="cta">סגור מרשם →</button>
+          </div>
+        </div>
+
+        <!-- Meta grid -->
+        <div class="meta-grid">
+          <div class="meta-cell">
+            <label>תאריך</label>
+            <div class="v"><input type="date" value="2026-05-07" /></div>
+          </div>
+          <div class="meta-cell">
+            <label>סוג בדיקה</label>
+            <div class="v"><select><option>התאמה ראשונה</option><option>בקרת התאמה</option><option>חידוש</option><option>סופי</option></select></div>
+          </div>
+          <div class="meta-cell">
+            <label>סוג עדשה</label>
+            <div class="v"><select><option>יומית · רכה</option><option>חודשית · רכה</option><option>שנתית · רכה</option><option>טורית</option><option>מולטיפוקל</option><option>RGP</option><option>אורתו-K</option></select></div>
+          </div>
+          <div class="meta-cell">
+            <label>תקופת החלפה</label>
+            <div class="v"><select><option>יומית</option><option>שבועית</option><option>חודשית</option><option>רבעונית</option><option>שנתית</option></select></div>
+          </div>
+          <div class="meta-cell">
+            <label>זמן הרכבה</label>
+            <div class="v"><select><option>יומי (להוריד בלילה)</option><option>הרכבה מתמשכת</option></select></div>
+          </div>
+          <div class="meta-cell">
+            <label>אופטומטריסט</label>
+            <div class="v"><select><option>ד"ר עידן רוזן</option><option>ד"ר נועה כהן</option></select></div>
+          </div>
+          <div class="meta-cell">
+            <label>תוקף עד</label>
+            <div class="v"><input type="date" value="2027-05-07" /></div>
+          </div>
+        </div>
+
+        <!-- Per-eye CL parameters -->
+        <div class="param-section">
+          <div class="ph">
+            <span class="ttl">פרמטרים פר-עין · עדשות-מגע</span>
+            <span class="extra">קרטומטריה קריטית להתאמה · OR = Over-Refraction מעל-העדשה</span>
+          </div>
+          <div class="param-table">
+            <table>
+              <thead>
+                <tr>
+                  <th class="eye-col" rowspan="2"></th>
+                  <th colspan="6" class="section h-cl">פרמטרי עדשה</th>
+                  <th colspan="2" class="section h-va">חדות ראייה</th>
+                  <th colspan="4" class="section h-kerato">קרטומטריה (קריטי)</th>
+                  <th colspan="2" class="section h-or">Over-Refraction</th>
+                </tr>
+                <tr>
+                  <th>POWER<span class="sub">דיופ'</span></th>
+                  <th>CYL<span class="sub">טורית</span></th>
+                  <th>AXIS<span class="sub">°</span></th>
+                  <th>ADD<span class="sub">מולטיפ'</span></th>
+                  <th>BC<span class="sub">base curve mm</span></th>
+                  <th>DIA<span class="sub">קוטר mm</span></th>
+                  <th>VAcc</th>
+                  <th>VAsc</th>
+                  <th>K1</th>
+                  <th>K2</th>
+                  <th>K avg</th>
+                  <th>K axis</th>
+                  <th>OR</th>
+                  <th>VA-OR</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="eye-cell r">R · OD</td>
+                  <td><input value="-2.00" /></td>
+                  <td><input value="-1.00" /></td>
+                  <td><input value="90" /></td>
+                  <td><input placeholder="—" /></td>
+                  <td><input value="8.40" /></td>
+                  <td><input value="14.20" /></td>
+                  <td><input value="6/6" /></td>
+                  <td><input value="6/9" /></td>
+                  <td><input value="7.50" /></td>
+                  <td><input value="7.65" /></td>
+                  <td><input value="7.58" /></td>
+                  <td><input value="178" /></td>
+                  <td><input value="-0.25" /></td>
+                  <td><input value="6/6" /></td>
+                </tr>
+                <tr>
+                  <td class="eye-cell l">L · OS</td>
+                  <td><input value="-3.00" /></td>
+                  <td><input value="-2.00" /></td>
+                  <td><input value="50" /></td>
+                  <td><input placeholder="—" /></td>
+                  <td><input value="8.40" /></td>
+                  <td><input value="14.20" /></td>
+                  <td><input value="6/6" /></td>
+                  <td><input value="6/12" /></td>
+                  <td><input value="7.45" /></td>
+                  <td><input value="7.60" /></td>
+                  <td><input value="7.53" /></td>
+                  <td><input value="174" /></td>
+                  <td><input placeholder="—" /></td>
+                  <td><input value="6/6" /></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Secondary — brand, model, material -->
+        <div class="secondary-row" style="grid-template-columns:repeat(6,1fr);">
+          <div class="sec-cell">
+            <label>חברה (יצרן)</label>
+            <div class="v"><select><option>Acuvue (J&J)</option><option>Air Optix</option><option>Proclear</option><option>Biofinity</option><option>Dailies</option></select></div>
+          </div>
+          <div class="sec-cell">
+            <label>שם דגם</label>
+            <div class="v"><input value="Acuvue Oasys 1-Day" /></div>
+          </div>
+          <div class="sec-cell">
+            <label>חומר</label>
+            <div class="v"><select><option>סיליקון-הידרוג'ל</option><option>הידרוג'ל</option><option>RGP</option></select></div>
+          </div>
+          <div class="sec-cell">
+            <label>אחוז-מים</label>
+            <div class="v"><input value="38%" /></div>
+          </div>
+          <div class="sec-cell">
+            <label>Dk/L</label>
+            <div class="v"><input value="121" /></div>
+          </div>
+          <div class="sec-cell">
+            <label>צבע (Tint)</label>
+            <div class="v"><select><option>שקוף</option><option>צבעוני</option></select></div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="notes-grid">
+          <div class="nt">
+            <label>הערות התאמה (פנימי)</label>
+            <textarea>התאמה טובה. תזוזה תקינה ב-blink. נוחות אחרי 30 דק'. בקרה תוך חודש.</textarea>
+          </div>
+          <div class="nt">
+            <label>הוראות-לקוח (מודפסות)</label>
+            <textarea>להרכיב לא יותר מ-12 שעות ביום. להחליף יומיומית. בקרה תוך חודש.</textarea>
+          </div>
+        </div>
+
+        <!-- Bottom strip -->
+        <div class="bottom-strip">
+          <div class="bs-card">
+            <h3>תזכורות (Recall) · multi-axis</h3>
+            <div class="recall-axes">
+              <span class="recall-ax"><span>בקרת התאמה</span><span class="when">07.06.2026 (1m)</span></span>
+              <span class="recall-ax"><span>בדיקה הבאה</span><span class="when">07.05.2027</span></span>
+              <span class="recall-ax"><span>תוקף קופ"ח</span><span class="when">07.05.2027</span></span>
+              <span class="recall-ax"><span>תוקף מרשם</span><span class="when">07.05.2027</span></span>
+              <span class="recall-ax" style="background:var(--purple-soft); color:var(--purple-deep);">
+                <span>טיפול-נבחר:</span><span class="when">— ללא —</span><span class="gear">⚙️</span>
+              </span>
+            </div>
+          </div>
+          <div class="bs-card">
+            <h3>קופ"ח · השתתפות</h3>
+            <div class="hf-info">
+              <div class="hf-name">מכבי · פלטינום</div>
+              <div class="ratio">החזר על עדשות-מגע: עד ₪400/שנה · תוקף 12m</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Print strip -->
+        <div class="print-strip">
+          <span class="lab">פעולות (זמין רק בסטטוס COMMITTED):</span>
+          <button disabled>📄 PDF · עברית</button>
+          <button disabled>💬 WhatsApp</button>
+          <button disabled>📧 אימייל</button>
+          <button disabled>➕ צור הזמנה</button>
+          <button disabled>🔄 הזמן חוזר</button>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- LEGEND -->
+<div style="max-width:1600px; margin:18px auto; padding:14px; background:var(--surface); border:0.5px solid var(--border); border-radius:var(--r-md);">
+  <h2 style="margin-bottom:10px;">מבנה המסך</h2>
+  <p style="font-size:12px; color:var(--text-2); line-height:1.6; margin:0 0 6px;">
+    <strong>Sidebar (ימין):</strong> רשימת כל המרשמים של הסוג-הנבחר. קומפקטי, גליל-אם-צריך. כל שורה = תאריך + badge + תקציר R/L. קליק → פותח באמצע. "+ מרשם" יוצר draft חדש בראש הרשימה. החלפת סוג-מרשם (משקפיים↔עדשות-מגע) מחליפה גם את הרשימה — אין ערבוב.
+  </p>
+  <p style="font-size:12px; color:var(--text-2); line-height:1.6; margin:0 0 6px;">
+    <strong>Center (אמצע):</strong> מרשם-אחד-בלבד. Context bar עם state, meta grid, per-eye table, secondary fields, notes, recall, health-fund, print actions. רוחב נוח, אין דחיסה.
+  </p>
+  <p style="font-size:12px; color:var(--text-2); line-height:1.6; margin:0;">
+    <strong>States:</strong> DRAFT (כתום, פתוח לעריכה, print מנוטרל) → COMMITTED (ירוק, נעול, print פעיל) → EXPIRED (אפור, read-only). Cancellation אפשרי רק במצב DRAFT לפני activity (Iron Rule 32).
+  </p>
+</div>
+
+
+
+</body>
+</html>
