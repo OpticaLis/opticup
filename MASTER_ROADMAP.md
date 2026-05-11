@@ -98,32 +98,29 @@ design system on M1.5. Phases 1 + 2 closed 2026-05-11 — variables.css defaults
 now tenant-neutral (Slate-900 near-black); Prizma's Indigo migrated to
 tenants.ui_config; all component CSS token-only + `:focus-visible` baseline
 across 5 files per WCAG 2.4.7; new tokens --color-focus-ring + --shadow-focus.
-Phase 3 split into 3a/3b/3c (2026-05-11) for context-budget reasons.
-**Phase 3a CLOSED 2026-05-11 (PUSH PENDING per Daniel directive)** —
-`M1_5_DESIGN_SYSTEM_MOCKUPS_3A_CONSERVATIVE` shipped 15 files under
-`architecture-brief/design-system-mockups/direction-1-conservative/`
-(13 module HTMLs + INDEX.html with Prizma override toggle + minimal
-`_tokens.css`). Production-sourced M1/M3-studio/M4 staticized (zero JS refs);
-mockup-sourced M5–M15 copied with sketch preservation.
-**Phase 3b CLOSED 2026-05-11 (PUSH PENDING per Daniel directive)** —
-`M1_5_DESIGN_SYSTEM_MOCKUPS_3B_MODERN_CLEAN` shipped 15 files under
-`architecture-brief/design-system-mockups/direction-2-modern-clean/`
-(13 module HTMLs + INDEX.html WITHOUT Prizma toggle — directions 2+3 showcase
-platform-default rendering per parent §5 — + `_tokens.css` overriding body
-font-size to 1.0rem, --radius-md to 12px, --space-md to 16px, plus softer/bigger
-shadows for the airy SaaS-default aesthetic).
-**Phase 3c CLOSED 2026-05-11 (PUSH PENDING per Daniel directive)** —
-`M1_5_DESIGN_SYSTEM_MOCKUPS_3C_BOLD_DENSE_PRO_TOOL` shipped 15 files under
-`architecture-brief/design-system-mockups/direction-3-bold-dense-pro-tool/`
-(13 module HTMLs + INDEX.html WITHOUT Prizma toggle + `_tokens.css` overriding
---font-size-md to 0.78rem, --space-md to 6px, --radius-md to 2px, replacing
-soft shadows with 1px border-like lines, and adding a `tabular-nums` helper for
-numeric cells — Linear/Bloomberg dense-pro-tool aesthetic). 28-row inventory
-mock targets criterion #18 density ≥ 22 / 1080 viewport. Helper script
-`scripts/transform-mockup-d3.mjs` sibling of d1's (same transform, different
-DEST + denser mocks). With all 3 sub-phases 🟢, Phase 4
-(`M1_5_DESIGN_SYSTEM_PHASE_4_CLOSE`) unblocks — Daniel picks the winner.
-Closes OPEN_TASKS task #1.
+
+**Phase 3 v1 ARCHIVED 2026-05-11 (superseded by v2)** — v1 (3a/3b/3c +
+CONSOLIDATION) produced 45 HTML files but failed its goal: executor staticized
+production HTML with near-empty `_tokens.css` (3a inherited everything; 3b/3c
+added 6-7 tokens), resulting in three near-identical directions Daniel could
+not meaningfully compare. v1 mockup folders moved (via `git mv`) to
+`_archive/design-system-mockups-v1-staticized/direction-{1-conservative,
+2-modern-clean,3-bold-dense-pro-tool}/`. v1 SPEC folders remain in place as
+historical record.
+
+**Phase 3 v2 CLOSED 2026-05-11** —
+`M1_5_DESIGN_SYSTEM_AUTHENTIC_LANGUAGES` shipped 21 HTML files + 3 `_tokens.css`
+under `modules/Module 1.5 - Shared Components/architecture-brief/design-system-mockups/language-{a-linear,b-stripe,c-notion}/`.
+Three visually-distinct design languages (Linear/Vercel; Stripe Dashboard;
+Notion/Airy) across 5 representative screens each (Storefront Studio,
+Permissions, Shipments+Boxes, Settings, Suppliers Debt). All light-background,
+RTL Hebrew, authored from scratch (NOT staticized — counter-measure to v1
+failure root cause). Each `_tokens.css` redefines ≥ 54 CSS custom properties
+covering palette, typography, density, radii, shadows. DOM intentionally
+varies per language: A = sidebar+breadcrumb, B = top-bar+hero+gradient,
+C = minimalist left rail + emoji glyphs. Phase 4
+(`M1_5_DESIGN_SYSTEM_PHASE_4_CLOSE`) unblocks — Daniel picks the winning
+language. Closes OPEN_TASKS task #1.
 
 ---
 

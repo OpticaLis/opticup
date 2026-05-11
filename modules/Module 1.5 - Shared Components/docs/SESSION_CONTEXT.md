@@ -1,9 +1,25 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
 ## Current Status
-- **Phase:** Design System initiative ACTIVE (Phases 1 + 2 + 3a + 3b + 3c all closed 2026-05-11; ALL THREE Phase 3 sub-phases are PUSH PENDING per Daniel directive — commits local, push deferred. Phase 4 (`M1_5_DESIGN_SYSTEM_PHASE_4_CLOSE`) now unblocks). Module 1.5 was MAINTENANCE since 2026-03-19; reopened for the Design System initiative.
+- **Phase:** Design System initiative ACTIVE. Phase 3 v2 closed 2026-05-11 (`M1_5_DESIGN_SYSTEM_AUTHENTIC_LANGUAGES`) — 3 design languages (Linear/Stripe/Notion) × 5 screens = 21 HTML files authored from scratch under `architecture-brief/design-system-mockups/language-{a,b,c}-*/`. Phase 3 v1 (3a/3b/3c + CONSOLIDATION) archived to `_archive/design-system-mockups-v1-staticized/` — superseded because v1 staticized production HTML and produced near-identical directions. Phase 4 (`M1_5_DESIGN_SYSTEM_PHASE_4_CLOSE`) unblocks — Daniel picks the winning language.
 - **Branch:** develop
-- **Last updated:** 2026-05-11 (Design System Phase 3c: Direction 3 — Bold dense-pro-tool — mockup tree built; PUSH PENDING).
+- **Last updated:** 2026-05-11 (Design System Phase 3 v2 closed — 3 authentic design languages × 5 screens).
+
+## 2026-05-11 — Design System Phase 3 v2 (Authentic Languages — supersedes v1)
+
+`M1_5_DESIGN_SYSTEM_AUTHENTIC_LANGUAGES` SPEC closed. 21 HTML files + 3 `_tokens.css` written under `modules/Module 1.5 - Shared Components/architecture-brief/design-system-mockups/`:
+
+- **`language-a-linear/`** — Linear/Vercel: pure-white base, subtle indigo (#6366f1) accent, Inter/Heebo 14px, borders preferred over shadows, 6-12px radii, tight Linear-density rows. Sidebar nav + top breadcrumbs. _tokens.css = 54 active CSS custom properties.
+- **`language-b-stripe/`** — Stripe Dashboard: warm off-white base (#f7f6f3), deep violet (#635bff) with gradient pair, Source Serif headings + Inter body 15px, soft layered shadows, 12px radii. Top-bar nav with hero + metric tiles. _tokens.css = 68 properties.
+- **`language-c-notion/`** — Notion/Airy: cool off-white (#fcfcfa), pastel accent trio (lavender/teal/coral/amber), Inter 16px, near-zero shadows, 10-20px round corners + pill buttons, emoji-led navigation. Minimalist left rail (no top bar). _tokens.css = 65 properties.
+
+Each language has the same 5 operational screens: Storefront Studio, Permissions, Shipments+Boxes, Settings, Suppliers Debt. All screens RTL Hebrew, light-background, self-contained (Google Fonts only external dep), authored from scratch — NOT staticized from production HTML (counter-measure to v1's failure root cause). Glance-test acceptance: opening `language-{a,b,c}-*/INDEX.html` side-by-side, the 3 languages differ at 2-second glance in palette, typography, density, surface treatment, decorative details.
+
+**v1 archived (not deleted):** 45 staticized files moved via `git mv` to `_archive/design-system-mockups-v1-staticized/direction-{1-conservative,2-modern-clean,3-bold-dense-pro-tool}/` — preserved for record and blame archaeology. v1 SPEC folders remain in `docs/specs/` as historical retrospective.
+
+Phase 4 (`M1_5_DESIGN_SYSTEM_PHASE_4_CLOSE`) now unblocks — Daniel reviews the 3 INDEX hubs side-by-side and picks the winning language. FOREMAN_REVIEW for this SPEC is deferred to after Daniel's pick (per SPEC §14 — review captures both execution quality and the winner).
+
+## Historical (v1 — superseded 2026-05-11)
 
 ## 2026-05-11 — Design System Phase 3c (Direction 3 — Bold dense-pro-tool)
 

@@ -2,17 +2,25 @@
 
 > Single reference document for all files, functions, and globals in the shared/ directory.
 > Updated every commit that adds/changes code in shared/.
-> Last updated: 2026-05-11 (Phase 3b — direction-2-modern-clean mockup tree built)
+> Last updated: 2026-05-11 (Phase 3 v2 — Authentic Languages tree built; v1 archived)
 
 ---
 
-## 0. Design System initiative — Phase 3b (2026-05-11)
+## 0. Design System initiative — Phase 3 v2 (2026-05-11, supersedes v1)
 
-`M1_5_DESIGN_SYSTEM_MOCKUPS_3B_MODERN_CLEAN` SPEC closed (PUSH PENDING). Direction 2 mockup tree built at `modules/Module 1.5 - Shared Components/architecture-brief/design-system-mockups/direction-2-modern-clean/` — 13 module HTMLs (M1/M3-studio/M4/M5/M6/M7/M8/M9/M11/M12/M13/M14/M15) + `INDEX.html` (NO Prizma toggle — directions 2+3 showcase platform-default neutral rendering per parent §5) + `_tokens.css` overriding font-size/spacing/radii/shadows for the airy SaaS-default aesthetic. Sibling sub-phase 3c (Bold dense-pro-tool) remains pending dispatch.
+`M1_5_DESIGN_SYSTEM_AUTHENTIC_LANGUAGES` SPEC closed. Three authentic design languages × five operational screens = **21 HTML files + 3 `_tokens.css`** under `modules/Module 1.5 - Shared Components/architecture-brief/design-system-mockups/`:
 
-## 0a. Design System initiative — Phase 3a (2026-05-11)
+| Folder | Identity | Token count | DOM pattern |
+|---|---|---|---|
+| `language-a-linear/` | Linear/Vercel — pure white + indigo #6366f1 + Inter 14px + borders > shadows + 6-12px radii | 54 active CSS custom props | Sidebar nav + top breadcrumb |
+| `language-b-stripe/` | Stripe Dashboard — warm off-white + deep violet #635bff + Source Serif headings + layered shadows + 12px radii | 68 active CSS custom props | Top-bar + hero + metric tiles |
+| `language-c-notion/` | Notion/Airy — cool off-white + pastel accents (lavender/teal/coral/amber) + Inter 16px + near-zero shadows + 10-20px radii | 65 active CSS custom props | Minimalist left rail + emoji glyphs |
 
-`M1_5_DESIGN_SYSTEM_MOCKUPS_3A_CONSERVATIVE` SPEC closed (PUSH PENDING). Direction 1 mockup tree built at `modules/Module 1.5 - Shared Components/architecture-brief/design-system-mockups/direction-1-conservative/` — 13 module HTMLs (M1/M3-studio/M4/M5/M6/M7/M8/M9/M11/M12/M13/M14/M15) + `INDEX.html` (Prizma override toggle live in this direction only) + minimal `_tokens.css` (Conservative inherits platform defaults). Bulk-transform helper: `scripts/transform-mockup-d1.mjs` (preserved for 3c reuse).
+Per language: `INDEX.html` (hub: top bar w/ 3-language switch + left rail w/ 5 screen links + iframe preview), `_tokens.css`, and 5 module HTMLs: `storefront-studio.html`, `permissions.html`, `shipments.html`, `settings.html`, `suppliers-debt.html`. All Hebrew RTL, light-background, self-contained (Google Fonts only external dep). Every module HTML ≤ 250 lines (well under Rule 12 cap). Zero hex literals in module `style=` attrs (var(--token) throughout). Integrity gate clean. Smoke suite 7/7 PASS.
+
+## 0a. Design System initiative — Phase 3 v1 (ARCHIVED — see `_archive/design-system-mockups-v1-staticized/`)
+
+v1 (3a/3b/3c + CONSOLIDATION, all closed 2026-05-11) produced 45 HTML files but failed the design-language distinctness goal: staticized production HTML + near-empty `_tokens.css` (3a: 0 active overrides; 3b/3c: 6-7 tokens each). Result was three near-identical directions. v2 (above) replaces it with authentic per-language authoring. Mockup folders moved (via `git mv`) to `_archive/design-system-mockups-v1-staticized/direction-{1-conservative,2-modern-clean,3-bold-dense-pro-tool}/`. v1 SPEC folders remain in `docs/specs/` as historical retrospective; only the v1 mockup directories were archived.
 
 ## 1. File Index — shared/css/
 

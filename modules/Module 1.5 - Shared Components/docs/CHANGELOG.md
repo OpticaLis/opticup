@@ -1,5 +1,34 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-11 — Design System Phase 3 v2 (Authentic Languages — supersedes v1)
+
+SPEC: `M1_5_DESIGN_SYSTEM_AUTHENTIC_LANGUAGES` ([folder](specs/M1_5_DESIGN_SYSTEM_AUTHENTIC_LANGUAGES/))
+
+Replaces Phase 3 v1 entirely. v1 produced 45 HTML files that failed the design-language distinctness goal (executor staticized production HTML + near-empty `_tokens.css`). v2 authors 21 HTML files from scratch using authentic per-language design treatment.
+
+- New folder `architecture-brief/design-system-mockups/language-a-linear/` — 7 files: `INDEX.html` (hub with 3-language switch + 5-screen left rail + iframe preview) + `_tokens.css` (54 CSS custom properties — pure-white base, indigo accent, Inter 14px, soft borders) + 5 module HTMLs (storefront-studio, permissions, shipments, settings, suppliers-debt). Linear/Vercel identity: sidebar+breadcrumb DOM.
+- New folder `architecture-brief/design-system-mockups/language-b-stripe/` — 7 files (same structure). `_tokens.css` = 68 properties (warm off-white base, deep violet #635bff with gradient pair, Source Serif headings, layered shadows, 12px radii). Top-bar+hero DOM with metric tiles.
+- New folder `architecture-brief/design-system-mockups/language-c-notion/` — 7 files (same structure). `_tokens.css` = 65 properties (cool off-white, pastel accent trio, Inter 16px, near-zero shadows, 10-20px round corners). Minimalist left-rail DOM with emoji glyphs.
+- v1 archival: 45 files (3 directions × 15 each) moved via `git mv` to `_archive/design-system-mockups-v1-staticized/direction-*/` — full history preserved.
+- Module docs synced (this CHANGELOG, MODULE_MAP §0 Phase 3 v2 section, SESSION_CONTEXT current status + Phase 3 v2 entry); MASTER_ROADMAP §6 Phase 3 v2 replacement.
+
+All 21 HTML files: RTL Hebrew, light backgrounds (no #00-#1F page colors), zero hex literals in module `style=` attributes (var(--token) throughout), every file ≤250 lines (well under Rule 12 cap of 350). Integrity gate clean. Smoke suite 7/7 PASS.
+
+### Commits
+- `3057b15` — chore(design): archive Phase 3 v1 mockups (staticized) to _archive/
+- `29c1a79` — feat(design): scaffold language-a-linear tokens + INDEX skeleton
+- `0ba6df7` — feat(design): language-a-linear — 5 module screens (Linear/Vercel)
+- `8c9f874` — feat(design): language-a-linear INDEX with cross-language switch + nav
+- `745aece` — feat(design): scaffold language-b-stripe tokens + INDEX skeleton
+- `269cd0a` — feat(design): language-b-stripe — 5 module screens (Stripe Dashboard)
+- `4f37d6a` — feat(design): language-b-stripe INDEX with cross-language switch + nav
+- `af06c56` — feat(design): scaffold language-c-notion tokens + INDEX skeleton
+- `0502545` — feat(design): language-c-notion — 5 module screens (Notion/Airy)
+- `63d1601` — feat(design): language-c-notion INDEX with cross-language switch + nav
+- (Commit 11 hash TBD) — chore(spec): close M1_5_DESIGN_SYSTEM_AUTHENTIC_LANGUAGES with retrospective
+
+Push: at SPEC close (all 11 commits in one push to origin/develop). FOREMAN_REVIEW.md deferred until after Daniel picks a winning language (per SPEC §14).
+
 ## 2026-05-11 — Design System Phase 3b: Direction 2 (Modern-clean) mockup tree (PUSH PENDING)
 
 SPEC: `M1_5_DESIGN_SYSTEM_MOCKUPS_3B_MODERN_CLEAN` ([folder](specs/M1_5_DESIGN_SYSTEM_MOCKUPS_3B_MODERN_CLEAN/))
