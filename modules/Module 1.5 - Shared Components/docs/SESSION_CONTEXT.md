@@ -1,9 +1,13 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
 ## Current Status
-- **Phase:** 6 complete ✅. Module 1.5 DONE (including UI facelift). MAINTENANCE phase.
+- **Phase:** Design System initiative ACTIVE (Phase 1 closed 2026-05-11; Phases 2-4 SPECs authored and pending dispatch). Module 1.5 was MAINTENANCE since 2026-03-19; reopened for the Design System initiative.
 - **Branch:** develop
-- **Last updated:** 2026-05-09 (overnight hygiene sweep — Sentinel M-7 stale-doc refresh)
+- **Last updated:** 2026-05-11 (Design System Phase 1: neutral defaults shipped, Prizma override migrated).
+
+## 2026-05-11 — Design System Phase 1 (neutral defaults)
+
+`M1_5_DESIGN_TOKENS_FOUNDATION` SPEC closed. `shared/css/variables.css` defaults are now tenant-neutral (Slate-900 near-black primary, no brand color). Prizma's Indigo identity moved to `tenants.ui_config` via JSONB merge — same render, different source. Demo tenant untouched (still green via existing ui_config override). This unblocks Design System Phase 2 (component restyle), Phase 3 (3-direction mockups for 13 modules), and Phase 4 (a11y + tenant theming UI).
 
 ## 2026-05-09 — Status refresh
 

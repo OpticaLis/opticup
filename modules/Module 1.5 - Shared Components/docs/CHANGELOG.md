@@ -1,5 +1,19 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-11 — Design System Phase 1: Neutral platform defaults
+
+SPEC: `M1_5_DESIGN_TOKENS_FOUNDATION` ([folder](specs/M1_5_DESIGN_TOKENS_FOUNDATION/))
+
+- `shared/css/variables.css`: 4 primary color tokens swapped from Indigo to neutral (Slate-900 / Slate-800 / Slate-100 / pure black). `--font-family` unchanged (Heebo). Daniel decision 2026-05-10: "ניטרלי לגמרי — שחור-לבן בלבד".
+- DB migration `2026-05-11_design_tokens_neutral_defaults.sql`: Prizma `ui_config` JSONB populated with Indigo overrides; Prizma renders unchanged after swap. Demo tenant untouched.
+- M1.5 `db-schema.sql` ui_config example refreshed; `MODULE_MAP.md` §4 updated.
+
+Rationale: Design System brief (2026-05-10) — platform default must be brand-free so future tenants don't inherit Prizma residue.
+
+### Commits
+- a89d9d9: variables.css token swap to neutral slate
+- 9dc89e6: tenants.ui_config migration — Prizma Indigo override applied
+
 ## Phase 6 — UI Facelift ✅ (2026-03-19)
 
 ### Commits

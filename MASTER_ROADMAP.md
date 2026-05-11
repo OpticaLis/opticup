@@ -93,6 +93,16 @@ shipped 2026-05-04. Legacy Monday/WordPress pipeline decommissioned.
 PR-only merges to main. Read-only by default for Overseer. See
 `feedback_production_discipline_post_cutover.md`.
 
+**Design System initiative (2026-05-10 → in progress):** 4-phase platform-wide
+design system on M1.5. Phase 1 (Design Tokens Foundation) closed 2026-05-11 —
+variables.css defaults now tenant-neutral (Slate-900 near-black); Prizma's
+Indigo migrated to tenants.ui_config. Phases 2-4 SPECs authored:
+M1_5_DESIGN_SYSTEM_COMPONENT_LIBRARY (focus-visible + token-only audit),
+M1_5_DESIGN_SYSTEM_MOCKUPS_3_DIRECTIONS (Conservative / Modern-clean / Bold
+dense-pro-tool × 13 modules), M1_5_DESIGN_SYSTEM_PHASE_4_CLOSE (chosen
+direction → platform default + tenant_color_presets + axe-core a11y gate).
+Closes OPEN_TASKS task #1.
+
 ---
 
 ### Module 3 (Storefront) — historical DNS switch context (April 2026)
