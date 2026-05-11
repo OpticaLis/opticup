@@ -222,6 +222,23 @@
 --   Replaces previously-hardcoded Prizma values across 5 source files +
 --   3 EFs. SaaS-readiness: tenant 2 onboarding requires only DB rows.
 --
+-- Test-mode allowlists on tenants (2 channels, 2 storage shapes):
+--   tenants.test_mode_sms_allowlist  jsonb         (top-level column, C001 2026-05-03)
+--   tenants.ui_config.test_mode_email_allowlist  jsonb path (DEMO_EMAIL_ALLOWLIST_INFRA 2026-05-11)
+--   Both store a jsonb array of strings; both are read by send-message EF
+--   (functions/send-message/allowlists.ts). Contract per channel:
+--     - Empty / NULL allowlist  → return true  (production mode; send to all)
+--     - Non-empty array          → recipient must match an entry; else send is dropped
+--                                  with status='rejected' in crm_message_log
+--     - DB lookup error / non-array allowlist → fail-CLOSED (return false)
+--   SMS comparison: phone normalization (E.164 ↔ Israeli local) per normalizePhone.
+--   Email comparison: case-insensitive + whitespace-trimmed per normalizeEmail.
+--   Demo tenant: 3 phones + 3 emails configured. Prizma tenant: both keys absent
+--   (= production mode for both channels).
+--   SMS uses a dedicated column because it predates ui_config; new test-mode
+--   allowlists (email, future channels) live under ui_config so SaaS-tenant
+--   onboarding requires only ui_config edits, no schema changes.
+--
 -- Module 4 schema authoritative file:
 --   modules/Module 4 - CRM/docs/db-schema.sql (currently documents only the
 --   payment-lifecycle additions per M4_ATTENDEE_PAYMENT_SCHEMA + 3 cycle
