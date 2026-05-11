@@ -298,6 +298,44 @@ Block counts match (all 3 = 8), but block TYPES and ORDER diverge. R1 removed ti
 
 ---
 
+### #12 — 🟢 Sentinel vs Lighthouse-Cron coexistence on `GUARDIAN_ALERTS.md` is informal (M3-INFRA-04)
+
+**Where:** `docs/guardian/GUARDIAN_ALERTS.md` — single file with two writers: (a) Sentinel (regenerates the whole file each scan, runs locally on dev machines); (b) Lighthouse cron (appends below `<!-- LIGHTHOUSE-CRON-APPEND-MARKER -->`, runs in CI on develop).
+
+**Why it's debt:** The marker-based design works for the cron's writes, but coexistence is conventional, not enforced. Risks: (1) Sentinel's local regenerations now produce dirty working trees (the `.gitignore` was changed from directory-level `docs/guardian/` to subdir-only `docs/guardian/*/` so the cron can commit `GUARDIAN_ALERTS.md`); (2) if a future Sentinel scan ever pushes its regenerated content, the cron's accumulated entries above the marker could be lost OR the marker itself deleted.
+
+**Why not fixed now:** Marker design is robust against routine drift; this is about formalizing what is currently a convention. Wait until either writer actually drifts before investing the SPEC time.
+
+**Planned fix:** Two clean options:
+- (a) Update Sentinel to also respect the marker (only write above it).
+- (b) Split into two files: `GUARDIAN_ALERTS.md` (Sentinel's, gitignored) + `LIGHTHOUSE_ALERTS.md` (cron's, committed).
+
+Both are ~1-hour SPECs.
+
+**Effort:** ~1 hour SPEC if/when needed.
+
+**Source:** `modules/Module 3 - Storefront/docs/specs/M3_LIGHTHOUSE_NIGHTLY_CRON/FINDINGS.md` Finding M3-INFRA-04 (executor-discovered 2026-05-10).
+
+---
+
+### #13 — 🟢 `tenants` table has no `updated_at` auto-update trigger (TD-TENANTS-UPDATED-AT-TRIGGER-MISSING)
+
+**Where:** Postgres `tenants` table — no `BEFORE UPDATE ... SET NEW.updated_at = NOW()` trigger.
+
+**Why it's debt:** SPECs that compare `tenants.updated_at` to verify a mutation succeeded get false negatives — the column doesn't bump unless the UPDATE explicitly sets it in the SET clause. Verified live 2026-05-11 during `M3_DEMO_STOREFRONT_FORMS_DEPLOYMENT`: an UPDATE to `ui_config` did not advance `updated_at`. The current value (`2026-03-29 08:33:43.906+00` for demo) was set by an earlier SPEC that explicitly included `updated_at = NOW()`.
+
+**Why not fixed now:** Schema change requires Level-3 SQL autonomy (never autonomous) and a dedicated migration. SPECs in the meantime should compare the substantive column via `RETURNING`, not `updated_at` (now documented as an authoring anti-pattern in `SPEC_TEMPLATE.md` per Author Proposal A2 from this SPEC's FOREMAN_REVIEW).
+
+**Planned fix:** Two viable resolutions:
+- (a) Add a standard `BEFORE UPDATE ... SET NEW.updated_at = NOW()` trigger to `tenants` (worth verifying which other multi-tenant tables also lack one before deciding scope).
+- (b) Document the absence (this entry) and rely on SPECs to verify mutations via substantive-column comparison only.
+
+**Effort:** ~30-minute migration if option (a) chosen + audit. Zero additional work if option (b).
+
+**Source:** `modules/Module 3 - Storefront/docs/specs/M3_DEMO_STOREFRONT_FORMS_DEPLOYMENT/FINDINGS.md` Finding M3-FINDINGS-02 (executor-discovered 2026-05-11).
+
+---
+
 ## Resolved Debt
 
 ### #2 — 🟢 scripts/README.md mixes two unrelated topics ✅ RESOLVED

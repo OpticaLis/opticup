@@ -1,8 +1,8 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: POST-CUTOVER MAINTENANCE — production stable, broad SaaS hardening shipped
-## Status: 🟢 PRODUCTION LIVE on `prizma-optic.co.il` (Vercel + custom domain). All 76+ published pages serving 200. PageSpeed baseline ~89. ~16 M3 SPECs closed since 2026-04-18.
-## Last updated: 2026-05-09 (overnight hygiene sweep — Sentinel M-7 stale-doc refresh; full historical detail in `docs/CHANGELOG.md` + per-SPEC `EXECUTION_REPORT.md`/`FOREMAN_REVIEW.md` files)
+## Current Phase: POST-CUTOVER MAINTENANCE — production stable, broad SaaS hardening shipped; **demo storefront now also live (separate Vercel project)**
+## Status: 🟢 PRODUCTION LIVE on `prizma-optic.co.il` (Vercel + custom domain). All 76+ published pages serving 200. PageSpeed baseline ~89. ~17 M3 SPECs closed since 2026-04-18. **Demo storefront live at `opticup-storefront-demo.vercel.app` (Phase 1 = forms only; mirrors Prizma 1:1, wired to demo `tenant_id`).**
+## Last updated: 2026-05-11 (Demo Storefront Forms Phase 1 closed 🟡 — Full-Auto Pipeline; Daniel-actions pending: SERVICE_ROLE_KEY in Vercel UI + manual test cycle)
 ## Authority: this file is authoritative for Module 3 phase status (per CLAUDE.md §7 Authority Matrix). Sibling repo's `opticup-storefront/SESSION_CONTEXT.md` describes storefront working state but defers to this file on phase status.
 
 ---
@@ -13,6 +13,7 @@ Listed newest → oldest. Each has its own `EXECUTION_REPORT.md` + `FOREMAN_REVI
 
 | Date | SPEC | Summary | Verdict |
 |---|---|---|---|
+| 2026-05-11 | `M3_DEMO_STOREFRONT_FORMS_DEPLOYMENT` | Phase 1: live demo storefront on new Vercel project `opticup-storefront-demo` (linked to `OpticaLis/opticup-storefront@main`), mirroring Prizma's supersale forms 1:1; `tenants.ui_config.storefront_url` updated for demo only; Prizma bit-identical; smoke 7/7. Daniel adds `SUPABASE_SERVICE_ROLE_KEY` manually + redeploy. | 🟡 |
 | 2026-05-09 | `M3_REC014_ORPHAN_CLEANUP` | DB cleanup of orphan rows from REC-SITE-014 follow-ups (test-shortcodes etc.). | 🟢 |
 | 2026-05-09 | `M3_SITEMAP_BRAND_404_CLEANUP` | Brand-page slug 404s in sitemap audit. | 🟢 |
 | 2026-05-09 | `M3_STUDIO_TRANSLATIONS_BRAND_FILTER` | Studio translations: brand sub-tab filtered to brands with ≥1 visible product. | 🟢 |
@@ -47,6 +48,7 @@ Listed newest → oldest. Each has its own `EXECUTION_REPORT.md` + `FOREMAN_REVI
 - **Branches:** Ashkelon live as first non-Tel-Aviv branch; per-branch design supports multi-branch growth
 - **Consent:** opt-in cookie banner gates 5 trackers (GTM/GA4/FB Pixel/Hotjar/TikTok) per tenant config
 - **Sitemap:** single canonical `sitemap-dynamic.xml` (364 `<loc>` + 986 hreflang alternates, 100% canonical-www)
+- **Demo storefront (new, Phase 1):** live at `https://opticup-storefront-demo.vercel.app` (Vercel project `prj_8bNP1xOFF7Lg93bt2e6ZEMPsrYU6`, linked to `OpticaLis/opticup-storefront@main`). Same codebase as Prizma, different `PUBLIC_DEFAULT_TENANT=demo`. Forms-only scope; CMS content / blog / catalog / brand pages are Phase 2+. Canonical URL bake-in is a known LOW finding (M3-FINDINGS-01 — astro.config.mjs hardcodes Prizma's domain) deferred to a separate Phase 2 SPEC. `SUPABASE_SERVICE_ROLE_KEY` is added manually by Daniel via Vercel UI (Path 2 of the env-var decision); without it the image-proxy returns errors for tenant logo but form submission flow is unaffected.
 
 ---
 
