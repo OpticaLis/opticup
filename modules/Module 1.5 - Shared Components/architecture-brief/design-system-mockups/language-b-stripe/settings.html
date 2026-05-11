@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>הגדרות — Language B (Stripe)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Heebo:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="./_tokens.css">
+  <style>
+    .tabs {
+      display: flex; gap: var(--space-1);
+      background: var(--bg-surface-alt);
+      border-radius: var(--radius-md);
+      padding: 4px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: var(--space-5);
+      overflow-x: auto;
+    }
+    .tab {
+      padding: 8px 16px; border-radius: var(--radius-sm);
+      font-size: var(--text-sm); font-weight: var(--weight-medium);
+      color: var(--text-secondary); white-space: nowrap;
+    }
+    .tab.active { background: var(--grad-violet); color: var(--bg-surface-alt); box-shadow: var(--shadow-sm); }
+    .tab:hover:not(.active) { background: var(--bg-page); color: var(--text-primary); }
+
+    .form-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: var(--space-5);
+    }
+    .form-grid.full > * { grid-column: 1 / -1; }
+    .switch {
+      width: 42px; height: 24px;
+      border-radius: 999px;
+      background: var(--accent);
+      position: relative;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .switch::after {
+      content: ""; position: absolute;
+      inset-block: 3px; inset-inline-start: 3px;
+      width: 18px; height: 18px; border-radius: 999px;
+      background: var(--bg-surface-alt); box-shadow: var(--shadow-sm);
+    }
+    .switch.off { background: var(--border-default); }
+    .switch.off::after { inset-inline-start: auto; inset-inline-end: 3px; }
+    .logo-tile {
+      width: 56px; height: 56px;
+      border-radius: var(--radius-md);
+      background: var(--grad-violet);
+      color: var(--bg-surface-alt);
+      display: grid; place-items: center;
+      font-family: var(--font-serif);
+      font-size: var(--text-xl); font-weight: var(--weight-bold);
+      box-shadow: var(--shadow-md);
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-glyph">O</span>
+      <span>Optic Up <em style="font-weight:400;color:var(--text-tertiary);font-style:normal;">Account</em></span>
+    </div>
+    <nav class="topnav">
+      <a href="#">פרופיל</a>
+      <a href="#" class="active">הגדרות חנות</a>
+      <a href="#">משתמשים</a>
+      <a href="#">חיוב</a>
+    </nav>
+    <div class="account">
+      <span>אופטיקה פריזמה</span>
+      <span class="avatar">ד</span>
+    </div>
+  </header>
+
+  <main class="shell">
+
+    <section class="hero">
+      <div>
+        <h1>הגדרות חנות</h1>
+        <p>אופטיקה פריזמה · נוצר 14.3.2025 · השינוי האחרון: דניאל, היום ב-09:42.</p>
+      </div>
+      <div style="display:flex;gap:var(--space-3);">
+        <button class="btn btn-ghost">בטל</button>
+        <button class="btn btn-primary">שמור שינויים</button>
+      </div>
+    </section>
+
+    <div class="tabs">
+      <a class="tab active">כללי</a>
+      <a class="tab">סניפים</a>
+      <a class="tab">שיטות תשלום</a>
+      <a class="tab">מס ומטבע</a>
+      <a class="tab">ברקוד ותג</a>
+      <a class="tab">שעות פעילות</a>
+      <a class="tab">התראות</a>
+      <a class="tab">אינטגרציות</a>
+    </div>
+
+    <section class="card card-padded">
+      <h2 class="card-title" style="margin-bottom:var(--space-2);">פרטי חנות</h2>
+      <div class="card-sub" style="margin-bottom:var(--space-6);">המידע שמופיע על מסמכי המכירה ובחנות אונליין.</div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label class="field-label">שם החנות</label>
+          <input class="input" value="אופטיקה פריזמה">
+          <div class="field-help">השם שמוצג בחנות האונליין ובכל מסמך.</div>
+        </div>
+        <div class="field">
+          <label class="field-label">מזהה חנות</label>
+          <input class="input" value="prizma" style="font-family:var(--font-mono);" disabled>
+          <div class="field-help">לא ניתן לשינוי לאחר ההקמה.</div>
+        </div>
+        <div class="field" style="grid-column:1/-1;">
+          <label class="field-label">כתובת ראשית</label>
+          <input class="input" value="רחוב הרצל 12, רמת גן">
+        </div>
+        <div class="field">
+          <label class="field-label">טלפון</label>
+          <input class="input" value="+972 3 555 1234" style="font-family:var(--font-mono);">
+        </div>
+        <div class="field">
+          <label class="field-label">אימייל</label>
+          <input class="input" value="info@prizma-optic.co.il" style="font-family:var(--font-mono);">
+        </div>
+        <div class="field" style="grid-column:1/-1;">
+          <label class="field-label">לוגו החנות</label>
+          <div style="display:flex;align-items:center;gap:var(--space-4);">
+            <div class="logo-tile">P</div>
+            <button class="btn">החלף לוגו</button>
+            <button class="btn btn-ghost">הסר</button>
+          </div>
+          <div class="field-help">SVG/PNG, מקסימום 1MB. ייעשה ב-favicon ובחנות אונליין.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-padded">
+      <h2 class="card-title" style="margin-bottom:var(--space-2);">מס ומטבע</h2>
+      <div class="card-sub" style="margin-bottom:var(--space-6);">חישובי מס ומטבע ברירת מחדל בכל מסמך חדש.</div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label class="field-label">מטבע ברירת מחדל</label>
+          <select class="select">
+            <option>שקל ישראלי (₪)</option>
+            <option>דולר אמריקאי ($)</option>
+            <option>אירו (€)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">שיעור מע״מ</label>
+          <input class="input" value="17%">
+        </div>
+        <div class="field" style="grid-column:1/-1;display:flex;flex-direction:row;align-items:center;justify-content:space-between;">
+          <div>
+            <div class="field-label">הצג מחירים כולל מע״מ</div>
+            <div class="field-help">משפיע על דף המוצר בחנות אונליין.</div>
+          </div>
+          <div class="switch"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-padded">
+      <h2 class="card-title" style="margin-bottom:var(--space-2);">ברקוד ותג</h2>
+      <div class="card-sub" style="margin-bottom:var(--space-6);">תצורת הברקוד הפנימי של החנות.</div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label class="field-label">פורמט</label>
+          <input class="input" value="BBDDDDD" style="font-family:var(--font-mono);" disabled>
+          <div class="field-help">2 ספרות סניף + 5 ספרות רץ. קבוע, לא לשינוי.</div>
+        </div>
+        <div class="field">
+          <label class="field-label">סניף ברירת מחדל</label>
+          <select class="select">
+            <option>01 — ראשי</option>
+            <option>02 — סניף ב'</option>
+          </select>
+        </div>
+        <div class="field" style="grid-column:1/-1;display:flex;flex-direction:row;align-items:center;justify-content:space-between;">
+          <div>
+            <div class="field-label">הדפסה אוטומטית בקבלה</div>
+          </div>
+          <div class="switch off"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

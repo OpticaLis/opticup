@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>הרשאות — Language B (Stripe)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Heebo:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="./_tokens.css">
+  <style>
+    .role-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); }
+    .role-tile {
+      background: var(--bg-surface-alt);
+      border-radius: var(--radius-md);
+      padding: var(--space-5);
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      border-top: 4px solid var(--accent);
+    }
+    .role-tile.r2 { border-top-color: var(--info); }
+    .role-tile.r3 { border-top-color: var(--dec-2); }
+    .role-tile.r4 { border-top-color: var(--dec-3); }
+    .role-tile h3 { font-family: var(--font-serif); font-size: var(--text-xl); }
+    .role-tile .count { color: var(--text-tertiary); font-size: var(--text-sm); margin-top: 4px; }
+    .role-tile .perm-summary { margin-top: var(--space-4); color: var(--text-secondary); font-size: var(--text-sm); }
+    .role-tile .num-perm { font-family: var(--font-serif); font-size: var(--text-2xl); font-weight: var(--weight-semibold); color: var(--text-primary); }
+    .matrix th, .matrix td { text-align: center; }
+    .matrix th:first-child, .matrix td:first-child { text-align: start; }
+    .check {
+      display: inline-grid; place-items: center;
+      width: 22px; height: 22px;
+      background: var(--accent-soft); color: var(--accent);
+      border-radius: 6px; font-weight: var(--weight-bold); font-size: 13px;
+    }
+    .cross { color: var(--border-strong); font-size: 18px; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-glyph">O</span>
+      <span>Optic Up <em style="font-weight:400;color:var(--text-tertiary);font-style:normal;">Admin</em></span>
+    </div>
+    <nav class="topnav">
+      <a href="#">סקירה</a>
+      <a href="#">משתמשים</a>
+      <a href="#" class="active">תפקידים והרשאות</a>
+      <a href="#">יומן פעולות</a>
+      <a href="#">חיוב</a>
+    </nav>
+    <div class="account">
+      <span>אופטיקה פריזמה</span>
+      <span class="avatar">ד</span>
+    </div>
+  </header>
+
+  <main class="shell">
+
+    <section class="hero">
+      <div>
+        <h1>תפקידים והרשאות</h1>
+        <p>4 תפקידים מותאמים אישית, 12 משתמשים פעילים, 23 הרשאות מוגדרות. השינוי האחרון: אתמול ב-14:22 ע״י דניאל.</p>
+      </div>
+      <button class="btn btn-primary">+ תפקיד חדש</button>
+    </section>
+
+    <section class="role-grid">
+      <div class="role-tile">
+        <h3>בעלים</h3>
+        <div class="count">1 משתמש</div>
+        <div class="perm-summary">
+          <span class="num-perm">23</span>
+          <span style="color:var(--text-tertiary);"> / 23 הרשאות</span>
+        </div>
+      </div>
+      <div class="role-tile r2">
+        <h3>מנהל</h3>
+        <div class="count">3 משתמשים</div>
+        <div class="perm-summary">
+          <span class="num-perm">18</span>
+          <span style="color:var(--text-tertiary);"> / 23 הרשאות</span>
+        </div>
+      </div>
+      <div class="role-tile r3">
+        <h3>מוכר</h3>
+        <div class="count">6 משתמשים</div>
+        <div class="perm-summary">
+          <span class="num-perm">11</span>
+          <span style="color:var(--text-tertiary);"> / 23 הרשאות</span>
+        </div>
+      </div>
+      <div class="role-tile r4">
+        <h3>אופטומטריסט</h3>
+        <div class="count">2 משתמשים</div>
+        <div class="perm-summary">
+          <span class="num-perm">9</span>
+          <span style="color:var(--text-tertiary);"> / 23 הרשאות</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">מטריצת הרשאות</h2>
+          <div class="card-sub">הרשאה מסומנת = התפקיד יכול לבצע את הפעולה.</div>
+        </div>
+        <button class="btn">חיפוש הרשאה</button>
+      </div>
+      <table class="tbl matrix">
+        <thead>
+          <tr><th>הרשאה</th><th>בעלים</th><th>מנהל</th><th>מוכר</th><th>אופטומטריסט</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>צפייה במלאי</strong><div style="color:var(--text-tertiary);font-size:var(--text-xs);font-family:var(--font-mono);">inventory.view</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td><strong>עריכת מלאי</strong><div style="color:var(--text-tertiary);font-size:var(--text-xs);font-family:var(--font-mono);">inventory.edit</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td><strong>שינוי כמויות</strong><div style="color:var(--text-tertiary);font-size:var(--text-xs);font-family:var(--font-mono);">inventory.qty</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td><strong>מחיקה רכה</strong><div style="color:var(--text-tertiary);font-size:var(--text-xs);font-family:var(--font-mono);">inventory.soft_delete</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td><strong>מחיקה קבועה (PIN כפול)</strong><div style="color:var(--text-tertiary);font-size:var(--text-xs);font-family:var(--font-mono);">inventory.hard_delete</div></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td><strong>צפייה בלקוחות</strong><div style="color:var(--text-tertiary);font-size:var(--text-xs);font-family:var(--font-mono);">crm.view</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td><strong>עריכת מרשם</strong><div style="color:var(--text-tertiary);font-size:var(--text-xs);font-family:var(--font-mono);">prescription.edit</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td><strong>סגירת מכירה</strong><div style="color:var(--text-tertiary);font-size:var(--text-xs);font-family:var(--font-mono);">sales.close</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td><strong>חובות ספקים</strong><div style="color:var(--text-tertiary);font-size:var(--text-xs);font-family:var(--font-mono);">supplier_debt.manage</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td><strong>ניהול משתמשים</strong><div style="color:var(--text-tertiary);font-size:var(--text-xs);font-family:var(--font-mono);">users.manage</div></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td><strong>הגדרות חנות</strong><div style="color:var(--text-tertiary);font-size:var(--text-xs);font-family:var(--font-mono);">settings.tenant</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td><strong>פרסום ל-Storefront</strong><div style="color:var(--text-tertiary);font-size:var(--text-xs);font-family:var(--font-mono);">storefront.publish</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>
