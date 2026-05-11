@@ -1,9 +1,17 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
 ## Current Status
-- **Phase:** Design System initiative ACTIVE (Phases 1 + 2 + 3a closed 2026-05-11; Phase 3a is PUSH PENDING per Daniel directive — commits local, push deferred. Phases 3b + 3c authored, pending dispatch in fresh chats. Phase 4 unblocks when all 3 sub-phases close). Module 1.5 was MAINTENANCE since 2026-03-19; reopened for the Design System initiative.
+- **Phase:** Design System initiative ACTIVE (Phases 1 + 2 + 3a + 3b + 3c all closed 2026-05-11; ALL THREE Phase 3 sub-phases are PUSH PENDING per Daniel directive — commits local, push deferred. Phase 4 (`M1_5_DESIGN_SYSTEM_PHASE_4_CLOSE`) now unblocks). Module 1.5 was MAINTENANCE since 2026-03-19; reopened for the Design System initiative.
 - **Branch:** develop
-- **Last updated:** 2026-05-11 (Design System Phase 3a: Direction 1 — Conservative — mockup tree built; PUSH PENDING).
+- **Last updated:** 2026-05-11 (Design System Phase 3c: Direction 3 — Bold dense-pro-tool — mockup tree built; PUSH PENDING).
+
+## 2026-05-11 — Design System Phase 3c (Direction 3 — Bold dense-pro-tool)
+
+`M1_5_DESIGN_SYSTEM_MOCKUPS_3C_BOLD_DENSE_PRO_TOOL` SPEC closed (PUSH PENDING). 15 files written under `architecture-brief/design-system-mockups/direction-3-bold-dense-pro-tool/`: 13 module HTMLs covering M1/M3-studio/M4/M5/M6/M7/M8/M9/M11/M12/M13/M14/M15 + `INDEX.html` (top-bar 3-direction switch + left-nav 13 buttons + iframe preview; NO Prizma toggle — Direction 1 owns the per-tenant override demo per parent §5) + `_tokens.css` overriding `--font-size-md: 0.78rem`, `--space-md: 6px`, `--radius-md: 2px`, replacing soft shadows with border-like 1px lines, and adding a `tabular-nums` helper for `[data-numeric]` / `.tb-td-currency` / `.tb-td-number` / `.tb-td-date`. INDEX chrome itself tuned to dense-pro-tool aesthetic (6-14px padding, 0.78rem body, 2px radii). Production HTMLs (M1/M3-studio/M4) staticized via `scripts/transform-mockup-d3.mjs` (sibling of `transform-mockup-d1.mjs` — same transform logic, different DEST + denser mock blocks; inventory mock has 28 rows targeting criterion #18 density ≥ 22). Mockup HTMLs (M5–M15) sketch-preserved with inline-style hex literals replaced with `transparent`. Daniel directive: commits remain LOCAL — push deferred. Phase 4 ("which direction wins?") now unblocked — awaits Daniel's pick.
+
+## 2026-05-11 — Design System Phase 3b (Direction 2 — Modern-clean)
+
+`M1_5_DESIGN_SYSTEM_MOCKUPS_3B_MODERN_CLEAN` SPEC closed (PUSH PENDING). 15 files written under `architecture-brief/design-system-mockups/direction-2-modern-clean/`: 13 module HTMLs covering M1/M3-studio/M4/M5/M6/M7/M8/M9/M11/M12/M13/M14/M15 + `INDEX.html` (top-bar 3-direction switch + left-nav 13 anchor links targeting an iframe via `target="preview-frame"` — directions 2+3 OMIT the Prizma override toggle per parent §5+§6) + `_tokens.css` overriding body font-size to 1.0rem, --space-md to 16px, --radius-md to 12px, plus softer/bigger shadows (rgba(15,23,42,0.04→0.10)) for the airy SaaS-default aesthetic. Production HTMLs (M1/M3-studio/M4) staticized (zero `<script>` refs; auth/page CSS removed; mock Hebrew rows injected into inventory + leads tables). Mockup HTMLs (M5–M15) sketch-preserved with inline-style hex declarations stripped and `<style>` blocks scrubbed of hex literals (Rule 9). Helper script `_staticize-tmp.mjs` used for bulk transformation and removed pre-commit (one-shot — Phase 3a's `transform-mockup-d1.mjs` is the canonical version retained for 3c reuse). Daniel directive: commits remain LOCAL — push deferred. Phase 3c (Bold dense-pro-tool) ready for dispatch.
 
 ## 2026-05-11 — Design System Phase 3a (Direction 1 — Conservative)
 

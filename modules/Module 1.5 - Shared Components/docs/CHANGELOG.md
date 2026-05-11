@@ -1,5 +1,23 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-11 — Design System Phase 3c: Direction 3 (Bold dense-pro-tool) mockup tree (PUSH PENDING)
+
+SPEC: `M1_5_DESIGN_SYSTEM_MOCKUPS_3C_BOLD_DENSE_PRO_TOOL` ([folder](specs/M1_5_DESIGN_SYSTEM_MOCKUPS_3C_BOLD_DENSE_PRO_TOOL/))
+
+- New folder `architecture-brief/design-system-mockups/direction-3-bold-dense-pro-tool/` with 15 files: 13 module HTMLs (M1/M3-studio/M4/M5/M6/M7/M8/M9/M11/M12/M13/M14/M15) + INDEX.html (top-bar 3-direction switch + left-nav 13 module links + iframe preview — NO Prizma override toggle; Direction 1 owns that demo) + `_tokens.css` (active overrides: `--font-size-md: 0.78rem`, `--space-md: 6px`, `--radius-md: 2px`, border-like 1px shadows, `tabular-nums` helper for `[data-numeric]` / `.tb-td-currency` / `.tb-td-number` / `.tb-td-date`).
+- Production-sourced HTMLs (M1/M3-studio/M4) staticized via `scripts/transform-mockup-d3.mjs` (sibling of `transform-mockup-d1.mjs` — same staticization logic, different DEST + denser mock blocks). Inventory mock has 28 rows (≥ 22 / criterion #18) with `data-numeric` annotations so `tabular-nums` activates on price/qty/barcode/size columns.
+- Mockup-sourced HTMLs (M5–M15) copied verbatim; `<script>` stripped; inline-style hex literals replaced with `transparent`; direction stylesheet chain appended before `</head>`. `<style>` blocks PRESERVED.
+- INDEX chrome (top-bar/nav/preview frame) styled per direction-3 aesthetic: tighter padding (6-14px), smaller font (0.78rem body), sharp 2px radii, 1px-border shadows — so even the INDEX itself feels dense-pro-tool.
+
+### Commits
+- `f436ac5` — scaffold (_tokens.css + INDEX.html)
+- `e0b1e8f` — M1, M3-studio, M4, M5, M6 (5 modules) + transform script
+- `a128065` — M7, M8, M9, M11, M12 (5 modules)
+- (Commit 4 hash TBD) — M13, M14, M15 + docs (MODULE_MAP, CHANGELOG, SESSION_CONTEXT, MASTER_ROADMAP)
+- (Commit 5 hash TBD) — close SPEC with retrospective
+
+**PUSH PENDING** — per Daniel directive 2026-05-11, commits remain local; push deferred to Daniel manual review.
+
 ## 2026-05-11 — Design System Phase 3a: Direction 1 (Conservative) mockup tree (PUSH PENDING)
 
 SPEC: `M1_5_DESIGN_SYSTEM_MOCKUPS_3A_CONSERVATIVE` ([folder](specs/M1_5_DESIGN_SYSTEM_MOCKUPS_3A_CONSERVATIVE/))

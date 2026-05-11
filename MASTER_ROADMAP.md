@@ -104,9 +104,25 @@ Phase 3 split into 3a/3b/3c (2026-05-11) for context-budget reasons.
 `architecture-brief/design-system-mockups/direction-1-conservative/`
 (13 module HTMLs + INDEX.html with Prizma override toggle + minimal
 `_tokens.css`). Production-sourced M1/M3-studio/M4 staticized (zero JS refs);
-mockup-sourced M5–M15 copied with sketch preservation. Phases 3b + 3c (Modern-
-clean + Bold dense-pro-tool) SPECs authored and pending dispatch in fresh chats.
-Phase 4 (`M1_5_DESIGN_SYSTEM_PHASE_4_CLOSE`) unblocks when all 3 sub-phases close.
+mockup-sourced M5–M15 copied with sketch preservation.
+**Phase 3b CLOSED 2026-05-11 (PUSH PENDING per Daniel directive)** —
+`M1_5_DESIGN_SYSTEM_MOCKUPS_3B_MODERN_CLEAN` shipped 15 files under
+`architecture-brief/design-system-mockups/direction-2-modern-clean/`
+(13 module HTMLs + INDEX.html WITHOUT Prizma toggle — directions 2+3 showcase
+platform-default rendering per parent §5 — + `_tokens.css` overriding body
+font-size to 1.0rem, --radius-md to 12px, --space-md to 16px, plus softer/bigger
+shadows for the airy SaaS-default aesthetic).
+**Phase 3c CLOSED 2026-05-11 (PUSH PENDING per Daniel directive)** —
+`M1_5_DESIGN_SYSTEM_MOCKUPS_3C_BOLD_DENSE_PRO_TOOL` shipped 15 files under
+`architecture-brief/design-system-mockups/direction-3-bold-dense-pro-tool/`
+(13 module HTMLs + INDEX.html WITHOUT Prizma toggle + `_tokens.css` overriding
+--font-size-md to 0.78rem, --space-md to 6px, --radius-md to 2px, replacing
+soft shadows with 1px border-like lines, and adding a `tabular-nums` helper for
+numeric cells — Linear/Bloomberg dense-pro-tool aesthetic). 28-row inventory
+mock targets criterion #18 density ≥ 22 / 1080 viewport. Helper script
+`scripts/transform-mockup-d3.mjs` sibling of d1's (same transform, different
+DEST + denser mocks). With all 3 sub-phases 🟢, Phase 4
+(`M1_5_DESIGN_SYSTEM_PHASE_4_CLOSE`) unblocks — Daniel picks the winner.
 Closes OPEN_TASKS task #1.
 
 ---
