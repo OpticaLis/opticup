@@ -8,6 +8,7 @@
    - components.css, layout.css, forms.css must ONLY use var(--...) from this file
    - Zero hardcoded colors, font-sizes, spacing, or radii outside :root
    - Tenant override: loadTenantTheme() injects per-tenant values from DB on top of these defaults
+   - The defaults below are tenant-neutral (near-black + slate scale). Per-tenant brand color lives in tenants.ui_config.
    ============================================================================= */
 
 :root {
@@ -16,10 +17,10 @@
      1. COLORS — PRIMARY
      Source: styles.css :root (--primary, --primary-light, --primary-dark)
      ========================================================================= */
-  --color-primary:        #4f46e5;  /* Indigo 600 — buttons, links, focus rings */
-  --color-primary-hover:  #4338ca;  /* Indigo 700 — hover state on primary */
-  --color-primary-light:  #eef2ff;  /* Indigo 50 — badges, selected rows, subtle highlights */
-  --color-primary-dark:   #3730a3;  /* Indigo 800 — header background, dark text on light bg */
+  --color-primary:        #0f172a;  /* Slate 900 — neutral platform default (near-black, Daniel decision 2026-05-10) */
+  --color-primary-hover:  #1e293b;  /* Slate 800 — hover lightens (near-black primary can't go darker) */
+  --color-primary-light:  #f1f5f9;  /* Slate 100 — light backgrounds, badges, selected rows */
+  --color-primary-dark:   #000000;  /* pure black — text-on-light extreme */
 
   /* Legacy alias — bridges old --primary consumers (header.css, index.html)
      until full migration to --color-primary is complete */
