@@ -159,4 +159,11 @@
   --transition-fast:      150ms ease;  /* from .qty-btn (all .15s), .ss-item (background .15s) */
   --transition-normal:    200ms ease;  /* from nav button, .btn, .sub-choice, .card (all .2s) — most common */
   --transition-slow:      300ms ease;  /* from toast @keyframes slideIn (.3s ease) */
+
+  /* =========================================================================
+     11. FOCUS — accessibility (Phase 2 — Design System)
+     Source: WCAG 2.4.7 (Focus Visible) + Brief Contract D
+     ========================================================================= */
+  --color-focus-ring:     var(--color-primary);  /* tracks primary by default; tenant can override to a contrasting color */
+  --shadow-focus:         0 0 0 3px rgba(15, 23, 42, 0.35);  /* 3px ring, near-black at 35% — visible on light AND on primary-colored backgrounds */
 }
