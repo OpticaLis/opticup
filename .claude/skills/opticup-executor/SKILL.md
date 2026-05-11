@@ -277,6 +277,15 @@ The SPEC author SHOULD pre-declare expected side-effects per the SPEC_TEMPLATE �
 - **Read before write** — always view a file before modifying it
 - **Surgical edits only** — targeted changes, never rewrite whole files unless instructed
 
+### Visual re-skin patterns (added 2026-05-11 from MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md):
+
+- **Pre-execution inline-hex audit.** Before editing a re-skin target, list every non-token hex code in the file:
+  ```
+  grep -oE '#[0-9a-fA-F]{3,8}\b' <file> | sort -u
+  ```
+  Cross-reference the output against the SPEC's swap list. If any hex code in the file is NOT covered by the SPEC, escalate to Foreman as a finding before proceeding. Re-skin SPECs must be exhaustive; a stranded hex is a SPEC defect, not an Executor judgment call.
+- **Page-scope `body { --primary }` override.** Validated migration vehicle for page-by-page visual migrations (Migrations #1–#4): instead of mutating the global `:root` in shared CSS, declare the override inside the page's own inline `<style>` block on the `body` selector. CSS cascade scopes the new palette to descendants of `<body>` of that page only; other pages inherit the legacy palette via cascade until they migrate. This is the pattern of choice when other pages still depend on the legacy tokens.
+
 ### Surgical File Transformation — Recipes (added 2026-05-11)
 
 When the Edit tool's `old_string` would exceed ~100 lines (typical for
@@ -770,6 +779,16 @@ approved. Ask yourself before any question:
 **You may NOT escalate to Daniel directly.** If an escalation is needed, you
 escalate to the Foreman (opticup-strategic), which is the only chat that
 speaks to Daniel in strategic terms.
+
+**Pre-existing untracked / modified files in Full-Auto Pipeline mode.** When
+the dispatch line includes "Full-Auto Pipeline" or "no Daniel questions", do
+NOT apply CLAUDE.md §1 step 4 (the "ask once" gate). Instead, log the
+pre-existing state in `EXECUTION_REPORT.md §5 Decisions Made in Real Time`,
+leave the files alone, use explicit-filename `git add` for every commit, and
+mark working-tree cleanliness as "scope-clean" in the success-criteria table.
+The clean-repo close obligation still applies to files this SPEC touched.
+(Harvested from `MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md` Executor
+Proposal #2, 2026-05-11.)
 
 ---
 

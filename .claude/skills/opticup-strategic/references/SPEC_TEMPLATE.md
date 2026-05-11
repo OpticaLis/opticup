@@ -7,6 +7,23 @@
 > **Phase (if applicable):** {letter/number}
 > **Author signature:** {chat name / session id}
 
+> **Heading convention:** Use `## N. Title` (plain numbered). Do NOT prefix headings with `§` — the Iron-Rule-32 pre-commit hook's regex (`scripts/checks/destructive-ops-declared.mjs`) does not accept the section-symbol prefix and will block the SPEC's own commit. (Harvested from `MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md` Author Proposal #1, 2026-05-11.)
+
+---
+
+## 0. Pre-Authoring Reality Check
+
+Required before drafting any later section. Confirms the SPEC is grounded in
+actual repo state, not in Brief assumptions that may have drifted.
+
+- Brief read in full on YYYY-MM-DD.
+- Target file(s) and dependent files exist at the claimed paths; line counts confirmed.
+- Every hex / token / table / column / function name the Brief assumes was grep-verified against the actual file content.
+- Where the Brief's assumptions diverge from repo reality, the SPEC's success criteria are written against repo reality (the Brief's intent applied to what's actually there), not against the Brief's literal claims.
+- Lessons applied from prior `FOREMAN_REVIEW.md` files in this module — list each one and how it was honored.
+
+(Harvested from `MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md` Author Proposal #2, 2026-05-11. Originally piloted in `M1_5_SKETCH_RESKIN_BATCH_3` as the Palette Pre-Audit.)
+
 ---
 
 ## 1. Goal
@@ -112,6 +129,20 @@ should include heavy payload columns verbatim (e.g. `blocks` JSONB on
   diffs trades against the rare rollback need.
 
 (Source: improvement A2 from M3_REC014_ORPHAN_CLEANUP FOREMAN_REVIEW, 2026-05-09.)
+
+---
+
+## 6.5. Destructive Operations
+
+Required by Iron Rule 32 (`scripts/checks/destructive-ops-declared.mjs` enforces this in pre-commit + CI). List every destructive operation this SPEC authorizes — file deletes, mass renames (≥5 files), `git rebase`, `git reset --hard`, `git push --force`, SQL `DROP`/`TRUNCATE`/`DELETE` without tenant scope, deletions from governance docs, modification of `main`. If none, write `None.` — the gate will then forbid ALL destructive ops for this SPEC's run.
+
+**Important:** the heading text MUST be exactly `## Destructive Operations` or `## N. Destructive Operations` (where N is a number). The hook's regex does NOT accept `§N.` prefixes.
+
+Example:
+1. 1 in-place file overwrite of `<path>` with pre-commit git tag `<tag>`.
+2. Additions to `<path>` (no removals, no renames).
+
+(Section added 2026-05-11 from `MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md` Author Proposal #1.)
 
 ---
 

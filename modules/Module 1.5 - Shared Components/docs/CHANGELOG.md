@@ -1,5 +1,38 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-11 — Migration #1: Suppliers Debt → Hybrid+Navy (LIVE production page)
+
+SPEC: `MIGRATION_1_SUPPLIERS_DEBT` ([folder](specs/MIGRATION_1_SUPPLIERS_DEBT/))
+
+First of 4 production-page migrations to Hybrid+Navy. The LIVE `suppliers-debt.html` (root of ERP repo) re-skinned in place to the Hybrid+Navy palette with **zero functional change** — no JS edits, no DOM structural changes, no Supabase contract changes. Smoke 7/7 PASS on demo tenant. Full-Auto Pipeline ran end-to-end in ONE chat across 5 skills (Foreman → Executor → Reviewer → Localhost-Tester → Foreman-Review).
+
+**Key technique — page-scope `body { --primary }` override.** Instead of modifying `css/styles.css :root` (which would cascade to all 17 other unmigrated ERP pages and break the staged migration plan), the page's inline `<style>` block now declares a `body { --primary: #1e3a8a; --primary-dark: #0f172a; --primary-light: #e6f1fb; --accent: #1e40af; }` override. CSS cascade scopes Navy to descendants of `<body>` of this page only. Other ERP pages continue to inherit the legacy Indigo `--primary` from `:root` until their own migration SPEC lands. This pattern is the safe migration vehicle for Migrations #2/#3/#4.
+
+**`shared/css/variables.css` — 6 additive tokens (Section 12).** `--accent-navy`, `--accent-navy-hover`, `--accent-navy-soft`, `--accent-navy-text`, `--text-slate-primary`, `--text-slate-secondary`. Zero deletions, zero renames — Brief Locked Decision #5 honored (existing tokens remain in place until all 4 migrations close).
+
+**4 purple hex swaps** in `suppliers-debt.html` (`.dst-linked`, `.btn-lnk`, `.btn-lnk:hover`, `.rst-shipped`) + **2 standalone blue nudges** (`.dst-open`, `.rst-ready`) + **2 inline-style gray hex → token swaps** on folder-toggle buttons. Semantic colors (success/warning/danger/info) preserved unchanged.
+
+**Verification:**
+- Line count 269 → 281 (+4.4%, within ±15% tolerance).
+- `<script>` tag count 55 → 55 (exact preservation).
+- `<link rel="stylesheet">` tag count 3 → 3 (exact preservation).
+- Open HTML tag count 125 → 125 (0% delta).
+- `grep "1e3a8a" suppliers-debt.html` → 4 hits (Navy landed).
+- `grep "6f42c1|e8dff5|f3eefb"` → 0 hits (legacy purple removed).
+- 17/17 DOM ids preserved (`debt-main-content`, `val-total-debt`, `val-due-week`, `val-overdue`, `val-paid-month`, `aging-buckets`, 7× `dtab-*`, `supplier-detail-panel`, `toast-c`, `loading`, `confirm-modal`).
+- 3/3 inline onclick handlers preserved (`switchDebtTab`, `toggleExpenseFolders`, `toggleGeneralInvoicesView`).
+- 8/8 critical JS+CSS resources return 200 on `localhost:3000`.
+- Iron Rule 32 destructive-ops gate passed; Iron Rule 31 integrity gate exit 0 twice.
+
+Pre-commit git tag `pre-migration-suppliers-debt` (at the commit before C1) enables per-page rollback if any post-merge regression surfaces. Per Daniel's batch-merge policy: all 4 production migrations land on `develop`; ONE merge to `main` after all 4 are QA-clean.
+
+4 skill improvements harvested + applied: 2 to `opticup-strategic` (SPEC heading convention `## N.` not `## §N.`; §0 Pre-Authoring Reality Check promoted to template), 2 to `opticup-executor` (inline-hex audit helper; Full-Auto pre-existing-files-leave-alone rule).
+
+### Commits
+
+- `52133b8` — feat(suppliers-debt): migrate to Hybrid+Navy design system
+- `<C2>` — chore(spec): close MIGRATION_1_SUPPLIERS_DEBT with retrospective + skill improvements
+
 ## 2026-05-11 — Sketch Revision Batch 3 (M5/M6/M8/M11/M12/M14/M15 → Hybrid+Navy)
 
 SPEC: `M1_5_SKETCH_RESKIN_BATCH_3` ([folder](specs/M1_5_SKETCH_RESKIN_BATCH_3/))
