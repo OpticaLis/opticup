@@ -1,9 +1,13 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
 ## Current Status
-- **Phase:** Design System initiative ACTIVE (Phases 1 + 2 closed 2026-05-11; Phases 3 + 4 SPECs authored and pending dispatch). Module 1.5 was MAINTENANCE since 2026-03-19; reopened for the Design System initiative.
+- **Phase:** Design System initiative ACTIVE (Phases 1 + 2 + 3a closed 2026-05-11; Phase 3a is PUSH PENDING per Daniel directive — commits local, push deferred. Phases 3b + 3c authored, pending dispatch in fresh chats. Phase 4 unblocks when all 3 sub-phases close). Module 1.5 was MAINTENANCE since 2026-03-19; reopened for the Design System initiative.
 - **Branch:** develop
-- **Last updated:** 2026-05-11 (Design System Phase 2: component library token-only + focus-visible baseline).
+- **Last updated:** 2026-05-11 (Design System Phase 3a: Direction 1 — Conservative — mockup tree built; PUSH PENDING).
+
+## 2026-05-11 — Design System Phase 3a (Direction 1 — Conservative)
+
+`M1_5_DESIGN_SYSTEM_MOCKUPS_3A_CONSERVATIVE` SPEC closed (PUSH PENDING). 15 files written under `architecture-brief/design-system-mockups/direction-1-conservative/`: 13 module HTMLs covering M1/M3-studio/M4/M5/M6/M7/M8/M9/M11/M12/M13/M14/M15 + `INDEX.html` (top-bar 3-direction switch + left-nav 13 anchor links + iframe preview + Prizma override toggle live in this direction only) + minimal `_tokens.css` (Conservative inherits platform defaults — no active overrides). Production HTMLs (M1/M3/M4) staticized (zero `<script>` refs, zero `css/*.css` page-CSS refs, mock Hebrew content injected). Mockup HTMLs (M5–M15) sketch-preserved with inline-style hex literals stripped (replaced with `transparent`). Helper script `scripts/transform-mockup-d1.mjs` preserved for 3b/3c reuse. Daniel directive: commits remain LOCAL — push deferred. Phases 3b (Modern-clean) + 3c (Bold dense-pro-tool) ready for dispatch.
 
 ## 2026-05-11 — Design System Phase 2 (component library)
 

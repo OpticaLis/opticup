@@ -98,11 +98,15 @@ design system on M1.5. Phases 1 + 2 closed 2026-05-11 — variables.css defaults
 now tenant-neutral (Slate-900 near-black); Prizma's Indigo migrated to
 tenants.ui_config; all component CSS token-only + `:focus-visible` baseline
 across 5 files per WCAG 2.4.7; new tokens --color-focus-ring + --shadow-focus.
-Phases 3 + 4 SPECs authored:
-M1_5_DESIGN_SYSTEM_COMPONENT_LIBRARY (focus-visible + token-only audit),
-M1_5_DESIGN_SYSTEM_MOCKUPS_3_DIRECTIONS (Conservative / Modern-clean / Bold
-dense-pro-tool × 13 modules), M1_5_DESIGN_SYSTEM_PHASE_4_CLOSE (chosen
-direction → platform default + tenant_color_presets + axe-core a11y gate).
+Phase 3 split into 3a/3b/3c (2026-05-11) for context-budget reasons.
+**Phase 3a CLOSED 2026-05-11 (PUSH PENDING per Daniel directive)** —
+`M1_5_DESIGN_SYSTEM_MOCKUPS_3A_CONSERVATIVE` shipped 15 files under
+`architecture-brief/design-system-mockups/direction-1-conservative/`
+(13 module HTMLs + INDEX.html with Prizma override toggle + minimal
+`_tokens.css`). Production-sourced M1/M3-studio/M4 staticized (zero JS refs);
+mockup-sourced M5–M15 copied with sketch preservation. Phases 3b + 3c (Modern-
+clean + Bold dense-pro-tool) SPECs authored and pending dispatch in fresh chats.
+Phase 4 (`M1_5_DESIGN_SYSTEM_PHASE_4_CLOSE`) unblocks when all 3 sub-phases close.
 Closes OPEN_TASKS task #1.
 
 ---

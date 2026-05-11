@@ -1,5 +1,23 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-11 — Design System Phase 3a: Direction 1 (Conservative) mockup tree (PUSH PENDING)
+
+SPEC: `M1_5_DESIGN_SYSTEM_MOCKUPS_3A_CONSERVATIVE` ([folder](specs/M1_5_DESIGN_SYSTEM_MOCKUPS_3A_CONSERVATIVE/))
+
+- New folder `architecture-brief/design-system-mockups/direction-1-conservative/` with 15 files: 13 module HTMLs (M1/M3-studio/M4/M5/M6/M7/M8/M9/M11/M12/M13/M14/M15) + INDEX.html (top-bar 3-direction switch + left-nav 13 module links + iframe preview + Prizma override toggle) + `_tokens.css` (intentionally minimal — Conservative inherits platform defaults).
+- Production-sourced HTMLs (M1/M3-studio/M4) staticized: all `<script>` removed, all page CSS (`css/*.css`) removed, Google Fonts external link removed, mock Hebrew content injected into first `<main>` (~14-row inventory table for D1 anti-blandness density target). Direction stylesheet chain (8 shared CSS + `_tokens.css`) added before `</head>`.
+- Mockup-sourced HTMLs (M5–M15) copied verbatim; `<script>` stripped; inline-style hex literals replaced with `transparent` (Rule 9 — no hardcoded colors in `style=""`); direction stylesheet chain appended before `</head>`. `<style>` blocks PRESERVED for sketch-preservation (custom classes the shared CSS doesn't cover).
+- Helper script `scripts/transform-mockup-d1.mjs` codifies the transformation (kept in tree for 3b/3c reuse — see SPEC retro proposal #1).
+
+### Commits
+- `676608e` — scaffold (_tokens.css + INDEX.html)
+- `ae4a16e` — M1, M3-studio, M4, M5, M6 (5 modules) + transform script
+- `46276ce` — M7, M8, M9, M11, M12 (5 modules)
+- (Commit 4 hash TBD) — M13, M14, M15 + docs (MODULE_MAP, CHANGELOG, SESSION_CONTEXT, MASTER_ROADMAP)
+- (Commit 5 hash TBD) — close SPEC with retrospective
+
+**PUSH PENDING** — per Daniel directive 2026-05-11, commits remain local; push deferred to Daniel manual review.
+
 ## 2026-05-11 — Design System Phase 2: Component library token-only + focus-visible baseline
 
 SPEC: `M1_5_DESIGN_SYSTEM_COMPONENT_LIBRARY` ([folder](specs/M1_5_DESIGN_SYSTEM_COMPONENT_LIBRARY/))

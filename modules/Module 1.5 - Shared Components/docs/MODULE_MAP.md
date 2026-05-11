@@ -2,9 +2,13 @@
 
 > Single reference document for all files, functions, and globals in the shared/ directory.
 > Updated every commit that adds/changes code in shared/.
-> Last updated: 2026-03-19 (Phase 6 complete)
+> Last updated: 2026-05-11 (Phase 3a — direction-1-conservative mockup tree built)
 
 ---
+
+## 0. Design System initiative — Phase 3a (2026-05-11)
+
+`M1_5_DESIGN_SYSTEM_MOCKUPS_3A_CONSERVATIVE` SPEC closed (PUSH PENDING). Direction 1 mockup tree built at `modules/Module 1.5 - Shared Components/architecture-brief/design-system-mockups/direction-1-conservative/` — 13 module HTMLs (M1/M3-studio/M4/M5/M6/M7/M8/M9/M11/M12/M13/M14/M15) + `INDEX.html` (Prizma override toggle live in this direction only) + minimal `_tokens.css` (Conservative inherits platform defaults). Bulk-transform helper: `scripts/transform-mockup-d1.mjs` (preserved for 3b/3c reuse). Sibling sub-phases 3b (Modern-clean) and 3c (Bold dense-pro-tool) authored, pending dispatch.
 
 ## 1. File Index — shared/css/
 
