@@ -5,6 +5,8 @@
 **מחבר:** Architect (skill `opticup-architect`)
 **יעד:** Module Strategist של M7 (skill `opticup-strategic`).
 
+> **Canonical Sketch (locked 2026-05-11):** [`M7_ORDERS_FULL_MOCKUP_V7.html`](./M7_ORDERS_FULL_MOCKUP_V7.html) (Variant A — שני-פאנלים אופקיים + רצועת-כלים דביקה). Selected by Daniel 2026-05-11 from a 3-variant comparison (`M7_CENTER_REDESIGN_V7_VARIANTS.html`). Predecessor v6 mockup and the two non-selected variants archived at [`_archive/m7-sketches-v6-prior/`](../../../_archive/m7-sketches-v6-prior/). Authorizing SPEC: [`docs/specs/M7_CLOSURE_V7_VARIANT_A/`](../docs/specs/M7_CLOSURE_V7_VARIANT_A/).
+
 > זה לא SPEC. שכבת-ביניים בין Master Plan ל-SPEC. מגדיר ישויות, חוזים, דפוסים, סיכונים — לא acceptance criteria, לא שדות-מלאים, לא phases.
 
 ---

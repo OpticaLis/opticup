@@ -13,3 +13,20 @@
 - Pipeline: Foreman → Executor → Reviewer → Localhost-Tester (N/A — static mockup) → Foreman-review (Full-Auto single chat).
 
 Files unchanged this run: `M7_ORDERS_FULL_MOCKUP_V6.html`, `M7_ORDERS_CENTER_COLUMN_VARIANTS.html` (Destructive Operations envelope: None).
+
+---
+
+## 2026-05-11 — V7 locked (Variant A canonical)
+
+**SPEC:** `M7_CLOSURE_V7_VARIANT_A` (closed 🟢)
+
+- Daniel selected Variant A from the 2026-05-11 3-variant exploration (`M7_CENTER_REDESIGN_V7_VARIANTS.html`). Variant A = two-pane work surface (wide right pane: items + lenses + CTA; narrow left pane: prescription + pricing) + sticky tools strip at bottom (so-print + so-msg). The only layout from the 3 candidates that kept all 9 v6 data regions visible simultaneously.
+- New canonical file: `architecture-brief/M7_ORDERS_FULL_MOCKUP_V7.html` (Variant A only, standalone — no tabs, no banner, no script).
+- Archived to `_archive/m7-sketches-v6-prior/`:
+  - `M7_ORDERS_FULL_MOCKUP_V6.html` (v6 baseline, superseded)
+  - `M7_CENTER_REDESIGN_V7_VARIANTS.html` (3-variant comparison file, decision history)
+  - `M7_ORDERS_CENTER_COLUMN_VARIANTS.html` (earlier rejected center-column attempt)
+- `M7_ORDERS_BRIEF.md` updated with Canonical Sketch header pointing to V7.
+- DECISIONS_LOG cross-module entry 18 + M7 sub-table entry 10 + full M7.md section recorded.
+- Pipeline: Foreman → Executor → Foreman-review (Localhost-Tester skipped per SPEC §10 — no runtime, doc-only).
+- Destructive Operations envelope: 3 `git mv` renames (rename-only, no deletes).
