@@ -154,6 +154,21 @@ The full text is in CLAUDE.md §4-§6. Here are the ones most relevant to execut
 - A step completed exactly as expected
 - The next step is in the plan and previous matched
 - You feel uncertain but there's no actual deviation
+- **Numerical bound off by less than ±20% (added 2026-05-11):** when a SPEC
+  §3 success criterion is a numerical bound (line count, file size, row count,
+  package count) and the actual value falls outside the bound by less than
+  ±20%, treat it as author-side estimation error and adjust the SPEC criterion
+  inline with annotation citing the actual measurement. Continue execution;
+  log the adjustment as a FINDINGS.md entry. STOP only when the deviation is
+  ≥ 20% OR when the actual value violates a STRUCTURAL expectation (file
+  appears truncated, content lost, required token missing, hash mismatch).
+  Rationale: forcing a halt on author-side numerical miss is overkill for
+  Full-Auto pipelines where author and executor share a chat; the right move
+  is adjust + annotate + continue + log. The author-side counterpart of this
+  rule lives in `opticup-strategic` SKILL.md §"SPEC Authoring Protocol →
+  Step 3 → Numerical-bound criteria — Measure before bounding" (also
+  2026-05-11). Source: `M7_CLOSURE_V7_VARIANT_A/FOREMAN_REVIEW.md` §7
+  Proposal 1 (F-AUTH-1).
 
 ## Code Patterns — How We Write Code Here
 
@@ -233,6 +248,56 @@ The SPEC author SHOULD pre-declare expected side-effects per the SPEC_TEMPLATE �
 - One responsibility per file
 - **Read before write** — always view a file before modifying it
 - **Surgical edits only** — targeted changes, never rewrite whole files unless instructed
+
+### Surgical File Transformation — Recipes (added 2026-05-11)
+
+When the Edit tool's `old_string` would exceed ~100 lines (typical for
+"delete an entire section X from a large file" SPECs — e.g., extracting
+one variant from a 3-variant comparison HTML), prefer **line-slicing**
+over giant Edits. Recipes:
+
+```powershell
+# Windows / PowerShell — delete lines N1..N2 inclusive (1-indexed)
+$f="path/to/file"
+$c=Get-Content $f -Encoding UTF8
+($c[0..(N1-2)] + $c[N2..($c.Count-1)]) | Set-Content $f -Encoding UTF8
+```
+
+```bash
+# Mac / Linux — same operation
+sed -i '' 'N1,N2d' path/to/file
+```
+
+```powershell
+# Windows / PowerShell — keep two contiguous ranges (cut out the middle)
+$f="path/to/file"
+$c=Get-Content $f -Encoding UTF8
+$kept=@(); $kept+=$c[0..(N1-1)]; $kept+=$c[N2..($c.Count-1)]
+$kept | Set-Content $f -Encoding UTF8
+```
+
+**When to use each:**
+- **Edit tool** — surgical text replacement, especially when the change is
+  semantic (rename a function, swap a value, replace a string). Old_string
+  must be unique; ≤ 100 lines is comfortable.
+- **Line slicing** — large contiguous deletions where the surrounding
+  context for a unique Edit `old_string` would itself be too large to
+  manage cleanly. Use only when:
+  1. The deletion spans > 100 lines, AND
+  2. The exact line numbers are known from a prior Read or Grep call.
+- **Write tool** — rebuild the entire file from scratch. Use only when
+  user explicitly says "rewrite from scratch" OR when ≥ 50% of the file
+  is being replaced.
+
+**Iron-Rule 10 (read-before-write) still applies** to sliced files — Read
+the file to register it with the harness before slicing, and Read again
+after slicing to verify the structure (`head -N` + `tail -N` of the
+relevant boundaries).
+
+Source: `M7_CLOSURE_V7_VARIANT_A/FOREMAN_REVIEW.md` §7 Proposal 2.
+The SPEC's V7 extraction needed a 605-line deletion (lines 515–1119 of
+the seeded V7 file) — an Edit `old_string` of 605 lines would have been
+awkward and error-prone; PowerShell slice was the right tool.
 
 ## SQL Autonomy Levels
 

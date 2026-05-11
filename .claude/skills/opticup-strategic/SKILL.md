@@ -390,6 +390,20 @@ Before writing a single line of SPEC content, you MUST:
    files, and apply any "executor improvement proposals" or "author improvement
    proposals" that are still relevant. **Do NOT repeat mistakes that past
    reviews already flagged.**
+   - **Citation discipline (added 2026-05-11 — M7_CLOSURE_V7_VARIANT_A
+     FOREMAN_REVIEW §6 Proposal 2):** when citing a prior FOREMAN_REVIEW in
+     the new SPEC's §11 "Lessons Already Incorporated", verify the cited
+     path EXISTS before writing the citation. A reference to a non-existent
+     `FOREMAN_REVIEW.md` is a footgun — the executor's first reflex is to
+     read it, and a 404 wastes a tool call and seeds doubt about the SPEC's
+     accuracy. If a prior SPEC closed as an artifact-only deliverable
+     without a FOREMAN_REVIEW (e.g., `M7_CENTER_REDESIGN_V7_VARIANTS`
+     closed 🟢 with no review), write the §11 line as:
+     > "FROM `<sibling-spec-slug>/` — predecessor SPEC closed as artifact deliverable without a FOREMAN_REVIEW. NOT APPLICABLE."
+     instead of the misleading
+     > "FROM `<sibling-spec-slug>/FOREMAN_REVIEW.md` → … (file does not yet exist…)"
+     Prefer truth over symmetry — the reader doesn't have to parse a
+     contradiction.
 8. Load `opticup-guardian` — it gates SPEC writing and enforces severity/format.
 9. **Migration-path pre-flight (A1 — added 2026-04-16):** If the SPEC will
    prescribe any SQL migration file in §8 Expected Final State, detect the
@@ -887,6 +901,43 @@ Every SPEC MUST include:
 
 A SPEC missing any of these is NOT ready for execution. Add the missing parts
 before dispatching.
+
+#### Numerical-bound criteria — Measure before bounding (added 2026-05-11)
+
+Whenever a §3 success criterion is a NUMERICAL BOUND on the outcome of a
+mechanical transformation (file line count, file size in bytes, row count,
+token count, etc.), the author MUST do ONE of the following BEFORE
+publishing the SPEC:
+
+1. **Measure first.** Run the transformation in a scratch workspace (since
+   the Foreman + Executor share the same Full-Auto chat and have full repo
+   access, this is cheap) and write the actual measurement as the criterion.
+   Example: instead of "between 600–1100 lines", set "exactly 518 lines"
+   after a dry-run extraction.
+2. **Bound conservatively wide + document the basis.** If measurement is
+   genuinely impractical (e.g., the transformation depends on a downstream
+   tool's output), set the bound to ±30% around the best estimate AND state
+   the basis in the criterion text. Example: "between 350 and 700 lines
+   (estimate based on V6 = 984 lines minus removed Variants B/C ≈ 600 lines;
+   ±30% tolerance because Variant A's internal line count was not measured)".
+
+**Never** publish a tight bound (±10%) on an unmeasured estimate. The
+Executor's automatic response to a missed bound is to STOP and report, which
+is correct for STRUCTURAL deviations but overkill for author-side numerical
+miscalibration. Moving the discipline to author-time avoids the overkill.
+
+**Cross-reference:** This rule is the §3-success-criteria sibling of
+**Step 1.5q — Threshold values must come from measured baselines** above
+(added 2026-05-10), which covers §4 autonomy envelope + §5 stop-triggers.
+Together they form a single coherent discipline: any numerical value in
+the SPEC must trace back to a measurement, never an estimate.
+
+**Rationale:** `M7_CLOSURE_V7_VARIANT_A/FOREMAN_REVIEW.md` (2026-05-11)
+documented F-AUTH-1 — a 600–1100 line bound on the V7 extraction's
+output, with actual measurement = 518 lines. Executor caught + amended
+inline; the right place for the discipline is at SPEC-authoring time.
+First strike specifically for §3 outcome bounds; promoted directly per
+Full-Auto Pipeline closure mandate.
 
 #### §11 Lessons Already Incorporated — Path Disambiguator Rule (A2 — added 2026-04-16)
 
