@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M7 — Orders · v6 · 4 סוגים · תשלום ימין-למטה</title>
+<style>
+  :root{
+
+    --border:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
+
+
+    --r-md:6px; --r-lg:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;font-family:-apple-system,'Segoe UI',Rubik,sans-serif;
+    background:var(--bg);color:var(--text);font-size:12px;line-height:1.4;direction:rtl;
+  }
+  .page{max-width:1640px;margin:0 auto;padding:18px;}
+  h1{font-size:18px;font-weight:500;margin:0 0 4px;}
+  .lede{color:var(--text-2);margin:0 0 14px;font-size:12px;}
+
+  button{
+    font-family:inherit;font-size:11px;padding:4px 8px;
+    background:var(--surface);border:0.5px solid var(--border-strong);
+    border-radius:var(--r-md);cursor:pointer;color:var(--text);
+  }
+  button:hover{background:var(--soft);}
+
+
+  button.ghost{background:transparent;border:0;color:var(--blue);font-size:11px;padding:3px 5px;}
+  button.danger-ghost{background:transparent;border:0;color:var(--red);font-size:11px;padding:3px 5px;}
+  button.tiny{font-size:10px;padding:3px 6px;}
+  button[disabled]{opacity:0.4;cursor:not-allowed;}
+
+  input,select,textarea{
+    font-family:inherit;font-size:12px;padding:5px 8px;
+    border:0.5px solid var(--border-strong);border-radius:var(--r-md);
+    background:var(--surface);color:var(--text);
+  }
+  textarea{resize:none;}
+
+  .pill{display:inline-block;font-size:10px;padding:1px 6px;border-radius:var(--r-md);font-weight:500;}
+  .pill-purple{background:var(--purple-soft);color:var(--purple-deep);}
+  .pill-teal{background:var(--teal-soft);color:var(--teal-deep);}
+  .pill-amber{background:var(--amber-soft);color:var(--amber-deep);}
+  .pill-blue{background:var(--blue-soft);color:var(--blue-deep);}
+  .pill-coral{background:var(--coral-soft);color:var(--coral-deep);}
+  .pill-pink{background:var(--pink-soft);color:var(--pink-deep);}
+  .pill-green{background:var(--green-soft);color:var(--green-deep);}
+  .pill-gray{background:var(--gray-soft);color:var(--gray);}
+
+
+  .row{display:flex;align-items:center;gap:6px;}
+  .row-between{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+  .mini{font-size:10px;color:var(--text-2);}
+  .money{font-variant-numeric:tabular-nums;font-weight:500;}
+
+  .app{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);overflow:hidden;}
+
+  /* HEADER */
+  .header{
+
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .header .left{display:flex;align-items:center;gap:10px;}
+  .avatar{
+
+    display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;
+  }
+  .cust-name{font-size:13px;font-weight:500;}
+
+
+
+  /* TABS */
+  .tabs{background:var(--surface);border-bottom:0.5px solid var(--border);display:flex;align-items:center;}
+  .tab{padding:8px 14px;font-size:12px;color:var(--text-2);cursor:pointer;border-left:0.5px solid var(--border);border-bottom:2px solid transparent;}
+  .tab:hover{background:var(--soft);}
+  .tab.active{background:var(--purple-soft);color:var(--purple-deep);font-weight:500;border-bottom-color:var(--purple);}
+  .tabs .right{margin-right:auto;padding:0 14px;font-size:11px;color:var(--text-2);}
+
+  /* CMD BAR */
+  .cmdbar{
+    background:var(--soft);padding:7px 14px;
+    display:flex;justify-content:space-between;align-items:center;
+    border-bottom:0.5px solid var(--border);
+  }
+
+  /* MAIN: 3 columns in RTL.
+     Visual order from RIGHT to LEFT:
+       RIGHT  = rail (sub-orders) on top + payment on bottom — both in same column.
+       CENTER = order editor.
+       LEFT   = comms + log.
+     In RTL, the FIRST grid column appears on the RIGHT side of the screen.
+  */
+  .main{display:grid;grid-template-columns:240px 1fr 320px;background:var(--bg);}
+
+  /* === RIGHT COLUMN (first in RTL) — rail on top, payment on bottom === */
+  .right-col{
+    background:var(--surface);border-left:0.5px solid var(--border);
+    display:flex;flex-direction:column;
+  }
+  .rail{
+    padding:10px;display:flex;flex-direction:column;flex:1;min-height:0;
+  }
+  .rail-h{
+    font-size:10px;color:var(--text-2);
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;
+  }
+  .so-card{
+    border-radius:var(--r-md);padding:7px 9px;margin-bottom:4px;cursor:pointer;
+    border:0.5px solid transparent;
+  }
+  .so-card.active{
+    background:var(--purple-soft);border-right:3px solid var(--purple);
+    border-radius:0 var(--r-md) var(--r-md) 0;
+  }
+  .so-card .top{display:flex;justify-content:space-between;align-items:center;}
+  .so-card .ttl{font-size:11px;font-weight:500;}
+  .so-card.active .ttl{color:var(--purple-deep);}
+  .so-card .sub{font-size:9px;color:var(--text-2);margin-top:2px;}
+  .so-card .badges{margin-top:3px;display:flex;flex-wrap:wrap;gap:2px;}
+  .so-card .badges .pill{font-size:8px;padding:0 4px;}
+
+  /* === CENTER === */
+  .center{padding:10px 14px;background:var(--bg);}
+
+  .rx{
+    background:var(--amber-soft);border-radius:var(--r-md);
+    padding:6px 10px;display:flex;justify-content:space-between;align-items:center;
+    font-size:11px;color:var(--amber-deep);margin-bottom:8px;
+  }
+  .rx strong{font-weight:500;}
+
+  .so-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .so-badge{
+
+    width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:500;
+  }
+
+  /* type picker — choose ONE of 4 */
+  .type-picker{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;
+  }
+  .type-btn{
+    padding:10px 6px;font-size:11px;background:var(--surface);
+    border:0.5px solid var(--border-strong);border-radius:var(--r-md);
+    cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;
+    text-align:center;
+  }
+  .type-btn:hover{border-color:var(--purple);background:var(--purple-soft);}
+
+  .type-btn .ico{font-size:18px;}
+  .type-btn .ttl{font-weight:500;}
+  .type-btn .sub{font-size:9px;opacity:0.75;}
+
+  /* scan zone */
+  .scan-zone{
+    background:var(--purple-soft);border:1.5px solid var(--purple);
+    border-radius:var(--r-md);padding:8px 10px;margin-bottom:10px;
+  }
+  .scan-zone input{
+    width:100%;font-size:13px;padding:7px 10px;border:0.5px solid var(--purple);
+  }
+  .scan-zone .row-h{
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-size:11px;color:var(--purple-deep);
+  }
+  .scan-zone .scan-actions{display:flex;gap:4px;align-items:center;margin-top:5px;}
+  .scan-zone .scan-actions button{font-size:10px;}
+
+  /* item card */
+  .item-card{
+    background:var(--surface);border:0.5px solid var(--border);
+    border-radius:var(--r-md);padding:10px 12px;margin-bottom:8px;
+  }
+  .item-line{
+    display:grid;
+    grid-template-columns:60px 1fr 100px 80px;
+    gap:6px;align-items:center;
+    padding-bottom:7px;border-bottom:0.5px dashed var(--border);
+  }
+  .item-line.last{border-bottom:0;padding-bottom:0;}
+  .item-line .name{font-weight:500;font-size:12px;}
+  .item-line .name-sub{font-size:10px;color:var(--text-2);}
+  .item-line .actions{display:flex;justify-content:flex-end;align-items:center;gap:3px;}
+  .item-card .extras{
+    display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;
+    margin-top:7px;padding-top:7px;border-top:0.5px dashed var(--border);
+  }
+  .item-card .note-input{
+    font-size:11px;padding:4px 7px;width:100%;background:var(--soft);
+    border:0.5px solid transparent;
+  }
+  .item-card .note-input:focus{background:var(--surface);border-color:var(--purple);}
+
+  /* lens picker buttons (Access-style) */
+  .lens-pickers{display:flex;gap:6px;margin-top:7px;}
+  .lens-pickers button{flex:1;font-size:11px;padding:6px;}
+
+  /* print actions block per sub-order */
+  .so-print{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    padding:8px 10px;margin-top:8px;
+  }
+  .so-print .sp-h{
+    font-size:11px;color:var(--text-2);font-weight:500;margin-bottom:6px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .so-print .sp-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:6px;
+  }
+  .so-print .sp-btn{
+    padding:7px 9px;font-size:11px;background:var(--surface);
+    border:0.5px solid var(--border-strong);border-radius:var(--r-md);cursor:pointer;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .so-print .sp-btn:hover{background:var(--blue-soft);border-color:var(--blue);}
+  .so-print .sp-btn.placeholder{
+    border:0.5px dashed var(--border-strong);color:var(--text-2);cursor:not-allowed;background:transparent;
+  }
+  .so-print .sp-btn .sp-tag{font-size:9px;color:var(--text-2);}
+
+  /* messaging actions block per sub-order */
+  .so-msg{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    padding:8px 10px;margin-top:8px;
+  }
+  .so-msg .sm-h{
+    font-size:11px;color:var(--text-2);font-weight:500;margin-bottom:6px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .so-msg .sm-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:6px;
+  }
+  .so-msg .sm-btn{
+    padding:7px 9px;font-size:11px;background:var(--surface);
+    border:0.5px solid var(--border-strong);border-radius:var(--r-md);cursor:pointer;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .so-msg .sm-btn:hover{background:var(--purple-soft);border-color:var(--purple);}
+
+  .so-msg .sm-btn.success:hover{background:var(--teal-deep);}
+  .so-msg .sm-btn.sent{background:var(--teal-soft);color:var(--teal-deep);border-color:var(--teal);cursor:default;}
+  .so-msg .sm-btn.disabled{opacity:0.5;cursor:not-allowed;}
+  .so-msg .sm-btn .sm-tag{font-size:9px;color:var(--text-2);}
+  .so-msg .sm-btn.sent .sm-tag{color:var(--teal-deep);}
+
+  .so-msg .sm-meta{font-size:9px;color:var(--text-2);margin-top:5px;}
+
+  /* sub-order pricing block (per sub-order discounts) */
+  .so-pricing{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    padding:8px 10px;margin-top:8px;
+  }
+  .so-pricing .sp-h{
+    font-size:11px;color:var(--text-2);font-weight:500;margin-bottom:6px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .so-pricing .sp-row{
+    display:grid;grid-template-columns:55px 60px 70px 1fr;
+    gap:6px;align-items:center;font-size:11px;margin-bottom:3px;
+  }
+  .so-pricing .sp-row .sp-cat{color:var(--text-2);}
+  .so-pricing .sp-row .sp-base{text-align:left;font-variant-numeric:tabular-nums;color:var(--text-2);}
+  .so-pricing .sp-row input{
+    font-size:11px;padding:3px 6px;text-align:center;background:var(--soft);
+    border:0.5px solid var(--border);width:100%;
+  }
+  .so-pricing .sp-row .sp-save{font-size:10px;color:var(--teal);text-align:left;font-variant-numeric:tabular-nums;}
+  .so-pricing .sp-divider{border-top:0.5px dashed var(--border);margin:5px 0;}
+  .so-pricing .sp-totals{
+    display:grid;grid-template-columns:1fr auto;gap:4px;font-size:11px;
+  }
+  .so-pricing .sp-totals .lbl{color:var(--text-2);}
+  .so-pricing .sp-totals .val{font-variant-numeric:tabular-nums;font-weight:500;}
+  .so-pricing .sp-final{font-size:13px;color:var(--purple-deep);font-weight:500;margin-top:3px;}
+
+  /* "add lenses to this frame" CTA */
+  .add-lenses-cta{
+    margin-top:8px;padding:6px 10px;background:var(--teal-soft);color:var(--teal-deep);
+    border:0.5px dashed var(--teal);border-radius:var(--r-md);font-size:11px;
+    display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+  }
+
+
+  /* qty stepper */
+  .qty{display:inline-flex;align-items:center;background:var(--soft);border-radius:var(--r-md);overflow:hidden;}
+  .qty button{border:0;background:transparent;width:22px;height:22px;font-size:12px;padding:0;}
+  .qty .n{padding:0 7px;font-size:11px;font-weight:500;min-width:18px;text-align:center;}
+
+  /* timeline */
+  .sec-h{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:11px;color:var(--text-2);margin:10px 0 4px 2px;
+  }
+  .sec-h .label{font-weight:500;color:var(--text);font-size:12px;}
+
+  .timeline{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
+  .tl-cell{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    padding:6px 8px;
+  }
+  .tl-cell.done{border-right:3px solid var(--purple);}
+  .tl-cell.active{border-right:3px solid var(--amber);}
+  .tl-cell.pending{opacity:0.5;}
+  .tl-cell .k{font-size:9px;color:var(--text-2);}
+  .tl-cell .v{font-size:11px;font-weight:500;}
+  .tl-cell.active .v{color:var(--amber-deep);}
+
+  /* location strip */
+  .loc-strip{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    padding:7px 10px;display:flex;justify-content:space-between;align-items:center;
+    margin-top:6px;
+  }
+  .loc-strip .left{display:flex;align-items:center;gap:8px;font-size:11px;}
+  .loc-strip select{font-size:11px;padding:3px 7px;background:var(--soft);border:0.5px solid var(--border);}
+
+  /* === LEFT COLUMN (last in RTL) — comms + history + tasks + log === */
+  .panel{
+    background:var(--surface);border-right:0.5px solid var(--border);
+    display:flex;flex-direction:column;
+  }
+  .panel-comms{
+    padding:10px;flex:1;overflow-y:auto;
+  }
+  .panel-section{margin-bottom:10px;}
+  .panel-section .h-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+  .panel-section h4{margin:0;font-size:12px;font-weight:500;}
+
+  .lang-row{display:flex;gap:3px;margin-bottom:4px;}
+  .lang-btn{
+    flex:1;font-size:10px;padding:4px 0;background:var(--surface);
+    border:0.5px solid var(--border-strong);border-radius:var(--r-md);cursor:pointer;
+  }
+
+  .lang-row .auto-tag{font-size:9px;color:var(--text-2);align-self:center;padding:0 4px;}
+
+  .quick-msgs{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:4px;}
+  .quick-msgs button{font-size:10px;padding:5px 4px;}
+
+  .panel textarea{
+    width:100%;min-height:38px;font-size:11px;padding:5px;
+    border-radius:var(--r-md);border:0.5px solid var(--border);
+  }
+
+  .msg-card{padding:6px 10px;border-radius:var(--r-md);margin-bottom:4px;}
+  .msg-card.msg-out{background:var(--purple-soft);}
+  .msg-card.msg-in{background:var(--soft);margin-right:14px;}
+  .msg-card .msg-meta{font-size:9px;color:var(--text-2);margin-bottom:3px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+  .msg-card .msg-body{font-size:11px;line-height:1.5;}
+
+  .task-card{
+    background:var(--soft);border-radius:var(--r-md);padding:7px 10px;margin-bottom:3px;
+  }
+  .task-card .ttl{font-size:11px;font-weight:500;}
+  .task-card .meta{font-size:10px;color:var(--text-2);margin-top:2px;}
+
+  .log{font-size:10px;line-height:1.7;color:var(--text-2);}
+  .log .ts{color:var(--text);font-variant-numeric:tabular-nums;}
+  .log .actor{color:var(--purple-deep);font-weight:500;}
+
+  /* === BOTTOM-RIGHT TOTALS PANEL === */
+  .totals-panel{
+
+    padding:10px 12px;
+    border-top:1px solid var(--purple-mid);
+  }
+
+
+  .disc-cat-row{
+    display:grid;grid-template-columns:55px 1fr 50px;gap:4px;align-items:center;
+    margin-bottom:3px;font-size:10px;
+  }
+
+  .disc-cat-row input{
+    font-size:10px;padding:2px 5px;text-align:center;
+
+  }
+
+
+  .totals-panel .divider{border-top:0.5px dashed var(--purple-mid);margin:5px 0;}
+  .totals-panel .total-line{display:flex;justify-content:space-between;font-size:13px;}
+
+  .totals-panel button.success{width:100%;margin-top:6px;font-size:11px;}
+
+  .totals-panel .general-discounts{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px;}
+  .totals-panel .general-discounts .pill{background:var(--teal-mid);color:var(--teal-deep);}
+
+  /* BOTTOM TOOLBAR */
+  .toolbar{
+    background:var(--surface);border-top:0.5px solid var(--border);
+    padding:7px 14px;display:flex;justify-content:space-between;align-items:center;
+  }
+  .nav-arrows{display:flex;gap:4px;align-items:center;font-size:11px;color:var(--text-2);}
+
+  /* legend */
+  .legend{
+    margin-top:14px;padding:14px;background:var(--surface);border:0.5px solid var(--border);
+    border-radius:var(--r-md);font-size:12px;color:var(--text-2);
+  }
+  .legend strong{color:var(--text);font-weight:500;}
+  .legend ul{margin:6px 0 0;padding-right:18px;}
+  .legend li{margin-bottom:3px;}
+</style>
+<link rel="stylesheet" href="../../../../../shared/css/variables.css">
+<link rel="stylesheet" href="../../../../../shared/css/layout.css">
+<link rel="stylesheet" href="../../../../../shared/css/components.css">
+<link rel="stylesheet" href="../../../../../shared/css/components-extra.css">
+<link rel="stylesheet" href="../../../../../shared/css/forms.css">
+<link rel="stylesheet" href="../../../../../shared/css/modal.css">
+<link rel="stylesheet" href="../../../../../shared/css/toast.css">
+<link rel="stylesheet" href="../../../../../shared/css/table.css">
+<link rel="stylesheet" href="./_tokens.css">
+</head>
+<body>
+<div style="background:var(--color-surface-alt); border-bottom:1px solid var(--color-border); padding:10px 20px; font-size:0.9rem; font-weight:600; color:var(--color-text-muted); text-align:center;">DESIGN MOCKUP — Direction 2: Modern-clean · M7-orders (mockup-sourced)</div>
+
+<div class="page">
+
+  <h1>M7 — מסך-הזמנה · v6 · 4 סוגים · תשלום ימין-למטה</h1>
+  <p class="lede">
+    4 סוגי תת-הזמנה (מסגרת · עדשות · עדשות-מגע · אביזרים) · עד 8 תת-הזמנות · "מסגרת" יכולה להכיל גם זוג-עדשות · תשלום בפינה ימנית-תחתונה ללא גלילה.
+  </p>
+
+  <div class="app">
+
+    <!-- HEADER -->
+    <div class="header">
+      <div class="left">
+        <div class="avatar">לד</div>
+        <div>
+          <div class="cust-name">ליסקר דניאל · 30</div>
+          <div class="cust-meta">📱 053-788-9878 · 3 הזמנות ב-12 חודשים · ₪4,250 בשנה האחרונה · אשקלון · ⌥ HE</div>
+        </div>
+        <span class="pill" style="background:var(--amber-mid); color:var(--amber-deep);">VIP</span>
+      </div>
+      <div class="row" style="gap:6px;">
+        <button>⌘K · חיפוש</button>
+        <button>📞 התקשר</button>
+        <button>💬 WhatsApp</button>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <div class="tab">פרטים</div>
+      <div class="tab">בדיקת ראייה</div>
+      <div class="tab">משקפיים</div>
+      <div class="tab">עדשות מגע</div>
+      <div class="tab active">הזמנות</div>
+      <div class="tab">תקשורת</div>
+      <div class="tab">היסטוריה</div>
+      <div class="right">
+        הזמנה <strong style="color:var(--text); font-weight:500;">9362</strong> · 18.03.26 · עובד: <strong style="color:var(--text); font-weight:500;">Ilya</strong>
+      </div>
+    </div>
+
+    <!-- CMD BAR -->
+    <div class="cmdbar">
+      <div class="row">
+        <span class="pill pill-purple">הזמנת מכר רגילה</span>
+        <span class="pill pill-amber">מרשם 10.10.25 · Naama</span>
+        <!-- ORDER-LEVEL "תודה" status — sent only when order is ACTIVE + payment ≥ 1 -->
+        <span class="pill pill-teal" title="נשלחה אוטומטית כשמצב ההזמנה=active וגם תשלום ≥ ₪1. Reservation לבדה לא מפעילה.">✓ "תודה" נשלחה · 14:32</span>
+        <button class="tiny" title="שלח שוב ידנית (אם הלקוח מבקש)">↻ שלח שוב</button>
+      </div>
+      <div class="row" style="gap:4px;">
+        <span class="pill pill-teal">✓ נשמר אוטומטית · 14:32:08</span>
+        <button class="tiny">↶ Undo</button>
+        <button class="tiny">↷ Redo</button>
+        <button class="tiny">→ המר הצעה</button>
+        <button class="tiny">⊠ בטל 🔒</button>
+        <button class="tiny">🗑 מחק 🔒</button>
+        <button class="tiny">🖨 ▾</button>
+      </div>
+    </div>
+
+    <!-- Visual reference: 3 possible states for the "תודה" pill+button on the same row -->
+    <div class="cmdbar" style="border-top:0.5px dashed var(--border);">
+      <div class="row" style="font-size:10px; color:var(--amber-deep);">
+        <strong>3 מצבי "תודה" אפשריים בשורה למעלה:</strong>
+        <span class="pill pill-gray">⏳ ממתין-לתשלום</span>
+        <span class="mini">(הזמנה ללא-תשלום = הצעת-מחיר, לא נשלחת "תודה")</span>
+        ·
+        <span class="pill pill-teal">✓ נשלחה · 14:32</span>
+        <span class="mini">(אוטומטית אחרי התשלום הראשון)</span>
+        ·
+        <span class="pill pill-red">✕ נכשלה</span>
+        <button class="tiny" style="background:var(--red); border:0;">↻ שלח שוב</button>
+        <span class="mini">(אם השליחה נכשלה — כפתור-ידני לחזרה)</span>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+      <!-- RIGHT COLUMN: rail on top + payment on bottom -->
+      <div class="right-col">
+      <div class="rail">
+        <div class="rail-h">
+          <span>תת-הזמנות (4 / 8)</span>
+          <span style="color:var(--blue); cursor:pointer;">+ חדשה</span>
+        </div>
+
+        <!-- A: מסגרת + עדשות (label reflects what's inside) -->
+        <div class="so-card active">
+          <div class="top">
+            <span class="ttl">A · מסגרת+עדשות</span>
+            <span class="money" style="font-size:10px;">₪1,800</span>
+          </div>
+          <div class="sub">Cazal 1280 + מולטיפוקל</div>
+          <div class="badges"><span class="pill pill-amber">⏱ ספק</span></div>
+        </div>
+
+        <!-- B: מסגרת + עדשות (קריאה) -->
+        <div class="so-card">
+          <div class="top">
+            <span class="ttl">B · מסגרת+עדשות</span>
+            <span class="money" style="font-size:10px; color:var(--text-2);">₪900</span>
+          </div>
+          <div class="sub">Ray-Ban + Single Vision</div>
+          <div class="badges"><span class="pill pill-blue">🔧 מעבדה</span></div>
+        </div>
+
+        <!-- C: רק עדשות-מגע -->
+        <div class="so-card">
+          <div class="top">
+            <span class="ttl">C · עדשות-מגע</span>
+            <span class="money" style="font-size:10px; color:var(--text-2);">₪450</span>
+          </div>
+          <div class="sub">Acuvue Oasys · 30 זוגות</div>
+          <div class="badges"><span class="pill pill-green">✓ נמסר</span></div>
+        </div>
+
+        <!-- D: אביזרים -->
+        <div class="so-card">
+          <div class="top">
+            <span class="ttl">D · אביזרים</span>
+            <span class="money" style="font-size:10px; color:var(--text-2);">₪40</span>
+          </div>
+          <div class="sub">נוזל ניקוי × 1</div>
+          <div class="badges"><span class="pill pill-green">✓ נמסר</span></div>
+        </div>
+
+        <div class="so-card" style="border:1px dashed var(--border-strong); text-align:center; color:var(--text-2); padding:6px;">
+          <span style="font-size:10px;">+ הוסף E · נותרו 4</span>
+        </div>
+
+        <div style="margin-top:auto; padding-top:8px; font-size:10px; color:var(--text-2);">
+          סטטוס-הזמנה כללי (אוטומטי):<br/>
+          <strong style="color:var(--text); font-weight:500;">בעבודה</strong><br/>
+          <span class="mini">מוכנה: 2/4 · נקלחה: 2/4</span><br/>
+          <span class="mini">"מוכנה" / "נקלחה" יוצבו ברמת-ההזמנה רק כשכל-תתי-ההזמנות יסומנו</span>
+        </div>
+      </div>
+
+      <!-- BOTTOM-RIGHT TOTALS + PAYMENT (aggregated across all sub-orders) -->
+      <div class="totals-panel">
+        <div class="ln"><span>סכום-לפני-הנחות (4 תת-הזמנות)</span><strong class="money">₪3,190</strong></div>
+
+        <div class="divider"></div>
+        <div class="ln" style="margin-bottom:4px;">סך-הנחות-לפי-קטגוריה <span class="mini" >(מצטבר מכל תת-ההזמנות)</span></div>
+        <div class="disc-cat-row" style="grid-template-columns:1fr 70px;">
+          <span class="label">מסגרות</span>
+          <span class="save">−₪360</span>
+        </div>
+        <div class="disc-cat-row" style="grid-template-columns:1fr 70px;">
+          <span class="label">עדשות</span>
+          <span class="save">−₪0</span>
+        </div>
+        <div class="disc-cat-row" style="grid-template-columns:1fr 70px;">
+          <span class="label">מגע</span>
+          <span class="save">—</span>
+        </div>
+        <div class="disc-cat-row" style="grid-template-columns:1fr 70px;">
+          <span class="label">אביזרים</span>
+          <span class="save">—</span>
+        </div>
+
+        <div class="divider"></div>
+        <div class="ln"><span>סה״כ אחרי הנחות-קטגוריה</span><strong class="money">₪2,830</strong></div>
+
+        <div class="divider"></div>
+        <div class="ln" style="margin-bottom:3px;">הנחות-כלליות</div>
+        <div class="general-discounts">
+          <span class="pill">VIP −10% ✕</span>
+          <span class="pill">SUMMER10 ✕</span>
+        </div>
+        <div class="row" style="gap:3px; flex-wrap:wrap;">
+          <button class="tiny">+ קופון</button>
+          <button class="tiny">+ קופ״ח</button>
+          <button class="tiny">+ ידנית 🔒</button>
+          <button class="tiny">+ זיכוי (₪0)</button>
+        </div>
+
+        <div class="divider"></div>
+        <div class="ln"><span>מע״מ 18%</span><strong>כלול</strong></div>
+        <div class="ln"><span>שולם</span><strong class="money">₪0</strong></div>
+        <div class="total-line">
+          <span>יתרה</span>
+          <span class="balance money">₪2,547</span>
+        </div>
+        <button class="success">💳 פתח תשלום</button>
+        <div class="deposit-hint">מקדמה-מינ׳ 50% = ₪1,274</div>
+      </div>
+
+      </div><!-- /right-col -->
+
+      <!-- CENTER -->
+      <div class="center">
+
+        <!-- prescription strip -->
+        <div class="rx">
+          <div>
+            <strong>מרשם 10.10.25 · Naama:</strong>
+            R: SPH −2.00 / CYL −0.75 · L: SPH −3.00 / CYL +0.50 · ADD +2.00 · PD 32/32
+          </div>
+          <button class="ghost">ערוך ←</button>
+        </div>
+
+        <!-- sub-order title -->
+        <div class="so-title">
+          <div class="row">
+            <span class="so-badge">A</span>
+            <h3 style="margin:0; font-size:14px; font-weight:500;">מסגרת + עדשות — מולטיפוקל</h3>
+          </div>
+          <div class="row" style="gap:3px;">
+            <button class="tiny">📞 השאר הודעה</button>
+            <button class="tiny">⚑ למנהל</button>
+            <button class="tiny" style="color:var(--red);">🗑 הסר A</button>
+          </div>
+        </div>
+
+        <!-- type picker — choose ONE of 4 -->
+        <div class="type-picker">
+          <button class="type-btn active">
+            <span class="ico">🕶</span>
+            <span class="ttl">מסגרת</span>
+            <span class="sub">+ זוג עדשות (אופציונלי)</span>
+          </button>
+          <button class="type-btn">
+            <span class="ico">👁</span>
+            <span class="ttl">עדשות</span>
+            <span class="sub">למסגרת קיימת של הלקוח</span>
+          </button>
+          <button class="type-btn">
+            <span class="ico">⊙</span>
+            <span class="ttl">עדשות-מגע</span>
+            <span class="sub">סוג אחד · qty חופשי</span>
+          </button>
+          <button class="type-btn">
+            <span class="ico">🧴</span>
+            <span class="ttl">אביזרים</span>
+            <span class="sub">עד 5 פריטים שונים</span>
+          </button>
+        </div>
+
+        <!-- scan zone -->
+        <div class="scan-zone">
+          <div class="row-h">
+            <span><strong>סרוק או חפש:</strong> מסגרת + עדשות לתת-הזמנה זו</span>
+            <span class="mini">⌥ Enter = הוסף · ⌥ ⇥ = סרוק הבא</span>
+          </div>
+          <input type="search" placeholder="🔍 סרוק ברקוד או הקלד שם / דגם / קוד..."/>
+          <div class="scan-actions">
+            <button class="tiny">🕶 פתח קטלוג מסגרות</button>
+            <button class="tiny">👁 פתח קטלוג עדשות</button>
+          </div>
+        </div>
+
+        <!-- THE item: frame + lenses (single card, since type=מסגרת and lenses were added) -->
+        <div class="item-card">
+
+          <!-- frame line -->
+          <div class="item-line">
+            <span class="pill pill-purple">מסגרת</span>
+            <div>
+              <div class="name">Cazal · 1280</div>
+              <div class="name-sub">52 / 001 · שחור · SHALDAG · במלאי</div>
+            </div>
+            <span class="money">₪1,800</span>
+            <div class="actions">
+              <button class="tiny">פרטים ▾</button>
+              <button class="danger-ghost">🗑</button>
+            </div>
+          </div>
+
+          <!-- lens line — Access-style with 2 buttons -->
+          <div class="item-line last">
+            <span class="pill pill-teal">עדשות R+L</span>
+            <div>
+              <div class="name">Optimize Multifocal · 1.56 · AR</div>
+              <div class="name-sub">Progressive · הזמנה לספק · סונן למרשם</div>
+            </div>
+            <span class="money">כלול</span>
+            <div class="actions">
+              <button class="tiny">פרטים ▾</button>
+              <button class="danger-ghost">🗑</button>
+            </div>
+          </div>
+
+          <!-- lens picker buttons (Access-style) -->
+          <div class="lens-pickers">
+            <button class="tiny">עדשה ראשונה (R) ←</button>
+            <button class="tiny">עדשה שניה (L) ←</button>
+            <span class="mini" style="align-self:center;">בחירה נפרדת ל-R/L נפתחת ב-popover</span>
+          </div>
+
+          <!-- single note for the whole sub-order -->
+          <div class="extras">
+            <input class="note-input" placeholder="הערה לתת-ההזמנה (תופיע בטופס המסירה ובהדפסות)..."
+                   value="לא להשפיע על אף-המסגרת. גובה אישונים נמדד היום."/>
+            <button class="tiny">+ הערה נוספת</button>
+          </div>
+        </div>
+
+        <!-- location for whole sub-order -->
+        <div class="loc-strip">
+          <div class="left">
+            <span class="pill pill-amber">📍 מיקום נוכחי</span>
+            <strong>בית-מלאכה Cazal</strong>
+            <span class="mini">(אוטומטי לפי "נשלח-לבית-מלאכה")</span>
+          </div>
+          <div class="row" style="gap:5px;">
+            <select>
+              <option>בית-מלאכה Cazal</option>
+              <option>בית-מלאכה כללי</option>
+              <option>במעבדה (אצלנו)</option>
+              <option>בחנות</option>
+              <option>אצל הלקוח</option>
+            </select>
+            <button class="tiny">override</button>
+          </div>
+        </div>
+
+        <!-- messaging actions for this sub-order (per-sub-order only — "thanks" lives at order level) -->
+        <div class="so-msg">
+          <div class="sm-h">
+            <span>הודעות לתת-הזמנה A · מזהה <strong style="color:var(--text);">1-9362-A</strong></span>
+            <span class="mini">פר-תת-הזמנה · בשלב ראשון: ידני · בעתיד: אוטומציות במודול-תקשורת</span>
+          </div>
+          <div class="sm-grid">
+            <button class="sm-btn">
+              <span>📤 שלח "נשלח-למסגור"</span>
+              <span class="sm-tag">ידני · יעדכן תאריך-שליחה בלוג</span>
+            </button>
+            <button class="sm-btn success">
+              <span>📦 שלח "ההזמנה מוכנה"</span>
+              <span class="sm-tag">ידני · יעדכן "הזמנה-מוכנה" בלוג רק אם נשלח בהצלחה</span>
+            </button>
+          </div>
+          <div class="sm-meta">
+            ⌥ הודעת "תודה" נשלחת פעם-אחת ברמת-ההזמנה כולה (לא פר-תת-הזמנה), כשמצב-ההזמנה <strong>active</strong> וגם נכנס תשלום ≥ ₪1. הזמנה במצב Quote או Reservation בלבד — לא מפעילה. סטטוס מוצג בשורת-הפקודה למעלה.
+          </div>
+        </div>
+
+        <!-- print actions for this sub-order -->
+        <div class="so-print">
+          <div class="sp-h">
+            <span>הדפסות לתת-הזמנה A</span>
+            <span class="mini">פר-תת-הזמנה · בעתיד: מילוי-AI מטפסי-חברות-עדשות</span>
+          </div>
+          <div class="sp-grid">
+            <button class="sp-btn">
+              <span>🖨 Order Inspection — בקרה פנימית</span>
+              <span class="sp-tag">A · נכנס לשקית עם המוצרים</span>
+            </button>
+            <button class="sp-btn">
+              <span>🖨 Outside Framing — שלח למסגור-חיצוני</span>
+              <span class="sp-tag">A · נשלח לחברת-עדשות</span>
+            </button>
+            <button class="sp-btn placeholder" title="זמין רק כשתת-ההזמנה במצב reserved">
+              <span>🖨 Frame Reservation — שמירה ללקוח</span>
+              <span class="sp-tag">זמין רק במצב Reserved · A כעת active</span>
+            </button>
+            <button class="sp-btn placeholder" title="זמין רק כשיש משימה פתוחה לתת-ההזמנה">
+              <span>🖨 Task Form — משימה למעבדה</span>
+              <span class="sp-tag">זמין רק כשיש משימה פתוחה · אין כעת</span>
+            </button>
+            <button class="sp-btn placeholder" title="זמין רק כש-is_repair=true">
+              <span>🖨 Internal Repair — תיקון במעבדה</span>
+              <span class="sp-tag">זמין רק במצב Repair · A כעת לא-תיקון</span>
+            </button>
+            <button class="sp-btn placeholder" title="זמין רק כש-is_repair=true">
+              <span>🖨 Outside Repair — תיקון בחברה</span>
+              <span class="sp-tag">זמין רק במצב Repair · ללא פרטי-לקוח</span>
+            </button>
+            <button class="sp-btn placeholder" style="grid-column:1 / -1;">
+              <span>+ טפסים נוספים פר-תת-הזמנה</span>
+              <span class="sp-tag">טופס-מסירה · ועוד</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- sub-order pricing — own subtotal, own per-category discounts -->
+        <div class="so-pricing">
+          <div class="sp-h">
+            <span>תמחור והנחות · תת-הזמנה A</span>
+            <span class="mini">הנחות פר-קטגוריה — חלות על תת-הזמנה זו בלבד</span>
+          </div>
+          <div class="sp-row">
+            <span class="sp-cat">מסגרת</span>
+            <span class="sp-base">₪1,800</span>
+            <input type="text" placeholder="—" value=""/>
+            <span class="sp-save">—</span>
+          </div>
+          <div class="sp-row">
+            <span class="sp-cat">עדשות</span>
+            <span class="sp-base">₪0</span>
+            <input type="text" placeholder="—" value="10%"/>
+            <span class="sp-save">−₪0</span>
+          </div>
+          <div class="sp-row">
+            <span class="sp-cat">מגע</span>
+            <span class="sp-base">—</span>
+            <input type="text" placeholder="—" disabled/>
+            <span class="sp-save">—</span>
+          </div>
+          <div class="sp-row">
+            <span class="sp-cat">אביזרים</span>
+            <span class="sp-base">—</span>
+            <input type="text" placeholder="—" disabled/>
+            <span class="sp-save">—</span>
+          </div>
+          <div class="sp-divider"></div>
+          <div class="sp-totals">
+            <span class="lbl">סכום-לפני-הנחות</span>
+            <span class="val">₪1,800</span>
+          </div>
+          <div class="sp-totals">
+            <span class="lbl">סך-הנחות (פר-קטגוריה)</span>
+            <span class="val" style="color:var(--teal);">−₪0</span>
+          </div>
+          <div class="sp-totals sp-final">
+            <span>סכום-סופי לתת-הזמנה A</span>
+            <span class="val">₪1,800</span>
+          </div>
+        </div>
+
+        <!-- sub-order timeline -->
+        <div class="sec-h">
+          <span class="label">לוח-זמנים של תת-הזמנה A</span>
+          <span>timestamp מלא נשמר · audit ←</span>
+        </div>
+        <div class="timeline">
+          <div class="tl-cell done"><div class="k">נוצרה</div><div class="v">18.03 14:22</div></div>
+          <div class="tl-cell done"><div class="k">נשלחה לספק</div><div class="v">18.03 14:30</div></div>
+          <div class="tl-cell active"><div class="k">בבית-מלאכה</div><div class="v">בהמתנה...</div></div>
+          <div class="tl-cell pending"><div class="k">מוכן</div><div class="v">—</div></div>
+          <div class="tl-cell pending"><div class="k">נמסר ללקוח</div><div class="v">—</div></div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT PANEL — comms on top + payment at bottom -->
+      <div class="panel">
+
+        <!-- comms area (scrollable) -->
+        <div class="panel-comms">
+
+          <!-- WhatsApp — free-text only. Status messages live in the central editor per sub-order. -->
+          <div class="panel-section">
+            <div class="h-row">
+              <h4>📱 הודעת-WhatsApp חופשית</h4>
+              <span class="mini">Green API</span>
+            </div>
+            <div class="lang-row">
+              <button class="lang-btn active">עברית</button>
+              <button class="lang-btn">Русский</button>
+              <button class="lang-btn">English</button>
+              <span class="auto-tag">auto משפת-הלקוח</span>
+            </div>
+            <textarea placeholder="טקסט-חופשי ללקוח (לא מתבסס על תבנית מאושרת)..."></textarea>
+            <div class="row-between" style="margin-top:4px;">
+              <span style="font-size:9px; color:var(--text-2);">הודעות-סטטוס ("תודה" / "מוכן" / "נשלח-למסגור") נמצאות בעורך-ההזמנה</span>
+              <button class="primary tiny">שלח →</button>
+            </div>
+          </div>
+
+          <!-- message history -->
+          <div class="panel-section">
+            <div class="h-row">
+              <h4>💬 היסטוריית הודעות (12)</h4>
+              <button class="ghost tiny">הצג הכל ←</button>
+            </div>
+            <div class="msg-card msg-out">
+              <div class="msg-meta"><span class="pill pill-purple">תזכורת</span><span>היום 14:30 · Ilya</span></div>
+              <div class="msg-body">"שלום דניאל, ההזמנה הוזמנה לבית-מלאכה. נעדכן ברגע שמוכן 🙏"</div>
+            </div>
+            <div class="msg-card msg-in">
+              <div class="msg-meta"><span>אתמול 19:42 · נכנסת</span></div>
+              <div class="msg-body">"מצוין תודה רבה! מתי בערך זה יהיה מוכן?"</div>
+            </div>
+            <div class="msg-card msg-out">
+              <div class="msg-meta"><span class="pill pill-teal">הכל מוכן</span><span>04.01 · Yossi · הזמנה 9201</span></div>
+              <div class="msg-body">"דניאל, עדשות-המגע הגיעו. אפשר לבוא לאסוף 🎉"</div>
+            </div>
+          </div>
+
+          <!-- tasks + notes -->
+          <div class="panel-section">
+            <div class="h-row">
+              <h4>⚑ משימות · 📝 הערות</h4>
+              <span class="mini">1 + 2</span>
+            </div>
+            <div class="task-card">
+              <div class="ttl">⚑ לוודא מחיר מסגרת מול SHALDAG</div>
+              <div class="meta">יעד: 19.03 · Yossi · קשור ל-A</div>
+            </div>
+            <div class="task-card">
+              <div class="ttl">📝 "רוצה להחליף עדשות-מגע ביום שישי"</div>
+              <div class="meta">Ilya · 14:25</div>
+            </div>
+          </div>
+
+          <!-- audit log -->
+          <div class="panel-section">
+            <div class="h-row">
+              <h4>🕓 יומן-פעולות</h4>
+              <button class="ghost tiny">הכל ←</button>
+            </div>
+            <div class="log">
+              <div><span class="ts">14:32</span> · <span class="actor">Ilya</span> שינה הנחת VIP ל-10%</div>
+              <div><span class="ts">14:30</span> · <span class="actor">Ilya</span> הוסיף עדשות-מולטיפוקל</div>
+              <div><span class="ts">14:28</span> · <span class="actor">Ilya</span> החיל הנחת קטגוריה 20%</div>
+              <div><span class="ts">14:25</span> · <span class="actor">Ilya</span> הוסיף מסגרת Cazal 1280</div>
+              <div><span class="ts">14:25</span> · <span class="actor">Ilya</span> קישר מרשם 10.10</div>
+              <div><span class="ts">14:22</span> · <span class="actor">Ilya</span> פתח תת-הזמנה A</div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- BOTTOM TOOLBAR -->
+    <div class="toolbar">
+      <div class="row" style="gap:4px;">
+        <button class="tiny">+ הזמנה לפי המרשם</button>
+        <button class="tiny">📋 רשימת לקוחות</button>
+      </div>
+      <div class="nav-arrows">
+        <button class="tiny">‹ הזמנה הקודמת של הלקוח</button>
+        <span>3 מתוך 3 הזמנות של הלקוח</span>
+        <button class="tiny" disabled>הזמנה הבאה ›</button>
+      </div>
+      <div class="row" style="gap:4px;">
+        <button class="tiny">📄 הצעת-מחיר 🖨</button>
+        <button class="tiny">📄 הזמנה+מרשם 🖨</button>
+        <button class="tiny">📄 טופס-מסירה (A) 🖨</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- legend -->
+  <div class="legend">
+    <strong>שינויים ב-v6 לעומת v4:</strong>
+    <ul>
+      <li><strong>4 סוגים בלבד</strong> במקום 5: מסגרת · עדשות · עדשות-מגע · אביזרים. הסוג "משקפיים" הוסר.</li>
+      <li><strong>"מסגרת" יכולה להכיל גם זוג-עדשות (אופציונלי).</strong> ההפרדה בין "מסגרת בלבד" ל-"מסגרת + עדשות" אינה סוג נפרד אלא תוצאה של מה שנוסף לתת-ההזמנה. זה משחרר תרחישי-יומיום (תיקון עדשה במסגרת קיימת, מסגרת היום + עדשות בעוד שבוע).</li>
+      <li><strong>"עדשות" כסוג נפרד</strong> — כשהלקוח מביא מסגרת קיימת ורוצה רק עדשות חדשות.</li>
+      <li><strong>תווית-תת-הזמנה ברכבת מימין משקפת את התוכן בפועל</strong> — "מסגרת+עדשות" כשיש שניהם, "מסגרת" כשרק היא, "עדשות" / "עדשות-מגע" / "אביזרים" לפי הסוג.</li>
+      <li><strong>תשלום עבר פיזית לפינה הימנית-תחתונה של המסך</strong>, מתחת לרכבת תת-ההזמנות. הטור-השמאלי מקבל את כל אזור-התקשורת (Whatsapp+הודעות+משימות+log).</li>
+      <li><strong>חלוקת המסך החדשה:</strong> ימין = תת-הזמנות (למעלה) + תשלום (למטה) · אמצע = עורך-ההזמנה · שמאל = תקשורת.</li>
+      <li><strong>הנחות פר-תת-הזמנה.</strong> כל תת-הזמנה מקבלת בלוק תמחור משלה: סכום-לפני, הנחות לפי 4 קטגוריות (מסגרת/עדשות/מגע/אביזרים) שחלות רק על אותה תת-הזמנה, וסכום-סופי. דוגמה: תת-הזמנה A יכולה לקבל 10% רק על העדשות, B יכולה לקבל 20% רק על המגע — בלי שיתערבבו.</li>
+      <li><strong>תשלום ימני-תחתון מציג אגרגציה:</strong> סכום-לפני-הנחות (מכל התת-הזמנות), שורה אחת לכל קטגוריה עם סך-ההנחה בשקלים שנצברה (אין input — קריאה-בלבד), ואז המשך רגיל (הנחות-כלליות, מע״מ, יתרה).</li>
+    </ul>
+
+    <strong style="display:block; margin-top:14px;">למה זה הפישוט הנכון:</strong>
+    <ul>
+      <li><strong>אין כפילות-קטגוריות בדוחות.</strong> מסגרות ועדשות נספרות בנפרד תמיד, כי כל פריט יושב בקטגוריה משלו ולא ב-"קטגוריה משולבת" כמו "משקפיים".</li>
+      <li><strong>גמישות לתרחישי-יומיום.</strong> תיקון, החלפת-עדשות, מסגרת-לבד, עדשות-לבד — כולם נופלים על אותה תת-הזמנה מסוג "מסגרת" או "עדשות".</li>
+      <li><strong>סטטוס-זרימה ברור.</strong> תת-הזמנה במעבדה = הכל בה במעבדה. אין קונפליקט-מצבים.</li>
+      <li><strong>הודעות לקוח טבעיות.</strong> "ההזמנה השנייה שלך מוכנה" עובד ללא קשר לתוכן הספציפי.</li>
+    </ul>
+  </div>
+
+</div>
+
+</body>
+</html>

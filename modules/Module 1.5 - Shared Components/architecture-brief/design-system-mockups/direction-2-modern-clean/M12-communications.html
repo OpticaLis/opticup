@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M12 — WhatsApp Inbox (Optic Up)</title>
+<style>
+  :root {
+
+
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Rubik', Arial, sans-serif;
+
+    margin: 0;
+    color: var(--text);
+    overflow: hidden;
+  }
+  .app-container {
+    display: grid;
+    grid-template-columns: 320px 1fr 340px;
+    height: 100vh;
+    background: var(--panel);
+    direction: rtl;
+  }
+
+  /* ---------- RIGHT PANEL: Conversation list ---------- */
+  .conv-list-panel {
+    border-left: 1px solid var(--border);
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .conv-list-header {
+    background: var(--header);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .conv-list-header .title {
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--text);
+  }
+  .conv-list-header .actions {
+    display: flex;
+    gap: 8px;
+  }
+  .conv-list-header .icon-btn {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+
+  .search-bar {
+    padding: 8px 12px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  .search-bar input {
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: var(--header);
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+  }
+
+  .filter-chips {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .chip {
+    padding: 5px 12px;
+    border-radius: 16px;
+    background: var(--header);
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    color: var(--text-muted);
+    border: 1px solid transparent;
+  }
+  .chip.active {
+
+    color: var(--whatsapp-dark);
+    border-color: var(--whatsapp);
+  }
+  .chip .count {
+    margin-right: 4px;
+    font-weight: 600;
+    color: inherit;
+  }
+
+  .conv-list {
+    flex: 1;
+    overflow-y: auto;
+  }
+  .conv-row {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+  .conv-row:hover { background: var(--hover); }
+  .conv-row.selected { background: var(--selected); }
+  .avatar {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600;
+    font-size: 18px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+
+
+  .conv-info {
+    min-width: 0;
+    overflow: hidden;
+  }
+  .conv-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+  }
+  .conv-name {
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .conv-time {
+    font-size: 12px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    margin-right: 8px;
+  }
+  .conv-time.unread { color: var(--whatsapp); font-weight: 600; }
+
+  .conv-bottom-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .conv-preview {
+    font-size: 14px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+  .conv-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .agent-tag {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid white;
+    box-shadow: 0 0 0 1px var(--border);
+  }
+
+
+  .agent-tag.unassigned {
+
+
+  }
+
+  .unread-badge {
+    background: var(--unread-badge);
+    color: var(--unread-text);
+    border-radius: 10px;
+    padding: 1px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    min-width: 20px;
+    text-align: center;
+  }
+  .status-pill {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+
+
+  /* ---------- CENTER PANEL: Active conversation thread ---------- */
+  .thread-panel {
+    background: var(--bg);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-opacity='0.04'%3E%3Cpath d='M0 0h50v50H0z' fill='%23000'/%3E%3Cpath d='M50 50h50v50H50z' fill='%23000'/%3E%3C/g%3E%3C/svg%3E");
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .thread-header {
+    background: var(--header);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    z-index: 5;
+  }
+  .thread-customer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+  }
+  .thread-customer .avatar {
+    width: 40px; height: 40px;
+    font-size: 16px;
+  }
+  .thread-customer-info { min-width: 0; }
+  .thread-customer-name {
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--text);
+  }
+  .thread-customer-status {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .thread-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .assign-picker {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .assign-picker:hover { background: var(--hover); }
+  .take-chat-btn {
+    background: var(--whatsapp);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .icon-btn-2 {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .icon-btn-2:hover { background: var(--hover); }
+
+  .thread-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .date-divider {
+    align-self: center;
+    background: white;
+    padding: 5px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 12px 0 8px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+
+  .system-msg {
+    align-self: center;
+    background: rgba(225, 245, 254, 0.8);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+
+    font-style: italic;
+  }
+
+  .bubble {
+    max-width: 65%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.08);
+    position: relative;
+  }
+  .bubble .meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    text-align: end;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 4px;
+  }
+
+
+  .bubble.theirs {
+    align-self: flex-start;
+    background: var(--bubble-theirs);
+    border-top-left-radius: 0;
+  }
+  .bubble.mine {
+    align-self: flex-end;
+    background: var(--bubble-mine);
+    border-top-right-radius: 0;
+  }
+  .bubble.mine .agent-line {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--whatsapp-dark);
+    margin-bottom: 4px;
+  }
+
+
+
+  .internal-note {
+    align-self: stretch;
+    margin: 4px 40px;
+    background: var(--note);
+    border: 1px solid var(--note-border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .internal-note .note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+    font-weight: 600;
+
+    font-size: 12px;
+  }
+  .internal-note .note-header .badge {
+
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    text-transform: uppercase;
+  }
+
+  /* ---------- AI suggestion strip (reserved, hidden in real build) ---------- */
+  .ai-strip {
+    background: var(--ai-strip);
+    border-top: 1px solid var(--ai-border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    border-bottom: 1px dashed var(--ai-border);
+  }
+  .ai-strip .ai-icon {
+    width: 28px; height: 28px;
+
+    color: white;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .ai-strip .ai-content {
+    flex: 1;
+
+  }
+  .ai-strip .ai-content .label {
+    font-size: 10px;
+    text-transform: uppercase;
+
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .ai-strip .ai-actions {
+    display: flex; gap: 6px;
+  }
+  .ai-btn {
+    background: white;
+
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+
+  }
+  .ai-btn.primary {
+
+    color: white;
+
+    font-weight: 500;
+  }
+  .ai-strip .future-tag {
+
+
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .composer {
+    background: var(--header);
+    padding: 10px 14px;
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .composer .icon-btn-2 { color: var(--text-muted); }
+  .composer-input-wrap {
+    flex: 1;
+    background: white;
+    border-radius: 8px;
+    padding: 9px 14px;
+    min-height: 42px;
+    display: flex; align-items: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    border: 1px solid transparent;
+  }
+  .composer-input-wrap:focus-within { border-color: var(--whatsapp); }
+  .send-btn {
+    width: 42px; height: 42px;
+    background: var(--whatsapp);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .composer-tabs {
+    display: flex;
+    background: var(--header);
+    border-top: 1px solid var(--border);
+    padding: 0 14px;
+  }
+  .composer-tab {
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+  .composer-tab.active {
+    color: var(--whatsapp-dark);
+    border-bottom-color: var(--whatsapp);
+    font-weight: 500;
+  }
+
+  /* ---------- LEFT PANEL: Customer context ---------- */
+  .customer-panel {
+    border-right: 1px solid var(--border);
+    background: var(--panel);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .customer-panel-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .customer-panel-header .title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+  }
+  .customer-panel-header .close {
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 18px;
+  }
+
+  .customer-card {
+    padding: 20px 16px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .customer-card .avatar {
+    width: 80px; height: 80px;
+    margin: 0 auto 12px;
+    font-size: 28px;
+  }
+  .customer-card .name {
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .customer-card .phone {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    direction: ltr;
+  }
+  .customer-card .badges {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .badge-tag {
+
+
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+
+
+  .panel-section {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-section h4 {
+    margin: 0 0 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .info-row .label { color: var(--text-muted); }
+  .info-row .value { color: var(--text); font-weight: 500; }
+
+  .recent-orders {
+    list-style: none;
+    margin: 0; padding: 0;
+  }
+  .order-item {
+    padding: 8px 10px;
+    background: var(--hover);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .order-item .order-top {
+    display: flex; justify-content: space-between;
+    margin-bottom: 3px;
+    font-weight: 500;
+  }
+  .order-item .order-bottom {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .consent-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .consent-cell {
+    padding: 8px 4px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    text-align: center;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .consent-cell.granted {
+
+
+    font-weight: 500;
+  }
+  .consent-cell.denied {
+
+
+  }
+  .consent-cell .channel-name {
+    display: block;
+    margin-bottom: 2px;
+    font-weight: 600;
+  }
+
+  .open-in-crm-btn {
+    background: white;
+    border: 1px solid var(--whatsapp);
+    color: var(--whatsapp-dark);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    width: 100%;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+
+
+  /* ---------- Annotations ---------- */
+  .annotation {
+    position: fixed;
+
+
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 11px;
+
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 999;
+    max-width: 220px;
+    line-height: 1.4;
+  }
+  .annotation::before {
+    content: "💡 ";
+  }
+</style>
+<link rel="stylesheet" href="../../../../../shared/css/variables.css">
+<link rel="stylesheet" href="../../../../../shared/css/layout.css">
+<link rel="stylesheet" href="../../../../../shared/css/components.css">
+<link rel="stylesheet" href="../../../../../shared/css/components-extra.css">
+<link rel="stylesheet" href="../../../../../shared/css/forms.css">
+<link rel="stylesheet" href="../../../../../shared/css/modal.css">
+<link rel="stylesheet" href="../../../../../shared/css/toast.css">
+<link rel="stylesheet" href="../../../../../shared/css/table.css">
+<link rel="stylesheet" href="./_tokens.css">
+</head>
+<body>
+<div style="background:var(--color-surface-alt); border-bottom:1px solid var(--color-border); padding:10px 20px; font-size:0.9rem; font-weight:600; color:var(--color-text-muted); text-align:center;">DESIGN MOCKUP — Direction 2: Modern-clean · M12-communications (mockup-sourced)</div>
+
+<div class="app-container">
+
+  <!-- ============ RIGHT PANEL: Conversation List ============ -->
+  <aside class="conv-list-panel">
+    <div class="conv-list-header">
+      <div class="title">📨 שיחות WhatsApp</div>
+      <div class="actions">
+        <button class="icon-btn" title="שיחה חדשה">✏️</button>
+        <button class="icon-btn" title="הגדרות">⚙️</button>
+      </div>
+    </div>
+
+    <div class="search-bar">
+      <input type="text" placeholder="🔍 חיפוש שיחה או לקוח...">
+    </div>
+
+    <div class="filter-chips">
+      <div class="chip active">הכל <span class="count">47</span></div>
+      <div class="chip">שלי <span class="count">8</span></div>
+      <div class="chip">לא משויך <span class="count">12</span></div>
+      <div class="chip">פתוחות <span class="count">23</span></div>
+      <div class="chip">סגורות</div>
+    </div>
+
+    <div class="conv-list">
+
+      <div class="conv-row selected">
+        <div class="avatar">רל</div>
+        <div class="conv-info">
+          <div class="conv-top-row">
+            <div class="conv-name">רחל לוי</div>
+            <div class="conv-time unread">כעת</div>
+          </div>
+          <div class="conv-bottom-row">
+            <div class="conv-preview">תודה רבה! מתי אני יכולה לבוא?</div>
+            <div class="conv-meta">
+              <div class="agent-tag daniel">ד</div>
+              <div class="unread-badge">2</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="conv-row">
+        <div class="avatar alt-1">מכ</div>
+        <div class="conv-info">
+          <div class="conv-top-row">
+            <div class="conv-name">משה כהן</div>
+            <div class="conv-time">14:32</div>
+          </div>
+          <div class="conv-bottom-row">
+            <div class="conv-preview">המשקפיים מוכנים לאיסוף ✓✓</div>
+            <div class="conv-meta">
+              <div class="agent-tag yael">י</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="conv-row">
+        <div class="avatar alt-2">שב</div>
+        <div class="conv-info">
+          <div class="conv-top-row">
+            <div class="conv-name">שרה בן-דוד</div>
+            <div class="conv-time unread">13:48</div>
+          </div>
+          <div class="conv-bottom-row">
+            <div class="conv-preview">היי, יש לכם משקפי שמש Ray-Ban?</div>
+            <div class="conv-meta">
+              <div class="agent-tag unassigned">?</div>
+              <div class="unread-badge">5</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="conv-row">
+        <div class="avatar alt-3">דכ</div>
+        <div class="conv-info">
+          <div class="conv-top-row">
+            <div class="conv-name">דוד כץ</div>
+            <div class="conv-time">12:15</div>
+          </div>
+          <div class="conv-bottom-row">
+            <div class="conv-preview">אני: שלום דוד, התור שלך מחר ב-10:00</div>
+            <div class="conv-meta">
+              <div class="agent-tag moshe">מ</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="conv-row">
+        <div class="avatar alt-4">אג</div>
+        <div class="conv-info">
+          <div class="conv-top-row">
+            <div class="conv-name">אסתר גולדברג</div>
+            <div class="conv-time">10:30</div>
+          </div>
+          <div class="conv-bottom-row">
+            <div class="conv-preview">📷 [תמונה]</div>
+            <div class="conv-meta">
+              <div class="agent-tag daniel">ד</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="conv-row">
+        <div class="avatar">יפ</div>
+        <div class="conv-info">
+          <div class="conv-top-row">
+            <div class="conv-name">יוסי פרידמן</div>
+            <div class="conv-time">09:42</div>
+          </div>
+          <div class="conv-bottom-row">
+            <div class="conv-preview">אני: תודה רבה! נתראה ✓✓</div>
+            <div class="conv-meta">
+              <div class="agent-tag yael">י</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="conv-row">
+        <div class="avatar alt-1">מל</div>
+        <div class="conv-info">
+          <div class="conv-top-row">
+            <div class="conv-name">מירי לוין</div>
+            <div class="conv-time">אתמול</div>
+          </div>
+          <div class="conv-bottom-row">
+            <div class="conv-preview">איך מגיעים אליכם?</div>
+            <div class="conv-meta">
+              <div class="agent-tag unassigned">?</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="conv-row">
+        <div class="avatar alt-2">בש</div>
+        <div class="conv-info">
+          <div class="conv-top-row">
+            <div class="conv-name">בני שמואלי</div>
+            <div class="conv-time">אתמול</div>
+          </div>
+          <div class="conv-bottom-row">
+            <div class="conv-preview">אני: ההזמנה שלך הגיעה למעבדה ✓✓</div>
+            <div class="conv-meta">
+              <div class="agent-tag moshe">מ</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ============ CENTER PANEL: Active Thread ============ -->
+  <main class="thread-panel">
+
+    <div class="thread-header">
+      <div class="thread-customer">
+        <div class="avatar">רל</div>
+        <div class="thread-customer-info">
+          <div class="thread-customer-name">רחל לוי</div>
+          <div class="thread-customer-status">📱 053-1234567 · פעילה כעת</div>
+        </div>
+      </div>
+      <div class="thread-actions">
+        <button class="take-chat-btn">🤝 קח שיחה</button>
+        <div class="assign-picker">
+          <span class="agent-tag daniel" style="width: 22px; height: 22px;">ד</span>
+          <span>דניאל</span>
+          <span style="color: var(--text-muted);">▼</span>
+        </div>
+        <button class="icon-btn-2" title="חיפוש בשיחה">🔍</button>
+        <button class="icon-btn-2" title="עוד">⋮</button>
+      </div>
+    </div>
+
+    <div class="thread-messages">
+      <div class="date-divider">היום</div>
+
+      <div class="bubble theirs">
+        היי, אני שמעתי שיש לכם מבצע על משקפי-שמש. אפשר לקבל פרטים?
+        <div class="meta">10:23</div>
+      </div>
+
+      <div class="bubble mine">
+        <div class="agent-line daniel">דניאל (אתה)</div>
+        בוקר טוב רחל! 😊<br>
+        כן, יש לנו מבצע מיוחד על Ray-Ban — 30% הנחה כל החודש. רוצה שאשלח לך את הקטלוג?
+        <div class="meta">10:25 <span class="checkmark">✓✓</span></div>
+      </div>
+
+      <div class="bubble theirs">
+        כן בבקשה!
+        <div class="meta">10:26</div>
+      </div>
+
+      <div class="bubble mine">
+        <div class="agent-line daniel">דניאל (אתה)</div>
+        📎 קטלוג Ray-Ban קיץ 2026.pdf<br>
+        <div class="meta">10:27 <span class="checkmark">✓✓</span></div>
+      </div>
+
+      <div class="internal-note">
+        <div class="note-header">
+          <span>📝 הערה פנימית — יעל</span>
+          <span class="badge">לקוחה ותיקה</span>
+        </div>
+        רחל קנתה אצלנו פעמיים בשנה האחרונה. אוהבת מסגרות aviator. לקוחה VIP — לתת יחס.
+      </div>
+
+      <div class="bubble theirs">
+        מצאתי דגם שאני אוהבת — RB3025 בצבע זהב. תודה רבה! מתי אני יכולה לבוא?
+        <div class="meta">14:48</div>
+      </div>
+
+    </div>
+
+    <!-- AI suggestion strip (reserved for future, hidden in production by feature flag) -->
+    <div class="ai-strip">
+      <div class="ai-icon">AI</div>
+      <div class="ai-content">
+        <div class="label">הצעת תשובה <span class="future-tag">פיצ'ר עתידי — לא ביום-1</span></div>
+        <div>"בוקר טוב רחל! 😊 אנחנו פתוחים היום עד 19:00. אם נוח לך, את מוזמנת לבוא בכל שעה — ה-RB3025 במלאי. רוצה שאשמור לך?"</div>
+      </div>
+      <div class="ai-actions">
+        <button class="ai-btn primary">קבל ✓</button>
+        <button class="ai-btn">ערוך</button>
+        <button class="ai-btn">דחה</button>
+      </div>
+    </div>
+
+    <div class="composer-tabs">
+      <div class="composer-tab active">💬 הודעה ללקוח</div>
+      <div class="composer-tab">📝 הערה פנימית</div>
+    </div>
+
+    <div class="composer">
+      <button class="icon-btn-2" title="קבצים">📎</button>
+      <button class="icon-btn-2" title="תבניות">/ </button>
+      <button class="icon-btn-2" title="אמוג'י">😊</button>
+      <div class="composer-input-wrap">הקלידו הודעה או / לתבניות מהירות...</div>
+      <button class="send-btn">➤</button>
+    </div>
+
+  </main>
+
+  <!-- ============ LEFT PANEL: Customer Context ============ -->
+  <aside class="customer-panel">
+
+    <div class="customer-panel-header">
+      <div class="title">פרטי לקוחה</div>
+      <div class="close">✕</div>
+    </div>
+
+    <div class="customer-card">
+      <div class="avatar">רל</div>
+      <div class="name">רחל לוי</div>
+      <div class="phone">+972 53-1234567</div>
+      <div class="badges">
+        <span class="badge-tag vip">⭐ VIP</span>
+        <span class="badge-tag member">חברת מועדון</span>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h4>פרטי קשר</h4>
+      <div class="info-row">
+        <span class="label">דוא"ל:</span>
+        <span class="value">rachel.l@gmail.com</span>
+      </div>
+      <div class="info-row">
+        <span class="label">יום הולדת:</span>
+        <span class="value">15.06</span>
+      </div>
+      <div class="info-row">
+        <span class="label">קופת חולים:</span>
+        <span class="value">מכבי</span>
+      </div>
+      <div class="info-row">
+        <span class="label">שפה מועדפת:</span>
+        <span class="value">עברית</span>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h4>הסכמות תקשורת</h4>
+      <div class="consent-grid">
+        <div class="consent-cell granted">
+          <span class="channel-name">WhatsApp</span>
+          <span>✓ אישרה</span>
+        </div>
+        <div class="consent-cell granted">
+          <span class="channel-name">SMS</span>
+          <span>✓ אישרה</span>
+        </div>
+        <div class="consent-cell denied">
+          <span class="channel-name">Email</span>
+          <span>✗ סירבה</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h4>מועדון חברים</h4>
+      <div class="info-row">
+        <span class="label">סטטוס:</span>
+        <span class="value">🥇 זהב</span>
+      </div>
+      <div class="info-row">
+        <span class="label">יתרת זיכוי:</span>
+        <span class="value">₪245</span>
+      </div>
+      <div class="info-row">
+        <span class="label">ותק:</span>
+        <span class="value">3 שנים</span>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h4>הזמנות אחרונות</h4>
+      <ul class="recent-orders">
+        <li class="order-item">
+          <div class="order-top">
+            <span>הזמנה #2418</span>
+            <span >✓ נמסרה</span>
+          </div>
+          <div class="order-bottom">משקפי ראייה Persol · ₪1,890 · 23.03.26</div>
+        </li>
+        <li class="order-item">
+          <div class="order-top">
+            <span>הזמנה #2156</span>
+            <span >✓ נמסרה</span>
+          </div>
+          <div class="order-bottom">עדשות מגע יומיות · ₪520 · 14.01.26</div>
+        </li>
+        <li class="order-item">
+          <div class="order-top">
+            <span>הזמנה #1987</span>
+            <span >✓ נמסרה</span>
+          </div>
+          <div class="order-bottom">משקפי שמש Ray-Ban · ₪1,450 · 08.07.25</div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="panel-section">
+      <h4>בדיקות עיניים</h4>
+      <div class="info-row">
+        <span class="label">בדיקה אחרונה:</span>
+        <span class="value">23.03.26</span>
+      </div>
+      <div class="info-row">
+        <span class="label">תוקף עדיין:</span>
+        <span class="value" >✓ עד 23.03.27</span>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <button class="open-in-crm-btn">🔗 פתח כרטיס מלא ב-CRM</button>
+    </div>
+
+  </aside>
+
+</div>
+
+</body>
+</html>

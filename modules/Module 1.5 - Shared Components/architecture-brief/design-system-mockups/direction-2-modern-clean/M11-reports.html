@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M11 — מסך-ראשי · רשימת דוחות לפי קטגוריה</title>
+<style>
+  :root{
+
+    --border:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
+
+
+    --r-md:6px; --r-lg:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;font-family:-apple-system,'Segoe UI',Rubik,sans-serif;
+    background:var(--bg);color:var(--text);font-size:12px;line-height:1.4;direction:rtl;
+  }
+  .page{max-width:1640px;margin:0 auto;padding:18px;}
+  h1{font-size:18px;font-weight:500;margin:0 0 4px;}
+  .lede{color:var(--text-2);margin:0 0 14px;font-size:12px;}
+
+  .top-bar{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:12px 16px;margin-bottom:14px;
+  }
+  .search-box{flex:1;display:flex;align-items:center;gap:8px;background:var(--soft);
+    border:1px solid var(--border);border-radius:var(--r-md);padding:8px 12px;}
+  .search-box input{flex:1;border:none;background:transparent;font-size:12px;outline:none;direction:rtl;}
+  .search-box .ico{color:var(--text-3);}
+
+  .actions-row{display:flex;gap:8px;}
+  .btn{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+    padding:8px 14px;font-size:12px;cursor:pointer;color:var(--text);
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .btn:hover{border-color:var(--border-strong);}
+
+  .btn.primary:hover{background:var(--purple-deep);}
+
+  /* Layout */
+  .layout{display:grid;grid-template-columns:240px 1fr;gap:16px;}
+
+  /* Left sidebar - categories */
+  .sidebar{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px;height:fit-content;
+  }
+  .sidebar h3{font-size:11px;font-weight:600;margin:0 0 10px;color:var(--text-2);
+    text-transform:uppercase;letter-spacing:0.4px;}
+  .cat-list{list-style:none;padding:0;margin:0;}
+  .cat-list li{
+    padding:8px 10px;border-radius:var(--r-md);cursor:pointer;
+    display:flex;align-items:center;justify-content:space-between;font-size:12px;
+    margin-bottom:2px;
+  }
+  .cat-list li:hover{background:var(--soft);}
+  .cat-list li.active{background:var(--purple-soft);color:var(--purple-deep);font-weight:500;}
+  .cat-list li .count{
+    background:var(--soft);color:var(--text-2);border-radius:10px;
+    padding:1px 8px;font-size:10.5px;font-weight:500;
+  }
+
+
+  .sidebar-divider{height:1px;background:var(--border);margin:12px -14px 12px;}
+
+  .sidebar-tools{display:flex;flex-direction:column;gap:6px;}
+  .sidebar-tools button{
+    text-align:start;background:transparent;border:none;padding:6px 8px;
+    border-radius:var(--r-md);cursor:pointer;font-size:11.5px;color:var(--text-2);
+    display:flex;align-items:center;gap:6px;
+  }
+  .sidebar-tools button:hover{background:var(--soft);color:var(--text);}
+
+  /* Main area */
+  .main{display:flex;flex-direction:column;gap:14px;}
+
+  .cat-header{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px 18px;display:flex;align-items:center;justify-content:space-between;
+  }
+  .cat-header h2{font-size:15px;font-weight:500;margin:0;display:flex;align-items:center;gap:8px;}
+  .cat-header h2 .ico{font-size:18px;}
+  .cat-header .desc{color:var(--text-2);font-size:11.5px;margin-top:3px;}
+
+  .filter-bar{
+    display:flex;gap:8px;align-items:center;background:var(--surface);
+    border:1px solid var(--border);border-radius:var(--r-lg);padding:10px 14px;
+  }
+  .chip{
+    padding:5px 10px;border-radius:14px;background:var(--soft);font-size:11px;cursor:pointer;
+    border:1px solid transparent;
+  }
+  .chip:hover{border-color:var(--border);}
+  .chip.active{background:var(--purple-soft);color:var(--purple-deep);border-color:var(--purple);}
+
+  /* Reports grid */
+  .reports-grid{
+    display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:12px;
+  }
+  .report-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px;cursor:pointer;display:flex;flex-direction:column;gap:8px;position:relative;
+    min-height:130px;
+  }
+  .report-card:hover{border-color:var(--purple);box-shadow:0 2px 8px rgba(83,74,183,0.08);}
+  .report-card .head{display:flex;align-items:flex-start;justify-content:space-between;}
+  .report-card .name{font-size:13px;font-weight:500;}
+  .report-card .badge{
+    font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;
+  }
+  .badge.system{background:var(--gray-soft);color:var(--text-2);}
+  .badge.tenant{background:var(--teal-soft);color:var(--teal-deep);}
+  .badge.private{background:var(--amber-soft);color:var(--amber-deep);}
+  .badge.modified{background:var(--blue-soft);color:var(--blue-deep);}
+
+  .report-card .desc{font-size:11px;color:var(--text-2);line-height:1.45;flex:1;}
+  .report-card .meta{
+    display:flex;align-items:center;gap:10px;font-size:10.5px;color:var(--text-3);
+    border-top:1px dashed var(--border);padding-top:7px;
+  }
+  .report-card .meta .item{display:inline-flex;align-items:center;gap:3px;}
+  .report-card .menu{
+    position:absolute;top:10px;left:10px;width:24px;height:24px;border-radius:4px;
+    display:flex;align-items:center;justify-content:center;color:var(--text-3);
+  }
+  .report-card .menu:hover{background:var(--soft);}
+
+  .new-report-card{
+    background:var(--purple-soft);border:2px dashed var(--purple);
+    display:flex;align-items:center;justify-content:center;flex-direction:column;
+    color:var(--purple-deep);text-align:center;padding:14px;cursor:pointer;
+    border-radius:var(--r-lg);min-height:130px;
+  }
+  .new-report-card .plus{font-size:28px;line-height:1;margin-bottom:6px;}
+  .new-report-card .label{font-size:12.5px;font-weight:500;}
+  .new-report-card .sub{font-size:10.5px;margin-top:3px;color:var(--purple);}
+
+  /* Notes panel */
+  .notes{
+    background:var(--blue-soft);border:1px solid var(--blue);border-radius:var(--r-lg);
+    padding:12px 16px;margin-top:14px;color:var(--blue-deep);font-size:11.5px;
+  }
+  .notes h4{margin:0 0 6px;font-size:12.5px;font-weight:600;}
+  .notes ul{margin:0;padding-inline-start:18px;}
+  .notes li{margin:3px 0;}
+</style>
+<link rel="stylesheet" href="../../../../../shared/css/variables.css">
+<link rel="stylesheet" href="../../../../../shared/css/layout.css">
+<link rel="stylesheet" href="../../../../../shared/css/components.css">
+<link rel="stylesheet" href="../../../../../shared/css/components-extra.css">
+<link rel="stylesheet" href="../../../../../shared/css/forms.css">
+<link rel="stylesheet" href="../../../../../shared/css/modal.css">
+<link rel="stylesheet" href="../../../../../shared/css/toast.css">
+<link rel="stylesheet" href="../../../../../shared/css/table.css">
+<link rel="stylesheet" href="./_tokens.css">
+</head>
+<body>
+<div style="background:var(--color-surface-alt); border-bottom:1px solid var(--color-border); padding:10px 20px; font-size:0.9rem; font-weight:600; color:var(--color-text-muted); text-align:center;">DESIGN MOCKUP — Direction 2: Modern-clean · M11-reports (mockup-sourced)</div>
+<div class="page">
+  <h1>M11 · מסך-ראשי — רשימת דוחות</h1>
+  <p class="lede">דרך הכניסה הראשית למודול הדוחות. ניווט-לפי-קטגוריה, חיפוש-חופשי, יצירת-דוח-חדש, ועריכת דוחות קיימים.</p>
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div class="search-box">
+      <span class="ico">🔍</span>
+      <input type="text" placeholder="חיפוש לפי שם דוח, תיאור או עמודה...">
+    </div>
+    <div class="actions-row">
+      <button class="btn">⚙️ ניהול קטגוריות</button>
+      <button class="btn">🔐 הרשאות דוחות</button>
+      <button class="btn primary">+ דוח חדש</button>
+    </div>
+  </div>
+
+  <!-- Main 2-column layout -->
+  <div class="layout">
+
+    <!-- Left sidebar -->
+    <aside class="sidebar">
+      <h3>קטגוריות</h3>
+      <ul class="cat-list">
+        <li><span>📊 כל הדוחות</span><span class="count">28</span></li>
+        <li class="active"><span>💰 מכירות וכספים</span><span class="count">8</span></li>
+        <li><span>👥 לקוחות ו-LTV</span><span class="count">5</span></li>
+        <li><span>📦 מלאי</span><span class="count">4</span></li>
+        <li><span>🔬 מעבדה</span><span class="count">3</span></li>
+        <li><span>📞 CRM ולידים</span><span class="count">3</span></li>
+        <li><span>👁 בדיקות-ראייה ו-Recall</span><span class="count">3</span></li>
+        <li><span>🎁 מועדון חברים</span><span class="count">2</span></li>
+      </ul>
+
+      <div class="sidebar-divider"></div>
+
+      <h3>תצוגות מהירות</h3>
+      <div class="sidebar-tools">
+        <button>⭐ דוחות מועדפים</button>
+        <button>🕐 שימוש לאחרונה</button>
+        <button>👁 דוחות פרטיים שלי</button>
+        <button>📂 דוחות שיצרתי</button>
+      </div>
+    </aside>
+
+    <!-- Main area -->
+    <div class="main">
+
+      <!-- Category header -->
+      <div class="cat-header">
+        <div>
+          <h2><span class="ico">💰</span>מכירות וכספים</h2>
+          <div class="desc">דוחות תפעוליים יומיים, חודשיים ושנתיים — מבוססים על נתוני M7 (הזמנות) ו-M8 (תשלומים).</div>
+        </div>
+        <button class="btn">📤 ייצוא קטגוריה (PDF)</button>
+      </div>
+
+      <!-- Filter chips -->
+      <div class="filter-bar">
+        <span style="color:var(--text-2); font-size:11px;">סינון:</span>
+        <span class="chip active">הכל</span>
+        <span class="chip">מקורי-מערכת</span>
+        <span class="chip">ערוך-טננט</span>
+        <span class="chip">חדש-טננט</span>
+        <span class="chip">פרטי שלי</span>
+      </div>
+
+      <!-- Reports grid -->
+      <div class="reports-grid">
+
+        <!-- System default -->
+        <div class="report-card">
+          <div class="menu">⋯</div>
+          <div class="head">
+            <div class="name">סוף-יום-קופה</div>
+            <span class="badge system">מערכת</span>
+          </div>
+          <div class="desc">פדיון יומי לפי ערוץ-סליקה (אשראי/מזומן/העברה/ביט/צ'ק/ירד-ממשכורת). כולל סיכום וקופה-בקופה.</div>
+          <div class="meta">
+            <span class="item">📊 12 עמודות</span>
+            <span class="item">🕐 פתחתי לפני 3 שעות</span>
+          </div>
+        </div>
+
+        <!-- System default -->
+        <div class="report-card">
+          <div class="menu">⋯</div>
+          <div class="head">
+            <div class="name">מכירות חודשי</div>
+            <span class="badge system">מערכת</span>
+          </div>
+          <div class="desc">סיכום חודשי לרואה-חשבון: הכנסות, ניכויים, קבלות שניתנו, פילוח-מע"מ.</div>
+          <div class="meta">
+            <span class="item">📊 9 עמודות</span>
+            <span class="item">⭐ מועדף</span>
+          </div>
+        </div>
+
+        <!-- Tenant-modified -->
+        <div class="report-card">
+          <div class="menu">⋯</div>
+          <div class="head">
+            <div class="name">ירד-ממשכורת חודשי</div>
+            <span class="badge modified">ערוך-טננט</span>
+          </div>
+          <div class="desc">תשלומי-עובדים שמחכים לחיוב-משכורת. כולל ✓ נוכה לסימון קבוצתי.</div>
+          <div class="meta">
+            <span class="item">✏️ ערוך</span>
+            <span class="item">📊 7 עמודות</span>
+          </div>
+        </div>
+
+        <!-- System default -->
+        <div class="report-card">
+          <div class="menu">⋯</div>
+          <div class="head">
+            <div class="name">מכירות שנתי</div>
+            <span class="badge system">מערכת</span>
+          </div>
+          <div class="desc">סיכום שנתי לרואה-חשבון. פילוח-חודשי-בתוך-שנה, השוואה שנה-קודמת.</div>
+          <div class="meta">
+            <span class="item">📊 14 עמודות</span>
+            <span class="item">📥 ייצוא PDF</span>
+          </div>
+        </div>
+
+        <!-- Tenant-new -->
+        <div class="report-card">
+          <div class="menu">⋯</div>
+          <div class="head">
+            <div class="name">פילוח קופ"ח להחזרים</div>
+            <span class="badge tenant">חדש-טננט</span>
+          </div>
+          <div class="desc">סיכום-קופ"ח (לאומית/מכבי/כללית/מאוחדת) — הכנסה ברוטו, החזרים, נטו.</div>
+          <div class="meta">
+            <span class="item">📊 6 עמודות</span>
+            <span class="item">👤 יוצר: אופיר</span>
+          </div>
+        </div>
+
+        <!-- Private -->
+        <div class="report-card">
+          <div class="menu">⋯</div>
+          <div class="head">
+            <div class="name">בונוסים — ניסוי</div>
+            <span class="badge private">פרטי</span>
+          </div>
+          <div class="desc">חישוב-ניסיון של עמלות-מכירה לאופטומטריסטים. לא מוצג לאחרים.</div>
+          <div class="meta">
+            <span class="item">🔒 פרטי</span>
+            <span class="item">📊 5 עמודות</span>
+          </div>
+        </div>
+
+        <!-- System default -->
+        <div class="report-card">
+          <div class="menu">⋯</div>
+          <div class="head">
+            <div class="name">פילוח לפי אופטומטריסט</div>
+            <span class="badge system">מערכת</span>
+          </div>
+          <div class="desc">מי מכר כמה — סיכום הכנסות, מספר-הזמנות, סוג-מוצרים, ממוצע-עסקה.</div>
+          <div class="meta">
+            <span class="item">📊 8 עמודות</span>
+          </div>
+        </div>
+
+        <!-- Add new -->
+        <div class="new-report-card">
+          <div class="plus">+</div>
+          <div class="label">דוח חדש בקטגוריה</div>
+          <div class="sub">בנה מאפס או העתק מדוח קיים</div>
+        </div>
+
+      </div>
+
+      <!-- Notes -->
+      <div class="notes">
+        <h4>📌 הסבר על סוגי-דוחות בעמוד</h4>
+        <ul>
+          <li><strong>מערכת:</strong> דוח שנשלח עם הפלטפורמה. ניתן לערוך — עריכה יוצרת עותק-טננט. כפתור "החזר ל-default" מבטל את העותק.</li>
+          <li><strong>ערוך-טננט:</strong> דוח-מערכת שטננט-זה ערך. מסתיר את ה-default המקורי ברשימה.</li>
+          <li><strong>חדש-טננט:</strong> דוח שנוצר מאפס בטננט הזה — לא קיים בפלטפורמה.</li>
+          <li><strong>פרטי:</strong> דוח-טננט שמסומן "פרטי שלי" — רק היוצר רואה אותו.</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>
