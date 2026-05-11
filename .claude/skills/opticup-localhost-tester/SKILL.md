@@ -197,3 +197,37 @@ Otherwise leave snapshots alone.
 *Skill version: v1 (created 2026-05-10).*
 *Self-improvement: lessons from running the chain accumulate in
 DECISIONS_LOG.md; baseline.test.mjs grows with v2/v3 as M5/M7 ship.*
+
+---
+
+## Pipeline Hand-off
+
+This section governs how `opticup-localhost-tester` hands off to the next skill in the Full-Auto Pipeline (see `modules/Module 1.5 - Shared Components/docs/specs/M1_5_FULL_AUTO_PIPELINE/SPEC.md`).
+
+Triggered when the dispatch line includes **"Pipeline mode: full-auto"**.
+
+1. Start local servers via `scripts/start-local.ps1` (ERP :3000 + Storefront :4321) if not already up. Health-check within 30s.
+2. Run `npm run smoke` (`tests/smoke/baseline.test.mjs`) on demo tenant.
+3. Write `TEST_REPORT.md` inside the SPEC folder (mandatory deliverable, even on success). Include verdict (`7/7 PASS`, `6/7 PASS`, etc.), per-test result, any console errors observed.
+4. Commit + push (`chore(spec): {SLUG} smoke test report`).
+5. Hand off to the Foreman for closure in the SAME chat:
+   ```
+   Skill: opticup-strategic
+   ```
+   Dispatch line: `Close SPEC modules/Module N/docs/specs/{SLUG}/ — Pipeline mode: full-auto. Return to opticup-strategic for FOREMAN_REVIEW. All reports written: EXECUTION_REPORT, FINDINGS, TEST_REPORT.`
+6. Emit the Hebrew status line.
+7. Do NOT continue running Localhost-Tester work after hand-off. The Foreman owns the closure phase.
+
+### Retry policy
+
+If `Skill: opticup-strategic` fails to load: retry ONCE. On second failure, write an escalation to `modules/Module N/escalations/{ISO_TS}_skill-load-failure.md` and emit the standard Hebrew escalation line. If `npm run smoke` fails: retry ONCE (some flakiness around server warm-up is known); on second failure, set TEST_REPORT verdict to FAIL, write FINDINGS entry, escalate.
+
+### Status Line (Hebrew, single line, per phase)
+
+The Localhost-Tester emits ONE Hebrew status line at end of its phase. ≤ 60 chars. Examples:
+
+- `✓ Smoke 7/7 PASS ({SLUG}).`
+- `⚠️ Smoke 6/7 PASS — {test_name} נכשל, ראה TEST_REPORT.`
+- `🛑 Smoke {N}/7 — escalation: {path}`
+
+This is the only chat output the Localhost-Tester emits between phases under full-auto mode.

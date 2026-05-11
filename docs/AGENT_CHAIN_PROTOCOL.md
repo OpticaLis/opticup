@@ -133,3 +133,21 @@ through all 5 agents.
 
 Older SPECs (pre-2026-05-10) closed without a TEST_REPORT.md are
 grandfathered — they remain valid and do not need retroactive testing.
+
+## Full-Auto Mode (added 2026-05-11)
+
+Source SPEC: `modules/Module 1.5 - Shared Components/docs/specs/M1_5_FULL_AUTO_PIPELINE/SPEC.md`.
+
+Under Full-Auto Mode the 5 phases above run inside **one Claude Code chat**, not five. Skills chain to each other via the `Skill:` invocation at end of phase. Daniel pastes ONE activation prompt; the chat emits ONE Hebrew status line per phase boundary and ONE closing line at end of FOREMAN_REVIEW.
+
+**Activation:** the literal phrase `Pipeline mode: full-auto` in the activation prompt or hand-off dispatch enters full-auto mode. Each skill's own SKILL.md `## Pipeline Hand-off` section defines its exit chain:
+
+- `opticup-strategic` (authoring phase) → loads `opticup-executor`
+- `opticup-executor` → loads `opticup-reviewer`
+- `opticup-reviewer` → loads `opticup-localhost-tester`
+- `opticup-localhost-tester` → loads `opticup-strategic` (closure phase)
+- `opticup-strategic` (closure phase) → no further hand-off; emits Hebrew closing line
+
+**Escalation:** any phase that cannot proceed writes `modules/Module N/escalations/{ISO_TS}_{TOPIC}.md` using the template at `modules/Module 1.5 - Shared Components/escalations/_TEMPLATE.md` and emits ONE Hebrew escalation line to Daniel. Daniel opens Cowork, Architect responds with an "Architect Decision" block, Daniel pastes it back into the SAME chat, and the paused skill resumes.
+
+**Enforced by:** Iron Rule 32 (`scripts/checks/destructive-ops-declared.mjs`) — every SPEC.md must declare its destructive ops; staged commits cannot introduce undeclared destructive patterns.
