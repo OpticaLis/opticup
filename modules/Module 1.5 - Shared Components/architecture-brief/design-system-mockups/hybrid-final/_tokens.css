@@ -3,7 +3,7 @@
    Stripe (B) structural foundation (hero + metrics + content cards +
    pills + role tiles) wearing Linear (A) sidebar navigation, in Navy
    #1e3a8a. Sans-only typography (Inter + Heebo). Tight 14px base for
-   table density per Linear (A). No violet, no serif, no topbar.
+   table density per Linear (A). Sidebar replaces the v2-B top nav.
    Light mode only.
    ===================================================================== */
 
@@ -223,7 +223,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 
 /* =====================================================================
-   Hero (Stripe-B pattern — softened with Navy tint, no gradient violet)
+   Hero (Stripe-B pattern — softened with Navy tint, solid Navy only)
    ===================================================================== */
 .hero {
   background: var(--accent-soft);

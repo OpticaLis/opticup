@@ -1,5 +1,29 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-11 — Design System Hybrid Final (consolidates v2 into one platform language)
+
+SPEC: `M1_5_DESIGN_SYSTEM_HYBRID_FINAL` ([folder](specs/M1_5_DESIGN_SYSTEM_HYBRID_FINAL/))
+
+Consolidates the v2 exploration (Linear A / Stripe B / Notion C) into a single locked-in **Hybrid** design language: Stripe-B structural foundation (hero + metrics + content cards + pills + role tiles) wearing Linear-A sidebar navigation, Navy `#1e3a8a` accent, sans-only typography, no topbar.
+
+- New folder `architecture-brief/design-system-mockups/hybrid-final/` — 7 files: `_tokens.css` (Navy palette + sans-only Inter/Heebo + 14px base + 36px row height + 240px sidebar) + `INDEX.html` (hub with cross-language switch to v2 A/B/C references + iframe preview) + 5 module HTMLs (`storefront-studio.html`, `permissions.html`, `shipments.html`, `settings.html`, `suppliers-debt.html`).
+- Every module HTML has `class="sidebar"` (Linear-A pattern, 240px, RTL-right via `border-inline-start`), `class="hero"` with H1 + actionable-context sentence + actions, `class="metric-card"` × 4 with Navy `metric-accent` top bar, and module-specific content sections (table density 36px Linear-tight).
+- `permissions.html` carries the 4 role-tiles row (B's pattern) + permission matrix with mono permission codes.
+- `suppliers-debt.html` carries all 6 real supplier names (Luxottica, Safilo, Marcolin, Hoya, Carl Zeiss Vision, Optical Frame Israel) + age-bar chart in semantic colors (success/info/warning/danger), explicitly NOT Navy.
+- Zero violet (`#635bff` / `#a78bfa` / `violet` / `purple` — 0 matches), zero serif typography (no `Source Serif`, no `--font-serif` token; `serif` appears only as the absolute last fallback inside `--font-sans` system chain), zero topbar.
+
+All 7 files: RTL Hebrew (`lang="he" dir="rtl"`), light-mode only, every file ≤350 lines (Rule 12). Integrity gate exit 0. Smoke suite 7/7 PASS.
+
+The 3 prior language folders (`language-{a,b,c}-*/`) remain untouched as historical reference per SPEC §2. Per-module migration of production HTML to Hybrid is a future SPEC chain.
+
+### Commits
+
+- `d38d3c7` — feat(design): scaffold hybrid-final tokens + INDEX skeleton
+- `1ba6b18` — feat(design): hybrid-final — 5 module screens (Stripe structure + Linear nav + Navy palette)
+- (Commit 3 hash TBD) — chore(spec): close M1_5_DESIGN_SYSTEM_HYBRID_FINAL with retrospective
+
+Push: incremental, one push per commit (per SPEC §9 strict rules).
+
 ## 2026-05-11 — Design System Phase 3 v2 (Authentic Languages — supersedes v1)
 
 SPEC: `M1_5_DESIGN_SYSTEM_AUTHENTIC_LANGUAGES` ([folder](specs/M1_5_DESIGN_SYSTEM_AUTHENTIC_LANGUAGES/))

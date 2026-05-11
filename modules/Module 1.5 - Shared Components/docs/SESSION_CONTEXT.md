@@ -1,9 +1,21 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
 ## Current Status
-- **Phase:** Design System initiative ACTIVE. Phase 3 v2 closed 2026-05-11 (`M1_5_DESIGN_SYSTEM_AUTHENTIC_LANGUAGES`) — 3 design languages (Linear/Stripe/Notion) × 5 screens = 21 HTML files authored from scratch under `architecture-brief/design-system-mockups/language-{a,b,c}-*/`. Phase 3 v1 (3a/3b/3c + CONSOLIDATION) archived to `_archive/design-system-mockups-v1-staticized/` — superseded because v1 staticized production HTML and produced near-identical directions. Phase 4 (`M1_5_DESIGN_SYSTEM_PHASE_4_CLOSE`) unblocks — Daniel picks the winning language.
+- **Phase:** Design System initiative — **Hybrid Final delivered** (`M1_5_DESIGN_SYSTEM_HYBRID_FINAL`, 2026-05-11). 7 new files under `architecture-brief/design-system-mockups/hybrid-final/` (Stripe-B structure × Linear-A sidebar × Navy `#1e3a8a` accent, sans-only). The Hybrid mockups are the platform's locked-in design language. Phase 3 v2 (3 authentic languages) remains as historical reference. Per-module migration of production HTML to Hybrid is a future SPEC chain.
 - **Branch:** develop
-- **Last updated:** 2026-05-11 (Design System Phase 3 v2 closed — 3 authentic design languages × 5 screens).
+- **Last updated:** 2026-05-11 (Design System Hybrid Final closed — single consolidating language).
+
+## 2026-05-11 — Design System Hybrid Final (consolidates v2 into one language)
+
+`M1_5_DESIGN_SYSTEM_HYBRID_FINAL` SPEC closed. Built **7 files** under `modules/Module 1.5 - Shared Components/architecture-brief/design-system-mockups/hybrid-final/`:
+
+- `_tokens.css` (~300 lines) — Navy `#1e3a8a` accent + `#e6f1fb` soft tint, Inter + Heebo sans-only (no `--font-serif` token), 14px base for density, 12px card radius / 8px button radius / 999px pill radius, 36px tight row height (Linear-style), 240px sidebar width.
+- `INDEX.html` — landing hub with header `lang-switch` linking to the 3 historical reference languages + iframe preview of the 5 module screens.
+- 5 module HTMLs (`storefront-studio.html`, `permissions.html`, `shipments.html`, `settings.html`, `suppliers-debt.html`) — every screen has `class="sidebar"` (Linear-A pattern, RTL-right via `border-inline-start`), `class="hero"` with H1 + actionable context sentence, `class="metric-card"` × 4 with `metric-accent` Navy top bar, content cards / role tiles / pills / dense tables. `suppliers-debt.html` carries all 6 real supplier names (Luxottica, Safilo, Marcolin, Hoya, Carl Zeiss Vision, Optical Frame Israel).
+
+All 7 files: RTL Hebrew (`lang="he" dir="rtl"`), light-mode only, sans-only typography, zero violet / zero `--font-serif` / zero topbar (sidebar replaces v2-B's top nav). Self-contained — Google Fonts only external dependency. Integrity gate exit 0. Smoke suite 7/7 PASS.
+
+The 3 prior language folders (`language-{a,b,c}-*/`) are untouched and remain as historical reference per SPEC §2. v1 staying archived. Per-module migration of production HTML to the Hybrid language is a future SPEC chain.
 
 ## 2026-05-11 — Design System Phase 3 v2 (Authentic Languages — supersedes v1)
 

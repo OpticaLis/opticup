@@ -2,11 +2,29 @@
 
 > Single reference document for all files, functions, and globals in the shared/ directory.
 > Updated every commit that adds/changes code in shared/.
-> Last updated: 2026-05-11 (Phase 3 v2 — Authentic Languages tree built; v1 archived)
+> Last updated: 2026-05-11 (Design System Hybrid Final delivered — 7 files locked in as platform language)
 
 ---
 
-## 0. Design System initiative — Phase 3 v2 (2026-05-11, supersedes v1)
+## 0. Design System initiative — Hybrid Final (2026-05-11, locked-in platform language)
+
+`M1_5_DESIGN_SYSTEM_HYBRID_FINAL` SPEC closed. **7 files** under `architecture-brief/design-system-mockups/hybrid-final/`:
+
+| # | File | Purpose |
+|---|------|---------|
+| 1 | `_tokens.css` | Hybrid design tokens — Navy `#1e3a8a` accent, `#e6f1fb` soft tint, Inter+Heebo sans-only, 14px base, 36px row height, 240px sidebar. Sans-only (no `--font-serif`). |
+| 2 | `INDEX.html` | Landing hub with cross-language switch (links to v2 A/B/C historical references) + iframe preview of the 5 module screens. |
+| 3 | `storefront-studio.html` | Studio mockup. Sidebar (Content/Commerce/Publish), hero + 4 metric-cards + pages table + recent-blocks list + media grid. |
+| 4 | `permissions.html` | Permissions mockup. Sidebar (Admin/Billing/Settings), hero + 4 metric-cards + 4 role-tiles (B pattern) + permission matrix with mono `inventory.view`-style permission codes. |
+| 5 | `shipments.html` | Shipments + Boxes mockup. Sidebar (Overview/Shipments/Inventory), hero + 4 metric-cards + active-shipments table + per-shipment box detail + timeline of operations. |
+| 6 | `settings.html` | Settings mockup. Sidebar (Store/Payment/Technical), hero + 4 metric-cards + tabs + 3 form sections (store details, tax/currency, barcode). |
+| 7 | `suppliers-debt.html` | Suppliers Debt mockup. Sidebar (Overview/Suppliers/Finance), hero + 4 metric-cards + age-chart (semantic colors, NOT Navy) + 6-row supplier table with all real names + payment history. |
+
+Pattern: Stripe-B structural foundation (hero + metrics + content cards + pills + role tiles) wearing Linear-A sidebar navigation (240px, RTL-right via `border-inline-start`, tight 36px rows). Navy palette only — zero violet, zero serif typography, zero topbar. Every HTML ≤350 lines (well under Rule 12 cap). Integrity gate clean. Smoke 7/7 PASS.
+
+The 3 prior language folders (`language-{a,b,c}-*/`) — untouched, retained as historical reference per SPEC §2. Per-module migration of production HTML to Hybrid is a future SPEC chain.
+
+## 0a. Design System initiative — Phase 3 v2 (2026-05-11, supersedes v1)
 
 `M1_5_DESIGN_SYSTEM_AUTHENTIC_LANGUAGES` SPEC closed. Three authentic design languages × five operational screens = **21 HTML files + 3 `_tokens.css`** under `modules/Module 1.5 - Shared Components/architecture-brief/design-system-mockups/`:
 
