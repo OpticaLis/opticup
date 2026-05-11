@@ -22,7 +22,7 @@ ALTER TABLE tenants
 -- }
 -- (Above is Prizma's current override — Indigo, set 2026-05-11 by M1_5_DESIGN_TOKENS_FOUNDATION.)
 -- Keys must start with "--" (enforced by theme-loader.js, not DB constraint).
--- Empty {} = use variables.css defaults (near-black + slate scale — brand-free neutral baseline).
+-- Empty {} = use variables.css defaults (near-black + neutral slate scale — brand-free baseline).
 -- No RLS change needed — tenants table already has tenant isolation policy.
 -- No index needed — one row per tenant, not searchable.
 

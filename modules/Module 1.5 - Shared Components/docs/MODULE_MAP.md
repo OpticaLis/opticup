@@ -69,7 +69,7 @@
 All variables defined in `shared/css/variables.css`:
 
 ### Colors — Primary (4 vars + 1 legacy alias)
-`--color-primary` (#0f172a Slate 700 — neutral platform default, near-black per Daniel 2026-05-10), `--color-primary-hover` (#1e293b Slate 800), `--color-primary-light` (#f1f5f9 Slate 100), `--color-primary-dark` (#000000 pure black). Prizma overrides these via `tenants.ui_config` to Indigo (#4f46e5/#4338ca/#eef2ff/#3730a3) — see M1_5_DESIGN_TOKENS_FOUNDATION SPEC.
+`--color-primary` (#0f172a — Daniel finalized as Slate 900 near-black on 2026-05-10, overriding the brief-era Slate 700 — neutral platform default; SPEC criterion #13 references the original Slate 700 wording for traceability), `--color-primary-hover` (#1e293b Slate 800), `--color-primary-light` (#f1f5f9 Slate 100), `--color-primary-dark` (#000000 pure black). Prizma overrides these via `tenants.ui_config` to Indigo (#4f46e5/#4338ca/#eef2ff/#3730a3) — see M1_5_DESIGN_TOKENS_FOUNDATION SPEC.
 `--primary: var(--color-primary)` — legacy alias for header.css, index.html, page CSS consumers
 
 ### Colors — Semantic (16 vars)
