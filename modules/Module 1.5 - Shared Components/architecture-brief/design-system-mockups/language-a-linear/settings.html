@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>הגדרות — Language A (Linear)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Heebo:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="./_tokens.css">
+  <style>
+    .settings-grid { display: grid; grid-template-columns: 200px 1fr; gap: 32px; }
+    .settings-nav { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 16px; }
+    .settings-nav a {
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: var(--text-sm);
+    }
+    .settings-nav a.active { background: var(--bg-surface-alt); color: var(--text-primary); font-weight: var(--weight-medium); }
+    .form-row {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 16px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .form-row:last-child { border-bottom: none; }
+    .form-label { font-weight: var(--weight-medium); font-size: var(--text-sm); }
+    .form-help { color: var(--text-tertiary); font-size: var(--text-xs); margin-top: 4px; }
+    .switch {
+      width: 36px; height: 20px; border-radius: 999px;
+      background: var(--accent); position: relative;
+    }
+    .switch::after {
+      content: ""; position: absolute; inset-block: 2px; inset-inline-start: 2px;
+      width: 16px; height: 16px; border-radius: 999px;
+      background: var(--bg-page);
+    }
+    .switch.off { background: var(--border-default); }
+    .switch.off::after { inset-inline-start: auto; inset-inline-end: 2px; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-mark">O</span>
+      <span>Optic Up</span>
+    </div>
+
+    <div class="sidebar-section-label">חשבון</div>
+    <a class="nav-item" href="#">פרופיל</a>
+    <a class="nav-item active" href="#">הגדרות חנות</a>
+    <a class="nav-item" href="#">תפקידים והרשאות</a>
+
+    <div class="sidebar-section-label">כללי</div>
+    <a class="nav-item" href="#">סניפים</a>
+    <a class="nav-item" href="#">שיטות תשלום</a>
+    <a class="nav-item" href="#">מסים ומטבעות</a>
+
+    <div class="sidebar-section-label">מתקדם</div>
+    <a class="nav-item" href="#">API ואינטגרציות</a>
+    <a class="nav-item" href="#">גיבויים</a>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="crumbs">
+        <span>חשבון</span>
+        <span class="sep">/</span>
+        <strong>הגדרות חנות</strong>
+      </div>
+      <div class="row">
+        <button class="btn btn-ghost">בטל</button>
+        <button class="btn btn-primary">שמור שינויים</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">הגדרות חנות</h1>
+          <p class="page-sub">אופטיקה פריזמה · נוצר 14.3.2025</p>
+        </div>
+      </div>
+
+      <div class="settings-grid">
+        <nav class="settings-nav">
+          <a href="#general" class="active">כללי</a>
+          <a href="#branches">סניפים</a>
+          <a href="#payments">שיטות תשלום</a>
+          <a href="#tax">מס ומטבע</a>
+          <a href="#barcode">ברקוד ותג</a>
+          <a href="#hours">שעות פעילות</a>
+          <a href="#notifications">התראות</a>
+          <a href="#integrations">אינטגרציות</a>
+        </nav>
+
+        <div style="display:flex;flex-direction:column;gap:24px;">
+
+          <section class="card">
+            <div class="card-header"><h2 class="card-title">פרטי חנות</h2></div>
+            <div class="card-body">
+              <div class="form-row">
+                <div>
+                  <div class="form-label">שם החנות</div>
+                  <div class="form-help">השם שמוצג בחנות האונליין ובמסמכי המכירה</div>
+                </div>
+                <input class="input" value="אופטיקה פריזמה">
+              </div>
+              <div class="form-row">
+                <div>
+                  <div class="form-label">מזהה חנות (slug)</div>
+                  <div class="form-help">מזהה ייחודי לשימוש במערכת. לא ניתן לשינוי.</div>
+                </div>
+                <input class="input mono" value="prizma" disabled>
+              </div>
+              <div class="form-row">
+                <div>
+                  <div class="form-label">כתובת ראשית</div>
+                  <div class="form-help">לכותרות חשבוניות ופרטי קשר בחנות</div>
+                </div>
+                <input class="input" value="רחוב הרצל 12, רמת גן">
+              </div>
+              <div class="form-row">
+                <div>
+                  <div class="form-label">טלפון</div>
+                </div>
+                <input class="input mono" value="+972 3 555 1234">
+              </div>
+              <div class="form-row">
+                <div>
+                  <div class="form-label">לוגו</div>
+                  <div class="form-help">SVG/PNG, מקסימום 1MB</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div style="width:48px;height:48px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);display:grid;place-items:center;background:var(--bg-surface);">P</div>
+                  <button class="btn">העלה</button>
+                  <button class="btn btn-ghost">הסר</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-header"><h2 class="card-title">מס ומטבע</h2></div>
+            <div class="card-body">
+              <div class="form-row">
+                <div>
+                  <div class="form-label">מטבע ברירת מחדל</div>
+                  <div class="form-help">משמש כברירת מחדל בכל מסמך חדש</div>
+                </div>
+                <select class="select" style="max-width:240px;">
+                  <option>שקל ישראלי (₪)</option>
+                  <option>דולר אמריקאי ($)</option>
+                  <option>אירו (€)</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <div>
+                  <div class="form-label">שיעור מע״מ</div>
+                  <div class="form-help">חישוב אוטומטי בכל מסמך</div>
+                </div>
+                <div class="row" style="max-width:240px;">
+                  <input class="input" value="17" style="width:80px;">
+                  <span class="mute">%</span>
+                </div>
+              </div>
+              <div class="form-row">
+                <div>
+                  <div class="form-label">הצג מחירים כולל מע״מ</div>
+                </div>
+                <div class="switch"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-header"><h2 class="card-title">ברקוד ותג</h2></div>
+            <div class="card-body">
+              <div class="form-row">
+                <div>
+                  <div class="form-label">פורמט ברקוד</div>
+                  <div class="form-help">2 ספרות סניף + 5 ספרות רץ. לא לשינוי.</div>
+                </div>
+                <input class="input mono" value="BBDDDDD" disabled>
+              </div>
+              <div class="form-row">
+                <div>
+                  <div class="form-label">סניף ברירת מחדל</div>
+                </div>
+                <select class="select" style="max-width:240px;">
+                  <option>01 — ראשי</option>
+                  <option>02 — סניף ב'</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <div>
+                  <div class="form-label">הדפסה אוטומטית בקבלה</div>
+                </div>
+                <div class="switch off"></div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>חובות ספקים — Language A (Linear)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Heebo:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="./_tokens.css">
+  <style>
+    .age-bar {
+      display: flex;
+      height: 6px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: var(--bg-surface-alt);
+      width: 120px;
+    }
+    .age-bar span { display: block; height: 100%; }
+    .age-0  { background: var(--success); }
+    .age-30 { background: var(--info); }
+    .age-60 { background: var(--warning); }
+    .age-90 { background: var(--danger); }
+    .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+    .num.neg { color: var(--danger); }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-mark">O</span>
+      <span>Optic Up</span>
+    </div>
+
+    <div class="sidebar-section-label">ספקים</div>
+    <a class="nav-item" href="#">ספקים</a>
+    <a class="nav-item" href="#">הזמנות רכש</a>
+    <a class="nav-item active" href="#">חובות</a>
+    <a class="nav-item" href="#">תשלומים</a>
+
+    <div class="sidebar-section-label">דוחות</div>
+    <a class="nav-item" href="#">דוח הזדקנות</a>
+    <a class="nav-item" href="#">תזרים מזומנים</a>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="crumbs">
+        <span>ספקים</span>
+        <span class="sep">/</span>
+        <strong>חובות</strong>
+      </div>
+      <div class="row">
+        <button class="btn">ייצוא Excel</button>
+        <button class="btn btn-primary">+ רשום תשלום</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">חובות ספקים</h1>
+          <p class="page-sub">8 ספקים פעילים · עדכון: היום, 09:42</p>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">סך חוב פתוח</div>
+          <div class="stat-value num">₪ 287,420</div>
+          <div class="stat-delta down">+₪14,200 השבוע</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">בפיגור</div>
+          <div class="stat-value num">₪ 42,180</div>
+          <div class="stat-delta down">3 ספקים</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">לתשלום השבוע</div>
+          <div class="stat-value num">₪ 58,900</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">תשלומים החודש</div>
+          <div class="stat-value num">₪ 192,600</div>
+          <div class="stat-delta">+12% מ-אפריל</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">חוב לפי ספק</h2>
+          <div class="row">
+            <input class="input" placeholder="חיפוש ספק..." style="width:240px">
+            <select class="select" style="width:140px;">
+              <option>כל הסטטוסים</option>
+              <option>בפיגור</option>
+              <option>בזמן</option>
+            </select>
+          </div>
+        </div>
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>ספק</th>
+              <th>מטבע</th>
+              <th>חוב פתוח</th>
+              <th>חלוקת הזדקנות</th>
+              <th>הזמנה אחרונה</th>
+              <th>סטטוס</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Luxottica</strong><div class="mute" style="font-size:var(--text-xs);">איטליה</div></td>
+              <td>EUR</td>
+              <td class="num">€ 24,820</td>
+              <td>
+                <div class="age-bar">
+                  <span class="age-0" style="flex:60"></span>
+                  <span class="age-30" style="flex:30"></span>
+                  <span class="age-60" style="flex:10"></span>
+                </div>
+              </td>
+              <td class="mute">5.5.2026</td>
+              <td><span class="badge badge-success"><span class="dot"></span>בזמן</span></td>
+            </tr>
+            <tr>
+              <td><strong>Safilo</strong><div class="mute" style="font-size:var(--text-xs);">איטליה</div></td>
+              <td>EUR</td>
+              <td class="num">€ 11,420</td>
+              <td>
+                <div class="age-bar">
+                  <span class="age-0" style="flex:40"></span>
+                  <span class="age-30" style="flex:40"></span>
+                  <span class="age-60" style="flex:20"></span>
+                </div>
+              </td>
+              <td class="mute">2.5.2026</td>
+              <td><span class="badge badge-success"><span class="dot"></span>בזמן</span></td>
+            </tr>
+            <tr>
+              <td><strong>Marcolin</strong><div class="mute" style="font-size:var(--text-xs);">איטליה</div></td>
+              <td>EUR</td>
+              <td class="num neg">€ 9,640</td>
+              <td>
+                <div class="age-bar">
+                  <span class="age-0" style="flex:20"></span>
+                  <span class="age-30" style="flex:20"></span>
+                  <span class="age-60" style="flex:30"></span>
+                  <span class="age-90" style="flex:30"></span>
+                </div>
+              </td>
+              <td class="mute">28.4.2026</td>
+              <td><span class="badge badge-danger"><span class="dot"></span>בפיגור 28 ימים</span></td>
+            </tr>
+            <tr>
+              <td><strong>Optical Frame Israel</strong><div class="mute" style="font-size:var(--text-xs);">ישראל</div></td>
+              <td>ILS</td>
+              <td class="num">₪ 86,400</td>
+              <td>
+                <div class="age-bar">
+                  <span class="age-0" style="flex:80"></span>
+                  <span class="age-30" style="flex:20"></span>
+                </div>
+              </td>
+              <td class="mute">8.5.2026</td>
+              <td><span class="badge badge-success"><span class="dot"></span>בזמן</span></td>
+            </tr>
+            <tr>
+              <td><strong>Carl Zeiss Vision</strong><div class="mute" style="font-size:var(--text-xs);">גרמניה</div></td>
+              <td>EUR</td>
+              <td class="num neg">€ 4,860</td>
+              <td>
+                <div class="age-bar">
+                  <span class="age-0" style="flex:10"></span>
+                  <span class="age-30" style="flex:30"></span>
+                  <span class="age-60" style="flex:60"></span>
+                </div>
+              </td>
+              <td class="mute">15.4.2026</td>
+              <td><span class="badge badge-warning"><span class="dot"></span>בפיגור 12 ימים</span></td>
+            </tr>
+            <tr>
+              <td><strong>Hoya Lens</strong><div class="mute" style="font-size:var(--text-xs);">יפן</div></td>
+              <td>USD</td>
+              <td class="num">$ 18,200</td>
+              <td>
+                <div class="age-bar">
+                  <span class="age-0" style="flex:70"></span>
+                  <span class="age-30" style="flex:30"></span>
+                </div>
+              </td>
+              <td class="mute">3.5.2026</td>
+              <td><span class="badge badge-success"><span class="dot"></span>בזמן</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">היסטוריית תשלומים — Luxottica</h2>
+          <a href="#" class="btn btn-ghost">צפה בכל ההיסטוריה</a>
+        </div>
+        <table class="tbl">
+          <thead>
+            <tr><th>תאריך</th><th>סוג</th><th>אסמכתא</th><th>סכום</th><th>יתרה</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mute">8.5.2026</td><td>תשלום</td><td class="mono">PAY-0042</td><td class="num">−€ 8,400</td><td class="num">€ 24,820</td></tr>
+            <tr><td class="mute">5.5.2026</td><td>חשבונית</td><td class="mono">INV-LUX-9914</td><td class="num neg">€ 12,200</td><td class="num">€ 33,220</td></tr>
+            <tr><td class="mute">28.4.2026</td><td>חשבונית</td><td class="mono">INV-LUX-9892</td><td class="num neg">€ 8,400</td><td class="num">€ 21,020</td></tr>
+            <tr><td class="mute">22.4.2026</td><td>תשלום</td><td class="mono">PAY-0038</td><td class="num">−€ 15,000</td><td class="num">€ 12,620</td></tr>
+            <tr><td class="mute">15.4.2026</td><td>חשבונית</td><td class="mono">INV-LUX-9871</td><td class="num neg">€ 11,000</td><td class="num">€ 27,620</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

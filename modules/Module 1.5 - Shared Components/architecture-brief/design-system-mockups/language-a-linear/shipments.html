@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>משלוחים וארגזים — Language A (Linear)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Heebo:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="./_tokens.css">
+  <style>
+    .split { display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+    .timeline { display: flex; flex-direction: column; gap: 16px; }
+    .tl-item { display: grid; grid-template-columns: 16px 1fr; gap: 12px; }
+    .tl-dot { width: 10px; height: 10px; border-radius: 999px; background: var(--accent); margin-top: 6px; }
+    .tl-line { width: 1px; background: var(--border-subtle); margin: 0 auto; flex: 1; }
+    .tl-col { display: flex; flex-direction: column; align-items: center; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-mark">O</span>
+      <span>Optic Up</span>
+    </div>
+
+    <div class="sidebar-section-label">תפעול</div>
+    <a class="nav-item" href="#">מלאי</a>
+    <a class="nav-item active" href="#">משלוחים</a>
+    <a class="nav-item" href="#">ארגזים</a>
+    <a class="nav-item" href="#">החזרות</a>
+
+    <div class="sidebar-section-label">ספקים</div>
+    <a class="nav-item" href="#">ספקים</a>
+    <a class="nav-item" href="#">הזמנות רכש</a>
+    <a class="nav-item" href="#">חובות</a>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="crumbs">
+        <span>תפעול</span>
+        <span class="sep">/</span>
+        <strong>משלוחים</strong>
+      </div>
+      <div class="row">
+        <button class="btn">סרוק ברקוד</button>
+        <button class="btn btn-primary">+ משלוח נכנס</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">משלוחים וארגזים</h1>
+          <p class="page-sub">7 ארגזים פעילים · 3 משלוחים בדרך</p>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">משלוחים החודש</div>
+          <div class="stat-value">42</div>
+          <div class="stat-delta">+8 לעומת חודש קודם</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">בדרך</div>
+          <div class="stat-value">3</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">ארגזים פתוחים</div>
+          <div class="stat-value">7</div>
+          <div class="stat-delta down">נעילת ארגז: 2 פגי תוקף</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">פריטים השבוע</div>
+          <div class="stat-value">284</div>
+        </div>
+      </div>
+
+      <div class="split">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">משלוחים פעילים</h2>
+            <div class="row">
+              <input class="input" placeholder="חיפוש לפי מספר/ספק..." style="width:240px">
+              <button class="btn">סינון</button>
+            </div>
+          </div>
+          <table class="tbl">
+            <thead>
+              <tr><th>מספר</th><th>ספק</th><th>סטטוס</th><th>ארגזים</th><th>פריטים</th><th>תאריך</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono"><strong>SH-2026-0142</strong></td>
+                <td>Luxottica</td>
+                <td><span class="badge badge-info"><span class="dot"></span>בדרך</span></td>
+                <td>4</td>
+                <td>87</td>
+                <td class="mute">11.5.2026</td>
+              </tr>
+              <tr>
+                <td class="mono"><strong>SH-2026-0141</strong></td>
+                <td>Safilo</td>
+                <td><span class="badge badge-info"><span class="dot"></span>בדרך</span></td>
+                <td>2</td>
+                <td>34</td>
+                <td class="mute">10.5.2026</td>
+              </tr>
+              <tr>
+                <td class="mono"><strong>SH-2026-0140</strong></td>
+                <td>Marcolin</td>
+                <td><span class="badge badge-warning"><span class="dot"></span>פתוח</span></td>
+                <td>3</td>
+                <td>52</td>
+                <td class="mute">9.5.2026</td>
+              </tr>
+              <tr>
+                <td class="mono"><strong>SH-2026-0139</strong></td>
+                <td>Optical Frame Israel</td>
+                <td><span class="badge badge-success"><span class="dot"></span>נסגר</span></td>
+                <td>2</td>
+                <td>28</td>
+                <td class="mute">8.5.2026</td>
+              </tr>
+              <tr>
+                <td class="mono"><strong>SH-2026-0138</strong></td>
+                <td>Luxottica</td>
+                <td><span class="badge badge-success"><span class="dot"></span>נסגר</span></td>
+                <td>5</td>
+                <td>114</td>
+                <td class="mute">5.5.2026</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">SH-2026-0140 · ארגזים</h2>
+            <span class="badge badge-warning">פתוח</span>
+          </div>
+          <div class="card-body">
+            <div class="spread" style="padding-bottom:12px;border-bottom:1px solid var(--border-subtle);">
+              <div>
+                <div style="font-weight:var(--weight-medium);">BX-0140-01</div>
+                <div class="mute" style="font-size:var(--text-xs);">22 פריטים · נעול</div>
+              </div>
+              <span class="badge badge-success"><span class="dot"></span>סגור</span>
+            </div>
+            <div class="spread" style="padding:12px 0;border-bottom:1px solid var(--border-subtle);">
+              <div>
+                <div style="font-weight:var(--weight-medium);">BX-0140-02</div>
+                <div class="mute" style="font-size:var(--text-xs);">18 פריטים · 14 מסומנים</div>
+              </div>
+              <span class="badge badge-warning"><span class="dot"></span>בעבודה</span>
+            </div>
+            <div class="spread" style="padding:12px 0;">
+              <div>
+                <div style="font-weight:var(--weight-medium);">BX-0140-03</div>
+                <div class="mute" style="font-size:var(--text-xs);">12 פריטים · ריק</div>
+              </div>
+              <span class="badge"><span class="dot"></span>ממתין</span>
+            </div>
+            <div style="margin-top:16px;display:flex;gap:8px;">
+              <button class="btn" style="flex:1">פתח BX-0140-02</button>
+              <button class="btn btn-primary" style="flex:1">+ ארגז</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">תיעוד משלוח SH-2026-0140</h2>
+          <span class="mute" style="font-size:var(--text-xs);">חתימת אבטחה: PIN דניאל · 09:14</span>
+        </div>
+        <div class="card-body">
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-col"><div class="tl-dot"></div><div class="tl-line"></div></div>
+              <div>
+                <div style="font-weight:var(--weight-medium);">המשלוח התקבל מהספק</div>
+                <div class="mute" style="font-size:var(--text-xs);">9.5.2026, 09:14 · 3 ארגזים · 52 פריטים מצופים</div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-col"><div class="tl-dot"></div><div class="tl-line"></div></div>
+              <div>
+                <div style="font-weight:var(--weight-medium);">BX-0140-01 נסגר</div>
+                <div class="mute" style="font-size:var(--text-xs);">9.5.2026, 11:42 · 22 פריטים נסרקו · PIN דניאל</div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-col"><div class="tl-dot"></div></div>
+              <div>
+                <div style="font-weight:var(--weight-medium);">BX-0140-02 בעבודה</div>
+                <div class="mute" style="font-size:var(--text-xs);">9.5.2026, 14:08 · 14/18 פריטים · נעילה אוטומטית בעוד 1:42</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>Storefront Studio — Language A (Linear)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Heebo:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="./_tokens.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-mark">O</span>
+      <span>Optic Up Studio</span>
+    </div>
+
+    <div class="sidebar-section-label">תוכן</div>
+    <a class="nav-item active" href="#">דפים</a>
+    <a class="nav-item" href="#">בלוקים</a>
+    <a class="nav-item" href="#">ספריית מדיה</a>
+    <a class="nav-item" href="#">תרגומים</a>
+
+    <div class="sidebar-section-label">מסחר</div>
+    <a class="nav-item" href="#">מוצרים</a>
+    <a class="nav-item" href="#">קטגוריות</a>
+    <a class="nav-item" href="#">קמפיינים</a>
+
+    <div class="sidebar-section-label">פרסום</div>
+    <a class="nav-item" href="#">תצוגה מקדימה</a>
+    <a class="nav-item" href="#">היסטוריית פרסום</a>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="crumbs">
+        <span>Studio</span>
+        <span class="sep">/</span>
+        <span>תוכן</span>
+        <span class="sep">/</span>
+        <strong>דפים</strong>
+      </div>
+      <div class="row">
+        <button class="btn btn-ghost">תצוגה מקדימה</button>
+        <button class="btn">שמור טיוטה</button>
+        <button class="btn btn-primary">פרסם</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">דפי החנות</h1>
+          <p class="page-sub">5 דפים פעילים · עדכון אחרון: לפני 17 דקות</p>
+        </div>
+        <button class="btn btn-primary">+ דף חדש</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">דפים פעילים</div>
+          <div class="stat-value">5</div>
+          <div class="stat-delta">+1 השבוע</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">בלוקים בשימוש</div>
+          <div class="stat-value">28</div>
+          <div class="stat-delta">+4 השבוע</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">פריטי מדיה</div>
+          <div class="stat-value">147</div>
+          <div class="stat-delta">+12 השבוע</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">תרגומים חסרים</div>
+          <div class="stat-value">3</div>
+          <div class="stat-delta down">EN חסר</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">דפים</h2>
+          <div class="row">
+            <input class="input" placeholder="חיפוש דף..." style="width:220px">
+            <button class="btn">מיין</button>
+          </div>
+        </div>
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>שם</th><th>נתיב</th><th>סטטוס</th><th>בלוקים</th><th>עודכן</th><th>שפות</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>דף הבית</strong></td>
+              <td class="mono">/</td>
+              <td><span class="badge badge-success"><span class="dot"></span>פורסם</span></td>
+              <td>8</td>
+              <td class="mute">לפני 17 דקות</td>
+              <td><span class="badge">HE</span> <span class="badge">EN</span></td>
+            </tr>
+            <tr>
+              <td><strong>מותגים</strong></td>
+              <td class="mono">/brands</td>
+              <td><span class="badge badge-success"><span class="dot"></span>פורסם</span></td>
+              <td>5</td>
+              <td class="mute">לפני יומיים</td>
+              <td><span class="badge">HE</span> <span class="badge">EN</span></td>
+            </tr>
+            <tr>
+              <td><strong>קטלוג מותג — Ray-Ban</strong></td>
+              <td class="mono">/brand/ray-ban</td>
+              <td><span class="badge badge-warning"><span class="dot"></span>טיוטה</span></td>
+              <td>6</td>
+              <td class="mute">היום, 10:42</td>
+              <td><span class="badge">HE</span></td>
+            </tr>
+            <tr>
+              <td><strong>אודות</strong></td>
+              <td class="mono">/about</td>
+              <td><span class="badge badge-success"><span class="dot"></span>פורסם</span></td>
+              <td>4</td>
+              <td class="mute">לפני 5 ימים</td>
+              <td><span class="badge">HE</span> <span class="badge">EN</span></td>
+            </tr>
+            <tr>
+              <td><strong>צור קשר</strong></td>
+              <td class="mono">/contact</td>
+              <td><span class="badge badge-success"><span class="dot"></span>פורסם</span></td>
+              <td>3</td>
+              <td class="mute">לפני שבוע</td>
+              <td><span class="badge">HE</span> <span class="badge">EN</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">בלוקים אחרונים</h2>
+            <a class="btn btn-ghost" href="#">הצג הכל</a>
+          </div>
+          <div class="card-body">
+            <div class="spread" style="padding:8px 0;">
+              <div>
+                <div style="font-weight:var(--weight-medium);">Hero — Spring Collection</div>
+                <div class="mute" style="font-size:var(--text-xs);margin-top:2px;">דף הבית · עודכן לפני 17 דקות</div>
+              </div>
+              <span class="badge badge-accent">בשימוש ב-2</span>
+            </div>
+            <div class="spread" style="padding:8px 0;border-top:1px solid var(--border-subtle);">
+              <div>
+                <div style="font-weight:var(--weight-medium);">Brand Grid — 12 מותגים</div>
+                <div class="mute" style="font-size:var(--text-xs);margin-top:2px;">/brands · עודכן לפני יומיים</div>
+              </div>
+              <span class="badge badge-accent">בשימוש ב-1</span>
+            </div>
+            <div class="spread" style="padding:8px 0;border-top:1px solid var(--border-subtle);">
+              <div>
+                <div style="font-weight:var(--weight-medium);">Testimonial — לקוחות מובילים</div>
+                <div class="mute" style="font-size:var(--text-xs);margin-top:2px;">/about · עודכן לפני 5 ימים</div>
+              </div>
+              <span class="badge">לא בשימוש</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">ספריית מדיה</h2>
+            <a class="btn btn-ghost" href="#">העלה</a>
+          </div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+              <div style="aspect-ratio:1;background:var(--bg-surface-alt);border-radius:var(--radius-sm);"></div>
+              <div style="aspect-ratio:1;background:var(--bg-surface-alt);border-radius:var(--radius-sm);"></div>
+              <div style="aspect-ratio:1;background:var(--bg-surface-alt);border-radius:var(--radius-sm);"></div>
+              <div style="aspect-ratio:1;background:var(--bg-surface-alt);border-radius:var(--radius-sm);"></div>
+              <div style="aspect-ratio:1;background:var(--bg-surface-alt);border-radius:var(--radius-sm);"></div>
+              <div style="aspect-ratio:1;background:var(--bg-surface-alt);border-radius:var(--radius-sm);"></div>
+              <div style="aspect-ratio:1;background:var(--bg-surface-alt);border-radius:var(--radius-sm);"></div>
+              <div style="aspect-ratio:1;background:var(--bg-surface-alt);border-radius:var(--radius-sm);"></div>
+            </div>
+            <div class="mute" style="margin-top:12px;font-size:var(--text-xs);">147 פריטים · 28.4 MB</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>הרשאות — Language A (Linear)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Heebo:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="./_tokens.css">
+  <style>
+    .matrix th, .matrix td { text-align: center; }
+    .matrix th:first-child, .matrix td:first-child { text-align: start; }
+    .check { color: var(--accent); font-weight: var(--weight-semibold); }
+    .role-pill {
+      display:inline-flex;align-items:center;gap:6px;
+      padding:2px 8px;border-radius:999px;
+      background:var(--bg-surface-alt);
+      font-size:var(--text-xs);color:var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-mark">O</span>
+      <span>Optic Up</span>
+    </div>
+
+    <div class="sidebar-section-label">חשבון</div>
+    <a class="nav-item" href="#">פרופיל</a>
+    <a class="nav-item" href="#">הגדרות חנות</a>
+
+    <div class="sidebar-section-label">צוות וגישה</div>
+    <a class="nav-item" href="#">משתמשים</a>
+    <a class="nav-item active" href="#">תפקידים והרשאות</a>
+    <a class="nav-item" href="#">יומן פעולות</a>
+
+    <div class="sidebar-section-label">חיוב</div>
+    <a class="nav-item" href="#">תוכנית</a>
+    <a class="nav-item" href="#">חשבוניות</a>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="crumbs">
+        <span>הגדרות</span>
+        <span class="sep">/</span>
+        <span>צוות וגישה</span>
+        <span class="sep">/</span>
+        <strong>תפקידים והרשאות</strong>
+      </div>
+      <div class="row">
+        <button class="btn btn-ghost">ייצוא CSV</button>
+        <button class="btn btn-primary">+ תפקיד חדש</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">תפקידים והרשאות</h1>
+          <p class="page-sub">4 תפקידים · 12 משתמשים פעילים · עודכן אתמול ב-14:22</p>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">תפקידים פעילים</div>
+          <div class="stat-value">4</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">משתמשים</div>
+          <div class="stat-value">12</div>
+          <div class="stat-delta">+2 החודש</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">הרשאות מוגדרות</div>
+          <div class="stat-value">23</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">חריגות אבטחה</div>
+          <div class="stat-value">0</div>
+          <div class="stat-delta">תקין</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">מטריצת הרשאות</h2>
+          <div class="row">
+            <span class="role-pill"><span class="dot" style="background:var(--success);"></span>פעיל</span>
+            <span class="role-pill"><span class="dot" style="background:var(--text-tertiary);"></span>חסום</span>
+            <button class="btn">חיפוש הרשאה</button>
+          </div>
+        </div>
+        <table class="tbl matrix">
+          <thead>
+            <tr>
+              <th>הרשאה</th>
+              <th>בעלים</th>
+              <th>מנהל</th>
+              <th>מוכר</th>
+              <th>אופטומטריסט</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>צפייה במלאי</strong><div class="mute" style="font-size:var(--text-xs)">inventory.view</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td><strong>עריכת מלאי</strong><div class="mute" style="font-size:var(--text-xs)">inventory.edit</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td>—</td><td>—</td></tr>
+            <tr><td><strong>שינוי כמויות</strong><div class="mute" style="font-size:var(--text-xs)">inventory.qty</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td>—</td></tr>
+            <tr><td><strong>מחיקה רכה</strong><div class="mute" style="font-size:var(--text-xs)">inventory.soft_delete</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td>—</td><td>—</td></tr>
+            <tr><td><strong>מחיקה קבועה (PIN כפול)</strong><div class="mute" style="font-size:var(--text-xs)">inventory.hard_delete</div></td><td><span class="check">✓</span></td><td>—</td><td>—</td><td>—</td></tr>
+            <tr><td><strong>צפייה בלקוחות</strong><div class="mute" style="font-size:var(--text-xs)">crm.view</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td><strong>עריכת מרשם</strong><div class="mute" style="font-size:var(--text-xs)">prescription.edit</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td>—</td><td><span class="check">✓</span></td></tr>
+            <tr><td><strong>סגירת מכירה</strong><div class="mute" style="font-size:var(--text-xs)">sales.close</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td>—</td></tr>
+            <tr><td><strong>ניהול חובות ספקים</strong><div class="mute" style="font-size:var(--text-xs)">supplier_debt.manage</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td>—</td><td>—</td></tr>
+            <tr><td><strong>ניהול משתמשים</strong><div class="mute" style="font-size:var(--text-xs)">users.manage</div></td><td><span class="check">✓</span></td><td>—</td><td>—</td><td>—</td></tr>
+            <tr><td><strong>הגדרות חנות</strong><div class="mute" style="font-size:var(--text-xs)">settings.tenant</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td>—</td><td>—</td></tr>
+            <tr><td><strong>פרסום ל-Storefront</strong><div class="mute" style="font-size:var(--text-xs)">storefront.publish</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">משתמשים פעילים</h2>
+          <button class="btn btn-primary">+ הזמן משתמש</button>
+        </div>
+        <table class="tbl">
+          <thead>
+            <tr><th>שם</th><th>אימייל</th><th>תפקיד</th><th>סניף</th><th>פעילות אחרונה</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>דניאל מנדלוביץ</strong></td><td class="mono">daniel@prizma-optic.co.il</td><td><span class="badge badge-accent">בעלים</span></td><td>ראשי</td><td class="mute">לפני 2 דקות</td><td><a href="#" class="mute">ערוך</a></td></tr>
+            <tr><td><strong>מאיה כהן</strong></td><td class="mono">maya@prizma-optic.co.il</td><td><span class="badge">מנהל</span></td><td>סניף ב'</td><td class="mute">לפני שעה</td><td><a href="#" class="mute">ערוך</a></td></tr>
+            <tr><td><strong>אורי לוי</strong></td><td class="mono">uri@prizma-optic.co.il</td><td><span class="badge">מוכר</span></td><td>סניף ב'</td><td class="mute">היום, 09:14</td><td><a href="#" class="mute">ערוך</a></td></tr>
+            <tr><td><strong>ד״ר שרון בן-דוד</strong></td><td class="mono">sharon@prizma-optic.co.il</td><td><span class="badge">אופטומטריסט</span></td><td>ראשי</td><td class="mute">אתמול</td><td><a href="#" class="mute">ערוך</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
