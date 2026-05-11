@@ -1,0 +1,253 @@
+<!--
+  Optic Up — Storefront Studio (CMS-2)
+  Block editor for managing storefront pages
+-->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optic Up — ניהול אתר Studio</title>
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+
+
+<style>
+.sf-container { max-width: 1400px; margin: 0 auto; padding: 24px 16px; }
+.sf-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+.sf-subtitle { color: var(--g400); font-size: .9rem; margin-bottom: 24px; }
+.sf-nav { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+.sf-nav a { padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: .9rem;
+  background: var(--g100); color: var(--g700); transition: all .2s; }
+.sf-nav a.active, .sf-nav a:hover { background: var(--primary); color: #fff; }
+.studio-template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.studio-template-card { padding: 16px; border: 1px solid var(--g200); border-radius: 10px; cursor: pointer; transition: all .2s; }
+.studio-template-card:hover { border-color: var(--primary); background: var(--g50); }
+.studio-template-name { font-weight: 600; margin-bottom: 4px; }
+.studio-template-desc { font-size: .85rem; color: var(--g500); margin-bottom: 8px; }
+.studio-template-meta { font-size: .75rem; color: var(--g400); }
+/* Quill richtext editor styling */
+.studio-richtext-wrap { border: 1px solid var(--g200); border-radius: 8px; overflow: hidden; }
+.studio-richtext-wrap .ql-toolbar { border: none; border-bottom: 1px solid var(--g200); background: var(--g50); direction: ltr; }
+.studio-richtext-wrap .ql-container { border: none; font-family: 'Heebo', sans-serif; font-size: .95rem; min-height: 250px; }
+.studio-richtext-wrap .ql-editor { min-height: 250px; direction: rtl; text-align: right; }
+.studio-richtext-wrap .ql-editor p { margin-bottom: .5em; }
+.studio-richtext-wrap .ql-editor ol, .studio-richtext-wrap .ql-editor ul { padding-right: 1.5em !important; padding-left: 0 !important; }
+.studio-richtext-wrap .ql-editor li { padding-right: 1.5em !important; padding-left: 0 !important; }
+.studio-richtext-wrap .ql-editor li::before { margin-left: 0 !important; margin-right: -1.5em !important; text-align: left !important; }
+
+/* Landing page wizard modal */
+.lp-wizard-overlay { position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center; }
+.lp-wizard { max-width:600px;width:92vw;max-height:90vh;overflow-y:auto;background:#fff;border-radius:16px;padding:0; }
+.lp-wizard-header { padding:20px 28px;border-bottom:1px solid #e5e5e5;display:flex;align-items:center;gap:12px; }
+.lp-wizard-header h3 { margin:0;font-size:1.15rem;font-weight:700;flex:1; }
+.lp-wizard-header .close-btn { width:32px;height:32px;border:none;background:#f3f4f6;border-radius:8px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center; }
+.lp-wizard-body { padding:24px 28px; }
+.lp-wizard-section { margin-bottom:20px; }
+.lp-wizard-section label { display:block;font-size:.85rem;font-weight:600;color:#374151;margin-bottom:6px; }
+.lp-wizard-section input, .lp-wizard-section select { width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:.95rem;font-family:inherit;background:#fff; }
+.lp-wizard-section input:focus, .lp-wizard-section select:focus, .lp-wizard-section textarea:focus { outline:none;border-color:#c9a555;box-shadow:0 0 0 3px rgba(201,165,85,.12); }
+.lp-wizard-section textarea { width:100%;padding:12px;border:1px solid #e5e5e5;border-radius:8px;font-size:.95rem;font-family:inherit;resize:vertical;background:#fff; }
+.lp-wizard-drop { border:2px dashed #d1d5db;border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s; }
+.lp-wizard-drop:hover, .lp-wizard-drop.dragover { border-color:#c9a555;background:#fefdf8; }
+.lp-wizard-drop p { margin:0;color:#6b7280;font-size:.88rem; }
+.lp-wizard-drop .drop-icon { font-size:1.5rem;margin-bottom:4px; }
+.lp-wizard-footer { padding:16px 28px;border-top:1px solid #e5e5e5;display:flex;gap:10px;background:#fafafa;border-radius:0 0 16px 16px; }
+.lp-wizard-footer .btn-create { flex:1;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#c9a555,#e8da94);color:#1a1a1a;font-weight:700;font-size:1rem;cursor:pointer;transition:opacity .15s;font-family:inherit; }
+.lp-wizard-footer .btn-create:hover { opacity:.9; }
+.lp-wizard-footer .btn-create:disabled { opacity:.5;cursor:not-allowed; }
+.lp-wizard-footer .btn-cancel { padding:12px 20px;border:1px solid #e5e5e5;border-radius:10px;background:#fff;color:#374151;font-weight:600;cursor:pointer;font-family:inherit; }
+</style>
+
+<link rel="stylesheet" href="../../../../../shared/css/variables.css">
+<link rel="stylesheet" href="../../../../../shared/css/layout.css">
+<link rel="stylesheet" href="../../../../../shared/css/components.css">
+<link rel="stylesheet" href="../../../../../shared/css/components-extra.css">
+<link rel="stylesheet" href="../../../../../shared/css/forms.css">
+<link rel="stylesheet" href="../../../../../shared/css/modal.css">
+<link rel="stylesheet" href="../../../../../shared/css/toast.css">
+<link rel="stylesheet" href="../../../../../shared/css/table.css">
+<link rel="stylesheet" href="./_tokens.css">
+</head>
+<body>
+
+<main>
+
+<div class="card" data-mock="design-direction-3">
+  <h3>🎨 בלוקים פעילים בעמוד הבית (mock — Direction 3)</h3>
+  <ul>
+    <li><span data-numeric>1</span> · Hero — "קמפיין סופרסייל 2026"</li>
+    <li><span data-numeric>2</span> · Brand carousel — Ray-Ban / Persol / Oakley / Prada / Gucci / Tom Ford / Chanel</li>
+    <li><span data-numeric>3</span> · Category grid — שמש · קריאה · רב-מוקדיות · ילדים · מותגי בוטיק</li>
+    <li><span data-numeric>4</span> · Promo strip — "משלוח חינם מעל ₪400"</li>
+    <li><span data-numeric>5</span> · Testimonials — 3 ציטוטים של לקוחות</li>
+    <li><span data-numeric>6</span> · Featured collection — "חדש על המדפים"</li>
+    <li><span data-numeric>7</span> · Footer — קישורים · יצירת קשר · מדיניות</li>
+  </ul>
+</div>
+
+
+  <div class="sf-container">
+    <div style="display:flex;align-items:center;gap:12px">
+      <h1 class="sf-title" style="margin:0">🎨 ניהול אתר — Studio</h1>
+      <button onclick="refreshCurrentTab()" title="רענן" style="background:none;border:1px solid transparent;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:1.1rem;transition:border-color .2s" onmouseover="this.style.borderColor='#c9a555'" onmouseout="this.style.borderColor='#e5e5e5'">🔄</button>
+    </div>
+    <p class="sf-subtitle">עריכת עמודים ובלוקים — ניהול תוכן ויזואלי</p>
+
+    <nav class="sf-nav">
+      <a href="storefront-settings.html">⚙️ הגדרות</a>
+      <a href="storefront-products.html">📦 מוצרים</a>
+      <a href="storefront-content.html">🤖 תוכן AI</a>
+      <a href="storefront-blog.html">📝 בלוג</a>
+      <a href="storefront-glossary.html">📖 מילון מונחים</a>
+      <a href="storefront-studio.html" class="active">🎨 Studio</a>
+    </nav>
+
+    <!-- Studio Tabs -->
+    <div class="studio-tabs">
+      <button class="studio-tab active" data-tab="pages" onclick="switchStudioTab('pages')">📄 עמודים</button>
+      <button class="studio-tab" data-tab="leads" onclick="switchStudioTab('leads')">📋 לידים</button>
+      <button class="studio-tab" data-tab="reviews" onclick="switchStudioTab('reviews')">⭐ ביקורות</button>
+      <button class="studio-tab" data-tab="templates" id="tab-btn-templates" onclick="switchStudioTab('templates')">📑 תבניות</button>
+      <button class="studio-tab" data-tab="shortcodes" id="tab-btn-shortcodes" onclick="switchStudioTab('shortcodes')">📦 שורטקודים</button>
+      <button class="studio-tab" data-tab="media" onclick="switchStudioTab('media')">🖼️ מדיה</button>
+      <button class="studio-tab" data-tab="translations" onclick="switchStudioTab('translations')">🌐 שפות</button>
+      <a href="storefront-blog.html" class="studio-tab" style="text-decoration:none">📝 ניהול בלוג</a>
+    </div>
+
+    <!-- Tab: Pages (existing) -->
+    <div class="studio-tab-content active" id="tab-pages">
+      <div class="studio-layout">
+        <aside class="studio-sidebar">
+          <div class="studio-sidebar-header">
+            <h3>עמודים</h3>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-sm btn-primary" onclick="createPage()">+ חדש</button>
+              <button class="btn btn-sm" onclick="openLandingPageWizard()" style="background:linear-gradient(135deg,transparent,transparent);color:transparent;font-weight:700;border:none;">🎯 דף נחיתה</button>
+            </div>
+          </div>
+          <!-- View toggle: Pages vs Brand Pages vs Campaigns -->
+          <div class="page-view-toggle">
+            <button class="page-view-btn active" data-view="pages" onclick="toggleBrandPagesView(false)">כל העמודים</button>
+            <button class="page-view-btn" data-view="brands" onclick="toggleBrandPagesView(true)">🏷️ עמודי מותג</button>
+            <button class="page-view-btn" data-view="campaigns" onclick="toggleCampaignsView()">🎯 קמפיינים</button>
+          </div>
+          <div id="studio-page-list" class="studio-page-list">
+            <div class="studio-empty">טוען...</div>
+          </div>
+          <div id="studio-brand-list" class="studio-page-list" style="display:none;"></div>
+          <div id="studio-campaign-list" class="studio-page-list" style="display:none;"></div>
+        </aside>
+        <section class="studio-main" id="studio-editor">
+          <div class="studio-empty-editor">
+            <p>בחר עמוד מהרשימה לעריכה</p>
+          </div>
+        </section>
+        <!-- AI Prompt Bar container moved inside editor render -->
+      </div>
+    </div>
+
+    <!-- Tab: Leads -->
+    <div class="studio-tab-content" id="tab-leads">
+      <div id="studio-leads-content">
+        <div class="studio-empty">טוען...</div>
+      </div>
+    </div>
+
+    <!-- Tab: Reviews -->
+    <div class="studio-tab-content" id="tab-reviews">
+      <div id="studio-reviews-content">
+        <div class="studio-empty">טוען...</div>
+      </div>
+    </div>
+
+    <!-- Tab: Templates (super_admin only) -->
+    <div class="studio-tab-content" id="tab-templates">
+      <div id="studio-templates-content">
+        <div class="studio-empty">טוען...</div>
+      </div>
+    </div>
+
+    <!-- Tab: Shortcodes Library -->
+    <div class="studio-tab-content" id="tab-shortcodes">
+      <div id="studio-shortcodes-content">
+        <div class="studio-empty">טוען...</div>
+      </div>
+    </div>
+
+    <!-- Tab: Media Library -->
+    <div class="studio-tab-content" id="tab-media">
+      <div id="studio-media-content">
+        <div class="studio-empty">טוען...</div>
+      </div>
+    </div>
+
+    <!-- Tab: Translations / Languages -->
+    <div class="studio-tab-content" id="tab-translations">
+      <div id="studio-translations-content">
+        <div class="studio-empty">טוען...</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- AI Diff Modal -->
+<div id="modal-ai-diff" class="modal hidden">
+  <div class="modal-content modal-large">
+    <div id="ai-diff-content"></div>
+  </div>
+</div>
+
+<!-- Toast + Loading -->
+<div id="toast-c"></div>
+<div id="loading" class="loading-overlay" style="display:none">
+  <div class="loading-box"><div class="spinner"></div><p id="loading-text">טוען...</p></div>
+</div>
+
+<!-- Shared JS -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- Studio JS -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
