@@ -1062,3 +1062,75 @@ Read these only when needed for a specific task:
 | Module business logic | `modules/Module X/docs/MODULE_SPEC.md` |
 | Module code map | `modules/Module X/docs/MODULE_MAP.md` |
 | Build sequence & roadmap | `MASTER_ROADMAP.md` |
+
+---
+
+## Pipeline Hand-off
+
+This section governs how `opticup-strategic` (Foreman) hands off to the next skill in the Full-Auto Pipeline (see `modules/Module 1.5 - Shared Components/docs/specs/M1_5_FULL_AUTO_PIPELINE/SPEC.md`).
+
+The Foreman is BOTH the FIRST skill (authoring phase) and the LAST skill (closure phase) in the chain. The hand-off rule depends on which role this run is playing.
+
+### When acting as Foreman-authoring (first phase)
+
+Triggered when the activation prompt says **"Pipeline mode: full-auto"** AND no SPEC.md exists yet for the named slug.
+
+1. Author the SPEC at `modules/Module N/docs/specs/{SLUG}/SPEC.md` per the SPEC Authoring Protocol earlier in this file.
+2. Commit + push the SPEC.md (`docs(spec): author {SLUG}`).
+3. Emit ONE Hebrew status line (see "Status Line" below).
+4. Hand off to the Executor in the SAME chat by invoking:
+   ```
+   Skill: opticup-executor
+   ```
+   with the dispatch line:
+   `Run SPEC modules/Module N/docs/specs/{SLUG}/SPEC.md under Pipeline mode: full-auto. Hand off to opticup-reviewer at the end of EXECUTION_REPORT.md write.`
+5. Do NOT continue running Foreman work after hand-off. The Executor owns the next phase.
+
+### When acting as Foreman-closure (last phase)
+
+Triggered when the activation prompt or the previous skill's hand-off says **"return to opticup-strategic for FOREMAN_REVIEW"** AND the SPEC folder contains both `EXECUTION_REPORT.md` AND `TEST_REPORT.md` (or a skip-rationale equivalent).
+
+1. Read EXECUTION_REPORT.md, FINDINGS.md, TEST_REPORT.md, and any reviewer notes embedded in EXECUTION_REPORT.md.
+2. Write `FOREMAN_REVIEW.md` per the existing FOREMAN_REVIEW protocol in this file.
+3. Apply 2 lessons to `opticup-strategic/SKILL.md` (this file) and 2 lessons to `opticup-executor/SKILL.md` — only when proposals warrant edits; otherwise log to FOREMAN_REVIEW as "proposals deferred."
+4. Commit + push (`chore(spec): close {SLUG} with retrospective`).
+5. Emit the Pipeline Closure Hebrew line (see "Pipeline Closure" below).
+6. Do NOT hand off further. The pipeline ends here.
+
+### Retry policy
+
+If `Skill: opticup-executor` fails to load: retry ONCE with the same dispatch line. On the second failure, write an escalation file at `modules/Module N/escalations/{ISO_TS}_skill-load-failure.md` and emit:
+`🛑 נתקעתי על טעינת Skill: opticup-executor — פנה לארכיטקט ב-Cowork. קובץ: {path}`
+
+## Pipeline Closure
+
+When the Foreman writes `FOREMAN_REVIEW.md` AND the verdict is recorded, it emits ONE final Hebrew line to Daniel intended as the entire visible summary of the run. The line must be ≤ 60 characters, must contain the verdict symbol (🟢 / 🟡 / 🔴), and must reference the SPEC slug.
+
+Examples (templates — substitute the slug):
+- `✅ {SLUG} CLOSED 🟢 — Next: {NEXT_SLUG or "TBD"}`
+- `⚠️ {SLUG} REOPEN 🟡 — סיבה: {one-word reason}. ראה FOREMAN_REVIEW.`
+- `🛑 {SLUG} BLOCKED 🔴 — סיבה: {one-word reason}. escalation: {path}`
+
+The Pipeline Closure line is the ONLY output Daniel sees at end-of-run in full-auto mode. The EXECUTION_REPORT, TEST_REPORT, and FOREMAN_REVIEW live on disk; the chat carries the one-liner.
+
+### Pipeline Mode Detection
+
+The Foreman detects full-auto mode by the literal phrase **`Pipeline mode: full-auto`** in the activation prompt. When present:
+
+- Every hand-off uses `Skill: <next>` chaining (no Daniel paste between phases).
+- AskUserQuestion is forbidden mid-pipeline (use escalation files + Hebrew lines instead).
+- Status lines are mandatory at each phase boundary.
+- Reports go to disk before the next skill loads (per Brief Contract B).
+
+When the phrase is absent → legacy behavior: each phase ends with a chat handoff to Daniel, Daniel manually opens the next skill in a new chat.
+
+### Status Line (Hebrew, single line, per phase)
+
+The Foreman emits exactly ONE Hebrew status line at the end of each phase it owns. The line is ≤ 60 characters, present-tense, and references either a count or a verdict. Examples:
+
+- `✓ SPEC נכתב ({SLUG}, {N} שורות).`
+- `✓ FOREMAN_REVIEW נכתב — verdict 🟢.`
+- `⚠️ FOREMAN_REVIEW — verdict 🟡, ראה FINDINGS.`
+- `🛑 נתקעתי על {topic} — escalation: {path}`
+
+These lines are the only chat output between phases. Verbose output, the SPEC body, the EXECUTION_REPORT body — none of those appear in the chat in full-auto mode; they live in commits and on disk.
