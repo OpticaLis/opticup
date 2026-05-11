@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>Optic Up — Hybrid Design System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Heebo:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="./_tokens.css">
+  <style>
+    body { display: grid; grid-template-rows: auto 1fr; height: 100vh; overflow: hidden; }
+
+    .hub-top {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--space-3) var(--space-6);
+      background: var(--bg-page);
+      border-bottom: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-sm);
+    }
+    .hub-brand { display: flex; align-items: center; gap: var(--space-3); font-weight: var(--weight-semibold); font-size: var(--text-lg); }
+    .hub-brand .mark {
+      width: 30px; height: 30px; border-radius: var(--radius-sm);
+      background: var(--accent); color: var(--accent-text);
+      display: grid; place-items: center;
+      font-weight: var(--weight-semibold); font-size: 14px;
+    }
+    .hub-brand small { display: block; color: var(--text-tertiary); font-weight: var(--weight-regular); font-size: 12px; margin-top: 1px; }
+
+    .lang-switch { display: flex; gap: var(--space-1); background: var(--bg-surface); padding: 4px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); }
+    .lang-switch a {
+      padding: 6px 14px; border-radius: var(--radius-sm);
+      font-size: var(--text-sm); font-weight: var(--weight-medium);
+      color: var(--text-secondary); text-align: center;
+    }
+    .lang-switch a small { display: block; font-weight: var(--weight-regular); opacity: 0.8; font-size: 11px; margin-top: 1px; }
+    .lang-switch a:hover { color: var(--text-primary); background: var(--bg-page); }
+    .lang-switch a.active { background: var(--accent); color: var(--accent-text); }
+    .lang-switch a.active small { opacity: 0.9; color: var(--accent-text); }
+
+    .hub-body { display: grid; grid-template-columns: var(--sidebar-width) 1fr; overflow: hidden; }
+    .hub-frame { background: var(--bg-surface); overflow: hidden; padding: var(--space-4); }
+    iframe {
+      width: 100%; height: 100%;
+      border: 0; border-radius: var(--radius-md);
+      background: var(--bg-page);
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .lang-note {
+      margin-top: auto; padding: var(--space-4);
+      border-radius: var(--radius-md);
+      background: var(--accent-soft);
+      border: 1px solid rgba(30,58,138,0.18);
+      font-size: var(--text-sm); color: var(--text-secondary); line-height: 1.6;
+    }
+    .lang-note strong {
+      display: block; margin-bottom: 6px;
+      font-weight: var(--weight-semibold); font-size: var(--text-base); color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hub-top">
+    <div class="hub-brand">
+      <span class="mark">O</span>
+      <div>
+        <div>Optic Up — Hybrid</div>
+        <small>Design System · Final · Stripe structure × Linear nav × Navy</small>
+      </div>
+    </div>
+    <nav class="lang-switch">
+      <a href="../language-a-linear/INDEX.html">Language A<small>Linear · ref</small></a>
+      <a href="../language-b-stripe/INDEX.html">Language B<small>Stripe · ref</small></a>
+      <a href="../language-c-notion/INDEX.html">Language C<small>Notion · ref</small></a>
+      <a href="./INDEX.html" class="active">Hybrid<small>Final</small></a>
+    </nav>
+  </header>
+
+  <div class="hub-body">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-mark">O</span>
+        <div>
+          <div>Optic Up</div>
+          <small>Hybrid · v1</small>
+        </div>
+      </div>
+
+      <div class="sidebar-section-label">מסכי הדגמה</div>
+      <a class="nav-item active" data-src="./storefront-studio.html" onclick="navTo(this); return false;" href="#">Storefront Studio</a>
+      <a class="nav-item" data-src="./permissions.html" onclick="navTo(this); return false;" href="#">הרשאות ותפקידים</a>
+      <a class="nav-item" data-src="./shipments.html" onclick="navTo(this); return false;" href="#">משלוחים וארגזים</a>
+      <a class="nav-item" data-src="./settings.html" onclick="navTo(this); return false;" href="#">הגדרות חנות</a>
+      <a class="nav-item" data-src="./suppliers-debt.html" onclick="navTo(this); return false;" href="#">חובות ספקים</a>
+
+      <div class="sidebar-section-label">שפת העיצוב</div>
+      <a class="nav-item" href="#">פלטה · Navy</a>
+      <a class="nav-item" href="#">טיפוגרפיה · Sans</a>
+      <a class="nav-item" href="#">צפיפות · 14px</a>
+
+      <div class="lang-note">
+        <strong>Optic Up Hybrid</strong>
+        מבנה Stripe (hero + metrics + cards) · ניווט Linear (sidebar שמאל-RTL, צפיפות 36px) · גוון Navy יחיד #1e3a8a · ללא ויולט, ללא סריף, ללא topbar.
+      </div>
+    </aside>
+
+    <main class="hub-frame">
+      <iframe id="preview" src="./storefront-studio.html" title="screen preview"></iframe>
+    </main>
+  </div>
+
+  <script>
+    function navTo(el) {
+      document.querySelectorAll(".nav-item").forEach(a => a.classList.remove("active"));
+      el.classList.add("active");
+      document.getElementById("preview").src = el.dataset.src;
+    }
+  </script>
+</body>
+</html>
