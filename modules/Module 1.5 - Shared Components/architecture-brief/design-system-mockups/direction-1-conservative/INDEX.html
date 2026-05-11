@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optic Up — Design System Mockups — Direction 1: Conservative</title>
+  <link rel="stylesheet" href="../../../../../shared/css/variables.css">
+  <link rel="stylesheet" href="../../../../../shared/css/layout.css">
+  <link rel="stylesheet" href="../../../../../shared/css/components.css">
+  <link rel="stylesheet" href="../../../../../shared/css/components-extra.css">
+  <link rel="stylesheet" href="../../../../../shared/css/forms.css">
+  <link rel="stylesheet" href="../../../../../shared/css/modal.css">
+  <link rel="stylesheet" href="../../../../../shared/css/toast.css">
+  <link rel="stylesheet" href="../../../../../shared/css/table.css">
+  <link rel="stylesheet" href="./_tokens.css">
+  <style>
+    /* INDEX-only chrome — does not belong in component CSS. */
+    html, body { height: 100%; margin: 0; }
+    body { display: grid; grid-template-rows: auto 1fr; font-family: var(--font-family-base, 'Heebo', sans-serif); background: var(--color-bg, #f8fafc); color: var(--color-text, #0f172a); }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: var(--color-surface, #ffffff); border-bottom: 1px solid var(--color-border, #e2e8f0); }
+    .top-bar h1 { margin: 0; font-size: 1rem; font-weight: 600; }
+    .direction-switch { display: flex; gap: 8px; }
+    .direction-switch a { padding: 6px 14px; border-radius: var(--radius-md, 8px); text-decoration: none; font-size: 0.85rem; background: var(--color-surface-alt, #f1f5f9); color: var(--color-text, #0f172a); border: 1px solid var(--color-border, #e2e8f0); }
+    .direction-switch a.active { background: var(--color-primary, #0f172a); color: #fff; }
+    .top-bar .toggle-row { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; }
+    .top-bar .toggle-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .layout { display: grid; grid-template-columns: 240px 1fr; min-height: 0; }
+    .nav { background: var(--color-surface, #ffffff); border-inline-end: 1px solid var(--color-border, #e2e8f0); padding: 12px; overflow-y: auto; }
+    .nav h2 { margin: 4px 4px 8px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted, #64748b); }
+    .nav ul { list-style: none; padding: 0; margin: 0; }
+    .nav li { margin: 2px 0; }
+    .nav button { width: 100%; text-align: start; padding: 8px 10px; border: 0; background: transparent; border-radius: var(--radius-sm, 6px); cursor: pointer; font-size: 0.88rem; color: var(--color-text, #0f172a); }
+    .nav button:hover { background: var(--color-surface-alt, #f1f5f9); }
+    .nav button.active { background: var(--color-primary-light, #eef2ff); color: var(--color-primary-dark, #3730a3); font-weight: 500; }
+    .preview { background: var(--color-bg, #f8fafc); padding: 12px; }
+    .preview iframe { width: 100%; height: 100%; border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-md, 8px); background: #fff; box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.08)); }
+    .preview-frame-wrap { height: 100%; }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <h1>Optic Up Design System — Direction 1: Conservative</h1>
+    <div class="direction-switch" aria-label="החלפת כיוון">
+      <a href="../direction-1-conservative/INDEX.html" class="active">1. Conservative</a>
+      <a href="../direction-2-modern-clean/INDEX.html">2. Modern-clean</a>
+      <a href="../direction-3-bold-dense-pro-tool/INDEX.html">3. Bold (dense-pro-tool)</a>
+    </div>
+    <div class="toggle-row">
+      <label>
+        <input type="checkbox" id="prizma-toggle">
+        Prizma sample (Indigo override)
+      </label>
+    </div>
+  </div>
+
+  <div class="layout">
+    <nav class="nav" aria-label="ניווט מודולים">
+      <h2>מודולים</h2>
+      <ul id="module-list">
+        <li><button data-src="./M1-inventory.html" class="active">M1 — Inventory</button></li>
+        <li><button data-src="./M3-storefront-studio.html">M3 — Storefront Studio</button></li>
+        <li><button data-src="./M4-crm.html">M4 — CRM</button></li>
+        <li><button data-src="./M5-customers.html">M5 — Customers</button></li>
+        <li><button data-src="./M6-prescriptions.html">M6 — Prescriptions</button></li>
+        <li><button data-src="./M7-orders.html">M7 — Orders</button></li>
+        <li><button data-src="./M8-payments.html">M8 — Payments</button></li>
+        <li><button data-src="./M9-lab-kds.html">M9 — Lab KDS</button></li>
+        <li><button data-src="./M11-reports.html">M11 — Reports</button></li>
+        <li><button data-src="./M12-communications.html">M12 — Communications</button></li>
+        <li><button data-src="./M13-loyalty.html">M13 — Loyalty</button></li>
+        <li><button data-src="./M14-appointments.html">M14 — Appointments</button></li>
+        <li><button data-src="./M15-queue.html">M15 — Queue</button></li>
+      </ul>
+    </nav>
+
+    <main class="preview">
+      <div class="preview-frame-wrap">
+        <iframe id="preview-frame" src="./M1-inventory.html" title="תצוגה מקדימה של מודול"></iframe>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Prizma override sample — Direction 1 only.
+    // Toggling the checkbox (or visiting with ?tenant=prizma) injects Indigo
+    // primary colors at :root so the SAME mockups demonstrate per-tenant theming.
+    (function () {
+      const root = document.documentElement;
+      const PRIZMA = {
+        '--color-primary':       '#4f46e5',
+        '--color-primary-hover': '#4338ca',
+        '--color-primary-light': '#eef2ff',
+        '--color-primary-dark':  '#3730a3'
+      };
+
+      function applyPrizma(on) {
+        for (const key in PRIZMA) {
+          if (on) root.style.setProperty(key, PRIZMA[key]);
+          else root.style.removeProperty(key);
+        }
+        // Forward the toggle into the iframe so its rendered CSS picks up the override too.
+        const f = document.getElementById('preview-frame');
+        try {
+          const iroot = f && f.contentDocument && f.contentDocument.documentElement;
+          if (iroot) {
+            for (const key in PRIZMA) {
+              if (on) iroot.style.setProperty(key, PRIZMA[key]);
+              else iroot.style.removeProperty(key);
+            }
+          }
+        } catch (e) { /* cross-origin safe-fail */ }
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const initial = params.get('tenant') === 'prizma';
+      const toggle = document.getElementById('prizma-toggle');
+      toggle.checked = initial;
+      applyPrizma(initial);
+      toggle.addEventListener('change', function () { applyPrizma(this.checked); });
+
+      // Module nav.
+      const list = document.getElementById('module-list');
+      const frame = document.getElementById('preview-frame');
+      list.addEventListener('click', function (e) {
+        const btn = e.target.closest('button[data-src]');
+        if (!btn) return;
+        list.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        frame.src = btn.dataset.src;
+      });
+      // Re-apply Prizma override after each iframe navigation.
+      frame.addEventListener('load', function () { applyPrizma(toggle.checked); });
+    })();
+  </script>
+</body>
+</html>
