@@ -6,7 +6,7 @@
 > **Module:** 1.5 — Shared Components
 > **Phase (in Design System initiative):** 4 of 4 — closure
 > **Parent brief:** `modules/Module 1.5 - Shared Components/architecture-brief/DESIGN_SYSTEM_BRIEF.md`
-> **Depends on:** `M1_5_DESIGN_SYSTEM_MOCKUPS_3_DIRECTIONS` (Phase 3) — must be 🟢 CLOSED first
+> **Depends on:** All 3 sub-phases of Phase 3 — `M1_5_DESIGN_SYSTEM_MOCKUPS_3A_CONSERVATIVE`, `M1_5_DESIGN_SYSTEM_MOCKUPS_3B_MODERN_CLEAN`, `M1_5_DESIGN_SYSTEM_MOCKUPS_3C_BOLD_DENSE_PRO_TOOL` — all must be 🟢 CLOSED first. (Phase 3 was originally a single SPEC; split into 3 sub-SPECs on 2026-05-11 per Daniel directive to fit context budget.)
 > **Author signature:** opticup-strategic / 2026-05-10 design-system phase-4 draft (closure)
 
 ---
@@ -23,7 +23,7 @@ Phases 1 + 2 + 3 produced: neutral platform defaults, a token-only component lib
 
 This SPEC contains the ONE intentional stop-trigger of the entire 4-phase initiative: Step 2 STOPS and asks Daniel "which direction?" Without that answer, the rest of Phase 4 cannot execute. Until then the executor sits idle by design.
 
-Per Daniel directive 2026-05-10 (Design System SPEC dispatch session): one combined FOREMAN_REVIEW.md is written at the end of THIS SPEC, covering Phases 1–4. Per-phase EXECUTION_REPORT + FINDINGS still exist in each SPEC folder.
+Per Daniel directive 2026-05-10 (Design System SPEC dispatch session): one combined FOREMAN_REVIEW.md is written at the end of THIS SPEC, covering Phases 1 + 2 + 3a + 3b + 3c + 4 (six SPECs total after the 2026-05-11 Phase 3 split). Per-SPEC EXECUTION_REPORT + FINDINGS still exist in each SPEC folder.
 
 ---
 
@@ -32,7 +32,7 @@ Per Daniel directive 2026-05-10 (Design System SPEC dispatch session): one combi
 | # | Criterion | Expected value | Verify command |
 |---|-----------|---------------|----------------|
 | 1 | Branch state at start | On `develop`, clean | `git status` → "nothing to commit" |
-| 2 | Phase 3 SPEC closed | EXECUTION_REPORT + FINDINGS in Phase 3 folder | `ls Phase 3 folder` |
+| 2 | All 3 Phase-3 sub-SPECs closed | each of 3a / 3b / 3c folder has EXECUTION_REPORT.md + FINDINGS.md | `for d in M1_5_DESIGN_SYSTEM_MOCKUPS_3{A_CONSERVATIVE,B_MODERN_CLEAN,C_BOLD_DENSE_PRO_TOOL}; do ls "modules/Module 1.5 - Shared Components/docs/specs/$d/" \| grep -cE "EXECUTION_REPORT\|FINDINGS"; done` → each ≥ 2 |
 | 3 | Daniel picked a direction | Direction recorded in EXECUTION_REPORT §3.0 as one of `direction-1-conservative`, `direction-2-modern-clean`, `direction-3-bold-dense-pro-tool` | executor stop-and-ask outcome logged |
 | 4 | Total commits produced | 7 commits | `git log origin/develop..HEAD --oneline \| wc -l` → 7 |
 | 5 | Chosen direction's `_tokens.css` promoted | `shared/css/variables.css` non-color tokens (font-size scale, spacing scale, radius scale, shadow scale) match the chosen direction's `_tokens.css` values | `diff -u <(grep -E "^\s*--font-size\|^\s*--space\|^\s*--radius\|^\s*--shadow" shared/css/variables.css) <(grep -E "^\s*--font-size\|^\s*--space\|^\s*--radius\|^\s*--shadow" .../design-system-mockups/{CHOSEN}/_tokens.css)` → minimal/expected diff (executor records actual diff in EXECUTION_REPORT §2) |
@@ -82,7 +82,7 @@ Per Daniel directive 2026-05-10 (Design System SPEC dispatch session): one combi
 
 ## 5. Execution Steps (numbered for stop-trigger clarity)
 
-**Step 1 — Verify preconditions.** Phase 3 closed. All 3 direction folders exist in `architecture-brief/design-system-mockups/`. `npm run smoke` green. Baseline: capture current `variables.css` font/space/radius/shadow values to EXECUTION_REPORT §2.
+**Step 1 — Verify preconditions.** All 3 Phase-3 sub-SPECs (3a + 3b + 3c) closed. All 3 direction folders exist in `architecture-brief/design-system-mockups/`. `npm run smoke` green. Baseline: capture current `variables.css` font/space/radius/shadow values to EXECUTION_REPORT §2.
 
 **Step 2 — ASK DANIEL: which direction wins?**
 
@@ -241,7 +241,7 @@ Per-step granularity: each Step commits before moving on, so reverting Step 8 (a
 
 ## 10. Dependencies / Preconditions
 
-- Phase 3 SPEC CLOSED with all 3 directions in `architecture-brief/design-system-mockups/`.
+- Phase 3 sub-SPECs 3a + 3b + 3c ALL 🟢 CLOSED, each with their direction folder fully built in `architecture-brief/design-system-mockups/`.
 - Daniel available to answer the Step-2 prompt within the executor session.
 - `npm` install permissions (for axe-core dev-deps).
 - Supabase MCP `apply_migration` for the new table.
