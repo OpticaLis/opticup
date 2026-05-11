@@ -45,6 +45,12 @@
 }
 
 .tb-th-sortable:hover { background: var(--color-gray-100); }
+.tb-th-sortable:focus { outline: none; }
+.tb-th-sortable:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+  box-shadow: var(--shadow-focus);
+}
 
 .tb-th-sortable::after {
   position: absolute;
