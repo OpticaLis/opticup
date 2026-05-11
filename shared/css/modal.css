@@ -22,7 +22,7 @@
   max-height: 90vh;
   overflow-y: auto;
   margin: var(--space-md, 12px);
-  background: var(--color-bg-card, #ffffff);
+  background: var(--color-bg-card);
   border-radius: var(--radius-lg, 10px);
   box-shadow: var(--shadow-lg, 0 12px 40px rgba(0, 0, 0, 0.25));
   display: flex;
@@ -93,11 +93,11 @@
 
 /* Danger — red-tinted header */
 .modal-type-danger .modal-header {
-  background: var(--color-error-light, #fee2e2);
-  border-bottom-color: var(--color-error, #ef4444);
+  background: var(--color-error-light);
+  border-bottom-color: var(--color-error);
 }
 .modal-type-danger .modal-header .modal-title {
-  color: var(--color-error, #ef4444);
+  color: var(--color-error);
 }
 .modal-type-danger .danger-confirm-input {
   width: 100%;
@@ -111,7 +111,7 @@
 }
 .modal-type-danger .danger-confirm-input:focus {
   outline: none;
-  border-color: var(--color-error, #ef4444);
+  border-color: var(--color-error);
 }
 
 /* --- 7. Wizard progress bar --- */
@@ -158,19 +158,19 @@
               color var(--transition-fast, 150ms ease);
 }
 .wizard-step-active {
-  color: var(--color-primary, #1a237e);
+  color: var(--color-primary);
   font-weight: var(--font-weight-semibold, 600);
 }
 .wizard-step-active .wizard-step-num {
-  background: var(--color-primary, #1a237e);
-  color: var(--color-white, #ffffff);
+  background: var(--color-primary);
+  color: var(--color-white);
 }
 .wizard-step-done {
-  color: var(--color-success, #10b981);
+  color: var(--color-success);
 }
 .wizard-step-done .wizard-step-num {
-  background: var(--color-success, #10b981);
-  color: var(--color-white, #ffffff);
+  background: var(--color-success);
+  color: var(--color-white);
 }
 .wizard-panel { display: none; }
 .wizard-panel-active { display: block; }
