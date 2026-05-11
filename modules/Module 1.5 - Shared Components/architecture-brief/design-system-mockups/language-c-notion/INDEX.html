@@ -8,11 +8,163 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Heebo:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="./_tokens.css">
+  <style>
+    body { display: grid; grid-template-rows: auto 1fr; height: 100vh; background: #fcfcfa; }
+
+    .hub-top {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 40px;
+      border-bottom: 1px solid #ece8e1;
+    }
+    .hub-brand {
+      display: flex; align-items: center; gap: 14px;
+      font-weight: 600; font-size: 17px; color: #2f2a25;
+    }
+    .hub-brand .mark {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: #f3eef9; color: #9f7aea;
+      display: grid; place-items: center;
+      font-weight: 700; font-size: 16px;
+    }
+    .hub-brand small {
+      display: block; color: #8a847d; font-weight: 400;
+      font-size: 13px; margin-top: 3px;
+    }
+    .lang-switch { display: flex; gap: 6px; }
+    .lang-switch a {
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 14px; font-weight: 500; color: #5a544e;
+      border: 1px solid #ece8e1;
+      background: #fff;
+    }
+    .lang-switch a.active {
+      background: #b794f4;
+      color: #2f2a25;
+      border-color: transparent;
+      font-weight: 600;
+    }
+    .lang-switch a small {
+      display: block; font-weight: 400; opacity: 0.85;
+      font-size: 11px; margin-top: 2px;
+    }
+
+    .hub-body { display: grid; grid-template-columns: 280px 1fr; overflow: hidden; }
+    .hub-side {
+      background: #f7f6f3;
+      padding: 28px 20px;
+      display: flex; flex-direction: column; gap: 8px;
+      overflow-y: auto;
+      border-inline-start: 1px solid #ece8e1;
+    }
+    .hub-side h3 {
+      font-size: 12px; color: #8a847d; font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin: 12px 0 8px; padding: 0 12px;
+    }
+    .screen-link {
+      padding: 12px 14px;
+      border-radius: 10px;
+      color: #5a544e;
+      font-size: 15px; font-weight: 500;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .screen-link .em { font-size: 20px; line-height: 1; width: 24px; text-align: center; }
+    .screen-link:hover { background: #ece8e1; color: #2f2a25; }
+    .screen-link.active { background: #f3eef9; color: #9f7aea; }
+    .screen-link small {
+      display: block; color: #8a847d; font-weight: 400;
+      font-size: 12px; margin-top: 2px;
+    }
+
+    .lang-note {
+      margin-top: auto;
+      padding: 20px;
+      border-radius: 16px;
+      background: #f3eef9;
+      border: 1px solid #ece8e1;
+      font-size: 14px; color: #5a544e; line-height: 1.7;
+    }
+    .lang-note strong {
+      display: block; margin-bottom: 8px;
+      font-weight: 600; font-size: 16px; color: #2f2a25;
+    }
+    .lang-note .em { font-size: 24px; display: block; margin-bottom: 8px; }
+
+    .hub-frame { background: #fcfcfa; overflow: hidden; padding: 28px; }
+    iframe {
+      width: 100%; height: 100%;
+      border: 1px solid #ece8e1;
+      border-radius: 20px;
+      background: #fcfcfa;
+    }
+  </style>
 </head>
 <body>
-  <header style="padding:32px;">
-    <strong>Language C — Notion / Airy</strong>
-    <p>Skeleton. Finalized in commit 10.</p>
+
+  <header class="hub-top">
+    <div class="hub-brand">
+      <span class="mark">C</span>
+      <div>
+        <div>Language C — Notion / Airy</div>
+        <small>Optic Up Design System · Phase 3 v2</small>
+      </div>
+    </div>
+    <nav class="lang-switch">
+      <a href="../language-a-linear/INDEX.html">
+        Language A<small>Linear</small>
+      </a>
+      <a href="../language-b-stripe/INDEX.html">
+        Language B<small>Stripe</small>
+      </a>
+      <a href="../language-c-notion/INDEX.html" class="active">
+        Language C<small>Notion</small>
+      </a>
+    </nav>
   </header>
+
+  <div class="hub-body">
+    <aside class="hub-side">
+      <h3>מסכים</h3>
+      <a class="screen-link active" data-src="./storefront-studio.html" onclick="navTo(this)">
+        <span class="em">📄</span>
+        <div>Storefront Studio<small>CMS · pages · media</small></div>
+      </a>
+      <a class="screen-link" data-src="./permissions.html" onclick="navTo(this)">
+        <span class="em">🔐</span>
+        <div>הרשאות<small>roles · matrix</small></div>
+      </a>
+      <a class="screen-link" data-src="./shipments.html" onclick="navTo(this)">
+        <span class="em">🚚</span>
+        <div>משלוחים<small>operations · timeline</small></div>
+      </a>
+      <a class="screen-link" data-src="./settings.html" onclick="navTo(this)">
+        <span class="em">⚙️</span>
+        <div>הגדרות<small>tabbed forms</small></div>
+      </a>
+      <a class="screen-link" data-src="./suppliers-debt.html" onclick="navTo(this)">
+        <span class="em">💰</span>
+        <div>חובות ספקים<small>finance · aging</small></div>
+      </a>
+
+      <div class="lang-note">
+        <span class="em">🌸</span>
+        <strong>Notion / Airy</strong>
+        קווי לבן-קריר · אקצנטים פסטליים (לבנדר · טיל · קוראל · אמבר) · Inter 16px · אפס צללים — גבולות ומפרידים · 16-20px פינות עגולות · אמוג'י חמים · המון מרחב נשימה · כפתורים בצורת גלולה.
+      </div>
+    </aside>
+    <main class="hub-frame">
+      <iframe id="preview" src="./storefront-studio.html" title="screen preview"></iframe>
+    </main>
+  </div>
+
+  <script>
+    function navTo(el) {
+      document.querySelectorAll(".screen-link").forEach(a => a.classList.remove("active"));
+      el.classList.add("active");
+      document.getElementById("preview").src = el.dataset.src;
+    }
+  </script>
 </body>
 </html>
