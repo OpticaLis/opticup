@@ -63,3 +63,4 @@ node scripts/verify.mjs --full --verbose
 | `rule-21-orphans` | 21 | Duplicate function names across files |
 | `rule-23-secrets` | 23 | Hardcoded secrets in source |
 | `check-root-discipline` | §0.5 | New root-level files not on allowlist |
+| `destructive-ops-declared` | 32 | SPECs missing § Destructive Operations; undeclared destructive patterns in staged diffs |
