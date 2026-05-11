@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>הרשאות — Language C (Notion)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Heebo:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="./_tokens.css">
+  <style>
+    .role-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto auto;
+      align-items: center;
+      gap: var(--space-5);
+      padding: var(--space-5);
+      border-radius: var(--radius-md);
+      background: var(--bg-surface-alt);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: var(--space-3);
+    }
+    .role-row .em { font-size: var(--text-2xl); }
+    .role-row h3 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+    .role-row .perm-summary { color: var(--text-tertiary); font-size: var(--text-sm); margin-top: 2px; }
+    .perm-row {
+      display: grid;
+      grid-template-columns: 1fr repeat(4, 60px);
+      gap: var(--space-3);
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--border-subtle);
+      align-items: center;
+    }
+    .perm-row:last-child { border-bottom: none; }
+    .perm-row .label { display: flex; align-items: center; gap: var(--space-3); }
+    .perm-row .label .em { font-size: var(--text-md); }
+    .perm-row .label .code { color: var(--text-tertiary); font-family: var(--font-mono); font-size: var(--text-xs); display: block; margin-top: 2px; }
+    .perm-row .cell { text-align: center; font-size: var(--text-md); }
+    .check { color: var(--success); font-weight: var(--weight-bold); }
+    .dash  { color: var(--text-disabled); }
+    .perm-header {
+      display: grid;
+      grid-template-columns: 1fr repeat(4, 60px);
+      gap: var(--space-3);
+      padding: var(--space-2) 0;
+      color: var(--text-tertiary); font-size: var(--text-xs); font-weight: var(--weight-medium);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      border-bottom: 2px solid var(--border-subtle);
+    }
+    .perm-header .cell { text-align: center; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="rail">
+    <div class="rail-brand"><span class="glyph">O</span><span>Optic Up</span></div>
+
+    <div class="rail-section">החשבון שלי</div>
+    <a class="rail-item" href="#"><span class="emoji">👤</span>פרופיל</a>
+    <a class="rail-item" href="#"><span class="emoji">⚙️</span>הגדרות חנות</a>
+
+    <div class="rail-section">צוות וגישה</div>
+    <a class="rail-item" href="#"><span class="emoji">👥</span>משתמשים</a>
+    <a class="rail-item active" href="#"><span class="emoji">🔐</span>תפקידים והרשאות</a>
+    <a class="rail-item" href="#"><span class="emoji">📜</span>יומן פעולות</a>
+
+    <div class="rail-section">חיוב</div>
+    <a class="rail-item" href="#"><span class="emoji">💳</span>תוכנית</a>
+    <a class="rail-item" href="#"><span class="emoji">🧾</span>חשבוניות</a>
+  </aside>
+
+  <main class="main">
+    <div class="page-title-block">
+      <div>
+        <div class="page-emoji">🔐</div>
+        <h1 class="page-title">תפקידים והרשאות</h1>
+        <p class="page-sub">ניהול מי יכול לעשות מה ב-Optic Up. 4 תפקידים פעילים, 12 משתמשים, 23 הרשאות מוגדרות. השינוי האחרון אתמול ב-14:22.</p>
+      </div>
+      <button class="btn btn-primary">+ תפקיד חדש</button>
+    </div>
+
+    <div class="callout callout-teal">
+      <span class="emoji">✨</span>
+      <span>טיפ: התחלת חנות חדשה? התבסס על אחד מתבניות התפקיד המוכנות — בעלים, מנהל, מוכר או אופטומטריסט.</span>
+    </div>
+
+    <section class="block" style="margin-top:var(--space-6);">
+      <div class="block-header">
+        <span class="block-emoji">👥</span>
+        <div>
+          <h2 class="block-title">תפקידים פעילים</h2>
+          <div class="block-sub">לחץ תפקיד לעריכת הרשאות.</div>
+        </div>
+      </div>
+
+      <div class="role-row">
+        <span class="em">👑</span>
+        <div>
+          <h3>בעלים</h3>
+          <div class="perm-summary">1 משתמש · גישה מלאה לכל ההגדרות</div>
+        </div>
+        <span class="tag tag-lavender">23 / 23 הרשאות</span>
+        <a href="#" class="btn btn-ghost">ערוך</a>
+      </div>
+
+      <div class="role-row">
+        <span class="em">📋</span>
+        <div>
+          <h3>מנהל</h3>
+          <div class="perm-summary">3 משתמשים · ניהול תפעולי, ללא ניהול משתמשים</div>
+        </div>
+        <span class="tag tag-teal">18 / 23 הרשאות</span>
+        <a href="#" class="btn btn-ghost">ערוך</a>
+      </div>
+
+      <div class="role-row">
+        <span class="em">🛒</span>
+        <div>
+          <h3>מוכר</h3>
+          <div class="perm-summary">6 משתמשים · מכירות וצפייה במלאי</div>
+        </div>
+        <span class="tag tag-coral">11 / 23 הרשאות</span>
+        <a href="#" class="btn btn-ghost">ערוך</a>
+      </div>
+
+      <div class="role-row">
+        <span class="em">👓</span>
+        <div>
+          <h3>אופטומטריסט</h3>
+          <div class="perm-summary">2 משתמשים · בדיקות ומרשמים</div>
+        </div>
+        <span class="tag tag-amber">9 / 23 הרשאות</span>
+        <a href="#" class="btn btn-ghost">ערוך</a>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-header">
+        <span class="block-emoji">📊</span>
+        <div>
+          <h2 class="block-title">מטריצת הרשאות</h2>
+          <div class="block-sub">סקירת כל ההרשאות לפי תפקיד.</div>
+        </div>
+      </div>
+
+      <div class="perm-header">
+        <div>הרשאה</div>
+        <div class="cell">👑</div>
+        <div class="cell">📋</div>
+        <div class="cell">🛒</div>
+        <div class="cell">👓</div>
+      </div>
+      <div class="perm-row"><div class="label"><span class="em">📦</span><div><strong>צפייה במלאי</strong><span class="code">inventory.view</span></div></div><div class="cell check">✓</div><div class="cell check">✓</div><div class="cell check">✓</div><div class="cell check">✓</div></div>
+      <div class="perm-row"><div class="label"><span class="em">✏️</span><div><strong>עריכת מלאי</strong><span class="code">inventory.edit</span></div></div><div class="cell check">✓</div><div class="cell check">✓</div><div class="cell dash">—</div><div class="cell dash">—</div></div>
+      <div class="perm-row"><div class="label"><span class="em">🔢</span><div><strong>שינוי כמויות</strong><span class="code">inventory.qty</span></div></div><div class="cell check">✓</div><div class="cell check">✓</div><div class="cell check">✓</div><div class="cell dash">—</div></div>
+      <div class="perm-row"><div class="label"><span class="em">🗑️</span><div><strong>מחיקה רכה</strong><span class="code">inventory.soft_delete</span></div></div><div class="cell check">✓</div><div class="cell check">✓</div><div class="cell dash">—</div><div class="cell dash">—</div></div>
+      <div class="perm-row"><div class="label"><span class="em">🔥</span><div><strong>מחיקה קבועה (PIN כפול)</strong><span class="code">inventory.hard_delete</span></div></div><div class="cell check">✓</div><div class="cell dash">—</div><div class="cell dash">—</div><div class="cell dash">—</div></div>
+      <div class="perm-row"><div class="label"><span class="em">👤</span><div><strong>צפייה בלקוחות</strong><span class="code">crm.view</span></div></div><div class="cell check">✓</div><div class="cell check">✓</div><div class="cell check">✓</div><div class="cell check">✓</div></div>
+      <div class="perm-row"><div class="label"><span class="em">👁️</span><div><strong>עריכת מרשם</strong><span class="code">prescription.edit</span></div></div><div class="cell check">✓</div><div class="cell check">✓</div><div class="cell dash">—</div><div class="cell check">✓</div></div>
+      <div class="perm-row"><div class="label"><span class="em">💰</span><div><strong>סגירת מכירה</strong><span class="code">sales.close</span></div></div><div class="cell check">✓</div><div class="cell check">✓</div><div class="cell check">✓</div><div class="cell dash">—</div></div>
+      <div class="perm-row"><div class="label"><span class="em">🏷️</span><div><strong>חובות ספקים</strong><span class="code">supplier_debt.manage</span></div></div><div class="cell check">✓</div><div class="cell check">✓</div><div class="cell dash">—</div><div class="cell dash">—</div></div>
+      <div class="perm-row"><div class="label"><span class="em">👥</span><div><strong>ניהול משתמשים</strong><span class="code">users.manage</span></div></div><div class="cell check">✓</div><div class="cell dash">—</div><div class="cell dash">—</div><div class="cell dash">—</div></div>
+      <div class="perm-row"><div class="label"><span class="em">⚙️</span><div><strong>הגדרות חנות</strong><span class="code">settings.tenant</span></div></div><div class="cell check">✓</div><div class="cell check">✓</div><div class="cell dash">—</div><div class="cell dash">—</div></div>
+      <div class="perm-row"><div class="label"><span class="em">🌐</span><div><strong>פרסום ל-Storefront</strong><span class="code">storefront.publish</span></div></div><div class="cell check">✓</div><div class="cell check">✓</div><div class="cell dash">—</div><div class="cell dash">—</div></div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

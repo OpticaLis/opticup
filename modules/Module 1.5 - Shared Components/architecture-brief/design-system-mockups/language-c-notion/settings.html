@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>הגדרות — Language C (Notion)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Heebo:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="./_tokens.css">
+  <style>
+    .toc {
+      display: flex; flex-direction: column; gap: 4px;
+      padding: var(--space-4);
+      border-radius: var(--radius-md);
+      background: var(--bg-wash);
+      margin-bottom: var(--space-6);
+    }
+    .toc h3 {
+      margin: 0 0 var(--space-2);
+      font-size: var(--text-xs);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--accent-hover);
+      font-weight: var(--weight-semibold);
+    }
+    .toc a {
+      padding: 6px 10px; border-radius: var(--radius-sm);
+      font-size: var(--text-sm); color: var(--text-secondary);
+    }
+    .toc a:hover { background: var(--bg-surface-alt); text-decoration: none; }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: var(--space-5);
+      align-items: start;
+      padding: var(--space-5) 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .form-row:last-child { border-bottom: none; }
+    .form-row .label-block strong { font-size: var(--text-md); display: block; margin-bottom: 4px; }
+    .form-row .label-block .help { color: var(--text-tertiary); font-size: var(--text-sm); }
+    .logo-tile {
+      width: 72px; height: 72px;
+      border-radius: var(--radius-md);
+      background: var(--bg-wash);
+      color: var(--accent-hover);
+      display: grid; place-items: center;
+      font-size: var(--text-2xl);
+      font-weight: var(--weight-bold);
+      border: 1px solid var(--border-subtle);
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="rail">
+    <div class="rail-brand"><span class="glyph">O</span><span>Optic Up</span></div>
+
+    <div class="rail-section">החשבון שלי</div>
+    <a class="rail-item" href="#"><span class="emoji">👤</span>פרופיל</a>
+    <a class="rail-item active" href="#"><span class="emoji">⚙️</span>הגדרות חנות</a>
+    <a class="rail-item" href="#"><span class="emoji">🔐</span>הרשאות</a>
+
+    <div class="rail-section">כללי</div>
+    <a class="rail-item" href="#"><span class="emoji">🏬</span>סניפים</a>
+    <a class="rail-item" href="#"><span class="emoji">💳</span>תשלום</a>
+    <a class="rail-item" href="#"><span class="emoji">💱</span>מטבע ומס</a>
+
+    <div class="rail-section">מתקדם</div>
+    <a class="rail-item" href="#"><span class="emoji">🔌</span>API</a>
+    <a class="rail-item" href="#"><span class="emoji">💾</span>גיבויים</a>
+  </aside>
+
+  <main class="main">
+    <div class="page-title-block">
+      <div>
+        <div class="page-emoji">⚙️</div>
+        <h1 class="page-title">הגדרות חנות</h1>
+        <p class="page-sub">אופטיקה פריזמה · נוצר 14.3.2025. השינוי האחרון: דניאל, היום ב-09:42.</p>
+      </div>
+      <div style="display:flex;gap:var(--space-3);">
+        <button class="btn btn-ghost">בטל</button>
+        <button class="btn btn-primary">💾 שמור</button>
+      </div>
+    </div>
+
+    <div class="callout">
+      <span class="emoji">📚</span>
+      <span>השינויים בהגדרות אלה משפיעים על כל החנויות והמסמכים שלך. <a href="#">מדריך הגדרות מלא &rarr;</a></span>
+    </div>
+
+    <nav class="toc" style="margin-top:var(--space-6);">
+      <h3>תוכן עניינים</h3>
+      <a href="#general">🏪 פרטי חנות</a>
+      <a href="#tax">💱 מס ומטבע</a>
+      <a href="#barcode">🏷️ ברקוד ותג</a>
+      <a href="#hours">🕐 שעות פעילות</a>
+      <a href="#notifications">🔔 התראות</a>
+    </nav>
+
+    <section class="block">
+      <div class="block-header">
+        <span class="block-emoji">🏪</span>
+        <div>
+          <h2 class="block-title">פרטי חנות</h2>
+          <div class="block-sub">המידע הבסיסי שמופיע על מסמכים ובחנות אונליין.</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="label-block">
+          <strong>שם החנות</strong>
+          <div class="help">השם שמוצג בחנות האונליין וברוב המסמכים.</div>
+        </div>
+        <input class="input" value="אופטיקה פריזמה">
+      </div>
+
+      <div class="form-row">
+        <div class="label-block">
+          <strong>מזהה חנות (slug)</strong>
+          <div class="help">מזהה ייחודי במערכת. לא ניתן לשנות.</div>
+        </div>
+        <input class="input" value="prizma" disabled style="font-family:var(--font-mono);">
+      </div>
+
+      <div class="form-row">
+        <div class="label-block">
+          <strong>כתובת ראשית</strong>
+          <div class="help">לכותרות בחשבוניות ובדף "צור קשר".</div>
+        </div>
+        <input class="input" value="רחוב הרצל 12, רמת גן">
+      </div>
+
+      <div class="form-row">
+        <div class="label-block">
+          <strong>טלפון ראשי</strong>
+          <div class="help">מוצג בכל מקום בחנות וב-WhatsApp.</div>
+        </div>
+        <input class="input" value="+972 3 555 1234" style="font-family:var(--font-mono);">
+      </div>
+
+      <div class="form-row">
+        <div class="label-block">
+          <strong>לוגו</strong>
+          <div class="help">SVG/PNG, עד 1MB. ייעשה ב-favicon ובכותרת.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:var(--space-4);">
+          <div class="logo-tile">P</div>
+          <button class="btn">📤 החלף</button>
+          <button class="btn btn-ghost">הסר</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-header">
+        <span class="block-emoji">💱</span>
+        <div>
+          <h2 class="block-title">מס ומטבע</h2>
+          <div class="block-sub">חישובי מע״מ ומטבע ברירת מחדל.</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="label-block">
+          <strong>מטבע ברירת מחדל</strong>
+          <div class="help">משמש בכל מסמך חדש שייווצר.</div>
+        </div>
+        <select class="select">
+          <option>🇮🇱 שקל ישראלי (₪)</option>
+          <option>🇺🇸 דולר אמריקאי ($)</option>
+          <option>🇪🇺 אירו (€)</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="label-block">
+          <strong>שיעור מע״מ</strong>
+          <div class="help">החישוב יתבצע אוטומטית בכל חשבונית.</div>
+        </div>
+        <input class="input" value="17%">
+      </div>
+
+      <div class="form-row">
+        <div class="label-block">
+          <strong>הצג מחירים כולל מע״מ</strong>
+          <div class="help">משפיע על דף המוצר בחנות אונליין.</div>
+        </div>
+        <div class="toggle"></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-header">
+        <span class="block-emoji">🏷️</span>
+        <div>
+          <h2 class="block-title">ברקוד ותג</h2>
+          <div class="block-sub">פורמט הברקוד הפנימי של החנות.</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="label-block">
+          <strong>פורמט ברקוד</strong>
+          <div class="help">2 ספרות סניף + 5 ספרות רץ. קבוע במערכת.</div>
+        </div>
+        <input class="input" value="BBDDDDD" disabled style="font-family:var(--font-mono);">
+      </div>
+
+      <div class="form-row">
+        <div class="label-block">
+          <strong>סניף ברירת מחדל</strong>
+          <div class="help">קוד הסניף שמוצמד אוטומטית לפריטים חדשים.</div>
+        </div>
+        <select class="select">
+          <option>01 — ראשי</option>
+          <option>02 — סניף ב'</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="label-block">
+          <strong>הדפסה אוטומטית בקבלה</strong>
+        </div>
+        <div class="toggle off"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

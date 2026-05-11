@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>משלוחים — Language C (Notion)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Heebo:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="./_tokens.css">
+  <style>
+    .shipment-card {
+      display: grid;
+      grid-template-columns: auto 1fr auto auto auto;
+      gap: var(--space-4);
+      align-items: center;
+      padding: var(--space-4);
+      border-radius: var(--radius-md);
+      background: var(--bg-surface-alt);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: var(--space-3);
+    }
+    .shipment-card .em { font-size: var(--text-xl); }
+    .shipment-card .id { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-tertiary); }
+    .box-list .box-item {
+      display: flex; align-items: center; gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      background: var(--bg-surface);
+      margin-bottom: var(--space-2);
+    }
+    .box-list .progress {
+      height: 8px; flex: 1;
+      border-radius: var(--radius-pill);
+      background: var(--bg-page);
+      overflow: hidden;
+      max-width: 200px;
+    }
+    .box-list .progress span { display: block; height: 100%; background: var(--accent); }
+    .tl { display: flex; flex-direction: column; gap: var(--space-4); padding-inline-start: var(--space-4); }
+    .tl-item {
+      position: relative;
+      padding-inline-start: var(--space-5);
+      padding-block: var(--space-2);
+    }
+    .tl-item::before {
+      content: ""; position: absolute;
+      inset-block: var(--space-2) 0;
+      inset-inline-start: 0;
+      width: 2px; background: var(--border-subtle);
+    }
+    .tl-item::after {
+      content: ""; position: absolute;
+      inset-inline-start: -5px; top: var(--space-3);
+      width: 12px; height: 12px;
+      border-radius: 999px;
+      background: var(--accent);
+      border: 2px solid var(--bg-page);
+    }
+    .tl-item:last-child::before { display: none; }
+    .tl-item strong { font-size: var(--text-md); }
+    .tl-item .meta { color: var(--text-tertiary); font-size: var(--text-xs); margin-top: 4px; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="rail">
+    <div class="rail-brand"><span class="glyph">O</span><span>Optic Up</span></div>
+
+    <div class="rail-section">תפעול יומי</div>
+    <a class="rail-item" href="#"><span class="emoji">📦</span>מלאי</a>
+    <a class="rail-item active" href="#"><span class="emoji">🚚</span>משלוחים</a>
+    <a class="rail-item" href="#"><span class="emoji">📥</span>ארגזים</a>
+    <a class="rail-item" href="#"><span class="emoji">↩️</span>החזרות</a>
+
+    <div class="rail-section">ספקים</div>
+    <a class="rail-item" href="#"><span class="emoji">🏭</span>ספקים</a>
+    <a class="rail-item" href="#"><span class="emoji">📋</span>הזמנות רכש</a>
+    <a class="rail-item" href="#"><span class="emoji">💰</span>חובות</a>
+  </aside>
+
+  <main class="main">
+    <div class="page-title-block">
+      <div>
+        <div class="page-emoji">🚚</div>
+        <h1 class="page-title">משלוחים וארגזים</h1>
+        <p class="page-sub">3 משלוחים בדרך אל פריזמה, 7 ארגזים פעילים במחסן. BX-0140-02 יינעל אוטומטית בעוד שעה ו-42 דקות.</p>
+      </div>
+      <div style="display:flex;gap:var(--space-3);">
+        <button class="btn">📷 סרוק</button>
+        <button class="btn btn-primary">+ משלוח</button>
+      </div>
+    </div>
+
+    <div class="callout callout-amber">
+      <span class="emoji">⏰</span>
+      <span><strong>נעילה אוטומטית קרובה:</strong> BX-0140-02 (Marcolin) ייסגר ב-15:50. 14 מתוך 18 פריטים נסרקו.</span>
+    </div>
+
+    <section class="block" style="margin-top:var(--space-6);">
+      <div class="stat-strip">
+        <div>
+          <div class="stat-label">🚚 משלוחים החודש</div>
+          <div class="stat-value">42</div>
+          <div class="stat-note">+8 מאפריל</div>
+        </div>
+        <div>
+          <div class="stat-label">🛣️ בדרך</div>
+          <div class="stat-value">3</div>
+          <div class="stat-note">צפויים השבוע</div>
+        </div>
+        <div>
+          <div class="stat-label">📥 ארגזים פתוחים</div>
+          <div class="stat-value">7</div>
+          <div class="stat-note">2 פגי נעילה</div>
+        </div>
+        <div>
+          <div class="stat-label">👓 פריטים השבוע</div>
+          <div class="stat-value">284</div>
+          <div class="stat-note">+62 מש״ק</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-header">
+        <span class="block-emoji">🚚</span>
+        <div>
+          <h2 class="block-title">משלוחים פעילים</h2>
+          <div class="block-sub">מוצגים לפי סדר כניסה למחסן.</div>
+        </div>
+      </div>
+
+      <div class="shipment-card">
+        <span class="em">🇮🇹</span>
+        <div>
+          <strong>Luxottica</strong>
+          <div class="id">SH-2026-0142 · 87 פריטים</div>
+        </div>
+        <span class="tag tag-teal">בדרך</span>
+        <span style="color:var(--text-tertiary);">4 ארגזים</span>
+        <span style="color:var(--text-tertiary);">11.5</span>
+      </div>
+
+      <div class="shipment-card">
+        <span class="em">🇮🇹</span>
+        <div>
+          <strong>Safilo</strong>
+          <div class="id">SH-2026-0141 · 34 פריטים</div>
+        </div>
+        <span class="tag tag-teal">בדרך</span>
+        <span style="color:var(--text-tertiary);">2 ארגזים</span>
+        <span style="color:var(--text-tertiary);">10.5</span>
+      </div>
+
+      <div class="shipment-card">
+        <span class="em">🇮🇹</span>
+        <div>
+          <strong>Marcolin</strong>
+          <div class="id">SH-2026-0140 · 52 פריטים</div>
+        </div>
+        <span class="tag tag-warning">פתוח</span>
+        <span style="color:var(--text-tertiary);">3 ארגזים</span>
+        <span style="color:var(--text-tertiary);">9.5</span>
+      </div>
+
+      <div class="shipment-card">
+        <span class="em">🇮🇱</span>
+        <div>
+          <strong>Optical Frame Israel</strong>
+          <div class="id">SH-2026-0139 · 28 פריטים</div>
+        </div>
+        <span class="tag tag-success">נסגר</span>
+        <span style="color:var(--text-tertiary);">2 ארגזים</span>
+        <span style="color:var(--text-tertiary);">8.5</span>
+      </div>
+
+      <div class="shipment-card">
+        <span class="em">🇮🇹</span>
+        <div>
+          <strong>Luxottica</strong>
+          <div class="id">SH-2026-0138 · 114 פריטים</div>
+        </div>
+        <span class="tag tag-success">נסגר</span>
+        <span style="color:var(--text-tertiary);">5 ארגזים</span>
+        <span style="color:var(--text-tertiary);">5.5</span>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-header">
+        <span class="block-emoji">📥</span>
+        <div>
+          <h2 class="block-title">ארגזים — SH-2026-0140 (Marcolin)</h2>
+          <div class="block-sub">3 ארגזים, 52 פריטים מצופים. 22 נסרקו, 14 בעבודה, 12 ממתינים.</div>
+        </div>
+      </div>
+
+      <div class="box-list">
+        <div class="box-item">
+          <span class="em" style="font-size:var(--text-md);">📦</span>
+          <strong style="flex:1;">BX-0140-01</strong>
+          <span style="color:var(--text-tertiary);">22 פריטים</span>
+          <span class="tag tag-success">סגור</span>
+        </div>
+        <div class="box-item">
+          <span class="em" style="font-size:var(--text-md);">📦</span>
+          <strong style="flex:1;">BX-0140-02</strong>
+          <div class="progress"><span style="width:78%;"></span></div>
+          <span style="color:var(--text-tertiary);">14 / 18</span>
+          <span class="tag tag-warning">בעבודה</span>
+        </div>
+        <div class="box-item">
+          <span class="em" style="font-size:var(--text-md);">📦</span>
+          <strong style="flex:1;">BX-0140-03</strong>
+          <span style="color:var(--text-tertiary);">ריק</span>
+          <span class="tag">ממתין</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-header">
+        <span class="block-emoji">📝</span>
+        <div>
+          <h2 class="block-title">תיעוד פעולות</h2>
+          <div class="block-sub">SH-2026-0140 · חתימת אבטחה: PIN דניאל.</div>
+        </div>
+      </div>
+      <div class="tl">
+        <div class="tl-item">
+          <strong>המשלוח התקבל מהספק</strong>
+          <div class="meta">9.5.2026, 09:14 · 3 ארגזים · 52 פריטים מצופים</div>
+        </div>
+        <div class="tl-item">
+          <strong>BX-0140-01 נסגר</strong>
+          <div class="meta">9.5.2026, 11:42 · 22 פריטים נסרקו · PIN דניאל</div>
+        </div>
+        <div class="tl-item">
+          <strong>BX-0140-02 בעבודה</strong>
+          <div class="meta">9.5.2026, 14:08 · 14/18 פריטים · נעילה אוטומטית בעוד 1:42</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>
