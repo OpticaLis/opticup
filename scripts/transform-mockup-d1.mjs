@@ -63,6 +63,9 @@ function transform(src, kind, mockBlock) {
   // 8) Collapse 3+ blank lines.
   s = s.replace(/\n{3,}/g, '\n\n');
 
+  // 9) Ensure trailing newline (Iron Rule 31 integrity-gate friendly).
+  if (!s.endsWith('\n')) s += '\n';
+
   return s;
 }
 
