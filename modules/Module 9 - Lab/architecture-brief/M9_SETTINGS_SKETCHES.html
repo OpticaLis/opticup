@@ -5,56 +5,56 @@
 <title>M9 — General Settings Sketches v2</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Rubik', -apple-system, sans-serif; background: #f5f5f7; color: #1d1d1f; padding: 16px; font-size: 13px; }
+  body { font-family: 'Rubik', -apple-system, sans-serif; background: #fafaf7; color: #0f172a; padding: 16px; font-size: 13px; }
   .nav { position: sticky; top: 0; background: white; padding: 14px 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; z-index: 100; }
-  .nav h1 { font-size: 18px; margin-left: auto; color: #c9a555; }
-  .nav button { background: #f5f5f7; border: 1px solid #d2d2d7; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; }
-  .nav button.active { background: #c9a555; color: white; border-color: #c9a555; }
+  .nav h1 { font-size: 18px; margin-left: auto; color: #1e3a8a; }
+  .nav button { background: #fafaf7; border: 1px solid #cbd5e1; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .nav button.active { background: #1e3a8a; color: white; border-color: #1e3a8a; }
   .sketch { display: block; background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
-  .sketch h2 { font-size: 22px; margin-bottom: 4px; color: #c9a555; }
-  .sketch .subtitle { color: #86868b; font-size: 13px; margin-bottom: 14px; }
-  .recommendation-banner { background: linear-gradient(135deg, #fff8e8 0%, #fff3d6 100%); border: 1px solid #e0c97f; padding: 14px 18px; border-radius: 10px; margin-bottom: 16px; }
+  .sketch h2 { font-size: 22px; margin-bottom: 4px; color: #1e3a8a; }
+  .sketch .subtitle { color: #475569; font-size: 13px; margin-bottom: 14px; }
+  .recommendation-banner { background: #e6f1fb; border: 1px solid #1e3a8a; padding: 14px 18px; border-radius: 10px; margin-bottom: 16px; }
   .recommendation-banner .rb-title { font-weight: 600; color: #855011; margin-bottom: 4px; font-size: 14px; }
   .recommendation-banner .rb-body { font-size: 12px; color: #444; line-height: 1.6; }
   .recommendation-banner ul { margin: 6px 18px 0; }
 
-  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding: 10px 14px; background: white; border: 1px solid #e5e5ea; border-radius: 6px; }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding: 10px 14px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; }
   .top-bar .title { font-size: 16px; font-weight: 600; }
   .top-bar .meta { font-size: 12px; color: #888; }
-  .btn-primary { background: #c9a555; color: white; border: 0; padding: 6px 14px; border-radius: 5px; cursor: pointer; font-size: 12px; font-family: inherit; }
-  .btn-secondary { background: white; color: #1d1d1f; border: 1px solid #d2d2d7; padding: 5px 12px; border-radius: 5px; font-family: inherit; font-size: 12px; cursor: pointer; }
+  .btn-primary { background: #1e3a8a; color: white; border: 0; padding: 6px 14px; border-radius: 5px; cursor: pointer; font-size: 12px; font-family: inherit; }
+  .btn-secondary { background: white; color: #0f172a; border: 1px solid #cbd5e1; padding: 5px 12px; border-radius: 5px; font-family: inherit; font-size: 12px; cursor: pointer; }
   .btn-danger { background: #c93535; color: white; border: 0; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-family: inherit; }
 
-  table.access-style { width: 100%; border-collapse: collapse; font-size: 12px; background: white; border: 1px solid #e5e5ea; }
-  table.access-style th { background: #fafafc; padding: 8px 10px; font-weight: 600; color: #555; border-bottom: 1px solid #e5e5ea; text-align: right; }
-  table.access-style td { padding: 8px 10px; border-bottom: 1px solid #f5f5f7; }
-  table.access-style input, table.access-style select { padding: 4px 8px; font-size: 12px; border: 1px solid #d2d2d7; border-radius: 4px; font-family: inherit; }
+  table.access-style { width: 100%; border-collapse: collapse; font-size: 12px; background: white; border: 1px solid #e2e8f0; }
+  table.access-style th { background: #f4f4f5; padding: 8px 10px; font-weight: 600; color: #555; border-bottom: 1px solid #e2e8f0; text-align: right; }
+  table.access-style td { padding: 8px 10px; border-bottom: 1px solid #fafaf7; }
+  table.access-style input, table.access-style select { padding: 4px 8px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: inherit; }
   .toggle-switch { display: inline-block; width: 36px; height: 20px; background: #c8e9b8; border-radius: 10px; position: relative; cursor: pointer; }
-  .toggle-switch.off { background: #e5e5ea; }
+  .toggle-switch.off { background: #e2e8f0; }
   .toggle-switch::after { content: ''; position: absolute; width: 16px; height: 16px; background: white; border-radius: 50%; top: 2px; right: 2px; transition: 0.2s; }
   .toggle-switch.off::after { right: auto; left: 2px; }
   .pill { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; display: inline-block; }
-  .pill-default { background: #fff3d6; color: #855011; }
-  .pill-locked  { background: #e5e5ea; color: #555; font-size: 10px; }
+  .pill-default { background: #e6f1fb; color: #855011; }
+  .pill-locked  { background: #e2e8f0; color: #555; font-size: 10px; }
 
   .sidebar-layout { display: grid; grid-template-columns: 220px 1fr; gap: 14px; }
-  .sidebar { background: white; border: 1px solid #e5e5ea; border-radius: 8px; padding: 8px; }
+  .sidebar { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; }
   .sidebar-section { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 12px 4px; }
   .sidebar-item { padding: 10px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
-  .sidebar-item:hover { background: #fafafc; }
-  .sidebar-item.active { background: #fff3d6; color: #855011; font-weight: 600; }
-  .sidebar-item .count { background: #e5e5ea; color: #555; padding: 1px 8px; border-radius: 8px; font-size: 11px; }
+  .sidebar-item:hover { background: #f4f4f5; }
+  .sidebar-item.active { background: #e6f1fb; color: #855011; font-weight: 600; }
+  .sidebar-item .count { background: #e2e8f0; color: #555; padding: 1px 8px; border-radius: 8px; font-size: 11px; }
   .sidebar-item.active .count { background: #855011; color: white; }
   .sidebar-item.external { color: #888; font-size: 12px; }
   .sidebar-item.external::after { content: '↗'; }
-  .content-pane { background: white; border: 1px solid #e5e5ea; border-radius: 8px; padding: 16px; }
+  .content-pane { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; }
   .content-pane h3 { font-size: 16px; margin-bottom: 4px; }
   .content-pane .pane-subtitle { font-size: 12px; color: #888; margin-bottom: 14px; }
 
   .toolbar-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
-  .toolbar-row input[type=text] { padding: 5px 10px; font-size: 12px; border: 1px solid #d2d2d7; border-radius: 5px; flex: 1; max-width: 220px; }
+  .toolbar-row input[type=text] { padding: 5px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 5px; flex: 1; max-width: 220px; }
 
-  .info-box { background: #fafafc; padding: 10px 14px; border-radius: 6px; font-size: 11px; color: #555; line-height: 1.6; margin-top: 12px; }
+  .info-box { background: #f4f4f5; padding: 10px 14px; border-radius: 6px; font-size: 11px; color: #555; line-height: 1.6; margin-top: 12px; }
   .info-box strong { color: #855011; }
 </style>
 </head>
@@ -146,14 +146,14 @@
             </tr>
             <tr>
               <td><strong>מדף הזמנה</strong></td>
-              <td><span style="background: #fff3d6; padding: 4px 10px; border-radius: 4px;">צהוב</span></td>
+              <td><span style="background: #e6f1fb; padding: 4px 10px; border-radius: 4px;">צהוב</span></td>
               <td><select><option>פנימי + הזמנת-עדשה</option></select></td>
               <td><div class="toggle-switch"></div></td>
               <td><button class="btn-danger">✕</button></td>
             </tr>
             <tr>
               <td><strong>מדף מלאי</strong></td>
-              <td><span style="background: #fff3d6; padding: 4px 10px; border-radius: 4px;">צהוב</span></td>
+              <td><span style="background: #e6f1fb; padding: 4px 10px; border-radius: 4px;">צהוב</span></td>
               <td><select><option>פנימי-מהמלאי</option></select></td>
               <td><div class="toggle-switch"></div></td>
               <td><button class="btn-danger">✕</button></td>
@@ -181,7 +181,7 @@
       </div>
     </div>
 
-    <div style="margin-top: 30px; padding: 20px; background: #fafafc; border-radius: 8px; border: 1px solid #e5e5ea;">
+    <div style="margin-top: 30px; padding: 20px; background: #f4f4f5; border-radius: 8px; border: 1px solid #e2e8f0;">
       <h3 style="font-size: 14px; color: #555; margin-bottom: 10px;">תצוגה לדוגמה: תחום "ספקים" — מסונכרן מ-M1, נעול-לעריכה</h3>
       <table class="access-style">
         <thead>

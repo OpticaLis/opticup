@@ -5,72 +5,72 @@
 <title>M9 — Compensation Matrix Sketches</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Rubik', -apple-system, sans-serif; background: #f5f5f7; color: #1d1d1f; padding: 16px; font-size: 13px; }
+  body { font-family: 'Rubik', -apple-system, sans-serif; background: #fafaf7; color: #0f172a; padding: 16px; font-size: 13px; }
   .nav { position: sticky; top: 0; background: white; padding: 14px 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; z-index: 100; }
-  .nav h1 { font-size: 18px; margin-left: auto; color: #c9a555; }
-  .nav button { background: #f5f5f7; border: 1px solid #d2d2d7; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; }
-  .nav button.active { background: #c9a555; color: white; border-color: #c9a555; }
+  .nav h1 { font-size: 18px; margin-left: auto; color: #1e3a8a; }
+  .nav button { background: #fafaf7; border: 1px solid #cbd5e1; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .nav button.active { background: #1e3a8a; color: white; border-color: #1e3a8a; }
   .sketch { display: none; background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
   .sketch.active { display: block; }
-  .sketch h2 { font-size: 22px; margin-bottom: 4px; color: #c9a555; }
-  .sketch .subtitle { color: #86868b; font-size: 13px; margin-bottom: 8px; }
-  .sketch .rationale { background: #fafafc; border-right: 3px solid #c9a555; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; color: #444; line-height: 1.6; }
-  .sketch .rationale strong { color: #c9a555; }
-  .recommendation-banner { background: linear-gradient(135deg, #fff8e8 0%, #fff3d6 100%); border: 1px solid #e0c97f; padding: 14px 18px; border-radius: 10px; margin-bottom: 16px; }
+  .sketch h2 { font-size: 22px; margin-bottom: 4px; color: #1e3a8a; }
+  .sketch .subtitle { color: #475569; font-size: 13px; margin-bottom: 8px; }
+  .sketch .rationale { background: #f4f4f5; border-right: 3px solid #1e3a8a; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; color: #444; line-height: 1.6; }
+  .sketch .rationale strong { color: #1e3a8a; }
+  .recommendation-banner { background: #e6f1fb; border: 1px solid #1e3a8a; padding: 14px 18px; border-radius: 10px; margin-bottom: 16px; }
   .recommendation-banner .rb-title { font-weight: 600; color: #855011; margin-bottom: 4px; font-size: 14px; }
   .recommendation-banner .rb-body { font-size: 12px; color: #444; line-height: 1.6; }
 
-  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding: 10px 14px; background: white; border: 1px solid #e5e5ea; border-radius: 6px; }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding: 10px 14px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; }
   .top-bar .title { font-size: 16px; font-weight: 600; }
   .top-bar .meta { font-size: 12px; color: #888; }
-  .top-bar select, .top-bar input { padding: 5px 10px; font-size: 12px; border: 1px solid #d2d2d7; border-radius: 5px; font-family: inherit; }
-  .btn-primary { background: #c9a555; color: white; border: 0; padding: 6px 14px; border-radius: 5px; cursor: pointer; font-size: 12px; font-family: inherit; }
-  .btn-secondary { background: white; color: #1d1d1f; border: 1px solid #d2d2d7; padding: 5px 12px; border-radius: 5px; font-family: inherit; font-size: 12px; cursor: pointer; }
+  .top-bar select, .top-bar input { padding: 5px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 5px; font-family: inherit; }
+  .btn-primary { background: #1e3a8a; color: white; border: 0; padding: 6px 14px; border-radius: 5px; cursor: pointer; font-size: 12px; font-family: inherit; }
+  .btn-secondary { background: white; color: #0f172a; border: 1px solid #cbd5e1; padding: 5px 12px; border-radius: 5px; font-family: inherit; font-size: 12px; cursor: pointer; }
   .btn-success { background: #2d8050; color: white; border: 0; padding: 6px 14px; border-radius: 5px; cursor: pointer; font-size: 12px; font-family: inherit; }
   .btn-danger  { background: #c93535; color: white; border: 0; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-family: inherit; }
 
-  .global-row { background: #fff8e8; border: 1px solid #e0c97f; border-radius: 8px; padding: 12px 16px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .global-row { background: #e6f1fb; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px 16px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
   .global-row .gr-label { font-size: 13px; font-weight: 600; color: #855011; }
   .global-row .gr-field { display: flex; gap: 6px; align-items: center; }
-  .global-row input { padding: 5px 10px; font-size: 12px; border: 1px solid #d2d2d7; border-radius: 5px; width: 80px; font-family: inherit; }
+  .global-row input { padding: 5px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 5px; width: 80px; font-family: inherit; }
 
   /* Sketch A — 2D matrix */
   .matrix-table { width: 100%; border-collapse: collapse; font-size: 12px; background: white; border: 1px solid #b8b8b8; }
   .matrix-table th { background: #d8d8d8; padding: 10px 8px; font-weight: 600; color: #333; border: 1px solid #b8b8b8; text-align: center; }
   .matrix-table th.cat-col { background: #404040; color: #ffd700; text-align: right; }
   .matrix-table td { padding: 8px; border: 1px solid #d8d8d8; text-align: center; }
-  .matrix-table td.cat-cell { background: #fff8e8; font-weight: 600; text-align: right; padding-right: 12px; }
+  .matrix-table td.cat-cell { background: #e6f1fb; font-weight: 600; text-align: right; padding-right: 12px; }
   .matrix-cell { display: flex; flex-direction: column; gap: 2px; align-items: stretch; }
-  .matrix-cell input { padding: 4px 6px; font-size: 12px; border: 1px solid #d2d2d7; border-radius: 4px; text-align: center; font-family: inherit; }
+  .matrix-cell input { padding: 4px 6px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; font-family: inherit; }
   .matrix-cell .type-row { display: flex; gap: 2px; align-items: center; font-size: 10px; color: #888; }
-  .matrix-cell .type-row select { font-size: 10px; padding: 2px 4px; border: 1px solid #d2d2d7; border-radius: 3px; flex: 1; }
-  .threshold-cell { background: #f5f5f7; }
-  .threshold-cell input { padding: 4px 6px; font-size: 11px; border: 1px solid #d2d2d7; border-radius: 4px; text-align: center; width: 100%; font-family: inherit; }
+  .matrix-cell .type-row select { font-size: 10px; padding: 2px 4px; border: 1px solid #cbd5e1; border-radius: 3px; flex: 1; }
+  .threshold-cell { background: #fafaf7; }
+  .threshold-cell input { padding: 4px 6px; font-size: 11px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; width: 100%; font-family: inherit; }
   .threshold-label { font-size: 10px; color: #888; margin-bottom: 2px; }
 
   /* Sketch B — Per-category form */
-  .cat-card { background: white; border: 1px solid #e5e5ea; border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
-  .cat-card-header { padding: 12px 16px; background: #fff8e8; border-bottom: 1px solid #e0c97f; font-size: 14px; font-weight: 600; color: #855011; display: flex; justify-content: space-between; align-items: center; }
+  .cat-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
+  .cat-card-header { padding: 12px 16px; background: #e6f1fb; border-bottom: 1px solid #1e3a8a; font-size: 14px; font-weight: 600; color: #855011; display: flex; justify-content: space-between; align-items: center; }
   .cat-card-body { padding: 14px 16px; }
   .cat-form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-  .cat-form-grid h4 { font-size: 12px; color: #555; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e5e5ea; }
+  .cat-form-grid h4 { font-size: 12px; color: #555; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0; }
   .form-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; font-size: 12px; }
   .form-row label { color: #555; flex: 1; }
-  .form-row input { padding: 4px 8px; font-size: 12px; border: 1px solid #d2d2d7; border-radius: 4px; width: 70px; font-family: inherit; text-align: center; }
-  .form-row select { padding: 4px 8px; font-size: 12px; border: 1px solid #d2d2d7; border-radius: 4px; font-family: inherit; }
-  .compensation-row { display: grid; grid-template-columns: 80px 1fr 100px 110px; gap: 6px; align-items: center; padding: 6px 0; border-top: 1px solid #f5f5f7; font-size: 12px; }
-  .compensation-row.header-row { background: #fafafc; padding: 6px 8px; font-weight: 600; border-radius: 4px; border: 0; }
+  .form-row input { padding: 4px 8px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 4px; width: 70px; font-family: inherit; text-align: center; }
+  .form-row select { padding: 4px 8px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: inherit; }
+  .compensation-row { display: grid; grid-template-columns: 80px 1fr 100px 110px; gap: 6px; align-items: center; padding: 6px 0; border-top: 1px solid #fafaf7; font-size: 12px; }
+  .compensation-row.header-row { background: #f4f4f5; padding: 6px 8px; font-weight: 600; border-radius: 4px; border: 0; }
   .severity-pill { padding: 2px 8px; border-radius: 4px; font-size: 11px; text-align: center; }
   .severity-yellow { background: #ffd476; color: #6b4400; }
   .severity-red { background: #fde7e7; color: #791f1f; }
   .severity-comp { background: #c93535; color: white; }
-  .compensation-row input { padding: 4px 8px; font-size: 12px; border: 1px solid #d2d2d7; border-radius: 4px; font-family: inherit; }
-  .compensation-row select { padding: 4px 8px; font-size: 12px; border: 1px solid #d2d2d7; border-radius: 4px; font-family: inherit; }
+  .compensation-row input { padding: 4px 8px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: inherit; }
+  .compensation-row select { padding: 4px 8px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: inherit; }
 
   /* Sketch C — Rules */
-  .rule-row { background: white; border: 1px solid #e5e5ea; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .rule-row .if-label { font-weight: 600; color: #c9a555; font-size: 12px; }
-  .rule-row select, .rule-row input { padding: 5px 10px; font-size: 12px; border: 1px solid #d2d2d7; border-radius: 5px; font-family: inherit; }
+  .rule-row { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .rule-row .if-label { font-weight: 600; color: #1e3a8a; font-size: 12px; }
+  .rule-row select, .rule-row input { padding: 5px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 5px; font-family: inherit; }
   .rule-row .arrow { color: #888; font-size: 14px; }
 
   .test-tool { background: #e7f3ff; border: 1px solid #a3cae8; border-radius: 8px; padding: 14px; margin-top: 14px; }
@@ -249,7 +249,7 @@
           </div>
         </div>
 
-        <h4 style="font-size: 12px; color: #555; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e5e5ea;">מדרגות-פיצוי</h4>
+        <h4 style="font-size: 12px; color: #555; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0;">מדרגות-פיצוי</h4>
 
         <div class="compensation-row header-row">
           <div>תווית</div>
@@ -404,7 +404,7 @@
       <button class="btn-danger">מחק</button>
     </div>
 
-    <div style="background: #fff3d6; padding: 10px 14px; border-radius: 8px; margin-top: 14px; font-size: 12px; color: #855011;">
+    <div style="background: #e6f1fb; padding: 10px 14px; border-radius: 8px; margin-top: 14px; font-size: 12px; color: #855011;">
       ⚠ אזהרה: כללים מורכבים-מדי עלולים להתנגש. בעלים שלא יודע לתעדף → באג.
     </div>
   </div>

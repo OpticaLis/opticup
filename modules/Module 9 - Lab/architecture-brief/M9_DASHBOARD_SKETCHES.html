@@ -5,31 +5,31 @@
 <title>M9 — Manager Dashboard Sketches</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Rubik', -apple-system, sans-serif; background: #f5f5f7; color: #1d1d1f; padding: 16px; font-size: 13px; }
+  body { font-family: 'Rubik', -apple-system, sans-serif; background: #fafaf7; color: #0f172a; padding: 16px; font-size: 13px; }
   .nav { position: sticky; top: 0; background: white; padding: 14px 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; z-index: 100; }
-  .nav h1 { font-size: 18px; margin-left: auto; color: #c9a555; }
-  .nav button { background: #f5f5f7; border: 1px solid #d2d2d7; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; }
-  .nav button.active { background: #c9a555; color: white; border-color: #c9a555; }
+  .nav h1 { font-size: 18px; margin-left: auto; color: #1e3a8a; }
+  .nav button { background: #fafaf7; border: 1px solid #cbd5e1; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .nav button.active { background: #1e3a8a; color: white; border-color: #1e3a8a; }
   .sketch { display: none; background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
   .sketch.active { display: block; }
-  .sketch h2 { font-size: 22px; margin-bottom: 4px; color: #c9a555; }
-  .sketch .subtitle { color: #86868b; font-size: 13px; margin-bottom: 8px; }
-  .sketch .rationale { background: #fafafc; border-right: 3px solid #c9a555; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; color: #444; line-height: 1.6; }
-  .sketch .rationale strong { color: #c9a555; }
-  .recommendation-banner { background: linear-gradient(135deg, #fff8e8 0%, #fff3d6 100%); border: 1px solid #e0c97f; padding: 14px 18px; border-radius: 10px; margin-bottom: 16px; }
+  .sketch h2 { font-size: 22px; margin-bottom: 4px; color: #1e3a8a; }
+  .sketch .subtitle { color: #475569; font-size: 13px; margin-bottom: 8px; }
+  .sketch .rationale { background: #f4f4f5; border-right: 3px solid #1e3a8a; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; color: #444; line-height: 1.6; }
+  .sketch .rationale strong { color: #1e3a8a; }
+  .recommendation-banner { background: #e6f1fb; border: 1px solid #1e3a8a; padding: 14px 18px; border-radius: 10px; margin-bottom: 16px; }
   .recommendation-banner .rb-title { font-weight: 600; color: #855011; margin-bottom: 4px; font-size: 14px; }
   .recommendation-banner .rb-body { font-size: 12px; color: #444; line-height: 1.6; }
 
-  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding: 10px 14px; background: white; border: 1px solid #e5e5ea; border-radius: 6px; }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding: 10px 14px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; }
   .top-bar .title { font-size: 16px; font-weight: 600; }
   .top-bar .filters { display: flex; gap: 6px; }
-  .top-bar select, .top-bar input { padding: 5px 10px; font-size: 12px; border: 1px solid #d2d2d7; border-radius: 5px; font-family: inherit; }
+  .top-bar select, .top-bar input { padding: 5px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 5px; font-family: inherit; }
 
   /* KPI cards */
   .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
-  .kpi-card { background: white; border: 1px solid #e5e5ea; border-radius: 8px; padding: 14px; }
+  .kpi-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; }
   .kpi-card.danger { border-color: #f0a4a4; background: #fffafa; }
-  .kpi-card.warn { border-color: #e0c97f; background: #fffdf7; }
+  .kpi-card.warn { border-color: #1e3a8a; background: #fffdf7; }
   .kpi-card.good { border-color: #b8d8a0; background: #fafff7; }
   .kpi-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
   .kpi-value { font-size: 28px; font-weight: 700; margin-top: 4px; }
@@ -43,16 +43,16 @@
   .kpi-trend.flat { color: #888; }
 
   /* Charts placeholder */
-  .chart-section { background: white; border: 1px solid #e5e5ea; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .chart-section { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
   .chart-title { font-size: 14px; font-weight: 600; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
   .chart-title .toggle { display: flex; gap: 4px; font-size: 11px; }
-  .chart-title .toggle button { padding: 4px 10px; background: #f5f5f7; border: 1px solid #d2d2d7; border-radius: 4px; cursor: pointer; font-size: 11px; }
-  .chart-title .toggle button.active { background: #c9a555; color: white; border-color: #c9a555; }
+  .chart-title .toggle button { padding: 4px 10px; background: #fafaf7; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; font-size: 11px; }
+  .chart-title .toggle button.active { background: #1e3a8a; color: white; border-color: #1e3a8a; }
 
   /* Bar chart (CSS-only) */
-  .bar-chart { display: flex; gap: 12px; align-items: flex-end; height: 200px; padding: 10px 0; border-right: 1px solid #e5e5ea; border-bottom: 1px solid #e5e5ea; }
+  .bar-chart { display: flex; gap: 12px; align-items: flex-end; height: 200px; padding: 10px 0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
   .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 4px; }
-  .bar-stack { width: 30px; background: #c9a555; border-radius: 3px 3px 0 0; position: relative; min-height: 4px; }
+  .bar-stack { width: 30px; background: #1e3a8a; border-radius: 3px 3px 0 0; position: relative; min-height: 4px; }
   .bar-stack .bar-label { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 600; }
   .bar-name { font-size: 10px; color: #555; text-align: center; }
 
@@ -65,8 +65,8 @@
   /* Tables */
   table.access-style { width: 100%; border-collapse: collapse; font-size: 12px; background: white; }
   table.access-style th { background: #d8d8d8; padding: 7px 8px; font-weight: 600; color: #333; border: 1px solid #b8b8b8; text-align: right; font-size: 11px; }
-  table.access-style td { padding: 7px 8px; border: 1px solid #e5e5ea; text-align: right; }
-  table.access-style tr:hover td { background: #fafafc; }
+  table.access-style td { padding: 7px 8px; border: 1px solid #e2e8f0; text-align: right; }
+  table.access-style tr:hover td { background: #f4f4f5; }
 
   .delay-badge-good { background: #c8e9b8; color: #2d5a1a; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
   .delay-badge-warn { background: #ffe2c4; color: #6b3a00; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
@@ -74,7 +74,7 @@
   .name-pill { padding: 2px 10px; border-radius: 999px; background: #e8e4ff; color: #5b3fc7; font-size: 11px; }
   .supplier-pill { padding: 2px 10px; border-radius: 999px; background: #d8e4ff; color: #1f3a72; font-size: 11px; }
 
-  .progress-mini { background: #f5f5f7; height: 6px; border-radius: 3px; overflow: hidden; min-width: 60px; }
+  .progress-mini { background: #fafaf7; height: 6px; border-radius: 3px; overflow: hidden; min-width: 60px; }
   .progress-mini .pm-fill { height: 100%; }
   .progress-mini .pm-fill.green { background: #639922; }
   .progress-mini .pm-fill.yellow { background: #ba7517; }
@@ -83,7 +83,7 @@
   .section-title { font-size: 14px; font-weight: 600; color: #555; margin: 0 0 8px 0; padding-right: 4px; }
 
   /* Sketch B specific */
-  .big-chart { background: white; border: 1px solid #e5e5ea; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .big-chart { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
 </style>
 </head>
 <body>
@@ -201,20 +201,20 @@
         </div>
       </div>
       <svg class="line-chart" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
-        <line x1="40" y1="180" x2="580" y2="180" stroke="#e5e5ea" stroke-width="1"/>
-        <line x1="40" y1="20" x2="40" y2="180" stroke="#e5e5ea" stroke-width="1"/>
+        <line x1="40" y1="180" x2="580" y2="180" stroke="#e2e8f0" stroke-width="1"/>
+        <line x1="40" y1="20" x2="40" y2="180" stroke="#e2e8f0" stroke-width="1"/>
         <text x="20" y="185" font-size="10" fill="#888">0</text>
         <text x="15" y="100" font-size="10" fill="#888">5d</text>
         <text x="15" y="25" font-size="10" fill="#888">10d</text>
         <polyline points="50,80 130,90 210,75 290,95 370,60 450,70 530,55"
-                  fill="none" stroke="#c9a555" stroke-width="3"/>
-        <circle cx="50" cy="80" r="4" fill="#c9a555"/>
-        <circle cx="130" cy="90" r="4" fill="#c9a555"/>
-        <circle cx="210" cy="75" r="4" fill="#c9a555"/>
-        <circle cx="290" cy="95" r="4" fill="#c9a555"/>
-        <circle cx="370" cy="60" r="4" fill="#c9a555"/>
-        <circle cx="450" cy="70" r="4" fill="#c9a555"/>
-        <circle cx="530" cy="55" r="4" fill="#c9a555"/>
+                  fill="none" stroke="#1e3a8a" stroke-width="3"/>
+        <circle cx="50" cy="80" r="4" fill="#1e3a8a"/>
+        <circle cx="130" cy="90" r="4" fill="#1e3a8a"/>
+        <circle cx="210" cy="75" r="4" fill="#1e3a8a"/>
+        <circle cx="290" cy="95" r="4" fill="#1e3a8a"/>
+        <circle cx="370" cy="60" r="4" fill="#1e3a8a"/>
+        <circle cx="450" cy="70" r="4" fill="#1e3a8a"/>
+        <circle cx="530" cy="55" r="4" fill="#1e3a8a"/>
         <text x="50" y="195" font-size="10" fill="#555" text-anchor="middle">דצמ</text>
         <text x="130" y="195" font-size="10" fill="#555" text-anchor="middle">ינו</text>
         <text x="210" y="195" font-size="10" fill="#555" text-anchor="middle">פבר</text>
@@ -300,21 +300,21 @@
         </div>
       </div>
       <svg class="line-chart" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
-        <line x1="40" y1="180" x2="580" y2="180" stroke="#e5e5ea" stroke-width="1"/>
-        <line x1="40" y1="20" x2="40" y2="180" stroke="#e5e5ea" stroke-width="1"/>
+        <line x1="40" y1="180" x2="580" y2="180" stroke="#e2e8f0" stroke-width="1"/>
+        <line x1="40" y1="20" x2="40" y2="180" stroke="#e2e8f0" stroke-width="1"/>
         <text x="20" y="185" font-size="10" fill="#888">0d</text>
         <text x="15" y="100" font-size="10" fill="#888">5d</text>
         <text x="15" y="25" font-size="10" fill="#888">10d</text>
         <line x1="40" y1="100" x2="580" y2="100" stroke="#fde9ec" stroke-width="1" stroke-dasharray="3"/>
         <polyline points="50,80 130,90 210,75 290,95 370,60 450,70 530,55"
-                  fill="none" stroke="#c9a555" stroke-width="3"/>
-        <circle cx="50" cy="80" r="4" fill="#c9a555"/>
-        <circle cx="130" cy="90" r="4" fill="#c9a555"/>
-        <circle cx="210" cy="75" r="4" fill="#c9a555"/>
-        <circle cx="290" cy="95" r="4" fill="#c9a555"/>
-        <circle cx="370" cy="60" r="4" fill="#c9a555"/>
-        <circle cx="450" cy="70" r="4" fill="#c9a555"/>
-        <circle cx="530" cy="55" r="4" fill="#c9a555"/>
+                  fill="none" stroke="#1e3a8a" stroke-width="3"/>
+        <circle cx="50" cy="80" r="4" fill="#1e3a8a"/>
+        <circle cx="130" cy="90" r="4" fill="#1e3a8a"/>
+        <circle cx="210" cy="75" r="4" fill="#1e3a8a"/>
+        <circle cx="290" cy="95" r="4" fill="#1e3a8a"/>
+        <circle cx="370" cy="60" r="4" fill="#1e3a8a"/>
+        <circle cx="450" cy="70" r="4" fill="#1e3a8a"/>
+        <circle cx="530" cy="55" r="4" fill="#1e3a8a"/>
         <text x="50" y="195" font-size="10" fill="#555" text-anchor="middle">דצמ</text>
         <text x="130" y="195" font-size="10" fill="#555" text-anchor="middle">ינו</text>
         <text x="210" y="195" font-size="10" fill="#555" text-anchor="middle">פבר</text>
