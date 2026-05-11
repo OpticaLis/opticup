@@ -79,6 +79,24 @@ until the corruption is cleared. Reference: `scripts/verify-tree-integrity.mjs`.
 
 ---
 
+## 3a. Shared Edit Block (multi-file SPECs only — omit if N=1)
+
+If this SPEC applies the SAME edit to N>1 files, declare the edit template ONCE here. Each per-file commit in §10 references this block by name. The Reviewer can verify the block's content once and check per-commit conformance — no per-file re-verification of identical text.
+
+**Sameness contract:** the inserted/modified content must be byte-identical across all target files. If any file needs per-file customization, do NOT use this section — list each file's edit explicitly in §3 instead.
+
+### Block A — <name>
+- **Insertion location** (relative to anchor): <e.g., "inside `<head>`, after the last `<link rel='stylesheet'>` line, immediately before `</head>`">
+- **Content** (verbatim — Reviewer diffs this against each commit):
+  ```
+  <exact text — newlines and whitespace matter>
+  ```
+- **Files this block applies to:** <list>
+
+(Section added 2026-05-11 from `MIGRATION_2_SETTINGS_PERMISSIONS/FOREMAN_REVIEW.md` Author Proposal #1, harvested after MIGRATION_2 produced 2 commits with the same `<style>` block on `settings.html` + `employees.html`.)
+
+---
+
 ## 4. Autonomy Envelope
 
 ### What the executor CAN do without asking

@@ -946,6 +946,10 @@ Every SPEC MUST include:
 A SPEC missing any of these is NOT ready for execution. Add the missing parts
 before dispatching.
 
+**Multi-file identical edits.** If your SPEC applies the SAME edit to multiple files (e.g., re-skin migrations Migration #2 onward), use the optional §3a Shared Edit Block in `SPEC_TEMPLATE.md` to declare the edit ONCE rather than copying it per file. The Reviewer can then verify the block's text once and check per-commit conformance. (Harvested from `MIGRATION_2_SETTINGS_PERMISSIONS/FOREMAN_REVIEW.md` Author Proposal #1, 2026-05-11.)
+
+**Baselines as symbols.** When success criteria depend on a metric measured at SPEC-authoring time (file size, tag count, hex count, etc.), pin the value in §0 Pre-Authoring Reality Check under the "Baselines" sub-table and reference it symbolically in §3 Success Criteria (e.g., `BASE_SCRIPTS_settings`). Avoids drift if the file changes between Brief and SPEC. (Harvested from `MIGRATION_2_SETTINGS_PERMISSIONS/FOREMAN_REVIEW.md` Author Proposal #2, 2026-05-11.)
+
 #### Numerical-bound criteria — Measure before bounding (added 2026-05-11)
 
 Whenever a §3 success criterion is a NUMERICAL BOUND on the outcome of a

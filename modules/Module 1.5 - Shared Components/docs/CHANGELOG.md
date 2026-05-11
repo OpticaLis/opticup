@@ -1,5 +1,52 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-11 — Migration #2: Settings + Permissions → Hybrid+Navy (2 LIVE production pages)
+
+SPEC: `MIGRATION_2_SETTINGS_PERMISSIONS` ([folder](specs/MIGRATION_2_SETTINGS_PERMISSIONS/))
+
+Second of 4 production-page migrations to Hybrid+Navy. Two LIVE pages re-skinned in place: `settings.html` (208→212 lines, +4) and `employees.html` (87→91 lines, +4). Per-page commits + per-page git tags enable independent rollback. **Zero functional change** — no JS edits, no DOM-structural changes (just +1 `<style>` element per page in `<head>`), no Supabase contract changes, no shared CSS mutations. Smoke 7/7 PASS on demo tenant. Full-Auto Pipeline ran end-to-end in ONE chat across 5 skills.
+
+**Decision (Daniel 2026-05-11):** Settings + Permissions stay as TWO separate pages in this migration. Tab-consolidation (per Hybrid mockup `permissions.html` showing them merged) is deferred to a separate SPEC after all 4 visual migrations land — that consolidation is structural (routing, event handlers, link migration) and earns its own scope.
+
+**Same vehicle as MIGRATION_1 — page-scope `body { --primary }` override.** Single 4-line block added to each page's `<head>`, immediately before `</head>`:
+
+```
+<!-- Hybrid+Navy migration (page-scoped override, MIGRATION_2 2026-05-11) -->
+<style>
+  body{--primary:#1e3a8a;--primary-dark:#0f172a;--primary-light:#e6f1fb;--accent:#1e40af}
+</style>
+```
+
+Cascade scopes the new palette to descendants of `<body>` of these 2 pages only. Other ERP pages keep their existing palette via `:root`. Verified by `Invoke-WebRequest /inventory.html` → page-scope confirmed confined.
+
+**Variables.css UNTOUCHED.** Migration #1 already added the 6 Navy/slate tokens (Section 12) — no additional token work needed for Migration #2.
+
+**Module CSS UNTOUCHED.** Discovered during §0 Reality Check: `css/settings.css` ≡ `css/employees.css` byte-identical (md5 `c318c26079c5009995492cad11024484`). Both contain the full app stylesheet plus settings-specific selectors. Touching either would propagate. Logged as F1 finding → future deduplication SPEC. `css/header.css` also untouched (would propagate site-wide).
+
+**Verification:**
+- settings.html: line count 208→212 (+1.9%, within ±15%); `<script>` 20→20; `<link rel="stylesheet">` 10→10; DOM tags 137→138 (+1, within ±2%); Navy `#1e3a8a` count 0→1.
+- employees.html: line count 87→91 (+4.6%, within ±15%); `<script>` 24→24; `<link rel="stylesheet">` 10→10; DOM tags 55→56 (+1, within ±2%); Navy count 0→1.
+- `grep "26215c|534ab7"` → 0 / 0 (regression baseline preserved on both).
+- npm run smoke → 7/7 PASS (PIN auth, CRM lead create+RLS, inventory read, storefront homepage, /supersale, cross-module read, no-5xx).
+- npm run verify:integrity → exit 0 throughout.
+- Iron Rule 32 destructive-ops gate accepted both commits on first attempt (heading-convention lesson from MIGRATION_1 applied: `## 4. Destructive Operations` not `## §4.`).
+- Per-page tags `pre-migration-settings` (HEAD pre-C1) + `pre-migration-employees` (HEAD at C1) enable surgical revert: settings or employees individually.
+- Localhost-Tester GREEN: both pages return 200, served HTML contains the override block, page-scope confirmed not leaked to inventory.html.
+
+4 skill improvements harvested + applied (2 each to opticup-strategic + opticup-executor):
+- **opticup-strategic Author #1:** new optional §3a "Shared Edit Block" in `SPEC_TEMPLATE.md` for multi-file identical-edit SPECs (Migration #3+ benefit immediately).
+- **opticup-strategic Author #2:** new "Baselines" sub-table in §0 Reality Check, with `BASE_*` symbols referenced from §3 Success Criteria — pins moment-of-authorship metrics so SPEC drift is caught.
+- **opticup-executor #1:** plan to build `scripts/verify-reskin-page.mjs` helper (single-line PASS/FAIL summary, exit code on any FAIL) — eliminates the Bash `&&`-chain abort-on-grep-no-match trap. Reference added to SKILL.md; script creation deferred to Migration #3.
+- **opticup-executor #2:** codified `<style>` block placement rule for re-skin SPECs (after last `<link rel="stylesheet">`, immediately before `</head>`).
+
+3 findings opened: F1 (settings.css ≡ employees.css duplication, MEDIUM, → new dedup SPEC), F2 (header.css `var(--primary, #1a237e)` fallback drift, LOW, → TECH_DEBT), F3 (skill SKILL.md user-global vs project-local copies drifted, LOW, → TECH_DEBT). C3 partially resyncs F3 by editing both copies for the 4 skill improvements above.
+
+### Commits
+
+- `b79a778` — feat(settings): migrate to Hybrid+Navy design system
+- `3c6618c` — feat(employees): migrate to Hybrid+Navy design system
+- `<C3>` — chore(spec): close MIGRATION_2_SETTINGS_PERMISSIONS with retrospective + skill improvements
+
 ## 2026-05-11 — Migration #1: Suppliers Debt → Hybrid+Navy (LIVE production page)
 
 SPEC: `MIGRATION_1_SUPPLIERS_DEBT` ([folder](specs/MIGRATION_1_SUPPLIERS_DEBT/))
