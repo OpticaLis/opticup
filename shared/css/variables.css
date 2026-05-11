@@ -166,4 +166,17 @@
      ========================================================================= */
   --color-focus-ring:     var(--color-primary);  /* tracks primary by default; tenant can override to a contrasting color */
   --shadow-focus:         0 0 0 3px rgba(15, 23, 42, 0.35);  /* 3px ring, near-black at 35% — visible on light AND on primary-colored backgrounds */
+
+  /* =========================================================================
+     12. NAVY ACCENT (Hybrid+Navy design system, 2026-05-11)
+     Additive tokens for the staged page-by-page migration to Hybrid+Navy.
+     Existing tokens (--color-primary, --primary, etc.) remain unchanged
+     until all 4 production migrations complete (Brief Locked Decision #5).
+     ========================================================================= */
+  --accent-navy:           #1e3a8a;  /* primary action — Hybrid+Navy */
+  --accent-navy-hover:     #1e40af;  /* hover state */
+  --accent-navy-soft:      #e6f1fb;  /* selected row, badge bg, hero wash */
+  --accent-navy-text:      #ffffff;  /* on Navy */
+  --text-slate-primary:    #0f172a;  /* deep slate body — alias of --color-gray-900, named for migration clarity */
+  --text-slate-secondary:  #475569;  /* secondary slate body — alias of --color-gray-600 */
 }
