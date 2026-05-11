@@ -743,3 +743,56 @@ session applies accepted proposals to the skill files as real edits.
 | `shared/js/table-builder.js` | TableBuilder.create() |
 | `references/STOREFRONT_CMS_ARCHITECTURE.md` | Mandatory pre-flight for any storefront-content SPEC (CMS vs Astro rendering fork) |
 | `scripts/verify.mjs` | Pre-commit rule verification |
+
+---
+
+## Pipeline Hand-off
+
+This section governs how `opticup-executor` hands off to the next skill in the Full-Auto Pipeline (see `modules/Module 1.5 - Shared Components/docs/specs/M1_5_FULL_AUTO_PIPELINE/SPEC.md`).
+
+Triggered when the dispatch line includes **"Pipeline mode: full-auto"**.
+
+1. Execute the SPEC end-to-end per the standard SPEC Execution Protocol earlier in this file (load + validate + DB pre-flight + Bounded-Autonomy loop + FINDINGS as we go + EXECUTION_REPORT + close commit).
+2. Verify Iron Rule 32: the SPEC's `## Destructive Operations` section must cover every destructive op actually performed. If a destructive op fired that wasn't declared — STOP, write escalation, emit Hebrew line. Do NOT silently amend §Destructive Operations.
+3. After committing EXECUTION_REPORT.md + FINDINGS.md (the chore(spec): close commit at the end of standard execution), hand off to the Reviewer in the SAME chat:
+   ```
+   Skill: opticup-reviewer
+   ```
+   Dispatch line: `Review SPEC modules/Module N/docs/specs/{SLUG}/ — Pipeline mode: full-auto. Hand off to opticup-localhost-tester at end of review.`
+4. Emit the Hebrew status line (see "Status Line" below).
+5. Do NOT continue running Executor work after hand-off. The Reviewer owns the next phase.
+
+### Retry policy
+
+If `Skill: opticup-reviewer` fails to load: retry ONCE with the same dispatch. On second failure, write an escalation to `modules/Module N/escalations/{ISO_TS}_skill-load-failure.md` and emit:
+`🛑 נתקעתי על טעינת Skill: opticup-reviewer — escalation: {path}`
+
+### Backups — automatic, not discretionary
+
+Before executing ANY of these:
+
+- An operation that touches **> 5 files** in one commit
+- A refactor that changes **> 100 lines in a single file**
+- ANY file rename (`git mv` or move-then-add-then-rm)
+
+…the Executor MUST create:
+```
+modules/Module N/backups/{YYYY-MM-DD}_{SPEC_SLUG}/
+```
+and copy:
+- Every file about to be modified or renamed in this op
+- Plus: `CLAUDE.md`, the owning module's `SESSION_CONTEXT.md`, `MODULE_SPEC.md`, `MODULE_MAP.md`, `ROADMAP.md`, `CHANGELOG.md`, `db-schema.sql`
+
+The backup happens BEFORE the destructive step, not after. There is no "the change is small, I'll skip the backup" path — this is Iron Rule 9 (upgraded by FULL_AUTO_PIPELINE 2026-05-11) and CLAUDE.md §9 #9.
+
+Skipping a required backup is a stop-on-deviation event. If unsure whether a trigger fires — back up. Cost of an unused backup folder is zero. Cost of a destructive op without a backup is irreversible.
+
+### Status Line (Hebrew, single line, per phase)
+
+The Executor emits ONE Hebrew status line at the end of its phase. ≤ 60 chars, present-tense. Examples:
+
+- `✓ {SLUG} מומש ({N} commits, {M} files).`
+- `⚠️ {SLUG} — finding לוג: {short}.`
+- `🛑 {SLUG} נתקע — escalation: {path}`
+
+This is the only chat output the Executor emits between phases under full-auto mode. The EXECUTION_REPORT and FINDINGS live on disk for the Reviewer to read.
