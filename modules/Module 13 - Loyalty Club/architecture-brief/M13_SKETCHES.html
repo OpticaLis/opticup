@@ -5,105 +5,105 @@
 <title>M13 — Loyalty Club Sketches</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Rubik', -apple-system, sans-serif; background: #f5f5f7; color: #1d1d1f; padding: 20px; }
+  body { font-family: 'Rubik', -apple-system, sans-serif; background: #fafaf7; color: #0f172a; padding: 20px; }
   .nav { position: sticky; top: 0; background: white; padding: 16px 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
   .nav h1 { font-size: 20px; margin-left: auto; }
-  .nav button { background: #f5f5f7; border: 1px solid #d2d2d7; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; font-family: inherit; }
-  .nav button.active { background: #c9a555; color: white; border-color: #c9a555; }
+  .nav button { background: #fafaf7; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; font-family: inherit; }
+  .nav button.active { background: #1e3a8a; color: white; border-color: #1e3a8a; }
   .sketch { display: none; background: white; border-radius: 16px; padding: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
   .sketch.active { display: block; }
-  .sketch h2 { font-size: 24px; margin-bottom: 4px; color: #c9a555; }
-  .sketch .subtitle { color: #86868b; font-size: 14px; margin-bottom: 24px; }
-  .device { background: #fafafc; border: 1px solid #e5e5ea; border-radius: 16px; padding: 24px; margin-bottom: 16px; }
+  .sketch h2 { font-size: 24px; margin-bottom: 4px; color: #1e3a8a; }
+  .sketch .subtitle { color: #475569; font-size: 14px; margin-bottom: 24px; }
+  .device { background: #f4f4f5; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 16px; }
   .device.mobile { max-width: 380px; }
-  .device .device-label { font-size: 11px; color: #86868b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .device .device-label { font-size: 11px; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
 
   /* S1 — Customer Card Tab */
-  .tab-bar { display: flex; gap: 4px; border-bottom: 2px solid #e5e5ea; margin-bottom: 20px; }
-  .tab { padding: 10px 16px; cursor: pointer; color: #86868b; font-size: 14px; }
-  .tab.active { color: #c9a555; border-bottom: 2px solid #c9a555; margin-bottom: -2px; font-weight: 600; }
-  .tier-hero { background: linear-gradient(135deg, #c9a555 0%, #a88838 100%); color: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .tab-bar { display: flex; gap: 4px; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; }
+  .tab { padding: 10px 16px; cursor: pointer; color: #475569; font-size: 14px; }
+  .tab.active { color: #1e3a8a; border-bottom: 2px solid #1e3a8a; margin-bottom: -2px; font-weight: 600; }
+  .tier-hero { background: #1e3a8a; color: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
   .tier-hero .tier-name { font-size: 28px; font-weight: 700; }
   .tier-hero .tier-meta { font-size: 13px; opacity: 0.9; margin-top: 4px; }
   .tier-hero .tier-progress { background: rgba(255,255,255,0.2); height: 6px; border-radius: 3px; margin-top: 16px; overflow: hidden; }
   .tier-hero .tier-progress > div { background: white; height: 100%; width: 65%; border-radius: 3px; }
   .tier-hero .tier-progress-label { font-size: 12px; margin-top: 6px; opacity: 0.9; }
   .blocks { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
-  .block { background: #fafafc; border: 1px solid #e5e5ea; border-radius: 8px; padding: 16px; }
-  .block .label { font-size: 11px; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .block { background: #f4f4f5; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; }
+  .block .label { font-size: 11px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
   .block .value { font-size: 22px; font-weight: 700; }
-  .block .meta { font-size: 12px; color: #86868b; margin-top: 4px; }
-  .history { border: 1px solid #e5e5ea; border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
-  .history-row { display: flex; padding: 12px 16px; justify-content: space-between; align-items: center; border-bottom: 1px solid #f5f5f7; font-size: 14px; }
+  .block .meta { font-size: 12px; color: #475569; margin-top: 4px; }
+  .history { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+  .history-row { display: flex; padding: 12px 16px; justify-content: space-between; align-items: center; border-bottom: 1px solid #fafaf7; font-size: 14px; }
   .history-row:last-child { border-bottom: 0; }
-  .history-row .desc { color: #1d1d1f; }
-  .history-row .date { color: #86868b; font-size: 12px; }
+  .history-row .desc { color: #0f172a; }
+  .history-row .date { color: #475569; font-size: 12px; }
   .history-row .amt { font-weight: 600; }
   .history-row .amt.earn { color: #00a854; }
   .history-row .amt.redeem { color: #d92c2c; }
-  .section-title { font-size: 13px; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 8px; }
+  .section-title { font-size: 13px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 8px; }
   .coupons { display: flex; gap: 8px; flex-wrap: wrap; }
-  .coupon { background: white; border: 2px dashed #c9a555; border-radius: 8px; padding: 10px 14px; font-size: 13px; }
-  .coupon .code { font-weight: 700; color: #c9a555; }
-  .coupon .meta { color: #86868b; font-size: 11px; margin-top: 2px; }
-  .family-list { background: white; border: 1px solid #e5e5ea; border-radius: 8px; padding: 12px; }
-  .family-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; border-bottom: 1px solid #f5f5f7; }
+  .coupon { background: white; border: 2px dashed #1e3a8a; border-radius: 8px; padding: 10px 14px; font-size: 13px; }
+  .coupon .code { font-weight: 700; color: #1e3a8a; }
+  .coupon .meta { color: #475569; font-size: 11px; margin-top: 2px; }
+  .family-list { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; }
+  .family-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; border-bottom: 1px solid #fafaf7; }
   .family-row:last-child { border-bottom: 0; }
-  .family-row .head-badge { background: #c9a555; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-right: 6px; }
+  .family-row .head-badge { background: #1e3a8a; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-right: 6px; }
   .actions { display: flex; gap: 8px; margin-top: 16px; }
-  .btn { background: #c9a555; color: white; border: 0; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-family: inherit; }
-  .btn.secondary { background: white; color: #1d1d1f; border: 1px solid #d2d2d7; }
+  .btn { background: #1e3a8a; color: white; border: 0; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .btn.secondary { background: white; color: #0f172a; border: 1px solid #cbd5e1; }
 
   /* S2 — Admin Dashboard */
   .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
-  .kpi { background: #fafafc; border-radius: 8px; padding: 16px; border: 1px solid #e5e5ea; }
-  .kpi .kpi-label { font-size: 11px; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; }
+  .kpi { background: #f4f4f5; border-radius: 8px; padding: 16px; border: 1px solid #e2e8f0; }
+  .kpi .kpi-label { font-size: 11px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
   .kpi .kpi-value { font-size: 28px; font-weight: 700; margin-top: 4px; }
   .kpi .kpi-trend { font-size: 12px; color: #00a854; margin-top: 4px; }
-  .table { width: 100%; border-collapse: collapse; background: white; border: 1px solid #e5e5ea; border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
-  .table th { background: #fafafc; text-align: right; padding: 10px 12px; font-size: 12px; color: #86868b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e5ea; }
-  .table td { padding: 12px; font-size: 14px; border-bottom: 1px solid #f5f5f7; }
+  .table { width: 100%; border-collapse: collapse; background: white; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+  .table th { background: #f4f4f5; text-align: right; padding: 10px 12px; font-size: 12px; color: #475569; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; }
+  .table td { padding: 12px; font-size: 14px; border-bottom: 1px solid #fafaf7; }
   .table tr:last-child td { border-bottom: 0; }
   .pill { padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
-  .pill.silver { background: #e5e5ea; color: #1d1d1f; }
-  .pill.gold { background: #fff3d6; color: #a88838; }
+  .pill.silver { background: #e2e8f0; color: #0f172a; }
+  .pill.gold { background: #e6f1fb; color: #1e40af; }
   .pill.diamond { background: #e8e4ff; color: #5b3fc7; }
   .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
-  .search { flex: 1; padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-family: inherit; font-size: 14px; }
+  .search { flex: 1; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; }
 
   /* S3 — Checkout block */
-  .checkout-block { background: linear-gradient(135deg, #fff8e8 0%, #fff3d6 100%); border: 1px solid #e0c97f; border-radius: 12px; padding: 20px; }
+  .checkout-block { background: #e6f1fb; border: 1px solid #1e3a8a; border-radius: 12px; padding: 20px; }
   .checkout-block .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
   .checkout-block .header .name { font-size: 16px; font-weight: 600; }
   .checkout-block .balance-line { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
-  .checkout-block .balance-line input { flex: 1; padding: 10px 12px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 16px; font-family: inherit; }
+  .checkout-block .balance-line input { flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 16px; font-family: inherit; }
   .checkout-block .balance-line label { font-size: 13px; }
   .checkout-block .coupon-line { display: flex; gap: 8px; }
-  .checkout-block .summary-line { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; border-top: 1px solid #e0c97f; margin-top: 12px; padding-top: 12px; }
+  .checkout-block .summary-line { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; border-top: 1px solid #1e3a8a; margin-top: 12px; padding-top: 12px; }
 
   /* S4 — Storefront enrollment */
   .storefront { background: white; border-radius: 12px; max-width: 480px; margin: 0 auto; }
-  .storefront .hero-img { height: 180px; background: linear-gradient(135deg, #c9a555 0%, #1a1a2e 100%); border-radius: 12px 12px 0 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; font-weight: 700; }
+  .storefront .hero-img { height: 180px; background: #1e3a8a; border-radius: 12px 12px 0 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; font-weight: 700; }
   .storefront .body { padding: 24px; }
   .storefront h3 { font-size: 22px; margin-bottom: 8px; }
-  .storefront .lead { color: #86868b; font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+  .storefront .lead { color: #475569; font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
   .storefront .form-group { margin-bottom: 14px; }
-  .storefront label { display: block; font-size: 13px; margin-bottom: 4px; color: #1d1d1f; font-weight: 500; }
-  .storefront input, .storefront select { width: 100%; padding: 10px 12px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 15px; font-family: inherit; }
-  .storefront .checkbox-group { display: flex; gap: 8px; margin-bottom: 12px; align-items: flex-start; padding: 10px; background: #fafafc; border-radius: 8px; }
+  .storefront label { display: block; font-size: 13px; margin-bottom: 4px; color: #0f172a; font-weight: 500; }
+  .storefront input, .storefront select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-family: inherit; }
+  .storefront .checkbox-group { display: flex; gap: 8px; margin-bottom: 12px; align-items: flex-start; padding: 10px; background: #f4f4f5; border-radius: 8px; }
   .storefront .checkbox-group input { width: auto; margin-top: 3px; }
-  .storefront .checkbox-group label { font-size: 13px; color: #1d1d1f; flex: 1; }
-  .storefront .checkbox-group label a { color: #c9a555; text-decoration: underline; }
+  .storefront .checkbox-group label { font-size: 13px; color: #0f172a; flex: 1; }
+  .storefront .checkbox-group label a { color: #1e3a8a; text-decoration: underline; }
   .storefront .tier-cards { display: grid; gap: 10px; margin-bottom: 16px; }
-  .storefront .tier-card { border: 2px solid #e5e5ea; border-radius: 10px; padding: 14px; cursor: pointer; }
-  .storefront .tier-card.selected { border-color: #c9a555; background: #fff8e8; }
+  .storefront .tier-card { border: 2px solid #e2e8f0; border-radius: 10px; padding: 14px; cursor: pointer; }
+  .storefront .tier-card.selected { border-color: #1e3a8a; background: #e6f1fb; }
   .storefront .tier-card .name { font-weight: 700; font-size: 16px; }
-  .storefront .tier-card .price { color: #c9a555; font-weight: 700; font-size: 18px; }
-  .storefront .tier-card .perks { font-size: 12px; color: #86868b; margin-top: 4px; }
-  .storefront .submit-btn { width: 100%; padding: 14px; background: #c9a555; color: white; border: 0; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .storefront .tier-card .price { color: #1e3a8a; font-weight: 700; font-size: 18px; }
+  .storefront .tier-card .perks { font-size: 12px; color: #475569; margin-top: 4px; }
+  .storefront .submit-btn { width: 100%; padding: 14px; background: #1e3a8a; color: white; border: 0; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; font-family: inherit; }
 
-  .annotations { background: #fff8e8; border-right: 4px solid #c9a555; padding: 12px 16px; margin-top: 16px; font-size: 13px; color: #1d1d1f; line-height: 1.6; }
-  .annotations strong { color: #c9a555; }
+  .annotations { background: #e6f1fb; border-right: 4px solid #1e3a8a; padding: 12px 16px; margin-top: 16px; font-size: 13px; color: #0f172a; line-height: 1.6; }
+  .annotations strong { color: #1e3a8a; }
 </style>
 </head>
 <body>
@@ -168,7 +168,7 @@
         <div><div class="desc">קנייה — הזמנה #4517</div><div class="date">2026-04-28</div></div>
         <div class="amt earn">+₪90</div>
       </div>
-      <div class="history-row" style="background: #fafafc; cursor: pointer; color: #c9a555; justify-content: center;">הצג הכל ←</div>
+      <div class="history-row" style="background: #f4f4f5; cursor: pointer; color: #1e3a8a; justify-content: center;">הצג הכל ←</div>
     </div>
 
     <div class="section-title">קופונים פעילים</div>
@@ -185,20 +185,20 @@
 
     <div class="section-title">משפחה (3 חברים) — סל משותף</div>
     <div class="family-list">
-      <div style="padding: 8px 0; font-size: 13px; color: #86868b; border-bottom: 1px solid #f5f5f7;">
-        💰 יתרה משפחתית: <strong style="color: #1d1d1f; font-size: 15px;">₪247</strong> · מצב: <span style="color: #00a854;">פתוח</span> · תקרת-מימוש: ללא
+      <div style="padding: 8px 0; font-size: 13px; color: #475569; border-bottom: 1px solid #fafaf7;">
+        💰 יתרה משפחתית: <strong style="color: #0f172a; font-size: 15px;">₪247</strong> · מצב: <span style="color: #00a854;">פתוח</span> · תקרת-מימוש: ללא
       </div>
       <div class="family-row">
         <div><span class="head-badge">ראש</span> דניאל כהן</div>
-        <div style="color: #86868b;">תרם ₪3,250 · משך ₪100</div>
+        <div style="color: #475569;">תרם ₪3,250 · משך ₪100</div>
       </div>
       <div class="family-row">
         <div>שרה כהן</div>
-        <div style="color: #86868b;">תרם ₪890 · משך ₪150</div>
+        <div style="color: #475569;">תרם ₪890 · משך ₪150</div>
       </div>
       <div class="family-row">
         <div>תומר כהן</div>
-        <div style="color: #86868b;">תרם ₪450 · משך ₪0</div>
+        <div style="color: #475569;">תרם ₪450 · משך ₪0</div>
       </div>
     </div>
 
@@ -235,7 +235,7 @@
       <div class="kpi">
         <div class="kpi-label">יתרה כוללת חוצה</div>
         <div class="kpi-value">₪89,450</div>
-        <div class="kpi-trend" style="color: #86868b;">חבות מאזנית</div>
+        <div class="kpi-trend" style="color: #475569;">חבות מאזנית</div>
       </div>
       <div class="kpi">
         <div class="kpi-label">Redemption Rate</div>
@@ -261,7 +261,7 @@
           <td>71%</td>
           <td>₪1,840</td>
           <td>₪82,140</td>
-          <td><a href="#" style="color: #c9a555;">הצג הכל</a></td>
+          <td><a href="#" style="color: #1e3a8a;">הצג הכל</a></td>
         </tr>
         <tr>
           <td><span class="pill gold">Gold</span></td>
@@ -269,7 +269,7 @@
           <td>23%</td>
           <td>₪3,410</td>
           <td>₪97,250</td>
-          <td><a href="#" style="color: #c9a555;">הצג הכל</a></td>
+          <td><a href="#" style="color: #1e3a8a;">הצג הכל</a></td>
         </tr>
         <tr>
           <td><span class="pill diamond">Diamond</span></td>
@@ -277,7 +277,7 @@
           <td>5%</td>
           <td>₪7,890</td>
           <td>₪104,180</td>
-          <td><a href="#" style="color: #c9a555;">הצג הכל</a></td>
+          <td><a href="#" style="color: #1e3a8a;">הצג הכל</a></td>
         </tr>
       </tbody>
     </table>
@@ -316,16 +316,16 @@
   <div class="device">
     <div class="device-label">M7 Checkout · Loyalty section embed</div>
 
-    <div style="background: #fafafc; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
-      <div style="font-size: 13px; color: #86868b; margin-bottom: 4px;">[רכיבי checkout רגילים: לקוח, פריטים, סכום]</div>
-      <div style="font-size: 13px; color: #86868b;">סך-הכל לפני: ₪1,890</div>
+    <div style="background: #f4f4f5; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+      <div style="font-size: 13px; color: #475569; margin-bottom: 4px;">[רכיבי checkout רגילים: לקוח, פריטים, סכום]</div>
+      <div style="font-size: 13px; color: #475569;">סך-הכל לפני: ₪1,890</div>
     </div>
 
     <div class="checkout-block">
       <div class="header">
         <div>
           <div class="name">⭐ דניאל כהן</div>
-          <div style="font-size: 12px; color: #86868b;">חבר Gold · יתרה זמינה: ₪247</div>
+          <div style="font-size: 12px; color: #475569;">חבר Gold · יתרה זמינה: ₪247</div>
         </div>
         <span class="pill gold">Gold</span>
       </div>
@@ -341,7 +341,7 @@
       <div style="margin-bottom: 12px;">
         <label style="font-size: 13px; display: block; margin-bottom: 6px;">קוד קופון:</label>
         <div class="coupon-line">
-          <input type="text" value="BIRTHDAY26" style="flex: 1; padding: 10px 12px; border: 1px solid #d2d2d7; border-radius: 8px; font-family: inherit;">
+          <input type="text" value="BIRTHDAY26" style="flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit;">
           <button class="btn secondary">הוסף</button>
         </div>
         <div style="font-size: 12px; color: #00a854; margin-top: 6px;">✓ קופון BIRTHDAY26 — 15% הנחה על משקפי-שמש</div>
@@ -364,7 +364,7 @@
         <div>₪1,515</div>
       </div>
 
-      <div style="margin-top: 12px; padding: 10px; background: rgba(255,255,255,0.6); border-radius: 8px; font-size: 13px; color: #1d1d1f;">
+      <div style="margin-top: 12px; padding: 10px; background: rgba(255,255,255,0.6); border-radius: 8px; font-size: 13px; color: #0f172a;">
         💡 לאחר התשלום תצבור <strong>₪75.75</strong> ליתרת הזיכוי שלך
       </div>
     </div>
@@ -393,12 +393,12 @@
         <div class="lead">חברות שנתיים תמורת תשלום חד-פעמי. צבור יתרת זיכוי על כל קנייה — והרמה שלך עולה אוטומטית לפי הוצאה שנתית.</div>
 
         <!-- Membership type toggle -->
-        <div style="display: flex; gap: 8px; margin-bottom: 20px; background: #f5f5f7; padding: 4px; border-radius: 10px;">
+        <div style="display: flex; gap: 8px; margin-bottom: 20px; background: #fafaf7; padding: 4px; border-radius: 10px;">
           <div style="flex: 1; text-align: center; padding: 10px; background: white; border-radius: 8px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" id="opt-individual">
             <div>חברות בודדת</div>
-            <div style="color: #c9a555; font-size: 18px; font-weight: 700;">₪50</div>
+            <div style="color: #1e3a8a; font-size: 18px; font-weight: 700;">₪50</div>
           </div>
-          <div style="flex: 1; text-align: center; padding: 10px; border-radius: 8px; cursor: pointer; color: #86868b;" id="opt-family">
+          <div style="flex: 1; text-align: center; padding: 10px; border-radius: 8px; cursor: pointer; color: #475569;" id="opt-family">
             <div>חברות משפחתית</div>
             <div style="font-size: 18px; font-weight: 700;">₪100</div>
             <div style="font-size: 10px;">עד 5 חברים</div>
@@ -406,7 +406,7 @@
         </div>
 
         <!-- Welcome Bonus block — always visible -->
-        <div style="background: linear-gradient(135deg, #c9a555 0%, #a88838 100%); color: white; border-radius: 10px; padding: 14px; margin-bottom: 12px; font-size: 13px;">
+        <div style="background: #1e3a8a; color: white; border-radius: 10px; padding: 14px; margin-bottom: 12px; font-size: 13px;">
           <div style="font-weight: 700; font-size: 15px; margin-bottom: 6px;">🎁 בונוס הצטרפות</div>
           <div style="line-height: 1.5;">
             <strong>5% הנחה מיידית</strong> על הקנייה הראשונה (עד ₪150).
@@ -414,28 +414,28 @@
         </div>
 
         <!-- Benefits explanation block — INDIVIDUAL (default) -->
-        <div style="background: #fff8e8; border: 1px solid #e0c97f; border-radius: 10px; padding: 14px; margin-bottom: 20px; font-size: 13px;" id="benefits-individual">
-          <div style="font-weight: 700; color: #1d1d1f; margin-bottom: 8px;">איך הצבירה עובדת?</div>
-          <div style="color: #1d1d1f; line-height: 1.6;">
+        <div style="background: #e6f1fb; border: 1px solid #1e3a8a; border-radius: 10px; padding: 14px; margin-bottom: 20px; font-size: 13px;" id="benefits-individual">
+          <div style="font-weight: 700; color: #0f172a; margin-bottom: 8px;">איך הצבירה עובדת?</div>
+          <div style="color: #0f172a; line-height: 1.6;">
             כל הצטרפות מתחילה ב-<strong>Silver</strong>: 4% צבירה על מסגרות, 7% על עדשות.<br>
             תקנו ב-₪10,000 בשנה? עליתם ל-<strong>Gold</strong> אוטומטית (6% / 12%).<br>
             תקנו ב-₪15,000 בשנה? <strong>Diamond</strong> (8% / 15%).<br>
-            <span style="color: #86868b; font-size: 12px;">החברות בתוקף לשנתיים. הקרדיט שצברתם תקף 24 חודש.</span>
+            <span style="color: #475569; font-size: 12px;">החברות בתוקף לשנתיים. הקרדיט שצברתם תקף 24 חודש.</span>
           </div>
         </div>
 
         <!-- Benefits explanation block — FAMILY (hidden by default) -->
-        <div style="display: none; background: #fff8e8; border: 1px solid #e0c97f; border-radius: 10px; padding: 14px; margin-bottom: 20px; font-size: 13px;" id="benefits-family">
-          <div style="font-weight: 700; color: #1d1d1f; margin-bottom: 8px;">איך הצבירה עובדת למשפחה?</div>
-          <div style="color: #1d1d1f; line-height: 1.6;">
+        <div style="display: none; background: #e6f1fb; border: 1px solid #1e3a8a; border-radius: 10px; padding: 14px; margin-bottom: 20px; font-size: 13px;" id="benefits-family">
+          <div style="font-weight: 700; color: #0f172a; margin-bottom: 8px;">איך הצבירה עובדת למשפחה?</div>
+          <div style="color: #0f172a; line-height: 1.6;">
             כל המשפחה מתחילה ב-<strong>Silver</strong>: 4% צבירה על מסגרות, 7% על עדשות.<br>
             הקניות של כל בני המשפחה מצטברות יחד וההטבות משותפות.<br><br>
             <strong>סף הקידום עולה לפי גודל המשפחה</strong> (30% לכל חבר נוסף):<br>
-            <span style="color: #86868b;">משפחה של 2:</span> ₪13,000 → Gold · ₪19,500 → Diamond<br>
-            <span style="color: #86868b;">משפחה של 3:</span> ₪16,000 → Gold · ₪24,000 → Diamond<br>
-            <span style="color: #86868b;">משפחה של 4:</span> ₪19,000 → Gold · ₪28,500 → Diamond<br>
-            <span style="color: #86868b;">משפחה של 5:</span> ₪22,000 → Gold · ₪33,000 → Diamond<br>
-            <span style="color: #86868b; font-size: 12px;">החברות בתוקף לשנתיים. הקרדיט שצברתם תקף 24 חודש.</span>
+            <span style="color: #475569;">משפחה של 2:</span> ₪13,000 → Gold · ₪19,500 → Diamond<br>
+            <span style="color: #475569;">משפחה של 3:</span> ₪16,000 → Gold · ₪24,000 → Diamond<br>
+            <span style="color: #475569;">משפחה של 4:</span> ₪19,000 → Gold · ₪28,500 → Diamond<br>
+            <span style="color: #475569;">משפחה של 5:</span> ₪22,000 → Gold · ₪33,000 → Diamond<br>
+            <span style="color: #475569; font-size: 12px;">החברות בתוקף לשנתיים. הקרדיט שצברתם תקף 24 חודש.</span>
           </div>
         </div>
 
@@ -465,9 +465,9 @@
         </div>
 
         <!-- Family-only block (conditional) -->
-        <div style="display: none; background: #fafafc; border: 1px solid #e5e5ea; border-radius: 10px; padding: 14px; margin-bottom: 14px;" id="family-block">
+        <div style="display: none; background: #f4f4f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 14px;" id="family-block">
           <div style="font-weight: 600; margin-bottom: 8px;">בני משפחה (תוכל להוסיף אחרי ההצטרפות)</div>
-          <div style="font-size: 13px; color: #86868b; line-height: 1.5;">
+          <div style="font-size: 13px; color: #475569; line-height: 1.5;">
             המשפחה צוברת יחד וההטבות משותפות. סף הקידום ל-Gold/Diamond עולה ב-50% לכל חבר נוסף — כדי לשמור על הוגנות.<br><br>
             <strong>לדוגמה:</strong> משפחה של 3 תעלה ל-Gold כשתקנה ביחד ₪20,000 בשנה (במקום ₪10,000 לחבר בודד).
           </div>
@@ -485,8 +485,8 @@
 
         <button class="submit-btn" id="submit-btn">הצטרף ועבור לתשלום ₪50</button>
 
-        <div style="text-align: center; font-size: 12px; color: #86868b; margin-top: 12px;">
-          <a href="#" style="color: #c9a555;">תקנון</a> · <a href="#" style="color: #c9a555;">פרטיות</a> · <a href="#" style="color: #c9a555;">יצירת קשר</a>
+        <div style="text-align: center; font-size: 12px; color: #475569; margin-top: 12px;">
+          <a href="#" style="color: #1e3a8a;">תקנון</a> · <a href="#" style="color: #1e3a8a;">פרטיות</a> · <a href="#" style="color: #1e3a8a;">יצירת קשר</a>
         </div>
       </div>
     </div>
@@ -519,11 +519,11 @@ document.addEventListener('DOMContentLoaded', function() {
     optInd.addEventListener('click', function() {
       optInd.style.background = 'white';
       optInd.style.fontWeight = '600';
-      optInd.style.color = '#1d1d1f';
+      optInd.style.color = '#0f172a';
       optInd.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
       optFam.style.background = 'transparent';
       optFam.style.fontWeight = '400';
-      optFam.style.color = '#86868b';
+      optFam.style.color = '#475569';
       optFam.style.boxShadow = 'none';
       familyBlock.style.display = 'none';
       benefitsIndividual.style.display = 'block';
@@ -533,11 +533,11 @@ document.addEventListener('DOMContentLoaded', function() {
     optFam.addEventListener('click', function() {
       optFam.style.background = 'white';
       optFam.style.fontWeight = '600';
-      optFam.style.color = '#1d1d1f';
+      optFam.style.color = '#0f172a';
       optFam.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
       optInd.style.background = 'transparent';
       optInd.style.fontWeight = '400';
-      optInd.style.color = '#86868b';
+      optInd.style.color = '#475569';
       optInd.style.boxShadow = 'none';
       familyBlock.style.display = 'block';
       benefitsIndividual.style.display = 'none';
@@ -557,7 +557,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="device-label">Settings · Loyalty Module Configuration</div>
 
     <!-- Section 1: Membership Pricing -->
-    <div style="background: #fafafc; border: 1px solid #e5e5ea; border-radius: 10px; padding: 20px; margin-bottom: 16px;">
+    <div style="background: #f4f4f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 16px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
         <div style="font-weight: 700; font-size: 16px;">💳 דמי חבר ומשך מנוי</div>
         <button class="btn secondary" style="font-size: 12px; padding: 6px 12px;">היסטוריית שינויים</button>
@@ -565,23 +565,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
         <div>
-          <label style="font-size: 12px; color: #86868b; display: block; margin-bottom: 4px;">חברות בודדת (₪)</label>
-          <input type="number" value="50" style="width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-family: inherit; font-size: 15px;">
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">חברות בודדת (₪)</label>
+          <input type="number" value="50" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
         </div>
         <div>
-          <label style="font-size: 12px; color: #86868b; display: block; margin-bottom: 4px;">מכפיל חברות משפחתית</label>
-          <input type="number" value="2.0" step="0.1" style="width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-family: inherit; font-size: 15px;">
-          <div style="font-size: 11px; color: #86868b; margin-top: 4px;">→ משפחתית: ₪100</div>
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">מכפיל חברות משפחתית</label>
+          <input type="number" value="2.0" step="0.1" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
+          <div style="font-size: 11px; color: #475569; margin-top: 4px;">→ משפחתית: ₪100</div>
         </div>
         <div>
-          <label style="font-size: 12px; color: #86868b; display: block; margin-bottom: 4px;">משך חברות (חודשים)</label>
-          <input type="number" value="24" style="width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-family: inherit; font-size: 15px;">
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">משך חברות (חודשים)</label>
+          <input type="number" value="24" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
         </div>
       </div>
     </div>
 
     <!-- Section 2: Welcome Bonus -->
-    <div style="background: #fafafc; border: 1px solid #e5e5ea; border-radius: 10px; padding: 20px; margin-bottom: 16px;">
+    <div style="background: #f4f4f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 16px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
         <div style="font-weight: 700; font-size: 16px;">🎁 בונוס הצטרפות</div>
         <label style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
@@ -591,30 +591,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
         <div>
-          <label style="font-size: 12px; color: #86868b; display: block; margin-bottom: 4px;">סוג בונוס</label>
-          <select style="width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-family: inherit; font-size: 15px;">
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">סוג בונוס</label>
+          <select style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
             <option selected>הנחה מיידית %</option>
             <option>קרדיט קבוע ₪</option>
             <option>פריט חינם</option>
           </select>
         </div>
         <div>
-          <label style="font-size: 12px; color: #86868b; display: block; margin-bottom: 4px;">ערך (%)</label>
-          <input type="number" value="5" style="width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-family: inherit; font-size: 15px;">
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">ערך (%)</label>
+          <input type="number" value="5" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
         </div>
         <div>
-          <label style="font-size: 12px; color: #86868b; display: block; margin-bottom: 4px;">תקרה (₪)</label>
-          <input type="number" value="150" style="width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-family: inherit; font-size: 15px;">
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">תקרה (₪)</label>
+          <input type="number" value="150" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
         </div>
       </div>
       <div style="margin-top: 12px;">
-        <label style="font-size: 12px; color: #86868b; display: block; margin-bottom: 4px;">תוקף הבונוס (ימים מההצטרפות)</label>
-        <input type="number" value="30" style="width: 200px; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-family: inherit; font-size: 15px;">
+        <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">תוקף הבונוס (ימים מההצטרפות)</label>
+        <input type="number" value="30" style="width: 200px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
       </div>
     </div>
 
     <!-- Section 3: Tiers -->
-    <div style="background: #fafafc; border: 1px solid #e5e5ea; border-radius: 10px; padding: 20px; margin-bottom: 16px;">
+    <div style="background: #f4f4f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 16px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
         <div style="font-weight: 700; font-size: 16px;">⭐ רמות מועדון (Tiers)</div>
         <button class="btn secondary" style="font-size: 12px; padding: 6px 12px;">+ הוסף Tier</button>
@@ -634,39 +634,39 @@ document.addEventListener('DOMContentLoaded', function() {
         </thead>
         <tbody>
           <tr>
-            <td><span class="pill silver">Silver</span><br><span style="font-size: 11px; color: #86868b;">tier ברירת-מחדל</span></td>
-            <td><input type="number" value="0" style="width: 80px; padding: 6px; border: 1px solid #d2d2d7; border-radius: 6px;"></td>
-            <td><input type="number" value="0" style="width: 80px; padding: 6px; border: 1px solid #d2d2d7; border-radius: 6px;"></td>
-            <td><input type="number" value="4" style="width: 60px; padding: 6px; border: 1px solid #d2d2d7; border-radius: 6px;">%</td>
-            <td><input type="number" value="7" style="width: 60px; padding: 6px; border: 1px solid #d2d2d7; border-radius: 6px;">%</td>
-            <td><input type="number" value="0" style="width: 60px; padding: 6px; border: 1px solid #d2d2d7; border-radius: 6px;">%</td>
-            <td><a href="#" style="color: #c9a555; font-size: 13px;">ערוך הטבות</a></td>
+            <td><span class="pill silver">Silver</span><br><span style="font-size: 11px; color: #475569;">tier ברירת-מחדל</span></td>
+            <td><input type="number" value="0" style="width: 80px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></td>
+            <td><input type="number" value="0" style="width: 80px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></td>
+            <td><input type="number" value="4" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">%</td>
+            <td><input type="number" value="7" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">%</td>
+            <td><input type="number" value="0" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">%</td>
+            <td><a href="#" style="color: #1e3a8a; font-size: 13px;">ערוך הטבות</a></td>
           </tr>
           <tr>
             <td><span class="pill gold">Gold</span></td>
-            <td><input type="number" value="10000" style="width: 80px; padding: 6px; border: 1px solid #d2d2d7; border-radius: 6px;"></td>
-            <td><input type="number" value="8000" style="width: 80px; padding: 6px; border: 1px solid #d2d2d7; border-radius: 6px;"></td>
-            <td><input type="number" value="6" style="width: 60px; padding: 6px; border: 1px solid #d2d2d7; border-radius: 6px;">%</td>
-            <td><input type="number" value="12" style="width: 60px; padding: 6px; border: 1px solid #d2d2d7; border-radius: 6px;">%</td>
-            <td><input type="number" value="0" style="width: 60px; padding: 6px; border: 1px solid #d2d2d7; border-radius: 6px;">%</td>
-            <td><a href="#" style="color: #c9a555; font-size: 13px;">ערוך הטבות</a></td>
+            <td><input type="number" value="10000" style="width: 80px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></td>
+            <td><input type="number" value="8000" style="width: 80px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></td>
+            <td><input type="number" value="6" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">%</td>
+            <td><input type="number" value="12" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">%</td>
+            <td><input type="number" value="0" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">%</td>
+            <td><a href="#" style="color: #1e3a8a; font-size: 13px;">ערוך הטבות</a></td>
           </tr>
           <tr>
             <td><span class="pill diamond">Diamond</span></td>
-            <td><input type="number" value="15000" style="width: 80px; padding: 6px; border: 1px solid #d2d2d7; border-radius: 6px;"></td>
-            <td><input type="number" value="12000" style="width: 80px; padding: 6px; border: 1px solid #d2d2d7; border-radius: 6px;"></td>
-            <td><input type="number" value="8" style="width: 60px; padding: 6px; border: 1px solid #d2d2d7; border-radius: 6px;">%</td>
-            <td><input type="number" value="15" style="width: 60px; padding: 6px; border: 1px solid #d2d2d7; border-radius: 6px;">%</td>
-            <td><input type="number" value="0" style="width: 60px; padding: 6px; border: 1px solid #d2d2d7; border-radius: 6px;">%</td>
-            <td><a href="#" style="color: #c9a555; font-size: 13px;">ערוך הטבות</a></td>
+            <td><input type="number" value="15000" style="width: 80px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></td>
+            <td><input type="number" value="12000" style="width: 80px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></td>
+            <td><input type="number" value="8" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">%</td>
+            <td><input type="number" value="15" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">%</td>
+            <td><input type="number" value="0" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">%</td>
+            <td><a href="#" style="color: #1e3a8a; font-size: 13px;">ערוך הטבות</a></td>
           </tr>
         </tbody>
       </table>
-      <div style="font-size: 12px; color: #86868b; margin-top: 8px;">סף עלייה = הוצאה שנתית מינימלית לקידום. סף שמירה = הוצאה מינימלית לשמירת ה-tier (אחרת downgrade עם grace).</div>
+      <div style="font-size: 12px; color: #475569; margin-top: 8px;">סף עלייה = הוצאה שנתית מינימלית לקידום. סף שמירה = הוצאה מינימלית לשמירת ה-tier (אחרת downgrade עם grace).</div>
     </div>
 
     <!-- Section 4: Family Settings -->
-    <div style="background: #fafafc; border: 1px solid #e5e5ea; border-radius: 10px; padding: 20px; margin-bottom: 16px;">
+    <div style="background: #f4f4f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 16px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
         <div style="font-weight: 700; font-size: 16px;">👨‍👩‍👧 הגדרות משפחה</div>
         <label style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
@@ -676,93 +676,93 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px;">
         <div>
-          <label style="font-size: 12px; color: #86868b; display: block; margin-bottom: 4px;">מקסימום חברים בכל משפחה</label>
-          <input type="number" value="5" style="width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-family: inherit; font-size: 15px;">
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">מקסימום חברים בכל משפחה</label>
+          <input type="number" value="5" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
         </div>
         <div>
-          <label style="font-size: 12px; color: #86868b; display: block; margin-bottom: 4px;">מדיניות צבירה</label>
-          <select style="width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-family: inherit; font-size: 15px;">
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">מדיניות צבירה</label>
+          <select style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
             <option selected>שווה — כולם תורמים</option>
             <option>ראש-משפחה בלבד</option>
           </select>
         </div>
         <div>
-          <label style="font-size: 12px; color: #86868b; display: block; margin-bottom: 4px;">scale_factor (סף עליית tier)</label>
-          <input type="number" value="0.3" step="0.05" min="0" max="2" style="width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-family: inherit; font-size: 15px;">
-          <div style="font-size: 11px; color: #86868b; margin-top: 4px;">→ 30% עלייה לחבר</div>
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">scale_factor (סף עליית tier)</label>
+          <input type="number" value="0.3" step="0.05" min="0" max="2" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
+          <div style="font-size: 11px; color: #475569; margin-top: 4px;">→ 30% עלייה לחבר</div>
         </div>
       </div>
 
-      <div style="border-top: 1px solid #e5e5ea; padding-top: 14px;">
+      <div style="border-top: 1px solid #e2e8f0; padding-top: 14px;">
         <div style="font-weight: 600; font-size: 13px; margin-bottom: 8px;">סל משפחתי משותף — מימוש</div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div>
-            <label style="font-size: 12px; color: #86868b; display: block; margin-bottom: 4px;">מצב default למשפחות חדשות</label>
-            <select style="width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-family: inherit; font-size: 15px;">
+            <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">מצב default למשפחות חדשות</label>
+            <select style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
               <option selected>פתוח — כל חבר מממש בלי אישור</option>
               <option>סגור — דורש אישור ראש-משפחה</option>
             </select>
           </div>
           <div>
-            <label style="font-size: 12px; color: #86868b; display: block; margin-bottom: 4px;">תקרת מימוש default לבן-משפחה (₪, 0 = ללא)</label>
-            <input type="number" value="0" style="width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-family: inherit; font-size: 15px;">
-            <div style="font-size: 11px; color: #86868b; margin-top: 4px;">מעל הסכום — דורש אישור ראש-משפחה (גם במצב פתוח)</div>
+            <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">תקרת מימוש default לבן-משפחה (₪, 0 = ללא)</label>
+            <input type="number" value="0" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
+            <div style="font-size: 11px; color: #475569; margin-top: 4px;">מעל הסכום — דורש אישור ראש-משפחה (גם במצב פתוח)</div>
           </div>
         </div>
-        <div style="font-size: 11px; color: #86868b; margin-top: 8px;">כל משפחה יכולה לעקוף את ה-default האלה דרך כרטיס המועדון שלה.</div>
+        <div style="font-size: 11px; color: #475569; margin-top: 8px;">כל משפחה יכולה לעקוף את ה-default האלה דרך כרטיס המועדון שלה.</div>
       </div>
     </div>
 
     <!-- Section 5: Credit & Renewal -->
-    <div style="background: #fafafc; border: 1px solid #e5e5ea; border-radius: 10px; padding: 20px; margin-bottom: 16px;">
+    <div style="background: #f4f4f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 16px;">
       <div style="font-weight: 700; font-size: 16px; margin-bottom: 14px;">💰 קרדיט וחידוש</div>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
         <div>
-          <label style="font-size: 12px; color: #86868b; display: block; margin-bottom: 4px;">תוקף קרדיט (חודשים)</label>
-          <input type="number" value="24" style="width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-family: inherit; font-size: 15px;">
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">תוקף קרדיט (חודשים)</label>
+          <input type="number" value="24" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
         </div>
         <div>
-          <label style="font-size: 12px; color: #86868b; display: block; margin-bottom: 4px;">Grace period downgrade (חודשים)</label>
-          <input type="number" value="6" style="width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-family: inherit; font-size: 15px;">
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">Grace period downgrade (חודשים)</label>
+          <input type="number" value="6" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
         </div>
         <div>
-          <label style="font-size: 12px; color: #86868b; display: block; margin-bottom: 4px;">מקסימום קופונים בהזמנה</label>
-          <input type="number" value="1" style="width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-family: inherit; font-size: 15px;">
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">מקסימום קופונים בהזמנה</label>
+          <input type="number" value="1" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
         </div>
       </div>
     </div>
 
     <!-- Section 6: Notifications -->
-    <div style="background: #fafafc; border: 1px solid #e5e5ea; border-radius: 10px; padding: 20px; margin-bottom: 16px;">
+    <div style="background: #f4f4f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 16px;">
       <div style="font-weight: 700; font-size: 16px; margin-bottom: 14px;">📢 התראות אוטומטיות</div>
 
       <div style="display: grid; gap: 8px;">
         <label style="display: flex; align-items: center; gap: 10px; padding: 8px; background: white; border-radius: 6px;">
           <input type="checkbox" checked>
-          <div style="flex: 1;"><strong>קרדיט פג בקרוב</strong> <span style="color: #86868b; font-size: 12px;">— 60 יום לפני התפוגה</span></div>
+          <div style="flex: 1;"><strong>קרדיט פג בקרוב</strong> <span style="color: #475569; font-size: 12px;">— 60 יום לפני התפוגה</span></div>
         </label>
         <label style="display: flex; align-items: center; gap: 10px; padding: 8px; background: white; border-radius: 6px;">
           <input type="checkbox" checked>
-          <div style="flex: 1;"><strong>קרוב לרמה הבאה</strong> <span style="color: #86868b; font-size: 12px;">— 80% מהסף</span></div>
+          <div style="flex: 1;"><strong>קרוב לרמה הבאה</strong> <span style="color: #475569; font-size: 12px;">— 80% מהסף</span></div>
         </label>
         <label style="display: flex; align-items: center; gap: 10px; padding: 8px; background: white; border-radius: 6px;">
           <input type="checkbox">
-          <div style="flex: 1;"><strong>קופון יום-הולדת</strong> <span style="color: #86868b; font-size: 12px;">— יומיים לפני</span></div>
+          <div style="flex: 1;"><strong>קופון יום-הולדת</strong> <span style="color: #475569; font-size: 12px;">— יומיים לפני</span></div>
         </label>
         <label style="display: flex; align-items: center; gap: 10px; padding: 8px; background: white; border-radius: 6px;">
           <input type="checkbox" checked>
-          <div style="flex: 1;"><strong>ברוך הבא</strong> <span style="color: #86868b; font-size: 12px;">— מיד עם הצטרפות</span></div>
+          <div style="flex: 1;"><strong>ברוך הבא</strong> <span style="color: #475569; font-size: 12px;">— מיד עם הצטרפות</span></div>
         </label>
         <label style="display: flex; align-items: center; gap: 10px; padding: 8px; background: white; border-radius: 6px;">
           <input type="checkbox" checked>
-          <div style="flex: 1;"><strong>חידוש מנוי</strong> <span style="color: #86868b; font-size: 12px;">— 30/14/7 ימים לפני</span></div>
+          <div style="flex: 1;"><strong>חידוש מנוי</strong> <span style="color: #475569; font-size: 12px;">— 30/14/7 ימים לפני</span></div>
         </label>
       </div>
     </div>
 
     <!-- Save bar -->
-    <div style="display: flex; justify-content: flex-end; gap: 8px; padding-top: 8px; border-top: 1px solid #e5e5ea;">
+    <div style="display: flex; justify-content: flex-end; gap: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0;">
       <button class="btn secondary">בטל שינויים</button>
       <button class="btn">שמור שינויים</button>
     </div>
