@@ -1,0 +1,327 @@
+/* =====================================================================
+   Language B — Stripe Dashboard
+   Premium fintech aesthetic. Warm off-white base, serif headings,
+   deep violet accent, layered cards with soft shadows, gradient touches.
+   Top-bar navigation pattern (NOT sidebar). 15px base.
+   ===================================================================== */
+
+:root {
+  /* ---- Color — backgrounds (4 tiers, warm off-white) ---- */
+  --bg-page:        #f7f6f3;          /* warm canvas */
+  --bg-surface:     #fafaf7;          /* cards on warm canvas */
+  --bg-surface-alt: #ffffff;          /* elevated, top-bar */
+  --bg-tint:        #f3eefe;          /* violet wash */
+
+  /* ---- Color — text (4 tiers) ---- */
+  --text-primary:   #1a1f36;          /* deep navy-ish */
+  --text-secondary: #425466;          /* body */
+  --text-tertiary:  #697386;          /* meta */
+  --text-disabled:  #a3acba;
+
+  /* ---- Color — borders (3 tiers) ---- */
+  --border-subtle:  #e3e8ee;
+  --border-default: #d3dce8;
+  --border-strong:  #8898aa;
+
+  /* ---- Color — accents (deep violet, 2 tiers + gradient pair) ---- */
+  --accent:         #635bff;
+  --accent-hover:   #4f46e5;
+  --accent-soft:    #ebe9ff;
+  --accent-text:    #ffffff;
+  --accent-grad-1:  #635bff;
+  --accent-grad-2:  #a78bfa;
+
+  /* ---- Color — semantic (4 states, Stripe-saturated) ---- */
+  --success:        #16a34a;
+  --success-soft:   #d1fae5;
+  --warning:        #d97706;
+  --warning-soft:   #fef3c7;
+  --danger:         #dc2626;
+  --danger-soft:    #fee2e2;
+  --info:           #0891b2;
+  --info-soft:      #cffafe;
+
+  /* ---- Decorative accent palette (Stripe loves color in charts) ---- */
+  --dec-1: #f59e0b;
+  --dec-2: #06b6d4;
+  --dec-3: #ec4899;
+  --dec-4: #84cc16;
+
+  /* ---- Typography — family ---- */
+  --font-serif: "Source Serif 4", "Source Serif Pro", "Merriweather", Georgia, serif;
+  --font-sans:  "Inter", "Heebo", system-ui, -apple-system, sans-serif;
+  --font-mono:  "JetBrains Mono", ui-monospace, monospace;
+
+  /* ---- Typography — sizes (6 tiers, slightly larger than Linear) ---- */
+  --text-xs:   12px;
+  --text-sm:   13px;
+  --text-base: 15px;        /* Stripe-style 15px */
+  --text-lg:   17px;
+  --text-xl:   22px;
+  --text-2xl:  32px;
+  --text-3xl:  44px;
+
+  /* ---- Typography — weights ---- */
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  /* ---- Typography — leading ---- */
+  --leading-tight: 1.2;
+  --leading-base:  1.55;
+  --leading-loose: 1.7;
+
+  /* ---- Spacing (7 tiers, slightly looser than Linear) ---- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  28px;
+  --space-7:  40px;
+  --space-8:  56px;
+
+  /* ---- Radii (3 tiers — Stripe is uniformly 12px) ---- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* ---- Shadows (4 tiers — softer, layered) ---- */
+  --shadow-sm:  0 1px 3px rgba(50, 50, 93, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md:  0 4px 12px rgba(50, 50, 93, 0.10), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-lg:  0 12px 32px rgba(50, 50, 93, 0.14), 0 4px 8px rgba(0, 0, 0, 0.07);
+  --shadow-ring: 0 0 0 4px rgba(99, 91, 255, 0.18);
+
+  /* ---- Density tokens ---- */
+  --row-height:     44px;       /* comfortable */
+  --input-height:   38px;
+  --button-height:  36px;
+  --topbar-height:  64px;
+
+  /* ---- Gradient backdrops ---- */
+  --grad-violet: linear-gradient(135deg, #635bff 0%, #a78bfa 100%);
+  --grad-soft:   linear-gradient(180deg, #fafaf7 0%, #f7f6f3 100%);
+  --grad-hero:   linear-gradient(135deg, rgba(99,91,255,0.10) 0%, rgba(167,139,250,0.06) 100%);
+}
+
+/* =====================================================================
+   Reset + base
+   ===================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-serif);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); }
+
+button { font-family: inherit; font-size: inherit; cursor: pointer; border: none; background: none; }
+input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+
+/* =====================================================================
+   Stripe-style primitives (top-bar, NOT sidebar — DOM differs from A)
+   ===================================================================== */
+
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+
+.topbar {
+  height: var(--topbar-height);
+  background: var(--bg-surface-alt);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 var(--space-7);
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+  position: sticky; top: 0; z-index: 10;
+}
+.brand {
+  display: flex; align-items: center; gap: var(--space-3);
+  font-family: var(--font-serif); font-weight: var(--weight-semibold);
+  font-size: var(--text-lg);
+}
+.brand-glyph {
+  width: 32px; height: 32px; border-radius: var(--radius-sm);
+  background: var(--grad-violet); color: #fff;
+  display: grid; place-items: center; font-family: var(--font-sans);
+  font-weight: var(--weight-semibold); font-size: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.topnav { display: flex; gap: var(--space-1); }
+.topnav a {
+  padding: var(--space-2) var(--space-4);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  border-radius: var(--radius-sm);
+}
+.topnav a:hover { color: var(--text-primary); background: var(--bg-page); }
+.topnav a.active { color: var(--accent); background: var(--accent-soft); }
+
+.account {
+  display: flex; align-items: center; gap: var(--space-3);
+  font-size: var(--text-sm); color: var(--text-secondary);
+}
+.avatar {
+  width: 32px; height: 32px; border-radius: 999px;
+  background: var(--grad-violet); color: #fff;
+  display: grid; place-items: center;
+  font-weight: var(--weight-semibold); font-size: 13px;
+}
+
+.shell {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-7);
+  display: flex; flex-direction: column; gap: var(--space-6);
+  width: 100%;
+}
+
+.hero {
+  background: var(--grad-hero);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6) var(--space-7);
+  display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-5);
+}
+.hero h1 {
+  font-size: var(--text-3xl); line-height: var(--leading-tight);
+  margin-bottom: var(--space-2);
+}
+.hero p { color: var(--text-secondary); margin: 0; font-size: var(--text-base); max-width: 600px; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  height: var(--button-height); padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm); font-weight: var(--weight-medium);
+  background: var(--bg-surface-alt);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-sm);
+  transition: all 120ms ease;
+}
+.btn:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.btn-primary {
+  background: var(--grad-violet); color: var(--accent-text);
+  border-color: transparent;
+}
+.btn-primary:hover { box-shadow: var(--shadow-md), var(--shadow-ring); }
+.btn-ghost { background: transparent; border-color: transparent; box-shadow: none; color: var(--text-secondary); }
+.btn-ghost:hover { background: var(--bg-page); transform: none; box-shadow: none; }
+
+/* Cards (Stripe-layered) */
+.card {
+  background: var(--bg-surface-alt);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.card-padded { padding: var(--space-6); }
+.card-header {
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-title { font-family: var(--font-serif); font-size: var(--text-xl); font-weight: var(--weight-semibold); }
+.card-sub   { color: var(--text-tertiary); font-size: var(--text-sm); margin-top: 4px; }
+.card-body  { padding: var(--space-6); }
+
+/* Metric tiles (Stripe-signature) */
+.metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); }
+.metric {
+  background: var(--bg-surface-alt);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+  position: relative; overflow: hidden;
+}
+.metric-label { font-size: var(--text-sm); color: var(--text-tertiary); font-weight: var(--weight-medium); }
+.metric-value {
+  font-family: var(--font-serif);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+  margin-top: var(--space-2);
+  letter-spacing: -0.02em;
+}
+.metric-trend { font-size: var(--text-xs); color: var(--success); margin-top: var(--space-2); font-weight: var(--weight-medium); }
+.metric-trend.down { color: var(--danger); }
+.metric-spark {
+  position: absolute; inset-inline-end: var(--space-3); top: var(--space-3);
+  width: 80px; height: 28px;
+  opacity: 0.6;
+}
+
+/* Tables */
+table.tbl {
+  width: 100%; border-collapse: collapse; font-size: var(--text-sm);
+}
+table.tbl th {
+  text-align: start; font-weight: var(--weight-semibold);
+  color: var(--text-tertiary); font-size: var(--text-xs);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+}
+table.tbl td {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+table.tbl tr:hover td { background: var(--bg-page); }
+table.tbl tr:last-child td { border-bottom: none; }
+
+/* Pills/Badges (Stripe colorful) */
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: var(--text-xs); font-weight: var(--weight-semibold);
+  background: var(--bg-page); color: var(--text-secondary);
+}
+.pill-success { background: var(--success-soft); color: #166534; }
+.pill-warning { background: var(--warning-soft); color: #92400e; }
+.pill-danger  { background: var(--danger-soft);  color: #991b1b; }
+.pill-info    { background: var(--info-soft);    color: #155e75; }
+.pill-violet  { background: var(--accent-soft);  color: var(--accent-hover); }
+.pill .dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+
+/* Form fields */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field-label { font-size: var(--text-sm); color: var(--text-primary); font-weight: var(--weight-medium); }
+.field-help  { color: var(--text-tertiary); font-size: var(--text-xs); }
+.input, .select {
+  height: var(--input-height);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-alt);
+  box-shadow: inset 0 1px 2px rgba(50, 50, 93, 0.04);
+}
+.input:focus, .select:focus {
+  outline: none; border-color: var(--accent); box-shadow: var(--shadow-ring);
+}
+
+/* Number style */
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+/* Decorative bar / gradient backdrop on metric */
+.metric-accent {
+  position: absolute; inset-inline-start: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--grad-violet);
+}
