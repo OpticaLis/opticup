@@ -83,6 +83,11 @@ if (verbose) {
 //   - rule-23-secrets        — Iron Rule 23 (no secrets in code/docs)
 //   - check-root-discipline  — Root Discipline Rule (CLAUDE.md §0.5) — added 2026-05-09 by STRUCTURE_PROTECTIONS SPEC
 //                              Detects newly-added root-level files/dirs not on scripts/checks/root-allowlist.json.
+//   - destructive-ops-declared — Iron Rule 32 (Destructive Operations Gate) — added 2026-05-11 by
+//                              M1_5_FULL_AUTO_PIPELINE SPEC. Runs in both --staged and --full modes
+//                              (auto-discovered). Enforces: every SPEC.md inside modules/*/docs/specs/*/
+//                              declares its destructive ops; staged commits do not introduce undeclared
+//                              destructive patterns (DROP/TRUNCATE/file deletes/mass renames/--no-verify).
 let checkEntries;
 try {
   checkEntries = await readdir(CHECKS_DIR);
