@@ -50,15 +50,29 @@ const NEW_ROOT = `:root{
     --r-md:6px; --r-lg:10px;
   }`;
 
+// Light-reskin neutral swaps for files that DON'T use the legacy purple palette
+// (e.g. M12 channel-themed mockups). Per Brief §2.4 we preserve semantic colors
+// (WhatsApp green, SMS blue, Email red, transactional/marketing badges, etc.)
+// and only realign the neutral foundation (bg / text / border / decorative gold).
+const NEUTRAL_TOKEN_SWAPS = [
+  ['--bg: #f5f6f8',       '--bg: #fafaf7'],   // page bg → Hybrid bg-page
+  ['--bg: #ece5dd',       '--bg: #ece5dd'],   // WhatsApp chat bg — preserved (semantic)
+  ['--text: #111b21',     '--text: #0f172a'],  // body text → Hybrid text-primary
+  ['--text-muted: #667781','--text-muted: #475569'], // muted → Hybrid text-secondary
+  ['--border: #e5e7eb',   '--border: #e2e8f0'], // border → Hybrid border-subtle
+  ['--border: #e9edef',   '--border: #e2e8f0'], // WhatsApp variant
+  ['--gold: #c9a555',     '--gold: #1e3a8a'],   // decorative gold → Navy accent
+  ['--gold-dark: #a98740','--gold-dark: #1e40af'], // gold hover → accent-hover
+];
+
 async function reskin(file) {
   const before = await readFile(file, 'utf8');
   const beforeLines = before.split('\n').length;
 
-  // 1. Replace the :root{} block. We anchor on the first `:root{` and balance
-  //    braces to find the matching `}`. This survives the variation across
-  //    files (some have nested calc(), some have rgba commas, etc.).
-  const idx = before.indexOf(':root{');
-  if (idx < 0) throw new Error(`No :root{ block found in ${file}`);
+  // Locate :root block (allowing optional whitespace before `{`)
+  const m = before.match(/:root\s*\{/);
+  if (!m) throw new Error(`No :root block found in ${file}`);
+  const idx = m.index;
   let depth = 0;
   let end = -1;
   for (let i = idx; i < before.length; i++) {
@@ -69,36 +83,47 @@ async function reskin(file) {
       if (depth === 0) { end = i + 1; break; }
     }
   }
-  if (end < 0) throw new Error(`Unbalanced :root{ block in ${file}`);
-  let out = before.slice(0, idx) + NEW_ROOT + before.slice(end);
+  if (end < 0) throw new Error(`Unbalanced :root block in ${file}`);
 
-  // 2. Sweep dark-background uses of --purple-deep → --accent.
-  //    Patterns observed in the legacy files:
-  //      background:var(--purple-deep)
-  //      background-color:var(--purple-deep)
-  //      background:linear-gradient(...,var(--purple-deep)...)
-  //    Replace the token reference itself when it appears in a background
-  //    context. Conservative: only swap when the var sits inside a
-  //    background-* declaration value.
-  out = out.replace(/(background[^;{}]*?)var\(--purple-deep\)/g,
-    (m, head) => head + 'var(--accent)');
+  const rootBlock = before.slice(idx, end);
+  const hasLegacyPurple = /--purple/.test(rootBlock) || /#26215[Cc]|#534[Aa][Bb]7/.test(rootBlock);
 
-  // 3. Inline hex literals.
-  out = out.replace(/#26215C/gi, '#1e3a8a'); // purple-deep hex → Navy
-  out = out.replace(/#534AB7/gi, '#1e3a8a'); // purple primary hex → Navy
-  out = out.replace(/#7F77DD/gi, '#1e40af'); // purple-mid hex → accent-hover
-  out = out.replace(/#EEEDFE/gi, '#e6f1fb'); // purple-soft hex → accent-soft
-  out = out.replace(/#CECBF6/gi, '#cbd5e1'); // light-purple tint → border-default
-  out = out.replace(/#B7B0FF/gi, '#cbd5e1'); // another light-purple tint, defensive
+  let out;
+  let mode;
+  if (hasLegacyPurple) {
+    // Heavy re-skin: full :root replacement + sweeps (legacy purple palette files)
+    mode = 'heavy';
+    out = before.slice(0, idx) + NEW_ROOT + before.slice(end);
 
-  // 4. Sanity: ensure --purple-mid usages are still served (alias handles them,
-  //    but if a file has inline `--purple-mid:` reassignments outside :root we
-  //    leave them — the alias in :root wins for cascade resolution anyway).
+    // Sweep dark-background uses of --purple-deep → --accent so dark headers
+    // stay Navy (alias points purple-deep at slate text-primary, which would
+    // render as a slate header instead of Navy per Brief §2.2).
+    out = out.replace(/(background[^;{}]*?)var\(--purple-deep\)/g,
+      (mm, head) => head + 'var(--accent)');
 
+    // Inline hex literals.
+    out = out.replace(/#26215C/gi, '#1e3a8a');
+    out = out.replace(/#534AB7/gi, '#1e3a8a');
+    out = out.replace(/#7F77DD/gi, '#1e40af');
+    out = out.replace(/#EEEDFE/gi, '#e6f1fb');
+    out = out.replace(/#CECBF6/gi, '#cbd5e1');
+    out = out.replace(/#B7B0FF/gi, '#cbd5e1');
+  } else {
+    // Light re-skin: targeted neutral-only swaps inside :root (M12 channel-
+    // themed files — Brief §2.4 mandates preserving semantic colors).
+    mode = 'light';
+    let newRoot = rootBlock;
+    for (const [from, to] of NEUTRAL_TOKEN_SWAPS) {
+      if (from === to) continue;
+      newRoot = newRoot.split(from).join(to);
+    }
+    out = before.slice(0, idx) + newRoot + before.slice(end);
+  }
   await writeFile(file, out, 'utf8');
   const afterLines = out.split('\n').length;
   return {
     file,
+    mode,
     bytesBefore: before.length,
     bytesAfter: out.length,
     linesBefore: beforeLines,
@@ -118,7 +143,7 @@ for (const f of files) {
   try {
     const r = await reskin(f);
     results.push(r);
-    console.log(`  ✅ ${r.file}`);
+    console.log(`  ✅ [${r.mode}] ${r.file}`);
     console.log(`     ${r.linesBefore} → ${r.linesAfter} lines (Δ ${r.deltaPct}%), ${r.bytesBefore} → ${r.bytesAfter} bytes`);
   } catch (err) {
     console.error(`  ❌ ${f}: ${err.message}`);
