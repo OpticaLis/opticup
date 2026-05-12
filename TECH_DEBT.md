@@ -7,6 +7,33 @@
 
 ## Active Debt
 
+### #M4-DEBT-CRM-AUTO-RULES-UPDATED-AT — 🟢 `crm_automation_rules` lacks `updated_at` column
+
+**Where:** Supabase table `public.crm_automation_rules`. Surfaced by `PRIZMA_CRM_BUGFIX_BACKPORT` (2026-05-12) Phase 1 pre-flight when a query requested `updated_at` and Postgres returned `42703: column "updated_at" does not exist`.
+
+**Why it's debt:** Rule rows are mutated occasionally (UI editor, data-only fixes like this SPEC) but the row itself doesn't record when. Auditors and "since X" verification queries (e.g., the predecessor `M4_DEMO_E2E_FULL_AUDIT`-style snapshot pattern) have to fall back on git/SPEC history instead of an authoritative DB timestamp.
+
+**Why not fixed now:** Out of scope for the backport SPEC. The table is small (16-32 rows per tenant) and the audit need is rare.
+
+**Planned fix:** Add `updated_at timestamptz NOT NULL DEFAULT now()` + an `ON UPDATE` trigger (mirroring the canonical pattern from other CRM tables) in a single-purpose migration. Effort: ~30 min.
+
+**Effort:** ~30 min.
+
+### #M4-DEBT-EVENT-REG-OPEN-AUDIENCE-AUDIT — 🟡 `event_registration_open` rule audience may be too broad
+
+**Where:** Supabase `crm_automation_rules` for Prizma tenant — a separate (out-of-`PRIZMA_CRM_BUGFIX_BACKPORT`-scope) automation rule fires on `event.status_change → registration_open` and uses a broad audience resolver. Surfaced by EF dry-run (`mode='evaluate'`) on event `a7c9f174` which returned 1999 plan_items all from template `event_registration_open` (≈ all Prizma `waiting`-status leads × 2 channels).
+
+**Why it's debt:** 1999 outbound messages per "event opened for registration" event flip is a lot. Need to confirm:
+1. Is this the intended behavior on Prizma operationally?
+2. Should the audience be narrowed (e.g., a status filter or a recency window)?
+3. Does demo's equivalent rule have the same audience?
+
+**Why not fixed now:** Out of scope for `PRIZMA_CRM_BUGFIX_BACKPORT` (the SPEC was a targeted 2-row data fix on `event_invite_waiting_list` rules, not an audit of all event-status-change automation).
+
+**Planned fix:** Author a small audit SPEC `M4_EVENT_REGISTRATION_OPEN_AUDIENCE_AUDIT` to inspect both tenants' equivalent rules + Daniel's intent. May or may not result in a data change.
+
+**Effort:** ~1 hour audit + Daniel decision; data fix if needed is single-row UPDATE.
+
 ### #1 — 🔴 ERP credentials are single-tenant-assumed
 
 **Where:** Currently there is no `.env` in the ERP repo. Phase 0B's schema-diff

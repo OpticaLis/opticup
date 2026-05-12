@@ -6,6 +6,23 @@ Decisions that don't belong to a single module — workflow, process, communicat
 
 ---
 
+## 2026-05-12 — PRIZMA_CRM_BUGFIX_BACKPORT (Full-Auto Pipeline, single chat, Path A)
+
+
+**Situation:** The bug fixed in demo on 2026-05-11 (E2E audit SPEC `M4_DEMO_E2E_FULL_AUDIT`) — two `crm_automation_rules` rows that auto-sent `event_invite_waiting_list` template to the wrong audience AND auto-attached recipients as `invited` — was still active in Prizma production. Daniel signed off on the backport brief; Architect handed off to Full-Auto Pipeline in a single Claude Code chat under continuous-run mandate with planned escalation only on structural mismatch.
+**Pipeline decision:** **Path A** — Prizma's 2 target rows (`d2585fc4-…` registration_open + `c25feaf7-…` invite_waiting_list) matched demo's `PRE_FIX_RULE_SNAPSHOT.json` byte-for-byte structurally (recipient_type, post_action_attendee_upsert, preserved keys all identical). Applied the same data-only UPDATE pattern: `recipient_type` `cross_event_active_waitlist` → `leads_by_status`; added `recipient_status_filter=['waitlist']`; removed `post_action_attendee_upsert` key. Post-UPDATE md5s are byte-identical to demo's `POST_FIX_RULE_STATE.json` md5s.
+**Verification:** Prizma's 14 non-target rules aggregate md5 unchanged. Demo's 2 fixed rules unchanged (zero regression on demo). EF `automation-engine` v8 `mode='evaluate'` dry-runs on Prizma for both rule-trigger conditions (`registration_open` + `invite_waiting_list`) produced 0 outbound messages, 0 attendee inserts, 0 queue writes. Specifically: 0 `crm_message_log` rows tied to any of the 4 dry-run `run_id`s. The fixed rules produced 0 plan_items (correct — Prizma has 0 `waitlist`-status leads currently).
+**Pre-merge artifacts:** `READY-FOR-MAIN-MERGE.md` (PR title/body/compare URL), `ROLLBACK_SQL.md` (verbatim pre-state SQL one UPDATE per rule), `ARCHITECT_REVIEW_CHECKPOINT.md` (side-by-side Before/After diff + auto-classified 🟢 Clean verdict). Pre-write annotated git tag `pre-backport-prizma-event-invite-fix` on `bccbc1a`. Main-merge is Daniel-only via GitHub PR.
+**Findings:** 2 INFO opened → TECH_DEBT — (i) `crm_automation_rules` has no `updated_at` column; (ii) the separate `event_registration_open` rule on Prizma resolves to 1999 plan_items on event open — worth a follow-up audience-audit SPEC. 2 INFO dismissed (column-name lookup, EF runs-table writes by design).
+**Skill improvements harvested (4):**
+- **opticup-strategic Author #1:** when a SPEC requires an EF dry-run as verification, read the EF source FIRST (`get_edge_function`) and pin exact field-value semantics in §3 Success Criteria. This SPEC's criterion #8 said `status='evaluated'` but EF source writes `'completed'` — verified via fallback check but criterion text was slightly off.
+- **opticup-strategic Author #2:** Cross-Reference Check result should be re-stated in DIAGNOSIS.md for SPECs authored more than 24h before execution. Catches drift between SPEC date and run date.
+- **opticup-executor #1:** EF dry-runs returning large `plan_items` arrays must use a per-rule `Group-Object` summary pattern. This SPEC's first EF call produced a 27MB tool result; the second call (with `Group-Object -Property rule_name`) summarized to 10 lines. The summary pattern is the right default.
+- **opticup-executor #2:** codify the two-tier hash pattern explicitly — per-target-row md5 + aggregate-untouched md5 captured pre/post-write for any subset-update SPEC. The aggregate-untouched md5 is the only mechanical proof of zero collateral damage.
+**Lesson:** This was the first SPEC where opticup-strategic ran BOTH Foreman authoring AND Executor execution AND Foreman review in a single chat under Full-Auto Pipeline mode. Path A/B branching with planned escalation worked cleanly when the structural-match criteria were precise. The two-tier hash pattern (also used by `DEMO_PARITY_REPLICATION` 2026-05-11) is now confirmed as a project standard for any "modify subset of rows in a tenanted table" SPEC.
+
+---
+
 ## 2026-05-06 — Verbose audit summary, multiple findings as bullet list
 
 
