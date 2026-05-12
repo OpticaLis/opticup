@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M9 — Manager Dashboard Sketches</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Rubik', -apple-system, sans-serif; background: #fafaf7; color: #0f172a; padding: 16px; font-size: 13px; }
+  .nav { position: sticky; top: 0; background: white; padding: 14px 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; z-index: 100; }
+  .nav h1 { font-size: 18px; margin-left: auto; color: #1e3a8a; }
+  .nav button { background: #fafaf7; border: 1px solid #cbd5e1; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .nav button.active { background: #1e3a8a; color: white; border-color: #1e3a8a; }
+  .sketch { display: none; background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+  .sketch.active { display: block; }
+  .sketch h2 { font-size: 22px; margin-bottom: 4px; color: #1e3a8a; }
+  .sketch .subtitle { color: #475569; font-size: 13px; margin-bottom: 8px; }
+  .sketch .rationale { background: #f4f4f5; border-right: 3px solid #1e3a8a; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; color: #444; line-height: 1.6; }
+  .sketch .rationale strong { color: #1e3a8a; }
+  .recommendation-banner { background: #e6f1fb; border: 1px solid #1e3a8a; padding: 14px 18px; border-radius: 10px; margin-bottom: 16px; }
+  .recommendation-banner .rb-title { font-weight: 600; color: #855011; margin-bottom: 4px; font-size: 14px; }
+  .recommendation-banner .rb-body { font-size: 12px; color: #444; line-height: 1.6; }
+
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding: 10px 14px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; }
+  .top-bar .title { font-size: 16px; font-weight: 600; }
+  .top-bar .filters { display: flex; gap: 6px; }
+  .top-bar select, .top-bar input { padding: 5px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 5px; font-family: inherit; }
+
+  /* KPI cards */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .kpi-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; }
+  .kpi-card.danger { border-color: #f0a4a4; background: #fffafa; }
+  .kpi-card.warn { border-color: #1e3a8a; background: #fffdf7; }
+  .kpi-card.good { border-color: #b8d8a0; background: #fafff7; }
+  .kpi-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+  .kpi-value { font-size: 28px; font-weight: 700; margin-top: 4px; }
+  .kpi-value.danger { color: #a32d2d; }
+  .kpi-value.warn { color: #855011; }
+  .kpi-value.good { color: #2d5a1a; }
+  .kpi-trend { font-size: 11px; margin-top: 4px; }
+  .kpi-trend.up-bad { color: #a32d2d; }
+  .kpi-trend.down-good { color: #2d5a1a; }
+  .kpi-trend.up-good { color: #2d5a1a; }
+  .kpi-trend.flat { color: #888; }
+
+  /* Charts placeholder */
+  .chart-section { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .chart-title { font-size: 14px; font-weight: 600; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .chart-title .toggle { display: flex; gap: 4px; font-size: 11px; }
+  .chart-title .toggle button { padding: 4px 10px; background: #fafaf7; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; font-size: 11px; }
+  .chart-title .toggle button.active { background: #1e3a8a; color: white; border-color: #1e3a8a; }
+
+  /* Bar chart (CSS-only) */
+  .bar-chart { display: flex; gap: 12px; align-items: flex-end; height: 200px; padding: 10px 0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 4px; }
+  .bar-stack { width: 30px; background: #1e3a8a; border-radius: 3px 3px 0 0; position: relative; min-height: 4px; }
+  .bar-stack .bar-label { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 600; }
+  .bar-name { font-size: 10px; color: #555; text-align: center; }
+
+  /* Line chart (SVG) */
+  .line-chart { width: 100%; height: 200px; }
+
+  /* Two-column layout */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+
+  /* Tables */
+  table.access-style { width: 100%; border-collapse: collapse; font-size: 12px; background: white; }
+  table.access-style th { background: #d8d8d8; padding: 7px 8px; font-weight: 600; color: #333; border: 1px solid #b8b8b8; text-align: right; font-size: 11px; }
+  table.access-style td { padding: 7px 8px; border: 1px solid #e2e8f0; text-align: right; }
+  table.access-style tr:hover td { background: #f4f4f5; }
+
+  .delay-badge-good { background: #c8e9b8; color: #2d5a1a; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+  .delay-badge-warn { background: #ffe2c4; color: #6b3a00; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+  .delay-badge-bad { background: #fde7e7; color: #791f1f; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+  .name-pill { padding: 2px 10px; border-radius: 999px; background: #e8e4ff; color: #5b3fc7; font-size: 11px; }
+  .supplier-pill { padding: 2px 10px; border-radius: 999px; background: #d8e4ff; color: #1f3a72; font-size: 11px; }
+
+  .progress-mini { background: #fafaf7; height: 6px; border-radius: 3px; overflow: hidden; min-width: 60px; }
+  .progress-mini .pm-fill { height: 100%; }
+  .progress-mini .pm-fill.green { background: #639922; }
+  .progress-mini .pm-fill.yellow { background: #ba7517; }
+  .progress-mini .pm-fill.red { background: #a32d2d; }
+
+  .section-title { font-size: 14px; font-weight: 600; color: #555; margin: 0 0 8px 0; padding-right: 4px; }
+
+  /* Sketch B specific */
+  .big-chart { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+  <div class="nav">
+    <button class="active" data-target="da">סקיצה א — KPI + טבלאות</button>
+    <button data-target="db">סקיצה ב — גרפים-מגמה</button>
+    <button data-target="dc">סקיצה ג — היברידי ⭐</button>
+    <h1>M9 · דשבורד מנהל — 3 גישות</h1>
+  </div>
+
+  <div class="recommendation-banner">
+    <div class="rb-title">המלצה: סקיצה ג — היברידי</div>
+    <div class="rb-body">
+      מנהל-סניף או בעלים פותח את הדשבורד אחת ליום-שבוע. הוא רוצה: (1) מספר-מהיר ב-glance — KPI cards למעלה, (2) תובנה-ויזואלית — גרף-מגמה מרכזי, (3) פירוט-לחקירה — טבלאות פילוח. סקיצה א נותנת רק 1+3, סקיצה ב נותנת רק 2. ג נותנת את ה-3 — וזה מה שמנהלים מצפים מ-dashboard מודרני.
+    </div>
+  </div>
+
+  <!-- ============ SKETCH A — KPI + tables ============ -->
+  <div class="sketch active" id="da">
+    <h2>סקיצה א — KPI cards + טבלאות פילוח</h2>
+    <div class="subtitle">מספרים-גדולים למעלה · טבלאות-פירוט מתחת · בלי גרפים</div>
+    <div class="rationale">
+      <strong>הרציונל:</strong> פוקוס על מספרים. מנהל רואה מיד 4 מדדים גדולים, ולמטה טבלאות מפורטות פר-קטגוריה / פר-עובד / פר-ספק.
+      <br><strong>יתרון:</strong> נקי, ישיר, פוקוס במספרים.
+      <br><strong>חיסרון:</strong> אין מגמה לאורך-זמן. קשה לראות "האם השתפרנו השבוע".
+    </div>
+
+    <div class="top-bar">
+      <div class="title">דשבורד מנהל — סניף סלמה</div>
+      <div class="filters">
+        <select><option>טווח: חודש אחרון</option><option>שבוע אחרון</option><option>השנה</option></select>
+        <select><option>סניף — סלמה</option></select>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card danger">
+        <div class="kpi-label">פיצויים החודש</div>
+        <div class="kpi-value danger">₪1,840</div>
+        <div class="kpi-trend up-bad">↑ 35% מול חודש קודם</div>
+      </div>
+      <div class="kpi-card warn">
+        <div class="kpi-label">הזמנות בעיכוב</div>
+        <div class="kpi-value warn">12 / 247</div>
+        <div class="kpi-trend up-bad">4.9% (היעד: <3%)</div>
+      </div>
+      <div class="kpi-card good">
+        <div class="kpi-label">זמן עיבוד ממוצע</div>
+        <div class="kpi-value good">5.2 ימים</div>
+        <div class="kpi-trend down-good">↓ 0.8 ימים מול חודש קודם</div>
+      </div>
+      <div class="kpi-card good">
+        <div class="kpi-label">% איסופים בזמן</div>
+        <div class="kpi-value good">87%</div>
+        <div class="kpi-trend up-good">↑ 4% מול חודש קודם</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div class="section-title">פיצויים — פילוח לפי קטגוריה</div>
+        <table class="access-style">
+          <tr><th>קטגוריה</th><th>פיצויים</th><th>סכום</th><th>% מהזמנות</th></tr>
+          <tr><td>מולטיפוקל</td><td>5</td><td>₪1,000</td><td><span class="delay-badge-bad">8%</span></td></tr>
+          <tr><td>אופיס</td><td>2</td><td>₪400</td><td><span class="delay-badge-warn">5%</span></td></tr>
+          <tr><td>מדף הזמנה</td><td>2</td><td>₪240</td><td><span class="delay-badge-good">2%</span></td></tr>
+          <tr><td>תיקון</td><td>1</td><td>₪200</td><td><span class="delay-badge-good">1%</span></td></tr>
+        </table>
+      </div>
+      <div>
+        <div class="section-title">פיצויים — פילוח לפי ספק</div>
+        <table class="access-style">
+          <tr><th>ספק</th><th>הזמנות</th><th>עיכובים</th><th>זמן ממוצע</th></tr>
+          <tr><td><span class="supplier-pill">Hoya</span></td><td>42</td><td><span class="delay-badge-bad">7</span></td><td>9.1 ימים</td></tr>
+          <tr><td><span class="supplier-pill">Essilor</span></td><td>38</td><td><span class="delay-badge-warn">3</span></td><td>6.8 ימים</td></tr>
+          <tr><td><span class="supplier-pill">שמיר</span></td><td>22</td><td><span class="delay-badge-good">1</span></td><td>5.2 ימים</td></tr>
+          <tr><td><span class="supplier-pill">בדולח</span></td><td>15</td><td><span class="delay-badge-good">1</span></td><td>4.5 ימים</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-title">משחק האופטיקאים — KPI אישי</div>
+    <table class="access-style">
+      <tr><th>אופטיקאי</th><th>משמרות החודש</th><th>הזמנות שטופלו</th><th>דחופים שנסגרו</th><th>פיצויים על המשמרת</th><th>הקפאות</th><th>ציון</th></tr>
+      <tr><td><span class="name-pill">איליה אלקימוביץ׳</span></td><td>22</td><td>164</td><td>18</td><td>2 (₪400)</td><td>4</td><td><span class="delay-badge-good">A</span></td></tr>
+      <tr><td><span class="name-pill">נעמה נחמני</span></td><td>20</td><td>83</td><td>5</td><td>1 (₪200)</td><td>2</td><td><span class="delay-badge-good">A</span></td></tr>
+      <tr><td><span class="name-pill">גיאנה אלאי</span></td><td>15</td><td>42</td><td>2</td><td>0</td><td>1</td><td><span class="delay-badge-good">A</span></td></tr>
+    </table>
+  </div>
+
+  <!-- ============ SKETCH B — Charts ============ -->
+  <div class="sketch" id="db">
+    <h2>סקיצה ב — גרפים מבוססי-מגמה</h2>
+    <div class="subtitle">גרפים-זמן · השוואות-ויזואליות · מוקטן בטבלאות</div>
+    <div class="rationale">
+      <strong>הרציונל:</strong> פוקוס על מגמה — האם השתפרנו? איזה ספק עולה ויורד? איפה הבעיה הולכת ומתחזקת?
+      <br><strong>יתרון:</strong> רואים תובנות-ויזואליות בלי לחשב במוח.
+      <br><strong>חיסרון:</strong> מספרים-מדויקים פחות נגישים. מי שרוצה פירוט צריך לרחף או לפתוח חלון-אחר.
+    </div>
+
+    <div class="top-bar">
+      <div class="title">דשבורד מנהל — סניף סלמה</div>
+      <div class="filters">
+        <select><option>טווח: 6 חודשים אחרונים</option></select>
+      </div>
+    </div>
+
+    <div class="big-chart">
+      <div class="chart-title">
+        זמן-עיבוד ממוצע — מגמה לאורך 6 חודשים
+        <div class="toggle">
+          <button class="active">הכל</button>
+          <button>פר-קטגוריה</button>
+          <button>פר-ספק</button>
+        </div>
+      </div>
+      <svg class="line-chart" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
+        <line x1="40" y1="180" x2="580" y2="180" stroke="#e2e8f0" stroke-width="1"/>
+        <line x1="40" y1="20" x2="40" y2="180" stroke="#e2e8f0" stroke-width="1"/>
+        <text x="20" y="185" font-size="10" fill="#888">0</text>
+        <text x="15" y="100" font-size="10" fill="#888">5d</text>
+        <text x="15" y="25" font-size="10" fill="#888">10d</text>
+        <polyline points="50,80 130,90 210,75 290,95 370,60 450,70 530,55"
+                  fill="none" stroke="#1e3a8a" stroke-width="3"/>
+        <circle cx="50" cy="80" r="4" fill="#1e3a8a"/>
+        <circle cx="130" cy="90" r="4" fill="#1e3a8a"/>
+        <circle cx="210" cy="75" r="4" fill="#1e3a8a"/>
+        <circle cx="290" cy="95" r="4" fill="#1e3a8a"/>
+        <circle cx="370" cy="60" r="4" fill="#1e3a8a"/>
+        <circle cx="450" cy="70" r="4" fill="#1e3a8a"/>
+        <circle cx="530" cy="55" r="4" fill="#1e3a8a"/>
+        <text x="50" y="195" font-size="10" fill="#555" text-anchor="middle">דצמ</text>
+        <text x="130" y="195" font-size="10" fill="#555" text-anchor="middle">ינו</text>
+        <text x="210" y="195" font-size="10" fill="#555" text-anchor="middle">פבר</text>
+        <text x="290" y="195" font-size="10" fill="#555" text-anchor="middle">מרץ</text>
+        <text x="370" y="195" font-size="10" fill="#555" text-anchor="middle">אפר</text>
+        <text x="450" y="195" font-size="10" fill="#555" text-anchor="middle">מאי</text>
+        <text x="530" y="195" font-size="10" fill="#555" text-anchor="middle">יונ</text>
+      </svg>
+    </div>
+
+    <div class="two-col">
+      <div class="big-chart">
+        <div class="chart-title">פיצויים — פר-ספק</div>
+        <div class="bar-chart">
+          <div class="bar-col"><div class="bar-stack" style="height: 80%; background: #a32d2d;"><span class="bar-label">7</span></div><div class="bar-name">Hoya</div></div>
+          <div class="bar-col"><div class="bar-stack" style="height: 40%; background: #ba7517;"><span class="bar-label">3</span></div><div class="bar-name">Essilor</div></div>
+          <div class="bar-col"><div class="bar-stack" style="height: 15%; background: #639922;"><span class="bar-label">1</span></div><div class="bar-name">שמיר</div></div>
+          <div class="bar-col"><div class="bar-stack" style="height: 15%; background: #639922;"><span class="bar-label">1</span></div><div class="bar-name">בדולח</div></div>
+        </div>
+      </div>
+      <div class="big-chart">
+        <div class="chart-title">עיכובים — פר-קטגוריה</div>
+        <div class="bar-chart">
+          <div class="bar-col"><div class="bar-stack" style="height: 80%; background: #a32d2d;"><span class="bar-label">8%</span></div><div class="bar-name">מולטיפוקל</div></div>
+          <div class="bar-col"><div class="bar-stack" style="height: 50%; background: #ba7517;"><span class="bar-label">5%</span></div><div class="bar-name">אופיס</div></div>
+          <div class="bar-col"><div class="bar-stack" style="height: 20%; background: #639922;"><span class="bar-label">2%</span></div><div class="bar-name">מדף הזמנה</div></div>
+          <div class="bar-col"><div class="bar-stack" style="height: 10%; background: #639922;"><span class="bar-label">1%</span></div><div class="bar-name">תיקון</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SKETCH C — Hybrid ⭐ ============ -->
+  <div class="sketch" id="dc">
+    <h2>סקיצה ג — היברידי ⭐</h2>
+    <div class="subtitle">KPI למעלה · גרף-מגמה במרכז · טבלאות פילוח למטה</div>
+    <div class="rationale">
+      <strong>הרציונל:</strong> השילוב של 1+2+3. למעלה 4 מספרים גדולים (תמונת-מצב מהירה). באמצע גרף-זמן (מגמה לאורך-זמן). למטה טבלאות-פילוח (לחקירה ולהחלטות).
+      <br><strong>יתרון:</strong> כל סוגי-המידע במסך-אחד. זה מה שמנהל-מצפה מ-dashboard מודרני.
+      <br><strong>חיסרון:</strong> צפוף — ייתכן שצריך גלילה. אבל זה סביר ל-dashboard שנפתח אחת ליום-שבוע.
+    </div>
+
+    <div class="top-bar">
+      <div class="title">דשבורד מנהל — סניף סלמה</div>
+      <div class="filters">
+        <select><option>טווח: חודש אחרון</option><option>שבוע</option><option>השנה</option></select>
+        <select><option>סניף — סלמה</option></select>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-grid">
+      <div class="kpi-card danger">
+        <div class="kpi-label">פיצויים החודש</div>
+        <div class="kpi-value danger">₪1,840</div>
+        <div class="kpi-trend up-bad">↑ 35% מחודש קודם</div>
+      </div>
+      <div class="kpi-card warn">
+        <div class="kpi-label">הזמנות בעיכוב</div>
+        <div class="kpi-value warn">12 / 247</div>
+        <div class="kpi-trend up-bad">4.9% (יעד: 3%)</div>
+      </div>
+      <div class="kpi-card good">
+        <div class="kpi-label">זמן עיבוד ממוצע</div>
+        <div class="kpi-value good">5.2 ימים</div>
+        <div class="kpi-trend down-good">↓ 0.8 ימים מחודש</div>
+      </div>
+      <div class="kpi-card good">
+        <div class="kpi-label">% איסופים בזמן</div>
+        <div class="kpi-value good">87%</div>
+        <div class="kpi-trend up-good">↑ 4% מחודש</div>
+      </div>
+    </div>
+
+    <!-- Trend chart -->
+    <div class="chart-section">
+      <div class="chart-title">
+        זמן-עיבוד ממוצע — 6 חודשים אחרונים
+        <div class="toggle">
+          <button class="active">הכל</button>
+          <button>פר-קטגוריה</button>
+          <button>פר-ספק</button>
+        </div>
+      </div>
+      <svg class="line-chart" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
+        <line x1="40" y1="180" x2="580" y2="180" stroke="#e2e8f0" stroke-width="1"/>
+        <line x1="40" y1="20" x2="40" y2="180" stroke="#e2e8f0" stroke-width="1"/>
+        <text x="20" y="185" font-size="10" fill="#888">0d</text>
+        <text x="15" y="100" font-size="10" fill="#888">5d</text>
+        <text x="15" y="25" font-size="10" fill="#888">10d</text>
+        <line x1="40" y1="100" x2="580" y2="100" stroke="#fde9ec" stroke-width="1" stroke-dasharray="3"/>
+        <polyline points="50,80 130,90 210,75 290,95 370,60 450,70 530,55"
+                  fill="none" stroke="#1e3a8a" stroke-width="3"/>
+        <circle cx="50" cy="80" r="4" fill="#1e3a8a"/>
+        <circle cx="130" cy="90" r="4" fill="#1e3a8a"/>
+        <circle cx="210" cy="75" r="4" fill="#1e3a8a"/>
+        <circle cx="290" cy="95" r="4" fill="#1e3a8a"/>
+        <circle cx="370" cy="60" r="4" fill="#1e3a8a"/>
+        <circle cx="450" cy="70" r="4" fill="#1e3a8a"/>
+        <circle cx="530" cy="55" r="4" fill="#1e3a8a"/>
+        <text x="50" y="195" font-size="10" fill="#555" text-anchor="middle">דצמ</text>
+        <text x="130" y="195" font-size="10" fill="#555" text-anchor="middle">ינו</text>
+        <text x="210" y="195" font-size="10" fill="#555" text-anchor="middle">פבר</text>
+        <text x="290" y="195" font-size="10" fill="#555" text-anchor="middle">מרץ</text>
+        <text x="370" y="195" font-size="10" fill="#555" text-anchor="middle">אפר</text>
+        <text x="450" y="195" font-size="10" fill="#555" text-anchor="middle">מאי</text>
+        <text x="530" y="195" font-size="10" fill="#555" text-anchor="middle">יונ</text>
+      </svg>
+    </div>
+
+    <!-- Two columns of details -->
+    <div class="two-col">
+      <div>
+        <div class="section-title">פיצויים — לפי ספק</div>
+        <table class="access-style">
+          <tr><th>ספק</th><th>הזמנות</th><th>פיצויים</th><th>זמן ממוצע</th></tr>
+          <tr><td><span class="supplier-pill">Hoya</span></td><td>42</td><td><span class="delay-badge-bad">7</span></td><td>9.1d</td></tr>
+          <tr><td><span class="supplier-pill">Essilor</span></td><td>38</td><td><span class="delay-badge-warn">3</span></td><td>6.8d</td></tr>
+          <tr><td><span class="supplier-pill">שמיר</span></td><td>22</td><td><span class="delay-badge-good">1</span></td><td>5.2d</td></tr>
+          <tr><td><span class="supplier-pill">בדולח</span></td><td>15</td><td><span class="delay-badge-good">1</span></td><td>4.5d</td></tr>
+        </table>
+      </div>
+      <div>
+        <div class="section-title">עיכובים — לפי קטגוריה</div>
+        <table class="access-style">
+          <tr><th>קטגוריה</th><th>הזמנות</th><th>בעיכוב</th><th>%</th></tr>
+          <tr><td>מולטיפוקל</td><td>62</td><td>5</td><td><span class="delay-badge-bad">8%</span></td></tr>
+          <tr><td>אופיס</td><td>40</td><td>2</td><td><span class="delay-badge-warn">5%</span></td></tr>
+          <tr><td>מדף הזמנה</td><td>91</td><td>2</td><td><span class="delay-badge-good">2%</span></td></tr>
+          <tr><td>תיקון</td><td>54</td><td>1</td><td><span class="delay-badge-good">1%</span></td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Player KPI -->
+    <div class="section-title" style="margin-top: 16px;">משחק האופטיקאים — KPI אישי</div>
+    <table class="access-style">
+      <tr><th>אופטיקאי</th><th>משמרות</th><th>טופלו</th><th>דחופים נסגרו</th><th>פיצויים על המשמרת</th><th>הקפאות</th><th>ציון</th></tr>
+      <tr><td><span class="name-pill">איליה אלקימוביץ׳</span></td><td>22</td><td>164</td><td>18</td><td>2 (₪400)</td><td>4</td><td><span class="delay-badge-good">A</span></td></tr>
+      <tr><td><span class="name-pill">נעמה נחמני</span></td><td>20</td><td>83</td><td>5</td><td>1 (₪200)</td><td>2</td><td><span class="delay-badge-good">A</span></td></tr>
+      <tr><td><span class="name-pill">גיאנה אלאי</span></td><td>15</td><td>42</td><td>2</td><td>0</td><td>1</td><td><span class="delay-badge-good">A</span></td></tr>
+    </table>
+  </div>
+
+<script>
+  document.querySelectorAll('.nav button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.sketch').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.target).classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

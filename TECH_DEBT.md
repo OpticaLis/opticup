@@ -7,6 +7,33 @@
 
 ## Active Debt
 
+### #M4-DEBT-CRM-AUTO-RULES-UPDATED-AT — 🟢 `crm_automation_rules` lacks `updated_at` column
+
+**Where:** Supabase table `public.crm_automation_rules`. Surfaced by `PRIZMA_CRM_BUGFIX_BACKPORT` (2026-05-12) Phase 1 pre-flight when a query requested `updated_at` and Postgres returned `42703: column "updated_at" does not exist`.
+
+**Why it's debt:** Rule rows are mutated occasionally (UI editor, data-only fixes like this SPEC) but the row itself doesn't record when. Auditors and "since X" verification queries (e.g., the predecessor `M4_DEMO_E2E_FULL_AUDIT`-style snapshot pattern) have to fall back on git/SPEC history instead of an authoritative DB timestamp.
+
+**Why not fixed now:** Out of scope for the backport SPEC. The table is small (16-32 rows per tenant) and the audit need is rare.
+
+**Planned fix:** Add `updated_at timestamptz NOT NULL DEFAULT now()` + an `ON UPDATE` trigger (mirroring the canonical pattern from other CRM tables) in a single-purpose migration. Effort: ~30 min.
+
+**Effort:** ~30 min.
+
+### #M4-DEBT-EVENT-REG-OPEN-AUDIENCE-AUDIT — 🟡 `event_registration_open` rule audience may be too broad
+
+**Where:** Supabase `crm_automation_rules` for Prizma tenant — a separate (out-of-`PRIZMA_CRM_BUGFIX_BACKPORT`-scope) automation rule fires on `event.status_change → registration_open` and uses a broad audience resolver. Surfaced by EF dry-run (`mode='evaluate'`) on event `a7c9f174` which returned 1999 plan_items all from template `event_registration_open` (≈ all Prizma `waiting`-status leads × 2 channels).
+
+**Why it's debt:** 1999 outbound messages per "event opened for registration" event flip is a lot. Need to confirm:
+1. Is this the intended behavior on Prizma operationally?
+2. Should the audience be narrowed (e.g., a status filter or a recency window)?
+3. Does demo's equivalent rule have the same audience?
+
+**Why not fixed now:** Out of scope for `PRIZMA_CRM_BUGFIX_BACKPORT` (the SPEC was a targeted 2-row data fix on `event_invite_waiting_list` rules, not an audit of all event-status-change automation).
+
+**Planned fix:** Author a small audit SPEC `M4_EVENT_REGISTRATION_OPEN_AUDIENCE_AUDIT` to inspect both tenants' equivalent rules + Daniel's intent. May or may not result in a data change.
+
+**Effort:** ~1 hour audit + Daniel decision; data fix if needed is single-row UPDATE.
+
 ### #1 — 🔴 ERP credentials are single-tenant-assumed
 
 **Where:** Currently there is no `.env` in the ERP repo. Phase 0B's schema-diff
@@ -31,25 +58,6 @@ tenant config, or GitHub Environments. Out of scope until tenant #2 is on the
 horizon.
 
 **Effort:** ~4-6 hours design + implementation when the time comes.
-
-### #2 — 🟢 scripts/README.md mixes two unrelated topics
-
-**Where:** `scripts/README.md` currently contains InventorySync watcher docs
-(pre-existing, ~77 lines) appended with verify system docs (~65 lines) = 142
-lines mixed.
-
-**Why it's debt:** Two unrelated systems in one doc file violates the "one
-responsibility per file" spirit of Iron Rule 12, and makes the doc harder to
-scan.
-
-**Why not fixed now:** Phase 0 is additive. Splitting is pure cleanup, out of
-0A/0B scope.
-
-**Planned fix:** Split into `scripts/README-sync-watcher.md` (legacy content) +
-`scripts/README-verify.md` (verify system), delete `scripts/README.md`, update
-any references.
-
-**Effort:** ~15 min.
 
 ### #3 — 🟢 Phase 0A baseline violations snapshot (not to be fixed in Phase 0)
 
@@ -269,7 +277,103 @@ Block counts match (all 3 = 8), but block TYPES and ORDER diverge. R1 removed ti
 
 ---
 
+### #10 — 🟢 `tenant-fallback-map.json` drifts on every storefront build (M3-DEBT-12)
+
+**Where:** `opticup-storefront/src/data/tenant-fallback-map.json` (committed copy) vs `scripts/generate-tenant-fallback-map.mjs` (generator).
+
+**Why it's debt:** Running `npm run build` regenerates the JSON and produces a phantom modification — the generator now emits a `www.prizma-optic.co.il` key (canonical www) that's missing from the committed copy. Every developer who runs build sees `M src/data/tenant-fallback-map.json` in git status. Either gets committed accidentally to unrelated PRs or gets restored manually. CI also produces this drift on every build and discards it.
+
+**Why not fixed now:** 1-commit fix (run generator → commit fresh JSON), but doesn't justify a SPEC of its own. Bundle with other small drift items in a "post-cutover hygiene" SPEC.
+
+**Planned fix:** Run `node scripts/generate-tenant-fallback-map.mjs` and commit the regenerated file. Verify the consuming code (`resolveTenantNameFallback()` per M3_TENANT_NAME_FALLBACK_SAAS) handles both apex + www keys correctly before committing.
+
+**Effort:** ~5 min.
+
+**Source:** `modules/Module 3 - Storefront/docs/specs/M3_SITEMAP_BRAND_404_CLEANUP/FINDINGS.md` Finding M3-DEBT-12 (executor-discovered 2026-05-09).
+
+---
+
+### #11 — 🟢 `verify-sitemap.mjs` check #8 warn-only allowance is now stale (M3-OBS-01)
+
+**Where:** `opticup-storefront/scripts/verify-sitemap.mjs` lines ~108-126 (check #8, the existing 30-URL random-sample probe).
+
+**Why it's debt:** Check #8 was authored as warn-only because the prior data-quality issue (brand-block 404s) was tracked as a separate REC. After M3_SITEMAP_BRAND_404_CLEANUP shipped 2026-05-09, the post-deploy verify run reports `Sample probe: 30/30 returned 200 (0 pre-existing 404s logged)`. The "pre-existing data-quality issue" was entirely brand-block-driven and is now resolved. Check #8 could safely be tightened from warn-only to a strict gate, AND its inline comment is now misleading (mentions a problem that no longer exists).
+
+**Why not fixed now:** Wait for 2 weeks of continuous 30/30 to confirm zero residual non-brand 404s before tightening (data confidence). The new `brand404Probe()` (check #10) already covers brands strictly, so tightening check #8 is incremental hardening, not bug-fix urgency.
+
+**Planned fix:** After 2 weeks of continuous PASS: change `console.warn` → `throw new Error()` and update the inline comment to remove the "pre-existing data-quality issue" reference.
+
+**Effort:** ~5 min.
+
+**Source:** `modules/Module 3 - Storefront/docs/specs/M3_SITEMAP_BRAND_404_CLEANUP/FINDINGS.md` Finding M3-OBS-01 (executor-discovered 2026-05-09).
+
+---
+
+### M4-DEBT-01 — 🟢 receipt-ocr-review.js T.INV migration deferred (blocked by H-3 file-size hard max)
+
+**Where:** `modules/goods-receipts/receipt-ocr-review.js` (402 lines — pre-commit file-size check blocks at 350 hard max).
+
+**Why it's debt:** OVERNIGHT_HYGIENE_SWEEP_2026_05_09 Item 12 migrated `'inventory'` → `T.INV` across 5 goods-receipts files. 4 of 5 committed cleanly. The 5th (this file) was already 402 lines — Sentinel H-3 (24 oversized files); staging ANY change trips the file-size hook. The 1-line T.INV change was reverted; commit `db042c0` closed Item 12 partial.
+
+**Why not fixed now:** Cannot stage any change until file is decomposed. Decomposition is its own SPEC (per H-3 plan: `MISC_OVERSIZED_FILES_SPLIT`).
+
+**Planned fix:** When the H-3 cleanup SPEC ships and decomposes receipt-ocr-review.js into smaller modules, complete the residual T.INV migration (1 line — replace one `'inventory'` raw string with `T.INV`). 5-minute follow-up.
+
+**Effort:** ~5 min after H-3 file-split SPEC ships.
+
+**Source:** `modules/Module 4 - CRM/docs/specs/OVERNIGHT_HYGIENE_SWEEP_2026_05_09/FINDINGS.md` Finding F4 (executor-discovered 2026-05-09).
+
+---
+
+### #12 — 🟢 Sentinel vs Lighthouse-Cron coexistence on `GUARDIAN_ALERTS.md` is informal (M3-INFRA-04)
+
+**Where:** `docs/guardian/GUARDIAN_ALERTS.md` — single file with two writers: (a) Sentinel (regenerates the whole file each scan, runs locally on dev machines); (b) Lighthouse cron (appends below `<!-- LIGHTHOUSE-CRON-APPEND-MARKER -->`, runs in CI on develop).
+
+**Why it's debt:** The marker-based design works for the cron's writes, but coexistence is conventional, not enforced. Risks: (1) Sentinel's local regenerations now produce dirty working trees (the `.gitignore` was changed from directory-level `docs/guardian/` to subdir-only `docs/guardian/*/` so the cron can commit `GUARDIAN_ALERTS.md`); (2) if a future Sentinel scan ever pushes its regenerated content, the cron's accumulated entries above the marker could be lost OR the marker itself deleted.
+
+**Why not fixed now:** Marker design is robust against routine drift; this is about formalizing what is currently a convention. Wait until either writer actually drifts before investing the SPEC time.
+
+**Planned fix:** Two clean options:
+- (a) Update Sentinel to also respect the marker (only write above it).
+- (b) Split into two files: `GUARDIAN_ALERTS.md` (Sentinel's, gitignored) + `LIGHTHOUSE_ALERTS.md` (cron's, committed).
+
+Both are ~1-hour SPECs.
+
+**Effort:** ~1 hour SPEC if/when needed.
+
+**Source:** `modules/Module 3 - Storefront/docs/specs/M3_LIGHTHOUSE_NIGHTLY_CRON/FINDINGS.md` Finding M3-INFRA-04 (executor-discovered 2026-05-10).
+
+---
+
+### #13 — 🟢 `tenants` table has no `updated_at` auto-update trigger (TD-TENANTS-UPDATED-AT-TRIGGER-MISSING)
+
+**Where:** Postgres `tenants` table — no `BEFORE UPDATE ... SET NEW.updated_at = NOW()` trigger.
+
+**Why it's debt:** SPECs that compare `tenants.updated_at` to verify a mutation succeeded get false negatives — the column doesn't bump unless the UPDATE explicitly sets it in the SET clause. Verified live 2026-05-11 during `M3_DEMO_STOREFRONT_FORMS_DEPLOYMENT`: an UPDATE to `ui_config` did not advance `updated_at`. The current value (`2026-03-29 08:33:43.906+00` for demo) was set by an earlier SPEC that explicitly included `updated_at = NOW()`.
+
+**Why not fixed now:** Schema change requires Level-3 SQL autonomy (never autonomous) and a dedicated migration. SPECs in the meantime should compare the substantive column via `RETURNING`, not `updated_at` (now documented as an authoring anti-pattern in `SPEC_TEMPLATE.md` per Author Proposal A2 from this SPEC's FOREMAN_REVIEW).
+
+**Planned fix:** Two viable resolutions:
+- (a) Add a standard `BEFORE UPDATE ... SET NEW.updated_at = NOW()` trigger to `tenants` (worth verifying which other multi-tenant tables also lack one before deciding scope).
+- (b) Document the absence (this entry) and rely on SPECs to verify mutations via substantive-column comparison only.
+
+**Effort:** ~30-minute migration if option (a) chosen + audit. Zero additional work if option (b).
+
+**Source:** `modules/Module 3 - Storefront/docs/specs/M3_DEMO_STOREFRONT_FORMS_DEPLOYMENT/FINDINGS.md` Finding M3-FINDINGS-02 (executor-discovered 2026-05-11).
+
+---
+
 ## Resolved Debt
+
+### #2 — 🟢 scripts/README.md mixes two unrelated topics ✅ RESOLVED
+
+**Resolved by commit `c623dd0` on 2026-05-09 — OVERNIGHT_HYGIENE_SWEEP_2026_05_09 Item 13.**
+
+**Original state:** `scripts/README.md` mixed InventorySync watcher docs (~77 lines) with verify system docs (~65 lines) = 142 lines, two unrelated systems in one file (Iron Rule 12 spirit violation).
+
+**Fix applied:** Split into `scripts/README-sync-watcher.md` (78 lines) + `scripts/README-verify.md` (~75 lines, expanded to include null-bytes + check-root-discipline checks). Original `scripts/README.md` deleted. Zero references in live code.
+
+---
 
 ### #7 — 🟢 verify.mjs warnings exit policy inconsistent between ERP and Storefront ✅ RESOLVED
 

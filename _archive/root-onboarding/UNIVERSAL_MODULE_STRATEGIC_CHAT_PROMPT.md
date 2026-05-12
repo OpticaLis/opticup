@@ -28,14 +28,14 @@
 
 ---
 
-## 2. שיטת העבודה — 4 שכבות🏛️ Main Strategic Chat (Daniel ↔)        — אסטרטגיה גלובלית, MASTER_ROADMAP
+## 2. שיטת העבודה — 4 שכבות🏛️ Architect (Daniel ↔)        — אסטרטגיה גלובלית, MASTER_ROADMAP
 ├── 📋 Module Strategic Chat (אתה ↔ Daniel) — אפיון מפורט, PHASE_SPEC
 │   └── 🔧 Secondary Chat (Daniel ↔)     — פרומפטים ל-Claude Code, ביצוע פאזה
 │       └── ⚡ Claude Code (terminal)     — מבצע בלבד
 
-**אתה לא מדבר ישירות עם Main Strategic Chat ולא עם Claude Code.** Daniel הוא הגשר.
+**אתה לא מדבר ישירות עם Architect ולא עם Claude Code.** Daniel הוא הגשר.
 
-**מתי לפנות ל-Main Strategic (דרך Daniel):**
+**מתי לפנות ל-Architect (דרך Daniel):**
 - שאלות שנוגעות למודולים אחרים
 - שינויים שעלולים להשפיע על MASTER_ROADMAP
 - החלטות ארכיטקטוניות חוצות-מודולים (חוקים חדשים, דפוסים חדשים)
@@ -243,14 +243,14 @@ Daniel מעורב במפורש ב:
 
 | קובץ | מי מעדכן | מתי |
 |---|---|---|
-| `MODULE_X_ROADMAP.md` | Main Strategic (פעם אחת) + אתה (אם נדרש שינוי) | בתחילת המודול |
+| `MODULE_X_ROADMAP.md` | Architect (פעם אחת) + אתה (אם נדרש שינוי) | בתחילת המודול |
 | `MODULE_X_PHASE_Y_SPEC.md` | אתה | לפני כל פאזה |
 | `SESSION_CONTEXT.md` | Claude Code (דרך הצ'אט המשני) | סוף סשן |
 | `MODULE_MAP.md` | Claude Code | כל commit שמוסיף קוד |
 | `MODULE_SPEC.md` | Claude Code | סוף פאזה |
 | `CHANGELOG.md` | Claude Code | סוף פאזה |
 | `db-schema.sql` | Claude Code | כל שינוי DB |
-| `MASTER_ROADMAP.md` | Main Strategic + פאזת QA סופית של כל מודול | סוף מודול |
+| `MASTER_ROADMAP.md` | Architect + פאזת QA סופית של כל מודול | סוף מודול |
 
 ---
 

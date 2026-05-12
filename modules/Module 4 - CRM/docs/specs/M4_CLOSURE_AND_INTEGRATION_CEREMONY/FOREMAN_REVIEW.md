@@ -148,7 +148,7 @@ One drift (MASTER_ROADMAP). Per the §1 Hard-Fail Rules: "If §8 Master-Doc Upda
 
 ## 10. Followups Opened
 
-- `MASTER_ROADMAP.md §3 Current State` — Module 4 row → MAINTENANCE badge + 2026-05-06 closure date. **Action:** apply in next opticup-main-strategic session's master-doc sweep, no separate SPEC needed (1-line bump).
+- `MASTER_ROADMAP.md §3 Current State` — Module 4 row → MAINTENANCE badge + 2026-05-06 closure date. **Action:** apply in next opticup-architect session's master-doc sweep, no separate SPEC needed (1-line bump).
 - (No NEW SPECs opened from this review.)
 - (No TECH_DEBT.md additions; the 4 already-logged tech-debt items per §7 of this SPEC remain logged in their respective places.)
 - (No 🔴 REOPEN — verdict 🟢.)

@@ -45,6 +45,12 @@
 }
 
 .tb-th-sortable:hover { background: var(--color-gray-100); }
+.tb-th-sortable:focus { outline: none; }
+.tb-th-sortable:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+  box-shadow: var(--shadow-focus);
+}
 
 .tb-th-sortable::after {
   position: absolute;
@@ -159,10 +165,10 @@
   position: fixed;
   bottom: 0;
   height: 16px;
-  background: var(--g100, #f3f4f6);
-  border-top: 1px solid var(--g300, #d1d5db);
+  background: var(--color-gray-100);
+  border-top: 1px solid var(--color-gray-300);
   z-index: 100;
 }
 .tbl-sticky-bar::-webkit-scrollbar { height: 10px; }
-.tbl-sticky-bar::-webkit-scrollbar-thumb { background: var(--g400, #9ca3af); border-radius: 5px; }
+.tbl-sticky-bar::-webkit-scrollbar-thumb { background: var(--color-gray-400); border-radius: 5px; }
 .tbl-sticky-spacer { height: 1px; }

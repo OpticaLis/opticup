@@ -15,12 +15,14 @@ ALTER TABLE tenants
 
 -- ui_config structure:
 -- {
---   "--color-primary": "#1a56db",
---   "--color-primary-hover": "#1e429f",
---   "--font-family": "Rubik, sans-serif"
+--   "--color-primary": "#4f46e5",
+--   "--color-primary-hover": "#4338ca",
+--   "--color-primary-light": "#eef2ff",
+--   "--color-primary-dark": "#3730a3"
 -- }
+-- (Above is Prizma's current override — Indigo, set 2026-05-11 by M1_5_DESIGN_TOKENS_FOUNDATION.)
 -- Keys must start with "--" (enforced by theme-loader.js, not DB constraint).
--- Empty {} = use variables.css defaults (current Prizma design).
+-- Empty {} = use variables.css defaults (near-black + neutral slate scale — brand-free baseline).
 -- No RLS change needed — tenants table already has tenant isolation policy.
 -- No index needed — one row per tenant, not searchable.
 

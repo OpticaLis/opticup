@@ -19,7 +19,7 @@
 
 - **Severity:** MEDIUM (carry-forward, third occurrence)
 - **Location:** `.gitignore` line 34 (`.claude/` re-ignore that overrides lines 6-9's negation).
-- **Description:** First seen in PROJECT_STRUCTURE_CLEANUP_SPEC (logged as F2 there, MEDIUM, recommend `GITIGNORE_CLEANUP`). Re-encountered in MODULES_HOME_UNIFICATION_SPEC. NOW re-encountered in this SPEC for the third time — Sentinel Mission 10 file (`references/missions/10-structure-discipline.md`) and main-strategic SKILL.md couldn't `git add` without `-f`. Each SPEC inherits the workaround.
+- **Description:** First seen in PROJECT_STRUCTURE_CLEANUP_SPEC (logged as F2 there, MEDIUM, recommend `GITIGNORE_CLEANUP`). Re-encountered in MODULES_HOME_UNIFICATION_SPEC. NOW re-encountered in this SPEC for the third time — Sentinel Mission 10 file (`references/missions/10-structure-discipline.md`) and architect SKILL.md couldn't `git add` without `-f`. Each SPEC inherits the workaround.
 - **Recommendation:** Run `GITIGNORE_CLEANUP` SPEC immediately after this SPEC's Module Close Ceremony — the fix is small (delete lines 33–34 or the duplicate `.claude/`) but the impact is significant (every future skill-touching SPEC gets this same friction). Daniel has implicitly authorized inheriting the workaround for now, but the cumulative pain is now MEDIUM.
 - **Suggested follow-up SPEC:** `GITIGNORE_CLEANUP` (small, single-commit) — covers F2 + F3 from PROJECT_STRUCTURE_CLEANUP (watcher.wrapper.log) + this F2.
 

@@ -3,7 +3,7 @@
 **גרסה:** v1
 **מעמד:** Brief סגור — מוכן ל-Module Strategist
 **נכתב:** 2026-05-09
-**מחבר:** Main Strategic Architect (Tier 2)
+**מחבר:** Architect (Tier 2)
 **מבוסס על:** סשן-תכנון 2026-05-09, 22 החלטות נעולות + 5 חיזוקי-מודולריות + 3 סקיצות
 
 ---
@@ -285,7 +285,7 @@ LTV מאחד M5 + M7 + M8. ביום-1 = JOIN חי של 3 ה-Views, חישוב-ב
 
 1. **קרא את 3 הסקיצות + DECISIONS_LOG entries של 2026-05-09 לפני כתיבת ROADMAP.**
 2. **מבנה-טבלאות:** 9 הטבלאות מ-§3 הם החזון. שמות-עמודות-מדויקים, FK rules, indexes — קביעה שלך.
-3. **חוזי-Views:** לפני-תכנון-SPEC, ודא ש-Module Strategists של M5/M6/M7/M8 הוסיפו את ה-Views הנדרשות (§4.1). אם לא — פנה אליהם דרך ה-Main Strategic.
+3. **חוזי-Views:** לפני-תכנון-SPEC, ודא ש-Module Strategists של M5/M6/M7/M8 הוסיפו את ה-Views הנדרשות (§4.1). אם לא — פנה אליהם דרך ה-Architect.
 4. **חלוקה לפאזות מומלצת:**
    - Phase 1: תשתית — 9 טבלאות + RLS + 3 מסכים בסיסיים + 2 דוחות-default (סוף-יום-קופה + מכירות חודשי).
    - Phase 2: engine מלא — grouping, summaries, bulk actions + RPC "✓ נוכה" + 5 דוחות-default נוספים.
@@ -293,7 +293,7 @@ LTV מאחד M5 + M7 + M8. ביום-1 = JOIN חי של 3 ה-Views, חישוב-ב
    - Phase 4: הרשאות — 2-שכבות + ניהול-קטגוריות.
    - Phase 5: 5 דוחות-default נוספים + smoke-tests עם פריזמה-demo data.
 5. **בדיקות-בוונה:** Module Strategist יוסיף stage של מבחני-עומס ב-Phase 5 — דוח-מכירות-שנתי על 9,805 הזמנות + דוח-LTV על 5,028 לקוחות. אם זמן-תגובה > 3 שניות — הוסף indexes או caching.
-6. **חיזוקי-מודולריות נעולים** (§6) — אסור לוותר עליהם. כל סטייה דורשת השלמה ל-Main Strategic.
+6. **חיזוקי-מודולריות נעולים** (§6) — אסור לוותר עליהם. כל סטייה דורשת השלמה ל-Architect.
 
 ---
 
@@ -336,10 +336,10 @@ LTV מאחד M5 + M7 + M8. ביום-1 = JOIN חי של 3 ה-Views, חישוב-ב
 - סקיצה 2: [עריכת דוח](M11_REPORT_EDITOR_MOCKUP.html)
 - סקיצה 3: [תצוגת דוח](M11_REPORT_VIEW_MOCKUP.html)
 - Master Plan: `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md` §4 (M11 requirements)
-- Decisions Log: `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md` — 2026-05-09 M11 entry
+- Decisions Log: `.claude/skills/opticup-architect/references/DECISIONS_LOG.md` — 2026-05-09 M11 entry
 - חוזי-views קודמים: M7 Brief §4 + M8 Brief §4.3-4.4
 - M11 handoff (this session's source): `M11_HANDOFF.md`
 
 ---
 
-*Brief סגור 2026-05-09 בסשן Main Strategic. מועבר ל-Module Strategist להמשך עבודת ROADMAP + SPECs.*
+*Brief סגור 2026-05-09 בסשן Architect. מועבר ל-Module Strategist להמשך עבודת ROADMAP + SPECs.*

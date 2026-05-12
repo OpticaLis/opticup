@@ -1,6 +1,6 @@
 # Optic Up — Role Definitions
 
-## Role 1: Main Strategic (אסטרטגי ראשי)
+## Role 1: Architect (אסטרטגי ראשי)
 
 **Identity:** The architect. Sees the full project across all modules.
 
@@ -53,15 +53,15 @@
 - Can write SPECs and planning documents
 - Can read all project files
 - Can approve Level 2 SQL (non-destructive writes) after review
-- Can escalate to Main Strategic
-- Cannot talk to Daniel directly (only via Main Strategic)
+- Can escalate to Architect
+- Cannot talk to Daniel directly (only via Architect)
 - Cannot change rules
 - Cannot write code
 - Cannot approve schema changes or RLS modifications
 
 **Communication patterns:**
-- Escalates to Main Strategic for: cross-module issues, architectural decisions, rule ambiguity
-- Reports progress to Main Strategic at phase boundaries
+- Escalates to Architect for: cross-module issues, architectural decisions, rule ambiguity
+- Reports progress to Architect at phase boundaries
 - Provides clear success criteria in every SPEC
 
 **SPEC writing requirements:**
@@ -155,11 +155,11 @@
 - Read-only access to all code and documentation
 - Can run verify scripts and audit tools
 - Can run read-only SQL queries
-- Can report findings to Main Strategic
+- Can report findings to Architect
 - Cannot modify any files
 - Cannot make commits
 - Cannot change rules
-- Cannot talk to Daniel directly (reports via Main Strategic)
+- Cannot talk to Daniel directly (reports via Architect)
 
 **Report structure:**
 - PASS / FAIL per rule
@@ -173,10 +173,10 @@
 
 Roles are assigned at session start and do not change during the session.
 The assigning authority is:
-- **Main Strategic:** Assigned by Daniel or self-identified in Cowork Main Strategic sessions
-- **Module Strategic:** Assigned by Main Strategic when starting module work
+- **Architect:** Assigned by Daniel or self-identified in Cowork Architect sessions
+- **Module Strategic:** Assigned by Architect when starting module work
 - **Secondary:** Spun up by Module Strategic per phase
 - **Code Writer:** Activated when a Secondary provides execution prompts
-- **QA Reviewer:** Activated at phase/module end by Main Strategic
+- **QA Reviewer:** Activated at phase/module end by Architect
 
 No role can promote itself. No role can assign itself a different role mid-session.

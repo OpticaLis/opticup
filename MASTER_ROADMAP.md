@@ -8,7 +8,7 @@
 > For the data model see `docs/GLOBAL_SCHEMA.sql`.
 >
 > If a new strategic chat is opened, paste this file and say:
-> "You are the Main Strategic Chat for Optic Up. Read this document and continue from Section 7."
+> "You are the Architect for Optic Up. Read this document and continue from Section 7."
 
 ---
 
@@ -57,14 +57,14 @@ Each module that needs to ship to LIVE day gets an Architecture Brief (cross-mod
 | M6 (Prescriptions) | ✅ v2 | Prescription Editor (sidebar+center, glasses↔contacts toggle) | `decisions/M6.md` |
 | M7 (Orders) | ✅ v1 | Main mockup + 5 forms + catalog | `decisions/M7.md` |
 | M8 (Payments) | ✅ v1 | Checkout + Pipeline + EOD + Provider Config | `decisions/M8.md` |
-| M9 (Lab) | ⬜ Not started | — | — |
+| **M9 (Lab/KDS)** | ✅ v1 (closed 2026-05-10) | 4 sketch files: KDS + Shipments + Dashboard + Settings | `decisions/M9.md` |
 | **M11 (Reports)** | ✅ v1 (closed 2026-05-09) | Reports List + Editor + View | `decisions/M11.md` |
 | **M12 (Communications)** | ✅ v1 (closed 2026-05-09) | Inbox + Templates + Customer History + Channel Configs | `decisions/M12.md` |
-| M13 (Loyalty Club) | ⬜ Next up — handoff written | — | — |
+| **M13 (Loyalty Club)** | ✅ v1 (closed 2026-05-10) | 5 sketches: Customer Tab + Admin Dashboard + Checkout Block + Storefront Enrollment + Tenant Settings | `decisions/M13.md` |
 | M14 (Appointments) | ✅ v1 | Calendar + 3 sub-screens | included in cross |
 | M15 (Queue) | ✅ v1 | Queue panel embedded in M14 calendar | included in cross |
 
-**Sequence to LIVE:** M13 → M9 (depends on third audit). After all Briefs sealed → Module Strategists write SPECs → Executors build → cutover.
+**Sequence to LIVE:** ✅ All Briefs sealed 2026-05-10. Module Strategists write SPECs → Executors build → cutover. **Blocker:** M1-extension SPEC (3 inventory tables — lenses/contact-lenses/accessories) must be written first before M7/M9.
 
 **Deferred LIVE-plan content:** Master Plan v1 history (cutover plan, risks, decisions Q1-Q8) is preserved in `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md` for historical reference.
 
@@ -92,6 +92,38 @@ shipped 2026-05-04. Legacy Monday/WordPress pipeline decommissioned.
 **Production discipline:** SPEC + Foreman + Executor flow on every change.
 PR-only merges to main. Read-only by default for Overseer. See
 `feedback_production_discipline_post_cutover.md`.
+
+**Design System initiative (2026-05-10 → in progress):** 4-phase platform-wide
+design system on M1.5. Phases 1 + 2 closed 2026-05-11 — variables.css defaults
+now tenant-neutral (Slate-900 near-black); Prizma's Indigo migrated to
+tenants.ui_config; all component CSS token-only + `:focus-visible` baseline
+across 5 files per WCAG 2.4.7; new tokens --color-focus-ring + --shadow-focus.
+
+**Phase 3 v1 ARCHIVED 2026-05-11 (superseded by v2)** — v1 (3a/3b/3c +
+CONSOLIDATION) produced 45 HTML files but failed its goal: executor staticized
+production HTML with near-empty `_tokens.css` (3a inherited everything; 3b/3c
+added 6-7 tokens), resulting in three near-identical directions Daniel could
+not meaningfully compare. v1 mockup folders moved (via `git mv`) to
+`_archive/design-system-mockups-v1-staticized/direction-{1-conservative,
+2-modern-clean,3-bold-dense-pro-tool}/`. v1 SPEC folders remain in place as
+historical record.
+
+**Full-Auto Pipeline: ✅ 2026-05-11 (M1.5)** — `M1_5_FULL_AUTO_PIPELINE` closed.
+The 5-chat manual SPEC dance is retired; new SPECs run end-to-end inside ONE Claude Code chat via skill chaining (Foreman → Executor → Reviewer → Localhost-Tester → Foreman-review). Iron Rule 32 (Destructive Operations Gate) live, enforced by `scripts/checks/destructive-ops-declared.mjs` in pre-commit + CI. Backups are now automatic (auto-trigger on >5 files OR >100 lines OR any rename), not discretionary. Escalation folders scaffolded in M1.5/M3/M4. Two verification SPECs (`TEST_1_DOCS_ONLY` 🟢, `TEST_2_CODE_CHANGE` 🟢 with smoke 7/7) ran end-to-end in one chat.
+
+**Phase 3 v2 CLOSED 2026-05-11** —
+`M1_5_DESIGN_SYSTEM_AUTHENTIC_LANGUAGES` shipped 21 HTML files + 3 `_tokens.css`
+under `modules/Module 1.5 - Shared Components/architecture-brief/design-system-mockups/language-{a-linear,b-stripe,c-notion}/`.
+Three visually-distinct design languages (Linear/Vercel; Stripe Dashboard;
+Notion/Airy) across 5 representative screens each (Storefront Studio,
+Permissions, Shipments+Boxes, Settings, Suppliers Debt). All light-background,
+RTL Hebrew, authored from scratch (NOT staticized — counter-measure to v1
+failure root cause). Each `_tokens.css` redefines ≥ 54 CSS custom properties
+covering palette, typography, density, radii, shadows. DOM intentionally
+varies per language: A = sidebar+breadcrumb, B = top-bar+hero+gradient,
+C = minimalist left rail + emoji glyphs. Phase 4
+(`M1_5_DESIGN_SYSTEM_PHASE_4_CLOSE`) unblocks — Daniel picks the winning
+language. Closes OPEN_TASKS task #1.
 
 ---
 
@@ -191,7 +223,7 @@ without explicit strategic-chat approval.
 | Mar 2026 | Platform Auth (email+password) ≠ Tenant Auth (PIN) | Different trust models, different Supabase auth flows |
 | Mar 2026 | Atomic RPC for all quantity changes | Race condition prevention (Iron Rule #1, formalized as #13 for sequential numbers) |
 | Mar 2026 | activity_log central + inventory_logs preserved | Don't break Module 1; unified view in future |
-| Mar 2026 | 4-tier workflow hierarchy | Main Strategic → Module Strategic → Secondary Chat → Claude Code |
+| Mar 2026 | 4-tier workflow hierarchy | Architect → Module Strategic → Secondary Chat → Claude Code |
 | Mar 2026 | Zero coupling + contracts between modules | Modules communicate only through declared contract functions |
 | Mar 2026 | Supplier portal deferred to Module 17 | Requires external auth from Module 2 |
 | Mar 2026 | Shipments as standalone module (5.9) | Serves all send types (framing, return, repair, delivery), not just returns |
@@ -208,6 +240,9 @@ without explicit strategic-chat approval.
 | Apr 2026 | Cancelled Claude API for translations | Translation now manual: Studio export → external chat → import. Claude API remains active only for content generation, logo normalization, Module 1 scan tracking. |
 | Apr 2026 | Module 3.1 (Project Reconstruction) closed | 5 mandatory artifacts produced (UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT, UNIVERSAL_SECONDARY_CHAT_PROMPT, MODULE_DOCUMENTATION_SCHEMA, DANIEL_QUICK_REFERENCE, MASTER_ROADMAP rewrite). DB audit baseline established. 7 security findings documented (4 anon_all leaks + 3 auth.uid tables) and queued for Module 3 Phase B preamble. Module 3 Phase B now unblocked on first gate (TIER-C-PENDING is the second gate). |
 | 2026-05-08 | Finance Hub registered as future module (post-launch) | Surfaced during M8 (Payments) design when discussing the check-pipeline screen. Daniel currently manages cash-flow + expenses in BizziBox. Decision: M8 stays narrow (transactional payments + check pipeline + day-close). A separate Finance Hub module (cash-flow projection, expense tracking, future bank/AI integrations) will be built post-launch. NOT in MASTER_LIVE_PLAN — Optic Up ships to LIVE without this module. Permissions reserved for accountant + business-owner (cashiers blocked). Module number TBD. |
+| 2026-05-11 | Demo event-link "bug" resolved as Path A2 (Strategic defer) — provision real demo storefront | Daniel reported demo's event-registration SMS link pointed to "opticalis" domain. Diagnosis (`DEMO_HEALTH_CHECK_EVENT_LINK_FIX`) found `buildRegistrationUrl` correctly reads `tenants.ui_config->>'storefront_url'`; demo's value is `https://demo.opticalis.co.il` set 2026-03-29 by `M4_HARDCODED_PRIZMA_REMOVAL`. No code bug. Demo has no live storefront — the configured value points to a non-functional endpoint. **Decision:** do NOT patch `storefront_url` to another non-functional value. Instead provision a real demo storefront on a separate Vercel project mirroring Prizma's supersale forms, then update `storefront_url` to its live URL. Follow-up SPEC stub: `modules/Module 3 - Storefront/docs/specs/M3_DEMO_STOREFRONT_FORMS_DEPLOYMENT/SPEC.md`. CRM Migration #3 remains PAUSED until follow-up ships. |
+| 2026-05-11 | Demo storefront live on dedicated Vercel project (`M3_DEMO_STOREFRONT_FORMS_DEPLOYMENT` 🟡 closed) | Full-Auto Pipeline ran end-to-end in ONE chat: Foreman authored full SPEC body (replacing the Path-A2 stub) → Executor provisioned Vercel project `opticup-storefront-demo` linked to `OpticaLis/opticup-storefront@main` → 3 of 4 env vars configured (Daniel adds `SUPABASE_SERVICE_ROLE_KEY` manually per Path 2) → deploy READY in ~30s → demo's `tenants.ui_config.storefront_url` updated to `https://opticup-storefront-demo.vercel.app` (single-row UPDATE, demo UUID literal) → Prizma `tenants` row bit-identical pre and post (regression-zero spot-checked independently by Foreman) → smoke 7/7 PASS (form-flow routes, short-link round-trip, URL-builder inspection-only). 2 planned escalations handled: Vercel access (Daniel provided `vcp_` CLI token), and Daniel's mid-pipeline MCP-pivot (Executor surfaced as non-viable — Vercel MCP lacks create_project + env-var primitives; `deploy_to_vercel` would have mutated Prizma per linked `.vercel/project.json`). 3 findings: M3-FINDINGS-01 (LOW, canonical URL bake-in → Phase 2 SPEC), M3-FINDINGS-02 (INFO, `tenants` no `updated_at` trigger → TECH_DEBT), M3-FINDINGS-03 (INFO, Vercel MCP gap → executor skill update). Unblocks: Daniel's manual test cycle on demo, then CRM Migration #3. |
+| 2026-05-11 | Demo behavioral parity to Prizma achieved (`DEMO_PARITY_REPLICATION` 🟢 closed) | Full-Auto Pipeline in ONE chat (Foreman → Executor → Foreman): discovery classified 102 tenant_id-bearing base tables (20 Behavioral / 8 Identity / 74 Content / **0 Ambiguous** — no Phase 1.5 escalation triggered). 10 of 12 Behavioral tables received writes (28 row mutations: 12 INSERTs + 16 UPDATEs, all scoped to demo UUID `8d8cfa7e-…cccb`); 2 tables (`permissions`, `roles`) already bit-identical pre-snapshot. Phase 4 verification GREEN across all gates: 12/12 matched-business-key hashes equal between tenants, 12/12 Prizma row counts + hashes identical pre/post (read-only proof — Prizma was not written to), demo `tenants` row + 5/5 Identity-table hashes bit-identical pre/post (`storefront_url` + WhatsApp + employees + AI config untouched), `information_schema.columns` hash `37fb06d29c5846de0ed5e7f6f2209b78` identical pre/post = zero DDL. 16 demo orphan rows flagged + left in place (no DELETE): 6 QA-cruft automation rules + 4 QA-cruft message templates + 6 `document_types` codes. 6 findings: **2 MEDIUM reverse-drift** (Prizma's `document_types` + `payment_methods` are UNDER-seeded vs demo — backfill candidate for `M4_PRIZMA_BEHAVIORAL_BACKFILL` follow-up), 2 LOW QA-cruft cleanup → TECH_DEBT, 2 INFO methodology (codify two-tier hash pattern in executor SKILL). Closes the demo-parity gap surfaced when Daniel saw new event auto-attaches old registrants on demo. Unblocks: Daniel's full manual test cycle on demo (storefront live + behavior 1:1), then CRM Migration #3. |
 
 ---
 

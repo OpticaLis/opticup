@@ -251,13 +251,13 @@ function updateReceiptItemsStats() {
     var q = parseFloat((tr.querySelector('.rcpt-qty') || {}).value) || 0;
     var c = parseFloat((tr.querySelector('.rcpt-ucost') || {}).value) || 0;
     var cell = tr.querySelector('.rcpt-line-total');
-    if (cell) cell.textContent = (q > 0 && c > 0) ? (q * c).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₪' : '—';
+    if (cell) cell.textContent = (q > 0 && c > 0) ? formatMoney(q * c, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
   });
   var extra = '';
   if (partialCnt) extra += ' | ' + partialCnt + ' \u05D7\u05DC\u05E7\u05D9\u05EA';
   if (notRecvd) extra += ' | ' + notRecvd + ' \u05DC\u05D0 \u05D4\u05D2\u05D9\u05E2\u05D5';
   if (returnCnt) extra += ' | ' + returnCnt + ' \u05DC\u05D4\u05D7\u05D6\u05E8\u05D4';
-  if (totalCost > 0) extra += ' | \u05E1\u05D4"\u05DB \u05E2\u05DC\u05D5\u05EA: \u20AA' + totalCost.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (totalCost > 0) extra += ' | \u05E1\u05D4"\u05DB \u05E2\u05DC\u05D5\u05EA: ' + formatMoney(totalCost, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   $('rcpt-items-stats').textContent = items.length
     ? `\u05E1\u05D4"\u05DB ${items.length} \u05E9\u05D5\u05E8\u05D5\u05EA | ${total} \u05D9\u05D7\u05D9\u05D3\u05D5\u05EA | ${existCount} \u05E7\u05D9\u05D9\u05DE\u05D9\u05DD | ${newCount} \u05D7\u05D3\u05E9\u05D9\u05DD` + extra
     : '';

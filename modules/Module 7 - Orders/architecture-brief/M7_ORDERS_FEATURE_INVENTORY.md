@@ -6,7 +6,7 @@
 > **מקור:** סקיצת Miro של דניאל (BackUp 29.6.25 Optic) + מסך Access הקיים +
 > שיחת-התכנון מ-2026-05-07.
 > **שפת-עבודה:** עברית. שמות-פיצ'רים באנגלית כשהם מהסקיצה המקורית.
-> **בעלים:** דניאל (Product) + Main Strategic (Architecture).
+> **בעלים:** דניאל (Product) + Architect (Architecture).
 
 ---
 
@@ -359,7 +359,7 @@
 ## 20. הצעדים-הבאים
 
 1. דניאל מאשר את ה-Inventory הזה ככיסוי מלא של הדרישות (או מוסיף).
-2. Main Strategic כותב **M7_ORDERS_ARCHITECTURE_BRIEF.md** שמתרגם את ה-Inventory
+2. Architect כותב **M7_ORDERS_ARCHITECTURE_BRIEF.md** שמתרגם את ה-Inventory
    למודל-נתונים, חוזים, RLS, RPCs, ולוקח החלטות על שאלות-הפתוחות מסעיף 18.
 3. Foreman כותב SPEC ראשון — Phase 0 Audit + Schema Design.
 4. Executor מבצע.
@@ -529,4 +529,4 @@ v0.2 הציג Delete-Order. החוק הקריטי שחסר:
 
 ---
 
-*נוצר: 2026-05-07. עורך: Main Strategic. גרסה: v0.3 — Inventory + סקירה-שנייה + טקסט-אפיון של דניאל.*
+*נוצר: 2026-05-07. עורך: Architect. גרסה: v0.3 — Inventory + סקירה-שנייה + טקסט-אפיון של דניאל.*

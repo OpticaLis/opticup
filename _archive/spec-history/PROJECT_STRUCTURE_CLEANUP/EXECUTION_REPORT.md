@@ -15,7 +15,7 @@ The SPEC ran end-to-end. It established the Root Discipline Rule (CLAUDE.md §0.
 
 | # | Hash | Message | Time | Files |
 |---|---|---|---|---|
-| Pre-A | `e8d6995` | feat(skills): main-strategic — add Module Close Ceremony, P24/P25/P26 patterns, hybrid DECISIONS_LOG | 17:41 | 9 |
+| Pre-A | `e8d6995` | feat(skills): architect — add Module Close Ceremony, P24/P25/P26 patterns, hybrid DECISIONS_LOG | 17:41 | 9 |
 | Pre-B | `435729b` | docs(roadmap): add §2.5 Architecture Briefs status tracker; reflects M11+M12 close | 17:42 | 1 |
 | Pre-C | `f40af2b` | feat(planning): close M12 Communications brief + 4 sketches; add structure audit + cleanup SPEC; add handoffs/ + planning README; deprecate MASTER_LIVE_PLAN | 17:43 | 12 |
 | Pre-D | `5420592` | feat(specs): commit pending SPEC artifacts from M3+M4 sessions | 17:45 | 25 |
@@ -79,7 +79,7 @@ SPEC §6 quoted the new section text with `###` heading. CLAUDE.md uses `## N.` 
 
 ### DM3 — `.gitignore` workaround vs fix
 
-`.gitignore` line 34 (duplicate `.claude/`) overrode lines 6–9 negation, blocking `git add` of new `.claude/skills/opticup-main-strategic/references/decisions/*.md` files. Two options: (a) `git add -f` workaround per-file, or (b) fix `.gitignore` by removing line 34. Chose (a) to avoid scope expansion. Logged as FINDING for separate cleanup.
+`.gitignore` line 34 (duplicate `.claude/`) overrode lines 6–9 negation, blocking `git add` of new `.claude/skills/opticup-architect/references/decisions/*.md` files. Two options: (a) `git add -f` workaround per-file, or (b) fix `.gitignore` by removing line 34. Chose (a) to avoid scope expansion. Logged as FINDING for separate cleanup.
 
 ### DM4 — Empty `_archive/` directory between Commit 1 and Commit 4
 

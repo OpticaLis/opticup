@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>Storefront Studio — Language C (Notion)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Heebo:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="./_tokens.css">
+  <style>
+    .media-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--space-3); }
+    .media-tile {
+      aspect-ratio: 1;
+      border-radius: var(--radius-md);
+      background: var(--bg-wash);
+      border: 1px solid var(--border-subtle);
+    }
+    .media-tile:nth-child(3n)   { background: var(--accent-teal-soft); }
+    .media-tile:nth-child(5n+1) { background: var(--accent-coral-soft); }
+    .media-tile:nth-child(7n+2) { background: var(--accent-amber-soft); }
+    .page-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto auto auto;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4) 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .page-row:last-child { border-bottom: none; }
+    .page-row .name { display: flex; align-items: center; gap: var(--space-3); }
+    .page-row .name .em { font-size: var(--text-lg); }
+    .page-row .path { color: var(--text-tertiary); font-family: var(--font-mono); font-size: var(--text-xs); }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="rail">
+    <div class="rail-brand">
+      <span class="glyph">O</span>
+      <span>Optic Up</span>
+    </div>
+
+    <div class="rail-section">חנות אונליין</div>
+    <a class="rail-item active" href="#"><span class="emoji">📄</span>דפים</a>
+    <a class="rail-item" href="#"><span class="emoji">🧩</span>בלוקים</a>
+    <a class="rail-item" href="#"><span class="emoji">🖼️</span>ספריית מדיה</a>
+    <a class="rail-item" href="#"><span class="emoji">🌐</span>תרגומים</a>
+
+    <div class="rail-section">מסחר</div>
+    <a class="rail-item" href="#"><span class="emoji">👓</span>מוצרים</a>
+    <a class="rail-item" href="#"><span class="emoji">🗂️</span>קטגוריות</a>
+    <a class="rail-item" href="#"><span class="emoji">✨</span>קמפיינים</a>
+
+    <div class="rail-section">פרסום</div>
+    <a class="rail-item" href="#"><span class="emoji">👁️</span>תצוגה מקדימה</a>
+    <a class="rail-item" href="#"><span class="emoji">📜</span>היסטוריה</a>
+  </aside>
+
+  <main class="main">
+    <div class="page-title-block">
+      <div>
+        <div class="page-emoji">📄</div>
+        <h1 class="page-title">דפי החנות</h1>
+        <p class="page-sub">5 דפים פעילים בחנות האונליין שלך. השינוי האחרון: לפני 17 דקות. אפשר לערוך כל דף, להוסיף בלוקים חדשים, או לפרסם טיוטות.</p>
+      </div>
+      <div style="display:flex;gap:var(--space-3);">
+        <button class="btn">👁️ תצוגה</button>
+        <button class="btn btn-primary">+ דף חדש</button>
+      </div>
+    </div>
+
+    <div class="callout">
+      <span class="emoji">💡</span>
+      <span><strong>תזכורת:</strong> דף "קטלוג Ray-Ban" עדיין בטיוטה. השפה האנגלית חסרה ב-3 דפים. <a href="#">השלם תרגומים &rarr;</a></span>
+    </div>
+
+    <section class="block" style="margin-top:var(--space-6);">
+      <div class="stat-strip">
+        <div>
+          <div class="stat-label">📄 דפים פעילים</div>
+          <div class="stat-value">5</div>
+          <div class="stat-note">+1 השבוע</div>
+        </div>
+        <div>
+          <div class="stat-label">🧩 בלוקים</div>
+          <div class="stat-value">28</div>
+          <div class="stat-note">+4 השבוע</div>
+        </div>
+        <div>
+          <div class="stat-label">🖼️ מדיה</div>
+          <div class="stat-value">147</div>
+          <div class="stat-note">28.4 MB / 5 GB</div>
+        </div>
+        <div>
+          <div class="stat-label">🌐 תרגומים חסרים</div>
+          <div class="stat-value">3</div>
+          <div class="stat-note">EN ממתין</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-header">
+        <span class="block-emoji">📄</span>
+        <div>
+          <h2 class="block-title">כל הדפים</h2>
+          <div class="block-sub">לחץ דף כדי לערוך תוכן ובלוקים.</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="page-row">
+          <div class="name"><span class="em">🏠</span><div><strong>דף הבית</strong><div class="path">/</div></div></div>
+          <div class="mute"><span class="tag tag-lavender">HE</span> <span class="tag tag-lavender">EN</span></div>
+          <span class="tag tag-success">פורסם</span>
+          <span class="num">8 בלוקים</span>
+          <span class="mute" style="color:var(--text-tertiary);">17 דקות</span>
+        </div>
+        <div class="page-row">
+          <div class="name"><span class="em">🏷️</span><div><strong>מותגים</strong><div class="path">/brands</div></div></div>
+          <div><span class="tag tag-lavender">HE</span> <span class="tag tag-lavender">EN</span></div>
+          <span class="tag tag-success">פורסם</span>
+          <span class="num">5 בלוקים</span>
+          <span style="color:var(--text-tertiary);">יומיים</span>
+        </div>
+        <div class="page-row">
+          <div class="name"><span class="em">🕶️</span><div><strong>קטלוג Ray-Ban</strong><div class="path">/brand/ray-ban</div></div></div>
+          <div><span class="tag tag-lavender">HE</span></div>
+          <span class="tag tag-warning">טיוטה</span>
+          <span class="num">6 בלוקים</span>
+          <span style="color:var(--text-tertiary);">10:42 היום</span>
+        </div>
+        <div class="page-row">
+          <div class="name"><span class="em">ℹ️</span><div><strong>אודות</strong><div class="path">/about</div></div></div>
+          <div><span class="tag tag-lavender">HE</span> <span class="tag tag-lavender">EN</span></div>
+          <span class="tag tag-success">פורסם</span>
+          <span class="num">4 בלוקים</span>
+          <span style="color:var(--text-tertiary);">5 ימים</span>
+        </div>
+        <div class="page-row">
+          <div class="name"><span class="em">📞</span><div><strong>צור קשר</strong><div class="path">/contact</div></div></div>
+          <div><span class="tag tag-lavender">HE</span> <span class="tag tag-lavender">EN</span></div>
+          <span class="tag tag-success">פורסם</span>
+          <span class="num">3 בלוקים</span>
+          <span style="color:var(--text-tertiary);">שבוע</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-header">
+        <span class="block-emoji">🧩</span>
+        <div>
+          <h2 class="block-title">בלוקים אחרונים</h2>
+          <div class="block-sub">רכיבי תוכן לשימוש חוזר.</div>
+        </div>
+      </div>
+      <div class="callout callout-teal">
+        <span class="emoji">🌟</span>
+        <div>
+          <div><strong>Hero — Spring Collection</strong> · עודכן לפני 17 דקות · בשימוש ב-2 דפים</div>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:var(--space-3);">
+        <span class="emoji">🎯</span>
+        <div>
+          <strong>Brand Grid — 12 מותגים</strong> · עודכן לפני יומיים · בשימוש ב-1 דף
+        </div>
+      </div>
+      <div class="callout callout-coral" style="margin-top:var(--space-3);">
+        <span class="emoji">💬</span>
+        <div>
+          <strong>Testimonial — לקוחות מובילים</strong> · עודכן לפני 5 ימים · לא בשימוש
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-header">
+        <span class="block-emoji">🖼️</span>
+        <div>
+          <h2 class="block-title">ספריית מדיה</h2>
+          <div class="block-sub">147 פריטים · 28.4 MB מתוך 5 GB.</div>
+        </div>
+      </div>
+      <div class="media-grid">
+        <div class="media-tile"></div><div class="media-tile"></div><div class="media-tile"></div>
+        <div class="media-tile"></div><div class="media-tile"></div><div class="media-tile"></div>
+        <div class="media-tile"></div><div class="media-tile"></div><div class="media-tile"></div>
+        <div class="media-tile"></div><div class="media-tile"></div><div class="media-tile"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

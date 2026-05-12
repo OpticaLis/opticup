@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>Language B — Stripe | Optic Up Design System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Heebo:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="./_tokens.css">
+  <style>
+    body { display: grid; grid-template-rows: auto 1fr; height: 100vh; }
+
+    .hub-top {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 28px;
+      background: #fafaf7;
+      border-bottom: 1px solid #e3e8ee;
+      box-shadow: 0 1px 3px rgba(50,50,93,0.06);
+    }
+    .hub-brand {
+      display: flex; align-items: center; gap: 12px;
+      font-family: "Source Serif 4", Georgia, serif;
+      font-weight: 600; font-size: 17px; color: #1a1f36;
+    }
+    .hub-brand .mark {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, #635bff 0%, #a78bfa 100%);
+      color: #fff;
+      display: grid; place-items: center;
+      font-family: Inter, system-ui, sans-serif;
+      font-weight: 600; font-size: 14px;
+      box-shadow: 0 4px 12px rgba(99,91,255,0.30);
+    }
+    .hub-brand small {
+      display: block; color: #697386; font-weight: 400;
+      font-family: Inter, system-ui, sans-serif; font-size: 12px;
+      margin-top: 2px;
+    }
+    .lang-switch { display: flex; gap: 6px; background: #f7f6f3; padding: 4px; border-radius: 10px; }
+    .lang-switch a {
+      padding: 8px 16px; border-radius: 7px;
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 13px; font-weight: 500; color: #425466;
+      text-align: center;
+    }
+    .lang-switch a.active {
+      background: linear-gradient(135deg, #635bff 0%, #a78bfa 100%);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(99,91,255,0.32);
+    }
+    .lang-switch a small {
+      display: block; font-weight: 400; opacity: 0.85;
+      font-size: 11px; margin-top: 2px;
+    }
+
+    .hub-body {
+      display: grid; grid-template-columns: 260px 1fr;
+      overflow: hidden;
+      background: #f7f6f3;
+    }
+    .hub-side {
+      padding: 20px;
+      display: flex; flex-direction: column; gap: 8px;
+      overflow-y: auto;
+      border-inline-start: 1px solid #e3e8ee;
+    }
+    .hub-side h3 {
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: 12px; font-weight: 600; color: #697386;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin: 12px 0 4px; padding: 0 8px;
+    }
+    .screen-link {
+      padding: 12px 14px; border-radius: 10px;
+      background: #fafaf7;
+      color: #425466;
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 14px; font-weight: 500;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(50,50,93,0.05);
+      transition: all 120ms ease;
+    }
+    .screen-link:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(50,50,93,0.10); }
+    .screen-link.active {
+      background: linear-gradient(135deg, #635bff 0%, #a78bfa 100%);
+      color: #fff;
+      box-shadow: 0 6px 20px rgba(99,91,255,0.30);
+    }
+    .screen-link small {
+      display: block; font-weight: 400; opacity: 0.75;
+      font-size: 11px; margin-top: 2px;
+    }
+    .lang-note {
+      margin-top: auto; padding: 16px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(99,91,255,0.10) 0%, rgba(167,139,250,0.06) 100%);
+      border: 1px solid rgba(99,91,255,0.18);
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 13px; color: #425466; line-height: 1.6;
+    }
+    .lang-note strong {
+      display: block; margin-bottom: 6px;
+      font-family: "Source Serif 4", Georgia, serif;
+      font-weight: 600; font-size: 15px; color: #1a1f36;
+    }
+
+    .hub-frame { background: #f7f6f3; overflow: hidden; padding: 20px; }
+    iframe {
+      width: 100%; height: 100%;
+      border: 0; border-radius: 12px;
+      background: #f7f6f3;
+      box-shadow: 0 12px 32px rgba(50,50,93,0.14), 0 4px 8px rgba(0,0,0,0.06);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hub-top">
+    <div class="hub-brand">
+      <span class="mark">B</span>
+      <div>
+        <div>Language B — Stripe Dashboard</div>
+        <small>Optic Up Design System · Phase 3 v2</small>
+      </div>
+    </div>
+    <nav class="lang-switch">
+      <a href="../language-a-linear/INDEX.html">
+        Language A<small>Linear</small>
+      </a>
+      <a href="../language-b-stripe/INDEX.html" class="active">
+        Language B<small>Stripe</small>
+      </a>
+      <a href="../language-c-notion/INDEX.html">
+        Language C<small>Notion</small>
+      </a>
+    </nav>
+  </header>
+
+  <div class="hub-body">
+    <aside class="hub-side">
+      <h3>מסכים</h3>
+      <a class="screen-link active" data-src="./storefront-studio.html" onclick="navTo(this)">
+        Storefront Studio<small>CMS · pages · media</small>
+      </a>
+      <a class="screen-link" data-src="./permissions.html" onclick="navTo(this)">
+        הרשאות<small>roles · matrix</small>
+      </a>
+      <a class="screen-link" data-src="./shipments.html" onclick="navTo(this)">
+        משלוחים<small>operations · timeline</small>
+      </a>
+      <a class="screen-link" data-src="./settings.html" onclick="navTo(this)">
+        הגדרות<small>tabbed forms</small>
+      </a>
+      <a class="screen-link" data-src="./suppliers-debt.html" onclick="navTo(this)">
+        חובות ספקים<small>finance · aging chart</small>
+      </a>
+
+      <div class="lang-note">
+        <strong>Stripe Dashboard</strong>
+        חום-לבן · סריף לכותרות (Source Serif) · ויולט עמוק עם גרדיאנט · צללים מרובדים · 12px פינות אחידות · צפיפות בינונית-נוחה · מטריות עם spark · פיתוחי תרשים צבעוניים.
+      </div>
+    </aside>
+    <main class="hub-frame">
+      <iframe id="preview" src="./storefront-studio.html" title="screen preview"></iframe>
+    </main>
+  </div>
+
+  <script>
+    function navTo(el) {
+      document.querySelectorAll(".screen-link").forEach(a => a.classList.remove("active"));
+      el.classList.add("active");
+      document.getElementById("preview").src = el.dataset.src;
+    }
+  </script>
+</body>
+</html>

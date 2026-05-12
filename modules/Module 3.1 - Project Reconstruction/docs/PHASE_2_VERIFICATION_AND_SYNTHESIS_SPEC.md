@@ -7,7 +7,7 @@
 > **Estimated time:** 60-90 minutes (one long Claude Code run)
 > **Risk level:** ZERO — no modification to any pre-existing file
 > **Repos:** **TWO** — `opticup` (read-only) AND `opticup-storefront` (read-only)
-> **Approved scope boundaries:** See §2 — explicit "what NOT to do" list, locked by Main Strategic Chat on 2026-04-11
+> **Approved scope boundaries:** See §2 — explicit "what NOT to do" list, locked by Architect on 2026-04-11
 
 ---
 
@@ -25,7 +25,7 @@ This phase is the bridge between "we know what's broken" (Phase 1) and "we fix w
 
 ## 2. Safety Rules — NON-NEGOTIABLE
 
-**These boundaries were locked by Main Strategic Chat on 2026-04-11 in response to the Phase A discovery in Phase 1C. They override anything in this SPEC that contradicts them.**
+**These boundaries were locked by Architect on 2026-04-11 in response to the Phase A discovery in Phase 1C. They override anything in this SPEC that contradicts them.**
 
 ### PROHIBITED — Phase 2 must NEVER do these
 
@@ -136,7 +136,7 @@ Before reading anything, run `ls` on every path above and produce a verified inv
 
 ### The Phase A verification is the most sensitive part
 
-Main Strategic Chat was explicit: Phase A's 8 files are sealed. The verification is **integrity** (do they exist, are they internally consistent, do they contradict the Phase 1 audit reports), NOT **quality** (is the writing good, could it be better, is the structure ideal). If a file is technically correct but you think it could be clearer — that is NOT a finding for Phase 2. That is Module 3 Phase B's job, not Module 3.1's.
+Architect was explicit: Phase A's 8 files are sealed. The verification is **integrity** (do they exist, are they internally consistent, do they contradict the Phase 1 audit reports), NOT **quality** (is the writing good, could it be better, is the structure ideal). If a file is technically correct but you think it could be clearer — that is NOT a finding for Phase 2. That is Module 3 Phase B's job, not Module 3.1's.
 
 A finding for Phase 2 looks like one of these:
 - "File X is referenced in Phase 1A's cross-references as authoritative on topic Y, but file X does not actually mention topic Y. Gap."

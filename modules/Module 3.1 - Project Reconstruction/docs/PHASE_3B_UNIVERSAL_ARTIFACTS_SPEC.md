@@ -157,7 +157,7 @@ Purpose: a 1-2 page document Daniel can open at any time to remember "I'm in cha
 
 Content sections:
 1. **The 4 layers, who they are, when to use each**
-   - Main Strategic Chat — long-running, project-wide decisions
+   - Architect — long-running, project-wide decisions
    - Module Strategic Chat — one per module, scoped to that module's SPECs
    - Secondary Chat — one per phase, executes SPEC, dies at phase end
    - Claude Code — terminal executor, reads CLAUDE.md, runs SPECs

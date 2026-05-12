@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M7 — Center Redesign · 3 Variants (A / B / C)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAFAF7; --surface:#FFFFFF; --soft:#F1EFE8;
+    --border:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
+    --text:#1F1F1E; --text-2:#5F5E5A; --text-3:#888780;
+    --purple:#534AB7; --purple-soft:#EEEDFE; --purple-deep:#26215C; --purple-mid:#7F77DD;
+    --teal:#0F6E56; --teal-soft:#E1F5EE; --teal-deep:#04342C; --teal-mid:#5DCAA5;
+    --amber:#BA7517; --amber-soft:#FAEEDA; --amber-deep:#412402; --amber-mid:#FAC775;
+    --blue:#185FA5; --blue-soft:#E6F1FB; --blue-deep:#0C447C;
+    --coral:#993C1D; --coral-soft:#FAECE7; --coral-deep:#4A1B0C;
+    --pink-soft:#FBEAF0; --pink-deep:#4B1528;
+    --green:#3B6D11; --green-soft:#EAF3DE; --green-deep:#173404;
+    --gray:#5F5E5A; --gray-soft:#F1EFE8;
+    --red:#A32D2D;
+    --r-md:6px; --r-lg:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;font-family:'Rubik',-apple-system,'Segoe UI',sans-serif;
+    background:var(--bg);color:var(--text);font-size:12px;line-height:1.4;direction:rtl;
+  }
+
+  /* Recommendation banner — top of file */
+  .reco-banner{
+    background:linear-gradient(95deg,var(--teal-deep) 0%,var(--purple-deep) 100%);
+    color:#EEEDFE;padding:12px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  }
+  .reco-banner .badge{
+    background:var(--amber-mid);color:var(--amber-deep);padding:3px 9px;border-radius:var(--r-md);
+    font-weight:600;font-size:11px;letter-spacing:0.5px;
+  }
+  .reco-banner .pick{font-size:13px;font-weight:500;}
+  .reco-banner .pick strong{background:var(--teal-mid);color:var(--teal-deep);padding:1px 7px;border-radius:var(--r-md);}
+  .reco-banner .why{font-size:12px;color:#CECBF6;}
+
+  /* Sticky tab nav */
+  .var-tabs{
+    position:sticky;top:0;z-index:50;background:var(--surface);
+    border-bottom:1px solid var(--border-strong);
+    padding:8px 22px;display:flex;align-items:center;gap:8px;
+    box-shadow:0 1px 6px rgba(0,0,0,0.04);
+  }
+  .var-tabs .label{font-size:11px;color:var(--text-2);margin-left:6px;}
+  .var-tab{
+    padding:8px 18px;font-size:12px;font-weight:500;
+    background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-md);
+    cursor:pointer;color:var(--text-2);font-family:inherit;
+  }
+  .var-tab:hover{background:var(--soft);color:var(--text);}
+  .var-tab.active{background:var(--purple-deep);color:#FFF;border-color:var(--purple-deep);}
+  .var-tab .ttl{font-weight:600;}
+  .var-tab .sub{font-size:10px;opacity:0.85;margin-right:6px;font-weight:400;}
+
+  .page{max-width:1640px;margin:0 auto;padding:14px 18px 28px;}
+  h1{font-size:16px;font-weight:500;margin:0 0 4px;}
+  .lede{color:var(--text-2);margin:0 0 12px;font-size:11px;}
+
+  button{
+    font-family:inherit;font-size:11px;padding:4px 8px;
+    background:var(--surface);border:0.5px solid var(--border-strong);
+    border-radius:var(--r-md);cursor:pointer;color:var(--text);
+  }
+  button:hover{background:var(--soft);}
+  button.primary{background:var(--purple);color:#FFF;border:0;}
+  button.success{background:var(--teal);color:#FFF;border:0;}
+  button.ghost{background:transparent;border:0;color:var(--blue);font-size:11px;padding:3px 5px;}
+  button.danger-ghost{background:transparent;border:0;color:var(--red);font-size:11px;padding:3px 5px;}
+  button.tiny{font-size:10px;padding:3px 6px;}
+  button[disabled]{opacity:0.4;cursor:not-allowed;}
+
+  input,select,textarea{
+    font-family:inherit;font-size:12px;padding:5px 8px;
+    border:0.5px solid var(--border-strong);border-radius:var(--r-md);
+    background:var(--surface);color:var(--text);
+  }
+  textarea{resize:none;}
+
+  .pill{display:inline-block;font-size:10px;padding:1px 6px;border-radius:var(--r-md);font-weight:500;}
+  .pill-purple{background:var(--purple-soft);color:var(--purple-deep);}
+  .pill-teal{background:var(--teal-soft);color:var(--teal-deep);}
+  .pill-amber{background:var(--amber-soft);color:var(--amber-deep);}
+  .pill-blue{background:var(--blue-soft);color:var(--blue-deep);}
+  .pill-green{background:var(--green-soft);color:var(--green-deep);}
+  .pill-gray{background:var(--gray-soft);color:var(--gray);}
+  .pill-red{background:#FCEBEB;color:var(--red);}
+
+  .row{display:flex;align-items:center;gap:6px;}
+  .row-between{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+  .mini{font-size:10px;color:var(--text-2);}
+  .money{font-variant-numeric:tabular-nums;font-weight:500;}
+
+  .app{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);overflow:hidden;}
+
+  /* HEADER (copied verbatim from v6) */
+  .header{
+    background:var(--purple-deep);color:#EEEDFE;padding:8px 14px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .header .left{display:flex;align-items:center;gap:10px;}
+  .avatar{
+    width:28px;height:28px;border-radius:50%;background:var(--purple-mid);color:#FFF;
+    display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;
+  }
+  .cust-name{font-size:13px;font-weight:500;}
+  .cust-meta{font-size:10px;color:#CECBF6;}
+  .header button{background:var(--purple-mid);color:#FFF;border:0;font-size:10px;}
+
+  /* TABS (copied from v6) */
+  .tabs{background:var(--surface);border-bottom:0.5px solid var(--border);display:flex;align-items:center;}
+  .tab{padding:8px 14px;font-size:12px;color:var(--text-2);cursor:pointer;border-left:0.5px solid var(--border);border-bottom:2px solid transparent;}
+  .tab:hover{background:var(--soft);}
+  .tab.active{background:var(--purple-soft);color:var(--purple-deep);font-weight:500;border-bottom-color:var(--purple);}
+  .tabs .right{margin-right:auto;padding:0 14px;font-size:11px;color:var(--text-2);}
+
+  /* CMD BAR (copied from v6) */
+  .cmdbar{
+    background:var(--soft);padding:7px 14px;
+    display:flex;justify-content:space-between;align-items:center;
+    border-bottom:0.5px solid var(--border);
+  }
+
+  /* MAIN 3-col layout */
+  .main{display:grid;grid-template-columns:240px 1fr 320px;background:var(--bg);min-height:600px;}
+
+  /* RIGHT COLUMN (rail + totals) */
+  .right-col{background:var(--surface);border-left:0.5px solid var(--border);display:flex;flex-direction:column;}
+  .rail{padding:10px;display:flex;flex-direction:column;flex:1;min-height:0;}
+  .rail-h{font-size:10px;color:var(--text-2);display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .so-card{border-radius:var(--r-md);padding:7px 9px;margin-bottom:4px;cursor:pointer;border:0.5px solid transparent;}
+  .so-card.active{background:var(--purple-soft);border-right:3px solid var(--purple);border-radius:0 var(--r-md) var(--r-md) 0;}
+  .so-card .top{display:flex;justify-content:space-between;align-items:center;}
+  .so-card .ttl{font-size:11px;font-weight:500;}
+  .so-card.active .ttl{color:var(--purple-deep);}
+  .so-card .sub{font-size:9px;color:var(--text-2);margin-top:2px;}
+  .so-card .badges{margin-top:3px;display:flex;flex-wrap:wrap;gap:2px;}
+  .so-card .badges .pill{font-size:8px;padding:0 4px;}
+
+  .totals-panel{background:var(--purple-deep);color:#EEEDFE;padding:10px 12px;border-top:1px solid var(--purple-mid);}
+  .totals-panel .ln{display:flex;justify-content:space-between;font-size:10px;color:#CECBF6;margin-bottom:2px;}
+  .totals-panel .ln strong{color:#FFF;font-weight:500;}
+  .totals-panel .divider{border-top:0.5px dashed var(--purple-mid);margin:5px 0;}
+  .totals-panel .total-line{display:flex;justify-content:space-between;font-size:13px;}
+  .totals-panel .balance{color:#FAC775;font-weight:500;}
+  .totals-panel button.success{width:100%;margin-top:6px;font-size:11px;}
+  .totals-panel .deposit-hint{font-size:9px;color:#9FE1CB;text-align:center;margin-top:3px;}
+  .disc-cat-row{display:grid;grid-template-columns:1fr 70px;gap:4px;align-items:center;margin-bottom:3px;font-size:10px;}
+  .disc-cat-row .label{color:#CECBF6;}
+  .disc-cat-row .save{font-size:10px;color:#9FE1CB;text-align:left;}
+  .general-discounts{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px;}
+  .general-discounts .pill{background:var(--teal-mid);color:var(--teal-deep);}
+
+  /* CENTER (variant-agnostic shared chrome) */
+  .center{padding:10px 14px;background:var(--bg);display:flex;flex-direction:column;gap:8px;}
+
+  /* === Daniel-locked action-bar (shared across all 3 variants) === */
+  .action-bar{
+    background:var(--purple-soft);border:1px solid var(--purple);border-radius:var(--r-md);
+    padding:8px;display:grid;grid-template-columns:1fr 1px auto;gap:10px;align-items:stretch;
+  }
+  .action-bar .ab-left{display:flex;flex-direction:column;gap:5px;justify-content:center;}
+  .action-bar .ab-divider{background:var(--purple);opacity:0.35;width:1px;align-self:stretch;}
+  .action-bar .ab-right{display:flex;flex-direction:column;justify-content:center;}
+  .action-bar .ab-scan-row{display:flex;gap:6px;align-items:center;}
+  .action-bar .ab-scan-row input{flex:1;font-size:13px;padding:6px 9px;border:0.5px solid var(--purple);}
+  .action-bar .ab-catalog-btn{
+    background:var(--purple);color:#FFF;border:0;font-size:11px;font-weight:500;
+    padding:6px 11px;border-radius:var(--r-md);cursor:pointer;white-space:nowrap;
+  }
+  .action-bar .ab-catalog-btn:hover{background:var(--purple-deep);}
+  .action-bar .ab-help{font-size:9px;color:var(--purple-deep);opacity:0.75;}
+  .action-bar .type-picker-2x2{
+    display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:5px;
+  }
+  .type-picker-2x2 .type-btn{
+    padding:6px 9px;font-size:10px;background:var(--surface);
+    border:0.5px solid var(--border-strong);border-radius:var(--r-md);cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;
+    min-width:115px;
+  }
+  .type-picker-2x2 .type-btn:hover{border-color:var(--purple);background:var(--purple-soft);}
+  .type-picker-2x2 .type-btn.active{background:var(--purple);color:#FFF;border-color:var(--purple);}
+  .type-picker-2x2 .type-btn .ico{font-size:14px;}
+  .type-picker-2x2 .type-btn .ttl{font-weight:500;font-size:10px;}
+  .type-picker-2x2 .type-btn .sub{font-size:8px;opacity:0.75;}
+
+  /* === SHARED region styles (rx, so-title, item-card, lens-pickers, so-print, so-msg, so-pricing) === */
+  .rx{background:var(--amber-soft);border-radius:var(--r-md);padding:6px 10px;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--amber-deep);}
+  .rx strong{font-weight:500;}
+  .so-title{display:flex;justify-content:space-between;align-items:center;}
+  .so-badge{background:var(--purple);color:#FFF;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;}
+  .item-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);padding:10px 12px;}
+  .item-line{display:grid;grid-template-columns:60px 1fr 100px 80px;gap:6px;align-items:center;padding-bottom:7px;border-bottom:0.5px dashed var(--border);}
+  .item-line.last{border-bottom:0;padding-bottom:0;}
+  .item-line .name{font-weight:500;font-size:12px;}
+  .item-line .name-sub{font-size:10px;color:var(--text-2);}
+  .item-line .actions{display:flex;justify-content:flex-end;align-items:center;gap:3px;}
+  .item-card .extras{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;margin-top:7px;padding-top:7px;border-top:0.5px dashed var(--border);}
+  .item-card .note-input{font-size:11px;padding:4px 7px;width:100%;background:var(--soft);border:0.5px solid transparent;}
+  .lens-pickers{display:flex;gap:6px;}
+  .lens-pickers button{flex:1;font-size:11px;padding:6px;}
+  .so-print,.so-msg,.so-pricing{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);padding:8px 10px;}
+  .so-print .sp-h,.so-msg .sm-h,.so-pricing .sp-h{font-size:11px;color:var(--text-2);font-weight:500;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
+  .so-print .sp-grid,.so-msg .sm-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .so-print .sp-btn,.so-msg .sm-btn{padding:7px 9px;font-size:11px;background:var(--surface);border:0.5px solid var(--border-strong);border-radius:var(--r-md);cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+  .so-print .sp-btn:hover{background:var(--blue-soft);border-color:var(--blue);}
+  .so-print .sp-btn.placeholder{border:0.5px dashed var(--border-strong);color:var(--text-2);cursor:not-allowed;background:transparent;}
+  .so-print .sp-btn .sp-tag,.so-msg .sm-btn .sm-tag{font-size:9px;color:var(--text-2);}
+  .so-msg .sm-btn:hover{background:var(--purple-soft);border-color:var(--purple);}
+  .so-msg .sm-btn.success{background:var(--teal);color:#FFF;border-color:var(--teal);}
+  .so-msg .sm-btn.success .sm-tag{color:#CFEFE3;}
+  .so-pricing .sp-row{display:grid;grid-template-columns:55px 60px 70px 1fr;gap:6px;align-items:center;font-size:11px;margin-bottom:3px;}
+  .so-pricing .sp-row .sp-cat{color:var(--text-2);}
+  .so-pricing .sp-row .sp-base{text-align:left;font-variant-numeric:tabular-nums;color:var(--text-2);}
+  .so-pricing .sp-row input{font-size:11px;padding:3px 6px;text-align:center;background:var(--soft);border:0.5px solid var(--border);width:100%;}
+  .so-pricing .sp-row .sp-save{font-size:10px;color:var(--teal);text-align:left;font-variant-numeric:tabular-nums;}
+  .so-pricing .sp-divider{border-top:0.5px dashed var(--border);margin:5px 0;}
+  .so-pricing .sp-totals{display:grid;grid-template-columns:1fr auto;gap:4px;font-size:11px;}
+  .so-pricing .sp-totals .lbl{color:var(--text-2);}
+  .so-pricing .sp-totals .val{font-variant-numeric:tabular-nums;font-weight:500;}
+  .so-pricing .sp-final{font-size:13px;color:var(--purple-deep);font-weight:500;margin-top:3px;}
+  .add-lenses-cta{padding:6px 10px;background:var(--teal-soft);color:var(--teal-deep);border:0.5px dashed var(--teal);border-radius:var(--r-md);font-size:11px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+  .add-lenses-cta:hover{background:var(--teal);color:#FFF;}
+
+  /* === LEFT panel (copied from v6) === */
+  .panel{background:var(--surface);border-right:0.5px solid var(--border);display:flex;flex-direction:column;}
+  .panel-comms{padding:10px;flex:1;overflow-y:auto;max-height:760px;}
+  .panel-section{margin-bottom:10px;}
+  .panel-section .h-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+  .panel-section h4{margin:0;font-size:12px;font-weight:500;}
+  .lang-row{display:flex;gap:3px;margin-bottom:4px;}
+  .lang-btn{flex:1;font-size:10px;padding:4px 0;background:var(--surface);border:0.5px solid var(--border-strong);border-radius:var(--r-md);cursor:pointer;}
+  .lang-btn.active{background:var(--purple);color:#FFF;border-color:var(--purple);}
+  .panel textarea{width:100%;min-height:38px;font-size:11px;padding:5px;border-radius:var(--r-md);border:0.5px solid var(--border);}
+  .msg-card{padding:6px 10px;border-radius:var(--r-md);margin-bottom:4px;}
+  .msg-card.msg-out{background:var(--purple-soft);}
+  .msg-card.msg-in{background:var(--soft);margin-right:14px;}
+  .msg-card .msg-meta{font-size:9px;color:var(--text-2);margin-bottom:3px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+  .msg-card .msg-body{font-size:11px;line-height:1.5;}
+  .task-card{background:var(--soft);border-radius:var(--r-md);padding:7px 10px;margin-bottom:3px;}
+  .task-card .ttl{font-size:11px;font-weight:500;}
+  .task-card .meta{font-size:10px;color:var(--text-2);margin-top:2px;}
+  .log{font-size:10px;line-height:1.7;color:var(--text-2);}
+  .log .ts{color:var(--text);font-variant-numeric:tabular-nums;}
+  .log .actor{color:var(--purple-deep);font-weight:500;}
+
+  /* ============ VARIANT A — two-pane work surface + sticky tools strip ============ */
+  .va-panes{display:grid;grid-template-columns:1.55fr 1fr;gap:10px;align-items:start;}
+  .va-pane{display:flex;flex-direction:column;gap:8px;}
+  .va-pane-h{
+    font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:0.8px;
+    padding:0 4px 4px;border-bottom:0.5px dashed var(--border);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .va-pane-h .pane-tag{
+    background:var(--purple-soft);color:var(--purple-deep);padding:1px 8px;border-radius:var(--r-md);
+    font-size:9px;font-weight:500;letter-spacing:0.4px;
+  }
+  .va-tools-strip{
+    position:sticky;bottom:0;background:var(--surface);border:1px solid var(--purple);
+    border-radius:var(--r-md);padding:8px;
+    display:grid;grid-template-columns:1fr 1fr;gap:10px;
+    box-shadow:0 -2px 8px rgba(0,0,0,0.06);
+    margin-top:4px;
+  }
+  .va-tools-strip .tools-section h5{margin:0 0 5px;font-size:10px;font-weight:600;color:var(--purple-deep);text-transform:uppercase;letter-spacing:0.7px;}
+  .va-tools-strip .compact-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+  .va-tools-strip .compact-btn{
+    padding:5px 7px;font-size:10px;background:var(--surface);
+    border:0.5px solid var(--border-strong);border-radius:var(--r-md);cursor:pointer;
+    display:flex;justify-content:space-between;align-items:center;gap:4px;
+  }
+  .va-tools-strip .compact-btn:hover{background:var(--purple-soft);border-color:var(--purple);}
+  .va-tools-strip .compact-btn.success{background:var(--teal);color:#FFF;border-color:var(--teal);}
+  .va-tools-strip .compact-btn.disabled{opacity:0.5;cursor:not-allowed;border-style:dashed;}
+  .va-tools-strip .compact-btn .ct{font-size:9px;opacity:0.7;}
+
+  /* ============ VARIANT B — accordion stack ============ */
+  .vb-stack{display:flex;flex-direction:column;gap:5px;}
+  .vb-acc{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);overflow:hidden;
+  }
+  .vb-acc.open{border-color:var(--purple);box-shadow:0 1px 4px rgba(83,74,183,0.12);}
+  .vb-acc-head{
+    padding:9px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+    background:var(--soft);
+  }
+  .vb-acc.open .vb-acc-head{background:var(--purple-soft);}
+  .vb-acc-head .left{display:flex;align-items:center;gap:8px;}
+  .vb-acc-head .ico{
+    width:22px;height:22px;border-radius:50%;background:var(--surface);
+    display:inline-flex;align-items:center;justify-content:center;font-size:12px;
+    border:0.5px solid var(--border);
+  }
+  .vb-acc.open .vb-acc-head .ico{background:var(--purple);color:#FFF;border-color:var(--purple);}
+  .vb-acc-head .ttl{font-size:12px;font-weight:500;}
+  .vb-acc.open .vb-acc-head .ttl{color:var(--purple-deep);}
+  .vb-acc-head .summary{font-size:10px;color:var(--text-2);}
+  .vb-acc.open .vb-acc-head .summary{display:none;}
+  .vb-acc-head .chev{font-size:11px;color:var(--text-2);transition:transform 0.2s;}
+  .vb-acc.open .vb-acc-head .chev{transform:rotate(180deg);color:var(--purple);}
+  .vb-acc-body{display:none;padding:10px 12px;background:var(--surface);}
+  .vb-acc.open .vb-acc-body{display:block;}
+
+  /* ============ VARIANT C — items-on-top + tab-bar below ============ */
+  .vc-top{display:flex;flex-direction:column;gap:8px;}
+  .vc-tabbar{
+    display:flex;gap:0;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);overflow:hidden;
+    margin-top:4px;
+  }
+  .vc-tab{
+    flex:1;padding:9px 8px;font-size:11px;cursor:pointer;
+    background:var(--surface);color:var(--text-2);
+    border-right:0.5px solid var(--border);text-align:center;font-family:inherit;border-top:0;border-bottom:0;border-left:0;
+    display:flex;flex-direction:column;align-items:center;gap:2px;
+  }
+  .vc-tab:last-child{border-right:0;}
+  .vc-tab:hover{background:var(--soft);}
+  .vc-tab.active{background:var(--purple);color:#FFF;font-weight:500;}
+  .vc-tab.linked{
+    box-shadow:inset 0 -3px 0 var(--amber);
+  }
+  .vc-tab.active.linked{box-shadow:inset 0 -3px 0 var(--amber-mid);}
+  .vc-tab .lbl-sub{font-size:9px;opacity:0.7;}
+  .vc-panel{
+    background:var(--surface);border:0.5px solid var(--border);border-top:0;
+    border-radius:0 0 var(--r-md) var(--r-md);padding:10px 12px;min-height:140px;display:none;
+  }
+  .vc-panel.active{display:block;}
+  .vc-rx-mini{font-size:10px;color:var(--amber-deep);}
+
+  /* tab-panel show/hide for outer A/B/C tabs */
+  .variant-panel{display:none;}
+  .variant-panel.active{display:block;}
+
+  .va-pane .item-card{flex:1;}
+
+  /* legend at bottom of file */
+  .legend{margin-top:18px;padding:14px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);font-size:12px;color:var(--text-2);}
+  .legend strong{color:var(--text);font-weight:600;}
+  .legend ul{margin:6px 0 0;padding-right:18px;}
+  .legend li{margin-bottom:4px;}
+</style>
+</head>
+<body>
+
+<!-- ============ RECOMMENDATION BANNER ============ -->
+<div class="reco-banner">
+  <span class="badge">המלצת הארכיטקט</span>
+  <span class="pick">וריאציה מומלצת: <strong>A — שני-פאנלים אופקיים + רצועת-כלים דביקה</strong></span>
+  <span class="why">— זו הוריאציה היחידה ש-9 האזורים בה גלויים בו-זמנית; מסירה את הערימה האנכית בלי להחביא כלום (B מחביא 5 מתוך 6, C מחביא 4 מתוך 5).</span>
+</div>
+
+<!-- ============ STICKY TAB NAV ============ -->
+<div class="var-tabs">
+  <span class="label">בחר וריאציה:</span>
+  <button class="var-tab active" data-var="A">
+    <span class="ttl">Variant A</span>
+    <span class="sub">· שני-פאנלים</span>
+  </button>
+  <button class="var-tab" data-var="B">
+    <span class="ttl">Variant B</span>
+    <span class="sub">· אקורדיון</span>
+  </button>
+  <button class="var-tab" data-var="C">
+    <span class="ttl">Variant C</span>
+    <span class="sub">· פריטים-למעלה</span>
+  </button>
+  <span style="margin-right:auto;font-size:10px;color:var(--text-2);">M7 · Orders Center Redesign · v7 candidates · 11.05.26</span>
+</div>
+
+<div class="page">
+
+  <!-- ============================================================== -->
+  <!-- ====================  VARIANT A  ============================= -->
+  <!-- ============================================================== -->
+  <div class="variant-panel active" data-var-panel="A">
+    <h1>וריאציה A · "שני-פאנלים אופקיים + רצועת-כלים דביקה למטה"</h1>
+    <p class="lede">
+      פאנל-עבודה רחב מימין (פריטים + עדשות + CTA) · פאנל-מטא צר משמאל (מרשם + תמחור) ·
+      רצועת so-print + so-msg דביקה בתחתית. הכל גלוי בו-זמנית.
+    </p>
+
+    <div class="app">
+
+      <!-- HEADER -->
+      <div class="header">
+        <div class="left">
+          <div class="avatar">לד</div>
+          <div>
+            <div class="cust-name">ליסקר דניאל · 30</div>
+            <div class="cust-meta">📱 053-788-9878 · 3 הזמנות ב-12 חודשים · ₪4,250 בשנה האחרונה · אשקלון · ⌥ HE</div>
+          </div>
+          <span class="pill" style="background:var(--amber-mid);color:var(--amber-deep);">VIP</span>
+        </div>
+        <div class="row" style="gap:6px;">
+          <button>⌘K · חיפוש</button>
+          <button>📞 התקשר</button>
+          <button>💬 WhatsApp</button>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs">
+        <div class="tab">פרטים</div>
+        <div class="tab">בדיקת ראייה</div>
+        <div class="tab">משקפיים</div>
+        <div class="tab">עדשות מגע</div>
+        <div class="tab active">הזמנות</div>
+        <div class="tab">תקשורת</div>
+        <div class="tab">היסטוריה</div>
+        <div class="right">הזמנה <strong style="color:var(--text);font-weight:500;">9362</strong> · 18.03.26 · עובד: <strong style="color:var(--text);font-weight:500;">Ilya</strong></div>
+      </div>
+
+      <!-- CMD BAR -->
+      <div class="cmdbar">
+        <div class="row">
+          <span class="pill pill-purple">הזמנת מכר רגילה</span>
+          <span class="pill pill-amber">מרשם 10.10.25 · Naama</span>
+          <span class="pill pill-teal">✓ "תודה" נשלחה · 14:32</span>
+        </div>
+        <div class="row" style="gap:4px;">
+          <span class="pill pill-teal">✓ נשמר אוטומטית · 14:32:08</span>
+          <button class="tiny">↶ Undo</button>
+          <button class="tiny">↷ Redo</button>
+          <button class="tiny">🖨 ▾</button>
+        </div>
+      </div>
+
+      <div class="main">
+
+        <!-- RIGHT COLUMN (rail + totals) -->
+        <div class="right-col">
+          <div class="rail">
+            <div class="rail-h"><span>תת-הזמנות (4 / 8)</span><span style="color:var(--blue);cursor:pointer;">+ חדשה</span></div>
+            <div class="so-card active"><div class="top"><span class="ttl">A · מסגרת+עדשות</span><span class="money" style="font-size:10px;">₪1,800</span></div><div class="sub">Cazal 1280 + מולטיפוקל</div><div class="badges"><span class="pill pill-amber">⏱ ספק</span></div></div>
+            <div class="so-card"><div class="top"><span class="ttl">B · מסגרת+עדשות</span><span class="money" style="font-size:10px;color:var(--text-2);">₪900</span></div><div class="sub">Ray-Ban + Single Vision</div><div class="badges"><span class="pill pill-blue">🔧 מעבדה</span></div></div>
+            <div class="so-card"><div class="top"><span class="ttl">C · עדשות-מגע</span><span class="money" style="font-size:10px;color:var(--text-2);">₪450</span></div><div class="sub">Acuvue Oasys · 30 זוגות</div><div class="badges"><span class="pill pill-green">✓ נמסר</span></div></div>
+            <div class="so-card"><div class="top"><span class="ttl">D · אביזרים</span><span class="money" style="font-size:10px;color:var(--text-2);">₪40</span></div><div class="sub">נוזל ניקוי × 1</div><div class="badges"><span class="pill pill-green">✓ נמסר</span></div></div>
+            <div style="margin-top:auto;padding-top:8px;font-size:10px;color:var(--text-2);">סטטוס: <strong style="color:var(--text);font-weight:500;">בעבודה</strong> · 2/4 מוכנות</div>
+          </div>
+          <div class="totals-panel">
+            <div class="ln"><span>סכום-לפני-הנחות</span><strong class="money">₪3,190</strong></div>
+            <div class="divider"></div>
+            <div class="disc-cat-row"><span class="label">מסגרות</span><span class="save">−₪360</span></div>
+            <div class="disc-cat-row"><span class="label">עדשות</span><span class="save">−₪0</span></div>
+            <div class="divider"></div>
+            <div class="ln"><span>אחרי הנחות-קטגוריה</span><strong class="money">₪2,830</strong></div>
+            <div class="divider"></div>
+            <div class="general-discounts"><span class="pill">VIP −10% ✕</span><span class="pill">SUMMER10 ✕</span></div>
+            <div class="divider"></div>
+            <div class="ln"><span>מע״מ 18%</span><strong>כלול</strong></div>
+            <div class="ln"><span>שולם</span><strong class="money">₪0</strong></div>
+            <div class="total-line"><span>יתרה</span><span class="balance money">₪2,547</span></div>
+            <button class="success">💳 פתח תשלום</button>
+            <div class="deposit-hint">מקדמה-מינ׳ 50% = ₪1,274</div>
+          </div>
+        </div>
+
+        <!-- CENTER · VARIANT A -->
+        <div class="center">
+
+          <!-- Daniel-locked action-bar -->
+          <div class="action-bar">
+            <div class="ab-left">
+              <div class="ab-scan-row">
+                <input type="search" placeholder="🔍 סרוק ברקוד או הקלד שם / דגם / קוד..."/>
+                <button class="ab-catalog-btn" title="הקטלוג נפתח לפי הסוג הפעיל (מסגרת)">🕶 פתח קטלוג</button>
+              </div>
+              <span class="ab-help">⌥ Enter = הוסף · ⌥ ⇥ = סרוק הבא · "פתח קטלוג" משתנה לפי הסוג הפעיל</span>
+            </div>
+            <div class="ab-divider"></div>
+            <div class="ab-right">
+              <div class="type-picker-2x2">
+                <button class="type-btn active"><span class="ico">🕶</span><span class="ttl">מסגרת</span><span class="sub">+ עדשות (אופציונלי)</span></button>
+                <button class="type-btn"><span class="ico">👁</span><span class="ttl">עדשות</span><span class="sub">למסגרת קיימת</span></button>
+                <button class="type-btn"><span class="ico">⊙</span><span class="ttl">עדשות-מגע</span><span class="sub">qty חופשי</span></button>
+                <button class="type-btn"><span class="ico">🧴</span><span class="ttl">אביזרים</span><span class="sub">עד 5 שונים</span></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Two panes side by side -->
+          <div class="va-panes">
+
+            <!-- Wide pane: items work surface -->
+            <div class="va-pane">
+              <div class="va-pane-h">
+                <span><strong style="color:var(--text);">משטח-עבודה · A</strong> — פריטים + עדשות בתת-הזמנה הפעילה</span>
+                <span class="pane-tag">פעיל</span>
+              </div>
+
+              <!-- sub-order title -->
+              <div class="so-title">
+                <div class="row">
+                  <span class="so-badge">A</span>
+                  <h3 style="margin:0;font-size:13px;font-weight:500;">מסגרת + עדשות — מולטיפוקל</h3>
+                </div>
+                <div class="row" style="gap:3px;">
+                  <button class="tiny">⚑ למנהל</button>
+                  <button class="tiny" style="color:var(--red);">🗑 הסר A</button>
+                </div>
+              </div>
+
+              <!-- items -->
+              <div class="item-card">
+                <div class="item-line">
+                  <span class="pill pill-purple">מסגרת</span>
+                  <div><div class="name">Cazal · 1280</div><div class="name-sub">52 / 001 · שחור · SHALDAG · במלאי</div></div>
+                  <span class="money">₪1,800</span>
+                  <div class="actions"><button class="tiny">פרטים ▾</button><button class="danger-ghost">🗑</button></div>
+                </div>
+                <div class="item-line last">
+                  <span class="pill pill-teal">עדשות R+L</span>
+                  <div><div class="name">Optimize Multifocal · 1.56 · AR</div><div class="name-sub">Progressive · הזמנה לספק · סונן למרשם</div></div>
+                  <span class="money">כלול</span>
+                  <div class="actions"><button class="tiny">פרטים ▾</button><button class="danger-ghost">🗑</button></div>
+                </div>
+                <div class="lens-pickers" style="margin-top:7px;">
+                  <button class="tiny">עדשה ראשונה (R) ←</button>
+                  <button class="tiny">עדשה שניה (L) ←</button>
+                  <span class="mini" style="align-self:center;">בחירה נפרדת ל-R/L נפתחת ב-popover</span>
+                </div>
+                <div class="extras">
+                  <input class="note-input" value="לא להשפיע על אף-המסגרת. גובה אישונים נמדד היום."/>
+                  <button class="tiny">+ הערה</button>
+                </div>
+              </div>
+
+              <div class="add-lenses-cta">
+                <span>+ הוסף זוג-עדשות נוסף (R/L נפרד) לתת-הזמנה A</span>
+                <span class="mini" style="color:inherit;">לפי בחירה במ׳ Optic-pickers</span>
+              </div>
+            </div>
+
+            <!-- Narrow pane: rx + pricing -->
+            <div class="va-pane">
+              <div class="va-pane-h">
+                <span><strong style="color:var(--text);">מטא · תמחור · מרשם</strong></span>
+                <span class="pane-tag" style="background:var(--amber-soft);color:var(--amber-deep);">תומך</span>
+              </div>
+
+              <!-- prescription strip -->
+              <div class="rx">
+                <div>
+                  <strong>מרשם 10.10.25 · Naama:</strong><br/>
+                  R: SPH −2.00 / CYL −0.75 · L: SPH −3.00 / CYL +0.50 · ADD +2.00 · PD 32/32
+                </div>
+                <button class="ghost">ערוך ←</button>
+              </div>
+
+              <!-- so-pricing -->
+              <div class="so-pricing">
+                <div class="sp-h"><span>תמחור · A</span><span class="mini">פר-קטגוריה · A בלבד</span></div>
+                <div class="sp-row"><span class="sp-cat">מסגרת</span><span class="sp-base">₪1,800</span><input type="text" value=""/><span class="sp-save">—</span></div>
+                <div class="sp-row"><span class="sp-cat">עדשות</span><span class="sp-base">₪0</span><input type="text" value="10%"/><span class="sp-save">−₪0</span></div>
+                <div class="sp-row"><span class="sp-cat">מגע</span><span class="sp-base">—</span><input type="text" disabled/><span class="sp-save">—</span></div>
+                <div class="sp-row"><span class="sp-cat">אביזרים</span><span class="sp-base">—</span><input type="text" disabled/><span class="sp-save">—</span></div>
+                <div class="sp-divider"></div>
+                <div class="sp-totals"><span class="lbl">לפני-הנחות</span><span class="val">₪1,800</span></div>
+                <div class="sp-totals"><span class="lbl">סך-הנחות</span><span class="val" style="color:var(--teal);">−₪0</span></div>
+                <div class="sp-totals sp-final"><span>סופי · A</span><span class="val">₪1,800</span></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Sticky tools strip (so-print + so-msg) -->
+          <div class="va-tools-strip">
+            <div class="tools-section">
+              <h5>🖨 הדפסות · A</h5>
+              <div class="compact-grid">
+                <button class="compact-btn"><span>Order Inspection</span><span class="ct">בקרה פנימית</span></button>
+                <button class="compact-btn"><span>Outside Framing</span><span class="ct">לספק</span></button>
+                <button class="compact-btn disabled"><span>Frame Reservation</span><span class="ct">לא-פעיל</span></button>
+                <button class="compact-btn disabled"><span>Task Form</span><span class="ct">אין משימה</span></button>
+              </div>
+            </div>
+            <div class="tools-section">
+              <h5>📤 הודעות · A · מזהה 1-9362-A</h5>
+              <div class="compact-grid">
+                <button class="compact-btn"><span>📤 "נשלח-למסגור"</span><span class="ct">ידני</span></button>
+                <button class="compact-btn success"><span>📦 "ההזמנה מוכנה"</span><span class="ct">לחיצה אחת</span></button>
+                <button class="compact-btn disabled"><span>"תודה"</span><span class="ct">ברמת-הזמנה</span></button>
+                <button class="compact-btn"><span>✏️ חופשי</span><span class="ct">מתוך WhatsApp</span></button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- LEFT PANEL -->
+        <div class="panel">
+          <div class="panel-comms">
+            <div class="panel-section">
+              <div class="h-row"><h4>📱 WhatsApp חופשי</h4><span class="mini">Green API</span></div>
+              <div class="lang-row"><button class="lang-btn active">עברית</button><button class="lang-btn">Русский</button><button class="lang-btn">English</button></div>
+              <textarea placeholder="טקסט חופשי ללקוח..."></textarea>
+              <div class="row-between" style="margin-top:4px;"><span class="mini">סטטוסים בעורך</span><button class="primary tiny">שלח →</button></div>
+            </div>
+            <div class="panel-section">
+              <div class="h-row"><h4>💬 היסטוריה (12)</h4><button class="ghost tiny">הצג הכל ←</button></div>
+              <div class="msg-card msg-out"><div class="msg-meta"><span class="pill pill-purple">תזכורת</span><span>14:30 · Ilya</span></div><div class="msg-body">"שלום דניאל, ההזמנה הוזמנה לבית-מלאכה. נעדכן ברגע שמוכן 🙏"</div></div>
+              <div class="msg-card msg-in"><div class="msg-meta"><span>אתמול 19:42 · נכנסת</span></div><div class="msg-body">"מצוין תודה רבה! מתי בערך זה יהיה מוכן?"</div></div>
+            </div>
+            <div class="panel-section">
+              <div class="h-row"><h4>⚑ משימות · 📝 הערות</h4><span class="mini">1 + 2</span></div>
+              <div class="task-card"><div class="ttl">⚑ לוודא מחיר מול SHALDAG</div><div class="meta">יעד: 19.03 · Yossi · A</div></div>
+              <div class="task-card"><div class="ttl">📝 "להחליף עדשות-מגע ביום שישי"</div><div class="meta">Ilya · 14:25</div></div>
+            </div>
+            <div class="panel-section">
+              <div class="h-row"><h4>🕓 יומן</h4><button class="ghost tiny">הכל ←</button></div>
+              <div class="log">
+                <div><span class="ts">14:32</span> · <span class="actor">Ilya</span> הנחת VIP 10%</div>
+                <div><span class="ts">14:30</span> · <span class="actor">Ilya</span> הוסיף Optimize Multifocal</div>
+                <div><span class="ts">14:25</span> · <span class="actor">Ilya</span> Cazal 1280</div>
+                <div><span class="ts">14:22</span> · <span class="actor">Ilya</span> פתח תת A</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- ====================  VARIANT B  ============================= -->
+  <!-- ============================================================== -->
+  <div class="variant-panel" data-var-panel="B">
+    <h1>וריאציה B · "אקורדיון — אחת פתוחה בכל רגע"</h1>
+    <p class="lede">
+      6 מקטעים מתקפלים מתחת לסרגל-הפעולות. ברירת-מחדל: "פריטים" פתוח. כל מקטע סגור מציג תקציר.
+      רק אחד פתוח בו-זמנית — הקליק על אחר סוגר את הקודם.
+    </p>
+
+    <div class="app">
+
+      <!-- HEADER -->
+      <div class="header">
+        <div class="left">
+          <div class="avatar">לד</div>
+          <div>
+            <div class="cust-name">ליסקר דניאל · 30</div>
+            <div class="cust-meta">📱 053-788-9878 · 3 הזמנות · ₪4,250 השנה · אשקלון · ⌥ HE</div>
+          </div>
+          <span class="pill" style="background:var(--amber-mid);color:var(--amber-deep);">VIP</span>
+        </div>
+        <div class="row" style="gap:6px;"><button>⌘K · חיפוש</button><button>📞 התקשר</button><button>💬 WhatsApp</button></div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab">פרטים</div><div class="tab">בדיקת ראייה</div><div class="tab">משקפיים</div>
+        <div class="tab">עדשות מגע</div><div class="tab active">הזמנות</div><div class="tab">תקשורת</div><div class="tab">היסטוריה</div>
+        <div class="right">הזמנה <strong style="color:var(--text);font-weight:500;">9362</strong> · 18.03.26 · עובד: <strong style="color:var(--text);font-weight:500;">Ilya</strong></div>
+      </div>
+
+      <div class="cmdbar">
+        <div class="row">
+          <span class="pill pill-purple">הזמנת מכר רגילה</span>
+          <span class="pill pill-amber">מרשם 10.10.25 · Naama</span>
+          <span class="pill pill-teal">✓ "תודה" נשלחה · 14:32</span>
+        </div>
+        <div class="row" style="gap:4px;"><span class="pill pill-teal">✓ נשמר · 14:32:08</span><button class="tiny">↶</button><button class="tiny">↷</button><button class="tiny">🖨 ▾</button></div>
+      </div>
+
+      <div class="main">
+
+        <!-- RIGHT COLUMN (same as A) -->
+        <div class="right-col">
+          <div class="rail">
+            <div class="rail-h"><span>תת-הזמנות (4 / 8)</span><span style="color:var(--blue);cursor:pointer;">+ חדשה</span></div>
+            <div class="so-card active"><div class="top"><span class="ttl">A · מסגרת+עדשות</span><span class="money" style="font-size:10px;">₪1,800</span></div><div class="sub">Cazal 1280 + מולטיפוקל</div><div class="badges"><span class="pill pill-amber">⏱ ספק</span></div></div>
+            <div class="so-card"><div class="top"><span class="ttl">B · מסגרת+עדשות</span><span class="money" style="font-size:10px;color:var(--text-2);">₪900</span></div><div class="sub">Ray-Ban + Single Vision</div><div class="badges"><span class="pill pill-blue">🔧 מעבדה</span></div></div>
+            <div class="so-card"><div class="top"><span class="ttl">C · עדשות-מגע</span><span class="money" style="font-size:10px;color:var(--text-2);">₪450</span></div><div class="sub">Acuvue Oasys · 30 זוגות</div><div class="badges"><span class="pill pill-green">✓ נמסר</span></div></div>
+            <div class="so-card"><div class="top"><span class="ttl">D · אביזרים</span><span class="money" style="font-size:10px;color:var(--text-2);">₪40</span></div><div class="sub">נוזל ניקוי × 1</div><div class="badges"><span class="pill pill-green">✓ נמסר</span></div></div>
+            <div style="margin-top:auto;padding-top:8px;font-size:10px;color:var(--text-2);">סטטוס: <strong style="color:var(--text);font-weight:500;">בעבודה</strong> · 2/4</div>
+          </div>
+          <div class="totals-panel">
+            <div class="ln"><span>סכום-לפני-הנחות</span><strong class="money">₪3,190</strong></div>
+            <div class="divider"></div>
+            <div class="disc-cat-row"><span class="label">מסגרות</span><span class="save">−₪360</span></div>
+            <div class="disc-cat-row"><span class="label">עדשות</span><span class="save">−₪0</span></div>
+            <div class="divider"></div>
+            <div class="ln"><span>אחרי הנחות-קטגוריה</span><strong class="money">₪2,830</strong></div>
+            <div class="divider"></div>
+            <div class="general-discounts"><span class="pill">VIP −10%</span><span class="pill">SUMMER10</span></div>
+            <div class="divider"></div>
+            <div class="ln"><span>מע״מ 18%</span><strong>כלול</strong></div>
+            <div class="ln"><span>שולם</span><strong class="money">₪0</strong></div>
+            <div class="total-line"><span>יתרה</span><span class="balance money">₪2,547</span></div>
+            <button class="success">💳 פתח תשלום</button>
+            <div class="deposit-hint">מקדמה-מינ׳ 50% = ₪1,274</div>
+          </div>
+        </div>
+
+        <!-- CENTER · VARIANT B -->
+        <div class="center">
+
+          <!-- Daniel-locked action-bar (same shared structure) -->
+          <div class="action-bar">
+            <div class="ab-left">
+              <div class="ab-scan-row">
+                <input type="search" placeholder="🔍 סרוק ברקוד או הקלד שם / דגם / קוד..."/>
+                <button class="ab-catalog-btn">🕶 פתח קטלוג</button>
+              </div>
+              <span class="ab-help">⌥ Enter = הוסף · "פתח קטלוג" משתנה לפי הסוג הפעיל</span>
+            </div>
+            <div class="ab-divider"></div>
+            <div class="ab-right">
+              <div class="type-picker-2x2">
+                <button class="type-btn active"><span class="ico">🕶</span><span class="ttl">מסגרת</span><span class="sub">+ עדשות</span></button>
+                <button class="type-btn"><span class="ico">👁</span><span class="ttl">עדשות</span><span class="sub">למסגרת קיימת</span></button>
+                <button class="type-btn"><span class="ico">⊙</span><span class="ttl">עדשות-מגע</span><span class="sub">qty חופשי</span></button>
+                <button class="type-btn"><span class="ico">🧴</span><span class="ttl">אביזרים</span><span class="sub">עד 5</span></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- sub-order title (kept above the accordion stack) -->
+          <div class="so-title" style="margin-top:2px;">
+            <div class="row">
+              <span class="so-badge">A</span>
+              <h3 style="margin:0;font-size:13px;font-weight:500;">מסגרת + עדשות — מולטיפוקל</h3>
+            </div>
+            <div class="row" style="gap:3px;"><button class="tiny">⚑ למנהל</button><button class="tiny" style="color:var(--red);">🗑 הסר A</button></div>
+          </div>
+
+          <!-- Accordion stack — 6 sections, only one open -->
+          <div class="vb-stack" data-vb-stack>
+
+            <!-- 1. Prescription -->
+            <div class="vb-acc" data-vb-key="rx">
+              <div class="vb-acc-head">
+                <div class="left">
+                  <span class="ico">📋</span>
+                  <span class="ttl">מרשם</span>
+                  <span class="summary">10.10.25 · Naama · R −2.00 / L −3.00 · ADD +2.00</span>
+                </div>
+                <span class="chev">▾</span>
+              </div>
+              <div class="vb-acc-body">
+                <div class="rx" style="margin:0;">
+                  <div><strong>מרשם 10.10.25 · Naama:</strong> R: SPH −2.00 / CYL −0.75 · L: SPH −3.00 / CYL +0.50 · ADD +2.00 · PD 32/32</div>
+                  <button class="ghost">ערוך ←</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Items (open by default) -->
+            <div class="vb-acc open" data-vb-key="items">
+              <div class="vb-acc-head">
+                <div class="left">
+                  <span class="ico">🛒</span>
+                  <span class="ttl">פריטים בהזמנה</span>
+                  <span class="summary">Cazal 1280 + Optimize Multifocal</span>
+                </div>
+                <span class="chev">▾</span>
+              </div>
+              <div class="vb-acc-body">
+                <div class="item-card" style="margin:0;">
+                  <div class="item-line">
+                    <span class="pill pill-purple">מסגרת</span>
+                    <div><div class="name">Cazal · 1280</div><div class="name-sub">52 / 001 · שחור · SHALDAG · במלאי</div></div>
+                    <span class="money">₪1,800</span>
+                    <div class="actions"><button class="tiny">פרטים ▾</button><button class="danger-ghost">🗑</button></div>
+                  </div>
+                  <div class="item-line last">
+                    <span class="pill pill-teal">עדשות R+L</span>
+                    <div><div class="name">Optimize Multifocal · 1.56 · AR</div><div class="name-sub">Progressive · הזמנה לספק · סונן למרשם</div></div>
+                    <span class="money">כלול</span>
+                    <div class="actions"><button class="tiny">פרטים ▾</button><button class="danger-ghost">🗑</button></div>
+                  </div>
+                  <div class="extras">
+                    <input class="note-input" value="לא להשפיע על אף-המסגרת. גובה אישונים נמדד היום."/>
+                    <button class="tiny">+ הערה</button>
+                  </div>
+                </div>
+                <div class="add-lenses-cta" style="margin-top:8px;">
+                  <span>+ הוסף זוג-עדשות נוסף (R/L נפרד) לתת-הזמנה A</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Lens-pickers -->
+            <div class="vb-acc" data-vb-key="lenses">
+              <div class="vb-acc-head">
+                <div class="left">
+                  <span class="ico">👁</span>
+                  <span class="ttl">עדשות (בחירת R/L)</span>
+                  <span class="summary">R: Optimize 1.56 AR · L: Optimize 1.56 AR (זהה)</span>
+                </div>
+                <span class="chev">▾</span>
+              </div>
+              <div class="vb-acc-body">
+                <div class="lens-pickers" style="margin:0;">
+                  <button class="tiny">עדשה ראשונה (R) ←</button>
+                  <button class="tiny">עדשה שניה (L) ←</button>
+                </div>
+                <p class="mini" style="margin:8px 0 0;">בחירה נפרדת ל-R/L נפתחת ב-popover. אפשר לסנכרן ביניהן (זהה) או להגדיר נפרד.</p>
+              </div>
+            </div>
+
+            <!-- 4. Print -->
+            <div class="vb-acc" data-vb-key="print">
+              <div class="vb-acc-head">
+                <div class="left">
+                  <span class="ico">🖨</span>
+                  <span class="ttl">הדפסות</span>
+                  <span class="summary">2 פעילות · 4 לא-זמינות (תלוי-מצב)</span>
+                </div>
+                <span class="chev">▾</span>
+              </div>
+              <div class="vb-acc-body">
+                <div class="so-print" style="margin:0;border:0;padding:0;">
+                  <div class="sp-grid">
+                    <button class="sp-btn"><span>🖨 Order Inspection — בקרה פנימית</span><span class="sp-tag">A</span></button>
+                    <button class="sp-btn"><span>🖨 Outside Framing — שלח למסגור</span><span class="sp-tag">A</span></button>
+                    <button class="sp-btn placeholder"><span>🖨 Frame Reservation</span><span class="sp-tag">Reserved בלבד</span></button>
+                    <button class="sp-btn placeholder"><span>🖨 Task Form</span><span class="sp-tag">אין משימה</span></button>
+                    <button class="sp-btn placeholder"><span>🖨 Internal Repair</span><span class="sp-tag">Repair בלבד</span></button>
+                    <button class="sp-btn placeholder"><span>🖨 Outside Repair</span><span class="sp-tag">Repair בלבד</span></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. Messages -->
+            <div class="vb-acc" data-vb-key="msg">
+              <div class="vb-acc-head">
+                <div class="left">
+                  <span class="ico">📤</span>
+                  <span class="ttl">הודעות</span>
+                  <span class="summary">"תודה" · "מוכנה" · "נשלח-למסגור" · מזהה 1-9362-A</span>
+                </div>
+                <span class="chev">▾</span>
+              </div>
+              <div class="vb-acc-body">
+                <div class="so-msg" style="margin:0;border:0;padding:0;">
+                  <div class="sm-grid">
+                    <button class="sm-btn"><span>📤 "נשלח-למסגור"</span><span class="sm-tag">ידני</span></button>
+                    <button class="sm-btn success"><span>📦 "ההזמנה מוכנה"</span><span class="sm-tag">ידני</span></button>
+                  </div>
+                  <p class="mini" style="margin:6px 0 0;">"תודה" ברמת-הזמנה כולה, נשלחת כש-תשלום ≥ ₪1 + הזמנה active.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 6. Pricing -->
+            <div class="vb-acc" data-vb-key="pricing">
+              <div class="vb-acc-head">
+                <div class="left">
+                  <span class="ico">💰</span>
+                  <span class="ttl">תמחור</span>
+                  <span class="summary">לפני: ₪1,800 · הנחות: ₪0 · סופי: <strong style="color:var(--purple-deep);">₪1,800</strong></span>
+                </div>
+                <span class="chev">▾</span>
+              </div>
+              <div class="vb-acc-body">
+                <div class="so-pricing" style="margin:0;border:0;padding:0;">
+                  <div class="sp-row"><span class="sp-cat">מסגרת</span><span class="sp-base">₪1,800</span><input type="text"/><span class="sp-save">—</span></div>
+                  <div class="sp-row"><span class="sp-cat">עדשות</span><span class="sp-base">₪0</span><input type="text" value="10%"/><span class="sp-save">−₪0</span></div>
+                  <div class="sp-row"><span class="sp-cat">מגע</span><span class="sp-base">—</span><input type="text" disabled/><span class="sp-save">—</span></div>
+                  <div class="sp-row"><span class="sp-cat">אביזרים</span><span class="sp-base">—</span><input type="text" disabled/><span class="sp-save">—</span></div>
+                  <div class="sp-divider"></div>
+                  <div class="sp-totals"><span class="lbl">לפני-הנחות</span><span class="val">₪1,800</span></div>
+                  <div class="sp-totals sp-final"><span>סופי · A</span><span class="val">₪1,800</span></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- LEFT PANEL (same as A) -->
+        <div class="panel">
+          <div class="panel-comms">
+            <div class="panel-section">
+              <div class="h-row"><h4>📱 WhatsApp חופשי</h4><span class="mini">Green API</span></div>
+              <div class="lang-row"><button class="lang-btn active">עברית</button><button class="lang-btn">Русский</button><button class="lang-btn">English</button></div>
+              <textarea placeholder="טקסט חופשי..."></textarea>
+              <div class="row-between" style="margin-top:4px;"><span class="mini">סטטוסים בעורך</span><button class="primary tiny">שלח →</button></div>
+            </div>
+            <div class="panel-section">
+              <div class="h-row"><h4>💬 היסטוריה (12)</h4></div>
+              <div class="msg-card msg-out"><div class="msg-meta"><span class="pill pill-purple">תזכורת</span><span>14:30 · Ilya</span></div><div class="msg-body">"שלום דניאל, ההזמנה הוזמנה לבית-מלאכה 🙏"</div></div>
+              <div class="msg-card msg-in"><div class="msg-meta"><span>אתמול 19:42 · נכנסת</span></div><div class="msg-body">"מצוין תודה! מתי בערך?"</div></div>
+            </div>
+            <div class="panel-section">
+              <div class="h-row"><h4>⚑ משימות · 📝 הערות</h4></div>
+              <div class="task-card"><div class="ttl">⚑ לוודא מחיר מול SHALDAG</div><div class="meta">יעד: 19.03 · Yossi · A</div></div>
+              <div class="task-card"><div class="ttl">📝 "להחליף עדשות-מגע ביום שישי"</div><div class="meta">Ilya · 14:25</div></div>
+            </div>
+            <div class="panel-section">
+              <div class="h-row"><h4>🕓 יומן</h4></div>
+              <div class="log">
+                <div><span class="ts">14:32</span> · <span class="actor">Ilya</span> הנחת VIP 10%</div>
+                <div><span class="ts">14:30</span> · <span class="actor">Ilya</span> Optimize Multifocal</div>
+                <div><span class="ts">14:25</span> · <span class="actor">Ilya</span> Cazal 1280</div>
+                <div><span class="ts">14:22</span> · <span class="actor">Ilya</span> פתח A</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- ====================  VARIANT C  ============================= -->
+  <!-- ============================================================== -->
+  <div class="variant-panel" data-var-panel="C">
+    <h1>וריאציה C · "T-Layout · פריטים-למעלה · 5 לשוניות למטה"</h1>
+    <p class="lede">
+      פריטי-העבודה תמיד גלויים בחצי-העליון. סרגל 5 לשוניות מתחת — עדשות / הדפסה / הודעות / תמחור / מרשם-מורחב.
+      הסוג הפעיל ב-2×2 מאיר ויזואלית את הלשונית הקשורה.
+    </p>
+
+    <div class="app">
+
+      <!-- HEADER -->
+      <div class="header">
+        <div class="left">
+          <div class="avatar">לד</div>
+          <div>
+            <div class="cust-name">ליסקר דניאל · 30</div>
+            <div class="cust-meta">📱 053-788-9878 · 3 הזמנות · ₪4,250 השנה · אשקלון · ⌥ HE</div>
+          </div>
+          <span class="pill" style="background:var(--amber-mid);color:var(--amber-deep);">VIP</span>
+        </div>
+        <div class="row" style="gap:6px;"><button>⌘K · חיפוש</button><button>📞 התקשר</button><button>💬 WhatsApp</button></div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab">פרטים</div><div class="tab">בדיקת ראייה</div><div class="tab">משקפיים</div>
+        <div class="tab">עדשות מגע</div><div class="tab active">הזמנות</div><div class="tab">תקשורת</div><div class="tab">היסטוריה</div>
+        <div class="right">הזמנה <strong style="color:var(--text);font-weight:500;">9362</strong> · 18.03.26 · עובד: <strong style="color:var(--text);font-weight:500;">Ilya</strong></div>
+      </div>
+
+      <div class="cmdbar">
+        <div class="row">
+          <span class="pill pill-purple">הזמנת מכר רגילה</span>
+          <span class="pill pill-amber">מרשם 10.10.25 · Naama</span>
+          <span class="pill pill-teal">✓ "תודה" נשלחה · 14:32</span>
+        </div>
+        <div class="row" style="gap:4px;"><span class="pill pill-teal">✓ נשמר · 14:32:08</span><button class="tiny">↶</button><button class="tiny">↷</button><button class="tiny">🖨 ▾</button></div>
+      </div>
+
+      <div class="main">
+
+        <!-- RIGHT COLUMN (same as A) -->
+        <div class="right-col">
+          <div class="rail">
+            <div class="rail-h"><span>תת-הזמנות (4 / 8)</span><span style="color:var(--blue);cursor:pointer;">+ חדשה</span></div>
+            <div class="so-card active"><div class="top"><span class="ttl">A · מסגרת+עדשות</span><span class="money" style="font-size:10px;">₪1,800</span></div><div class="sub">Cazal 1280 + מולטיפוקל</div><div class="badges"><span class="pill pill-amber">⏱ ספק</span></div></div>
+            <div class="so-card"><div class="top"><span class="ttl">B · מסגרת+עדשות</span><span class="money" style="font-size:10px;color:var(--text-2);">₪900</span></div><div class="sub">Ray-Ban + Single Vision</div><div class="badges"><span class="pill pill-blue">🔧 מעבדה</span></div></div>
+            <div class="so-card"><div class="top"><span class="ttl">C · עדשות-מגע</span><span class="money" style="font-size:10px;color:var(--text-2);">₪450</span></div><div class="sub">Acuvue Oasys · 30 זוגות</div><div class="badges"><span class="pill pill-green">✓ נמסר</span></div></div>
+            <div class="so-card"><div class="top"><span class="ttl">D · אביזרים</span><span class="money" style="font-size:10px;color:var(--text-2);">₪40</span></div><div class="sub">נוזל ניקוי × 1</div><div class="badges"><span class="pill pill-green">✓ נמסר</span></div></div>
+            <div style="margin-top:auto;padding-top:8px;font-size:10px;color:var(--text-2);">סטטוס: <strong style="color:var(--text);font-weight:500;">בעבודה</strong> · 2/4</div>
+          </div>
+          <div class="totals-panel">
+            <div class="ln"><span>סכום-לפני-הנחות</span><strong class="money">₪3,190</strong></div>
+            <div class="divider"></div>
+            <div class="disc-cat-row"><span class="label">מסגרות</span><span class="save">−₪360</span></div>
+            <div class="disc-cat-row"><span class="label">עדשות</span><span class="save">−₪0</span></div>
+            <div class="divider"></div>
+            <div class="ln"><span>אחרי הנחות-קטגוריה</span><strong class="money">₪2,830</strong></div>
+            <div class="divider"></div>
+            <div class="general-discounts"><span class="pill">VIP −10%</span><span class="pill">SUMMER10</span></div>
+            <div class="divider"></div>
+            <div class="ln"><span>מע״מ 18%</span><strong>כלול</strong></div>
+            <div class="ln"><span>שולם</span><strong class="money">₪0</strong></div>
+            <div class="total-line"><span>יתרה</span><span class="balance money">₪2,547</span></div>
+            <button class="success">💳 פתח תשלום</button>
+            <div class="deposit-hint">מקדמה-מינ׳ 50% = ₪1,274</div>
+          </div>
+        </div>
+
+        <!-- CENTER · VARIANT C -->
+        <div class="center">
+
+          <!-- Action-bar (same shared) -->
+          <div class="action-bar">
+            <div class="ab-left">
+              <div class="ab-scan-row">
+                <input type="search" placeholder="🔍 סרוק ברקוד או הקלד שם / דגם / קוד..."/>
+                <button class="ab-catalog-btn">🕶 פתח קטלוג</button>
+              </div>
+              <span class="ab-help">⌥ Enter = הוסף · "פתח קטלוג" משתנה לפי הסוג הפעיל</span>
+            </div>
+            <div class="ab-divider"></div>
+            <div class="ab-right">
+              <div class="type-picker-2x2" data-vc-picker>
+                <button class="type-btn active" data-vc-type="lens"><span class="ico">🕶</span><span class="ttl">מסגרת</span><span class="sub">+ עדשות</span></button>
+                <button class="type-btn" data-vc-type="lens"><span class="ico">👁</span><span class="ttl">עדשות</span><span class="sub">למסגרת קיימת</span></button>
+                <button class="type-btn"><span class="ico">⊙</span><span class="ttl">עדשות-מגע</span><span class="sub">qty חופשי</span></button>
+                <button class="type-btn"><span class="ico">🧴</span><span class="ttl">אביזרים</span><span class="sub">עד 5</span></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top-of-fold: items always visible -->
+          <div class="vc-top">
+
+            <!-- prescription strip (compact, always visible) -->
+            <div class="rx vc-rx-mini">
+              <div>
+                <strong>מרשם 10.10.25 · Naama:</strong>
+                R: −2.00 / −0.75 · L: −3.00 / +0.50 · ADD +2.00 · PD 32/32
+                <span class="mini" style="margin-right:8px;">(מורחב בלשונית "מרשם-מורחב" ↓)</span>
+              </div>
+              <button class="ghost">ערוך ←</button>
+            </div>
+
+            <!-- sub-order title -->
+            <div class="so-title">
+              <div class="row">
+                <span class="so-badge">A</span>
+                <h3 style="margin:0;font-size:13px;font-weight:500;">מסגרת + עדשות — מולטיפוקל</h3>
+              </div>
+              <div class="row" style="gap:3px;"><button class="tiny">⚑ למנהל</button><button class="tiny" style="color:var(--red);">🗑 הסר A</button></div>
+            </div>
+
+            <!-- Items always visible -->
+            <div class="item-card">
+              <div class="item-line">
+                <span class="pill pill-purple">מסגרת</span>
+                <div><div class="name">Cazal · 1280</div><div class="name-sub">52 / 001 · שחור · SHALDAG · במלאי</div></div>
+                <span class="money">₪1,800</span>
+                <div class="actions"><button class="tiny">פרטים ▾</button><button class="danger-ghost">🗑</button></div>
+              </div>
+              <div class="item-line last">
+                <span class="pill pill-teal">עדשות R+L</span>
+                <div><div class="name">Optimize Multifocal · 1.56 · AR</div><div class="name-sub">Progressive · הזמנה לספק · סונן למרשם</div></div>
+                <span class="money">כלול</span>
+                <div class="actions"><button class="tiny">פרטים ▾</button><button class="danger-ghost">🗑</button></div>
+              </div>
+              <div class="extras">
+                <input class="note-input" value="לא להשפיע על אף-המסגרת. גובה אישונים נמדד היום."/>
+                <button class="tiny">+ הערה</button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 5-tab bar (the active 2×2 type "lens" highlights the עדשות tab) -->
+          <div class="vc-tabbar" data-vc-tabbar>
+            <button class="vc-tab active linked" data-vc-tab="lens"><span>👁 עדשות</span><span class="lbl-sub">סונכרן עם הסוג הפעיל</span></button>
+            <button class="vc-tab" data-vc-tab="print"><span>🖨 הדפסה</span><span class="lbl-sub">6 טפסים · 2 פעילים</span></button>
+            <button class="vc-tab" data-vc-tab="msg"><span>📤 הודעות</span><span class="lbl-sub">3 סטטוסים</span></button>
+            <button class="vc-tab" data-vc-tab="pricing"><span>💰 תמחור</span><span class="lbl-sub">סופי ₪1,800</span></button>
+            <button class="vc-tab" data-vc-tab="rx"><span>📋 מרשם-מורחב</span><span class="lbl-sub">10.10.25 · Naama</span></button>
+          </div>
+
+          <!-- Tab panels -->
+          <div class="vc-panel active" data-vc-panel="lens">
+            <div class="lens-pickers" style="margin:0;">
+              <button class="tiny">עדשה ראשונה (R) ←</button>
+              <button class="tiny">עדשה שניה (L) ←</button>
+              <span class="mini" style="align-self:center;">בחירה נפרדת ל-R/L נפתחת ב-popover.</span>
+            </div>
+            <div class="add-lenses-cta" style="margin-top:8px;">
+              <span>+ הוסף זוג-עדשות נוסף (R/L נפרד) לתת-הזמנה A</span>
+              <span class="mini" style="color:inherit;">בחירה נפרדת לכל עין</span>
+            </div>
+          </div>
+
+          <div class="vc-panel" data-vc-panel="print">
+            <div class="so-print" style="margin:0;border:0;padding:0;">
+              <div class="sp-h"><span>הדפסות · A</span><span class="mini">בעתיד: מילוי-AI מטפסי-חברות</span></div>
+              <div class="sp-grid">
+                <button class="sp-btn"><span>🖨 Order Inspection</span><span class="sp-tag">בקרה פנימית</span></button>
+                <button class="sp-btn"><span>🖨 Outside Framing</span><span class="sp-tag">לספק</span></button>
+                <button class="sp-btn placeholder"><span>🖨 Frame Reservation</span><span class="sp-tag">Reserved בלבד</span></button>
+                <button class="sp-btn placeholder"><span>🖨 Task Form</span><span class="sp-tag">אין משימה</span></button>
+                <button class="sp-btn placeholder"><span>🖨 Internal Repair</span><span class="sp-tag">Repair בלבד</span></button>
+                <button class="sp-btn placeholder"><span>🖨 Outside Repair</span><span class="sp-tag">Repair בלבד</span></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="vc-panel" data-vc-panel="msg">
+            <div class="so-msg" style="margin:0;border:0;padding:0;">
+              <div class="sm-h"><span>הודעות · A · 1-9362-A</span><span class="mini">ידני · בעתיד אוטומציה</span></div>
+              <div class="sm-grid">
+                <button class="sm-btn"><span>📤 "נשלח-למסגור"</span><span class="sm-tag">ידני</span></button>
+                <button class="sm-btn success"><span>📦 "ההזמנה מוכנה"</span><span class="sm-tag">ידני</span></button>
+              </div>
+              <p class="mini" style="margin:6px 0 0;">"תודה" ברמת-הזמנה · נשלחת כשתשלום ≥ ₪1 + active.</p>
+            </div>
+          </div>
+
+          <div class="vc-panel" data-vc-panel="pricing">
+            <div class="so-pricing" style="margin:0;border:0;padding:0;">
+              <div class="sp-h"><span>תמחור · A</span><span class="mini">פר-קטגוריה · A בלבד</span></div>
+              <div class="sp-row"><span class="sp-cat">מסגרת</span><span class="sp-base">₪1,800</span><input type="text"/><span class="sp-save">—</span></div>
+              <div class="sp-row"><span class="sp-cat">עדשות</span><span class="sp-base">₪0</span><input type="text" value="10%"/><span class="sp-save">−₪0</span></div>
+              <div class="sp-row"><span class="sp-cat">מגע</span><span class="sp-base">—</span><input type="text" disabled/><span class="sp-save">—</span></div>
+              <div class="sp-row"><span class="sp-cat">אביזרים</span><span class="sp-base">—</span><input type="text" disabled/><span class="sp-save">—</span></div>
+              <div class="sp-divider"></div>
+              <div class="sp-totals"><span class="lbl">לפני-הנחות</span><span class="val">₪1,800</span></div>
+              <div class="sp-totals"><span class="lbl">סך-הנחות</span><span class="val" style="color:var(--teal);">−₪0</span></div>
+              <div class="sp-totals sp-final"><span>סופי · A</span><span class="val">₪1,800</span></div>
+            </div>
+          </div>
+
+          <div class="vc-panel" data-vc-panel="rx">
+            <div class="rx" style="margin:0;">
+              <div>
+                <strong>מרשם 10.10.25 · Naama (מורחב):</strong><br/>
+                R: SPH −2.00 / CYL −0.75 / AXIS 90 · ADD +2.00 · PD-R 32 · גובה אישונים 22<br/>
+                L: SPH −3.00 / CYL +0.50 / AXIS 85 · ADD +2.00 · PD-L 32 · גובה אישונים 22<br/>
+                <span class="mini" style="color:var(--amber-deep);">תאריך-תפוגה: 10.10.26 · מקור: בדיקה אצל Naama</span>
+              </div>
+              <button class="ghost">ערוך ←</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- LEFT PANEL (same as A) -->
+        <div class="panel">
+          <div class="panel-comms">
+            <div class="panel-section">
+              <div class="h-row"><h4>📱 WhatsApp חופשי</h4><span class="mini">Green API</span></div>
+              <div class="lang-row"><button class="lang-btn active">עברית</button><button class="lang-btn">Русский</button><button class="lang-btn">English</button></div>
+              <textarea placeholder="טקסט חופשי..."></textarea>
+              <div class="row-between" style="margin-top:4px;"><span class="mini">סטטוסים בעורך</span><button class="primary tiny">שלח →</button></div>
+            </div>
+            <div class="panel-section">
+              <div class="h-row"><h4>💬 היסטוריה (12)</h4></div>
+              <div class="msg-card msg-out"><div class="msg-meta"><span class="pill pill-purple">תזכורת</span><span>14:30 · Ilya</span></div><div class="msg-body">"שלום דניאל, ההזמנה הוזמנה לבית-מלאכה 🙏"</div></div>
+              <div class="msg-card msg-in"><div class="msg-meta"><span>אתמול 19:42 · נכנסת</span></div><div class="msg-body">"מצוין תודה! מתי בערך?"</div></div>
+            </div>
+            <div class="panel-section">
+              <div class="h-row"><h4>⚑ משימות · 📝 הערות</h4></div>
+              <div class="task-card"><div class="ttl">⚑ לוודא מחיר מול SHALDAG</div><div class="meta">יעד: 19.03 · Yossi · A</div></div>
+              <div class="task-card"><div class="ttl">📝 "להחליף עדשות-מגע ביום שישי"</div><div class="meta">Ilya · 14:25</div></div>
+            </div>
+            <div class="panel-section">
+              <div class="h-row"><h4>🕓 יומן</h4></div>
+              <div class="log">
+                <div><span class="ts">14:32</span> · <span class="actor">Ilya</span> הנחת VIP 10%</div>
+                <div><span class="ts">14:30</span> · <span class="actor">Ilya</span> Optimize Multifocal</div>
+                <div><span class="ts">14:25</span> · <span class="actor">Ilya</span> Cazal 1280</div>
+                <div><span class="ts">14:22</span> · <span class="actor">Ilya</span> פתח A</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <strong>הסבר 3 הוריאציות (לפי תדריך הארכיטקט · 11.05.26):</strong>
+    <ul>
+      <li><strong>A · שני-פאנלים אופקיים</strong> — פאנל-עבודה רחב (פריטים + עדשות + CTA) ליד פאנל-מטא צר (מרשם + תמחור). מתחתם רצועה דביקה (so-print + so-msg) — תמיד נגישה, אף-פעם לא נגללת מחוץ למסך. <strong>9 האזורים גלויים בו-זמנית.</strong></li>
+      <li><strong>B · אקורדיון</strong> — 6 מקטעים מתקפלים. רק אחד פתוח. כל מקטע סגור מציג תקציר. שומר על הסדר האנכי של v6 אבל בלי תחרות-תשומת-לב.</li>
+      <li><strong>C · T-Layout</strong> — פריטים תמיד למעלה (לב ההזמנה). 5 לשוניות מתחת. הסוג הפעיל ב-2×2 מאיר את הלשונית הקשורה (אמבר underline).</li>
+    </ul>
+    <strong style="display:block;margin-top:12px;">חוקי דניאל שמשתמרים בכל-3:</strong>
+    <ul>
+      <li>2×2 type-picker מימין של action-bar.</li>
+      <li>סרגל סריקה + <strong>כפתור-קטלוג-יחיד</strong> משמאל של action-bar. הכפתור מצטרף לסוג הפעיל.</li>
+      <li>מחיצה אנכית בין שני הצדדים.</li>
+      <li>אף אחד מ-9 האזורים של v6 לא הוסר — רק סודר אחרת.</li>
+    </ul>
+  </div>
+
+</div>
+
+<script>
+  // Outer variant tab switching
+  document.querySelectorAll('.var-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.var;
+      document.querySelectorAll('.var-tab').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('.variant-panel').forEach(p => {
+        p.classList.toggle('active', p.dataset.varPanel === target);
+      });
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  });
+
+  // Variant B accordion — one open at a time
+  document.querySelectorAll('[data-vb-stack]').forEach(stack => {
+    stack.querySelectorAll('.vb-acc-head').forEach(head => {
+      head.addEventListener('click', () => {
+        const acc = head.parentElement;
+        const willOpen = !acc.classList.contains('open');
+        stack.querySelectorAll('.vb-acc').forEach(a => a.classList.remove('open'));
+        if (willOpen) acc.classList.add('open');
+      });
+    });
+  });
+
+  // Variant C tab switching
+  document.querySelectorAll('[data-vc-tabbar]').forEach(bar => {
+    const container = bar.closest('.variant-panel');
+    bar.querySelectorAll('.vc-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const key = tab.dataset.vcTab;
+        bar.querySelectorAll('.vc-tab').forEach(t => t.classList.toggle('active', t === tab));
+        container.querySelectorAll('.vc-panel').forEach(p => {
+          p.classList.toggle('active', p.dataset.vcPanel === key);
+        });
+      });
+    });
+  });
+
+  // Variant C: 2×2 type-picker linkage — active type "lens" highlights עדשות tab
+  document.querySelectorAll('[data-vc-picker]').forEach(picker => {
+    const container = picker.closest('.variant-panel');
+    picker.querySelectorAll('.type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        picker.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b === btn));
+        // Type→tab linkage: types "מסגרת" / "עדשות" both link to עדשות tab
+        const linksToLens = btn.dataset.vcType === 'lens';
+        const lensTab = container.querySelector('.vc-tab[data-vc-tab="lens"]');
+        if (lensTab) lensTab.classList.toggle('linked', linksToLens);
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

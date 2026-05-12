@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M8 — Checkout · v3 · עם ערוץ-סליקה</title>
+<style>
+  :root{
+    --bg:#FAFAF7; --surface:#FFFFFF; --soft:#F1EFE8;
+    --border:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
+    --text:#1F1F1E; --text-2:#5F5E5A; --text-3:#888780;
+    --purple:#534AB7; --purple-soft:#EEEDFE; --purple-deep:#26215C; --purple-mid:#7F77DD;
+    --teal:#0F6E56; --teal-soft:#E1F5EE; --teal-deep:#04342C; --teal-mid:#5DCAA5;
+    --amber:#BA7517; --amber-soft:#FAEEDA; --amber-deep:#412402; --amber-mid:#FAC775;
+    --blue:#185FA5; --blue-soft:#E6F1FB; --blue-deep:#0C447C;
+    --coral:#993C1D; --coral-soft:#FAECE7; --coral-deep:#4A1B0C;
+    --pink-soft:#FBEAF0; --pink-deep:#4B1528;
+    --green:#3B6D11; --green-soft:#EAF3DE; --green-deep:#173404;
+    --gray:#5F5E5A; --gray-soft:#F1EFE8;
+    --red:#A32D2D;
+    --r-md:6px; --r-lg:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;font-family:-apple-system,'Segoe UI',Rubik,sans-serif;
+    background:var(--bg);color:var(--text);font-size:12px;line-height:1.4;direction:rtl;
+  }
+  .page{max-width:1640px;margin:0 auto;padding:18px;}
+  h1{font-size:18px;font-weight:500;margin:0 0 4px;}
+  .lede{color:var(--text-2);margin:0 0 14px;font-size:12px;}
+
+  /* Top legal banner */
+  .legal-banner{
+    background:var(--amber-soft);border:1px solid var(--amber);border-radius:var(--r-lg);
+    padding:12px 16px;margin-bottom:14px;font-size:11.5px;color:var(--amber-deep);
+    display:flex;align-items:center;gap:10px;
+  }
+  .legal-banner .ico{font-size:20px;}
+  .legal-banner strong{color:var(--text);}
+
+  /* Top intro panel */
+  .intro{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px 16px;margin-bottom:16px;
+  }
+  .intro h2{font-size:13px;font-weight:500;margin:0 0 6px;}
+  .intro ul{margin:6px 0 0;padding-inline-start:18px;color:var(--text-2);}
+  .intro li{margin:3px 0;font-size:11.5px;}
+  .intro li strong{color:var(--text);}
+
+  /* Flow diagram */
+  .flow{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px 16px;margin-bottom:16px;
+  }
+  .flow h2{font-size:13px;font-weight:500;margin:0 0 12px;}
+  .steps{display:grid;grid-template-columns:1fr 24px 1fr 24px 1fr;gap:8px;align-items:stretch;}
+  .step{
+    background:var(--soft);border:1px solid var(--border);border-radius:var(--r-md);
+    padding:10px 12px;
+  }
+  .step.active{background:var(--purple-soft);border-color:var(--purple);}
+  .step .num{
+    display:inline-block;width:20px;height:20px;border-radius:50%;
+    background:var(--purple);color:#fff;text-align:center;line-height:20px;
+    font-size:11px;font-weight:600;margin-inline-end:6px;
+  }
+  .step .title{font-weight:500;font-size:12px;display:inline-block;}
+  .step .desc{color:var(--text-2);font-size:10.5px;margin-top:6px;}
+  .arrow{
+    display:flex;align-items:center;justify-content:center;
+    color:var(--text-3);font-size:18px;
+  }
+
+  /* Two columns: order context (left) + checkout block (right) */
+  .layout{
+    display:grid;grid-template-columns:1.4fr 1fr;gap:16px;
+  }
+
+  .panel{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:14px 16px;
+  }
+  .panel h3{font-size:13px;font-weight:500;margin:0 0 8px;}
+  .panel-muted{background:var(--soft);}
+
+  /* Order summary on the left */
+  .so-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:6px 0;border-bottom:1px dashed var(--border);font-size:11.5px;
+  }
+  .so-row:last-child{border-bottom:none;}
+  .so-name{color:var(--text);}
+  .so-amount{color:var(--text);font-weight:500;}
+  .so-badge{
+    display:inline-block;width:18px;height:18px;border-radius:50%;
+    text-align:center;line-height:18px;font-weight:600;font-size:10px;
+    background:var(--purple-soft);color:var(--purple-deep);margin-inline-end:6px;
+  }
+  .totals{
+    margin-top:10px;border-top:2px solid var(--border-strong);padding-top:8px;
+  }
+  .ln{display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-2);margin:3px 0;}
+  .ln strong{color:var(--text);font-weight:500;}
+  .total-line{
+    display:flex;justify-content:space-between;align-items:baseline;
+    margin-top:6px;padding-top:6px;border-top:2px solid var(--border-strong);
+    font-size:14px;
+  }
+  .balance{color:var(--coral);font-weight:600;font-size:16px;}
+  .money{font-variant-numeric:tabular-nums;}
+
+  /* Existing payments list */
+  .pay-existing{margin-top:10px;}
+  .pay-row{
+    display:grid;grid-template-columns:90px 1fr 90px 130px 24px;gap:8px;align-items:center;
+    padding:7px 8px;background:var(--gray-soft);border-radius:var(--r-md);
+    margin-bottom:4px;font-size:11.5px;
+  }
+  .pay-row .pay-method{font-weight:500;}
+  .pay-row .pay-meta{color:var(--text-2);font-size:10.5px;}
+  .pay-row .pay-amount{text-align:start;font-weight:500;}
+  .pay-row .pay-status{text-align:center;}
+  .pay-row .pay-x{text-align:center;color:var(--text-3);cursor:pointer;}
+
+  .status-pill{
+    display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:500;
+    white-space:nowrap;
+  }
+  .status-paid{background:var(--green-soft);color:var(--green-deep);}
+  .status-pending-pos{background:var(--amber-soft);color:var(--amber-deep);}
+  .status-pending-bank{background:var(--blue-soft);color:var(--blue-deep);}
+  .status-future{background:var(--blue-soft);color:var(--blue-deep);}
+  .status-bounced{background:#FBE6E6;color:var(--red);}
+
+  /* Receipt-number cell */
+  .receipt-num{
+    font-family:monospace;font-size:10.5px;color:var(--text-2);
+    background:var(--surface);padding:1px 5px;border-radius:3px;border:1px solid var(--border);
+  }
+
+  /* Checkout block on right */
+  .checkout{
+    display:flex;flex-direction:column;gap:14px;
+  }
+
+  .balance-banner{
+    background:var(--coral-soft);border:1px solid var(--coral);
+    border-radius:var(--r-lg);padding:10px 14px;
+    display:flex;justify-content:space-between;align-items:baseline;
+  }
+  .balance-banner .lbl{font-size:11px;color:var(--coral-deep);}
+  .balance-banner .val{font-size:22px;font-weight:600;color:var(--coral-deep);}
+
+  /* Method picker — 6 buttons */
+  .method-picker{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+  }
+  .method-btn{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+    padding:10px 8px;cursor:pointer;text-align:center;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    font-size:11.5px;font-weight:500;
+    transition:all .12s;
+  }
+  .method-btn:hover{border-color:var(--purple);background:var(--purple-soft);}
+  .method-btn.active{border-color:var(--purple);background:var(--purple-soft);color:var(--purple-deep);}
+  .method-btn .ico{font-size:18px;}
+  .method-btn .ttl{font-weight:500;}
+  .method-btn.disabled{opacity:.35;cursor:not-allowed;}
+  .method-btn.disabled:hover{border-color:var(--border);background:var(--surface);}
+
+  /* Method-specific form */
+  .method-form{
+    background:var(--purple-soft);border:1px solid var(--purple);border-radius:var(--r-md);
+    padding:12px;margin-top:8px;
+  }
+  .form-row{display:flex;gap:8px;align-items:center;margin-bottom:7px;}
+  .form-row label{flex:0 0 100px;font-size:11.5px;color:var(--text-2);}
+  .form-row input,.form-row select{
+    flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:var(--r-md);
+    font-size:11.5px;background:var(--surface);
+  }
+  .form-row .small-input{flex:0 0 80px;}
+  .form-row .full-amount{flex:1;font-weight:500;}
+
+  .form-hint{
+    font-size:10.5px;color:var(--purple-deep);margin-top:4px;font-style:italic;
+  }
+
+  .form-actions{
+    display:flex;gap:6px;margin-top:10px;
+  }
+  .form-actions button{flex:1;padding:8px 10px;font-size:12px;}
+  .btn-primary{
+    background:var(--purple);color:#fff;border:none;border-radius:var(--r-md);
+    cursor:pointer;font-weight:500;
+  }
+  .btn-secondary{
+    background:var(--surface);color:var(--text);border:1px solid var(--border);
+    border-radius:var(--r-md);cursor:pointer;
+  }
+
+  /* POS dispatch banner — strong */
+  .pos-banner{
+    background:var(--blue-soft);border:1px solid var(--blue);border-radius:var(--r-md);
+    padding:10px 14px;margin-top:10px;font-size:11px;color:var(--blue-deep);
+  }
+  .pos-banner .row1{display:flex;align-items:center;gap:8px;font-weight:500;}
+  .pos-banner .row1 .ico{font-size:18px;}
+  .pos-banner .row2{margin-top:6px;color:var(--blue-deep);font-size:11px;}
+  .pos-banner code{background:var(--surface);padding:1px 5px;border-radius:3px;font-family:monospace;}
+
+  /* Receipt-number entry */
+  .receipt-entry{
+    background:var(--surface);border:1px dashed var(--blue);border-radius:var(--r-md);
+    padding:10px;margin-top:10px;
+  }
+  .receipt-entry .row{display:flex;gap:6px;align-items:center;}
+  .receipt-entry input{flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:var(--r-md);font-family:monospace;}
+  .receipt-entry .lbl{font-size:11px;color:var(--text-2);font-weight:500;}
+
+  /* Section titles */
+  .sec-title{
+    font-size:12px;color:var(--text-2);text-transform:uppercase;letter-spacing:.04em;
+    margin:14px 0 8px;
+  }
+
+  .note-block{
+    background:var(--soft);border-inline-start:3px solid var(--purple);
+    padding:8px 12px;border-radius:var(--r-md);font-size:11px;color:var(--text-2);
+    margin-top:10px;
+  }
+  .note-block strong{color:var(--text);}
+
+  /* Multi-check section */
+  .multi-check{
+    background:var(--soft);border:1px dashed var(--border-strong);border-radius:var(--r-md);
+    padding:8px 10px;margin-top:8px;
+  }
+  .multi-check h4{font-size:11.5px;font-weight:500;margin:0 0 6px;}
+  .check-line{
+    display:grid;grid-template-columns:30px 90px 1fr 80px 24px;gap:6px;align-items:center;
+    padding:5px 6px;background:var(--surface);border-radius:4px;margin-bottom:3px;font-size:11px;
+  }
+  .check-line .num{
+    display:inline-block;width:20px;height:20px;border-radius:50%;
+    background:var(--blue);color:#fff;text-align:center;line-height:20px;
+    font-size:10px;font-weight:600;
+  }
+  .add-check{
+    background:var(--surface);border:1px dashed var(--blue);color:var(--blue-deep);
+    padding:5px 10px;border-radius:var(--r-md);cursor:pointer;font-size:11px;width:100%;
+    margin-top:4px;
+  }
+
+  /* Annotation legend at the bottom */
+  .annotations{
+    margin-top:24px;padding:16px 18px;
+    background:var(--soft);border-radius:var(--r-lg);
+  }
+  .annotations h2{font-size:14px;font-weight:500;margin:0 0 10px;}
+  .annotations ol{margin:0;padding-inline-start:20px;color:var(--text);font-size:11.5px;line-height:1.6;}
+  .annotations li{margin:5px 0;}
+  .annotations li strong{color:var(--purple-deep);}
+
+  .changes-from-v1{
+    background:var(--green-soft);border:1px solid var(--green);border-radius:var(--r-lg);
+    padding:14px 16px;margin-bottom:16px;
+  }
+  .changes-from-v1 h2{font-size:13px;font-weight:500;margin:0 0 8px;color:var(--green-deep);}
+  .changes-from-v1 ul{margin:0;padding-inline-start:18px;color:var(--text);font-size:11.5px;}
+  .changes-from-v1 li{margin:3px 0;}
+  .changes-from-v1 li strong{color:var(--green-deep);}
+
+</style>
+
+<link rel="stylesheet" href="../../../../../shared/css/variables.css">
+<link rel="stylesheet" href="../../../../../shared/css/layout.css">
+<link rel="stylesheet" href="../../../../../shared/css/components.css">
+<link rel="stylesheet" href="../../../../../shared/css/components-extra.css">
+<link rel="stylesheet" href="../../../../../shared/css/forms.css">
+<link rel="stylesheet" href="../../../../../shared/css/modal.css">
+<link rel="stylesheet" href="../../../../../shared/css/toast.css">
+<link rel="stylesheet" href="../../../../../shared/css/table.css">
+<link rel="stylesheet" href="./_tokens.css">
+</head>
+<body>
+
+<div class="page">
+
+  <h1>M8 — מסך-תשלום (Checkout) · v3</h1>
+  <p class="lede">v3 מוסיף את ערוץ-הסליקה — הקופאי לא רואה אותו ברגיל (default = Linet). רק אם התשלום עבר דרך ערוץ-אחר (Gama Pay) — לוחץ "🔄 ערוץ-אחר" ובוחר.</p>
+
+  <div class="changes-from-v1" style="background:transparent;border-color:var(--amber);">
+    <h2 style="color:var(--amber-deep);">שינוי מ-v2 → v3</h2>
+    <ul>
+      <li><strong>שדה "ערוץ-סליקה" נסתר.</strong> default מוגדר ב-tenant settings (פריזמה = Linet). 99% מהזמן הקופאי לא רואה את השדה.</li>
+      <li><strong>כפתור "🔄 ערוץ-אחר"</strong> מופיע ליד כל טופס-תשלום. לחיצה → dropdown של ערוצים-זמינים אצל ה-tenant. פריזמה היום: Linet + Gama Pay.</li>
+      <li><strong>למה זה חשוב.</strong> לפעמים תשלום עובר דרך ערוץ-חלופי (Gama Pay כשיש בעיה ב-Linet). הסימון נשמר ברשומת-התשלום ומופיע במסך-סוף-יום-קופה לפילוח.</li>
+    </ul>
+  </div>
+
+  <div class="changes-from-v1">
+    <h2>שינויים מ-v1</h2>
+    <ul>
+      <li><strong>הוסר ה-toggle "פדיון/תשלומים-רגילים".</strong> זאת הגדרת-tenant מול חברת-האשראי, לא בחירת-קופאי.</li>
+      <li><strong>כל סוג-תשלום עובר בקופה לפי חוק-מע"מ</strong> (לא רק אשראי). הכוונה: מזומן/שיק-יומי/העברה לא נרשמים-כשולמים-ב-Optic Up עד שיש מספר-קבלה מהקופה.</li>
+      <li><strong>שיק-דחוי = החריג היחיד.</strong> נרשם ב-Optic Up בלי-קופה. ביום-הפרעון → באנר-התראה → לחיצה → שולח לקופה → סוגר.</li>
+      <li><strong>תמיכה ב-N צ'קים על אותה הזמנה</strong> (5 צ'קים ל-5 חודשים = 5 שורות).</li>
+      <li><strong>שדה "שם על חשבונית"</strong> — אופציונלי. אם ממולא = נשמר בהיסטוריית-הלקוח.</li>
+      <li><strong>flow-diagram</strong> בראש המסך מבהיר את 3 השלבים.</li>
+    </ul>
+  </div>
+
+  <div class="legal-banner">
+    <span class="ico">⚖️</span>
+    <span><strong>תאימות חוקית:</strong> כל תשלום (מזומן/שיק/אשראי/העברה/ביט) חייב לפי חוק-מע"מ לעבור בקופת-לינט המוסמכת שמנפיקה את הקבלה. Optic Up רושם את מספר-הקבלה — לא מנפיק קבלה לבד. החריג היחיד = שיק-דחוי, שעובר בקופה רק ביום-הפרעון.</span>
+  </div>
+
+  <div class="flow">
+    <h2>ה-flow של תשלום במסך הזה</h2>
+    <div class="steps">
+      <div class="step active">
+        <div><span class="num">1</span><span class="title">תכנון ב-Optic Up</span></div>
+        <div class="desc">קופאי בוחר סוג-תשלום, מקליד סכום + פרטים. לוחץ "הכן לקופה". התשלום נכנס לרשימה בסטטוס "ממתין-לקופה".</div>
+      </div>
+      <div class="arrow">←</div>
+      <div class="step">
+        <div><span class="num">2</span><span class="title">ביצוע בקופת-לינט</span></div>
+        <div class="desc">קופאי עובר ל-Linet, מקליד את הפרטים (שם, סכום, מס'-תשלומים, וכו'). הקופה מסלקת ומדפיסה קבלה.</div>
+      </div>
+      <div class="arrow">←</div>
+      <div class="step">
+        <div><span class="num">3</span><span class="title">סגירה ב-Optic Up</span></div>
+        <div class="desc">קופאי חוזר, מקליד מספר-הקבלה שחזר מהקופה. הסטטוס משתנה ל-"שולם". יתרת-הזמנה יורדת.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="intro">
+    <h2>הקשר־תפעולי קצר</h2>
+    <ul>
+      <li><strong>6 סוגי-תשלום פעילים אצל פריזמה</strong> (אשראי / מזומן / העברה / שיק / ביט / ירד-ממשכורת). כל tenant סימן ב-settings אילו פעילים אצלו.</li>
+      <li><strong>אשראי</strong> = סכום + מס'-תשלומים. אופן-הקבלה (פדיון/תשלומים-רגילים) = הגדרת-tenant ברקע, לא רואה הקופאי.</li>
+      <li><strong>שיק-דחוי</strong> נרשם בלי-קופה ביום-המכירה. תומך ב-N צ'קים. ביום-הפרעון של כל-אחד — באנר-התראה.</li>
+      <li><strong>ירד-ממשכורת</strong> מטופל במסך-נפרד לאחראי-חשבונות. לא מופיע ב-Checkout.</li>
+      <li><strong>בעלות על משימת-צ'ק</strong> — ארכיטקטונית מ-day-1 (ניתן להגביל לתפקיד). ב-day-1 התראות לכולם.</li>
+    </ul>
+  </div>
+
+  <div class="layout">
+
+    <!-- LEFT — Order summary context -->
+    <div class="panel">
+      <h3>הקשר ההזמנה (מ-M7)</h3>
+
+      <div class="so-row"><span class="so-name"><span class="so-badge">A</span> מסגרת + עדשות מולטיפוקל</span><span class="so-amount money">₪2,180</span></div>
+      <div class="so-row"><span class="so-name"><span class="so-badge">B</span> עדשות-מגע (חודשיות)</span><span class="so-amount money">₪650</span></div>
+
+      <div class="totals">
+        <div class="ln"><span>סה"כ אחרי הנחות-קטגוריה</span><strong class="money">₪2,830</strong></div>
+        <div class="ln"><span>הנחות-כלליות (VIP −10%)</span><strong class="money">−₪283</strong></div>
+        <div class="ln"><span>מע"מ 18%</span><strong>כלול</strong></div>
+        <div class="ln"><span>שולם עד עכשיו</span><strong class="money">₪2,000</strong></div>
+        <div class="total-line">
+          <span>יתרה לתשלום</span>
+          <span class="balance money">₪547</span>
+        </div>
+      </div>
+
+      <!-- Demo: 4 payments already in -->
+      <div class="sec-title">תשלומים על ההזמנה הזאת (4)</div>
+      <div class="pay-existing">
+        <div class="pay-row">
+          <span class="pay-method">💵 מזומן</span>
+          <span class="pay-meta">14:32 · קופאית: שירה</span>
+          <span class="pay-amount money">₪500</span>
+          <span class="pay-status"><span class="status-pill status-paid">שולם</span> <span class="receipt-num">#7723</span></span>
+          <span class="pay-x" title="הסר">✕</span>
+        </div>
+        <div class="pay-row">
+          <span class="pay-method">💳 אשראי 3</span>
+          <span class="pay-meta">14:34 · ערוץ: <strong>Gama Pay</strong> · auth=1234567</span>
+          <span class="pay-amount money">₪1,500</span>
+          <span class="pay-status"><span class="status-pill status-paid">שולם</span> <span class="receipt-num">#7724</span></span>
+          <span class="pay-x" title="הסר">✕</span>
+        </div>
+        <div class="pay-row">
+          <span class="pay-method">📄 שיק 1/3</span>
+          <span class="pay-meta">פרעון 1.7 · בנק 12 / סניף 415 · #0987654</span>
+          <span class="pay-amount money">₪200</span>
+          <span class="pay-status"><span class="status-pill status-future">ממתין-לפרעון</span></span>
+          <span class="pay-x" title="הסר">✕</span>
+        </div>
+        <div class="pay-row">
+          <span class="pay-method">📄 שיק 2/3</span>
+          <span class="pay-meta">פרעון 1.8 · בנק 12 / סניף 415 · #0987655</span>
+          <span class="pay-amount money">₪200</span>
+          <span class="pay-status"><span class="status-pill status-future">ממתין-לפרעון</span></span>
+          <span class="pay-x" title="הסר">✕</span>
+        </div>
+        <div class="pay-row">
+          <span class="pay-method">📄 שיק 3/3</span>
+          <span class="pay-meta">פרעון 1.9 · בנק 12 / סניף 415 · #0987656</span>
+          <span class="pay-amount money">₪147</span>
+          <span class="pay-status"><span class="status-pill status-future">ממתין-לפרעון</span></span>
+          <span class="pay-x" title="הסר">✕</span>
+        </div>
+      </div>
+
+      <div class="note-block" style="border-color:var(--blue);border-inline-start-color:var(--blue);">
+        <strong>💡 שלושת השיקים הם 3 שורות נפרדות.</strong> ביום-הפרעון של כל אחד, באנר-התראה יקפוץ במסך-הראשי של Optic Up. לחיצה על הבאנר → שולח את הצ'ק לקופה → הסטטוס משתנה ל-"שולם" + מספר-הקבלה נכנס.
+      </div>
+    </div><!-- /left -->
+
+    <!-- RIGHT — Checkout block -->
+    <div class="panel">
+      <h3>הוספת תשלום חדש</h3>
+
+      <div class="balance-banner">
+        <span class="lbl">יתרה לתשלום</span>
+        <span class="val money">₪547</span>
+      </div>
+
+      <!-- Method picker — 6 active per tenant settings -->
+      <div class="sec-title">בחר סוג תשלום</div>
+      <div class="method-picker">
+        <button class="method-btn">
+          <span class="ico">💳</span><span class="ttl">אשראי</span>
+        </button>
+        <button class="method-btn">
+          <span class="ico">💵</span><span class="ttl">מזומן</span>
+        </button>
+        <button class="method-btn">
+          <span class="ico">🏦</span><span class="ttl">העברה</span>
+        </button>
+        <button class="method-btn active">
+          <span class="ico">📄</span><span class="ttl">שיק</span>
+        </button>
+        <button class="method-btn">
+          <span class="ico">📱</span><span class="ttl">ביט</span>
+        </button>
+        <button class="method-btn">
+          <span class="ico">👤</span><span class="ttl">ירד-מ-משכורת</span>
+        </button>
+      </div>
+      <div class="form-hint">⌥ פריזמה הפעילה את כל 6 הסוגים. "ירד-ממשכורת" = הסדר-פנימי לעובדים, ייסגר עם סטטוס "ממתין-לחיוב-משכורת" עד שאחראי-החשבונות יסמן "✓ נוכה" בדוח-החודשי של M11.</div>
+
+      <!-- Form for selected method (Check — multi-check support) -->
+      <div class="method-form">
+        <div class="form-row">
+          <label>סכום-כולל</label>
+          <input type="text" class="full-amount money" value="₪547" placeholder="₪0"/>
+          <button class="btn-secondary" style="flex:0 0 auto;font-size:10px;padding:5px 8px;">↻ כל היתרה</button>
+        </div>
+
+        <div class="form-row">
+          <label>פיצול לכמה צ'קים</label>
+          <select class="small-input">
+            <option>1</option>
+            <option>2</option>
+            <option selected>3</option>
+            <option>4</option>
+            <option>5</option>
+            <option>6</option>
+            <option>10</option>
+            <option>12</option>
+          </select>
+          <span style="font-size:11px;color:var(--text-2);">3 × ₪182.33</span>
+        </div>
+
+        <div class="multi-check">
+          <h4>פרטי 3 הצ'קים</h4>
+          <div class="check-line">
+            <span class="num">1</span>
+            <input type="date" value="2026-07-01" style="font-size:10.5px;"/>
+            <input type="text" placeholder="מספר-שיק" value="0987654" style="font-size:10.5px;"/>
+            <input type="text" placeholder="₪" value="₪200" style="font-size:10.5px;"/>
+            <span class="pay-x">✕</span>
+          </div>
+          <div class="check-line">
+            <span class="num">2</span>
+            <input type="date" value="2026-08-01" style="font-size:10.5px;"/>
+            <input type="text" placeholder="מספר-שיק" value="0987655" style="font-size:10.5px;"/>
+            <input type="text" placeholder="₪" value="₪200" style="font-size:10.5px;"/>
+            <span class="pay-x">✕</span>
+          </div>
+          <div class="check-line">
+            <span class="num">3</span>
+            <input type="date" value="2026-09-01" style="font-size:10.5px;"/>
+            <input type="text" placeholder="מספר-שיק" value="0987656" style="font-size:10.5px;"/>
+            <input type="text" placeholder="₪" value="₪147" style="font-size:10.5px;"/>
+            <span class="pay-x">✕</span>
+          </div>
+          <button class="add-check">+ הוסף צ'ק נוסף</button>
+        </div>
+
+        <div class="form-row">
+          <label>בנק / סניף</label>
+          <input value="12 / 415" class="small-input"/>
+          <input placeholder="חשבון" value="123456" class="small-input"/>
+        </div>
+
+        <div class="form-row">
+          <label>שם על חשבונית</label>
+          <input type="text" placeholder="ריק = שם הלקוח (Naama Cohen)"/>
+        </div>
+        <div class="form-hint">⌥ אופציונלי. אם הלקוח רוצה שהחשבונית תצא ע"ש חברה — ממלאים כאן. נשמר בהיסטוריית-הלקוח.</div>
+
+        <div style="display:flex;justify-content:flex-start;align-items:center;gap:8px;margin:6px 0 10px;padding:6px 10px;background:var(--gray-soft);border-radius:var(--r-md);font-size:11px;">
+          <span style="color:var(--text-2);">ערוץ-סליקה:</span>
+          <strong style="color:var(--text);">Linet</strong>
+          <span style="color:var(--text-3);font-style:italic;">(ברירת-מחדל)</span>
+          <button class="btn-secondary" style="margin-inline-start:auto;font-size:10.5px;padding:3px 8px;">🔄 ערוץ-אחר</button>
+        </div>
+        <div class="form-hint">⌥ ערוץ-סליקה זמין בכל סוגי-התשלום. ביום-הפרעון של כל צ'ק תוכל גם לבחור ערוץ-אחר.</div>
+
+        <div class="form-actions">
+          <button class="btn-primary">✓ הוסף 3 צ'קים</button>
+          <button class="btn-secondary">ביטול</button>
+        </div>
+
+        <div class="note-block" style="margin-top:10px;border-color:var(--blue);border-inline-start-color:var(--blue);">
+          <strong>📅 שיק-דחוי = חריג חוקי.</strong> נרשם ישירות ב-Optic Up בלי לעבור בקופה ביום-המכירה. ביום-הפרעון של כל צ'ק — באנר-התראה במסך-הראשי. לחיצה על הבאנר תפעיל את ה-flow לקופה.
+        </div>
+      </div>
+
+      <!-- Section: alternative method forms -->
+      <div class="sec-title">איך נראים שאר הטפסים (מקופלים)</div>
+
+      <details class="panel-muted" style="padding:8px 12px;border-radius:var(--r-md);margin-bottom:6px;" open>
+        <summary style="cursor:pointer;font-weight:500;">💳 אשראי (הטופס המורכב ביותר)</summary>
+        <div style="margin-top:8px;">
+          <div class="form-row"><label>סכום</label><input value="₪1,500"/></div>
+          <div class="form-row">
+            <label>מס' תשלומים</label>
+            <select class="small-input"><option>1</option><option selected>3</option><option>6</option><option>12</option><option>24</option></select>
+            <span style="font-size:11px;color:var(--text-2);">× ₪500</span>
+          </div>
+          <div class="form-row"><label>שם על חשבונית</label><input placeholder="ריק = שם הלקוח"/></div>
+
+          <!-- Channel — hidden default, expand on click -->
+          <div style="display:flex;justify-content:flex-start;align-items:center;gap:8px;margin:6px 0 10px;padding:6px 10px;background:var(--gray-soft);border-radius:var(--r-md);font-size:11px;">
+            <span style="color:var(--text-2);">ערוץ-סליקה:</span>
+            <strong style="color:var(--text);">Linet</strong>
+            <span style="color:var(--text-3);font-style:italic;">(ברירת-מחדל)</span>
+            <button class="btn-secondary" style="margin-inline-start:auto;font-size:10.5px;padding:3px 8px;">🔄 ערוץ-אחר</button>
+          </div>
+
+          <div class="pos-banner">
+            <div class="row1"><span class="ico">🖥</span> אחרי "הכן לקופה" → עבור ל-Linet והקלד:</div>
+            <div class="row2"><code>₪1,500 · אשראי · 3 תשלומים</code> · אופן-קבלה: פדיון (לפי tenant settings)</div>
+          </div>
+
+          <div class="receipt-entry">
+            <div class="lbl">אחרי שהקופה החזירה קבלה — הקלד את המספר:</div>
+            <div class="row" style="margin-top:6px;">
+              <input placeholder="מספר קבלה מ-Linet"/>
+              <button class="btn-primary" style="flex:0 0 auto;padding:7px 14px;">✓ סגור תשלום</button>
+            </div>
+          </div>
+          <div class="form-hint">⌥ אופן-הקבלה (פדיון/תשלומים-רגילים) הוא הגדרת-tenant מול חברת-האשראי. הקופאי לא בוחר.</div>
+        </div>
+      </details>
+
+      <details class="panel-muted" style="padding:8px 12px;border-radius:var(--r-md);margin-bottom:6px;">
+        <summary style="cursor:pointer;font-weight:500;">💵 מזומן</summary>
+        <div style="margin-top:8px;">
+          <div class="form-row"><label>סכום</label><input value="₪500"/></div>
+          <div class="form-row"><label>שם על חשבונית</label><input placeholder="ריק = שם הלקוח"/></div>
+
+          <div style="display:flex;justify-content:flex-start;align-items:center;gap:8px;margin:6px 0 10px;padding:6px 10px;background:var(--gray-soft);border-radius:var(--r-md);font-size:11px;">
+            <span style="color:var(--text-2);">ערוץ-סליקה:</span>
+            <strong style="color:var(--text);">Linet</strong>
+            <span style="color:var(--text-3);font-style:italic;">(ברירת-מחדל)</span>
+            <button class="btn-secondary" style="margin-inline-start:auto;font-size:10.5px;padding:3px 8px;">🔄 ערוץ-אחר</button>
+          </div>
+
+          <div class="pos-banner">
+            <div class="row1"><span class="ico">🖥</span> חובה לעבור ב-Linet — Linet מנפיק קבלה למזומן.</div>
+            <div class="row2">בקופה: <code>₪500 · מזומן</code></div>
+          </div>
+          <div class="receipt-entry">
+            <div class="lbl">מספר-קבלה מ-Linet:</div>
+            <div class="row" style="margin-top:6px;"><input placeholder="#____"/><button class="btn-primary" style="flex:0 0 auto;padding:7px 14px;">✓ סגור</button></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="panel-muted" style="padding:8px 12px;border-radius:var(--r-md);margin-bottom:6px;">
+        <summary style="cursor:pointer;font-weight:500;">📱 ביט</summary>
+        <div style="margin-top:8px;">
+          <div class="form-row"><label>סכום</label><input value="₪200"/></div>
+          <div class="form-row"><label>טלפון-לאסמכתא</label><input value="050-1234567"/></div>
+          <div class="form-row"><label>שם על חשבונית</label><input placeholder="ריק = שם הלקוח"/></div>
+
+          <div style="display:flex;justify-content:flex-start;align-items:center;gap:8px;margin:6px 0 10px;padding:6px 10px;background:var(--gray-soft);border-radius:var(--r-md);font-size:11px;">
+            <span style="color:var(--text-2);">ערוץ-סליקה:</span>
+            <strong style="color:var(--text);">Linet</strong>
+            <span style="color:var(--text-3);font-style:italic;">(ברירת-מחדל)</span>
+            <button class="btn-secondary" style="margin-inline-start:auto;font-size:10.5px;padding:3px 8px;">🔄 ערוץ-אחר</button>
+          </div>
+
+          <div class="form-hint">⌥ Linet לא תומך-ב-Bit. בקופה: ₪200 כסוג "מזומן" + הערה. בעתיד עם CardCom/Tranzila — Bit יוכל לעבור ישירות דרך הקופה.</div>
+        </div>
+      </details>
+
+      <details class="panel-muted" style="padding:8px 12px;border-radius:var(--r-md);">
+        <summary style="cursor:pointer;font-weight:500;">🏦 העברה בנקאית</summary>
+        <div style="margin-top:8px;">
+          <div class="form-row"><label>סכום</label><input value="₪1,000"/></div>
+          <div class="form-row"><label>מספר-אסמכתא</label><input value="REF-887766"/></div>
+          <div class="form-row"><label>שם על חשבונית</label><input placeholder="ריק = שם הלקוח"/></div>
+
+          <div style="display:flex;justify-content:flex-start;align-items:center;gap:8px;margin:6px 0 10px;padding:6px 10px;background:var(--gray-soft);border-radius:var(--r-md);font-size:11px;">
+            <span style="color:var(--text-2);">ערוץ-סליקה:</span>
+            <strong style="color:var(--text);">Linet</strong>
+            <span style="color:var(--text-3);font-style:italic;">(ברירת-מחדל)</span>
+            <button class="btn-secondary" style="margin-inline-start:auto;font-size:10.5px;padding:3px 8px;">🔄 ערוץ-אחר</button>
+          </div>
+
+          <div class="pos-banner">
+            <div class="row1"><span class="ico">🖥</span> חובה לעבור ב-Linet אחרי שאחראי-חשבונות וידא בבנק.</div>
+          </div>
+          <div class="form-hint">⌥ זרימה: כסף נכנס לבנק → אחראי-חשבונות מאשר → רישום ב-Linet → קבלה → סגירה ב-Optic Up.</div>
+        </div>
+      </details>
+
+      <div class="note-block">
+        <strong>הערה — "תודה" של M7:</strong> נשלח אוטומטית ברגע שההזמנה עוברת ל-active עם תשלום ≥ ₪1 (חוזה M7-M12). תשלומים נוספים אחרי-זה לא מפעילים שוב.
+      </div>
+    </div><!-- /right -->
+  </div><!-- /layout -->
+
+  <div class="annotations">
+    <h2>החלטות שמופיעות במסך הזה</h2>
+    <ol>
+      <li><strong>ה-flow המלא = 3 צעדים.</strong> תכנון ב-Optic Up → ביצוע ב-Linet → רישום מספרי-קבלה. הצעד-2 הוא איפה החוק נסגר. ה-flow-diagram בראש המסך הוא מנעמן-ויזואלי, יישאר תמיד גלוי.</li>
+      <li><strong>אשראי, מזומן, ביט, העברה — כל אחד עובר ב-Linet.</strong> המסך משדר באנר-כחול שמראה לקופאי בדיוק מה להקליד שם. אחרי שהקבלה חזרה — הקופאי מקליד מספר-קבלה ב-Optic Up וזה סוגר את התשלום.</li>
+      <li><strong>צ'ק-דחוי = החריג היחיד.</strong> נרשם ב-Optic Up בלי-קופה ביום-המכירה. ביום-הפרעון של כל אחד מהצ'קים — באנר-התראה במסך-הראשי של Optic Up. לחיצה על הבאנר → Optic Up שולח את פרטי-הצ'ק ל-Linet → הקופה מנפיקה קבלה → Optic Up רושם ומסגר.</li>
+      <li><strong>תמיכה ב-N צ'קים על אותה הזמנה.</strong> הקופאי בוחר "פיצול לכמה צ'קים" → 3-12 → טופס דינמי לכל צ'ק (תאריך + מספר + סכום). שלושת הצ'קים = שלוש שורות נפרדות ב-Existing Payments.</li>
+      <li><strong>שדה "שם על חשבונית"</strong> בכל סוג-תשלום. אופציונלי. אם ממולא = נשמר בהיסטוריית-הלקוח כ"חשבונית הוצאה ע"ש [שם]" + מקושר לעסקה הזאת.</li>
+      <li><strong>ירד-ממשכורת = סוג-תשלום פעיל ב-Checkout (לא disabled).</strong> כשעובד קונה משקפיים, הקופאי בוחר "ירד-ממשכורת" כסוג-תשלום, ההזמנה נסגרת בסטטוס "ממתין-לחיוב-משכורת". זה לא הולך לקופה החיצונית — זה הסדר-פנימי-של-העסק. אחראי-החשבונות פעם-בחודש פותח דוח-של-M11 שמסכם את כל-העובדים-החייבים, מסמן "✓ נוכה" אחרי שהעביר לתוכנת-השכר, וזה סוגר את הסטטוסים. אין צורך במסך-נפרד ב-M8.</li>
+      <li><strong>אופן-קבלה (פדיון/תשלומים-רגילים)</strong> = הגדרת-tenant ברקע, לא בחירת-קופאי. הבאנר-הכחול לאשראי מצין מה להקליד ב-Linet בהתאם להגדרה.</li>
+      <li><strong>בעלות-על-משימת-צ'ק — ארכיטקטונית.</strong> ב-day-1 כולם רואים התראות. מתי שתחליט שאחראי-חשבונות הוא היחיד שמטפל — שינוי ב-tenant settings, אפס שיפוץ-קוד.</li>
+    </ol>
+
+    <h2 style="margin-top:18px;">מה לא בסקיצה הזאת ויידון בנפרד</h2>
+    <ol>
+      <li><strong>מסך-הראשי-של-Optic-Up + באנר-התראה לצ'ק-לפרעון.</strong> נסקרת בנפרד אחרי שיוסכם המבנה.</li>
+      <li><strong>מסך-Pipeline-של-צ'קים</strong> (כל הצ'קים-העתידיים מסודרים לפי תאריך-פרעון, ניתן לסנן). זה אחד מ-5 המסכים הסופיים של M8.</li>
+      <li><strong>מסך-ירד-ממשכורת</strong> לאחראי-חשבונות.</li>
+      <li><strong>החזרים (refunds)</strong> — flow נפרד. כפתור "החזר" על תשלום קיים → "החזר-מלא" / "החזר-חלקי" → שולח ל-Linet → קבלה-של-החזר.</li>
+      <li><strong>מסך-עסקאות-Pending</strong> (settlement T+1/T+3 של Linet). חלק מ-Daily Close.</li>
+      <li><strong>מסך-הגדרות-ספק</strong> (Provider Configuration) — בחירת קופה, credentials, capability flags. מסך-Admin.</li>
+    </ol>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,6 +1,6 @@
 # M8 Payments — Reverse-Sync Capability Research
 
-**Source:** general-purpose subagent, dispatched 2026-05-08 by Main Strategic.
+**Source:** general-purpose subagent, dispatched 2026-05-08 by Architect.
 **Question answered:** Does the POS push transaction-split detail back to the ERP via webhook / batch / polling? Or is manual re-entry the only path?
 **Verdict:** Manual re-entry / "Optic Up dictates, POS executes" is the only architecturally-safe path across the 6 dominant Israeli POS systems.
 **Use:** Drives the Checkout screen design — split is entered in Optic Up FIRST, totals go to the hardware POS.
@@ -50,4 +50,4 @@
 
 ---
 
-*Saved 2026-05-08 by Main Strategic. Source: subagent dispatch.*
+*Saved 2026-05-08 by Architect. Source: subagent dispatch.*

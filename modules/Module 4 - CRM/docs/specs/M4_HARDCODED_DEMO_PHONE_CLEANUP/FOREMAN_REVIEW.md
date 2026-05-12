@@ -145,7 +145,7 @@ One drift: CHANGELOG. Per Hard-Fail Rule #1, verdict capped at 🟡. Follow-up l
 
 ## 10. Followups Opened
 
-- **TECH_DEBT entry / next strategic-chat session sweep:** `modules/Module 4 - CRM/docs/CHANGELOG.md` needs a 2026-05-07 entry for this SPEC's commit `cdbba26 chore(crm): replace decorative demo phone with placeholder + LEARNINGS L-PROJECT-001`. Single-line bump, no separate SPEC needed; bundle with other accumulated CHANGELOG drifts in the next opticup-main-strategic master-doc sweep.
+- **TECH_DEBT entry / next strategic-chat session sweep:** `modules/Module 4 - CRM/docs/CHANGELOG.md` needs a 2026-05-07 entry for this SPEC's commit `cdbba26 chore(crm): replace decorative demo phone with placeholder + LEARNINGS L-PROJECT-001`. Single-line bump, no separate SPEC needed; bundle with other accumulated CHANGELOG drifts in the next opticup-architect master-doc sweep.
 - **Author-skill Proposal 1 (criterion vs §5 template literal):** 1st occurrence — log and watch. If 2 more SPECs trip the same class, apply the change immediately per the Self-Improvement Mandate's 3-occurrence rule.
 - **Executor-skill Proposals 1 + 2:** echo the executor's own proposals verbatim from their EXECUTION_REPORT.md §8. Apply in next strategic-chat skill-improvement pass.
 - (No NEW SPECs opened from this review.)

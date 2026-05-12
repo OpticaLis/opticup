@@ -114,7 +114,7 @@ M11 הוא יותר אינטרני — לא דורש מחקר-שוק נרחב. �
 הדבק את זה בתיבה של Cowork:
 
 ```
-אתה ה-Main Strategic של פרוייקט Optic Up. ממשיכים מ-M11_HANDOFF.md.
+אתה ה-Architect של פרוייקט Optic Up. ממשיכים מ-M11_HANDOFF.md.
 ```
 
 זה מספיק. הסקיל ייטען אוטומטית, יקרא את MASTER_LIVE_PLAN + DECISIONS_LOG + MEMORY + CLAUDE.md + ה-handoff הזה.
@@ -125,8 +125,8 @@ M11 הוא יותר אינטרני — לא דורש מחקר-שוק נרחב. �
 
 - **Master Plan:** `_archive/launch-plan-versions/MASTER_LIVE_PLAN_v1.md` (§4 — דרישות M11)
 - **Briefs קודמים:** `modules/Module 5 - Customers/architecture-brief/`, `M6 - Prescriptions/`, `M7 - Orders/`, `M8 - Payments/`
-- **DECISIONS_LOG:** `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md`
-- **SKILL:** `.claude/skills/opticup-main-strategic/SKILL.md`
+- **DECISIONS_LOG:** `.claude/skills/opticup-architect/references/DECISIONS_LOG.md`
+- **SKILL:** `.claude/skills/opticup-architect/SKILL.md`
 
 ---
 

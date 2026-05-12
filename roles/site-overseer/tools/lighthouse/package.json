@@ -1,0 +1,19 @@
+{
+  "name": "opticup-lighthouse-tools",
+  "version": "0.1.0",
+  "description": "Lighthouse + axe-core nightly/weekly monitoring for Optic Up storefront. Local-install only — see roles/site-overseer/tools/lighthouse/README.md.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "tier1": "node scripts/run-tier1.mjs",
+    "full": "node scripts/run-full.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@axe-core/cli": "^4.10.0",
+    "chrome-launcher": "^1.1.2",
+    "lighthouse": "^12.2.1"
+  }
+}

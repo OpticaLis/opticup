@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>חובות ספקים — Language B (Stripe)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Heebo:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="./_tokens.css">
+  <style>
+    .chart-card {
+      padding: var(--space-6);
+      border-radius: var(--radius-md);
+      background: var(--bg-surface-alt);
+      box-shadow: var(--shadow-sm);
+    }
+    .chart-bar { display: flex; gap: 4px; align-items: flex-end; height: 120px; margin-top: var(--space-4); }
+    .chart-bar .seg {
+      flex: 1; border-radius: 6px 6px 0 0;
+      background: var(--grad-violet);
+      position: relative;
+    }
+    .chart-bar .seg.s2 { background: linear-gradient(180deg, var(--info) 0%, var(--info-soft) 100%); }
+    .chart-bar .seg.s3 { background: linear-gradient(180deg, var(--warning) 0%, var(--warning-soft) 100%); }
+    .chart-bar .seg.s4 { background: linear-gradient(180deg, var(--danger) 0%, var(--danger-soft) 100%); }
+    .chart-legend { display: flex; gap: var(--space-4); margin-top: var(--space-4); font-size: var(--text-xs); color: var(--text-tertiary); }
+    .chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .chart-legend .swatch { width: 12px; height: 12px; border-radius: 3px; }
+    .age-bar {
+      display: flex; height: 8px; border-radius: 999px;
+      overflow: hidden; background: var(--bg-page); width: 140px;
+    }
+    .age-bar > span { display: block; height: 100%; }
+    .age-0 { background: var(--success); }
+    .age-30 { background: var(--info); }
+    .age-60 { background: var(--warning); }
+    .age-90 { background: var(--danger); }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-glyph">O</span>
+      <span>Optic Up <em style="font-weight:400;color:var(--text-tertiary);font-style:normal;">Finance</em></span>
+    </div>
+    <nav class="topnav">
+      <a href="#">סקירה</a>
+      <a href="#">ספקים</a>
+      <a href="#">הזמנות רכש</a>
+      <a href="#" class="active">חובות</a>
+      <a href="#">תזרים</a>
+    </nav>
+    <div class="account">
+      <span>אופטיקה פריזמה</span>
+      <span class="avatar">ד</span>
+    </div>
+  </header>
+
+  <main class="shell">
+
+    <section class="hero">
+      <div>
+        <h1>חובות ספקים</h1>
+        <p>8 ספקים פעילים · ₪ 287,420 חוב פתוח · 3 ספקים בפיגור. עדכון אחרון: היום, 09:42.</p>
+      </div>
+      <div style="display:flex;gap:var(--space-3);">
+        <button class="btn">ייצוא Excel</button>
+        <button class="btn btn-primary">+ רשום תשלום</button>
+      </div>
+    </section>
+
+    <section style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);">
+      <div class="metrics" style="grid-template-columns:repeat(2,1fr);">
+        <div class="metric">
+          <div class="metric-accent"></div>
+          <div class="metric-label">סך חוב פתוח</div>
+          <div class="metric-value num">₪ 287,420</div>
+          <div class="metric-trend down">+₪14,200 השבוע</div>
+        </div>
+        <div class="metric">
+          <div class="metric-accent"></div>
+          <div class="metric-label">בפיגור</div>
+          <div class="metric-value num">₪ 42,180</div>
+          <div class="metric-trend down">3 ספקים</div>
+        </div>
+        <div class="metric">
+          <div class="metric-accent"></div>
+          <div class="metric-label">לתשלום השבוע</div>
+          <div class="metric-value num">₪ 58,900</div>
+          <div class="metric-trend">5 חשבוניות</div>
+        </div>
+        <div class="metric">
+          <div class="metric-accent"></div>
+          <div class="metric-label">תשלומים החודש</div>
+          <div class="metric-value num">₪ 192,600</div>
+          <div class="metric-trend">+12% מ-אפריל</div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h2 class="card-title" style="font-size:var(--text-lg);">הזדקנות חוב</h2>
+        <div class="card-sub">חלוקת ₪287,420 לפי גיל החוב.</div>
+        <div class="chart-bar">
+          <div class="seg" style="height:75%;"></div>
+          <div class="seg s2" style="height:48%;"></div>
+          <div class="seg s3" style="height:30%;"></div>
+          <div class="seg s4" style="height:18%;"></div>
+        </div>
+        <div class="chart-legend">
+          <span><span class="swatch" style="background:var(--accent);"></span> 0-30: ₪149,200</span>
+          <span><span class="swatch" style="background:var(--info);"></span> 31-60: ₪95,040</span>
+          <span><span class="swatch" style="background:var(--warning);"></span> 61-90: ₪22,860</span>
+          <span><span class="swatch" style="background:var(--danger);"></span> 90+: ₪20,320</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">חוב לפי ספק</h2>
+          <div class="card-sub">מיון: סטטוס תשלום, אז סכום חוב.</div>
+        </div>
+        <input class="input" placeholder="חיפוש..." style="width:240px;">
+      </div>
+      <table class="tbl">
+        <thead>
+          <tr><th>ספק</th><th>מטבע</th><th>חוב</th><th>הזדקנות</th><th>הזמנה אחרונה</th><th>סטטוס</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong style="font-family:var(--font-serif);">Luxottica</strong><div style="color:var(--text-tertiary);font-size:var(--text-xs);">איטליה · קוד LUX</div></td>
+            <td>EUR</td>
+            <td class="num">€ 24,820</td>
+            <td><div class="age-bar"><span class="age-0" style="flex:60;"></span><span class="age-30" style="flex:30;"></span><span class="age-60" style="flex:10;"></span></div></td>
+            <td style="color:var(--text-tertiary);">5.5</td>
+            <td><span class="pill pill-success"><span class="dot"></span>בזמן</span></td>
+          </tr>
+          <tr>
+            <td><strong style="font-family:var(--font-serif);">Safilo</strong><div style="color:var(--text-tertiary);font-size:var(--text-xs);">איטליה · קוד SAF</div></td>
+            <td>EUR</td>
+            <td class="num">€ 11,420</td>
+            <td><div class="age-bar"><span class="age-0" style="flex:40;"></span><span class="age-30" style="flex:40;"></span><span class="age-60" style="flex:20;"></span></div></td>
+            <td style="color:var(--text-tertiary);">2.5</td>
+            <td><span class="pill pill-success"><span class="dot"></span>בזמן</span></td>
+          </tr>
+          <tr>
+            <td><strong style="font-family:var(--font-serif);">Marcolin</strong><div style="color:var(--text-tertiary);font-size:var(--text-xs);">איטליה · קוד MAR</div></td>
+            <td>EUR</td>
+            <td class="num">€ 9,640</td>
+            <td><div class="age-bar"><span class="age-0" style="flex:20;"></span><span class="age-30" style="flex:20;"></span><span class="age-60" style="flex:30;"></span><span class="age-90" style="flex:30;"></span></div></td>
+            <td style="color:var(--text-tertiary);">28.4</td>
+            <td><span class="pill pill-danger"><span class="dot"></span>פיגור 28d</span></td>
+          </tr>
+          <tr>
+            <td><strong style="font-family:var(--font-serif);">Optical Frame Israel</strong><div style="color:var(--text-tertiary);font-size:var(--text-xs);">ישראל · קוד OFI</div></td>
+            <td>ILS</td>
+            <td class="num">₪ 86,400</td>
+            <td><div class="age-bar"><span class="age-0" style="flex:80;"></span><span class="age-30" style="flex:20;"></span></div></td>
+            <td style="color:var(--text-tertiary);">8.5</td>
+            <td><span class="pill pill-success"><span class="dot"></span>בזמן</span></td>
+          </tr>
+          <tr>
+            <td><strong style="font-family:var(--font-serif);">Carl Zeiss Vision</strong><div style="color:var(--text-tertiary);font-size:var(--text-xs);">גרמניה · קוד CZV</div></td>
+            <td>EUR</td>
+            <td class="num">€ 4,860</td>
+            <td><div class="age-bar"><span class="age-0" style="flex:10;"></span><span class="age-30" style="flex:30;"></span><span class="age-60" style="flex:60;"></span></div></td>
+            <td style="color:var(--text-tertiary);">15.4</td>
+            <td><span class="pill pill-warning"><span class="dot"></span>פיגור 12d</span></td>
+          </tr>
+          <tr>
+            <td><strong style="font-family:var(--font-serif);">Hoya Lens</strong><div style="color:var(--text-tertiary);font-size:var(--text-xs);">יפן · קוד HOY</div></td>
+            <td>USD</td>
+            <td class="num">$ 18,200</td>
+            <td><div class="age-bar"><span class="age-0" style="flex:70;"></span><span class="age-30" style="flex:30;"></span></div></td>
+            <td style="color:var(--text-tertiary);">3.5</td>
+            <td><span class="pill pill-success"><span class="dot"></span>בזמן</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">היסטוריית תשלומים — Luxottica</h2>
+          <div class="card-sub">5 פעולות אחרונות.</div>
+        </div>
+        <a href="#" class="btn btn-ghost">היסטוריה מלאה</a>
+      </div>
+      <table class="tbl">
+        <thead>
+          <tr><th>תאריך</th><th>סוג</th><th>אסמכתא</th><th>סכום</th><th>יתרה</th></tr>
+        </thead>
+        <tbody>
+          <tr><td style="color:var(--text-tertiary);">8.5.2026</td><td><span class="pill pill-violet">תשלום</span></td><td style="font-family:var(--font-mono);">PAY-0042</td><td class="num">−€ 8,400</td><td class="num">€ 24,820</td></tr>
+          <tr><td style="color:var(--text-tertiary);">5.5.2026</td><td><span class="pill">חשבונית</span></td><td style="font-family:var(--font-mono);">INV-LUX-9914</td><td class="num">€ 12,200</td><td class="num">€ 33,220</td></tr>
+          <tr><td style="color:var(--text-tertiary);">28.4.2026</td><td><span class="pill">חשבונית</span></td><td style="font-family:var(--font-mono);">INV-LUX-9892</td><td class="num">€ 8,400</td><td class="num">€ 21,020</td></tr>
+          <tr><td style="color:var(--text-tertiary);">22.4.2026</td><td><span class="pill pill-violet">תשלום</span></td><td style="font-family:var(--font-mono);">PAY-0038</td><td class="num">−€ 15,000</td><td class="num">€ 12,620</td></tr>
+          <tr><td style="color:var(--text-tertiary);">15.4.2026</td><td><span class="pill">חשבונית</span></td><td style="font-family:var(--font-mono);">INV-LUX-9871</td><td class="num">€ 11,000</td><td class="num">€ 27,620</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

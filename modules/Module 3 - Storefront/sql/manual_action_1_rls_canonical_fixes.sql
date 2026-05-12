@@ -3,7 +3,7 @@
 -- ==========================================================================
 -- Run ONCE in Supabase Dashboard SQL Editor as superuser
 -- Date prepared: 2026-04-12
--- Prepared by: Main Strategic (Cowork) with live DB verification
+-- Prepared by: Architect (Cowork) with live DB verification
 --
 -- Coverage:
 --   §1.1 — 4 pre-multitenancy tables (no tenant_id): retrofit + RLS

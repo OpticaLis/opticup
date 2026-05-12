@@ -33,14 +33,14 @@
 
 ---
 
-### Finding 2 — Two `.claude/skills/opticup-main-strategic/*` files appeared modified mid-session, NOT touched by this executor
+### Finding 2 — Two `.claude/skills/opticup-architect/*` files appeared modified mid-session, NOT touched by this executor
 
 - **Code:** `M4-INFRA-06`
 - **Severity:** LOW (process-friction; not a security or data issue)
 - **Discovered during:** pre-commit `git status` after writing my own files
 - **Location:**
-  - `.claude/skills/opticup-main-strategic/SKILL.md`
-  - `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md`
+  - `.claude/skills/opticup-architect/SKILL.md`
+  - `.claude/skills/opticup-architect/references/DECISIONS_LOG.md`
 - **Description:** At session start `git status` showed only the standard pre-existing untracked paths (`[retired-2026-05-09:LAUNCH_PLAN_DRAFT]/`, `tests/optic*.acc*`). After my SPEC work, `git status --short` reported these two files as modified — but I never opened or edited them. Possibilities: (a) a parallel Claude Code session in another project window is editing them; (b) a hook ran during my session that touched them; (c) a Sentinel run wrote to them. None of these are caused by my work. I excluded them from the fix commit using explicit `git add` of in-scope files only.
 - **Reproduction:** N/A (race condition or background process)
 - **Expected vs Actual:**

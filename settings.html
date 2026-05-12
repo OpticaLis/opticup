@@ -1,6 +1,9 @@
 <!--
-  Optic Up — Settings / הגדרות
-  CEO/Manager only — business, financial, display settings
+  Optic Up — Settings + Permissions (consolidated)
+  Tabbed page: כללי (settings) + הרשאות (permissions).
+  History: SETTINGS_PERMISSIONS_CONSOLIDATION SPEC, 2026-05-12.
+  Permissions UI relocated from former standalone permissions page
+  (archived under _archive/pre-consolidation/).
 -->
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
@@ -21,11 +24,24 @@
 <!-- Module CSS -->
 <link rel="stylesheet" href="css/header.css">
 <link rel="stylesheet" href="css/settings.css">
+<link rel="stylesheet" href="css/employees.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Hybrid+Navy migration (page-scoped override, MIGRATION_2 2026-05-11) -->
+<style>
+  body{--primary:#1e3a8a;--primary-dark:#0f172a;--primary-light:#e6f1fb;--accent:#1e40af}
+</style>
 </head>
 <body>
 
+<nav id="mainNav">
+  <button data-tab="general" data-tab-permission="settings.view" class="active" onclick="goSettingsTab('general')">&#9881;&#65039; כללי</button>
+  <button data-tab="permissions" data-tab-permission="employees.view" onclick="goSettingsTab('permissions')">&#128272; הרשאות</button>
+</nav>
+
 <main>
+
+<!-- ========== TAB 1: GENERAL (settings) ========== -->
+<section id="tab-general" class="tab active">
   <div class="settings-container" id="settings-container">
     <h1 class="settings-title">&#9881;&#65039; הגדרות</h1>
 
@@ -156,6 +172,15 @@
       <button class="btn-p" id="save-settings" onclick="saveSettings()">&#128190; שמור הגדרות</button>
     </div>
   </div>
+</section>
+
+<!-- ========== TAB 2: PERMISSIONS (employees) ========== -->
+<section id="tab-permissions" class="tab">
+  <div style="padding:16px">
+    <div id="employees-container">טוען...</div>
+  </div>
+</section>
+
 </main>
 
 <!-- Toast container -->
@@ -186,22 +211,82 @@
 <script src="shared/js/permission-ui.js"></script>
 <script src="shared/js/supabase-client.js"></script>
 <script src="shared/js/activity-logger.js"></script>
+<script src="shared/js/table-resize.js"></script>
 <!-- Core JS -->
 <script src="js/shared-field-map.js"></script>
 <script src="js/shared.js"></script>
+<script src="shared/js/plan-helpers.js"></script>
 <script src="js/shared-ui.js"></script>
 <script src="js/auth-service.js"></script>
 <script src="js/supabase-ops.js"></script>
 <script src="js/supabase-alerts-ocr.js"></script>
+<script src="js/data-loading.js"></script>
 <script src="js/header.js"></script>
 <script src="js/alerts-badge.js"></script>
+<!-- Module JS -->
 <script src="modules/settings/settings-page.js"></script>
+<script src="modules/permissions/employee-list.js"></script>
+<script src="modules/permissions/permission-matrix.js"></script>
 <script>
+// =========================================================
+// Tab routing — hash-based, lazy permissions init.
+// SETTINGS_PERMISSIONS_CONSOLIDATION SPEC §3 criterion 10.
+// Reuses showTab() from shared-ui.js (Iron Rule 21 — no duplicate).
+// =========================================================
+let _permissionsTabLoaded = false;
+
+function goSettingsTab(name) {
+  // Permission gate — silently no-op if user lacks the tab's permission.
+  if (name === 'general'     && !hasPermission('settings.view'))  return;
+  if (name === 'permissions' && !hasPermission('employees.view')) return;
+
+  // Update URL hash without scroll-jump or history pollution.
+  const desired = '#' + name;
+  if (window.location.hash !== desired) {
+    history.replaceState(null, '', desired);
+  }
+
+  // Switch the visible tab via the project-wide showTab() helper.
+  showTab(name);
+
+  // Lazy-init the permissions UI on first activation only.
+  if (name === 'permissions' && !_permissionsTabLoaded
+      && typeof loadEmployeesTab === 'function') {
+    _permissionsTabLoaded = true;
+    loadEmployeesTab();
+  }
+}
+
+window.addEventListener('hashchange', function () {
+  const h = window.location.hash;
+  const name = (h === '#permissions') ? 'permissions' : 'general';
+  goSettingsTab(name);
+});
+
 window.addEventListener('DOMContentLoaded', async () => {
   const session = await loadSession();
   if (!session) { window.location.href = '/'; return; }
-  if (!hasPermission('settings.view')) { window.location.href = '/'; return; }
-  await loadSettings();
+  // Page entry: allow if EITHER permission held (per Brief §2.permission-gates).
+  if (!hasPermission('settings.view') && !hasPermission('employees.view')) {
+    window.location.href = '/';
+    return;
+  }
+
+  // General tab is always loaded (fast — single tenants row read).
+  if (hasPermission('settings.view')) {
+    await loadSettings();
+  }
+
+  // Initial tab from URL hash, gated by permission.
+  const initialHash = window.location.hash;
+  if (initialHash === '#permissions' && hasPermission('employees.view')) {
+    goSettingsTab('permissions');
+  } else if (hasPermission('settings.view')) {
+    goSettingsTab('general');
+  } else {
+    // settings.view absent but employees.view present — open permissions.
+    goSettingsTab('permissions');
+  }
 });
 </script>
 </body>

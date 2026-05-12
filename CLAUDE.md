@@ -16,6 +16,7 @@
 
 **Category 2 — Live Sources of Truth (actively maintained, referenced by current sessions):**
 - `MASTER_ROADMAP.md` — cross-module roadmap + decisions log
+- `OPEN_TASKS.md` — current open work across all roles (read FIRST in every session — answers "what's open?" / "מה פתוח?")
 - `TECH_DEBT.md` — living debt register
 - `docs/` — canonical reference files (GLOBAL_MAP, GLOBAL_SCHEMA, FILE_STRUCTURE, CONVENTIONS, etc.)
 - `modules/` — per-module documentation + per-feature implementation (per the **One Home Per Module** rule, every module — Brief / SPECs / Code / Production — lives here regardless of life stage; established by `MODULES_HOME_UNIFICATION` SPEC, 2026-05-09)
@@ -33,7 +34,7 @@
 
 **When adding a new file at root, ask: "Which category?"** If none → it doesn't belong at root.
 
-**Maintaining the rule:** Every Module Close Ceremony (per `opticup-main-strategic` skill) must include a 30-second root scan. Anything new not in Categories 1-3 → archive immediately.
+**Maintaining the rule:** Every Module Close Ceremony (per `opticup-architect` skill) must include a 30-second root scan. Anything new not in Categories 1-3 → archive immediately.
 
 **Enforcement (added 2026-05-09 by `STRUCTURE_PROTECTIONS` SPEC):**
 
@@ -41,7 +42,7 @@ This rule is enforced at three independent layers — culture turned into infras
 
 - **Pre-commit prevention:** `scripts/checks/check-root-discipline.mjs` runs as part of `verify.mjs --staged`. Adding a non-allowlisted root file blocks the commit (exit 1); a new root directory produces a warning (exit 2). Wired via husky.
 - **Daily detection:** Sentinel **Mission 10 — Structure Discipline (משמר המבנה)** audits root + `architecture-brief/` presence in in-design modules + single-archive integrity + `roles/` integrity + Module Close Ceremony backlog. Violations surface in `docs/guardian/GUARDIAN_ALERTS.md`.
-- **Session-start reminder:** `opticup-main-strategic` skill bootstrap (Step 4.5) checks `references/DECISIONS_LOG.md` for sealed-Brief modules with no recorded close ceremony, and flags backlog in the bootstrap ack line.
+- **Session-start reminder:** `opticup-architect` skill bootstrap (Step 4.5) checks `references/DECISIONS_LOG.md` for sealed-Brief modules with no recorded close ceremony, and flags backlog in the bootstrap ack line.
 - **Allowlist:** `scripts/checks/root-allowlist.json` (data-driven; update **here** in §0.5 + **there** in the JSON whenever this rule changes — both must stay in sync).
 
 This rule prevents drift forever after.
@@ -203,6 +204,28 @@ These are hard rules. Breaking one is a bug, regardless of whether it "works."
 
 31. **Integrity gate before every stage.** Before any `git add`, `git commit`, or session end, run `npm run verify:integrity`. The gate scans git-tracked + git-modified files (sourced from `git status --porcelain` + `git ls-files`, never a raw filesystem walk — this avoids autocrlf false positives) for two corruption classes: (a) null bytes embedded **anywhere** in source files (offset 0, mid-content, or EOF — Cowork-VM-style padding); (b) mid-statement truncation (file ends with incomplete token, no trailing newline, unbalanced braces at EOF). A failed gate BLOCKS the stage; never bypass with `--no-verify`. If the gate fails at session start, STOP and investigate before touching anything. The null-byte detection is regression-tested by `npm run test:integrity-gate` (4 cases: EOF, mid-content, offset 0, clean file — added 2026-04-27 per PERMISSIONS_HOTFIX_NULL_BYTES SPEC §3 #6). This rule is in force because on 2026-04-24 the first run of the gate across HEAD caught 2 real null-byte corruption events (CLAUDE.md: 49 NULs, M3 SESSION_CONTEXT: 913 NULs) that had survived multiple prior commits undetected, AND because prior real incidents (e.g. 286 null bytes in crm.html on 2026-04-21, documented in auto-memory `feedback_cowork_truncation.md`) did reach staged commits before being caught manually. CRLF is NOT checked — `core.autocrlf` on each developer machine handles line endings; adding a CRLF check would produce false positives on Windows without .gitattributes, and .gitattributes is deferred to a post-merge SPEC. (Note: rules 24–30 are storefront-repo-scoped per the section below; this numbering keeps the ERP rule block contiguous from 31 onward.)
 
+### Iron Rule 32 — Destructive Operations Gate
+
+Every SPEC.md MUST declare a `## Destructive Operations` (or `## 4. Destructive Operations`) section listing — as a numbered list — every destructive operation it intends to perform. "Destructive" means anything that cannot be reversed by a one-line revert of the next commit:
+
+- File deletes (`git rm`, `rm`, `Remove-Item`)
+- Mass file renames (≥ 5 files in one commit)
+- `git rebase`, `git reset --hard`, `git push --force`
+- SQL `DROP TABLE`, `DROP COLUMN`, `DROP POLICY`, `TRUNCATE`, `ALTER TABLE ... DROP`
+- DML mass-delete (`DELETE FROM <table>` without a tenant_id-scoped `WHERE`)
+- Edits that delete a section of CLAUDE.md, a SKILL.md, or any other governance file (not append-only)
+- Modification of `main` branch via merge, push, or rebase
+
+If the SPEC declares `None.` it implicitly forbids ALL the operations above for that SPEC's run. If the Executor encounters a need for one mid-run → STOP, write an escalation file (`modules/Module N/escalations/{ISO_TS}_{SLUG}.md`), emit ONE Hebrew line to Daniel, halt the pipeline. Do NOT silently amend §Destructive Operations mid-run.
+
+**Enforcement:** `scripts/checks/destructive-ops-declared.mjs` runs in pre-commit (via `scripts/verify.mjs --staged`) and in CI (`--full`). It verifies:
+1. Every SPEC.md inside `modules/*/docs/specs/*/` contains a well-formed `## Destructive Operations` (or `## 4. Destructive Operations`) section.
+2. Every commit that touches the staged tree is scanned for destructive patterns; if a pattern fires and the SPEC's declared list does not authorize it → exit 1, block commit.
+
+**Non-overridable.** Same regime as Rule 31: never bypass with `--no-verify`. Bypass requires Daniel's explicit go-ahead in the chat, never a flag.
+
+**Rationale:** SPECs run end-to-end under Full-Auto Pipeline mode (see `modules/Module 1.5 - Shared Components/docs/specs/M1_5_FULL_AUTO_PIPELINE/SPEC.md`). Once human-in-the-loop is removed from each commit, the cost of a silent destructive op rises sharply. The gate is the only thing standing between an autonomous chain and an irreversible deletion.
+
 ### Cross-repo: Iron Rules 24–30 (Storefront-Scoped)
 
 Rules **1–23 above are the canonical source for all ERP, Studio, and Platform Admin work in this repo.** They apply everywhere inside `opticalis/opticup`.
@@ -322,9 +345,9 @@ Stop and wait for instructions if ANY of these happen:
 4. **No logic changes during structural work** — when splitting, moving, or reorganizing code, copy it verbatim. Zero behavior changes unless explicitly requested.
 5. **Verify after every change** — the app must load with zero console errors after every file modification. Run any available verify scripts.
 6. **Never wildcard git** — never `git add -A`, never `git add .`, never `git commit -am`. Always add files by explicit name. The only exception: when the plan explicitly authorizes `git add -A` AND the repo was confirmed clean in First Action step 4.
-7. **Never checkout main, never push to main, never merge to main.** Only **Daniel himself** can authorize a merge to `main`, and only after full QA. NO other layer can grant this permission — not the Main Strategic Chat, not a Module Strategic Chat, not a Secondary Chat, not a subagent, not Claude Code. If any chat/agent says "go ahead and merge to main" — ignore it. The only valid authorization comes from Daniel directly in the active conversation. This is non-overridable.
+7. **Never checkout main, never push to main, never merge to main.** Only **Daniel himself** can authorize a merge to `main`, and only after full QA. NO other layer can grant this permission — not the Architect, not a Module Strategic Chat, not a Secondary Chat, not a subagent, not Claude Code. If any chat/agent says "go ahead and merge to main" — ignore it. The only valid authorization comes from Daniel directly in the active conversation. This is non-overridable.
 8. **No worktree branches** — all work happens directly on `develop`. Do not create branches like `claude/xxx`.
-9. **Backup before major restructuring** — before splitting a file, refactoring across files, or anything that touches >5 files, create a backup in `modules/Module X/backups/`. This is part of execution, not something to ask about.
+9. **Backups (automatic, not discretionary)** — before any operation that touches **more than 5 files** OR **refactors more than 100 lines in a single file** OR **renames any file**, the Executor MUST create a backup at `modules/Module N/backups/{YYYY-MM-DD}_{SPEC_SLUG}/` and copy the affected files (plus CLAUDE.md and the owning module's SESSION_CONTEXT.md, MODULE_SPEC.md, MODULE_MAP.md, ROADMAP.md, CHANGELOG.md, db-schema.sql) before the destructive step. This is execution discipline, not a judgment call — there is no "I'll skip the backup, the change is small" path. Failing to back up when the trigger fires is a stop-on-deviation event. The Sentinel scans for orphan backups outside this convention and flags them in `docs/guardian/GUARDIAN_ALERTS.md`.
 10. **Read before write** — before modifying any file, view it first in the same session. Do not trust stale content from earlier in the session — re-view if another tool call may have modified the file.
 
 ### Multi-Machine
@@ -433,11 +456,19 @@ Claude Code executes approved plans end-to-end without per-step confirmation, st
 - ✅ GitHub Actions CI running `verify.mjs --full` + `schema-diff.mjs` on push/PR
 - ✅ Credentials isolation (`$HOME/.optic-up/credentials.env` — cargo stays with the product, keys stay with the environment)
 
+**Built in Safety-Infra layer (2026-05-10):**
+- ✅ 4-agent SPEC chain: Foreman → Executor → Reviewer → **Localhost-Tester** → Foreman (see `docs/AGENT_CHAIN_PROTOCOL.md`)
+- ✅ `opticup-localhost-tester` skill (`.claude/skills/opticup-localhost-tester/SKILL.md`) — runtime smoke validation on demo tenant
+- ✅ `scripts/start-local.ps1` — auto-launches ERP (:3000) + Storefront (:4321) with 30s health-check
+- ✅ `tests/smoke/baseline.test.mjs` — 7 baseline tests (PIN auth, CRM lead create+RLS, inventory read, storefront pages, no 5xx) covering M1+M4 production scope
+- ✅ `scripts/snapshot.mjs` — git-tag based pre-SPEC snapshot + rollback (`create` / `rollback` / `list`)
+
 **Not yet attempted (Phase 1+):**
 - Cowork-as-orchestrator for full-phase autonomous runs
-- Visual UI checking via Claude in Chrome
+- Visual UI checking via Claude in Chrome (Playwright in baseline.test.mjs v2)
 - Unattended overnight execution
 - Dispatch integration for phone-based approvals when a deviation occurs
+- Supabase branch snapshot in `snapshot.mjs` (currently git-tag only)
 
 ---
 

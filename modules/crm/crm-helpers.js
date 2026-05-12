@@ -11,12 +11,12 @@ if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLo
 (function () {
   'use strict';
 
-  var PRIZMA_PHONE_RE = /^\+972(\d{9})$/;
+  var IL_PHONE_RE = /^\+972(\d{9})$/;
 
   // --- Phone format: +9725XXXXXXXX -> 0XX-XXX-XXXX (E.164 → local) ---
   function formatPhone(raw) {
     if (!raw) return '';
-    var m = String(raw).match(PRIZMA_PHONE_RE);
+    var m = String(raw).match(IL_PHONE_RE);
     if (m) {
       var local = '0' + m[1];
       return local.slice(0, 3) + '-' + local.slice(3, 6) + '-' + local.slice(6);

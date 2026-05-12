@@ -2,11 +2,47 @@
 
 > Single reference document for all files, functions, and globals in the shared/ directory.
 > Updated every commit that adds/changes code in shared/.
-> Last updated: 2026-03-19 (Phase 6 complete)
+> Last updated: 2026-05-11 (Design System Hybrid Final delivered — 7 files locked in as platform language)
 
 ---
 
+## 0. Design System initiative — Hybrid Final (2026-05-11, locked-in platform language)
+
+`M1_5_DESIGN_SYSTEM_HYBRID_FINAL` SPEC closed. **7 files** under `architecture-brief/design-system-mockups/hybrid-final/`:
+
+| # | File | Purpose |
+|---|------|---------|
+| 1 | `_tokens.css` | Hybrid design tokens — Navy `#1e3a8a` accent, `#e6f1fb` soft tint, Inter+Heebo sans-only, 14px base, 36px row height, 240px sidebar. Sans-only (no `--font-serif`). |
+| 2 | `INDEX.html` | Landing hub with cross-language switch (links to v2 A/B/C historical references) + iframe preview of the 5 module screens. |
+| 3 | `storefront-studio.html` | Studio mockup. Sidebar (Content/Commerce/Publish), hero + 4 metric-cards + pages table + recent-blocks list + media grid. |
+| 4 | `permissions.html` | Permissions mockup. Sidebar (Admin/Billing/Settings), hero + 4 metric-cards + 4 role-tiles (B pattern) + permission matrix with mono `inventory.view`-style permission codes. |
+| 5 | `shipments.html` | Shipments + Boxes mockup. Sidebar (Overview/Shipments/Inventory), hero + 4 metric-cards + active-shipments table + per-shipment box detail + timeline of operations. |
+| 6 | `settings.html` | Settings mockup. Sidebar (Store/Payment/Technical), hero + 4 metric-cards + tabs + 3 form sections (store details, tax/currency, barcode). |
+| 7 | `suppliers-debt.html` | Suppliers Debt mockup. Sidebar (Overview/Suppliers/Finance), hero + 4 metric-cards + age-chart (semantic colors, NOT Navy) + 6-row supplier table with all real names + payment history. |
+
+Pattern: Stripe-B structural foundation (hero + metrics + content cards + pills + role tiles) wearing Linear-A sidebar navigation (240px, RTL-right via `border-inline-start`, tight 36px rows). Navy palette only — zero violet, zero serif typography, zero topbar. Every HTML ≤350 lines (well under Rule 12 cap). Integrity gate clean. Smoke 7/7 PASS.
+
+The 3 prior language folders (`language-{a,b,c}-*/`) — untouched, retained as historical reference per SPEC §2. Per-module migration of production HTML to Hybrid is a future SPEC chain.
+
+## 0a. Design System initiative — Phase 3 v2 (2026-05-11, supersedes v1)
+
+`M1_5_DESIGN_SYSTEM_AUTHENTIC_LANGUAGES` SPEC closed. Three authentic design languages × five operational screens = **21 HTML files + 3 `_tokens.css`** under `modules/Module 1.5 - Shared Components/architecture-brief/design-system-mockups/`:
+
+| Folder | Identity | Token count | DOM pattern |
+|---|---|---|---|
+| `language-a-linear/` | Linear/Vercel — pure white + indigo #6366f1 + Inter 14px + borders > shadows + 6-12px radii | 54 active CSS custom props | Sidebar nav + top breadcrumb |
+| `language-b-stripe/` | Stripe Dashboard — warm off-white + deep violet #635bff + Source Serif headings + layered shadows + 12px radii | 68 active CSS custom props | Top-bar + hero + metric tiles |
+| `language-c-notion/` | Notion/Airy — cool off-white + pastel accents (lavender/teal/coral/amber) + Inter 16px + near-zero shadows + 10-20px radii | 65 active CSS custom props | Minimalist left rail + emoji glyphs |
+
+Per language: `INDEX.html` (hub: top bar w/ 3-language switch + left rail w/ 5 screen links + iframe preview), `_tokens.css`, and 5 module HTMLs: `storefront-studio.html`, `permissions.html`, `shipments.html`, `settings.html`, `suppliers-debt.html`. All Hebrew RTL, light-background, self-contained (Google Fonts only external dep). Every module HTML ≤ 250 lines (well under Rule 12 cap). Zero hex literals in module `style=` attrs (var(--token) throughout). Integrity gate clean. Smoke suite 7/7 PASS.
+
+## 0a. Design System initiative — Phase 3 v1 (ARCHIVED — see `_archive/design-system-mockups-v1-staticized/`)
+
+v1 (3a/3b/3c + CONSOLIDATION, all closed 2026-05-11) produced 45 HTML files but failed the design-language distinctness goal: staticized production HTML + near-empty `_tokens.css` (3a: 0 active overrides; 3b/3c: 6-7 tokens each). Result was three near-identical directions. v2 (above) replaces it with authentic per-language authoring. Mockup folders moved (via `git mv`) to `_archive/design-system-mockups-v1-staticized/direction-{1-conservative,2-modern-clean,3-bold-dense-pro-tool}/`. v1 SPEC folders remain in `docs/specs/` as historical retrospective; only the v1 mockup directories were archived.
+
 ## 1. File Index — shared/css/
+
+> **Phase 2 design-system audit pass (2026-05-11):** All 8 component CSS files now consume bare `var(--token)` references — zero hex fallback literals (15 sites cleaned: 12 in modal.css digit-suffixed vars + 3 stale `--g{100,300,400}` refs in table.css fixed to `--color-gray-*`). `:focus-visible` baseline added across components.css / forms.css / modal.css / table.css / toast.css per WCAG 2.4.7. New tokens in variables.css: `--color-focus-ring`, `--shadow-focus`. JS component APIs UNCHANGED (Brief Contract B).
 
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
@@ -69,7 +105,7 @@
 All variables defined in `shared/css/variables.css`:
 
 ### Colors — Primary (4 vars + 1 legacy alias)
-`--color-primary` (#4f46e5 Indigo), `--color-primary-hover` (#4338ca), `--color-primary-light` (#eef2ff), `--color-primary-dark` (#3730a3)
+`--color-primary` (#0f172a — Daniel finalized as Slate 900 near-black on 2026-05-10, overriding the brief-era Slate 700 — neutral platform default; SPEC criterion #13 references the original Slate 700 wording for traceability), `--color-primary-hover` (#1e293b Slate 800), `--color-primary-light` (#f1f5f9 Slate 100), `--color-primary-dark` (#000000 pure black). Prizma overrides these via `tenants.ui_config` to Indigo (#4f46e5/#4338ca/#eef2ff/#3730a3) — see M1_5_DESIGN_TOKENS_FOUNDATION SPEC.
 `--primary: var(--color-primary)` — legacy alias for header.css, index.html, page CSS consumers
 
 ### Colors — Semantic (16 vars)

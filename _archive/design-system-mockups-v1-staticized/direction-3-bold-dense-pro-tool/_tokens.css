@@ -1,0 +1,49 @@
+/* =============================================================================
+   _tokens.css — Direction 3: Bold (dense-pro-tool)
+   =============================================================================
+   "Terminal for power users." Linear / Bloomberg aesthetic. Maximum information
+   density, small fonts, tight padding, sharp 1px borders instead of soft shadows.
+   Daniel-locked direction axis 2026-05-10.
+   ============================================================================= */
+
+:root {
+  /* Typography — pro-tool small, restrained weight scale */
+  --font-size-md:  0.78rem;   /* ~12.5px body */
+  --font-size-sm:  0.72rem;
+  --font-size-lg:  0.92rem;
+  --font-size-xl:  1.15rem;
+  --font-size-2xl: 1.4rem;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+
+  /* Spacing — tight */
+  --space-xs:  2px;
+  --space-sm:  4px;
+  --space-md:  6px;
+  --space-lg:  10px;
+  --space-xl:  14px;
+  --space-2xl: 20px;
+
+  /* Radii — sharp */
+  --radius-sm:   2px;
+  --radius-md:   2px;
+  --radius-lg:   4px;
+  --radius-full: 9999px;
+
+  /* Shadows — minimal, border-like (1px lines instead of soft glow) */
+  --shadow-sm: 0 0 0 1px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 1px 2px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 4px 8px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.12);
+
+  /* Subtle off-white page bg — terminal-ish */
+  --color-bg-page: #fafafa;
+}
+
+/* Monospace numerals helper — apply [data-numeric] to currency cells, counts, dates */
+[data-numeric],
+.tb-td-currency,
+.tb-td-number,
+.tb-td-date {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}

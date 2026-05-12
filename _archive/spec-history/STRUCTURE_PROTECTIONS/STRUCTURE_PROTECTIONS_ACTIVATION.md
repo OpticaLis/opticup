@@ -20,7 +20,7 @@ This is the THIRD structural SPEC in 24 hours. Two predecessors (PROJECT_STRUCTU
 Three protection layers:
 1. Pre-commit hook addition: scripts/checks/check-root-discipline.mjs (blocks new disallowed root files)
 2. Sentinel Mission 10: daily audit of root + module-home compliance
-3. main-strategic skill bootstrap: Step 4.5 auto-checks Module Close Ceremony backlog
+3. architect skill bootstrap: Step 4.5 auto-checks Module Close Ceremony backlog
 
 NOTE — temporary SPEC location: This SPEC sits at modules/Module 5 - Customers/architecture-brief/ as a placeholder because no infrastructure-specific module home exists yet. The SPEC is NOT about Module 5 — it's a cross-cutting infrastructure SPEC. After execution, the SPEC + retrospective will be moved to _archive/spec-history/STRUCTURE_PROTECTIONS/ as part of Module Close Ceremony. Do not let the location confuse the scope.
 
@@ -37,7 +37,7 @@ Two callouts to be especially careful about:
 - Commit 3 (wiring check into verify.mjs): if the check blocks the SPEC's OWN subsequent commits, that's a bug in the check or the allowlist. STOP and report — don't disable the check to unblock the SPEC.
 - Commit 4 (test script): the test stashes/unstashes the working tree. If anything goes wrong mid-test, the user's tree might be in an unexpected state. Verify clean restoration before proceeding to Commit 5.
 
-After completion, return to Daniel and standby. Cowork Main Strategic runs the Module Close Ceremony.
+After completion, return to Daniel and standby. Cowork Architect runs the Module Close Ceremony.
 ```
 
 ---
@@ -46,10 +46,10 @@ After completion, return to Daniel and standby. Cowork Main Strategic runs the M
 
 ✅ **Pre-commit prevention:** Adding any new root-level file outside the allowlist will block the commit immediately. No need to remember the rule — git refuses.
 ✅ **Periodic detection:** Sentinel Mission 10 audits the structural rules daily. Any drift surfaces in `GUARDIAN_ALERTS.md` within 24h.
-✅ **Session-start reminder:** Every Cowork Main Strategic session starts with a self-audit of Module Close Ceremony backlog. Modules that closed without ceremony are flagged immediately.
+✅ **Session-start reminder:** Every Cowork Architect session starts with a self-audit of Module Close Ceremony backlog. Modules that closed without ceremony are flagged immediately.
 
 After this — **the structural rules are infrastructure, not culture.** They cannot be silently undone by a future session that didn't read CLAUDE.md.
 
 ---
 
-*Authored 2026-05-09 by Main Strategic. Successor to PROJECT_STRUCTURE_CLEANUP_SPEC + MODULES_HOME_UNIFICATION_SPEC.*
+*Authored 2026-05-09 by Architect. Successor to PROJECT_STRUCTURE_CLEANUP_SPEC + MODULES_HOME_UNIFICATION_SPEC.*

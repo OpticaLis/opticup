@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optic Up — Design System Mockups — Direction 2: Modern-clean</title>
+  <link rel="stylesheet" href="../../../../../shared/css/variables.css">
+  <link rel="stylesheet" href="../../../../../shared/css/layout.css">
+  <link rel="stylesheet" href="../../../../../shared/css/components.css">
+  <link rel="stylesheet" href="../../../../../shared/css/components-extra.css">
+  <link rel="stylesheet" href="../../../../../shared/css/forms.css">
+  <link rel="stylesheet" href="../../../../../shared/css/modal.css">
+  <link rel="stylesheet" href="../../../../../shared/css/toast.css">
+  <link rel="stylesheet" href="../../../../../shared/css/table.css">
+  <link rel="stylesheet" href="./_tokens.css">
+  <style>
+    /* INDEX-only chrome — Modern-clean aesthetic: airy, soft shadows, rounded. */
+    html, body { height: 100%; margin: 0; }
+    body { display: grid; grid-template-rows: auto 1fr; font-family: var(--font-family-base, 'Heebo', sans-serif); background: var(--color-bg-page, #fafafa); color: var(--color-text, #0f172a); font-size: var(--font-size-md, 1rem); }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: var(--color-surface, #ffffff); border-bottom: 1px solid var(--color-border, #e2e8f0); box-shadow: var(--shadow-sm, 0 4px 12px rgba(15,23,42,0.04)); }
+    .top-bar h1 { margin: 0; font-size: 1.1rem; font-weight: 600; }
+    .direction-switch { display: flex; gap: 10px; }
+    .direction-switch a { padding: 10px 18px; border-radius: var(--radius-md, 12px); text-decoration: none; font-size: 0.92rem; background: var(--color-surface-alt, #f1f5f9); color: var(--color-text, #0f172a); border: 1px solid var(--color-border, #e2e8f0); transition: background 0.15s ease; }
+    .direction-switch a:hover { background: var(--color-surface, #fff); }
+    .direction-switch a.active { background: var(--color-primary, #0f172a); color: #fff; border-color: var(--color-primary, #0f172a); }
+    .layout { display: grid; grid-template-columns: 260px 1fr; min-height: 0; }
+    .nav { background: var(--color-surface, #ffffff); border-inline-end: 1px solid var(--color-border, #e2e8f0); padding: 24px 16px; overflow-y: auto; }
+    .nav h2 { margin: 4px 8px 16px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted, #64748b); font-weight: 600; }
+    .nav ul { list-style: none; padding: 0; margin: 0; }
+    .nav li { margin: 4px 0; }
+    .nav a { display: block; width: 100%; text-align: start; padding: 12px 14px; border: 0; background: transparent; border-radius: var(--radius-md, 12px); cursor: pointer; font-size: var(--font-size-md, 1rem); color: var(--color-text, #0f172a); text-decoration: none; transition: background 0.15s ease; }
+    .nav a:hover { background: var(--color-surface-alt, #f1f5f9); }
+    .nav a.active { background: var(--color-primary-light, #eef2ff); color: var(--color-primary-dark, #3730a3); font-weight: 500; }
+    .preview { background: var(--color-bg-page, #fafafa); padding: 24px; }
+    .preview iframe { width: 100%; height: 100%; border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-lg, 16px); background: #fff; box-shadow: var(--shadow-md, 0 8px 24px rgba(15,23,42,0.06)); }
+    .preview-frame-wrap { height: 100%; }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <h1>Optic Up Design System — Direction 2: Modern-clean</h1>
+    <div class="direction-switch" aria-label="החלפת כיוון">
+      <a href="../direction-1-conservative/INDEX.html">1. Conservative</a>
+      <a href="../direction-2-modern-clean/INDEX.html" class="active">2. Modern-clean</a>
+      <a href="../direction-3-bold-dense-pro-tool/INDEX.html">3. Bold (dense-pro-tool)</a>
+    </div>
+  </div>
+
+  <div class="layout">
+    <nav class="nav" aria-label="ניווט מודולים">
+      <h2>מודולים</h2>
+      <ul id="module-list">
+        <li><a href="./M1-inventory.html" target="preview-frame" class="active">M1 — Inventory</a></li>
+        <li><a href="./M3-storefront-studio.html" target="preview-frame">M3 — Storefront Studio</a></li>
+        <li><a href="./M4-crm.html" target="preview-frame">M4 — CRM</a></li>
+        <li><a href="./M5-customers.html" target="preview-frame">M5 — Customers</a></li>
+        <li><a href="./M6-prescriptions.html" target="preview-frame">M6 — Prescriptions</a></li>
+        <li><a href="./M7-orders.html" target="preview-frame">M7 — Orders</a></li>
+        <li><a href="./M8-payments.html" target="preview-frame">M8 — Payments</a></li>
+        <li><a href="./M9-lab-kds.html" target="preview-frame">M9 — Lab KDS</a></li>
+        <li><a href="./M11-reports.html" target="preview-frame">M11 — Reports</a></li>
+        <li><a href="./M12-communications.html" target="preview-frame">M12 — Communications</a></li>
+        <li><a href="./M13-loyalty.html" target="preview-frame">M13 — Loyalty</a></li>
+        <li><a href="./M14-appointments.html" target="preview-frame">M14 — Appointments</a></li>
+        <li><a href="./M15-queue.html" target="preview-frame">M15 — Queue</a></li>
+      </ul>
+    </nav>
+
+    <main class="preview">
+      <div class="preview-frame-wrap">
+        <iframe id="preview-frame" name="preview-frame" src="./M1-inventory.html" title="תצוגה מקדימה של מודול"></iframe>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Direction 2 has NO Prizma toggle — directions 2 + 3 showcase the
+    // platform-default neutral rendering (per parent SPEC §5 + §6).
+    // Anchors target the iframe via target="preview-frame" so clicks navigate
+    // the preview pane without leaving INDEX.html.
+    (function () {
+      const list = document.getElementById('module-list');
+      list.addEventListener('click', function (e) {
+        const a = e.target.closest('a[target="preview-frame"]');
+        if (!a) return;
+        list.querySelectorAll('a').forEach(x => x.classList.remove('active'));
+        a.classList.add('active');
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M13 — Loyalty Club Sketches</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Rubik', -apple-system, sans-serif; background: #fafaf7; color: #0f172a; padding: 20px; }
+  .nav { position: sticky; top: 0; background: white; padding: 16px 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .nav h1 { font-size: 20px; margin-left: auto; }
+  .nav button { background: #fafaf7; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; font-family: inherit; }
+  .nav button.active { background: #1e3a8a; color: white; border-color: #1e3a8a; }
+  .sketch { display: none; background: white; border-radius: 16px; padding: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+  .sketch.active { display: block; }
+  .sketch h2 { font-size: 24px; margin-bottom: 4px; color: #1e3a8a; }
+  .sketch .subtitle { color: #475569; font-size: 14px; margin-bottom: 24px; }
+  .device { background: #f4f4f5; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 16px; }
+  .device.mobile { max-width: 380px; }
+  .device .device-label { font-size: 11px; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+
+  /* S1 — Customer Card Tab */
+  .tab-bar { display: flex; gap: 4px; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; }
+  .tab { padding: 10px 16px; cursor: pointer; color: #475569; font-size: 14px; }
+  .tab.active { color: #1e3a8a; border-bottom: 2px solid #1e3a8a; margin-bottom: -2px; font-weight: 600; }
+  .tier-hero { background: #1e3a8a; color: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .tier-hero .tier-name { font-size: 28px; font-weight: 700; }
+  .tier-hero .tier-meta { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+  .tier-hero .tier-progress { background: rgba(255,255,255,0.2); height: 6px; border-radius: 3px; margin-top: 16px; overflow: hidden; }
+  .tier-hero .tier-progress > div { background: white; height: 100%; width: 65%; border-radius: 3px; }
+  .tier-hero .tier-progress-label { font-size: 12px; margin-top: 6px; opacity: 0.9; }
+  .blocks { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .block { background: #f4f4f5; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; }
+  .block .label { font-size: 11px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .block .value { font-size: 22px; font-weight: 700; }
+  .block .meta { font-size: 12px; color: #475569; margin-top: 4px; }
+  .history { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+  .history-row { display: flex; padding: 12px 16px; justify-content: space-between; align-items: center; border-bottom: 1px solid #fafaf7; font-size: 14px; }
+  .history-row:last-child { border-bottom: 0; }
+  .history-row .desc { color: #0f172a; }
+  .history-row .date { color: #475569; font-size: 12px; }
+  .history-row .amt { font-weight: 600; }
+  .history-row .amt.earn { color: #00a854; }
+  .history-row .amt.redeem { color: #d92c2c; }
+  .section-title { font-size: 13px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 8px; }
+  .coupons { display: flex; gap: 8px; flex-wrap: wrap; }
+  .coupon { background: white; border: 2px dashed #1e3a8a; border-radius: 8px; padding: 10px 14px; font-size: 13px; }
+  .coupon .code { font-weight: 700; color: #1e3a8a; }
+  .coupon .meta { color: #475569; font-size: 11px; margin-top: 2px; }
+  .family-list { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; }
+  .family-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; border-bottom: 1px solid #fafaf7; }
+  .family-row:last-child { border-bottom: 0; }
+  .family-row .head-badge { background: #1e3a8a; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-right: 6px; }
+  .actions { display: flex; gap: 8px; margin-top: 16px; }
+  .btn { background: #1e3a8a; color: white; border: 0; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .btn.secondary { background: white; color: #0f172a; border: 1px solid #cbd5e1; }
+
+  /* S2 — Admin Dashboard */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .kpi { background: #f4f4f5; border-radius: 8px; padding: 16px; border: 1px solid #e2e8f0; }
+  .kpi .kpi-label { font-size: 11px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
+  .kpi .kpi-value { font-size: 28px; font-weight: 700; margin-top: 4px; }
+  .kpi .kpi-trend { font-size: 12px; color: #00a854; margin-top: 4px; }
+  .table { width: 100%; border-collapse: collapse; background: white; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+  .table th { background: #f4f4f5; text-align: right; padding: 10px 12px; font-size: 12px; color: #475569; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; }
+  .table td { padding: 12px; font-size: 14px; border-bottom: 1px solid #fafaf7; }
+  .table tr:last-child td { border-bottom: 0; }
+  .pill { padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .pill.silver { background: #e2e8f0; color: #0f172a; }
+  .pill.gold { background: #e6f1fb; color: #1e40af; }
+  .pill.diamond { background: #e8e4ff; color: #5b3fc7; }
+  .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
+  .search { flex: 1; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; }
+
+  /* S3 — Checkout block */
+  .checkout-block { background: #e6f1fb; border: 1px solid #1e3a8a; border-radius: 12px; padding: 20px; }
+  .checkout-block .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .checkout-block .header .name { font-size: 16px; font-weight: 600; }
+  .checkout-block .balance-line { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+  .checkout-block .balance-line input { flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 16px; font-family: inherit; }
+  .checkout-block .balance-line label { font-size: 13px; }
+  .checkout-block .coupon-line { display: flex; gap: 8px; }
+  .checkout-block .summary-line { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; border-top: 1px solid #1e3a8a; margin-top: 12px; padding-top: 12px; }
+
+  /* S4 — Storefront enrollment */
+  .storefront { background: white; border-radius: 12px; max-width: 480px; margin: 0 auto; }
+  .storefront .hero-img { height: 180px; background: #1e3a8a; border-radius: 12px 12px 0 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; font-weight: 700; }
+  .storefront .body { padding: 24px; }
+  .storefront h3 { font-size: 22px; margin-bottom: 8px; }
+  .storefront .lead { color: #475569; font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+  .storefront .form-group { margin-bottom: 14px; }
+  .storefront label { display: block; font-size: 13px; margin-bottom: 4px; color: #0f172a; font-weight: 500; }
+  .storefront input, .storefront select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-family: inherit; }
+  .storefront .checkbox-group { display: flex; gap: 8px; margin-bottom: 12px; align-items: flex-start; padding: 10px; background: #f4f4f5; border-radius: 8px; }
+  .storefront .checkbox-group input { width: auto; margin-top: 3px; }
+  .storefront .checkbox-group label { font-size: 13px; color: #0f172a; flex: 1; }
+  .storefront .checkbox-group label a { color: #1e3a8a; text-decoration: underline; }
+  .storefront .tier-cards { display: grid; gap: 10px; margin-bottom: 16px; }
+  .storefront .tier-card { border: 2px solid #e2e8f0; border-radius: 10px; padding: 14px; cursor: pointer; }
+  .storefront .tier-card.selected { border-color: #1e3a8a; background: #e6f1fb; }
+  .storefront .tier-card .name { font-weight: 700; font-size: 16px; }
+  .storefront .tier-card .price { color: #1e3a8a; font-weight: 700; font-size: 18px; }
+  .storefront .tier-card .perks { font-size: 12px; color: #475569; margin-top: 4px; }
+  .storefront .submit-btn { width: 100%; padding: 14px; background: #1e3a8a; color: white; border: 0; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; font-family: inherit; }
+
+  .annotations { background: #e6f1fb; border-right: 4px solid #1e3a8a; padding: 12px 16px; margin-top: 16px; font-size: 13px; color: #0f172a; line-height: 1.6; }
+  .annotations strong { color: #1e3a8a; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <button class="tab-btn active" onclick="show('s1')">S1 — כרטיס לקוח: Tab מועדון</button>
+  <button class="tab-btn" onclick="show('s2')">S2 — Dashboard מנהל</button>
+  <button class="tab-btn" onclick="show('s3')">S3 — Checkout בקופה</button>
+  <button class="tab-btn" onclick="show('s4')">S4 — הצטרפות באתר</button>
+  <button class="tab-btn" onclick="show('s5')">S5 — הגדרות מועדון (Tenant)</button>
+  <h1>M13 — Loyalty Sketches</h1>
+</div>
+
+<!-- ============= S1 ============= -->
+<div id="s1" class="sketch active">
+  <h2>S1 — כרטיס לקוח: Tab "מועדון"</h2>
+  <div class="subtitle">Tab חדש בכרטיס הלקוח של M5. מציג tier, יתרה, היסטוריה, קופונים, משפחה, progression.</div>
+
+  <div class="device">
+    <div class="device-label">M5 Customer Card · Loyalty Tab</div>
+
+    <div class="tab-bar">
+      <div class="tab">פרטים</div>
+      <div class="tab">מרשמים</div>
+      <div class="tab">הזמנות</div>
+      <div class="tab active">מועדון</div>
+      <div class="tab">תקשורת</div>
+      <div class="tab">היסטוריה</div>
+    </div>
+
+    <div class="tier-hero">
+      <div class="tier-name">⭐ Gold Member</div>
+      <div class="tier-meta">חבר מ-15.03.2026 · חידוש: 15.03.2027 · דמי-חבר: ₪50/שנה</div>
+      <div class="tier-progress"><div></div></div>
+      <div class="tier-progress-label">צברת ₪10,500 השנה. עוד ₪4,500 ל-Diamond (₪15,000)</div>
+    </div>
+
+    <div class="blocks">
+      <div class="block">
+        <div class="label">יתרת זיכוי</div>
+        <div class="value">₪247</div>
+        <div class="meta">פג תוקף: 03.2028</div>
+      </div>
+      <div class="block">
+        <div class="label">צברת מאז ההצטרפות</div>
+        <div class="value">₪890</div>
+        <div class="meta">נמשך: ₪643</div>
+      </div>
+    </div>
+
+    <div class="section-title">פעילות אחרונה</div>
+    <div class="history">
+      <div class="history-row">
+        <div><div class="desc">קנייה — הזמנה #4521</div><div class="date">2026-05-08</div></div>
+        <div class="amt earn">+₪62.50</div>
+      </div>
+      <div class="history-row">
+        <div><div class="desc">מימוש — הזמנה #4519</div><div class="date">2026-05-02</div></div>
+        <div class="amt redeem">-₪150</div>
+      </div>
+      <div class="history-row">
+        <div><div class="desc">קנייה — הזמנה #4517</div><div class="date">2026-04-28</div></div>
+        <div class="amt earn">+₪90</div>
+      </div>
+      <div class="history-row" style="background: #f4f4f5; cursor: pointer; color: #1e3a8a; justify-content: center;">הצג הכל ←</div>
+    </div>
+
+    <div class="section-title">קופונים פעילים</div>
+    <div class="coupons">
+      <div class="coupon">
+        <div class="code">BIRTHDAY26</div>
+        <div class="meta">15% הנחה · עד 31.05 · משקפי-שמש</div>
+      </div>
+      <div class="coupon">
+        <div class="code">GOLDPERK</div>
+        <div class="meta">₪200 הנחה · 2nd pair · עד 30.06</div>
+      </div>
+    </div>
+
+    <div class="section-title">משפחה (3 חברים) — סל משותף</div>
+    <div class="family-list">
+      <div style="padding: 8px 0; font-size: 13px; color: #475569; border-bottom: 1px solid #fafaf7;">
+        💰 יתרה משפחתית: <strong style="color: #0f172a; font-size: 15px;">₪247</strong> · מצב: <span style="color: #00a854;">פתוח</span> · תקרת-מימוש: ללא
+      </div>
+      <div class="family-row">
+        <div><span class="head-badge">ראש</span> דניאל כהן</div>
+        <div style="color: #475569;">תרם ₪3,250 · משך ₪100</div>
+      </div>
+      <div class="family-row">
+        <div>שרה כהן</div>
+        <div style="color: #475569;">תרם ₪890 · משך ₪150</div>
+      </div>
+      <div class="family-row">
+        <div>תומר כהן</div>
+        <div style="color: #475569;">תרם ₪450 · משך ₪0</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn">הנפק קופון</button>
+      <button class="btn secondary">תיקון יתרה</button>
+      <button class="btn secondary">נהל משפחה</button>
+    </div>
+  </div>
+
+  <div class="annotations">
+    <strong>החלטות שמשתקפות:</strong>
+    Hero של ה-tier כולל progress bar ל-tier הבא (D3 — לקוח רואה את הקידום שלו).
+    יתרה עם תאריך-תפוגה (D4 — 24 חודשים).
+    משפחה עם דגל "ראש" (D6 — pooling=equal, אבל ראש-המשפחה מודגש לטובת notifications).
+    כפתורי admin פעולות-נדירות בתחתית — לא תופסים מקום מהמידע ההכרחי.
+  </div>
+</div>
+
+<!-- ============= S2 ============= -->
+<div id="s2" class="sketch">
+  <h2>S2 — Admin: Dashboard המועדון</h2>
+  <div class="subtitle">מסך תפעול למנהל-המועדון. KPI, פילוח לפי tier, פעילות, חיפוש, פעולות-batch.</div>
+
+  <div class="device">
+    <div class="device-label">Admin · Loyalty Dashboard</div>
+
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">חברים פעילים</div>
+        <div class="kpi-value">1,247</div>
+        <div class="kpi-trend">↑ 38 השבוע</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">יתרה כוללת חוצה</div>
+        <div class="kpi-value">₪89,450</div>
+        <div class="kpi-trend" style="color: #475569;">חבות מאזנית</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Redemption Rate</div>
+        <div class="kpi-value">62%</div>
+        <div class="kpi-trend">↑ 4% YoY</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">ARPU חבר vs לא-חבר</div>
+        <div class="kpi-value">₪2,340</div>
+        <div class="kpi-trend">פי 2.1 מלא-חבר</div>
+      </div>
+    </div>
+
+    <div class="section-title">פילוח לפי Tier</div>
+    <table class="table">
+      <thead>
+        <tr><th>Tier</th><th>מספר חברים</th><th>% מהבסיס</th><th>ממוצע הוצאה שנתי</th><th>צבירה YTD</th><th>פעולות</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="pill silver">Silver</span></td>
+          <td>892</td>
+          <td>71%</td>
+          <td>₪1,840</td>
+          <td>₪82,140</td>
+          <td><a href="#" style="color: #1e3a8a;">הצג הכל</a></td>
+        </tr>
+        <tr>
+          <td><span class="pill gold">Gold</span></td>
+          <td>289</td>
+          <td>23%</td>
+          <td>₪3,410</td>
+          <td>₪97,250</td>
+          <td><a href="#" style="color: #1e3a8a;">הצג הכל</a></td>
+        </tr>
+        <tr>
+          <td><span class="pill diamond">Diamond</span></td>
+          <td>66</td>
+          <td>5%</td>
+          <td>₪7,890</td>
+          <td>₪104,180</td>
+          <td><a href="#" style="color: #1e3a8a;">הצג הכל</a></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="section-title">פעילות אחרונה</div>
+    <div class="toolbar">
+      <input class="search" placeholder="חיפוש לקוח (שם / טלפון / אימייל)">
+      <button class="btn">הנפק קופון Batch</button>
+      <button class="btn secondary">נהל משפחות</button>
+      <button class="btn secondary">דו"ח מלא ←</button>
+    </div>
+    <table class="table">
+      <thead><tr><th>תאריך</th><th>לקוח</th><th>פעולה</th><th>סכום</th><th>מקור</th></tr></thead>
+      <tbody>
+        <tr><td>5 דק'</td><td>שרה לוי</td><td><span style="color: #00a854;">צבירה</span></td><td>+₪62</td><td>הזמנה #4521</td></tr>
+        <tr><td>14 דק'</td><td>דני כהן</td><td><span style="color: #d92c2c;">מימוש</span></td><td>-₪150</td><td>הזמנה #4519</td></tr>
+        <tr><td>1 שעה</td><td>אורית מזרחי</td><td><span style="color: #5b3fc7;">קידום</span></td><td>Silver→Gold</td><td>אוטומטי</td></tr>
+        <tr><td>2 שעות</td><td>חיים אבן-טוב</td><td><span style="color: #00a854;">הצטרפות</span></td><td>+₪0</td><td>אתר</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="annotations">
+    <strong>החלטות שמשתקפות:</strong>
+    "יתרה כוללת חוצה" = balance liability — חיוני לראייה פיננסית (D4 expiry policy מצמצם את זה).
+    הפעולות (קופון Batch, ניהול משפחות) ב-toolbar — לא תפריט נפרד; שמירה על מסך אחד שאוסף הכל.
+    שורת "הצטרפות מהאתר" בפעילות — אין מקור "קופה" כי D5 ביטל את זה.
+  </div>
+</div>
+
+<!-- ============= S3 ============= -->
+<div id="s3" class="sketch">
+  <h2>S3 — Checkout (M7) → Loyalty Block</h2>
+  <div class="subtitle">לא מסך חדש — בלוק שמתווסף ל-checkout של M7 כשהלקוח חבר. מאפשר שימוש ביתרה + הוספת קופון.</div>
+
+  <div class="device">
+    <div class="device-label">M7 Checkout · Loyalty section embed</div>
+
+    <div style="background: #f4f4f5; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+      <div style="font-size: 13px; color: #475569; margin-bottom: 4px;">[רכיבי checkout רגילים: לקוח, פריטים, סכום]</div>
+      <div style="font-size: 13px; color: #475569;">סך-הכל לפני: ₪1,890</div>
+    </div>
+
+    <div class="checkout-block">
+      <div class="header">
+        <div>
+          <div class="name">⭐ דניאל כהן</div>
+          <div style="font-size: 12px; color: #475569;">חבר Gold · יתרה זמינה: ₪247</div>
+        </div>
+        <span class="pill gold">Gold</span>
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <label style="font-size: 13px; display: block; margin-bottom: 6px;">השתמש מהיתרה:</label>
+        <div class="balance-line">
+          <input type="number" value="150" placeholder="0">
+          <label><input type="checkbox"> כל היתרה (₪247)</label>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <label style="font-size: 13px; display: block; margin-bottom: 6px;">קוד קופון:</label>
+        <div class="coupon-line">
+          <input type="text" value="BIRTHDAY26" style="flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit;">
+          <button class="btn secondary">הוסף</button>
+        </div>
+        <div style="font-size: 12px; color: #00a854; margin-top: 6px;">✓ קופון BIRTHDAY26 — 15% הנחה על משקפי-שמש</div>
+      </div>
+
+      <div class="summary-line">
+        <div>סכום מקורי</div>
+        <div>₪1,890</div>
+      </div>
+      <div class="summary-line" style="color: #00a854; border-top: 0; padding-top: 0;">
+        <div>הנחת קופון (15% על משקפי-שמש)</div>
+        <div>-₪225</div>
+      </div>
+      <div class="summary-line" style="color: #00a854; border-top: 0; padding-top: 0;">
+        <div>שימוש ביתרה</div>
+        <div>-₪150</div>
+      </div>
+      <div class="summary-line" style="font-weight: 700; font-size: 16px;">
+        <div>נשאר לתשלום</div>
+        <div>₪1,515</div>
+      </div>
+
+      <div style="margin-top: 12px; padding: 10px; background: rgba(255,255,255,0.6); border-radius: 8px; font-size: 13px; color: #0f172a;">
+        💡 לאחר התשלום תצבור <strong>₪75.75</strong> ליתרת הזיכוי שלך
+      </div>
+    </div>
+  </div>
+
+  <div class="annotations">
+    <strong>החלטות שמשתקפות:</strong>
+    הבלוק נטען רק אם הלקוח חבר — Non-members לא רואים אותו (Iron Rule 7 — תוצר של RPC `get_loyalty_for_checkout`).
+    Coupon scope ("על משקפי-שמש") מגיע מ-`applies_to` JSONB של הקופון (M13) ומפורש על-ידי M7.
+    הודעת "תצבור ₪75.75" משדרת ערך-מיידי שמעודד גם בקנייה הבאה — לא רק "השתמש".
+  </div>
+</div>
+
+<!-- ============= S4 ============= -->
+<div id="s4" class="sketch">
+  <h2>S4 — עמוד הצטרפות באתר</h2>
+  <div class="subtitle">עמוד ייעודי באתר הציבורי (M3 storefront). זוהי הדרך היחידה להצטרף. מודל מחיר-אחיד — אין בחירת tier בהצטרפות.</div>
+
+  <div class="device mobile">
+    <div class="device-label">Storefront · /loyalty-club/ · Mobile</div>
+
+    <div class="storefront">
+      <div class="hero-img">⭐ מועדון פריזמה</div>
+      <div class="body">
+        <h3>הצטרף למועדון</h3>
+        <div class="lead">חברות שנתיים תמורת תשלום חד-פעמי. צבור יתרת זיכוי על כל קנייה — והרמה שלך עולה אוטומטית לפי הוצאה שנתית.</div>
+
+        <!-- Membership type toggle -->
+        <div style="display: flex; gap: 8px; margin-bottom: 20px; background: #fafaf7; padding: 4px; border-radius: 10px;">
+          <div style="flex: 1; text-align: center; padding: 10px; background: white; border-radius: 8px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" id="opt-individual">
+            <div>חברות בודדת</div>
+            <div style="color: #1e3a8a; font-size: 18px; font-weight: 700;">₪50</div>
+          </div>
+          <div style="flex: 1; text-align: center; padding: 10px; border-radius: 8px; cursor: pointer; color: #475569;" id="opt-family">
+            <div>חברות משפחתית</div>
+            <div style="font-size: 18px; font-weight: 700;">₪100</div>
+            <div style="font-size: 10px;">עד 5 חברים</div>
+          </div>
+        </div>
+
+        <!-- Welcome Bonus block — always visible -->
+        <div style="background: #1e3a8a; color: white; border-radius: 10px; padding: 14px; margin-bottom: 12px; font-size: 13px;">
+          <div style="font-weight: 700; font-size: 15px; margin-bottom: 6px;">🎁 בונוס הצטרפות</div>
+          <div style="line-height: 1.5;">
+            <strong>5% הנחה מיידית</strong> על הקנייה הראשונה (עד ₪150).
+          </div>
+        </div>
+
+        <!-- Benefits explanation block — INDIVIDUAL (default) -->
+        <div style="background: #e6f1fb; border: 1px solid #1e3a8a; border-radius: 10px; padding: 14px; margin-bottom: 20px; font-size: 13px;" id="benefits-individual">
+          <div style="font-weight: 700; color: #0f172a; margin-bottom: 8px;">איך הצבירה עובדת?</div>
+          <div style="color: #0f172a; line-height: 1.6;">
+            כל הצטרפות מתחילה ב-<strong>Silver</strong>: 4% צבירה על מסגרות, 7% על עדשות.<br>
+            תקנו ב-₪10,000 בשנה? עליתם ל-<strong>Gold</strong> אוטומטית (6% / 12%).<br>
+            תקנו ב-₪15,000 בשנה? <strong>Diamond</strong> (8% / 15%).<br>
+            <span style="color: #475569; font-size: 12px;">החברות בתוקף לשנתיים. הקרדיט שצברתם תקף 24 חודש.</span>
+          </div>
+        </div>
+
+        <!-- Benefits explanation block — FAMILY (hidden by default) -->
+        <div style="display: none; background: #e6f1fb; border: 1px solid #1e3a8a; border-radius: 10px; padding: 14px; margin-bottom: 20px; font-size: 13px;" id="benefits-family">
+          <div style="font-weight: 700; color: #0f172a; margin-bottom: 8px;">איך הצבירה עובדת למשפחה?</div>
+          <div style="color: #0f172a; line-height: 1.6;">
+            כל המשפחה מתחילה ב-<strong>Silver</strong>: 4% צבירה על מסגרות, 7% על עדשות.<br>
+            הקניות של כל בני המשפחה מצטברות יחד וההטבות משותפות.<br><br>
+            <strong>סף הקידום עולה לפי גודל המשפחה</strong> (30% לכל חבר נוסף):<br>
+            <span style="color: #475569;">משפחה של 2:</span> ₪13,000 → Gold · ₪19,500 → Diamond<br>
+            <span style="color: #475569;">משפחה של 3:</span> ₪16,000 → Gold · ₪24,000 → Diamond<br>
+            <span style="color: #475569;">משפחה של 4:</span> ₪19,000 → Gold · ₪28,500 → Diamond<br>
+            <span style="color: #475569;">משפחה של 5:</span> ₪22,000 → Gold · ₪33,000 → Diamond<br>
+            <span style="color: #475569; font-size: 12px;">החברות בתוקף לשנתיים. הקרדיט שצברתם תקף 24 חודש.</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>שם פרטי</label>
+          <input type="text" placeholder="ישראל">
+        </div>
+
+        <div class="form-group">
+          <label>שם משפחה</label>
+          <input type="text" placeholder="ישראלי">
+        </div>
+
+        <div class="form-group">
+          <label>טלפון נייד</label>
+          <input type="tel" placeholder="050-1234567">
+        </div>
+
+        <div class="form-group">
+          <label>אימייל</label>
+          <input type="email" placeholder="israel@example.com">
+        </div>
+
+        <div class="form-group">
+          <label>תאריך לידה (אופציונלי — נשלח קופון יום-הולדת)</label>
+          <input type="date">
+        </div>
+
+        <!-- Family-only block (conditional) -->
+        <div style="display: none; background: #f4f4f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 14px;" id="family-block">
+          <div style="font-weight: 600; margin-bottom: 8px;">בני משפחה (תוכל להוסיף אחרי ההצטרפות)</div>
+          <div style="font-size: 13px; color: #475569; line-height: 1.5;">
+            המשפחה צוברת יחד וההטבות משותפות. סף הקידום ל-Gold/Diamond עולה ב-50% לכל חבר נוסף — כדי לשמור על הוגנות.<br><br>
+            <strong>לדוגמה:</strong> משפחה של 3 תעלה ל-Gold כשתקנה ביחד ₪20,000 בשנה (במקום ₪10,000 לחבר בודד).
+          </div>
+        </div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="terms">
+          <label for="terms">קראתי ואני מאשר את <a href="#">תקנון המועדון</a></label>
+        </div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="marketing" checked>
+          <label for="marketing">אני מאשר קבלת הצעות שיווקיות בוואטסאפ, SMS ואימייל</label>
+        </div>
+
+        <button class="submit-btn" id="submit-btn">הצטרף ועבור לתשלום ₪50</button>
+
+        <div style="text-align: center; font-size: 12px; color: #475569; margin-top: 12px;">
+          <a href="#" style="color: #1e3a8a;">תקנון</a> · <a href="#" style="color: #1e3a8a;">פרטיות</a> · <a href="#" style="color: #1e3a8a;">יצירת קשר</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="annotations">
+    <strong>החלטות שמשתקפות:</strong><br>
+    <strong>מודל מחיר-אחיד:</strong> אין בחירת tier בהצטרפות — כולם נכנסים ל-Silver. הקידום אוטומטי לפי הוצאה שנתית. בלוק ההסבר ויזואלי וברור.<br>
+    <strong>Toggle בודד/משפחתי בראש:</strong> שני מחירים בלבד (₪50 / ₪100). בחירה בקליק אחד. כפתור התשלום מתעדכן דינמית.<br>
+    <strong>בלוק משפחה מותנה:</strong> מופיע רק אם בחרו "משפחתי", כולל הסבר על סף-הקידום הגדל (ל-fairness).<br>
+    <strong>תאריך לידה אופציונלי:</strong> מתומרץ עם הסבר ("קופון יום-הולדת") — לא חובה אבל מועיל.<br>
+    <strong>שני אישורים בלבד:</strong> תקנון (חובה) + שיווק (אופציונלי, ברירת-מחדל מסומן). הוסר checkbox "להוסיף משפחה" (זה כעת תפקיד ה-toggle).<br>
+    <strong>CTA דינמי:</strong> "₪50" או "₪100" לפי הבחירה — שקיפות מקסימלית.<br>
+    <strong>אחרי הגשה:</strong> מעבר לעמוד תשלום (M8). אחרי תשלום מוצלח: created membership + הודעה welcome (M12).
+  </div>
+</div>
+
+<script>
+// Family/individual toggle for S4
+document.addEventListener('DOMContentLoaded', function() {
+  var optInd = document.getElementById('opt-individual');
+  var optFam = document.getElementById('opt-family');
+  var familyBlock = document.getElementById('family-block');
+  var submitBtn = document.getElementById('submit-btn');
+
+  var benefitsIndividual = document.getElementById('benefits-individual');
+  var benefitsFamily = document.getElementById('benefits-family');
+
+  if (optInd && optFam) {
+    optInd.addEventListener('click', function() {
+      optInd.style.background = 'white';
+      optInd.style.fontWeight = '600';
+      optInd.style.color = '#0f172a';
+      optInd.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+      optFam.style.background = 'transparent';
+      optFam.style.fontWeight = '400';
+      optFam.style.color = '#475569';
+      optFam.style.boxShadow = 'none';
+      familyBlock.style.display = 'none';
+      benefitsIndividual.style.display = 'block';
+      benefitsFamily.style.display = 'none';
+      submitBtn.textContent = 'הצטרף ועבור לתשלום ₪50';
+    });
+    optFam.addEventListener('click', function() {
+      optFam.style.background = 'white';
+      optFam.style.fontWeight = '600';
+      optFam.style.color = '#0f172a';
+      optFam.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+      optInd.style.background = 'transparent';
+      optInd.style.fontWeight = '400';
+      optInd.style.color = '#475569';
+      optInd.style.boxShadow = 'none';
+      familyBlock.style.display = 'block';
+      benefitsIndividual.style.display = 'none';
+      benefitsFamily.style.display = 'block';
+      submitBtn.textContent = 'הצטרף ועבור לתשלום ₪100';
+    });
+  }
+});
+</script>
+
+<!-- ============= S5 — Settings ============= -->
+<div id="s5" class="sketch">
+  <h2>S5 — הגדרות מועדון (Tenant Owner Panel)</h2>
+  <div class="subtitle">פאנל הגדרות הזמין למנהל ה-tenant. כל המספרים ניתנים לעדכון מכאן בלי שינוי קוד. שינוי = החל מההצטרפות הבאה (לא משפיע למפרע).</div>
+
+  <div class="device">
+    <div class="device-label">Settings · Loyalty Module Configuration</div>
+
+    <!-- Section 1: Membership Pricing -->
+    <div style="background: #f4f4f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div style="font-weight: 700; font-size: 16px;">💳 דמי חבר ומשך מנוי</div>
+        <button class="btn secondary" style="font-size: 12px; padding: 6px 12px;">היסטוריית שינויים</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+        <div>
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">חברות בודדת (₪)</label>
+          <input type="number" value="50" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
+        </div>
+        <div>
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">מכפיל חברות משפחתית</label>
+          <input type="number" value="2.0" step="0.1" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
+          <div style="font-size: 11px; color: #475569; margin-top: 4px;">→ משפחתית: ₪100</div>
+        </div>
+        <div>
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">משך חברות (חודשים)</label>
+          <input type="number" value="24" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Welcome Bonus -->
+    <div style="background: #f4f4f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div style="font-weight: 700; font-size: 16px;">🎁 בונוס הצטרפות</div>
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
+          <input type="checkbox" checked> פעיל
+        </label>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+        <div>
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">סוג בונוס</label>
+          <select style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
+            <option selected>הנחה מיידית %</option>
+            <option>קרדיט קבוע ₪</option>
+            <option>פריט חינם</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">ערך (%)</label>
+          <input type="number" value="5" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
+        </div>
+        <div>
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">תקרה (₪)</label>
+          <input type="number" value="150" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
+        </div>
+      </div>
+      <div style="margin-top: 12px;">
+        <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">תוקף הבונוס (ימים מההצטרפות)</label>
+        <input type="number" value="30" style="width: 200px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
+      </div>
+    </div>
+
+    <!-- Section 3: Tiers -->
+    <div style="background: #f4f4f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div style="font-weight: 700; font-size: 16px;">⭐ רמות מועדון (Tiers)</div>
+        <button class="btn secondary" style="font-size: 12px; padding: 6px 12px;">+ הוסף Tier</button>
+      </div>
+
+      <table class="table" style="background: white;">
+        <thead>
+          <tr>
+            <th>Tier</th>
+            <th>סף עלייה (₪/שנה)</th>
+            <th>סף שמירה (₪/שנה)</th>
+            <th>צבירה מסגרות</th>
+            <th>צבירה עדשות</th>
+            <th>צבירה אחר</th>
+            <th>פעולות</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="pill silver">Silver</span><br><span style="font-size: 11px; color: #475569;">tier ברירת-מחדל</span></td>
+            <td><input type="number" value="0" style="width: 80px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></td>
+            <td><input type="number" value="0" style="width: 80px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></td>
+            <td><input type="number" value="4" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">%</td>
+            <td><input type="number" value="7" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">%</td>
+            <td><input type="number" value="0" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">%</td>
+            <td><a href="#" style="color: #1e3a8a; font-size: 13px;">ערוך הטבות</a></td>
+          </tr>
+          <tr>
+            <td><span class="pill gold">Gold</span></td>
+            <td><input type="number" value="10000" style="width: 80px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></td>
+            <td><input type="number" value="8000" style="width: 80px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></td>
+            <td><input type="number" value="6" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">%</td>
+            <td><input type="number" value="12" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">%</td>
+            <td><input type="number" value="0" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">%</td>
+            <td><a href="#" style="color: #1e3a8a; font-size: 13px;">ערוך הטבות</a></td>
+          </tr>
+          <tr>
+            <td><span class="pill diamond">Diamond</span></td>
+            <td><input type="number" value="15000" style="width: 80px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></td>
+            <td><input type="number" value="12000" style="width: 80px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></td>
+            <td><input type="number" value="8" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">%</td>
+            <td><input type="number" value="15" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">%</td>
+            <td><input type="number" value="0" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">%</td>
+            <td><a href="#" style="color: #1e3a8a; font-size: 13px;">ערוך הטבות</a></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="font-size: 12px; color: #475569; margin-top: 8px;">סף עלייה = הוצאה שנתית מינימלית לקידום. סף שמירה = הוצאה מינימלית לשמירת ה-tier (אחרת downgrade עם grace).</div>
+    </div>
+
+    <!-- Section 4: Family Settings -->
+    <div style="background: #f4f4f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div style="font-weight: 700; font-size: 16px;">👨‍👩‍👧 הגדרות משפחה</div>
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
+          <input type="checkbox" checked> חברות משפחתית פעילה
+        </label>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+        <div>
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">מקסימום חברים בכל משפחה</label>
+          <input type="number" value="5" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
+        </div>
+        <div>
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">מדיניות צבירה</label>
+          <select style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
+            <option selected>שווה — כולם תורמים</option>
+            <option>ראש-משפחה בלבד</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">scale_factor (סף עליית tier)</label>
+          <input type="number" value="0.3" step="0.05" min="0" max="2" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
+          <div style="font-size: 11px; color: #475569; margin-top: 4px;">→ 30% עלייה לחבר</div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid #e2e8f0; padding-top: 14px;">
+        <div style="font-weight: 600; font-size: 13px; margin-bottom: 8px;">סל משפחתי משותף — מימוש</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">מצב default למשפחות חדשות</label>
+            <select style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
+              <option selected>פתוח — כל חבר מממש בלי אישור</option>
+              <option>סגור — דורש אישור ראש-משפחה</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">תקרת מימוש default לבן-משפחה (₪, 0 = ללא)</label>
+            <input type="number" value="0" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
+            <div style="font-size: 11px; color: #475569; margin-top: 4px;">מעל הסכום — דורש אישור ראש-משפחה (גם במצב פתוח)</div>
+          </div>
+        </div>
+        <div style="font-size: 11px; color: #475569; margin-top: 8px;">כל משפחה יכולה לעקוף את ה-default האלה דרך כרטיס המועדון שלה.</div>
+      </div>
+    </div>
+
+    <!-- Section 5: Credit & Renewal -->
+    <div style="background: #f4f4f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 16px;">
+      <div style="font-weight: 700; font-size: 16px; margin-bottom: 14px;">💰 קרדיט וחידוש</div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+        <div>
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">תוקף קרדיט (חודשים)</label>
+          <input type="number" value="24" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
+        </div>
+        <div>
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">Grace period downgrade (חודשים)</label>
+          <input type="number" value="6" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
+        </div>
+        <div>
+          <label style="font-size: 12px; color: #475569; display: block; margin-bottom: 4px;">מקסימום קופונים בהזמנה</label>
+          <input type="number" value="1" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px;">
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 6: Notifications -->
+    <div style="background: #f4f4f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 16px;">
+      <div style="font-weight: 700; font-size: 16px; margin-bottom: 14px;">📢 התראות אוטומטיות</div>
+
+      <div style="display: grid; gap: 8px;">
+        <label style="display: flex; align-items: center; gap: 10px; padding: 8px; background: white; border-radius: 6px;">
+          <input type="checkbox" checked>
+          <div style="flex: 1;"><strong>קרדיט פג בקרוב</strong> <span style="color: #475569; font-size: 12px;">— 60 יום לפני התפוגה</span></div>
+        </label>
+        <label style="display: flex; align-items: center; gap: 10px; padding: 8px; background: white; border-radius: 6px;">
+          <input type="checkbox" checked>
+          <div style="flex: 1;"><strong>קרוב לרמה הבאה</strong> <span style="color: #475569; font-size: 12px;">— 80% מהסף</span></div>
+        </label>
+        <label style="display: flex; align-items: center; gap: 10px; padding: 8px; background: white; border-radius: 6px;">
+          <input type="checkbox">
+          <div style="flex: 1;"><strong>קופון יום-הולדת</strong> <span style="color: #475569; font-size: 12px;">— יומיים לפני</span></div>
+        </label>
+        <label style="display: flex; align-items: center; gap: 10px; padding: 8px; background: white; border-radius: 6px;">
+          <input type="checkbox" checked>
+          <div style="flex: 1;"><strong>ברוך הבא</strong> <span style="color: #475569; font-size: 12px;">— מיד עם הצטרפות</span></div>
+        </label>
+        <label style="display: flex; align-items: center; gap: 10px; padding: 8px; background: white; border-radius: 6px;">
+          <input type="checkbox" checked>
+          <div style="flex: 1;"><strong>חידוש מנוי</strong> <span style="color: #475569; font-size: 12px;">— 30/14/7 ימים לפני</span></div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Save bar -->
+    <div style="display: flex; justify-content: flex-end; gap: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0;">
+      <button class="btn secondary">בטל שינויים</button>
+      <button class="btn">שמור שינויים</button>
+    </div>
+  </div>
+
+  <div class="annotations">
+    <strong>החלטות שמשתקפות:</strong><br>
+    <strong>הכל config-driven (Pattern P19):</strong> כל המספרים שדנו בהם נמצאים כאן — מחיר, אחוזי צבירה, ספים, scale_factor, multipliers, תוקפים. שינוי = update DB row, לא שינוי קוד.<br>
+    <strong>Per-tenant 100%:</strong> כל tenant רואה רק את ההגדרות שלו. אין hardcoded ערכים בקוד.<br>
+    <strong>שינוי לא רטרואקטיבי:</strong> שינוי ספים/אחוזים משפיע מההצטרפות הבאה — חברים קיימים שומרים על תנאי-הצטרפותם (קריטי לאמון).<br>
+    <strong>היסטוריית שינויים:</strong> כפתור "היסטוריית שינויים" → audit log של כל שינוי (מי, מתי, ממה, למה).<br>
+    <strong>Toggle התראות:</strong> כל סוג הודעה ניתן לכבות/להפעיל בנפרד. הטמפלטים עצמם (טקסט, ערוץ) נערכים ב-M12.<br>
+    <strong>הוספת Tier:</strong> tenant יכול ליצור tier רביעי (לדוג' Platinum) בלי שינוי קוד.<br>
+    <strong>Welcome Bonus toggle:</strong> אם רואים שזה לא משפיע על conversion — אפשר לכבות בלי איבוד נתונים.<br>
+    <strong>הטבות per-tier (כפתור "ערוך הטבות"):</strong> פותח דיאלוג JSONB editor עבור tier_benefits — free shipping, priority service, exclusive events וכו'.
+  </div>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.sketch').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

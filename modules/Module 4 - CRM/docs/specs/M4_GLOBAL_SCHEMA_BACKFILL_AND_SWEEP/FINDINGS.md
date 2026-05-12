@@ -68,7 +68,7 @@
   grep -n "L-PROJECT-001\|HARDCODED_DEMO_PHONE\|717-5675" "modules/Module 4 - CRM/docs/CHANGELOG.md"
   # → 0 hits
   ```
-- **Suggested next action:** TECH_DEBT (1-line bump in next opticup-main-strategic master-doc sweep — no separate SPEC needed)
+- **Suggested next action:** TECH_DEBT (1-line bump in next opticup-architect master-doc sweep — no separate SPEC needed)
 - **Rationale for action:** Documentation drift, single line missing. Auto-include CHANGELOG in every SPEC_TEMPLATE going forward (logged as opticup-strategic Proposal 2 in M4_HARDCODED_DEMO_PHONE_CLEANUP/FOREMAN_REVIEW.md §6).
 - **Foreman override (filled by Foreman in review):** { }
 

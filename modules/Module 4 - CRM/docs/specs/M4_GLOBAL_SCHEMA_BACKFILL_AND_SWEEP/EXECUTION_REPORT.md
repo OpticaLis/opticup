@@ -120,7 +120,7 @@ Closed one of the two declared gaps from M4_CLOSURE_AND_INTEGRATION_CEREMONY (Ga
 - Signal Foreman: "SPEC closed. Awaiting Foreman review."
 - Do NOT write FOREMAN_REVIEW.md (Foreman's job).
 
-**For Daniel + the next opticup-main-strategic session:**
+**For Daniel + the next opticup-architect session:**
 - Module 4 doc gaps: ZERO remaining. Both M4_CLOSURE and M4_HARDCODED_DEMO_PHONE_CLEANUP now have FOREMAN_REVIEWs. Module 4 closure cycle is fully audited.
 - 4 routed-forward items (see FINDINGS.md):
   - **M4-FINDING-01 (LOW):** event-register/index.ts reads tenants.ui_config directly — refactor to use `_shared/tenant-config.ts` helper for consistency. New SPEC `M4_EVENT_REGISTER_TENANT_CONFIG_HELPER` (small).

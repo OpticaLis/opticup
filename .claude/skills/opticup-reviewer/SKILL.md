@@ -229,3 +229,38 @@ If reviewing Phase B work specifically, verify these are being FIXED, not ignore
 | DB schema | `docs/GLOBAL_SCHEMA.sql` |
 | File tree | `docs/FILE_STRUCTURE.md` |
 | Module code map | `modules/Module X/docs/MODULE_MAP.md` |
+
+---
+
+## Pipeline Hand-off
+
+This section governs how `opticup-reviewer` hands off to the next skill in the Full-Auto Pipeline (see `modules/Module 1.5 - Shared Components/docs/specs/M1_5_FULL_AUTO_PIPELINE/SPEC.md`).
+
+Triggered when the dispatch line includes **"Pipeline mode: full-auto"**.
+
+1. Read the SPEC.md, EXECUTION_REPORT.md, FINDINGS.md from the SPEC folder + the diff range of the SPEC's commits.
+2. Run the standard review protocol (Iron Rules 1-32, RLS audit, security checks, file-size, FIELD_MAP coverage, naming collisions).
+3. Write review notes by APPENDING a `## Reviewer Notes (post-execution audit)` section to EXECUTION_REPORT.md — do NOT create a new file. Note any new findings; if none, write "No new findings beyond those already in FINDINGS.md."
+4. Commit + push (`chore(spec): {SLUG} reviewer notes`).
+5. Hand off to the Localhost-Tester in the SAME chat:
+   ```
+   Skill: opticup-localhost-tester
+   ```
+   Dispatch line: `Smoke-test SPEC modules/Module N/docs/specs/{SLUG}/ — Pipeline mode: full-auto. Hand off to opticup-strategic for FOREMAN_REVIEW at end.`
+6. Emit the Hebrew status line (see "Status Line" below).
+7. Do NOT continue running Reviewer work after hand-off. The Localhost-Tester owns the next phase.
+
+### Retry policy
+
+If `Skill: opticup-localhost-tester` fails to load: retry ONCE. On second failure, write an escalation to `modules/Module N/escalations/{ISO_TS}_skill-load-failure.md` and emit:
+`🛑 נתקעתי על טעינת Skill: opticup-localhost-tester — escalation: {path}`
+
+### Status Line (Hebrew, single line, per phase)
+
+The Reviewer emits ONE Hebrew status line at end of its phase. ≤ 60 chars. Examples:
+
+- `✓ Review נקי ({SLUG}).`
+- `⚠️ Review — {N} ממצאים חדשים ב-EXECUTION_REPORT.`
+- `🛑 Review חוסם — {SLUG} REOPEN, escalation: {path}`
+
+This is the only chat output the Reviewer emits between phases under full-auto mode.

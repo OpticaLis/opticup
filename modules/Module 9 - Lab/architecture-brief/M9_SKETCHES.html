@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M9 — Lab/KDS Sketches v2</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Rubik', -apple-system, sans-serif; background: #fafaf7; color: #0f172a; padding: 16px; font-size: 13px; }
+  .nav { position: sticky; top: 0; background: white; padding: 14px 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; z-index: 100; }
+  .nav h1 { font-size: 18px; margin-left: auto; color: #1e3a8a; }
+  .nav button { background: #fafaf7; border: 1px solid #cbd5e1; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .nav button.active { background: #1e3a8a; color: white; border-color: #1e3a8a; }
+  .sketch { display: none; background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+  .sketch.active { display: block; }
+  .sketch h2 { font-size: 22px; margin-bottom: 4px; color: #1e3a8a; }
+  .sketch .subtitle { color: #475569; font-size: 13px; margin-bottom: 8px; }
+  .sketch .rationale { background: #f4f4f5; border-right: 3px solid #1e3a8a; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; color: #444; line-height: 1.6; }
+  .sketch .rationale strong { color: #1e3a8a; }
+
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 8px 12px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; }
+  .top-bar .title { font-size: 15px; font-weight: 600; }
+  .top-bar .stats { display: flex; gap: 6px; font-size: 12px; }
+  .stat-chip { padding: 3px 9px; border-radius: 10px; }
+  .stat-chip.neutral { background: #fafaf7; color: #0f172a; }
+  .stat-chip.danger { background: #fde7e7; color: #a32d2d; }
+  .stat-chip.warn { background: #e6f1fb; color: #855011; }
+
+  .tabs-row { display: flex; gap: 4px; margin-bottom: 10px; border-bottom: 2px solid #e2e8f0; }
+  .tab-pill { padding: 8px 16px; cursor: pointer; font-size: 13px; color: #555; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+  .tab-pill.active { color: #1e3a8a; font-weight: 600; border-bottom: 2px solid #1e3a8a; }
+  .tab-pill .badge { background: #fde7e7; color: #a32d2d; padding: 1px 7px; border-radius: 8px; font-size: 11px; margin-right: 4px; }
+
+  .filter-bar { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
+  .filter-bar select, .filter-bar input { padding: 5px 9px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 5px; font-family: inherit; background: white; }
+  .filter-bar input { flex: 1; min-width: 120px; }
+
+  table.access-style { width: 100%; border-collapse: collapse; font-size: 11px; background: white; border: 1px solid #b8b8b8; }
+  table.access-style th { background: #d8d8d8; padding: 6px 4px; font-weight: 600; color: #333; border: 1px solid #b8b8b8; text-align: center; font-size: 11px; }
+  table.access-style td { padding: 5px 4px; border: 1px solid #d8d8d8; text-align: center; white-space: nowrap; }
+  tr.row-active td { background: #fff8c4; }
+  tr.row-done td { background: #e8e8e8; color: #888; }
+  td.cell-pending { background: #fde9ec; }
+  td.cell-done { background: #c8e9b8; }
+  td.cell-na { background: #c8c8c8; color: transparent; }
+  .cell-date { font-size: 11px; line-height: 1.2; }
+  .cell-date .d { display: block; font-weight: 500; }
+  .cell-date .t { display: block; color: #666; font-size: 10px; }
+  td.delay-cell { background: #d92c2c; color: white; font-weight: 700; font-size: 12px; min-width: 36px; }
+  td.delay-cell.delay-zero { background: #ffe7e7; color: #d92c2c; }
+  td.delay-cell.delay-yellow { background: #ffd476; color: #6b4400; }
+  td.delay-cell.delay-none { background: #c8e9b8; color: #2d5a1a; }
+  td.id-cell { background: #fff200; font-weight: 600; }
+  td.cat-multi { background: #ffe2c4; }
+  td.cat-stock { background: #e6f1fb; }
+  td.cat-yatzur { background: #f7d5e3; }
+  td.cat-mishima { background: #ffd6cc; }
+  td.cat-task { background: #d8e4ff; }
+  td.cat-credit { background: #f0d4ff; }
+  .row-action { background: white; border: 1px solid #b8b8b8; cursor: pointer; padding: 0; width: 22px; height: 22px; }
+  td.branch-cell { background: #404040; color: #ffd700; font-weight: 600; font-size: 10px; }
+
+  .priority-zone { background: #fde7e7; border: 1px solid #f0a4a4; border-radius: 10px; padding: 10px; margin-bottom: 14px; }
+  .priority-zone .pz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 0 4px; }
+  .priority-zone .pz-title { font-size: 13px; font-weight: 600; color: #791f1f; }
+  .priority-zone .pz-meta { font-size: 11px; color: #a32d2d; }
+  .priority-zone table.access-style { font-size: 11px; }
+  .action-link { color: #185fa5; font-size: 11px; text-decoration: underline; cursor: pointer; }
+
+  /* Sub-row drawer */
+  .sub-row td { background: #fffbf0 !important; padding: 12px 16px !important; text-align: right !important; border-top: 2px solid #1e3a8a !important; }
+  .sub-row .sub-title { font-weight: 600; color: #1e3a8a; margin-bottom: 8px; font-size: 12px; }
+  .sub-row .sub-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 12px; }
+  .sub-row .sub-cell { background: white; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; }
+  .sub-row .sub-cell .sub-label { font-size: 10px; color: #888; text-transform: uppercase; }
+  .sub-row .sub-cell .sub-value { font-size: 12px; font-weight: 500; margin-top: 2px; }
+  .sub-row .notes-section { background: white; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; }
+  .sub-row .note-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #fafaf7; font-size: 11px; }
+  .sub-row .note-row:last-child { border-bottom: 0; }
+  .sub-row .note-author { color: #888; font-size: 10px; }
+  .sub-row .note-input { width: 100%; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: inherit; font-size: 12px; margin-top: 6px; resize: vertical; }
+  .sub-row .add-note-btn { background: #1e3a8a; color: white; border: 0; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-top: 6px; font-family: inherit; }
+
+  .recommendation-banner { background: #e6f1fb; border: 1px solid #1e3a8a; padding: 14px 18px; border-radius: 10px; margin-bottom: 16px; }
+  .recommendation-banner .rb-title { font-weight: 600; color: #855011; margin-bottom: 4px; font-size: 14px; }
+  .recommendation-banner .rb-body { font-size: 12px; color: #444; line-height: 1.6; }
+  .recommendation-banner ul { margin: 6px 18px 0; }
+
+  .legend { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; padding: 8px; background: #f4f4f5; border-radius: 6px; font-size: 11px; }
+  .legend-item { display: flex; gap: 4px; align-items: center; }
+  .legend-swatch { width: 14px; height: 14px; border: 1px solid #b8b8b8; }
+  .scroll-x { overflow-x: auto; }
+
+  .game-banner { background: #1a1a2e; color: #fff; padding: 10px 14px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .game-banner .gb-left { font-size: 13px; }
+  .game-banner .gb-left strong { color: #ffd700; }
+  .game-banner .gb-score { display: flex; gap: 16px; font-size: 11px; }
+  .game-banner .gb-score .item .v { font-size: 16px; font-weight: 700; color: #ffd700; }
+  .game-banner .gb-score .item .l { color: #aaa; font-size: 10px; }
+</style>
+</head>
+<body>
+  <div class="nav">
+    <button class="active" data-target="sc">סקיצה ג v2 — עדיפות מסכן ⭐</button>
+    <button data-target="sa">סקיצה א — Access</button>
+    <button data-target="sb">סקיצה ב — Kanban</button>
+    <h1>M9 · Lab/KDS — מסך הזמנות (v2)</h1>
+  </div>
+
+  <div class="recommendation-banner">
+    <div class="rb-title">סקיצה ג v2 — עדכונים מ-Daniel 2026-05-10:</div>
+    <div class="rb-body">
+      <ul>
+        <li><strong>2 שעוני-עיכוב נפרדים:</strong> "ימי-עיבוד" (קליטה→הודעה-מוכן) + "ימי-המתנה-לאיסוף" (הודעה→איסוף-בפועל)</li>
+        <li><strong>שמות-עמודות תוקנו:</strong> "שם-מוכר" (ביצע ההזמנה ללקוח) + "אופטיקאי-משמרת" (מחובר כעת למעבדה — נושא אחריות)</li>
+        <li><strong>3 לשוניות:</strong> הזמנות / משימות / זיכויים-והחלפות. ברירת-מחדל = פתוחות בלבד (לא מציג "נלקח")</li>
+        <li><strong>Sub-row על קליק:</strong> כל ה-5 תאריכים, היסטוריית-הערות, הוספת-הערה</li>
+        <li><strong>Game banner:</strong> KPI יומי לאופטיקאי-משמרת (מטרה = לרוקן את השורות הצהובות/אדומות)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-swatch" style="background: #fff200;"></div>מס' הזמנה</div>
+    <div class="legend-item"><div class="legend-swatch" style="background: #fff8c4;"></div>פעיל</div>
+    <div class="legend-item"><div class="legend-swatch" style="background: #fde9ec;"></div>טרם קרה</div>
+    <div class="legend-item"><div class="legend-swatch" style="background: #c8e9b8;"></div>נסגר</div>
+    <div class="legend-item"><div class="legend-swatch" style="background: #c8c8c8;"></div>לא רלוונטי</div>
+    <div class="legend-item"><div class="legend-swatch" style="background: #d92c2c;"></div>עיכוב</div>
+    <div class="legend-item"><div class="legend-swatch" style="background: #d8e4ff;"></div>משימה</div>
+    <div class="legend-item"><div class="legend-swatch" style="background: #f0d4ff;"></div>זיכוי/החלפה</div>
+  </div>
+
+  <!-- ============ SKETCH C v2 ============ -->
+  <div class="sketch active" id="sc">
+    <h2>סקיצה ג v2 — עדיפות מסכן + סאב-שורה + 3 לשוניות</h2>
+    <div class="subtitle">מסך-שליטה למעבדה · "משחק" של ריקון-עיכובים · אופטיקאי-משמרת אחראי</div>
+
+    <div class="game-banner">
+      <div class="gb-left">משמרת: <strong>איליה אלקימוביץ׳</strong> · מחובר מ-08:00 · <span style="color: #ffd700;">המטרה: לסיים את היום בלי שורות צהובות/אדומות</span></div>
+      <div class="gb-score">
+        <div class="item"><div class="v">8</div><div class="l">פתורים היום</div></div>
+        <div class="item"><div class="v">4</div><div class="l">דחופים פתוחים</div></div>
+        <div class="item"><div class="v">12</div><div class="l">ימי-עיכוב גרועים ביותר</div></div>
+      </div>
+    </div>
+
+    <div class="top-bar">
+      <div class="title">מעקב מעבדה — סניף סלמה</div>
+      <div class="stats">
+        <span class="stat-chip neutral">47 פתוחות</span>
+        <span class="stat-chip danger">3 בעיכוב-עיבוד</span>
+        <span class="stat-chip warn">5 לא-נאסף</span>
+      </div>
+    </div>
+
+    <div class="tabs-row">
+      <div class="tab-pill active">הזמנות <span class="badge">8</span></div>
+      <div class="tab-pill">משימות <span class="badge">2</span></div>
+      <div class="tab-pill">זיכויים והחלפות <span class="badge">3</span></div>
+    </div>
+
+    <div class="priority-zone">
+      <div class="pz-header">
+        <div class="pz-title">⚠ דורש טיפול עכשיו · 4</div>
+        <div class="pz-meta">3 בעיכוב-עיבוד · 1 בעיכוב-איסוף</div>
+      </div>
+
+      <table class="access-style">
+        <thead>
+          <tr>
+            <th style="width: 60px;">סיכון</th>
+            <th>מס'</th>
+            <th>קטגוריה</th>
+            <th>לקוח</th>
+            <th>סטטוס</th>
+            <th>אופטיקאי</th>
+            <th>שעון-עיבוד</th>
+            <th>שעון-איסוף</th>
+            <th>פעולה</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="background: white; cursor: pointer;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'table-row' ? 'none' : 'table-row'">
+            <td style="background: #a32d2d; color: white; font-weight: 700;">קריטי</td>
+            <td class="id-cell">9745-a</td>
+            <td class="cat-multi">מולטיפוקל</td>
+            <td><strong>דניאל לוי</strong></td>
+            <td>אצל Hoya 12 ימים</td>
+            <td>איליה</td>
+            <td class="delay-cell">12/7</td>
+            <td class="delay-cell delay-none">—</td>
+            <td><span class="action-link">פיצוי ₪200 →</span></td>
+          </tr>
+          <tr class="sub-row" style="display: table-row;">
+            <td colspan="9">
+              <div class="sub-title">פרטי הזמנה 9745-a · דניאל לוי</div>
+              <div class="sub-grid">
+                <div class="sub-cell"><div class="sub-label">תאריך הזמנה</div><div class="sub-value">28/04 · 11:19</div></div>
+                <div class="sub-cell"><div class="sub-label">נשלח למסגור</div><div class="sub-value" style="color: #2d5a1a;">29/04 · 10:00 ✓</div></div>
+                <div class="sub-cell"><div class="sub-label">הזמנת עדשה</div><div class="sub-value" style="color: #888;">טרם — Hoya</div></div>
+                <div class="sub-cell"><div class="sub-label">הזמנה מוכנה</div><div class="sub-value" style="color: #888;">טרם</div></div>
+                <div class="sub-cell"><div class="sub-label">הזמנה נמסרה</div><div class="sub-value" style="color: #888;">טרם</div></div>
+                <div class="sub-cell"><div class="sub-label">שם-מוכר (מי שביצע ההזמנה)</div><div class="sub-value">גיאנה</div></div>
+                <div class="sub-cell"><div class="sub-label">אופטיקאי-משמרת</div><div class="sub-value">איליה אלקימוביץ׳</div></div>
+                <div class="sub-cell"><div class="sub-label">פלואו</div><div class="sub-value">חיצוני (Hoya)</div></div>
+                <div class="sub-cell"><div class="sub-label">סף-עיכוב לקטגוריה</div><div class="sub-value">7 ימים</div></div>
+                <div class="sub-cell"><div class="sub-label">סף-פיצוי</div><div class="sub-value" style="color: #a32d2d;">10+ ימים → ₪200</div></div>
+              </div>
+              <div class="notes-section">
+                <div style="font-size: 11px; font-weight: 600; margin-bottom: 6px;">היסטוריית הערות (2)</div>
+                <div class="note-row">
+                  <div>
+                    <div>התקשרתי ל-Hoya, אמרו שהעדשות יוצאות מחר.</div>
+                    <div class="note-author">איליה · 09/05 14:20</div>
+                  </div>
+                </div>
+                <div class="note-row">
+                  <div>
+                    <div>לקוח התקשר לבדוק. הסברתי שמתעכב.</div>
+                    <div class="note-author">גיאנה · 06/05 11:00</div>
+                  </div>
+                </div>
+                <textarea class="note-input" rows="2" placeholder="הוסף הערה..."></textarea>
+                <button class="add-note-btn">שמור הערה</button>
+              </div>
+            </td>
+          </tr>
+
+          <tr style="background: white; cursor: pointer;">
+            <td style="background: #ba7517; color: white; font-weight: 700;">בקרוב</td>
+            <td class="id-cell">9745-b</td>
+            <td class="cat-stock">מדף מלאי</td>
+            <td><strong>שרה בן-עמי</strong></td>
+            <td>הודעת-מוכן 06/05</td>
+            <td>איליה</td>
+            <td class="delay-cell delay-none">—</td>
+            <td class="delay-cell delay-yellow">4/3</td>
+            <td><span class="action-link">תזכורת →</span></td>
+          </tr>
+          <tr style="background: white; cursor: pointer;">
+            <td style="background: #ba7517; color: white; font-weight: 700;">בקרוב</td>
+            <td class="id-cell">9747-a</td>
+            <td class="cat-multi">מולטיפוקל</td>
+            <td><strong>נועה כהן</strong></td>
+            <td>אצל Hoya 5 ימים</td>
+            <td>איליה</td>
+            <td class="delay-cell delay-yellow">5/7</td>
+            <td class="delay-cell delay-none">—</td>
+            <td><span class="action-link">פרטים →</span></td>
+          </tr>
+          <tr style="background: white; cursor: pointer;">
+            <td style="background: #ba7517; color: white; font-weight: 700;">בקרוב</td>
+            <td class="id-cell">9738-a</td>
+            <td class="cat-stock">אופיס</td>
+            <td><strong>מירי גולן</strong></td>
+            <td>הודעת-מוכן 05/05</td>
+            <td>נעמה</td>
+            <td class="delay-cell delay-none">—</td>
+            <td class="delay-cell delay-yellow">5/3</td>
+            <td><span class="action-link">תזכורת →</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="filter-bar">
+      <strong>הכל בעבודה</strong>
+      <select style="margin-right: auto;"><option>קטגוריה</option></select>
+      <select><option>סוג מעקב</option></select>
+      <select><option>אופטיקאי</option></select>
+      <select style="background: #fff8c4;"><option>מצב — פתוחות בלבד</option><option>כולל "נלקח"</option></select>
+      <input type="text" placeholder="חיפוש" />
+      <input type="text" placeholder="מתאריך" style="max-width: 90px;" />
+      <input type="text" placeholder="עד" style="max-width: 90px;" />
+      <button style="padding: 5px 12px; background: white; border: 1px solid #cbd5e1; border-radius: 5px; font-family: inherit; font-size: 12px; cursor: pointer;">לאקסל</button>
+    </div>
+
+    <div class="scroll-x">
+    <table class="access-style">
+      <thead>
+        <tr>
+          <th></th>
+          <th>מספר הזמנה</th>
+          <th>סניף</th>
+          <th>קטגוריה</th>
+          <th>שם לקוח</th>
+          <th>תאריך הזמנה</th>
+          <th>נשלח למסגור</th>
+          <th>הזמנת עדשה</th>
+          <th>הודעת-מוכן</th>
+          <th>הזמנה נמסרה</th>
+          <th>שם-מוכר</th>
+          <th>אופטיקאי-משמרת</th>
+          <th>שעון-עיבוד</th>
+          <th>שעון-איסוף</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="row-active">
+          <td><button class="row-action">📝</button></td>
+          <td class="id-cell">9744-a</td>
+          <td class="branch-cell">פריזמה סלמה</td>
+          <td class="cat-mishima">מגע</td>
+          <td>יוסי דהן</td>
+          <td><span class="cell-date"><span class="d">07/05</span><span class="t">10:00</span></span></td>
+          <td class="cell-done"><span class="cell-date"><span class="d">08/05</span><span class="t">09:00</span></span></td>
+          <td class="cell-done"><span class="cell-date"><span class="d">10/05</span><span class="t">14:30</span></span></td>
+          <td class="cell-pending"></td>
+          <td class="cell-pending"></td>
+          <td>גיאנה</td>
+          <td>איליה</td>
+          <td class="delay-cell delay-zero">3/5</td>
+          <td class="delay-cell delay-none">—</td>
+        </tr>
+        <tr class="row-active">
+          <td><button class="row-action">📝</button></td>
+          <td class="id-cell">9741-a</td>
+          <td class="branch-cell">פריזמה סלמה</td>
+          <td class="cat-multi">מולטיפוקל</td>
+          <td>אבי ר.</td>
+          <td><span class="cell-date"><span class="d">06/05</span><span class="t">15:30</span></span></td>
+          <td class="cell-done"><span class="cell-date"><span class="d">07/05</span><span class="t">11:20</span></span></td>
+          <td class="cell-pending"></td>
+          <td class="cell-pending"></td>
+          <td class="cell-pending"></td>
+          <td>גיאנה</td>
+          <td>איליה</td>
+          <td class="delay-cell delay-none">3/7</td>
+          <td class="delay-cell delay-none">—</td>
+        </tr>
+        <tr class="row-active">
+          <td><button class="row-action">📝</button></td>
+          <td class="id-cell">9743-a</td>
+          <td class="branch-cell">פריזמה סלמה</td>
+          <td class="cat-yatzur">תיקון</td>
+          <td>תמר אזולאי</td>
+          <td><span class="cell-date"><span class="d">09/05</span><span class="t">16:40</span></span></td>
+          <td class="cell-pending"></td>
+          <td class="cell-pending"></td>
+          <td class="cell-pending"></td>
+          <td class="cell-pending"></td>
+          <td>גיאנה</td>
+          <td>איליה</td>
+          <td class="delay-cell delay-none">1/3</td>
+          <td class="delay-cell delay-none">—</td>
+        </tr>
+        <tr class="row-active">
+          <td><button class="row-action">📝</button></td>
+          <td class="id-cell">9740-a</td>
+          <td class="branch-cell">פריזמה סלמה</td>
+          <td class="cat-stock">מדף הזמנה</td>
+          <td>רונית ב.</td>
+          <td><span class="cell-date"><span class="d">07/05</span><span class="t">12:15</span></span></td>
+          <td class="cell-done"><span class="cell-date"><span class="d">08/05</span><span class="t">14:30</span></span></td>
+          <td class="cell-pending"></td>
+          <td class="cell-pending"></td>
+          <td class="cell-pending"></td>
+          <td>גיאנה</td>
+          <td>איליה</td>
+          <td class="delay-cell delay-none">2/5</td>
+          <td class="delay-cell delay-none">—</td>
+        </tr>
+        <tr class="row-active">
+          <td><button class="row-action">📝</button></td>
+          <td class="id-cell">9742-a</td>
+          <td class="branch-cell">פריזמה סלמה</td>
+          <td class="cat-stock">מדף מלאי</td>
+          <td>מאיה ש.</td>
+          <td><span class="cell-date"><span class="d">10/05</span><span class="t">11:05</span></span></td>
+          <td class="cell-na"></td>
+          <td class="cell-na"></td>
+          <td class="cell-pending"></td>
+          <td class="cell-pending"></td>
+          <td>איליה</td>
+          <td>איליה</td>
+          <td class="delay-cell delay-none">0/1</td>
+          <td class="delay-cell delay-none">—</td>
+        </tr>
+        <tr class="row-active">
+          <td><button class="row-action">📝</button></td>
+          <td class="id-cell">9739-a</td>
+          <td class="branch-cell">פריזמה סלמה</td>
+          <td class="cat-multi">מולטיפוקל</td>
+          <td>עידן ק.</td>
+          <td><span class="cell-date"><span class="d">02/05</span><span class="t">10:00</span></span></td>
+          <td class="cell-done"><span class="cell-date"><span class="d">03/05</span><span class="t">09:00</span></span></td>
+          <td class="cell-done"><span class="cell-date"><span class="d">08/05</span><span class="t">14:00</span></span></td>
+          <td class="cell-done"><span class="cell-date"><span class="d">09/05</span><span class="t">10:30</span></span></td>
+          <td class="cell-pending"></td>
+          <td>גיאנה</td>
+          <td>איליה</td>
+          <td class="delay-cell delay-none">7/7</td>
+          <td class="delay-cell delay-none">1/3</td>
+        </tr>
+        <tr style="color: #c7c7cc;">
+          <td colspan="14" style="text-align: center; padding: 8px; background: #fafafa;">+ 33 הזמנות נוספות בעבודה (לא מציגים "נלקח" — שנה בסינון)...</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div style="background: #f4f4f5; padding: 12px; margin-top: 16px; border-radius: 6px; font-size: 12px; color: #555; line-height: 1.7;">
+      <strong style="color: #1e3a8a;">אחריות M9 — מה שמודול-המעבדה מנהל:</strong>
+      <ul style="margin: 6px 18px 0;">
+        <li>הזמנות-רגילות (לשונית 1) — 3 פלואו: מהמלאי / הזמנת-עדשה+מסגור-פנימי / הזמנת-עדשה+מסגור-חיצוני</li>
+        <li>משימות (לשונית 2) — תיקונים, ייעוצים, התקנות-נוספות; אופטיקאי אחראי לוודא שטופלו</li>
+        <li>זיכויים והחלפות (לשונית 3) — עדשות שגויות/שבורות, הזמנות חוזרות, אורך-זמן ארוך מספק</li>
+        <li>2 שעוני-עיכוב נפרדים: עיבוד (קליטה→הודעה) + איסוף (הודעה→נלקח-בפועל)</li>
+        <li>סף-פיצוי per-קטגוריה (מטריצה — אישרת)</li>
+        <li>משלוחים בין-סניפים (Day-N — תשתית מוכנה היום)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Sketch A and B kept for reference -->
+  <div class="sketch" id="sa"><h2>סקיצה א — Access (לא נבחרה)</h2><p style="color: #888; padding: 20px;">הסקיצה הקודמת — שכפול 1:1 של Access.</p></div>
+  <div class="sketch" id="sb"><h2>סקיצה ב — Kanban (לא נבחרה)</h2><p style="color: #888; padding: 20px;">הסקיצה הקודמת — Kanban עמודות.</p></div>
+
+<script>
+  document.querySelectorAll('.nav button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.sketch').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.target).classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

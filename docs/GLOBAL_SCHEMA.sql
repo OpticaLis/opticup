@@ -2,7 +2,7 @@
 -- GLOBAL SCHEMA — Optic Up
 -- Reconciled from live DB: 2026-04-11 (Phase 3A Part 2)
 -- Sources: modules/Module 3.1 - Project Reconstruction/db-audit/
---            01-tables.md     — 84 base tables
+--            01-tables.md     — 84 base tables (snapshot 2026-04-11; live count 113 as of 2026-05-09)
 --            02-columns.md    — column-level detail (base tables + view columns)
 --            03-views.md      — 24 views with full definitions
 --            04-policies.md   — 162 RLS policies
@@ -65,7 +65,7 @@
 
 
 -- ============================================================
--- TABLES (84 total, grouped by owning module)
+-- TABLES (113 total live; 84 in initial reconstruction snapshot — see db-audit/01-tables.md, grouped by owning module)
 -- Full column lists live in db-audit/02-columns.md.
 -- Every table has rls_enabled=true (see db-audit/01-tables.md).
 -- ============================================================
@@ -221,6 +221,23 @@
 --   support_phone_display, storefront_url, brand{gold/_light/_hover}.
 --   Replaces previously-hardcoded Prizma values across 5 source files +
 --   3 EFs. SaaS-readiness: tenant 2 onboarding requires only DB rows.
+--
+-- Test-mode allowlists on tenants (2 channels, 2 storage shapes):
+--   tenants.test_mode_sms_allowlist  jsonb         (top-level column, C001 2026-05-03)
+--   tenants.ui_config.test_mode_email_allowlist  jsonb path (DEMO_EMAIL_ALLOWLIST_INFRA 2026-05-11)
+--   Both store a jsonb array of strings; both are read by send-message EF
+--   (functions/send-message/allowlists.ts). Contract per channel:
+--     - Empty / NULL allowlist  → return true  (production mode; send to all)
+--     - Non-empty array          → recipient must match an entry; else send is dropped
+--                                  with status='rejected' in crm_message_log
+--     - DB lookup error / non-array allowlist → fail-CLOSED (return false)
+--   SMS comparison: phone normalization (E.164 ↔ Israeli local) per normalizePhone.
+--   Email comparison: case-insensitive + whitespace-trimmed per normalizeEmail.
+--   Demo tenant: 3 phones + 3 emails configured. Prizma tenant: both keys absent
+--   (= production mode for both channels).
+--   SMS uses a dedicated column because it predates ui_config; new test-mode
+--   allowlists (email, future channels) live under ui_config so SaaS-tenant
+--   onboarding requires only ui_config edits, no schema changes.
 --
 -- Module 4 schema authoritative file:
 --   modules/Module 4 - CRM/docs/db-schema.sql (currently documents only the

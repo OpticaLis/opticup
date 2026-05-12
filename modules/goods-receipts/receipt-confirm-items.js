@@ -21,7 +21,7 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
 
       if (!item.is_new_item && itemBarcode) {
         // Existing item: increment quantity by effectiveQty
-        const { data: invRow, error: findErr } = await sb.from('inventory')
+        const { data: invRow, error: findErr } = await sb.from(T.INV)
           .select('id, quantity, barcode, brand_id, model, size, color, cost_price, sell_price, sell_discount, bridge, temple_length')
           .eq('tenant_id', getTenantId())
           .eq('barcode', itemBarcode)
@@ -45,7 +45,7 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
           const rcptCost = parseFloat(item.unit_cost) || 0;
           const oldCost = parseFloat(invRow.cost_price) || 0;
           if (rcptCost > 0 && rcptCost !== oldCost) {
-            await batchUpdate('inventory', [{ id: invRow.id, cost_price: rcptCost }]);
+            await batchUpdate(T.INV, [{ id: invRow.id, cost_price: rcptCost }]);
             writeLog('cost_update', invRow.id, {
               field: 'cost_price', old_value: oldCost, new_value: rcptCost,
               source: 'goods_receipt', receipt_id: receiptId
@@ -55,13 +55,13 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
           var rcptDisc = parseFloat(item.sell_discount) || 0;
           var oldDisc = parseFloat(invRow.sell_discount) || 0;
           if (rcptDisc !== oldDisc) {
-            await batchUpdate('inventory', [{ id: invRow.id, sell_discount: rcptDisc }]);
+            await batchUpdate(T.INV, [{ id: invRow.id, sell_discount: rcptDisc }]);
           }
           // Auto-update sell_price from receipt
           var rcptSellPrice = parseFloat(item.sell_price) || 0;
           var oldSellPrice = parseFloat(invRow.sell_price) || 0;
           if (rcptSellPrice > 0 && rcptSellPrice !== oldSellPrice) {
-            await batchUpdate('inventory', [{ id: invRow.id, sell_price: rcptSellPrice }]);
+            await batchUpdate(T.INV, [{ id: invRow.id, sell_price: rcptSellPrice }]);
           }
           // Auto-update model/size/color if changed during receipt
           var detailChanges = {};
@@ -77,7 +77,7 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
             if (detailChanges.color) detailUpdate.color = item.color;
             if (detailChanges.bridge) detailUpdate.bridge = item.bridge;
             if (detailChanges.temple_length) detailUpdate.temple_length = item.temple_length;
-            await batchUpdate('inventory', [detailUpdate]);
+            await batchUpdate(T.INV, [detailUpdate]);
             writeLog('edit_details', invRow.id, { source: 'goods_receipt', receipt_id: receiptId, changes: detailChanges });
           }
         } else {
@@ -221,7 +221,7 @@ async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
     tenant_id: getTenantId()
   };
 
-  const { data: created, error: cErr } = await sb.from('inventory').insert(newRow).select().single();
+  const { data: created, error: cErr } = await sb.from(T.INV).insert(newRow).select().single();
   if (cErr) throw cErr;
 
   // Update receipt item with inventory_id and barcode

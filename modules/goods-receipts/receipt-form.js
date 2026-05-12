@@ -274,7 +274,7 @@ async function searchReceiptBarcode() {
 
   showLoading('מחפש ברקוד...');
   try {
-    const { data, error } = await sb.from('inventory')
+    const { data, error } = await sb.from(T.INV)
       .select('*, inventory_images(*)')
       .eq('tenant_id', getTenantId())
       .eq('barcode', barcode)

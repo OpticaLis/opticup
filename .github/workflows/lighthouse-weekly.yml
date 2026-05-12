@@ -1,0 +1,76 @@
+# Lighthouse — weekly full-sitemap sweep (REC-SITE-013 / M3_LIGHTHOUSE_NIGHTLY_CRON).
+#
+# Runs at 03:00 IDT (00:00 UTC) every Sunday on develop branch.
+# - Headless Chromium (preinstalled on ubuntu-latest)
+# - Scrapes live sitemap-dynamic.xml, dedupes, runs Lighthouse + axe per URL
+# - ~255 URLs, ~2 hr budget
+# - Per-URL JSON + SUMMARY.md → docs/guardian/lighthouse-reports/weekly/{YYYY-Www}/
+# - Regressions append to docs/guardian/GUARDIAN_ALERTS.md
+# - Auto-commits as `OpticaLis [bot]` and pushes to develop
+
+name: lighthouse-weekly
+
+on:
+  schedule:
+    # 03:00 IDT (Israel) Sunday = 00:00 UTC Sunday. Weekly.
+    - cron: "0 0 * * 0"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Optional note for the manual run (kept in run logs only)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lighthouse-weekly
+  cancel-in-progress: false
+
+jobs:
+  run-full:
+    name: Lighthouse weekly sweep (~255 URLs)
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout develop
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Cache lighthouse-tools node_modules
+        uses: actions/cache@v4
+        with:
+          path: roles/site-overseer/tools/lighthouse/node_modules
+          key: lighthouse-${{ runner.os }}-${{ hashFiles('roles/site-overseer/tools/lighthouse/package-lock.json') }}
+          restore-keys: |
+            lighthouse-${{ runner.os }}-
+
+      - name: Install Lighthouse dependencies
+        working-directory: roles/site-overseer/tools/lighthouse
+        run: npm ci --no-fund --no-audit
+
+      - name: Run Lighthouse full sweep
+        working-directory: roles/site-overseer/tools/lighthouse
+        run: npm run full
+
+      - name: Commit + push reports
+        run: |
+          git config user.name "OpticaLis [bot]"
+          git config user.email "noreply@opticalis.co.il"
+          git add docs/guardian/lighthouse-reports/ docs/guardian/GUARDIAN_ALERTS.md
+          if git diff --staged --quiet; then
+            echo "No report changes to commit."
+            exit 0
+          fi
+          ISO_WEEK=$(date -u '+%G-W%V')
+          git commit -m "chore(guardian): lighthouse weekly report $ISO_WEEK"
+          git push origin develop

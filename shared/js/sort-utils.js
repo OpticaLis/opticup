@@ -5,6 +5,19 @@
 const SortUtils = (() => {
   const _state = {};
 
+  /**
+   * Sort an array of objects in-place by a given key.
+   *
+   * Behavior:
+   *   - null/undefined values sort to the end regardless of direction
+   *   - numbers compared numerically
+   *   - other values compared as strings via Hebrew-aware localeCompare ('he')
+   *
+   * @param {Array<Object>} arr   the array to sort (mutated)
+   * @param {string} key          the property name to sort by
+   * @param {'asc'|'desc'} [dir]  sort direction, defaults to 'asc'
+   * @returns {Array<Object>}     the same array, sorted
+   */
   function sortArray(arr, key, dir) {
     dir = dir || 'asc';
     return arr.sort((a, b) => {

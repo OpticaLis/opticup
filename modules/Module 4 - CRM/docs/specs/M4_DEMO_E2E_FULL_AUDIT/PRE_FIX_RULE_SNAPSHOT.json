@@ -1,0 +1,55 @@
+{
+  "snapshot_taken_at": "2026-05-11T19:46:58Z",
+  "purpose": "Bug §3 pre-fix snapshot for rollback. SPEC: M4_DEMO_E2E_FULL_AUDIT.",
+  "demo_tenant_id": "8d8cfa7e-ef58-49af-9702-a862d459cccb",
+  "rules": [
+    {
+      "id": "a06be5d8-4dd6-43fa-bb53-b0e3be07a548",
+      "name": "אירוע פתח להרשמה - הזמנת רשימת המתנה",
+      "trigger_entity": "event",
+      "trigger_event": "status_change",
+      "trigger_condition": {"type": "status_equals", "status": "registration_open"},
+      "action_type": "send_message",
+      "action_config_pre_fix": {
+        "channels": ["sms", "email"],
+        "language": "he",
+        "template_slug": "event_invite_waiting_list",
+        "recipient_type": "cross_event_active_waitlist",
+        "post_action_attendee_upsert": {"status": "invited"}
+      },
+      "sort_order": 25,
+      "is_active": true
+    },
+    {
+      "id": "ee0a6f24-1a3e-43f4-9ea6-fc4c1d081787",
+      "name": "שינוי סטטוס: הזמנה ממתינים",
+      "trigger_entity": "event",
+      "trigger_event": "status_change",
+      "trigger_condition": {"type": "status_equals", "status": "invite_waiting_list"},
+      "action_type": "send_message",
+      "action_config_pre_fix": {
+        "channels": ["sms", "email"],
+        "template_slug": "event_invite_waiting_list",
+        "recipient_type": "cross_event_active_waitlist",
+        "post_action_attendee_upsert": {"status": "invited"}
+      },
+      "sort_order": 80,
+      "is_active": true
+    }
+  ],
+  "prizma_baseline": {
+    "tenant_id": "6ad0781b-37f0-47a9-92e3-be9ed1477e1c",
+    "leads_count": 1274,
+    "leads_max_updated": "2026-05-11T16:27:12.083057Z",
+    "events_count": 4,
+    "attendees_count": 221,
+    "automation_rules_count": 16,
+    "automation_rules_action_config_md5": "2791080fca7181a05c7e28cbcd882418",
+    "message_templates_count": 32,
+    "activity_log_count": 705
+  },
+  "rollback_sql": [
+    "UPDATE crm_automation_rules SET action_config = '{\"channels\":[\"sms\",\"email\"],\"language\":\"he\",\"template_slug\":\"event_invite_waiting_list\",\"recipient_type\":\"cross_event_active_waitlist\",\"post_action_attendee_upsert\":{\"status\":\"invited\"}}'::jsonb WHERE id = 'a06be5d8-4dd6-43fa-bb53-b0e3be07a548';",
+    "UPDATE crm_automation_rules SET action_config = '{\"channels\":[\"sms\",\"email\"],\"template_slug\":\"event_invite_waiting_list\",\"recipient_type\":\"cross_event_active_waitlist\",\"post_action_attendee_upsert\":{\"status\":\"invited\"}}'::jsonb WHERE id = 'ee0a6f24-1a3e-43f4-9ea6-fc4c1d081787';"
+  ]
+}

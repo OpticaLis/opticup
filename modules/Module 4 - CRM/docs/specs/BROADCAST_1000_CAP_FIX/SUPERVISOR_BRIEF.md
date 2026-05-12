@@ -1,7 +1,7 @@
 # Supervisor Brief — Broadcast 1000-Recipient Cap
 
 **From:** Campaign Overseer (Cowork session, 2026-05-03)
-**To:** Supervisor (opticup-strategic / Main Strategic Chat)
+**To:** Supervisor (opticup-strategic / Architect)
 **Decision needed:** architectural — pick the right fix shape, then author the SPEC.
 
 ## The bug (operational impact)

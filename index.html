@@ -153,7 +153,7 @@ const MODULES = [
   { id: 'shipments', label: 'משלוחים וארגזים', icon: '\uD83D\uDE9A',     url: 'shipments.html',           status: 'active', permission: 'shipments.view', feature: 'shipments' },
   { id: 'crm',        label: 'CRM — ניהול לידים', icon: '\uD83D\uDCCB',   url: 'crm.html',                 status: 'active', permission: 'settings.view' },
   { id: 'storefront', label: 'ניהול חנות אונליין', icon: '\uD83C\uDF10',  url: 'storefront-settings.html', status: 'active', permission: 'settings.view' },
-  { id: 'employees',  label: '\u05E0\u05D9\u05D4\u05D5\u05DC \u05D4\u05E8\u05E9\u05D0\u05D5\u05EA', icon: '\uD83D\uDD10', url: 'employees.html', status: 'active', permission: 'employees.view' },
+  { id: 'employees',  label: '\u05E0\u05D9\u05D4\u05D5\u05DC \u05D4\u05E8\u05E9\u05D0\u05D5\u05EA', icon: '\uD83D\uDD10', url: 'settings.html#permissions', status: 'active', permission: 'employees.view' },
   { id: 'settings',   label: 'הגדרות',        icon: '\u2699\uFE0F',        url: 'settings.html',            status: 'active', permission: 'settings.view' },
   { id: 'attendance', label: 'שעון נוכחות',  icon: '\uD83D\uDD50',       url: 'attendance.html',          status: 'coming_soon' }
 ];
@@ -164,13 +164,23 @@ let failCount = 0;
 // =========================================================
 // Render module cards
 // =========================================================
+// Hash-aware tenant param: keeps `?t=...` BEFORE `#fragment` so the
+// URL `settings.html?t=demo#permissions` parses correctly.
+// (SETTINGS_PERMISSIONS_CONSOLIDATION SPEC §3 criterion 13.)
+function urlWithTenant(u) {
+  if (!TENANT_SLUG) return u;
+  const t = encodeURIComponent(TENANT_SLUG);
+  const i = u.indexOf('#');
+  return i < 0 ? u + '?t=' + t : u.slice(0, i) + '?t=' + t + u.slice(i);
+}
+
 function renderModules() {
   const grid = document.getElementById('modules-grid');
   grid.innerHTML = '';
   MODULES.forEach(m => {
     const a = document.createElement('a');
     a.className = 'module-card';
-    a.href = TENANT_SLUG ? m.url + '?t=' + encodeURIComponent(TENANT_SLUG) : m.url;
+    a.href = urlWithTenant(m.url);
 
     if (m.status === 'coming_soon') {
       a.classList.add('coming-soon');

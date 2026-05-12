@@ -16,7 +16,7 @@ _No active entries._
 ## Completed
 
 ### IMP-2026-04-12-spec-sweep
-**Triggered by:** Main Strategic during Module 3 Phase B root cause analysis
+**Triggered by:** Architect during Module 3 Phase B root cause analysis
 **Category:** SPEC_GAP
 **What happened:** Phase B SPEC was written based on incomplete reading of project docs. Included 7 tables for RLS fixes, but MASTER_ROADMAP and GLOBAL_SCHEMA.sql clearly listed additional tables. Scope correction mid-execution.
 **Time cost:** ~3 hours of escalation chain + frozen Secondary Chat
@@ -36,7 +36,7 @@ _No active entries._
 **Implemented:** April 2026 — added to SPEC writing requirements
 
 ### IMP-2026-04-12-doc-before-escalation
-**Triggered by:** Main Strategic during escalation chain analysis
+**Triggered by:** Architect during escalation chain analysis
 **Category:** ESCALATION_LEAK
 **What happened:** When Gate 2 failed, the escalation went Secondary → Module Strategic → Main → Daniel. Nobody checked GLOBAL_SCHEMA.sql first, which had the answer.
 **Time cost:** Daniel received a technical question that wasn't strategic
@@ -46,7 +46,7 @@ _No active entries._
 **Implemented:** April 2026 — added to handoff protocol and guardian skill escalation flow
 
 ### IMP-2026-04-12-roadmap-contradiction
-**Triggered by:** Main Strategic during root cause analysis
+**Triggered by:** Architect during root cause analysis
 **Category:** DOC_DRIFT
 **What happened:** MASTER_ROADMAP §5 lists SF-2 as a finding. §6 says it's NOT a finding (verified by Daniel). Both coexist in the same file.
 **Time cost:** Confusion about actual scope during SPEC writing
@@ -56,7 +56,7 @@ _No active entries._
 **Status:** Pending — fix ready, needs separate commit
 
 ### IMP-2026-04-12-cowork-migration
-**Triggered by:** Main Strategic after context exhaustion
+**Triggered by:** Architect after context exhaustion
 **Category:** CONTEXT_LOSS
 **What happened:** Module 3 Strategic Chat went through two full handoffs within Phase B alone. Context window capacity exceeded.
 **Time cost:** Handoff overhead, potential for dropped context

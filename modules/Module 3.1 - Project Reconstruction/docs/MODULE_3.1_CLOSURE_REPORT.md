@@ -118,5 +118,5 @@ Total Phase 3D commits: 10 (6 in Part 3, 2 in Part 4, 2 in Part 5).
 
 Strategic Chat (Module 3.1) hands off to:
 - Daniel — for archival of the closed module's chats
-- Main Strategic Chat — for the project-wide MASTER_ROADMAP awareness
+- Architect — for the project-wide MASTER_ROADMAP awareness
 - Module 3 Strategic Chat — for the Phase B preamble work

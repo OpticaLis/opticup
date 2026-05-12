@@ -22,7 +22,7 @@
   max-height: 90vh;
   overflow-y: auto;
   margin: var(--space-md, 12px);
-  background: var(--color-bg-card, #ffffff);
+  background: var(--color-bg-card);
   border-radius: var(--radius-lg, 10px);
   box-shadow: var(--shadow-lg, 0 12px 40px rgba(0, 0, 0, 0.25));
   display: flex;
@@ -35,13 +35,13 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-md, 12px) var(--space-lg, 16px);
-  border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
+  border-bottom: 1px solid var(--color-gray-200);
   flex-shrink: 0;
 }
 .modal-header .modal-title {
   font-size: var(--font-size-lg, 1.1rem);
   font-weight: var(--font-weight-semibold, 600);
-  color: var(--color-gray-900, #111827);
+  color: var(--color-gray-900);
   margin: 0;
   line-height: var(--line-height-tight, 1.25);
 }
@@ -55,7 +55,7 @@
   gap: var(--space-sm, 8px);
   justify-content: flex-end;
   padding: var(--space-md, 12px) var(--space-lg, 16px);
-  border-top: 1px solid var(--color-gray-200, #e5e7eb);
+  border-top: 1px solid var(--color-gray-200);
   flex-shrink: 0;
 }
 
@@ -66,15 +66,21 @@
   cursor: pointer;
   font-size: 1.25rem;
   line-height: 1;
-  color: var(--color-gray-400, #9ca3af);
+  color: var(--color-gray-400);
   padding: var(--space-xs, 4px);
   border-radius: var(--radius-sm, 6px);
   transition: color var(--transition-fast, 150ms ease),
               background var(--transition-fast, 150ms ease);
 }
 .modal-close:hover {
-  color: var(--color-gray-700, #374151);
-  background: var(--color-gray-100, #f9fafb);
+  color: var(--color-gray-700);
+  background: var(--color-gray-100);
+}
+.modal-close:focus { outline: none; }
+.modal-close:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  box-shadow: var(--shadow-focus);
 }
 
 /* --- 5. Sizes (max-width on .modal-container) --- */
@@ -93,17 +99,17 @@
 
 /* Danger — red-tinted header */
 .modal-type-danger .modal-header {
-  background: var(--color-error-light, #fee2e2);
-  border-bottom-color: var(--color-error, #ef4444);
+  background: var(--color-error-light);
+  border-bottom-color: var(--color-error);
 }
 .modal-type-danger .modal-header .modal-title {
-  color: var(--color-error, #ef4444);
+  color: var(--color-error);
 }
 .modal-type-danger .danger-confirm-input {
   width: 100%;
   margin-block-start: var(--space-md, 12px);
   padding: var(--space-sm, 8px) var(--space-md, 12px);
-  border: 2px solid var(--color-gray-300, #d1d5db);
+  border: 2px solid var(--color-gray-300);
   border-radius: var(--radius-md, 8px);
   font-size: var(--font-size-md, 0.92rem);
   font-family: var(--font-family, 'Heebo', sans-serif);
@@ -111,7 +117,7 @@
 }
 .modal-type-danger .danger-confirm-input:focus {
   outline: none;
-  border-color: var(--color-error, #ef4444);
+  border-color: var(--color-error);
 }
 
 /* --- 7. Wizard progress bar --- */
@@ -120,7 +126,7 @@
   align-items: center;
   gap: var(--space-sm, 8px);
   padding: var(--space-sm, 8px) var(--space-lg, 16px);
-  border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
+  border-bottom: 1px solid var(--color-gray-200);
   overflow-x: auto;
   flex-shrink: 0;
 }
@@ -129,7 +135,7 @@
   align-items: center;
   gap: var(--space-xs, 4px);
   font-size: var(--font-size-sm, 0.85rem);
-  color: var(--color-gray-400, #9ca3af);
+  color: var(--color-gray-400);
   white-space: nowrap;
   transition: color var(--transition-fast, 150ms ease);
 }
@@ -138,7 +144,7 @@
   display: inline-block;
   width: 24px;
   height: 1px;
-  background: var(--color-gray-300, #d1d5db);
+  background: var(--color-gray-300);
   margin-inline-end: var(--space-xs, 4px);
   flex-shrink: 0;
 }
@@ -151,26 +157,26 @@
   border-radius: var(--radius-full, 9999px);
   font-size: var(--font-size-xs, 0.75rem);
   font-weight: var(--font-weight-semibold, 600);
-  background: var(--color-gray-200, #e5e7eb);
-  color: var(--color-gray-500, #6b7280);
+  background: var(--color-gray-200);
+  color: var(--color-gray-500);
   flex-shrink: 0;
   transition: background var(--transition-fast, 150ms ease),
               color var(--transition-fast, 150ms ease);
 }
 .wizard-step-active {
-  color: var(--color-primary, #1a237e);
+  color: var(--color-primary);
   font-weight: var(--font-weight-semibold, 600);
 }
 .wizard-step-active .wizard-step-num {
-  background: var(--color-primary, #1a237e);
-  color: var(--color-white, #ffffff);
+  background: var(--color-primary);
+  color: var(--color-white);
 }
 .wizard-step-done {
-  color: var(--color-success, #10b981);
+  color: var(--color-success);
 }
 .wizard-step-done .wizard-step-num {
-  background: var(--color-success, #10b981);
-  color: var(--color-white, #ffffff);
+  background: var(--color-success);
+  color: var(--color-white);
 }
 .wizard-panel { display: none; }
 .wizard-panel-active { display: block; }

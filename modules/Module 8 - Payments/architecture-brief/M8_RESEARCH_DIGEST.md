@@ -1,6 +1,6 @@
 # M8 Payments — Strategic Research Digest
 
-**Source:** general-purpose subagent, dispatched 2026-05-08 by Main Strategic per Pattern P23 (research-first).
+**Source:** general-purpose subagent, dispatched 2026-05-08 by Architect per Pattern P23 (research-first).
 **Scope:** 8 categories — Israeli POS market, international standards, tax-authority, complex patterns, architecture, vendor specifics, edge-cases, reports.
 **Length:** ~2000 words.
 **Use:** Foundation for the 5 strategic decisions below; input to M8 Architecture Brief.
@@ -100,4 +100,4 @@ Israeli banks offer interest-free installments at thresholds (3 months free up t
 
 ---
 
-*Saved 2026-05-08 by Main Strategic per P14. Source: subagent dispatch, ~58 seconds.*
+*Saved 2026-05-08 by Architect per P14. Source: subagent dispatch, ~58 seconds.*

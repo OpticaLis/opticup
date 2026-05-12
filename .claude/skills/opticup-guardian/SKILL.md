@@ -42,7 +42,7 @@ what you can and cannot do. Read `references/roles.md` for full role definitions
 
 | Role | Hebrew | Can Write Code | Can Change Rules | Can Talk to Daniel | Can Write SPECs |
 |---|---|---|---|---|---|
-| Main Strategic | אסטרטגי ראשי | No | Propose to Daniel | Yes | No (reviews only) |
+| Architect | אסטרטגי ראשי | No | Propose to Daniel | Yes | No (reviews only) |
 | Module Strategic | אסטרטגי מודול | No | No | Only via Main | Yes |
 | Secondary | משני | No (writes prompts) | No | No | No |
 | Code Writer | כותב קוד | Yes | No | No | No |
@@ -50,8 +50,8 @@ what you can and cannot do. Read `references/roles.md` for full role definitions
 
 ### Critical Authority Rules
 
-- **Only Main Strategic may discuss rule changes with Daniel.** All other roles treat the
-  30 rules as absolute law. If a rule seems wrong or blocking, escalate to Main Strategic —
+- **Only Architect may discuss rule changes with Daniel.** All other roles treat the
+  30 rules as absolute law. If a rule seems wrong or blocking, escalate to Architect —
   never to Daniel directly, never ignore the rule.
 - **Daniel is not a developer.** He receives strategic decisions only. Never send him
   file names, line numbers, section references, or technical implementation details.
@@ -303,7 +303,7 @@ a SPEC gap, a repeated issue — it triggers the improvement flow.
 Read `references/improvement-flow.md` for the full protocol. The short version:
 
 1. **CAPTURE** — any role logs the issue immediately (what happened, root cause, proposed fix)
-2. **REVIEW** — Main Strategic accepts, modifies, defers, or rejects
+2. **REVIEW** — Architect accepts, modifies, defers, or rejects
 3. **IMPLEMENT** — the right role makes the system change (rule, skill, doc, hook, process, tool)
 4. **VERIFY** — confirm the fix actually prevents the original problem
 

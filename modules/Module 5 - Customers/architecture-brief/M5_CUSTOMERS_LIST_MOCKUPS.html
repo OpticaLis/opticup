@@ -5,17 +5,32 @@
 <title>M5 — מסך ניהול לקוחות — 3 סקיצות</title>
 <style>
   :root{
-    --bg:#FAFAF7; --surface:#FFFFFF; --soft:#F1EFE8;
-    --border:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
-    --text:#1F1F1E; --text-2:#5F5E5A; --text-3:#8A8884;
-    --purple:#534AB7; --purple-soft:#EEEDFE; --purple-deep:#26215C; --purple-mid:#7F77DD;
-    --teal:#0F6E56; --teal-soft:#E1F5EE; --teal-deep:#04342C; --teal-mid:#5DCAA5;
-    --amber:#BA7517; --amber-soft:#FAEEDA; --amber-deep:#412402; --amber-mid:#FAC775;
-    --blue:#185FA5; --blue-soft:#E6F1FB; --blue-deep:#0C447C;
-    --coral:#993C1D; --coral-soft:#FAECE7;
-    --green:#3B6D11; --green-soft:#EAF3DE;
-    --gray:#5F5E5A; --gray-soft:#F1EFE8;
-    --red:#A32D2D; --red-soft:#FBEAEA;
+    /* === Hybrid+Navy canonical tokens (Batch 3 re-skin, 2026-05-11) === */
+    --bg-page:#fafaf7; --bg-surface:#ffffff; --bg-surface-alt:#f4f4f5;
+    --accent:#1e3a8a; --accent-hover:#1e40af; --accent-soft:#e6f1fb; --accent-text:#ffffff;
+    --text-primary:#0f172a; --text-secondary:#475569; --text-tertiary:#94a3b8;
+    --border-subtle:#e2e8f0; --border-default:#cbd5e1; --border-strong-token:#94a3b8;
+    --success:#16a34a; --success-soft:#d1fae5;
+    --warning:#d97706; --warning-soft:#fef3c7;
+    --danger:#dc2626;  --danger-soft:#fee2e2;
+    --info:#0891b2;    --info-soft:#cffafe;
+    --font-sans:"Inter","Heebo",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+
+    /* === Backward-compat aliases (legacy var names resolve to Hybrid values) === */
+    --bg:var(--bg-page); --surface:var(--bg-surface); --soft:var(--bg-surface-alt);
+    --border:var(--border-subtle); --border-strong:var(--border-default);
+    --text:var(--text-primary); --text-2:var(--text-secondary); --text-3:var(--text-tertiary);
+    --purple:var(--accent); --purple-soft:var(--accent-soft);
+    --purple-deep:var(--text-primary); --purple-mid:var(--accent-hover);
+    /* Decorative legacy multi-colors → mapped to semantic equivalents */
+    --teal:var(--success); --teal-soft:var(--success-soft); --teal-deep:var(--success); --teal-mid:var(--success);
+    --amber:var(--warning); --amber-soft:var(--warning-soft); --amber-deep:var(--warning); --amber-mid:var(--warning-soft);
+    --blue:var(--info);    --blue-soft:var(--info-soft);     --blue-deep:var(--info);
+    --coral:var(--danger); --coral-soft:var(--danger-soft);
+    --pink:var(--accent-soft);
+    --green:var(--success); --green-soft:var(--success-soft);
+    --gray:var(--text-secondary); --gray-soft:var(--bg-surface-alt);
+    --red:var(--danger); --red-soft:var(--danger-soft);
     --r-md:6px; --r-lg:10px;
   }
   *{box-sizing:border-box;}
@@ -48,14 +63,14 @@
 
   /* HEADER */
   .header{
-    background:var(--purple-deep);color:#EEEDFE;padding:10px 16px;
+    background:var(--accent);color:#e6f1fb;padding:10px 16px;
     display:flex;justify-content:space-between;align-items:center;
   }
   .header .title{font-size:15px;font-weight:500;}
   .header .right{display:flex;gap:8px;align-items:center;}
   .header button{background:var(--purple-mid);color:#FFF;border:0;font-size:11px;padding:5px 10px;border-radius:var(--r-md);cursor:pointer;}
   .header button.primary{background:var(--amber);}
-  .header .crumbs{font-size:11px;color:#CECBF6;}
+  .header .crumbs{font-size:11px;color:#cbd5e1;}
 
   /* COMMON UTILS */
   .pill{display:inline-block;font-size:10px;padding:1px 6px;border-radius:var(--r-md);font-weight:500;}
@@ -161,12 +176,12 @@
      =========================================================== */
   .s2-body{display:grid;grid-template-columns:240px 1fr;height:680px;}
   .s2-side{
-    background:var(--purple-deep);color:#FFF;padding:14px 0;display:flex;flex-direction:column;
+    background:var(--accent);color:#FFF;padding:14px 0;display:flex;flex-direction:column;
   }
   .s2-side .group{padding:8px 14px;}
   .s2-side .group .hdr{font-size:9px;color:#A8A4D8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;font-weight:500;}
   .s2-side button{
-    width:100%;background:transparent;color:#EEEDFE;border:0;padding:8px 10px;
+    width:100%;background:transparent;color:#e6f1fb;border:0;padding:8px 10px;
     text-align:right;font-size:12px;border-radius:var(--r-md);cursor:pointer;
     display:flex;justify-content:space-between;align-items:center;font-family:inherit;
   }
@@ -233,13 +248,13 @@
      =========================================================== */
   .s3-body{padding:14px;background:var(--bg);}
   .s3-banner{
-    background:linear-gradient(135deg,var(--purple) 0%,var(--purple-deep) 100%);
+    background:linear-gradient(135deg,var(--purple) 0%,var(--accent) 100%);
     color:#FFF;padding:14px 18px;border-radius:var(--r-md);margin-bottom:12px;
     display:flex;justify-content:space-between;align-items:center;
   }
   .s3-banner .greet{font-size:16px;font-weight:500;}
   .s3-banner .sum{display:flex;gap:18px;}
-  .s3-banner .sum .item{font-size:11px;color:#CECBF6;}
+  .s3-banner .sum .item{font-size:11px;color:#cbd5e1;}
   .s3-banner .sum .item .v{display:block;color:#FFF;font-size:18px;font-weight:500;line-height:1;}
 
   .s3-quickbar{
@@ -650,7 +665,7 @@
       <div class="s3-banner">
         <div>
           <div class="greet">בוקר טוב, דניאל 👋</div>
-          <div style="font-size:12px;color:#CECBF6;margin-top:3px;">יום חמישי · 7 במאי 2026 · סניף הרצליה</div>
+          <div style="font-size:12px;color:#cbd5e1;margin-top:3px;">יום חמישי · 7 במאי 2026 · סניף הרצליה</div>
         </div>
         <div class="sum">
           <div class="item"><span class="v num">8</span>תורי בדיקה</div>

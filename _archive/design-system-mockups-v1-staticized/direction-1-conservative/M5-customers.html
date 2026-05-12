@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M5 — מסך ניהול לקוחות — 3 סקיצות</title>
+<style>
+  :root{
+    --bg:#FAFAF7; --surface:#FFFFFF; --soft:#F1EFE8;
+    --border:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
+    --text:#1F1F1E; --text-2:#5F5E5A; --text-3:#8A8884;
+    --purple:#534AB7; --purple-soft:#EEEDFE; --purple-deep:#26215C; --purple-mid:#7F77DD;
+    --teal:#0F6E56; --teal-soft:#E1F5EE; --teal-deep:#04342C; --teal-mid:#5DCAA5;
+    --amber:#BA7517; --amber-soft:#FAEEDA; --amber-deep:#412402; --amber-mid:#FAC775;
+    --blue:#185FA5; --blue-soft:#E6F1FB; --blue-deep:#0C447C;
+    --coral:#993C1D; --coral-soft:#FAECE7;
+    --green:#3B6D11; --green-soft:#EAF3DE;
+    --gray:#5F5E5A; --gray-soft:#F1EFE8;
+    --red:#A32D2D; --red-soft:#FBEAEA;
+    --r-md:6px; --r-lg:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;padding:20px;background:var(--bg);color:var(--text);
+    font-family:-apple-system,'Segoe UI',Rubik,sans-serif;font-size:12px;direction:rtl;
+  }
+  h1{font-size:20px;font-weight:500;margin:0 0 4px;}
+  h2{font-size:14px;font-weight:500;margin:0 0 8px;}
+  .lede{color:var(--text-2);margin:0 0 16px;font-size:12px;max-width:1100px;line-height:1.5;}
+
+  /* TOP NAV */
+  .top-nav{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);
+    padding:12px;margin-bottom:20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+  }
+  .top-nav .label{font-size:12px;color:var(--text-2);font-weight:500;}
+  .top-nav button{
+    background:var(--purple-soft);color:var(--purple-deep);border:0;font-size:12px;
+    padding:8px 16px;border-radius:var(--r-md);cursor:pointer;font-weight:500;
+  }
+  .top-nav button.active{background:var(--purple);color:#FFF;}
+  .top-nav .meta{margin-inline-start:auto;color:var(--text-3);font-size:11px;}
+
+  /* APP FRAME */
+  .app{
+    background:var(--surface);border:0.5px solid var(--border);
+    border-radius:var(--r-lg);overflow:hidden;max-width:1500px;margin:0 auto 28px;
+  }
+
+  /* HEADER */
+  .header{
+    background:var(--purple-deep);color:#EEEDFE;padding:10px 16px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .header .title{font-size:15px;font-weight:500;}
+  .header .right{display:flex;gap:8px;align-items:center;}
+  .header button{background:var(--purple-mid);color:#FFF;border:0;font-size:11px;padding:5px 10px;border-radius:var(--r-md);cursor:pointer;}
+  .header button.primary{background:var(--amber);}
+  .header .crumbs{font-size:11px;color:#CECBF6;}
+
+  /* COMMON UTILS */
+  .pill{display:inline-block;font-size:10px;padding:1px 6px;border-radius:var(--r-md);font-weight:500;}
+  .pill-amber{background:var(--amber-mid);color:var(--amber-deep);}
+  .pill-teal{background:var(--teal-mid);color:var(--teal-deep);}
+  .pill-purple{background:var(--purple-mid);color:#FFF;}
+  .pill-blue{background:var(--blue-soft);color:var(--blue-deep);}
+  .pill-gray{background:var(--gray-soft);color:var(--text-2);}
+  .pill-red{background:var(--red-soft);color:var(--red);}
+  .pill-green{background:var(--green-soft);color:var(--green);}
+  .num{font-variant-numeric:tabular-nums;}
+  .icon{display:inline-block;width:14px;text-align:center;}
+
+  /* BADGE */
+  .new-badge{display:inline-block;background:var(--coral);color:#FFF;font-size:9px;padding:1px 5px;border-radius:8px;margin-inline-start:4px;font-weight:500;}
+
+  /* ===========================================================
+     SKETCH 1: COMMAND CENTER
+     =========================================================== */
+  .s1-body{padding:14px;background:var(--bg);}
+  .s1-strip{
+    display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin-bottom:12px;
+  }
+  .s1-action{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    padding:10px 8px;text-align:center;cursor:pointer;transition:all 0.15s;
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+  }
+  .s1-action:hover{border-color:var(--purple-mid);background:var(--purple-soft);}
+  .s1-action .ic{font-size:18px;}
+  .s1-action .lab{font-size:11px;color:var(--text);font-weight:500;}
+  .s1-action .sub{font-size:9px;color:var(--text-3);}
+  .s1-action.feature{background:var(--amber-soft);border-color:var(--amber-mid);}
+  .s1-action.feature .lab{color:var(--amber-deep);}
+
+  .s1-search-row{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    padding:10px;margin-bottom:12px;display:flex;gap:8px;align-items:center;
+  }
+  .s1-search-row input{
+    flex:1;border:0.5px solid var(--border);border-radius:var(--r-md);padding:8px 10px;
+    font-size:13px;font-family:inherit;
+  }
+  .s1-search-row .filter-btn{
+    background:var(--purple);color:#FFF;border:0;padding:8px 14px;border-radius:var(--r-md);
+    font-size:12px;cursor:pointer;font-weight:500;
+  }
+  .s1-search-row .qbarcode{
+    background:var(--teal-soft);color:var(--teal-deep);border:0;padding:8px 12px;border-radius:var(--r-md);
+    font-size:12px;cursor:pointer;font-weight:500;
+  }
+
+  .s1-grid{display:grid;grid-template-columns:1fr 320px;gap:12px;}
+  .s1-table-wrap{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    overflow:hidden;
+  }
+  .s1-table-head{
+    background:var(--soft);padding:10px 12px;display:flex;justify-content:space-between;align-items:center;
+    border-bottom:0.5px solid var(--border);
+  }
+  .s1-table-head .h{font-size:13px;font-weight:500;}
+  .s1-table-head .switch{display:flex;gap:4px;}
+  .s1-table-head .switch button{
+    background:transparent;border:0.5px solid var(--border);font-size:10px;padding:3px 8px;border-radius:var(--r-md);
+    cursor:pointer;color:var(--text-2);
+  }
+  .s1-table-head .switch button.on{background:var(--purple);color:#FFF;border-color:var(--purple);}
+  table{width:100%;border-collapse:collapse;font-size:11px;}
+  thead th{
+    background:var(--surface);padding:8px 10px;text-align:right;font-weight:500;font-size:10px;
+    color:var(--text-3);border-bottom:0.5px solid var(--border);text-transform:uppercase;letter-spacing:0.3px;
+  }
+  tbody td{padding:8px 10px;border-bottom:0.5px solid var(--border);font-size:11px;}
+  tbody tr{cursor:pointer;}
+  tbody tr:hover{background:var(--purple-soft);}
+
+  .s1-side{display:flex;flex-direction:column;gap:10px;}
+  .s1-card{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);padding:12px;
+  }
+  .s1-card h3{font-size:12px;font-weight:500;margin:0 0 8px;color:var(--text-2);
+    text-transform:uppercase;letter-spacing:0.3px;}
+  .s1-stat{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;
+    border-bottom:0.5px solid var(--border);}
+  .s1-stat:last-child{border:0;}
+  .s1-stat .v{font-weight:500;}
+
+  .s1-queue-row{display:flex;justify-content:space-between;align-items:center;
+    background:var(--teal-soft);padding:6px 10px;border-radius:var(--r-md);margin-bottom:4px;font-size:11px;}
+  .s1-queue-row .nm{color:var(--teal-deep);font-weight:500;}
+  .s1-queue-row .wait{color:var(--teal);font-size:10px;}
+
+  .s1-quick-cust{display:flex;justify-content:space-between;align-items:center;
+    padding:6px 0;border-bottom:0.5px solid var(--border);font-size:11px;cursor:pointer;}
+  .s1-quick-cust:hover{background:var(--purple-soft);}
+  .s1-quick-cust:last-child{border:0;}
+  .s1-quick-cust .nm{font-weight:500;}
+  .s1-quick-cust .when{color:var(--text-3);font-size:10px;}
+
+  /* ===========================================================
+     SKETCH 2: SPLIT WORKSPACE
+     =========================================================== */
+  .s2-body{display:grid;grid-template-columns:240px 1fr;height:680px;}
+  .s2-side{
+    background:var(--purple-deep);color:#FFF;padding:14px 0;display:flex;flex-direction:column;
+  }
+  .s2-side .group{padding:8px 14px;}
+  .s2-side .group .hdr{font-size:9px;color:#A8A4D8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;font-weight:500;}
+  .s2-side button{
+    width:100%;background:transparent;color:#EEEDFE;border:0;padding:8px 10px;
+    text-align:right;font-size:12px;border-radius:var(--r-md);cursor:pointer;
+    display:flex;justify-content:space-between;align-items:center;font-family:inherit;
+  }
+  .s2-side button:hover{background:rgba(255,255,255,0.08);}
+  .s2-side button.active{background:var(--purple);}
+  .s2-side button .ic{font-size:14px;}
+  .s2-side .div{height:1px;background:rgba(255,255,255,0.1);margin:6px 14px;}
+  .s2-side .branch{padding:10px 14px;border-top:1px solid rgba(255,255,255,0.1);margin-top:auto;
+    color:#A8A4D8;font-size:10px;}
+  .s2-side .branch .b-name{color:#FFF;font-size:12px;font-weight:500;margin-bottom:2px;}
+
+  .s2-main{padding:14px;background:var(--bg);overflow:auto;}
+  .s2-toolbar{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    padding:10px;margin-bottom:10px;display:flex;gap:8px;align-items:center;
+  }
+  .s2-toolbar input{
+    flex:1;border:0;font-size:14px;font-family:inherit;outline:none;background:transparent;
+  }
+  .s2-toolbar .ic{font-size:14px;color:var(--text-3);margin-inline-end:4px;}
+  .s2-toolbar button{
+    background:var(--soft);color:var(--text);border:0;padding:7px 12px;border-radius:var(--r-md);
+    font-size:11px;cursor:pointer;font-family:inherit;
+  }
+  .s2-toolbar button:hover{background:var(--border);}
+
+  .s2-pills{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+  .s2-pill{
+    background:var(--surface);border:0.5px solid var(--border);padding:5px 10px;border-radius:14px;
+    font-size:11px;cursor:pointer;color:var(--text-2);
+  }
+  .s2-pill:hover{background:var(--purple-soft);border-color:var(--purple-mid);color:var(--purple-deep);}
+  .s2-pill.on{background:var(--purple);color:#FFF;border-color:var(--purple);}
+  .s2-pill .cnt{font-size:10px;opacity:0.7;margin-inline-start:4px;}
+
+  .s2-results{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);overflow:hidden;
+  }
+  .s2-results .resHdr{
+    padding:9px 14px;background:var(--soft);border-bottom:0.5px solid var(--border);
+    font-size:11px;color:var(--text-2);display:flex;justify-content:space-between;
+  }
+  .s2-row{
+    display:grid;grid-template-columns:36px 1.6fr 1fr 1fr 1fr 1fr 90px;gap:10px;
+    padding:9px 14px;border-bottom:0.5px solid var(--border);align-items:center;
+    cursor:pointer;font-size:11px;
+  }
+  .s2-row:hover{background:var(--purple-soft);}
+  .s2-row .av{
+    width:30px;height:30px;border-radius:50%;background:var(--purple-mid);color:#FFF;
+    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;
+  }
+  .s2-row .nm{font-weight:500;font-size:12px;}
+  .s2-row .sub{font-size:10px;color:var(--text-3);}
+  .s2-row .actions{display:flex;gap:4px;}
+  .s2-row .actions button{
+    background:var(--soft);border:0;width:24px;height:24px;border-radius:4px;cursor:pointer;
+    font-size:11px;
+  }
+  .s2-row .actions button:hover{background:var(--purple-soft);}
+
+  /* ===========================================================
+     SKETCH 3: KANBAN/STREAM (DAILY OPS)
+     =========================================================== */
+  .s3-body{padding:14px;background:var(--bg);}
+  .s3-banner{
+    background:linear-gradient(135deg,var(--purple) 0%,var(--purple-deep) 100%);
+    color:#FFF;padding:14px 18px;border-radius:var(--r-md);margin-bottom:12px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .s3-banner .greet{font-size:16px;font-weight:500;}
+  .s3-banner .sum{display:flex;gap:18px;}
+  .s3-banner .sum .item{font-size:11px;color:#CECBF6;}
+  .s3-banner .sum .item .v{display:block;color:#FFF;font-size:18px;font-weight:500;line-height:1;}
+
+  .s3-quickbar{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    padding:8px;margin-bottom:12px;display:grid;grid-template-columns:1.4fr repeat(7,1fr);gap:6px;
+  }
+  .s3-quickbar .search{
+    display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--soft);border-radius:var(--r-md);
+  }
+  .s3-quickbar .search input{flex:1;background:transparent;border:0;outline:none;font-size:12px;font-family:inherit;}
+  .s3-quickbar .qa{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    padding:8px 6px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;
+  }
+  .s3-quickbar .qa:hover{border-color:var(--purple-mid);background:var(--purple-soft);}
+  .s3-quickbar .qa .ic{font-size:16px;}
+  .s3-quickbar .qa .lb{font-size:10px;font-weight:500;}
+
+  .s3-cols{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  .s3-col{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);overflow:hidden;
+    display:flex;flex-direction:column;
+  }
+  .s3-col .ch{
+    padding:9px 12px;background:var(--soft);border-bottom:0.5px solid var(--border);
+    display:flex;justify-content:space-between;align-items:center;font-size:11px;
+  }
+  .s3-col .ch .nm{font-weight:500;font-size:12px;}
+  .s3-col .ch .ct{
+    background:var(--surface);color:var(--text-2);padding:1px 7px;border-radius:8px;
+    font-size:10px;font-weight:500;
+  }
+  .s3-col.teal .ch{background:var(--teal-soft);}
+  .s3-col.teal .ch .nm{color:var(--teal-deep);}
+  .s3-col.amber .ch{background:var(--amber-soft);}
+  .s3-col.amber .ch .nm{color:var(--amber-deep);}
+  .s3-col.blue .ch{background:var(--blue-soft);}
+  .s3-col.blue .ch .nm{color:var(--blue-deep);}
+  .s3-col.purple .ch{background:var(--purple-soft);}
+  .s3-col.purple .ch .nm{color:var(--purple-deep);}
+
+  .s3-col .body{padding:8px;display:flex;flex-direction:column;gap:6px;flex:1;min-height:300px;}
+  .s3-card{
+    background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    padding:8px 10px;cursor:pointer;
+  }
+  .s3-card:hover{border-color:var(--purple-mid);box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+  .s3-card .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+  .s3-card .nm{font-weight:500;font-size:12px;}
+  .s3-card .meta{font-size:10px;color:var(--text-3);}
+  .s3-card .det{font-size:11px;color:var(--text-2);}
+
+  .s3-side-actions{
+    margin-top:12px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-md);
+    padding:10px;display:flex;gap:8px;flex-wrap:wrap;
+  }
+  .s3-side-actions .lab{font-size:11px;color:var(--text-2);align-self:center;font-weight:500;margin-inline-end:6px;}
+  .s3-side-actions .modlink{
+    background:var(--soft);color:var(--text);padding:6px 12px;border-radius:14px;font-size:11px;cursor:pointer;border:0;
+    font-family:inherit;
+  }
+  .s3-side-actions .modlink:hover{background:var(--purple-soft);color:var(--purple-deep);}
+
+  /* SECTION TITLES */
+  .sketch-title{
+    max-width:1500px;margin:0 auto 8px;display:flex;justify-content:space-between;align-items:flex-end;gap:14px;
+  }
+  .sketch-title h2{font-size:18px;font-weight:500;margin:0;}
+  .sketch-title .desc{font-size:12px;color:var(--text-2);max-width:780px;line-height:1.5;}
+  .sketch-title .tagline{font-size:11px;color:var(--purple);font-weight:500;text-transform:uppercase;letter-spacing:0.5px;}
+</style>
+
+<link rel="stylesheet" href="../../../../../shared/css/variables.css">
+<link rel="stylesheet" href="../../../../../shared/css/layout.css">
+<link rel="stylesheet" href="../../../../../shared/css/components.css">
+<link rel="stylesheet" href="../../../../../shared/css/components-extra.css">
+<link rel="stylesheet" href="../../../../../shared/css/forms.css">
+<link rel="stylesheet" href="../../../../../shared/css/modal.css">
+<link rel="stylesheet" href="../../../../../shared/css/toast.css">
+<link rel="stylesheet" href="../../../../../shared/css/table.css">
+<link rel="stylesheet" href="./_tokens.css">
+</head>
+<body>
+
+<h1>M5 — מסך ניהול לקוחות · 3 סקיצות</h1>
+<p class="lede">
+  שלוש פילוסופיות-עיצוב שונות לאותו תפקיד: לוח-תפעולי שמשמש את הצוות לכל הקשור ללקוחות + פעולות-מהירות + קישורים למודולים. החיפוש המתקדם הוא <em>פילטר נפתח</em> מאותו מסך, לא מסך נפרד. הסקיצות הן בראייה כללית — צבעים, גדלים ופרטים יתחדדו בשלב ה-SPEC.
+</p>
+
+<div class="top-nav">
+  <span class="label">מעבר בין סקיצות:</span>
+  <button class="active" onclick="showS(1)">1 · Command Center</button>
+  <button onclick="showS(2)">2 · Split Workspace</button>
+  <button onclick="showS(3)">3 · Daily Stream</button>
+  <span class="meta">RTL · Hebrew · גובה ראשי 768</span>
+</div>
+
+<!-- ===================================================================
+     SKETCH 1 — COMMAND CENTER
+     "כל הפעולות בראש, רשימת לקוחות תמיד גלויה, לוח-מצב צד-ימין"
+     =================================================================== -->
+<div id="sketch1" class="sketch">
+  <div class="sketch-title">
+    <div>
+      <div class="tagline">סקיצה 1</div>
+      <h2>Command Center</h2>
+    </div>
+    <div class="desc">
+      פעולות-מהירות בשורת-כפתורים אופקית למעלה (כמו ה-Dock במק). חיפוש בולט באמצע. רשימת-לקוחות גדולה משמאל ולוח-מצב חי מימין (תור-נוכחי, לקוחות-של-היום, ספירות-מהירות). דומה לרוח האקסס המקורי, רק מודרני.
+    </div>
+  </div>
+
+  <div class="app">
+    <div class="header">
+      <div class="title">ניהול לקוחות</div>
+      <div class="right">
+        <span class="crumbs">Dashboard / לקוחות</span>
+        <button class="primary">+ לקוח חדש</button>
+      </div>
+    </div>
+
+    <div class="s1-body">
+      <!-- Quick Actions Strip -->
+      <div class="s1-strip">
+        <div class="s1-action"><div class="ic">📦</div><div class="lab">מסירת הזמנה</div><div class="sub">סרוק ברקוד</div></div>
+        <div class="s1-action"><div class="ic">🛠️</div><div class="lab">תיקונים</div><div class="sub">לקוח חדש/קיים</div></div>
+        <div class="s1-action"><div class="ic">📋</div><div class="lab">משימה</div><div class="sub">פתיחת משימה</div></div>
+        <div class="s1-action"><div class="ic">🛒</div><div class="lab">אביזרים</div><div class="sub">לקוח כללי</div></div>
+        <div class="s1-action"><div class="ic">📅</div><div class="lab">ניהול תורים</div><div class="sub">יומן · לוח</div></div>
+        <div class="s1-action feature"><div class="ic">⭐</div><div class="lab">חברי מועדון</div><div class="sub">tiers · זיכויים</div></div>
+        <div class="s1-action"><div class="ic">📈</div><div class="lab">דוחות</div><div class="sub">LTV · מכירות</div></div>
+        <div class="s1-action"><div class="ic">📞</div><div class="lab">CRM · לידים</div><div class="sub">מודול 4</div></div>
+      </div>
+
+      <!-- Search Row -->
+      <div class="s1-search-row">
+        <span style="font-size:14px;color:var(--text-3);margin-inline-start:6px;">🔍</span>
+        <input placeholder="חיפוש מהיר — שם · טלפון · ת.ז · מספר הזמנה · ברקוד..." />
+        <button class="qbarcode">📷 ברקוד</button>
+        <button class="filter-btn">⚙️ חיפוש מתקדם</button>
+      </div>
+
+      <!-- Two Columns -->
+      <div class="s1-grid">
+        <!-- Customers Table -->
+        <div class="s1-table-wrap">
+          <div class="s1-table-head">
+            <div class="h">לקוחות</div>
+            <div class="switch">
+              <button class="on">אחרונים</button>
+              <button>היום</button>
+              <button>השבוע</button>
+              <button>הכל</button>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>שם</th><th>טלפון</th><th>קופ"ח</th><th>בדיקה אחרונה</th><th>הזמנה אחרונה</th><th>סטטוס</th><th>זיכוי</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>יוסי כהן</strong></td><td class="num">050-3348349</td>
+                <td>מכבי</td><td class="num">12.04.26</td><td class="num">#9847</td>
+                <td><span class="pill pill-teal">פעיל</span></td><td class="num">₪120</td>
+              </tr>
+              <tr>
+                <td><strong>שרה לוי</strong> <span class="new-badge">חדש</span></td><td class="num">053-7889878</td>
+                <td>לאומית</td><td class="num">07.05.26</td><td class="num">—</td>
+                <td><span class="pill pill-amber">לקוח חדש</span></td><td class="num">—</td>
+              </tr>
+              <tr>
+                <td><strong>אורן ברק</strong></td><td class="num">054-6630499</td>
+                <td>כללית</td><td class="num">28.03.26</td><td class="num">#9821</td>
+                <td><span class="pill pill-blue">במעבדה</span></td><td class="num">₪0</td>
+              </tr>
+              <tr>
+                <td><strong>מירי דהן</strong> <span class="pill pill-purple" style="font-size:9px;">⭐ Gold</span></td><td class="num">052-2457583</td>
+                <td>מאוחדת</td><td class="num">15.04.26</td><td class="num">#9839</td>
+                <td><span class="pill pill-teal">פעיל</span></td><td class="num">₪450</td>
+              </tr>
+              <tr>
+                <td><strong>אבי מזרחי</strong></td><td class="num">050-8122341</td>
+                <td>מכבי</td><td class="num">02.05.26</td><td class="num">#9852</td>
+                <td><span class="pill pill-amber">תיקון</span></td><td class="num">₪0</td>
+              </tr>
+              <tr>
+                <td><strong>טל אברמוב</strong></td><td class="num">053-7888912</td>
+                <td>לאומית</td><td class="num">29.04.26</td><td class="num">#9844</td>
+                <td><span class="pill pill-blue">מוכן לאיסוף</span></td><td class="num">₪80</td>
+              </tr>
+              <tr>
+                <td><strong>נטע פרץ</strong></td><td class="num">054-3215672</td>
+                <td>כללית</td><td class="num">01.05.26</td><td class="num">#9849</td>
+                <td><span class="pill pill-gray">משימה</span></td><td class="num">—</td>
+              </tr>
+              <tr>
+                <td><strong>רון שמיר</strong></td><td class="num">050-6112293</td>
+                <td>מכבי</td><td class="num">03.05.26</td><td class="num">#9854</td>
+                <td><span class="pill pill-teal">פעיל</span></td><td class="num">₪200</td>
+              </tr>
+              <tr>
+                <td><strong>גליה בר</strong></td><td class="num">052-7798845</td>
+                <td>מאוחדת</td><td class="num">06.05.26</td><td class="num">—</td>
+                <td><span class="pill pill-amber">תור היום</span></td><td class="num">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Side Panel -->
+        <div class="s1-side">
+          <div class="s1-card">
+            <h3>תור פעיל · בדיקת עיניים</h3>
+            <div class="s1-queue-row"><span class="nm">1. דוד מזרחי</span><span class="wait">בבדיקה</span></div>
+            <div class="s1-queue-row"><span class="nm">2. גליה בר</span><span class="wait">12 דק'</span></div>
+            <div class="s1-queue-row"><span class="nm">3. עומר כץ</span><span class="wait">28 דק'</span></div>
+            <div class="s1-queue-row"><span class="nm">4. תמר עמר</span><span class="wait">45 דק'</span></div>
+            <button style="width:100%;margin-top:6px;background:var(--teal);color:transparent;border:0;padding:6px;border-radius:var(--r-md);font-size:11px;cursor:pointer;">פתח לוח-תור מלא</button>
+          </div>
+
+          <div class="s1-card">
+            <h3>היום · 7.5.2026</h3>
+            <div class="s1-stat"><span>תורי בדיקה</span><span class="v num">8</span></div>
+            <div class="s1-stat"><span>הזמנות לאיסוף</span><span class="v num">14</span></div>
+            <div class="s1-stat"><span>הזמנות במעבדה</span><span class="v num">23</span></div>
+            <div class="s1-stat"><span>משימות פתוחות</span><span class="v num">5</span></div>
+            <div class="s1-stat"><span>תיקונים פעילים</span><span class="v num">3</span></div>
+          </div>
+
+          <div class="s1-card">
+            <h3>נצפו לאחרונה</h3>
+            <div class="s1-quick-cust"><span class="nm">שרה לוי</span><span class="when">לפני 2 דק'</span></div>
+            <div class="s1-quick-cust"><span class="nm">יוסי כהן</span><span class="when">לפני 14 דק'</span></div>
+            <div class="s1-quick-cust"><span class="nm">מירי דהן</span><span class="when">היום 09:14</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================
+     SKETCH 2 — SPLIT WORKSPACE
+     "ניווט-צד שמאחד את כל הפעולות והמודולים, רשימה ענקית מימין"
+     =================================================================== -->
+<div id="sketch2" class="sketch" style="display:none;">
+  <div class="sketch-title">
+    <div>
+      <div class="tagline">סקיצה 2</div>
+      <h2>Split Workspace</h2>
+    </div>
+    <div class="desc">
+      ניווט-צד קבוע משמאל מקבץ את כל הפעולות והקישורים-למודולים בקטגוריות. הצד הימני (הראשי) מתמקד ברשימת-הלקוחות עם חיפוש-מהיר וטאבי-סינון. גישת SaaS-מודרנית סטנדרטית. פחות צפיפות בראש-המסך, יותר מקום לרשימה.
+    </div>
+  </div>
+
+  <div class="app">
+    <div class="s2-body">
+      <!-- Left Sidebar -->
+      <div class="s2-side">
+        <div class="group">
+          <div class="hdr">פעולות מהירות</div>
+          <button><span>📦 מסירת הזמנה</span></button>
+          <button><span>🛠️ תיקונים</span></button>
+          <button><span>📋 משימה חדשה</span></button>
+          <button><span>🛒 אביזרים · לקוח כללי</span></button>
+        </div>
+
+        <div class="div"></div>
+
+        <div class="group">
+          <div class="hdr">לקוחות</div>
+          <button class="active"><span>👥 כל הלקוחות</span><span class="num" style="font-size:10px;">5,028</span></button>
+          <button><span>⭐ חברי מועדון</span><span class="num" style="font-size:10px;">847</span></button>
+          <button><span>🆕 לקוחות חדשים</span><span class="num" style="font-size:10px;">23</span></button>
+          <button><span>📞 לידים פתוחים</span><span class="num" style="font-size:10px;">14</span></button>
+          <button><span>🎁 ימי-הולדת השבוע</span><span class="num" style="font-size:10px;">8</span></button>
+        </div>
+
+        <div class="div"></div>
+
+        <div class="group">
+          <div class="hdr">מודולים מקושרים</div>
+          <button><span>📅 ניהול תורים</span></button>
+          <button><span>🔬 מעבדה (KDS)</span></button>
+          <button><span>📊 דוחות</span></button>
+          <button><span>🏪 ניהול מלאי</span></button>
+          <button><span>💬 תקשורת · WhatsApp</span></button>
+        </div>
+
+        <div class="branch">
+          <div class="b-name">סניף ראשי · הרצליה</div>
+          <div>אופטיקה פריזמה</div>
+        </div>
+      </div>
+
+      <!-- Right Main Area -->
+      <div class="s2-main">
+        <!-- Search Bar -->
+        <div class="s2-toolbar">
+          <span class="ic">🔍</span>
+          <input placeholder="חיפוש לקוח לפי שם · טלפון · ת.ז · ברקוד הזמנה..." />
+          <button>📷 סריקת ברקוד</button>
+          <button>⚙️ חיפוש מתקדם</button>
+          <button style="background:var(--purple);color:transparent;font-weight:500;">+ לקוח חדש</button>
+        </div>
+
+        <!-- Filter Pills -->
+        <div class="s2-pills">
+          <span class="s2-pill on">הכל <span class="cnt">5,028</span></span>
+          <span class="s2-pill">פעילים <span class="cnt">3,841</span></span>
+          <span class="s2-pill">תור היום <span class="cnt">8</span></span>
+          <span class="s2-pill">מוכנים לאיסוף <span class="cnt">14</span></span>
+          <span class="s2-pill">במעבדה <span class="cnt">23</span></span>
+          <span class="s2-pill">תיקונים <span class="cnt">3</span></span>
+          <span class="s2-pill">משימות <span class="cnt">5</span></span>
+          <span class="s2-pill">חברי מועדון <span class="cnt">847</span></span>
+          <span class="s2-pill">קופ"ח: לאומית <span class="cnt">2,558</span></span>
+          <span class="s2-pill">חוב פתוח <span class="cnt">42</span></span>
+        </div>
+
+        <!-- Customer List -->
+        <div class="s2-results">
+          <div class="resHdr">
+            <span>5,028 לקוחות · ממוין לפי: פעילות אחרונה ↓</span>
+            <span>טור-תצוגה ⚙️ · ייצוא Excel</span>
+          </div>
+          <div class="s2-row">
+            <div class="av">יכ</div>
+            <div><div class="nm">יוסי כהן <span class="pill pill-teal">פעיל</span></div><div class="sub">ת.ז 023456789 · גיל 47 · בעל מכון-כושר</div></div>
+            <div><div class="num">050-3348349</div><div class="sub">דוא"ל מאומת</div></div>
+            <div>מכבי <span class="pill pill-blue">פלטינום</span></div>
+            <div><div>בדיקה אחרונה</div><div class="sub num">12.04.26 · ד"ר נועה</div></div>
+            <div><div>הזמנה אחרונה</div><div class="sub num">#9847 · ₪1,840</div></div>
+            <div class="actions"><button>📅</button><button>💬</button><button>📞</button></div>
+          </div>
+          <div class="s2-row">
+            <div class="av">של</div>
+            <div><div class="nm">שרה לוי <span class="pill pill-amber">לקוח חדש</span></div><div class="sub">ת.ז 045678901 · גיל 32 · רוסית</div></div>
+            <div><div class="num">053-7889878</div><div class="sub">דוא"ל לא-מאומת</div></div>
+            <div>לאומית <span class="pill pill-blue">פלטינום</span></div>
+            <div><div>בדיקה אחרונה</div><div class="sub num">07.05.26 · היום</div></div>
+            <div><div>הזמנה אחרונה</div><div class="sub">—</div></div>
+            <div class="actions"><button>📅</button><button>💬</button><button>📞</button></div>
+          </div>
+          <div class="s2-row">
+            <div class="av" style="background:var(--amber);">מד</div>
+            <div><div class="nm">מירי דהן <span class="pill pill-purple">⭐ Gold</span></div><div class="sub">ת.ז 067890123 · גיל 54 · ⭐ חברת מועדון מ-2021</div></div>
+            <div><div class="num">052-2457583</div><div class="sub">דוא"ל מאומת</div></div>
+            <div>מאוחדת <span class="pill pill-blue">שיא-מצוינות</span></div>
+            <div><div>בדיקה אחרונה</div><div class="sub num">15.04.26 · ד"ר עידן</div></div>
+            <div><div>הזמנה אחרונה</div><div class="sub num">#9839 · ₪3,450</div></div>
+            <div class="actions"><button>📅</button><button>💬</button><button>📞</button></div>
+          </div>
+          <div class="s2-row">
+            <div class="av">אב</div>
+            <div><div class="nm">אורן ברק <span class="pill pill-blue">במעבדה</span></div><div class="sub">ת.ז 078901234 · גיל 39</div></div>
+            <div><div class="num">054-6630499</div><div class="sub">—</div></div>
+            <div>כללית</div>
+            <div><div>בדיקה אחרונה</div><div class="sub num">28.03.26 · ד"ר נועה</div></div>
+            <div><div>הזמנה פעילה</div><div class="sub num">#9821 · בעבודה במעבדה</div></div>
+            <div class="actions"><button>📅</button><button>💬</button><button>📞</button></div>
+          </div>
+          <div class="s2-row">
+            <div class="av">אמ</div>
+            <div><div class="nm">אבי מזרחי <span class="pill pill-amber">תיקון</span></div><div class="sub">ת.ז 089012345 · גיל 61</div></div>
+            <div><div class="num">050-8122341</div><div class="sub">דוא"ל מאומת</div></div>
+            <div>מכבי</div>
+            <div><div>בדיקה אחרונה</div><div class="sub num">02.05.26</div></div>
+            <div><div>תיקון פתוח</div><div class="sub">החלפת זרוע מסגרת</div></div>
+            <div class="actions"><button>📅</button><button>💬</button><button>📞</button></div>
+          </div>
+          <div class="s2-row">
+            <div class="av" style="background:var(--teal);">טא</div>
+            <div><div class="nm">טל אברמוב <span class="pill pill-blue">מוכן לאיסוף</span></div><div class="sub">ת.ז 090123456 · גיל 28</div></div>
+            <div><div class="num">053-7888912</div><div class="sub">דוא"ל מאומת</div></div>
+            <div>לאומית <span class="pill pill-blue">פלטינום</span></div>
+            <div><div>בדיקה אחרונה</div><div class="sub num">29.04.26 · ד"ר עידן</div></div>
+            <div><div>הזמנה מוכנה</div><div class="sub num">#9844 · נשלח SMS</div></div>
+            <div class="actions"><button>📅</button><button>💬</button><button>📞</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================
+     SKETCH 3 — DAILY STREAM
+     "Kanban של מצבי-לקוחות, פעולות-מהירות בראש, היום קודם הכל"
+     =================================================================== -->
+<div id="sketch3" class="sketch" style="display:none;">
+  <div class="sketch-title">
+    <div>
+      <div class="tagline">סקיצה 3</div>
+      <h2>Daily Stream</h2>
+    </div>
+    <div class="desc">
+      גישה תהליכית: לקוחות מאורגנים לפי <em>מצב פעיל</em> בעמודות-Kanban (מחכה לבדיקה / במעבדה / מוכן לאיסוף / משימה פתוחה). הצוות רואה את העבודה הזורמת ביום, לא רק את הדאטה. מצוין למי שמתעדכן הרבה במהלך היום (קופאי / סייעת). חיפוש-מתקדם מגיע ב-overlay כשצריך, אבל הברירת-מחדל היא View-עבודה.
+    </div>
+  </div>
+
+  <div class="app">
+    <div class="header">
+      <div class="title">לוח עבודה — לקוחות פעילים</div>
+      <div class="right">
+        <span class="crumbs">Dashboard / לקוחות / היום</span>
+        <button>🔍 חיפוש</button>
+        <button>📋 רשימה מלאה</button>
+        <button class="primary">+ לקוח חדש</button>
+      </div>
+    </div>
+
+    <div class="s3-body">
+      <!-- Greeting Banner -->
+      <div class="s3-banner">
+        <div>
+          <div class="greet">בוקר טוב, דניאל 👋</div>
+          <div style="font-size:12px;color:transparent;margin-top:3px;">יום חמישי · 7 במאי 2026 · סניף הרצליה</div>
+        </div>
+        <div class="sum">
+          <div class="item"><span class="v num">8</span>תורי בדיקה</div>
+          <div class="item"><span class="v num">14</span>מוכנים לאיסוף</div>
+          <div class="item"><span class="v num">23</span>במעבדה</div>
+          <div class="item"><span class="v num">5</span>משימות</div>
+          <div class="item"><span class="v num">3</span>תיקונים</div>
+        </div>
+      </div>
+
+      <!-- Quick Action Bar -->
+      <div class="s3-quickbar">
+        <div class="search">
+          <span style="font-size:14px;color:var(--text-3);">🔍</span>
+          <input placeholder="חיפוש מהיר..." />
+          <span style="font-size:10px;color:var(--text-3);">⌘K</span>
+        </div>
+        <div class="qa"><div class="ic">📦</div><div class="lb">מסירת הזמנה</div></div>
+        <div class="qa"><div class="ic">🛠️</div><div class="lb">תיקונים</div></div>
+        <div class="qa"><div class="ic">📋</div><div class="lb">משימה</div></div>
+        <div class="qa"><div class="ic">🛒</div><div class="lb">אביזרים</div></div>
+        <div class="qa"><div class="ic">📅</div><div class="lb">תורים</div></div>
+        <div class="qa"><div class="ic">⭐</div><div class="lb">חברי מועדון</div></div>
+        <div class="qa"><div class="ic">📊</div><div class="lb">דוחות</div></div>
+      </div>
+
+      <!-- Kanban Columns -->
+      <div class="s3-cols">
+        <!-- Column 1: Today's Appointments -->
+        <div class="s3-col teal">
+          <div class="ch"><span class="nm">תורי בדיקה היום</span><span class="ct">8</span></div>
+          <div class="body">
+            <div class="s3-card">
+              <div class="top"><div class="nm">דוד מזרחי</div><span class="pill pill-teal">בבדיקה</span></div>
+              <div class="meta">09:00 · ד"ר נועה</div>
+              <div class="det">בדיקת עיניים שגרתית · קופ"ח לאומית</div>
+            </div>
+            <div class="s3-card">
+              <div class="top"><div class="nm">גליה בר</div><span class="pill pill-amber">12 דק'</span></div>
+              <div class="meta">09:30 · ד"ר עידן</div>
+              <div class="det">בדיקה ראשונה · לקוח חדש</div>
+            </div>
+            <div class="s3-card">
+              <div class="top"><div class="nm">עומר כץ</div><span class="pill pill-gray">10:00</span></div>
+              <div class="meta">10:00 · ד"ר נועה</div>
+              <div class="det">חידוש מרשם · עדשות-מגע</div>
+            </div>
+            <div class="s3-card">
+              <div class="top"><div class="nm">תמר עמר</div><span class="pill pill-gray">10:45</span></div>
+              <div class="meta">10:45 · ד"ר עידן</div>
+              <div class="det">בדיקה שנתית · ⭐ Gold</div>
+            </div>
+            <div class="s3-card" style="background:var(--soft);text-align:center;color:var(--text-3);font-size:11px;">+ 4 נוספים</div>
+          </div>
+        </div>
+
+        <!-- Column 2: Lab -->
+        <div class="s3-col blue">
+          <div class="ch"><span class="nm">במעבדה · בעבודה</span><span class="ct">23</span></div>
+          <div class="body">
+            <div class="s3-card">
+              <div class="top"><div class="nm">אורן ברק</div><span class="pill pill-blue">דחוף</span></div>
+              <div class="meta">#9821 · נשלח 28.03</div>
+              <div class="det">משקפיים פרוגרסיביים · ZEISS · 12 ימים</div>
+            </div>
+            <div class="s3-card">
+              <div class="top"><div class="nm">רעות ניר</div><span class="pill pill-blue">רגיל</span></div>
+              <div class="meta">#9835 · נשלח 02.04</div>
+              <div class="det">עדשות-מגע · BAUSCH+LOMB · 5 ימים</div>
+            </div>
+            <div class="s3-card">
+              <div class="top"><div class="nm">אבי שלום</div><span class="pill pill-blue">רגיל</span></div>
+              <div class="meta">#9841 · נשלח 04.05</div>
+              <div class="det">משקפי שמש מרשם · עדשות-מאחז · 3 ימים</div>
+            </div>
+            <div class="s3-card" style="background:var(--soft);text-align:center;color:var(--text-3);font-size:11px;">+ 20 נוספים · פתח KDS</div>
+          </div>
+        </div>
+
+        <!-- Column 3: Ready for Pickup -->
+        <div class="s3-col amber">
+          <div class="ch"><span class="nm">מוכן לאיסוף</span><span class="ct">14</span></div>
+          <div class="body">
+            <div class="s3-card">
+              <div class="top"><div class="nm">טל אברמוב</div><span class="pill pill-amber">SMS נשלח</span></div>
+              <div class="meta">#9844 · מוכן 06.05</div>
+              <div class="det">משקפיים פרוגרסיביים · ₪2,840 · יתרה ₪0</div>
+            </div>
+            <div class="s3-card">
+              <div class="top"><div class="nm">חיים לוי</div><span class="pill pill-red">ממתין +5 ימים</span></div>
+              <div class="meta">#9826 · מוכן 02.05</div>
+              <div class="det">עדשות-מגע · ₪480 · יתרה ₪240 · התקשר!</div>
+            </div>
+            <div class="s3-card">
+              <div class="top"><div class="nm">נועה כספי</div><span class="pill pill-amber">SMS נשלח</span></div>
+              <div class="meta">#9837 · מוכן 04.05</div>
+              <div class="det">משקפי שמש מרשם · ₪1,650 · יתרה ₪0</div>
+            </div>
+            <div class="s3-card">
+              <div class="top"><div class="nm">יוסי כהן</div><span class="pill pill-amber">חדש מהבוקר</span></div>
+              <div class="meta">#9847 · מוכן 07.05</div>
+              <div class="det">משקפיים · ₪1,840 · יתרה ₪600</div>
+            </div>
+            <div class="s3-card" style="background:var(--soft);text-align:center;color:var(--text-3);font-size:11px;">+ 10 נוספים</div>
+          </div>
+        </div>
+
+        <!-- Column 4: Tasks + Repairs -->
+        <div class="s3-col purple">
+          <div class="ch"><span class="nm">משימות · תיקונים</span><span class="ct">8</span></div>
+          <div class="body">
+            <div class="s3-card">
+              <div class="top"><div class="nm">נטע פרץ</div><span class="pill pill-purple">משימה</span></div>
+              <div class="meta">פתוח 05.05 · נורית</div>
+              <div class="det">לקוחה רוצה לבדוק תיק' מולטיפוקל אצל ספק חיצוני</div>
+            </div>
+            <div class="s3-card">
+              <div class="top"><div class="nm">אבי מזרחי</div><span class="pill pill-coral" style="background:var(--coral-soft);color:var(--coral);">תיקון</span></div>
+              <div class="meta">פתוח 04.05 · יואב</div>
+              <div class="det">החלפת זרוע · נשלח לחברה החיצונית</div>
+            </div>
+            <div class="s3-card">
+              <div class="top"><div class="nm">רחלי דוד</div><span class="pill pill-purple">משימה</span></div>
+              <div class="meta">פתוח 03.05 · נורית</div>
+              <div class="det">בירור עם קופ"ח על קוד-מנוי חדש</div>
+            </div>
+            <div class="s3-card">
+              <div class="top"><div class="nm">אלון בנש</div><span class="pill pill-coral" style="background:var(--coral-soft);color:var(--coral);">תיקון</span></div>
+              <div class="meta">פתוח 06.05 · יואב</div>
+              <div class="det">הדבקת עדשה שנפלה · בחנות</div>
+            </div>
+            <div class="s3-card" style="background:var(--soft);text-align:center;color:var(--text-3);font-size:11px;">+ 4 נוספים</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Module Links -->
+      <div class="s3-side-actions">
+        <span class="lab">מודולים מקושרים:</span>
+        <button class="modlink">📅 לוח-תורים מלא</button>
+        <button class="modlink">🔬 KDS — מעבדה</button>
+        <button class="modlink">⭐ ניהול חברי מועדון</button>
+        <button class="modlink">📞 CRM — לידים</button>
+        <button class="modlink">📊 דוחות LTV</button>
+        <button class="modlink">💬 WhatsApp · תקשורת</button>
+        <button class="modlink">🏪 ניהול מלאי</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</body>
+</html>

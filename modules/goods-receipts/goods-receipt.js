@@ -69,7 +69,7 @@ async function onReceiptPoSelected() {
       // Try to find existing inventory item — first by barcode, then by brand+model+size+color
       let existingInv = null;
       if (item.barcode) {
-        const { data: inv } = await sb.from('inventory')
+        const { data: inv } = await sb.from(T.INV)
           .select('id, barcode')
           .eq('tenant_id', getTenantId())
           .eq('barcode', item.barcode)
@@ -81,7 +81,7 @@ async function onReceiptPoSelected() {
       if (!existingInv && item.brand) {
         var lookupBrandId = brandCache[(item.brand || '').trim()] || null;
         if (lookupBrandId) {
-          var lookupQuery = sb.from('inventory')
+          var lookupQuery = sb.from(T.INV)
             .select('id, barcode, quantity')
             .eq('tenant_id', getTenantId())
             .eq('brand_id', lookupBrandId)

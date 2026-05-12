@@ -48,7 +48,7 @@ function handleReceiptExcel(ev) {
 
         // If barcode provided, check if exists in inventory
         if (barcode) {
-          const { data: inv } = await sb.from('inventory')
+          const { data: inv } = await sb.from(T.INV)
             .select('id, brand_id, model, color, size, quantity')
             .eq('barcode', barcode)
             .eq('is_deleted', false)

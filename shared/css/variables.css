@@ -8,6 +8,7 @@
    - components.css, layout.css, forms.css must ONLY use var(--...) from this file
    - Zero hardcoded colors, font-sizes, spacing, or radii outside :root
    - Tenant override: loadTenantTheme() injects per-tenant values from DB on top of these defaults
+   - The defaults below are tenant-neutral (near-black + slate scale). Per-tenant brand color lives in tenants.ui_config.
    ============================================================================= */
 
 :root {
@@ -16,10 +17,10 @@
      1. COLORS — PRIMARY
      Source: styles.css :root (--primary, --primary-light, --primary-dark)
      ========================================================================= */
-  --color-primary:        #4f46e5;  /* Indigo 600 — buttons, links, focus rings */
-  --color-primary-hover:  #4338ca;  /* Indigo 700 — hover state on primary */
-  --color-primary-light:  #eef2ff;  /* Indigo 50 — badges, selected rows, subtle highlights */
-  --color-primary-dark:   #3730a3;  /* Indigo 800 — header background, dark text on light bg */
+  --color-primary:        #0f172a;  /* Slate 900 — neutral platform default (near-black, Daniel decision 2026-05-10) */
+  --color-primary-hover:  #1e293b;  /* Slate 800 — hover lightens (near-black primary can't go darker) */
+  --color-primary-light:  #f1f5f9;  /* Slate 100 — light backgrounds, badges, selected rows */
+  --color-primary-dark:   #000000;  /* pure black — text-on-light extreme */
 
   /* Legacy alias — bridges old --primary consumers (header.css, index.html)
      until full migration to --color-primary is complete */
@@ -158,4 +159,24 @@
   --transition-fast:      150ms ease;  /* from .qty-btn (all .15s), .ss-item (background .15s) */
   --transition-normal:    200ms ease;  /* from nav button, .btn, .sub-choice, .card (all .2s) — most common */
   --transition-slow:      300ms ease;  /* from toast @keyframes slideIn (.3s ease) */
+
+  /* =========================================================================
+     11. FOCUS — accessibility (Phase 2 — Design System)
+     Source: WCAG 2.4.7 (Focus Visible) + Brief Contract D
+     ========================================================================= */
+  --color-focus-ring:     var(--color-primary);  /* tracks primary by default; tenant can override to a contrasting color */
+  --shadow-focus:         0 0 0 3px rgba(15, 23, 42, 0.35);  /* 3px ring, near-black at 35% — visible on light AND on primary-colored backgrounds */
+
+  /* =========================================================================
+     12. NAVY ACCENT (Hybrid+Navy design system, 2026-05-11)
+     Additive tokens for the staged page-by-page migration to Hybrid+Navy.
+     Existing tokens (--color-primary, --primary, etc.) remain unchanged
+     until all 4 production migrations complete (Brief Locked Decision #5).
+     ========================================================================= */
+  --accent-navy:           #1e3a8a;  /* primary action — Hybrid+Navy */
+  --accent-navy-hover:     #1e40af;  /* hover state */
+  --accent-navy-soft:      #e6f1fb;  /* selected row, badge bg, hero wash */
+  --accent-navy-text:      #ffffff;  /* on Navy */
+  --text-slate-primary:    #0f172a;  /* deep slate body — alias of --color-gray-900, named for migration clarity */
+  --text-slate-secondary:  #475569;  /* secondary slate body — alias of --color-gray-600 */
 }

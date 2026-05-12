@@ -1,0 +1,13 @@
+/* =============================================================================
+   _tokens.css — Direction 1: Conservative
+   =============================================================================
+   "Just like today, but cleaner." Production-like density. Familiar to existing
+   Prizma users. Uses platform defaults from shared/css/variables.css unchanged
+   — this file is intentionally minimal. The Prizma override sample lives in
+   INDEX.html (toggle via ?tenant=prizma).
+   ============================================================================= */
+
+:root {
+  /* No active overrides — Conservative inherits everything from variables.css. */
+  /* If user toggles Prizma sample, INDEX.html injects --color-* Indigo values. */
+}

@@ -6,7 +6,7 @@ Two-stage. First load `opticup-strategic` (Foreman) to author the SPEC. Then loa
 
 ## Pre-reads (in order, MANDATORY before authoring)
 
-1. `modules/Module 4 - CRM/docs/specs/BROADCAST_1000_CAP_FIX/SUPERVISOR_DECISION.md` — the binding architectural verdict from the Main Strategic Chat. The SPEC must follow §SPEC scope verbatim.
+1. `modules/Module 4 - CRM/docs/specs/BROADCAST_1000_CAP_FIX/SUPERVISOR_DECISION.md` — the binding architectural verdict from the Architect. The SPEC must follow §SPEC scope verbatim.
 2. `modules/Module 4 - CRM/docs/specs/BROADCAST_1000_CAP_FIX/SUPERVISOR_BRIEF.md` — the Campaign Overseer's original problem statement + 3 options analysis.
 3. `roles/campaign-overseer/DECISIONS_LOG.md` REC-010 — the Overseer's logged recommendation.
 

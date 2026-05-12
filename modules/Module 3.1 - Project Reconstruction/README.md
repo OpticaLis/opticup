@@ -20,7 +20,7 @@ This module produces no new product features. It produces clarity.
 ```
 modules/Module 3.1 - Project Reconstruction/
 ├── README.md                                 ← this file
-├── MODULE_3.1_ROADMAP.md                     ← the module roadmap (Main Strategic wrote it)
+├── MODULE_3.1_ROADMAP.md                     ← the module roadmap (Architect wrote it)
 ├── MODULE_3.1_SECONDARY_CHAT_TEMPLATE.md     ← template for any secondary chat in this module
 ├── docs/
 │   ├── SESSION_CONTEXT.md                    ← master session context (strategic chat owns)

@@ -118,10 +118,10 @@ M5 (Customers v3), M6 (Prescriptions v2), M7 (Orders v1), M14 (Appointments v1),
 הדבק את זה בתיבה של Cowork:
 
 ```
-אתה ה-Main Strategic של פרוייקט Optic Up. ממשיכים מ-M8_HANDOFF.md.
+אתה ה-Architect של פרוייקט Optic Up. ממשיכים מ-M8_HANDOFF.md.
 ```
 
-זה מספיק. הסקיל `opticup-main-strategic` ייטען אוטומטית, יקרא את MASTER_LIVE_PLAN + DECISIONS_LOG + MEMORY + CLAUDE.md, ואת ה-handoff הזה. הוא ידע:
+זה מספיק. הסקיל `opticup-architect` ייטען אוטומטית, יקרא את MASTER_LIVE_PLAN + DECISIONS_LOG + MEMORY + CLAUDE.md, ואת ה-handoff הזה. הוא ידע:
 - איזה מודולים נסגרו.
 - מה הצעד הבא (M8).
 - שצריך *לפתוח עם subagent* ולא להתחיל שאלות-מיד (Pattern P23).
@@ -150,8 +150,8 @@ M5 (Customers v3), M6 (Prescriptions v2), M7 (Orders v1), M14 (Appointments v1),
 - M7 Brief: `modules/Module 7 - Orders/architecture-brief/M7_ORDERS_BRIEF.md` (v1)
 - M14 Brief: `modules/Module 14 - Appointments/architecture-brief/M14_APPOINTMENTS_BRIEF.md` (v1)
 - M15 Brief: `modules/Module 15 - Queue/architecture-brief/M15_QUEUE_BRIEF.md` (v1)
-- DECISIONS_LOG: `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md`
-- SKILL: `.claude/skills/opticup-main-strategic/SKILL.md` (עם Pattern P23 חדש)
+- DECISIONS_LOG: `.claude/skills/opticup-architect/references/DECISIONS_LOG.md`
+- SKILL: `.claude/skills/opticup-architect/SKILL.md` (עם Pattern P23 חדש)
 - Auto-memory: `MEMORY.md` (תזכורות פר-יום של פרוייקט)
 
 ---

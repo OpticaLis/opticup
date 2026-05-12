@@ -166,7 +166,7 @@ out of date. This is the mechanism that prevents silent drift across 20 modules.
 
 ## 9. Daniel-Facing Summary (Hebrew, 3 sentences max)
 
-For the Main Strategic Chat to paraphrase to Daniel:
+For the Architect to paraphrase to Daniel:
 
 > {Hebrew summary — one line on what shipped, one line on findings, one line on verdict}
 

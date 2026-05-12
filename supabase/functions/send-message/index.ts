@@ -9,12 +9,18 @@ import {
 } from "./event-variables.ts";
 import { injectLeadVariables } from "./lead-variables.ts";
 import { writeDispatchAndSend } from "./dispatch.ts";
+import { phoneAllowed, emailAllowed } from "./allowlists.ts";
 
 // send-message — CRM message dispatch (P3c+P4 Architecture v3).
 // Flow: POST {tenant_id, lead_id, channel, template_slug|body, variables} →
 // validate → fetch template → substitute vars → log(pending) → Make webhook
 // → log(sent|failed) → return. Make is a 3-module send-only pipe (Webhook →
 // Router → SMS|Email); all business logic lives here.
+//
+// Test-mode allowlists for SMS (tenants.test_mode_sms_allowlist, C001 2026-05-03)
+// and email (tenants.ui_config.test_mode_email_allowlist, DEMO_EMAIL_ALLOWLIST_INFRA
+// 2026-05-11) live in ./allowlists.ts. Empty/NULL = production mode (send to all);
+// non-empty = filter recipients; fail-CLOSED on lookup error or malformed JSON.
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -28,36 +34,6 @@ const MAKE_WEBHOOK_URL =
   Deno.env.get("MAKE_SEND_MESSAGE_WEBHOOK_URL") || MAKE_WEBHOOK_URL_DEFAULT;
 
 const DEFAULT_LANGUAGE = "he";
-
-// C001 (2026-05-03) — phone allowlist moved from hardcoded ALLOWED_PHONES to
-// tenants.test_mode_sms_allowlist (JSONB array of E.164 strings, NULL = production).
-// Fail-closed on lookup error or malformed JSON — never accidentally blast strangers.
-function normalizePhone(p: string): string {
-  const d = p.replace(/[\s+\-]/g, "");
-  return d.startsWith("972") ? "0" + d.slice(3) : d;
-}
-async function phoneAllowed(db: any, tenantId: string, phone: string | null): Promise<boolean> {
-  if (!phone) return true;
-  const { data: tenant, error } = await db
-    .from("tenants")
-    .select("test_mode_sms_allowlist")
-    .eq("id", tenantId)
-    .maybeSingle();
-  if (error) {
-    console.warn("phoneAllowed: tenant lookup failed; failing CLOSED for safety", error);
-    return false;
-  }
-  const allowlist = tenant?.test_mode_sms_allowlist;
-  if (allowlist == null) return true;  // production mode
-  if (!Array.isArray(allowlist)) {
-    console.warn("phoneAllowed: malformed allowlist on tenant", tenantId);
-    return false;
-  }
-  const n = normalizePhone(phone);
-  return allowlist.some((a: unknown) =>
-    typeof a === "string" && normalizePhone(a) === n
-  );
-}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -308,6 +284,10 @@ Deno.serve(async (req: Request) => {
   }
 
   // --- Allowlist gate (layer 1) ---
+  // SMS allowlist source: tenants.test_mode_sms_allowlist (C001 2026-05-03).
+  // Email allowlist source: tenants.ui_config.test_mode_email_allowlist
+  // (DEMO_EMAIL_ALLOWLIST_INFRA 2026-05-11). Both fail-CLOSED on lookup error
+  // or malformed JSON. Empty/NULL allowlist on the tenant → send to all.
   if (channel === "sms" && !(await phoneAllowed(db, tenantId, recipientPhone))) {
     await db.from("crm_message_log").insert({
       tenant_id: tenantId, lead_id: leadId, event_id: eventId, run_id: runId,
@@ -315,6 +295,14 @@ Deno.serve(async (req: Request) => {
       status: "rejected", error_message: "phone_not_allowed: " + recipientPhone,
     });
     return jsonResponse({ ok: false, error: "phone_not_allowed" }, 200);
+  }
+  if (channel === "email" && !(await emailAllowed(db, tenantId, recipientEmail))) {
+    await db.from("crm_message_log").insert({
+      tenant_id: tenantId, lead_id: leadId, event_id: eventId, run_id: runId,
+      template_id: templateId, channel, content: finalBody,
+      status: "rejected", error_message: "email_not_allowed: " + recipientEmail,
+    });
+    return jsonResponse({ ok: false, error: "email_not_allowed" }, 200);
   }
 
   // --- Final-stage dispatch (write pending log → Make → mark sent/failed) ---

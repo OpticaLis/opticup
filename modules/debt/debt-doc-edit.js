@@ -273,7 +273,6 @@ async function _learnFromDocumentEdits(doc, docTypeCode, newValues) {
   }
 
   if (!Object.keys(corrections).length) return;
-  console.log('AI learning from document edit:', corrections);
   await updateOCRTemplate(doc.supplier_id, docTypeCode || 'invoice', corrections, ext);
 }
 

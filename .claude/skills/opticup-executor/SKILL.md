@@ -54,6 +54,26 @@ Before touching any file, do these steps. No exceptions.
    (never a raw filesystem walk), so autocrlf does not produce false positives.
    Reference: `scripts/verify-tree-integrity.mjs`.
 
+4b. **Browser-QA readiness check.** Before editing any file, scan the SPEC's `§10 QA Steps` and `§3 Success Criteria` for keywords: "open localhost", "browser", "console", "click", "DOM", "Chrome".
+
+   - **If present and Chrome not running with `--remote-debugging-port=9222`:** include this in the readiness sentence: "Browser-QA required by SPEC §X.Y but Chrome debug-port not detected — please start Chrome with `--remote-debugging-port=9222` before I proceed past commit." Continue the SPEC up to commit, then surface the readiness gap before post-deploy verification.
+   - **If present and Chrome IS running with debug port:** confirm in the readiness sentence: "Chrome debug-port detected; browser QA enabled."
+   - **If absent (HTTP/SQL/script-based QA only):** state in the readiness sentence: "SPEC's QA is non-browser; Chrome readiness check skipped."
+
+   This converts a mid-execution surprise into a session-start clarification.
+
+   (Source: improvement #1 from M3_STUDIO_TRANSLATIONS_BRAND_FILTER FOREMAN_REVIEW, 2026-05-09. Symmetric to opticup-strategic improvement A2 in SPEC_TEMPLATE §10.)
+
+4c. **gh CLI readiness check.** Scan the SPEC's §10 QA Steps and §3 Success Criteria for `gh ` commands (workflow run, pr create, run watch, secret set, etc.). If found, run `gh auth status`. If not authenticated, surface the gap in the readiness sentence at session start:
+
+   > "SPEC §X.Y cites `gh` commands but gh CLI not authenticated — please `gh auth login` before I reach that step, or I'll fall back to manual UI instructions for that SC."
+
+   Continue execution; just front-load the gap. Don't discover it mid-execution at the QA step.
+
+   If absent, no readiness sentence needed — the gap doesn't apply.
+
+   (Source: improvement #1 from M3_LIGHTHOUSE_NIGHTLY_CRON FOREMAN_REVIEW, 2026-05-10. **3-occurrence threshold reached:** gh-auth fallback hit in M3_SITEMAP_BRAND_404_CLEANUP + M3_REC014_ORPHAN_CLEANUP + M3_LIGHTHOUSE_NIGHTLY_CRON. Per opticup-strategic SKILL §"Self-Improvement Mandate", rule promotion is mandatory.)
+
 5. **Read CLAUDE.md** — the constitution for this repo. Contains the Iron Rules.
 
 5.5. **Skill-reference file lookup rule (E1 — added 2026-04-16):** When a SPEC
@@ -130,10 +150,53 @@ The full text is in CLAUDE.md §4-§6. Here are the ones most relevant to execut
 - Branch/repo/path mismatch
 - Any Iron Rule would be violated
 
+### Verification order for batch transformations (added 2026-05-11)
+
+When executing a SPEC that runs a script over multiple files in a batch
+(e.g., a re-skin, mass rename, or mass token-swap):
+
+1. **Test-on-one BEFORE tag-all.** Run the transformation on the FIRST file
+   in the batch (no git tag, no commit, just the transformation + verification
+   greps). If it works, proceed to step 2. If it fails, fix the script first,
+   then return to step 1.
+2. **Create tags for the full batch.** Pre-commit tags (`pre-<op>-M{N}-{stem}`)
+   are created at the parent commit so any single file can be reverted later.
+3. **Run the transformation on all remaining files.**
+4. **Run the SPEC's success-criteria grep checks IMMEDIATELY** — before
+   `git add`. If any check returns ≥1 hit when the SPEC says 0, STOP, do not
+   stage, investigate the deviation.
+5. **`git add` + commit.**
+
+Skipping step 1 risks pre-commit tags pointing at a commit that does not
+represent the intended pre-state, because the script may abort mid-batch and
+leave most files in their original state under tags that were created
+optimistically. Skipping step 4 risks staging broken transformations that
+have to be rewound from the index. Source: `M1_5_SKETCH_RESKIN_BATCH_3/`
+FOREMAN_REVIEW.md improvement proposals #1 + #2, 2026-05-11. The reskin script
+in that batch aborted on file 1 of M12 (a `:root\s*\{` regex miss) AFTER
+4 tags had already been created at HEAD — fortunate this time because the
+fix worked, but in a different SPEC the tag placement could have damaged
+per-file revert semantics.
+
 ### Do NOT stop when:
 - A step completed exactly as expected
 - The next step is in the plan and previous matched
 - You feel uncertain but there's no actual deviation
+- **Numerical bound off by less than ±20% (added 2026-05-11):** when a SPEC
+  §3 success criterion is a numerical bound (line count, file size, row count,
+  package count) and the actual value falls outside the bound by less than
+  ±20%, treat it as author-side estimation error and adjust the SPEC criterion
+  inline with annotation citing the actual measurement. Continue execution;
+  log the adjustment as a FINDINGS.md entry. STOP only when the deviation is
+  ≥ 20% OR when the actual value violates a STRUCTURAL expectation (file
+  appears truncated, content lost, required token missing, hash mismatch).
+  Rationale: forcing a halt on author-side numerical miss is overkill for
+  Full-Auto pipelines where author and executor share a chat; the right move
+  is adjust + annotate + continue + log. The author-side counterpart of this
+  rule lives in `opticup-strategic` SKILL.md §"SPEC Authoring Protocol →
+  Step 3 → Numerical-bound criteria — Measure before bounding" (also
+  2026-05-11). Source: `M7_CLOSURE_V7_VARIANT_A/FOREMAN_REVIEW.md` §7
+  Proposal 1 (F-AUTH-1).
 
 ## Code Patterns — How We Write Code Here
 
@@ -178,12 +241,162 @@ The mechanical workaround is well-established (precedents: M4 P12 `info`/`phone`
 
 Applied to opticup-executor via FOREMAN_REVIEW for ATOMIC_CONFIRMATION_FLOW (3rd-cycle trigger from prior reviews).
 
+**Generalization (added 2026-05-10):**
+
+This pattern applies to **ANY directory with multiple sibling scripts that share helper-function names** — not just `modules/crm/`. Examples now in the wild:
+
+- `modules/crm/` — original case (CRM secondary-chat scripts).
+- `roles/site-overseer/tools/lighthouse/scripts/` — `run-tier1.mjs` + `run-full.mjs` shared `main()`, `round`, `totalElapsed`, `elapsedSec`. Hook flagged 4 violations on commit-2 attempt; fixed via `_lib.mjs` extraction + entry-point renames (`runTier1Main` / `runFullMain`).
+
+**Standing rule for new tool clusters:** When creating a NEW directory with multiple sibling scripts, BEFORE the first commit:
+
+1. Identify functions that would otherwise be duplicated across scripts (helper utilities, shared constants, common error handlers, common logging).
+2. Pre-emptively extract them into a `_lib.mjs` (underscore prefix marks the file as internal — not part of the public script API).
+3. Use UNIQUE entry-point names per script (`runFooMain` / `runBarMain`, not `main()` in both).
+
+This avoids the fix-and-retry cycle on the first commit. Saves ~10 minutes per affected SPEC.
+
+(Source: improvement #2 from M3_LIGHTHOUSE_NIGHTLY_CRON FOREMAN_REVIEW, 2026-05-10.)
+
+#### Build-side-effect file restoration
+
+After running build/codegen scripts (e.g. `npm run build`, generators, type emitters), run `git status --short` and identify side-effect files. Apply the following decision:
+
+1. **Are they listed in SPEC §8 as expected regeneration?** → Include in commit.
+2. **Are they unrelated to the SPEC's scope?** → `git checkout <file>` to restore BEFORE staging. Log as finding (TECH_DEBT) so the drift is visible without expanding the SPEC's scope.
+3. **Unknown:** default to restore + log as finding. Never commit unintended side-effect drift just because the build produced it.
+
+The SPEC author SHOULD pre-declare expected side-effects per the SPEC_TEMPLATE §8 "Build-side-effect file expectations" sub-section. If they didn't, the default rules above apply.
+
+(Source: improvement #2 from M3_SITEMAP_BRAND_404_CLEANUP FOREMAN_REVIEW, 2026-05-09. Symmetric to opticup-strategic improvement A2 in SPEC_TEMPLATE §8.)
+
 ### File discipline:
 - Target 300 lines per file, max 350
 - Split by logical separation, not arbitrary line count
 - One responsibility per file
 - **Read before write** — always view a file before modifying it
 - **Surgical edits only** — targeted changes, never rewrite whole files unless instructed
+
+### Visual re-skin patterns (added 2026-05-11 from MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md):
+
+- **Pre-execution inline-hex audit.** Before editing a re-skin target, list every non-token hex code in the file:
+  ```
+  grep -oE '#[0-9a-fA-F]{3,8}\b' <file> | sort -u
+  ```
+  Cross-reference the output against the SPEC's swap list. If any hex code in the file is NOT covered by the SPEC, escalate to Foreman as a finding before proceeding. Re-skin SPECs must be exhaustive; a stranded hex is a SPEC defect, not an Executor judgment call.
+- **Page-scope `body { --primary }` override.** Validated migration vehicle for page-by-page visual migrations (Migrations #1–#4): instead of mutating the global `:root` in shared CSS, declare the override inside the page's own inline `<style>` block on the `body` selector. CSS cascade scopes the new palette to descendants of `<body>` of that page only; other pages inherit the legacy palette via cascade until they migrate. This is the pattern of choice when other pages still depend on the legacy tokens.
+- **Page-scope `<style>` block placement.** When inserting a NEW `<style>` block to override CSS variables on a single page, place it inside `<head>` AFTER the last `<link rel="stylesheet">` tag and immediately before `</head>`. The cascade order requires the override to load AFTER the linked CSS. Intervening `<script>` tags do not affect CSS cascade. If the page already has an inline `<style>` block, prefer extending it over adding a new one (preserves DOM tag count discipline). (Harvested from `MIGRATION_2_SETTINGS_PERMISSIONS/FOREMAN_REVIEW.md` Executor Proposal #2, 2026-05-11.)
+- **Re-skin verification runner (planned helper, MIGRATION_3 onwards).** After every per-page edit on a visual-migration SPEC, run `node scripts/verify-reskin-page.mjs --file <page> --regression-hex '26215c|534ab7' --new-hex 1e3a8a --expected-scripts <N> --expected-links <N> --line-min <N> --line-max <N> --dom-tag-min <N> --dom-tag-max <N>` BEFORE `git add`. The script emits a single-line PASS/FAIL summary and exits non-zero on any FAIL. Replaces the 6-command verification dance and avoids the Bash `&&`-chain abort-on-grep-no-match trap. NOTE: the helper script does not yet exist; build it lazily when Migration #3 starts (or use `;`-separated greps + PowerShell tag count individually until then). (Harvested from `MIGRATION_2_SETTINGS_PERMISSIONS/FOREMAN_REVIEW.md` Executor Proposal #1, 2026-05-11.)
+
+### Sweep & archive patterns (added 2026-05-12 from SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md):
+
+- **Tombstone comments — never name the dead path as a literal string.** When a consolidation/archive SPEC adds a header comment to the surviving file explaining its history (e.g., "merged from foo.html", "replaces bar.html"), do NOT include the dead path as a literal string. Use a description ("former standalone permissions page", "former shipments page") instead. Reason: SPEC sweep criteria use bare `grep` checks that treat narrative comments and live links identically — a single literal in a comment can flip a criterion from PASS to FAIL and force a reactive 1-line reword commit. See `SETTINGS_PERMISSIONS_CONSOLIDATION/EXECUTION_REPORT.md` D4 for an example. (Harvested from that SPEC's FOREMAN_REVIEW Executor Proposal #1, 2026-05-12.)
+
+### Common Page Patterns — SPA tab page (added 2026-05-12)
+
+When a SPEC asks for a tabbed single-page surface (multiple sections with their own URL fragments, lazy content init), reuse the project-wide pattern — do NOT invent a new tab activator (Iron Rule 21).
+
+**Canonical HTML skeleton:**
+
+```html
+<nav id="mainNav">
+  <button data-tab="general"     data-tab-permission="settings.view"  class="active" onclick="goXxxTab('general')">⚙️ כללי</button>
+  <button data-tab="permissions" data-tab-permission="employees.view"             onclick="goXxxTab('permissions')">🔐 הרשאות</button>
+</nav>
+
+<main>
+  <section id="tab-general" class="tab active"> ... </section>
+  <section id="tab-permissions" class="tab">
+    <div id="employees-container">טוען...</div>
+  </section>
+</main>
+```
+
+**Per-page wrapper (page-local; reuses global `showTab()` from `js/shared-ui.js`):**
+
+```js
+let _xxxLoaded = false;
+function goXxxTab(name) {
+  if (name === 'general'     && !hasPermission('settings.view'))  return;
+  if (name === 'permissions' && !hasPermission('employees.view')) return;
+  const desired = '#' + name;
+  if (window.location.hash !== desired) history.replaceState(null, '', desired);
+  showTab(name);                                  // global, in shared-ui.js
+  if (name === 'permissions' && !_xxxLoaded && typeof loadEmployeesTab === 'function') {
+    _xxxLoaded = true;
+    loadEmployeesTab();                           // lazy init, called once
+  }
+}
+window.addEventListener('hashchange', () => {
+  goXxxTab(location.hash === '#permissions' ? 'permissions' : 'general');
+});
+```
+
+**Bootstrap (in DOMContentLoaded):**
+
+```js
+const session = await loadSession();
+if (!session) { window.location.href = '/'; return; }
+// Page entry widened to "either permission" — PermissionUI auto-hides whichever tab is unauthorized
+if (!hasPermission('settings.view') && !hasPermission('employees.view')) { window.location.href = '/'; return; }
+if (hasPermission('settings.view')) await loadSettings();    // default tab content
+const initial = window.location.hash;
+if (initial === '#permissions' && hasPermission('employees.view')) goXxxTab('permissions');
+else if (hasPermission('settings.view'))                          goXxxTab('general');
+else                                                              goXxxTab('permissions');
+```
+
+**Live exemplars:** `inventory.html` (lines 37–50, multi-tab page), consolidated `settings.html` (lines 32–35 nav + 198–249 routing). When CRM Migration #3 or any future tabbed page starts, copy the skeleton from one of these — do NOT redesign tab activation. PermissionUI auto-gates `[data-tab-permission]` after `loadSession()` (via `js/auth-service.js:309`) — no manual gating call needed. (Harvested from `SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md` Executor Proposal #2, 2026-05-12.)
+
+### Surgical File Transformation — Recipes (added 2026-05-11)
+
+When the Edit tool's `old_string` would exceed ~100 lines (typical for
+"delete an entire section X from a large file" SPECs — e.g., extracting
+one variant from a 3-variant comparison HTML), prefer **line-slicing**
+over giant Edits. Recipes:
+
+```powershell
+# Windows / PowerShell — delete lines N1..N2 inclusive (1-indexed)
+$f="path/to/file"
+$c=Get-Content $f -Encoding UTF8
+($c[0..(N1-2)] + $c[N2..($c.Count-1)]) | Set-Content $f -Encoding UTF8
+```
+
+```bash
+# Mac / Linux — same operation
+sed -i '' 'N1,N2d' path/to/file
+```
+
+```powershell
+# Windows / PowerShell — keep two contiguous ranges (cut out the middle)
+$f="path/to/file"
+$c=Get-Content $f -Encoding UTF8
+$kept=@(); $kept+=$c[0..(N1-1)]; $kept+=$c[N2..($c.Count-1)]
+$kept | Set-Content $f -Encoding UTF8
+```
+
+**When to use each:**
+- **Edit tool** — surgical text replacement, especially when the change is
+  semantic (rename a function, swap a value, replace a string). Old_string
+  must be unique; ≤ 100 lines is comfortable.
+- **Line slicing** — large contiguous deletions where the surrounding
+  context for a unique Edit `old_string` would itself be too large to
+  manage cleanly. Use only when:
+  1. The deletion spans > 100 lines, AND
+  2. The exact line numbers are known from a prior Read or Grep call.
+- **Write tool** — rebuild the entire file from scratch. Use only when
+  user explicitly says "rewrite from scratch" OR when ≥ 50% of the file
+  is being replaced.
+
+**Iron-Rule 10 (read-before-write) still applies** to sliced files — Read
+the file to register it with the harness before slicing, and Read again
+after slicing to verify the structure (`head -N` + `tail -N` of the
+relevant boundaries).
+
+Source: `M7_CLOSURE_V7_VARIANT_A/FOREMAN_REVIEW.md` §7 Proposal 2.
+The SPEC's V7 extraction needed a 605-line deletion (lines 515–1119 of
+the seeded V7 file) — an Edit `old_string` of 605 lines would have been
+awkward and error-prone; PowerShell slice was the right tool.
 
 ## SQL Autonomy Levels
 
@@ -197,6 +410,42 @@ Applied to opticup-executor via FOREMAN_REVIEW for ATOMIC_CONFIRMATION_FLOW (3rd
 - Written to SQL file first, reviewed by Strategic
 - Batch approval for homogeneous template-based operations
 - Red-list keywords auto-escalate to Daniel
+
+### SQL footgun — CTE-with-DML snapshot semantics
+
+When verifying a `DELETE … RETURNING` (or `UPDATE … RETURNING`, or
+`INSERT … RETURNING`) result, ALWAYS run a SEPARATE `SELECT COUNT(*)`
+statement after the data-modifying statement. NEVER rely on inline
+`(SELECT COUNT(*) FROM same_table WHERE same_predicate)` subqueries
+embedded inside a `WITH (DELETE …)` CTE.
+
+**Why:** Postgres data-modifying-WITH semantics — the sub-statement and
+the main query execute concurrently, and inline non-CTE-references see
+the snapshot BEFORE the modification. The inline post-count returns
+the pre-DELETE count, which looks like the DELETE didn't run.
+
+**Correct pattern (2 statements):**
+```sql
+-- Statement 1: do the work + count what got modified
+WITH d AS (
+  DELETE FROM storefront_pages
+  WHERE tenant_id = $1 AND slug = '/test-shortcodes/'
+  RETURNING id
+)
+SELECT (SELECT COUNT(*) FROM d) AS rows_deleted;
+
+-- Statement 2: verify SC by querying the live table state
+SELECT COUNT(*) AS rows_remaining
+FROM storefront_pages
+WHERE tenant_id = $1 AND slug = '/test-shortcodes/';
+-- Expected: 0
+```
+
+Total: 2 statements, never 1.
+
+(Source: improvement #1 from M3_REC014_ORPHAN_CLEANUP FOREMAN_REVIEW, 2026-05-09.
+Cost: 30 seconds of "did the DELETE run?" anxiety in that SPEC; this rule
+shortcuts every future cleanup-with-verification SPEC.)
 
 ### Level 3 — Schema/RLS changes (NEVER autonomous):
 - CREATE/ALTER TABLE, CREATE/ALTER/DROP POLICY, DISABLE RLS, GRANT/REVOKE
@@ -266,6 +515,17 @@ green-light to proceed. See First Action step 4a for interpretation.
 4. Read `FOREMAN_REVIEW.md` from the 3 most recent SPECs in the SAME module
    (`ls ../` on the specs folder) — harvest executor-improvement proposals
    relevant to this SPEC. Apply them to your execution plan.
+
+### Step 1.4 — Cross-section tension resolution
+
+When two SPEC sections appear to conflict (e.g. a stop-trigger in §4 vs an explicit out-of-scope decision in §7), apply this tie-breaker:
+
+- **The section that explicitly resolves the question wins** over the section that flags it as a generic risk.
+- The out-of-scope decision (§7) is the SPEC author's stated intent; the stop-trigger (§4) is a guardrail. Read both, identify which is intent and which is guardrail, and document the resolution in EXECUTION_REPORT §4.
+- **Special case for subset relationships:** if §7 names a subset relationship explicitly (per the SPEC_TEMPLATE convention), the SPEC predicate intentionally emits fewer items than a related consumer accepts. SQL pre-flight should confirm the predicate is a STRICT subset (i.e. `spec_emits_but_404s = 0`) before proceeding. Strict-subset under-emit is safe; superset over-emit is the case the §4 stop-trigger is designed for.
+- **If the conflict is genuine** (both are intent statements with no clear hierarchy), STOP and ask Daniel.
+
+(Source: improvement #1 from M3_SITEMAP_BRAND_404_CLEANUP FOREMAN_REVIEW, 2026-05-09.)
 
 ### Step 1.5 — DB Pre-Flight Check (MANDATORY before any DDL or schema-touching work)
 
@@ -582,6 +842,16 @@ approved. Ask yourself before any question:
 escalate to the Foreman (opticup-strategic), which is the only chat that
 speaks to Daniel in strategic terms.
 
+**Pre-existing untracked / modified files in Full-Auto Pipeline mode.** When
+the dispatch line includes "Full-Auto Pipeline" or "no Daniel questions", do
+NOT apply CLAUDE.md §1 step 4 (the "ask once" gate). Instead, log the
+pre-existing state in `EXECUTION_REPORT.md §5 Decisions Made in Real Time`,
+leave the files alone, use explicit-filename `git add` for every commit, and
+mark working-tree cleanliness as "scope-clean" in the success-criteria table.
+The clean-repo close obligation still applies to files this SPEC touched.
+(Harvested from `MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md` Executor
+Proposal #2, 2026-05-11.)
+
 ---
 
 ## Storefront CMS Architecture — Mandatory Pre-Flight
@@ -647,3 +917,56 @@ session applies accepted proposals to the skill files as real edits.
 | `shared/js/table-builder.js` | TableBuilder.create() |
 | `references/STOREFRONT_CMS_ARCHITECTURE.md` | Mandatory pre-flight for any storefront-content SPEC (CMS vs Astro rendering fork) |
 | `scripts/verify.mjs` | Pre-commit rule verification |
+
+---
+
+## Pipeline Hand-off
+
+This section governs how `opticup-executor` hands off to the next skill in the Full-Auto Pipeline (see `modules/Module 1.5 - Shared Components/docs/specs/M1_5_FULL_AUTO_PIPELINE/SPEC.md`).
+
+Triggered when the dispatch line includes **"Pipeline mode: full-auto"**.
+
+1. Execute the SPEC end-to-end per the standard SPEC Execution Protocol earlier in this file (load + validate + DB pre-flight + Bounded-Autonomy loop + FINDINGS as we go + EXECUTION_REPORT + close commit).
+2. Verify Iron Rule 32: the SPEC's `## Destructive Operations` section must cover every destructive op actually performed. If a destructive op fired that wasn't declared — STOP, write escalation, emit Hebrew line. Do NOT silently amend §Destructive Operations.
+3. After committing EXECUTION_REPORT.md + FINDINGS.md (the chore(spec): close commit at the end of standard execution), hand off to the Reviewer in the SAME chat:
+   ```
+   Skill: opticup-reviewer
+   ```
+   Dispatch line: `Review SPEC modules/Module N/docs/specs/{SLUG}/ — Pipeline mode: full-auto. Hand off to opticup-localhost-tester at end of review.`
+4. Emit the Hebrew status line (see "Status Line" below).
+5. Do NOT continue running Executor work after hand-off. The Reviewer owns the next phase.
+
+### Retry policy
+
+If `Skill: opticup-reviewer` fails to load: retry ONCE with the same dispatch. On second failure, write an escalation to `modules/Module N/escalations/{ISO_TS}_skill-load-failure.md` and emit:
+`🛑 נתקעתי על טעינת Skill: opticup-reviewer — escalation: {path}`
+
+### Backups — automatic, not discretionary
+
+Before executing ANY of these:
+
+- An operation that touches **> 5 files** in one commit
+- A refactor that changes **> 100 lines in a single file**
+- ANY file rename (`git mv` or move-then-add-then-rm)
+
+…the Executor MUST create:
+```
+modules/Module N/backups/{YYYY-MM-DD}_{SPEC_SLUG}/
+```
+and copy:
+- Every file about to be modified or renamed in this op
+- Plus: `CLAUDE.md`, the owning module's `SESSION_CONTEXT.md`, `MODULE_SPEC.md`, `MODULE_MAP.md`, `ROADMAP.md`, `CHANGELOG.md`, `db-schema.sql`
+
+The backup happens BEFORE the destructive step, not after. There is no "the change is small, I'll skip the backup" path — this is Iron Rule 9 (upgraded by FULL_AUTO_PIPELINE 2026-05-11) and CLAUDE.md §9 #9.
+
+Skipping a required backup is a stop-on-deviation event. If unsure whether a trigger fires — back up. Cost of an unused backup folder is zero. Cost of a destructive op without a backup is irreversible.
+
+### Status Line (Hebrew, single line, per phase)
+
+The Executor emits ONE Hebrew status line at the end of its phase. ≤ 60 chars, present-tense. Examples:
+
+- `✓ {SLUG} מומש ({N} commits, {M} files).`
+- `⚠️ {SLUG} — finding לוג: {short}.`
+- `🛑 {SLUG} נתקע — escalation: {path}`
+
+This is the only chat output the Executor emits between phases under full-auto mode. The EXECUTION_REPORT and FINDINGS live on disk for the Reviewer to read.

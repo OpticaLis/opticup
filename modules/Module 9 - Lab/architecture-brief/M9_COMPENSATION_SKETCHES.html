@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>M9 — Compensation Matrix Sketches</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Rubik', -apple-system, sans-serif; background: #fafaf7; color: #0f172a; padding: 16px; font-size: 13px; }
+  .nav { position: sticky; top: 0; background: white; padding: 14px 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; z-index: 100; }
+  .nav h1 { font-size: 18px; margin-left: auto; color: #1e3a8a; }
+  .nav button { background: #fafaf7; border: 1px solid #cbd5e1; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .nav button.active { background: #1e3a8a; color: white; border-color: #1e3a8a; }
+  .sketch { display: none; background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+  .sketch.active { display: block; }
+  .sketch h2 { font-size: 22px; margin-bottom: 4px; color: #1e3a8a; }
+  .sketch .subtitle { color: #475569; font-size: 13px; margin-bottom: 8px; }
+  .sketch .rationale { background: #f4f4f5; border-right: 3px solid #1e3a8a; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; color: #444; line-height: 1.6; }
+  .sketch .rationale strong { color: #1e3a8a; }
+  .recommendation-banner { background: #e6f1fb; border: 1px solid #1e3a8a; padding: 14px 18px; border-radius: 10px; margin-bottom: 16px; }
+  .recommendation-banner .rb-title { font-weight: 600; color: #855011; margin-bottom: 4px; font-size: 14px; }
+  .recommendation-banner .rb-body { font-size: 12px; color: #444; line-height: 1.6; }
+
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding: 10px 14px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; }
+  .top-bar .title { font-size: 16px; font-weight: 600; }
+  .top-bar .meta { font-size: 12px; color: #888; }
+  .top-bar select, .top-bar input { padding: 5px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 5px; font-family: inherit; }
+  .btn-primary { background: #1e3a8a; color: white; border: 0; padding: 6px 14px; border-radius: 5px; cursor: pointer; font-size: 12px; font-family: inherit; }
+  .btn-secondary { background: white; color: #0f172a; border: 1px solid #cbd5e1; padding: 5px 12px; border-radius: 5px; font-family: inherit; font-size: 12px; cursor: pointer; }
+  .btn-success { background: #2d8050; color: white; border: 0; padding: 6px 14px; border-radius: 5px; cursor: pointer; font-size: 12px; font-family: inherit; }
+  .btn-danger  { background: #c93535; color: white; border: 0; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-family: inherit; }
+
+  .global-row { background: #e6f1fb; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px 16px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .global-row .gr-label { font-size: 13px; font-weight: 600; color: #855011; }
+  .global-row .gr-field { display: flex; gap: 6px; align-items: center; }
+  .global-row input { padding: 5px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 5px; width: 80px; font-family: inherit; }
+
+  /* Sketch A — 2D matrix */
+  .matrix-table { width: 100%; border-collapse: collapse; font-size: 12px; background: white; border: 1px solid #b8b8b8; }
+  .matrix-table th { background: #d8d8d8; padding: 10px 8px; font-weight: 600; color: #333; border: 1px solid #b8b8b8; text-align: center; }
+  .matrix-table th.cat-col { background: #404040; color: #ffd700; text-align: right; }
+  .matrix-table td { padding: 8px; border: 1px solid #d8d8d8; text-align: center; }
+  .matrix-table td.cat-cell { background: #e6f1fb; font-weight: 600; text-align: right; padding-right: 12px; }
+  .matrix-cell { display: flex; flex-direction: column; gap: 2px; align-items: stretch; }
+  .matrix-cell input { padding: 4px 6px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; font-family: inherit; }
+  .matrix-cell .type-row { display: flex; gap: 2px; align-items: center; font-size: 10px; color: #888; }
+  .matrix-cell .type-row select { font-size: 10px; padding: 2px 4px; border: 1px solid #cbd5e1; border-radius: 3px; flex: 1; }
+  .threshold-cell { background: #fafaf7; }
+  .threshold-cell input { padding: 4px 6px; font-size: 11px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; width: 100%; font-family: inherit; }
+  .threshold-label { font-size: 10px; color: #888; margin-bottom: 2px; }
+
+  /* Sketch B — Per-category form */
+  .cat-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
+  .cat-card-header { padding: 12px 16px; background: #e6f1fb; border-bottom: 1px solid #1e3a8a; font-size: 14px; font-weight: 600; color: #855011; display: flex; justify-content: space-between; align-items: center; }
+  .cat-card-body { padding: 14px 16px; }
+  .cat-form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .cat-form-grid h4 { font-size: 12px; color: #555; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0; }
+  .form-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; font-size: 12px; }
+  .form-row label { color: #555; flex: 1; }
+  .form-row input { padding: 4px 8px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 4px; width: 70px; font-family: inherit; text-align: center; }
+  .form-row select { padding: 4px 8px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: inherit; }
+  .compensation-row { display: grid; grid-template-columns: 80px 1fr 100px 110px; gap: 6px; align-items: center; padding: 6px 0; border-top: 1px solid #fafaf7; font-size: 12px; }
+  .compensation-row.header-row { background: #f4f4f5; padding: 6px 8px; font-weight: 600; border-radius: 4px; border: 0; }
+  .severity-pill { padding: 2px 8px; border-radius: 4px; font-size: 11px; text-align: center; }
+  .severity-yellow { background: #ffd476; color: #6b4400; }
+  .severity-red { background: #fde7e7; color: #791f1f; }
+  .severity-comp { background: #c93535; color: white; }
+  .compensation-row input { padding: 4px 8px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: inherit; }
+  .compensation-row select { padding: 4px 8px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: inherit; }
+
+  /* Sketch C — Rules */
+  .rule-row { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .rule-row .if-label { font-weight: 600; color: #1e3a8a; font-size: 12px; }
+  .rule-row select, .rule-row input { padding: 5px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 5px; font-family: inherit; }
+  .rule-row .arrow { color: #888; font-size: 14px; }
+
+  .test-tool { background: #e7f3ff; border: 1px solid #a3cae8; border-radius: 8px; padding: 14px; margin-top: 14px; }
+  .test-tool .tt-title { font-size: 13px; font-weight: 600; color: #0c447c; margin-bottom: 8px; }
+  .test-tool .tt-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .test-tool .tt-result { background: white; padding: 6px 12px; border-radius: 5px; font-weight: 600; color: #0c447c; }
+</style>
+</head>
+<body>
+  <div class="nav">
+    <button class="active" data-target="ca">סקיצה א — מטריצה דו-ממדית</button>
+    <button data-target="cb">סקיצה ב — טופס פר-קטגוריה ⭐</button>
+    <button data-target="cc">סקיצה ג — כללי-IF</button>
+    <h1>M9 · Settings — מטריצת פיצויים</h1>
+  </div>
+
+  <div class="recommendation-banner">
+    <div class="rb-title">המלצה: סקיצה ב — טופס פר-קטגוריה</div>
+    <div class="rb-body">
+      מטריצה (א) נראית מסודרת אבל מעמיסה הרבה תאים-קטנים. כללי-IF (ג) גמישים מדי וקשים-לקריאה. טופס פר-קטגוריה (ב) הכי טבעי לבעלים — הוא חושב לפי-קטגוריה ("מולטיפוקל = X ימים, Y₪"), ולא לפי-מטריצה. כל קטגוריה במקום אחד עם כל ההגדרות שלה ביחד.
+    </div>
+  </div>
+
+  <!-- ============ SKETCH A — 2D matrix ============ -->
+  <div class="sketch active" id="ca">
+    <h2>סקיצה א — מטריצה דו-ממדית</h2>
+    <div class="subtitle">קטגוריות × רמות-עיכוב · תא-תא הגדרת סכום ופלואו</div>
+    <div class="rationale">
+      <strong>הרציונל:</strong> תצוגה מסודרת של הכל בטבלה אחת. רוחב=רמות-עיכוב (צהוב/אדום/פיצוי-1/פיצוי-2). אורך=קטגוריות.
+      <br><strong>יתרון:</strong> רואים הכל ב-glance.
+      <br><strong>חיסרון:</strong> תאים קטנים מאוד, צפוף, קשה לערוך הרבה שדות. עלול לבלבל.
+    </div>
+
+    <div class="top-bar">
+      <div class="title">Settings · מטריצת פיצויים — שעון עיבוד</div>
+      <div class="meta">סף עליון לפיצוי-מנהל: ₪500</div>
+    </div>
+
+    <div class="global-row">
+      <span class="gr-label">סף-עליון-מוחלט (חריגה דורשת אישור-בעלים):</span>
+      <div class="gr-field"><label style="font-size: 12px;">סכום:</label><input type="text" value="500" /><span style="font-size: 12px;">₪</span></div>
+      <div class="gr-field"><label style="font-size: 12px;">סף-איסוף צהוב כללי:</label><input type="text" value="3" /><span style="font-size: 12px;">ימים</span></div>
+      <div class="gr-field"><label style="font-size: 12px;">סף-איסוף אדום:</label><input type="text" value="7" /><span style="font-size: 12px;">ימים</span></div>
+    </div>
+
+    <table class="matrix-table">
+      <thead>
+        <tr>
+          <th class="cat-col" rowspan="2">קטגוריה</th>
+          <th colspan="2" class="threshold-cell">ספים</th>
+          <th colspan="2">פיצוי-1 (אדום+X ימים)</th>
+          <th colspan="2">פיצוי-2 (אדום+Y ימים)</th>
+        </tr>
+        <tr>
+          <th class="threshold-cell"><span class="threshold-label">צהוב</span>(ימים)</th>
+          <th class="threshold-cell"><span class="threshold-label">אדום</span>(ימים)</th>
+          <th>סכום (₪)</th>
+          <th>סוג</th>
+          <th>סכום (₪)</th>
+          <th>סוג</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="cat-cell">מולטיפוקל</td>
+          <td class="threshold-cell"><input type="text" value="10" /></td>
+          <td class="threshold-cell"><input type="text" value="14" /></td>
+          <td><input type="text" value="200" /></td>
+          <td><select><option>עדשות</option><option>מסגרות</option></select></td>
+          <td><input type="text" value="300" /></td>
+          <td><select><option>עדשות</option></select></td>
+        </tr>
+        <tr>
+          <td class="cat-cell">אופיס</td>
+          <td class="threshold-cell"><input type="text" value="10" /></td>
+          <td class="threshold-cell"><input type="text" value="14" /></td>
+          <td><input type="text" value="150" /></td>
+          <td><select><option>עדשות</option></select></td>
+          <td><input type="text" value="250" /></td>
+          <td><select><option>עדשות</option></select></td>
+        </tr>
+        <tr>
+          <td class="cat-cell">ביפוקל</td>
+          <td class="threshold-cell"><input type="text" value="10" /></td>
+          <td class="threshold-cell"><input type="text" value="14" /></td>
+          <td><input type="text" value="150" /></td>
+          <td><select><option>עדשות</option></select></td>
+          <td><input type="text" value="250" /></td>
+          <td><select><option>עדשות</option></select></td>
+        </tr>
+        <tr>
+          <td class="cat-cell">מדף הזמנה</td>
+          <td class="threshold-cell"><input type="text" value="2" /></td>
+          <td class="threshold-cell"><input type="text" value="5" /></td>
+          <td><input type="text" value="100" /></td>
+          <td><select><option>עדשות</option></select></td>
+          <td><input type="text" value="200" /></td>
+          <td><select><option>עדשות</option></select></td>
+        </tr>
+        <tr>
+          <td class="cat-cell">מדף מלאי</td>
+          <td class="threshold-cell"><input type="text" value="24" /></td>
+          <td class="threshold-cell"><input type="text" value="72" /></td>
+          <td><input type="text" value="50" /></td>
+          <td><select><option>עדשות</option></select></td>
+          <td><input type="text" value="100" /></td>
+          <td><select><option>עדשות</option></select></td>
+        </tr>
+        <tr>
+          <td class="cat-cell">תיקון</td>
+          <td class="threshold-cell"><input type="text" value="3" /></td>
+          <td class="threshold-cell"><input type="text" value="7" /></td>
+          <td><input type="text" value="100" /></td>
+          <td><select><option>עדשות</option></select></td>
+          <td><input type="text" value="200" /></td>
+          <td><select><option>עדשות</option></select></td>
+        </tr>
+        <tr>
+          <td class="cat-cell">ייצור</td>
+          <td class="threshold-cell"><input type="text" value="5" /></td>
+          <td class="threshold-cell"><input type="text" value="10" /></td>
+          <td><input type="text" value="150" /></td>
+          <td><select><option>עדשות</option></select></td>
+          <td><input type="text" value="250" /></td>
+          <td><select><option>עדשות</option></select></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============ SKETCH B — Per-category form ⭐ ============ -->
+  <div class="sketch" id="cb">
+    <h2>סקיצה ב — טופס פר-קטגוריה ⭐</h2>
+    <div class="subtitle">לכל קטגוריה כרטיס מורחב עם 3 בלוקים: ספי-עיבוד · ספי-איסוף · מדרגות-פיצוי</div>
+    <div class="rationale">
+      <strong>הרציונל:</strong> בעלים חושב לפי-קטגוריה ("מולטיפוקל אצלי 10 ימים צהוב, 14 ימים אדום, פיצוי 17 ימים = 200₪"). הטופס בנוי כך שהוא ימצא הכל-במקום-אחד לקטגוריה.
+      <br><strong>יתרון:</strong> טבעי לחשיבה. הרבה מקום לפרטים. לא צפוף.
+      <br><strong>חיסרון:</strong> סקירה-כללית פחות נוחה — אם בעלים רוצה להשוות בין קטגוריות הוא צריך לפתוח כל אחת.
+    </div>
+
+    <div class="top-bar">
+      <div class="title">Settings · מדיניות פיצויים</div>
+      <div class="meta">7 קטגוריות מוגדרות</div>
+    </div>
+
+    <div class="global-row">
+      <span class="gr-label">סף-עליון-מוחלט לפיצוי-מנהל:</span>
+      <div class="gr-field"><input type="text" value="500" /><span style="font-size: 12px;">₪ (חריגה דורשת אישור-בעלים)</span></div>
+      <button class="btn-primary">+ הוסף קטגוריה</button>
+    </div>
+
+    <div class="cat-card">
+      <div class="cat-card-header">
+        <span>📐 מולטיפוקל</span>
+        <div style="display: flex; gap: 6px;"><button class="btn-secondary">העתק</button><button class="btn-danger">מחק</button></div>
+      </div>
+      <div class="cat-card-body">
+        <div class="cat-form-grid">
+          <div>
+            <h4>שעון-עיבוד</h4>
+            <div class="form-row"><label>סף צהוב</label><input type="text" value="10" /><span style="font-size: 11px;">ימים</span></div>
+            <div class="form-row"><label>סף אדום</label><input type="text" value="14" /><span style="font-size: 11px;">ימים</span></div>
+            <div class="form-row"><label>סף פיצוי</label><input type="text" value="17" /><span style="font-size: 11px;">ימים</span></div>
+          </div>
+          <div>
+            <h4>שעון-איסוף</h4>
+            <div class="form-row"><label>סף צהוב</label><input type="text" value="3" /><span style="font-size: 11px;">ימים</span></div>
+            <div class="form-row"><label>סף אדום</label><input type="text" value="7" /><span style="font-size: 11px;">ימים</span></div>
+            <div class="form-row" style="color: #888; font-size: 11px;">(אין פיצוי לאיסוף — פנימי בלבד)</div>
+          </div>
+          <div>
+            <h4>הודעות אוטומטיות</h4>
+            <div class="form-row"><label>תזכורת-איסוף בצהוב</label><select><option>WhatsApp</option><option>SMS</option><option>אימייל</option></select></div>
+            <div class="form-row"><label>תזכורת-איסוף באדום</label><select><option>WhatsApp + טלפון-אופטיקאי</option></select></div>
+            <div class="form-row"><label>התראת-עיכוב פנימית</label><select><option>סאונד + WhatsApp</option></select></div>
+          </div>
+        </div>
+
+        <h4 style="font-size: 12px; color: #555; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0;">מדרגות-פיצוי</h4>
+
+        <div class="compensation-row header-row">
+          <div>תווית</div>
+          <div>תנאי</div>
+          <div>סכום</div>
+          <div>סוג</div>
+        </div>
+        <div class="compensation-row">
+          <div><span class="severity-pill severity-comp">פיצוי-1</span></div>
+          <div>אחרי <input type="text" value="3" style="width: 50px;" /> ימים מהסף-האדום</div>
+          <div><input type="text" value="200" style="width: 80px;" /> ₪</div>
+          <div><select><option>עדשות</option><option>מסגרות</option></select></div>
+        </div>
+        <div class="compensation-row">
+          <div><span class="severity-pill severity-comp">פיצוי-2</span></div>
+          <div>אחרי <input type="text" value="7" style="width: 50px;" /> ימים מהסף-האדום</div>
+          <div><input type="text" value="300" style="width: 80px;" /> ₪</div>
+          <div><select><option>עדשות</option></select></div>
+        </div>
+        <div style="margin-top: 8px;">
+          <button class="btn-secondary">+ מדרגת-פיצוי</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cat-card">
+      <div class="cat-card-header">
+        <span>📚 מדף הזמנה</span>
+        <div style="display: flex; gap: 6px;"><button class="btn-secondary">העתק</button><button class="btn-danger">מחק</button></div>
+      </div>
+      <div class="cat-card-body">
+        <div class="cat-form-grid">
+          <div>
+            <h4>שעון-עיבוד</h4>
+            <div class="form-row"><label>סף צהוב</label><input type="text" value="2" /><span style="font-size: 11px;">ימים</span></div>
+            <div class="form-row"><label>סף אדום</label><input type="text" value="5" /><span style="font-size: 11px;">ימים</span></div>
+            <div class="form-row"><label>סף פיצוי</label><input type="text" value="7" /><span style="font-size: 11px;">ימים</span></div>
+          </div>
+          <div>
+            <h4>שעון-איסוף</h4>
+            <div class="form-row"><label>סף צהוב</label><input type="text" value="3" /><span style="font-size: 11px;">ימים</span></div>
+            <div class="form-row"><label>סף אדום</label><input type="text" value="7" /><span style="font-size: 11px;">ימים</span></div>
+          </div>
+          <div>
+            <h4>הודעות אוטומטיות</h4>
+            <div class="form-row"><label>תזכורת-איסוף</label><select><option>WhatsApp</option></select></div>
+            <div class="form-row"><label>התראה פנימית</label><select><option>סאונד</option></select></div>
+          </div>
+        </div>
+
+        <div class="compensation-row header-row">
+          <div>תווית</div><div>תנאי</div><div>סכום</div><div>סוג</div>
+        </div>
+        <div class="compensation-row">
+          <div><span class="severity-pill severity-comp">פיצוי-1</span></div>
+          <div>אחרי <input type="text" value="2" style="width: 50px;" /> ימים מהסף-האדום</div>
+          <div><input type="text" value="100" style="width: 80px;" /> ₪</div>
+          <div><select><option>עדשות</option></select></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cat-card" style="opacity: 0.6;">
+      <div class="cat-card-header">
+        <span>📦 מדף מלאי <span style="font-size: 11px; color: #888; font-weight: 400;">(לחץ להרחבה)</span></span>
+        <div style="display: flex; gap: 6px;"><button class="btn-secondary">פתח</button></div>
+      </div>
+    </div>
+    <div class="cat-card" style="opacity: 0.6;">
+      <div class="cat-card-header">
+        <span>🔧 תיקון</span>
+        <div style="display: flex; gap: 6px;"><button class="btn-secondary">פתח</button></div>
+      </div>
+    </div>
+    <div class="cat-card" style="opacity: 0.6;">
+      <div class="cat-card-header">
+        <span>🏭 ייצור</span>
+        <div style="display: flex; gap: 6px;"><button class="btn-secondary">פתח</button></div>
+      </div>
+    </div>
+
+    <div class="test-tool">
+      <div class="tt-title">🧪 כלי-בדיקה — מה יקרה אם...</div>
+      <div class="tt-row">
+        <select><option>קטגוריה: מולטיפוקל</option></select>
+        <span>ועברו</span>
+        <input type="text" value="18" style="padding: 5px 8px; width: 50px; text-align: center;" />
+        <span>ימים מהקליטה</span>
+        <button class="btn-primary">בדוק</button>
+        <span class="tt-result">→ פיצוי-1: ₪200 בעדשות (מומלץ למנהל לאישור)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SKETCH C — Rules ============ -->
+  <div class="sketch" id="cc">
+    <h2>סקיצה ג — כללי-IF (מבוססי-זאפיר)</h2>
+    <div class="subtitle">"אם קטגוריה=X ועיכוב=Y → תן Z₪" · גמיש לחלוטין · כללים מורכבים</div>
+    <div class="rationale">
+      <strong>הרציונל:</strong> כל כלל הוא משפט "אם-אז". בעלים יכול ליצור כללים מורכבים: "אם קטגוריה=מולטיפוקל ועיכוב>3 ימים מהאדום וגם ספק=Hoya → 250₪".
+      <br><strong>יתרון:</strong> גמישות-מקסימלית. תומך בכל לוגיקה.
+      <br><strong>חיסרון:</strong> דורש חשיבה-תכנותית. בעלים לא תכניתן. סדר-החוקים חשוב (איזה כלל מנצח). מסבך מאוד.
+    </div>
+
+    <div class="top-bar">
+      <div class="title">Settings · כללי-פיצוי</div>
+      <div class="meta">12 כללים פעילים</div>
+    </div>
+
+    <div class="global-row">
+      <span class="gr-label">סף-עליון-מוחלט:</span>
+      <div class="gr-field"><input type="text" value="500" /><span style="font-size: 12px;">₪</span></div>
+      <button class="btn-primary">+ כלל חדש</button>
+    </div>
+
+    <div class="rule-row">
+      <span class="if-label">אם</span>
+      <select><option>קטגוריה = מולטיפוקל</option></select>
+      <span>וגם</span>
+      <select><option>עיכוב ≥ 3 ימים מהאדום</option></select>
+      <span class="arrow">→</span>
+      <span>פיצוי</span>
+      <input type="text" value="200" style="width: 60px;" />
+      <span>₪</span>
+      <select><option>עדשות</option></select>
+      <button class="btn-danger">מחק</button>
+    </div>
+
+    <div class="rule-row">
+      <span class="if-label">אם</span>
+      <select><option>קטגוריה = מולטיפוקל</option></select>
+      <span>וגם</span>
+      <select><option>עיכוב ≥ 7 ימים מהאדום</option></select>
+      <span class="arrow">→</span>
+      <span>פיצוי</span>
+      <input type="text" value="300" style="width: 60px;" />
+      <span>₪</span>
+      <select><option>עדשות</option></select>
+      <button class="btn-danger">מחק</button>
+    </div>
+
+    <div class="rule-row">
+      <span class="if-label">אם</span>
+      <select><option>קטגוריה = מדף מלאי</option></select>
+      <span>וגם</span>
+      <select><option>עיכוב ≥ 24 שעות מהאדום</option></select>
+      <span class="arrow">→</span>
+      <span>פיצוי</span>
+      <input type="text" value="50" style="width: 60px;" />
+      <span>₪</span>
+      <select><option>עדשות</option></select>
+      <button class="btn-danger">מחק</button>
+    </div>
+
+    <div style="background: #e6f1fb; padding: 10px 14px; border-radius: 8px; margin-top: 14px; font-size: 12px; color: #855011;">
+      ⚠ אזהרה: כללים מורכבים-מדי עלולים להתנגש. בעלים שלא יודע לתעדף → באג.
+    </div>
+  </div>
+
+<script>
+  document.querySelectorAll('.nav button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.sketch').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.target).classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

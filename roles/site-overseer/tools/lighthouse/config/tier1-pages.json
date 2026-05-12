@@ -1,0 +1,26 @@
+{
+  "_meta": {
+    "spec": "M3_LIGHTHOUSE_NIGHTLY_CRON",
+    "rec": "REC-SITE-013",
+    "rationale": "Daniel-named 2026-05-09: 'עמוד מותגים, עמוד משקפי שמש ומסגרות ראייה לפחות העמוד הראשון, סופרסייל, התקנונים' + Site Overseer additions (homepage + first branch + about). 10 base routes × 3 langs = 30 URLs.",
+    "origin": "https://www.prizma-optic.co.il",
+    "languages": ["he", "en", "ru"]
+  },
+  "routes": [
+    { "path": "/",                          "label": "homepage",          "tier1_reason": "LCP element + top-of-funnel" },
+    { "path": "/brands/",                   "label": "brands-index",      "tier1_reason": "Daniel-named (מותגים)" },
+    { "path": "/category/sunglasses",       "label": "sunglasses-cat",    "tier1_reason": "Daniel-verified 2026-05-10 — actual route is /category/{slug} singular per REC-SITE-019 closure" },
+    { "path": "/category/eyeglasses",       "label": "eyeglasses-cat",    "tier1_reason": "Daniel-verified 2026-05-10 — actual route is /category/{slug} singular per REC-SITE-019 closure" },
+    { "path": "/supersale/",                "label": "supersale",         "tier1_reason": "Daniel-named, high-traffic" },
+    { "path": "/terms/",                    "label": "terms",             "tier1_reason": "Daniel-named (התקנונים)" },
+    { "path": "/privacy/",                  "label": "privacy",           "tier1_reason": "Legal page, completes התקנונים group" },
+    { "path": "/multi-takanon/",            "label": "multi-takanon",     "tier1_reason": "Multifocal terms, third legal page" },
+    { "path": "/about/",                    "label": "about",             "tier1_reason": "Informational anchor" },
+    { "path": "/branches/ashkelon/",        "label": "branch-ashkelon",   "tier1_reason": "First live branch — Schema.org JSON-LD validation surface" }
+  ],
+  "_lang_prefixes": {
+    "he": "",
+    "en": "en/",
+    "ru": "ru/"
+  }
+}

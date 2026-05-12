@@ -2,7 +2,7 @@
 
 > **Authoritative artifact of Module 3.1 — Project Reconstruction.**
 > Defines how every Optic Up module's documentation is owned, located, and cross-referenced across the dual-repo split (`opticalis/opticup` and `opticalis/opticup-storefront`).
-> Adopted: 2026-04-11 (Main Strategic Chat approval of R13).
+> Adopted: 2026-04-11 (Architect approval of R13).
 > Status: BINDING for all modules from Module 3.1 forward.
 
 ---
@@ -34,7 +34,7 @@ Module 3 broke that model in two ways:
 
 2. **New 4-layer chat hierarchy.** Strategic chats, secondary chats, Claude Code, and the Main strategic chat each touch documentation differently. Without a schema, each chat invented its own conventions in real-time, and different chats produced inconsistent files.
 
-Phase 1C of Module 3.1 audited every Module 3 doc across both repos and surfaced the underlying problem in a single recommendation, **R13**. Main Strategic Chat approved R13 as the basis for this schema, with two additions (Rule 5 on pointer-stub format and Rule 6 on schema-in-pieces).
+Phase 1C of Module 3.1 audited every Module 3 doc across both repos and surfaced the underlying problem in a single recommendation, **R13**. Architect approved R13 as the basis for this schema, with two additions (Rule 5 on pointer-stub format and Rule 6 on schema-in-pieces).
 
 This document is the result.
 

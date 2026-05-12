@@ -7,6 +7,24 @@
 > **Phase (if applicable):** {letter/number}
 > **Author signature:** {chat name / session id}
 
+> **Heading convention:** Use `## N. Title` (plain numbered). Do NOT prefix headings with `§` — the Iron-Rule-32 pre-commit hook's regex (`scripts/checks/destructive-ops-declared.mjs`) does not accept the section-symbol prefix and will block the SPEC's own commit. (Harvested from `MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md` Author Proposal #1, 2026-05-11.)
+
+---
+
+## 0. Pre-Authoring Reality Check
+
+Required before drafting any later section. Confirms the SPEC is grounded in
+actual repo state, not in Brief assumptions that may have drifted.
+
+- Brief read in full on YYYY-MM-DD.
+- Target file(s) and dependent files exist at the claimed paths; line counts confirmed.
+- Every hex / token / table / column / function name the Brief assumes was grep-verified against the actual file content.
+- Where the Brief's assumptions diverge from repo reality, the SPEC's success criteria are written against repo reality (the Brief's intent applied to what's actually there), not against the Brief's literal claims.
+- Lessons applied from prior `FOREMAN_REVIEW.md` files in this module — list each one and how it was honored.
+- Pre-existing untracked files surveyed (`git status --porcelain | grep '^??'` count recorded). The Executor will leave them alone — selective `git add` by filename throughout. (See CLAUDE.md §1.4. Codified after 3 consecutive Pipeline SPECs — MIGRATION_1, MIGRATION_2, SETTINGS_PERMISSIONS_CONSOLIDATION — made the same D1 decision.)
+
+(Harvested from `MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md` Author Proposal #2, 2026-05-11. Originally piloted in `M1_5_SKETCH_RESKIN_BATCH_3` as the Palette Pre-Audit. Untracked-files item added 2026-05-12 from `SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md` Author Proposal #2.)
+
 ---
 
 ## 1. Goal
@@ -23,6 +41,22 @@ within a 15-minute window with a verified rollback plan."
 
 2–4 sentences. Why now? What previous work does this depend on? Link to
 relevant commits / SPECs / FOREMAN_REVIEWs.
+
+### Already-done discovery contingency
+
+When the SPEC's background table cites items that may have been independently
+closed by other commits since the source REC was filed, include a per-item
+"if already done, action" column or sentence in the table. Example:
+
+> "Item B: `_deprecated/` folder — possibly already deleted by storefront
+> commit `a4723b5`. If already gone (Step 0b confirms), skip this item and
+> report. If present, `git rm -rf`."
+
+This pre-authorizes the executor to skip without an AskUserQuestion when
+reality has already moved past the SPEC's premise. Without the contingency,
+the executor either stops (wasted time) or proceeds anyway (wrong action).
+
+(Source: improvement A1 from M3_REC014_ORPHAN_CLEANUP FOREMAN_REVIEW, 2026-05-09.)
 
 ---
 
@@ -43,6 +77,26 @@ possible. If a criterion is not measurable, the SPEC is not ready.
 **Every SPEC must include an Integrity Gate criterion** (Iron Rule 31). A SPEC
 whose execution ends with a null-byte ERROR in HEAD is not closed — it is open
 until the corruption is cleared. Reference: `scripts/verify-tree-integrity.mjs`.
+
+**Sweep criteria — link vs comment distinction.** When a §3 success criterion uses bare `grep -r "<old_name>"` to count references to a deleted/moved name, **narrative comments** in the surviving file (file-history docstrings, "merged from foo.html" headers, tombstone markers) will collide with the criterion alongside **live links** (HTML `href`/`src`, JS `import`, string literals consumed at runtime). Either: (a) tighten the regex (`grep -E "(href=|src=|url:|require\(|from\s+).*<old_name>"`) so only live links are counted; OR (b) add a one-line note authorizing the executor to reword narrative comments to satisfy the literal grep. Avoids reactive 1-line edits mid-execution. (Added 2026-05-12 from `SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md` Author Proposal #1.)
+
+---
+
+## 3a. Shared Edit Block (multi-file SPECs only — omit if N=1)
+
+If this SPEC applies the SAME edit to N>1 files, declare the edit template ONCE here. Each per-file commit in §10 references this block by name. The Reviewer can verify the block's content once and check per-commit conformance — no per-file re-verification of identical text.
+
+**Sameness contract:** the inserted/modified content must be byte-identical across all target files. If any file needs per-file customization, do NOT use this section — list each file's edit explicitly in §3 instead.
+
+### Block A — <name>
+- **Insertion location** (relative to anchor): <e.g., "inside `<head>`, after the last `<link rel='stylesheet'>` line, immediately before `</head>`">
+- **Content** (verbatim — Reviewer diffs this against each commit):
+  ```
+  <exact text — newlines and whitespace matter>
+  ```
+- **Files this block applies to:** <list>
+
+(Section added 2026-05-11 from `MIGRATION_2_SETTINGS_PERMISSIONS/FOREMAN_REVIEW.md` Author Proposal #1, harvested after MIGRATION_2 produced 2 commits with the same `<style>` block on `settings.html` + `employees.html`.)
 
 ---
 
@@ -81,6 +135,36 @@ If the SPEC fails partway through and must be reverted:
 - Restore DB state via: {specific queries or "no DB changes in this SPEC"}
 - Notify Foreman; SPEC is marked REOPEN, not CLOSED.
 
+### Backup format guidance for DB-DELETE SPECs
+
+When prescribing a pre-DELETE backup JSON, specify in §8 whether the backup
+should include heavy payload columns verbatim (e.g. `blocks` JSONB on
+`storefront_pages`) or substitute a `_field_omitted_for_brevity` flag.
+
+**Default rule:**
+- Include all metadata columns verbatim.
+- Substitute heavy payloads (>2KB per row) only when:
+  - The data is recoverable from PG point-in-time recovery, AND
+  - The SPEC explicitly authorizes the trade-off (state in §8: "Backup may omit `blocks` column; recoverable from PITR").
+- Otherwise, include payloads verbatim regardless of size — readability of
+  diffs trades against the rare rollback need.
+
+(Source: improvement A2 from M3_REC014_ORPHAN_CLEANUP FOREMAN_REVIEW, 2026-05-09.)
+
+---
+
+## 6.5. Destructive Operations
+
+Required by Iron Rule 32 (`scripts/checks/destructive-ops-declared.mjs` enforces this in pre-commit + CI). List every destructive operation this SPEC authorizes — file deletes, mass renames (≥5 files), `git rebase`, `git reset --hard`, `git push --force`, SQL `DROP`/`TRUNCATE`/`DELETE` without tenant scope, deletions from governance docs, modification of `main`. If none, write `None.` — the gate will then forbid ALL destructive ops for this SPEC's run.
+
+**Important:** the heading text MUST be exactly `## Destructive Operations` or `## N. Destructive Operations` (where N is a number). The hook's regex does NOT accept `§N.` prefixes.
+
+Example:
+1. 1 in-place file overwrite of `<path>` with pre-commit git tag `<tag>`.
+2. Additions to `<path>` (no removals, no renames).
+
+(Section added 2026-05-11 from `MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md` Author Proposal #1.)
+
 ---
 
 ## 7. Out of Scope (explicit)
@@ -88,6 +172,24 @@ If the SPEC fails partway through and must be reverted:
 Things that look related but MUST NOT be touched in this SPEC:
 - [file or module]
 - [feature or behavior]
+
+### Subset relationships (use only if applicable)
+
+If the SPEC's predicate is intentionally a SUBSET of what a related route /
+view / consumer accepts (i.e. SPEC emits FEWER items than the consumer
+would render), state this explicitly here:
+
+> "SPEC predicate emits N items; route accepts M items where M > N. The
+> delta of (M − N) items is intentional — they exist in the system but
+> are excluded from this surface for [reason]. The route will continue
+> to serve them at 200 if reached directly. This is not a bug;
+> deliberate scope reduction."
+
+This pre-resolves any §4 stop-trigger that would otherwise fire on
+"predicate diverges from route filter" — the executor sees the intent
+immediately and doesn't have to read both sections to reconcile.
+
+(Source: improvement A1 from M3_SITEMAP_BRAND_404_CLEANUP FOREMAN_REVIEW, 2026-05-09.)
 
 ---
 
@@ -130,6 +232,26 @@ Source: M4_TENANT_ISOLATION_HARDENING_PART2 M4-DB-01.
 ### DB state
 - Table `X` has columns {Y, Z} with expected seed data
 
+### Build-side-effect file expectations
+
+If the SPEC's commands include any build/codegen step (`npm run build`,
+`npm run generate`, etc.), explicitly state which files those commands
+are expected to regenerate, and whether they should be committed or
+restored:
+
+- **Tightly-coupled side-effects** (the SPEC's intent regenerates the file): list here, executor includes in commit.
+- **Unrelated build drift** (file regenerates on every build but isn't this SPEC's concern): list here as "executor MUST `git checkout <file>` before staging; log as finding if drift is new".
+- **Unknown** (don't know if build touches anything): say so; default rule is restore + log as finding.
+
+Example line for unrelated drift:
+> "NOT touched: `src/data/tenant-fallback-map.json` — regenerates on every `npm run build`, restore before commit; pre-existing drift logged as TECH_DEBT M3-DEBT-12."
+
+This prevents the executor from either (a) accidentally polluting the
+commit with unrelated drift, or (b) wasting time deciding whether to
+restore vs include without authorial guidance.
+
+(Source: improvement A2 from M3_SITEMAP_BRAND_404_CLEANUP FOREMAN_REVIEW, 2026-05-09.)
+
 ### Docs updated (MUST include)
 - `MASTER_ROADMAP.md` §3 updated if phase status changes
 - `docs/GLOBAL_MAP.md` if new functions/contracts
@@ -153,6 +275,18 @@ Specify how commits should be grouped. Example:
 - Previous SPEC {X} must be closed
 - Tool {Y} must be available (version {Z})
 - Credentials {W} must be in `$HOME/.optic-up/credentials.env`
+
+---
+
+### Browser readiness pre-flight (executor instructs at start)
+
+If any QA step in this SPEC names a browser action — "open localhost", "click", "console", "browser", "DOM" — the executor MUST confirm at the start of execution that Chrome is running with `--remote-debugging-port=9222`. If not, surface it in the readiness sentence BEFORE editing any file: "Browser-QA required by SPEC §X.Y but Chrome debug-port not detected — please start Chrome with `--remote-debugging-port=9222` before I proceed past commit."
+
+This converts a mid-execution surprise into a session-start clarification.
+
+If the SPEC's verification is purely SQL/HTTP/script-based and no browser action is needed, state it explicitly: "Pre-flight (executor): SPEC's QA is HTTP-level (curl) + script-based — no browser required. Skip Chrome readiness check."
+
+(Source: improvement A2 from M3_STUDIO_TRANSLATIONS_BRAND_FILTER FOREMAN_REVIEW, 2026-05-09. Symmetric to opticup-executor improvement #1 from same review.)
 
 ---
 

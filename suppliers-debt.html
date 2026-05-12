@@ -13,6 +13,18 @@
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/header.css">
 <style>
+  /* ---------------------------------------------------------------
+     Hybrid+Navy migration (2026-05-11, MIGRATION_1_SUPPLIERS_DEBT).
+     Page-scoped overrides: only this page sees Navy. Other un-migrated
+     pages keep legacy Indigo via the global :root in css/styles.css.
+     --------------------------------------------------------------- */
+  body {
+    --primary: #1e3a8a;          /* Navy accent */
+    --primary-dark: #0f172a;     /* deep slate */
+    --primary-light: #e6f1fb;    /* accent-soft */
+    --accent: #1e40af;           /* accent-hover */
+  }
+
   .debt-page { max-width: 1100px; margin: 0 auto; padding: 16px; }
 
   /* Summary cards row */
@@ -42,22 +54,22 @@
   .doc-cb-label { display: flex; align-items: center; gap: 4px; font-size: .85rem; color: var(--g600); }
   .doc-add-btn { margin-right: auto; }
   .doc-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: .78rem; font-weight: 600; }
-  .dst-open { background: #e3f0ff; color: #1a5fb4; }
+  .dst-open { background: #e6f1fb; color: #1e40af; }
   .dst-partial { background: #fff3cd; color: #856404; }
   .dst-paid { background: #d4edda; color: #155724; }
-  .dst-linked { background: #e8dff5; color: #6f42c1; }
+  .dst-linked { background: #e6f1fb; color: #1e3a8a; }
   .dst-cancel { background: var(--g200); color: var(--g500); }
   .dst-draft { background: #fef3c7; color: #92400e; }
   .dst-review { background: #fff7ed; color: #c2410c; border: 1px solid #fb923c; }
   .row-draft { background-color: #fef9c3 !important; }
   .btn-sm { padding: 3px 8px; border: 1px solid var(--g300); border-radius: 4px; background: var(--white); cursor: pointer; font-size: .78rem; font-family: inherit; }
   .btn-sm:hover { background: var(--g100); }
-  .btn-lnk { border-color: #6f42c1; color: #6f42c1; }
-  .btn-lnk:hover { background: #f3eefb; }
+  .btn-lnk { border-color: #1e3a8a; color: #1e3a8a; }
+  .btn-lnk:hover { background: #e6f1fb; }
   .pst-red { background: #f8d7da; color: #721c24; }
   .rst-pending { background: #fff3cd; color: #856404; }
-  .rst-ready { background: #e3f0ff; color: #1a5fb4; }
-  .rst-shipped { background: #e8dff5; color: #6f42c1; }
+  .rst-ready { background: #e6f1fb; color: #1e40af; }
+  .rst-shipped { background: #e6f1fb; color: #1e3a8a; }
   .rst-agent { background: #ffe0b2; color: #e65100; }
   .rst-received { background: #d4edda; color: #155724; }
   .rst-credited { background: #d4edda; color: #155724; }
@@ -124,7 +136,7 @@
 
     <!-- Expense folders toggle -->
     <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-      <button class="btn btn-sm" style="background:#f3f4f6;color:#374151;font-size:.82rem" onclick="toggleExpenseFolders()">📁 תיקיות הוצאות</button>
+      <button class="btn btn-sm" style="background:var(--g100);color:var(--g700);font-size:.82rem" onclick="toggleExpenseFolders()">📁 תיקיות הוצאות</button>
     </div>
     <div id="expense-folders-container" style="display:none"></div>
 
@@ -134,7 +146,7 @@
     </div>
     <div id="dtab-documents" class="debt-tab-content">
       <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-        <button id="gen-inv-toggle" class="btn btn-sm" style="background:#f3f4f6;color:#374151;font-size:.82rem" onclick="toggleGeneralInvoicesView()">📁 חשבוניות כלליות</button>
+        <button id="gen-inv-toggle" class="btn btn-sm" style="background:var(--g100);color:var(--g700);font-size:.82rem" onclick="toggleGeneralInvoicesView()">📁 חשבוניות כלליות</button>
       </div>
       <div class="empty-state">אין נתונים להצגה</div>
     </div>

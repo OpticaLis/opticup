@@ -24,6 +24,8 @@
     },
     currency(v) {
       if (v == null || v === '') return '';
+      // Iron Rule 9 — tenant-config-driven currency. Soft dep on formatMoney from shared.js.
+      if (typeof formatMoney === 'function') return formatMoney(v);
       return Number(v).toLocaleString('he-IL', { style: 'currency', currency: 'ILS' });
     },
     date(v) {

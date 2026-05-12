@@ -17,7 +17,7 @@
 
 2. **`_archive/root-deprecated/` was staged today but never committed forward.** Seven root-level files (`DANIEL_QUICK_REFERENCE.md`, `STRATEGIC_CHAT_ONBOARDING.md`, `MODULE_DOCUMENTATION_SCHEMA.md`, `UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT.md`, `UNIVERSAL_SECONDARY_CHAT_PROMPT.md`, `PHASE_0_PROGRESS.md`, `handoff-next-session.md`) were copied into `_archive/root-deprecated/` during today's Cowork session; the originals were never deleted. The result is seven byte-identical duplicates living at root and in the staged archive. Until Daniel decides "commit forward (delete root)" or "abort (delete _archive/)", every future session sees the duplicates and re-asks the same question.
 
-3. **`docs/FILE_STRUCTURE.md` is stale enough to mislead.** Per CLAUDE.md §7 it is the authoritative repo file tree. Today's reorg (`__LAUNCH_PLAN_DRAFT__/_archive/`, `__LAUNCH_PLAN_DRAFT__/architecture-briefs/`, `__LAUNCH_PLAN_DRAFT__/handoffs/`, root `_archive/`, the M12 brief close, the `decisions/` subfolder under the main-strategic skill) is invisible in it — zero hits when grepped for `__LAUNCH_PLAN_DRAFT__`, `_archive`, or `M12`. Anyone who reads it as "current" will be wrong about where things live. This is the worst kind of staleness: a document that *looks* authoritative.
+3. **`docs/FILE_STRUCTURE.md` is stale enough to mislead.** Per CLAUDE.md §7 it is the authoritative repo file tree. Today's reorg (`__LAUNCH_PLAN_DRAFT__/_archive/`, `__LAUNCH_PLAN_DRAFT__/architecture-briefs/`, `__LAUNCH_PLAN_DRAFT__/handoffs/`, root `_archive/`, the M12 brief close, the `decisions/` subfolder under the architect skill) is invisible in it — zero hits when grepped for `__LAUNCH_PLAN_DRAFT__`, `_archive`, or `M12`. Anyone who reads it as "current" will be wrong about where things live. This is the worst kind of staleness: a document that *looks* authoritative.
 
 **Total estimated remediation effort:** ~6–9 hours across all stages, distributed:
 - Stage A (low-risk wins): 60–90 min
@@ -192,14 +192,14 @@ __LAUNCH_PLAN_DRAFT__/
 | Skill | Lines | Last commit | Verdict |
 |-------|-------|-------------|---------|
 | opticup-executor | 649 | 2026-05-06 | ✅ Active |
-| opticup-strategic | 1008 | 2026-05-06 | ✅ Active (could trim — overlaps with main-strategic) |
-| opticup-main-strategic | 543 | 2026-05-06 | ✅ Active, reorganised today |
+| opticup-strategic | 1008 | 2026-05-06 | ✅ Active (could trim — overlaps with architect) |
+| opticup-architect | 543 | 2026-05-06 | ✅ Active, reorganised today |
 | opticup-campaign-overseer | 352 | 2026-05-04 | ✅ Active |
 | opticup-guardian | 325 | 2026-04-14 | ✅ Active |
 | opticup-reviewer | 231 | 2026-04-14 | ✅ Active |
 | opticup-sentinel | 177 | 2026-04-14 | ✅ Active |
 
-**opticup-main-strategic post-reorg is clean** — `references/decisions/` has 7 per-module files (CROSS, M5–M8, M11, M12), DECISIONS_LOG.md is an INDEX (~9.4 KB), Module Close Ceremony documented.
+**opticup-architect post-reorg is clean** — `references/decisions/` has 7 per-module files (CROSS, M5–M8, M11, M12), DECISIONS_LOG.md is an INDEX (~9.4 KB), Module Close Ceremony documented.
 
 **Orphan files:**
 - `.claude/skills/opticup-strategic/test_write` (empty, 2026-04-29) — delete.
@@ -311,7 +311,7 @@ Risk: zero.
 - `__LAUNCH_PLAN_DRAFT__/` (with subtree summary including `_archive/`, `architecture-briefs/`, `handoffs/`, `campaign-overseer/`, `site-overseer/`, `access-audit/`, `supervisor-system/`)
 - `_archive/` (root, if Path 1 of A.1 chosen) or remove from any "future state" section (if Path 2)
 - `campaigns/` clarification ("Campaign Overseer working area; not a module")
-- `.claude/skills/opticup-main-strategic/references/decisions/` subfolder
+- `.claude/skills/opticup-architect/references/decisions/` subfolder
 
 Edit pass; ~30 min careful read.
 

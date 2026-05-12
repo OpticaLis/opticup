@@ -1,7 +1,7 @@
 # Site Overseer — DECISIONS_LOG
 
 > **Purpose:** Append-only log of Site-Overseer-related decisions Daniel makes.
-> Mirrors the format of `.claude/skills/opticup-main-strategic/references/DECISIONS_LOG.md`.
+> Mirrors the format of `.claude/skills/opticup-architect/references/DECISIONS_LOG.md`.
 > Each entry is timestamped, dated, and lists: the question, Daniel's call, the rationale (if shared), and the operational action taken.
 > **Created:** 2026-05-07 (empty stub, Mode B baseline).
 
@@ -23,6 +23,77 @@
 ---
 
 ## Entries
+
+### 2026-05-10 — rec019-tier1-slug-fix (M3_TIER1_CATEGORY_SLUG_FIX / REC-SITE-019)
+
+- **Context:** REC-SITE-019 — the Lighthouse cron's Tier 1 list (config in `roles/site-overseer/tools/lighthouse/config/tier1-pages.json`) cited `/categories/sunglasses/` and `/categories/eyeglasses/` (plural + trailing slash) which 404'd. Daniel discovered live 2026-05-10 that the actual routes are `/category/sunglasses` and `/category/eyeglasses` (singular, no trailing slash). M3-DATA-03 originally framed three closure paths (build dedicated routes / replace with equivalents / accept SKIP_404).
+- **Question (asked offline 2026-05-10):** Daniel chose **Option B (replace, not build)** — `/category/{singular}` is the canonical storefront convention; building parallel `/categories/{plural}/` routes would be redundant. Site Overseer authored the 4-line config-fix SPEC.
+- **Decision:** Replace the 2 path strings + 2 tier1_reason strings in `tier1-pages.json`. Optional local re-run to verify 30 OK / 0 SKIP. ERP repo only, no PR to main (monitoring config, not production code).
+- **Rationale:** The build-dedicated-routes path (Option A) was a content/SEO project that would have taken hours and produced a parallel URL surface to maintain forever. Option B is a 30-second config fix that captures the same data Daniel cares about (sunglasses + eyeglasses category perf + a11y scores) using URLs that already exist + are already linked from the storefront's navigation.
+- **Operational action:**
+  - Step 0: re-probed all 6 URLs (`/category/{slug}` × 3 langs) → all 200; HANDOFF still showed REC-019 OPEN; tier1-pages.json still had wrong slugs at lines 12-13.
+  - Edited 4 lines in `tier1-pages.json`.
+  - Ran `node scripts/run-tier1.mjs` locally — 6.5 minutes for 30 LH probes; output: `30 OK / 0 SKIP, avg perf 86, avg a11y 95`. The 6 category cells now have real numbers (perf 80-88, a11y 95, axe 2 each).
+  - Cleaned 6 stale `categories-{plural}` SKIP_404 JSONs from `docs/guardian/lighthouse-reports/daily/2026-05-10/` (slugify produces different filenames for `/categories/sunglasses/` vs `/category/sunglasses` so the post-fix run added new files alongside the stale ones; SUMMARY counted 36 rows initially).
+  - Regenerated SUMMARY.md + GUARDIAN_ALERTS section after cleanup. Final baseline: 30 OK / 0 SKIP.
+  - Single commit: config + reports + HANDOFF + DECISIONS_LOG + retrospective trio.
+- **Self-improvement validation:** This SPEC is the immediate proof that the **Step 1.5p URL existence verification (MANDATORY)** rule applied to the strategic SKILL on 2026-05-10 (commit `0b00c9c`) is paying off. The parent M3_LIGHTHOUSE_NIGHTLY_CRON SPEC's URL probe was cursory ("do these 6 URLs return 200?") instead of exhaustive ("what are the actual category URLs on this storefront?"); had the new rule been in force at parent-author time, this REC and this SPEC would not have been needed. The same rule applied to THIS SPEC produced a complete §2 probe table covering both the wrong slugs (404) AND the right slugs (200) AND the WP-era `/product-category/{Hebrew}/` legacy URLs (out-of-scope but logged for visibility).
+- **Cross-refs:** REC-SITE-019 (closed in HANDOFF), `modules/Module 3 - Storefront/docs/specs/M3_TIER1_CATEGORY_SLUG_FIX/` (SPEC + EXECUTION_REPORT + FINDINGS + new baseline reports), `M3_LIGHTHOUSE_NIGHTLY_CRON/FINDINGS.md` M3-DATA-03 (effectively resolved), strategic SKILL Step 1.5p (commit `0b00c9c`, self-validated by this SPEC).
+
+---
+
+### 2026-05-10 — lighthouse-cron (M3_LIGHTHOUSE_NIGHTLY_CRON / REC-SITE-013)
+
+- **Context:** REC-SITE-013 — no automated perf/a11y monitoring of the storefront existed. Manual checks were sporadic; regressions were caught only when noticed. Site Overseer Mode B operating procedure explicitly listed Lighthouse as the missing tool gating targeted Mode-B perf audits. Production has been LIVE since 2026-05-03; perf/a11y regressions now affect real customers.
+- **Question (asked offline 2026-05-09):** Daniel directed Site Overseer (after closing REC-SITE-017, REC-SITE-018, REC-SITE-014 the same day) to author a SPEC for REC-SITE-013 next, with these constraints: Tier 1 pages = "עמוד מותגים, עמוד משקפי שמש ומסגרות ראייה לפחות העמוד הראשון, סופרסייל, התקנונים"; cron + reports under `docs/guardian/`; tooling under `roles/site-overseer/tools/`; alerts to `GUARDIAN_ALERTS.md`; pure ERP-repo work (no storefront, no DB).
+- **Decision:** Foreman authored 269-line SPEC `M3_LIGHTHOUSE_NIGHTLY_CRON` exercising all 9 freshly-applied SPEC_TEMPLATE improvements (already-done contingency in §2, backup format guidance N/A in §6, subset-relationships N/A in §7, build-side-effect declaration in §8, browser-readiness skip in §10). 10 base routes × 3 langs = 30 Tier 1 URLs. Daily cron 03:00 IDT, weekly cron Sunday 03:00 IDT. Auto-commit by `OpticaLis [bot]`. Daniel mid-execution decision: chose `actions/cache` for npm modules when executor surfaced 222 MB > 200 MB threshold (SPEC §4 rule).
+- **Rationale:** Production deployment makes silent perf regressions a customer-impact risk. Catching them in CI before they accumulate (or before the next manual audit randomly notices) is high-leverage. AI-summarized digest deferred to a clean follow-up SPEC after ≥2 weeks of raw output (SPEC §7 explicit out-of-scope).
+- **Operational action:**
+  - Step 0: live HTTP probe of all 30 Tier 1 URLs → 24/30 200, 6/30 404. Logged the 6 404s as M3-DATA-03 finding (categories/sunglasses + categories/eyeglasses × 3 langs). Tools dir confirmed missing; existing workflows: only `verify.yml`. Node v24.14, sufficient for Lighthouse v12+. `gh auth status`: not authenticated → SC #17 deferred to Daniel UI.
+  - Commit 1 (`40fdbbc`): scaffolded `roles/site-overseer/tools/lighthouse/` with package.json + lockfile (264 packages, 222 MB), README, config/{tier1-pages,thresholds}.json, `.gitignore` un-ignore exceptions for `docs/guardian/lighthouse-reports/**` + `GUARDIAN_ALERTS.md` (replacing directory-level ignore with subdir-only so children are reachable).
+  - Commit 2 (`b7300fc`): 6 scripts under `scripts/` — first attempt blocked by Rule 21 hook (duplicate `main`/`round`/`totalElapsed` across run-tier1 + run-full); resolved without `--no-verify` by extracting `_lib.mjs` (shared helpers) + renaming entry-points to `runTier1Main`/`runFullMain`.
+  - Commit 3 (`071e771`): two workflow YAMLs with cron + workflow_dispatch + actions/cache + auto-commit-as-`OpticaLis [bot]` step.
+  - Commit 4 (`83e5d9f`): first local baseline run (gh CLI not auth'd → CI deferred). 30 URLs probed, 24 OK + 6 SKIP_404. Avg perf 87, avg a11y 95. ALL CLEAR appended to GUARDIAN_ALERTS.md below LIGHTHOUSE-CRON-APPEND-MARKER. Two script fixes folded in (chrome.kill EPERM on Windows → safeKillChrome wrapper; process.argv[1] undefined under `node -e` import → guard).
+  - Commit 5 (this retro): EXECUTION_REPORT + FINDINGS + HANDOFF + DECISIONS_LOG + SITE_OVERSEER_SKILL.md bumped to v0.5 with new §5d documenting the cron infra.
+- **Cross-refs:** REC-SITE-013 (closed in HANDOFF), `modules/Module 3 - Storefront/docs/specs/M3_LIGHTHOUSE_NIGHTLY_CRON/` (SPEC + EXECUTION_REPORT + FINDINGS + first-baseline reports), 5 findings logged (M3-DATA-03 MEDIUM = NEW_SPEC for missing category routes; M3-EXEC-DEBT-04/05/06 LOW already-fixed; M3-INFRA-04 LOW Sentinel-vs-Cron coexistence as TECH_DEBT).
+
+---
+
+### 2026-05-09 — rec014-orphan-cleanup (M3_REC014_ORPHAN_CLEANUP / REC-SITE-014)
+
+- **Context:** REC-SITE-014 — three independent cosmetic-cleanup items left over from earlier sessions: (A) 3 archived `/test-shortcodes/` rows in `storefront_pages` for prizma; (B) `_deprecated/` folder in storefront repo (possibly already removed by `a4723b5`); (C) 3 orphan `poweredBy` i18n keys (he/en/ru) — leftover WP-era footer string no longer rendered. All LOW severity, none customer-blocking.
+- **Question (asked offline):** Daniel directed Site Overseer to author SPEC and dispatch.
+- **Decision:** Foreman authored SPEC using all 6 freshly-applied SPEC_TEMPLATE improvements (commit `74922cd`, applied 2026-05-09): subset-relationships marked "not applicable" in §7, build-side-effect file expectations declared for `tenant-fallback-map.json` in §8 ("NOT touched: restore before staging"), browser-readiness skip-line in §10 ("SPEC's QA is HTTP/SQL/script-based — no browser required"). Three execution steps gated on per-item Step 0 / Step 0b pre-flight; up to 3 commits (1 ERP, 2 storefront); SPEC §6 mandated SELECT→JSON-backup→DELETE for item A. First SPEC to exercise the full updated SPEC_TEMPLATE.
+- **Rationale:** Hygiene + greppability; eliminate references that confuse future readers ("is this live?"). The SPEC's 30-min cosmetic scope justified Daniel-pre-authorized DELETE on archived test data (Level 2 SQL, framed as authorized in §4) without needing mid-execution re-confirmation.
+- **Operational action:**
+  - Step 0 SQL: confirmed exactly 3 archived rows (en/he/ru), all with `status='archived'` and `is_deleted=true`. Backup JSON written to SPEC folder.
+  - Step 0b storefront pre-flight: `_deprecated/` already gone (Item B → SKIP); `grep -rn poweredBy src/` returned matches only inside the 3 i18n JSON files themselves (Item C → safe to delete).
+  - Item A: DELETE executed via Supabase MCP — 3 rows deleted, post-fresh-SELECT count = 0 (SC #1 met). Commit `e84acd2` in ERP repo with backup JSON.
+  - Item C: 3 i18n JSON edits removing `"poweredBy": "..."` line + trailing-comma adjustment on adjacent `"rights"` key. `npm run build` PASS (5.98s); image-proxy guard clean (9 dist files, 0 violations). `tenant-fallback-map.json` build-drift restored per SPEC §8 guidance. Commit `2e2dd1b` in storefront `develop`.
+  - Daniel pending: open PR for storefront `2e2dd1b` and merge to main. ERP commit needs no PR (DB + SPEC docs only).
+  - Self-improvement loop continued: this SPEC's smooth execution (no AskUserQuestion fired, no §4-vs-§7 tension to resolve) validates that the 6 SPEC_TEMPLATE/skill improvements applied at `74922cd` are working as designed.
+- **Cross-refs:** REC-SITE-014 (closed in HANDOFF), `modules/Module 3 - Storefront/docs/specs/M3_REC014_ORPHAN_CLEANUP/` (SPEC + backup + EXECUTION_REPORT + FINDINGS), commit `74922cd` (skill improvements applied earlier same day), commit `a4723b5` (storefront, 2026-05-07, retroactively credited with closing item B).
+
+---
+
+### 2026-05-09 — sitemap-brand-404-cleanup (M3_SITEMAP_BRAND_404_CLEANUP / REC-SITE-017)
+
+- **Context:** REC-SITE-017 — `sitemap-dynamic.xml` brand block emitted 155 `/brands/{slug}/` URLs (every row of `v_storefront_brands`) but only ~45 had a working detail page. The 110 unbacked URLs returned 404, wasting Google crawl budget. Source: M3_SITEMAP_CONSOLIDATION/FINDINGS.md M3-DATA-01.
+- **Question (asked offline, "אתה האחראי על האתר. מה עוד יש לעשות?"):** Daniel directed Site Overseer to author SPEC for REC-SITE-017 (next in queue after 018), then dispatch.
+- **Decision:** Foreman authored SPEC under `modules/Module 3 - Storefront/docs/specs/M3_SITEMAP_BRAND_404_CLEANUP/`. Filter predicate: `brand_page_enabled = true AND product_count > 0` (yields 45 — strict subset of route's 47, intentional under-emit). Two-file change (sitemap-dynamic.xml.ts + verify-sitemap.mjs), zero DB/view/robots/astro.config changes. Cross-repo: code in `opticup-storefront`, SPEC docs in `opticup`.
+- **Rationale:** Mirror the predicate already used by 3 peer surfaces (`studio-brands.js`, `studio-translations.js` post-M3_STUDIO_TRANSLATIONS_BRAND_FILTER, public `lib/brands.ts`). Route's filter is slightly looser (47) — the 2 brands difference is intentional out-of-scope per SPEC §7 (Daniel can flip `brand_page_enabled` in Studio if he wants those 2 published).
+- **Operational action:**
+  - Step 0 SQL pre-flight: 155 view rows → 45 with both filters (measured live).
+  - Live HTTP probe pre-fix: 155 brand URLs in sitemap; sample 21 known-bad slugs from M3-DATA-01 → all 404.
+  - SPEC §3 ships with 9 measurable SCs + SQL-equivalent for SC #1 inline (per A1 from M3_STUDIO_TRANSLATIONS_BRAND_FILTER review — first SPEC to use the new convention).
+  - Executor (Claude Code on Windows desktop): 2 commits on storefront `develop` (`20eece1` + `4d0413f`); resolved §4-vs-§7 tension correctly (intent over guardrail); restored `tenant-fallback-map.json` build-side-effect drift; logged 2 findings.
+  - Daniel merged storefront PR + Vercel deployed.
+  - Foreman post-deploy verification: 45 unique brand slugs (exact SC #1), 15/15 random-sample 200, total `<loc>` 254 (in band), `verify-sitemap.mjs` 10/10 PASS.
+  - Bonus: general-sample probe (verify check #8) returned 30/30 200 — M3_SITEMAP_CONSOLIDATION leftover "pre-existing data-quality issue" was entirely brand-block-driven, now fully closed.
+  - 2 findings dispositioned to TECH_DEBT: M3-DEBT-12 (tenant-fallback-map.json drift), M3-OBS-01 (verify check #8 stale warn). Both LOW priority.
+- **Cross-refs:** REC-SITE-017 (closed in HANDOFF), `modules/Module 3 - Storefront/docs/specs/M3_SITEMAP_BRAND_404_CLEANUP/` (SPEC + EXECUTION_REPORT + FINDINGS + FOREMAN_REVIEW), `M3_SITEMAP_CONSOLIDATION/FINDINGS.md` M3-DATA-01 (now resolved), `TECH_DEBT.md` (2 new entries).
+
+---
 
 ### 2026-05-09 — getbaseurl-canonical-www (REC-SITE-018)
 
