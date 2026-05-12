@@ -16,6 +16,29 @@ type Db = any;
 
 const TIER2_STATUSES = ["waiting", "invited", "confirmed", "confirmed_verified"];
 
+// 2026-05-12 PAGINATE_QUERY_RANGE_REBUILD — PostgREST caps every response at
+// 1000 rows. Browser code goes through paginateQuery in js/supabase-ops.js;
+// the EF previously did NOT paginate at all, silently capping every
+// recipient resolver at 1000 (Prizma broadcast hit 1216 → got 1000).
+//
+// Helper rebuilds the query each page via a factory so .range() is set on
+// a fresh PostgrestFilterBuilder. Same contract as the browser-side fix.
+async function paginate<T>(buildQuery: () => any, pageSize = 1000): Promise<T[]> {
+  const out: T[] = [];
+  let from = 0;
+  while (true) {
+    // deno-lint-ignore no-explicit-any
+    const { data, error }: { data: T[] | null; error: any } =
+      await buildQuery().range(from, from + pageSize - 1);
+    if (error) throw new Error(error.message);
+    if (!data || !data.length) break;
+    out.push(...data);
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+  return out;
+}
+
 export async function resolveRecipients(
   db: Db, tenantId: string,
   recipientType: string,
@@ -44,19 +67,16 @@ export async function resolveRecipients(
       return [];
     }
     const statusList = hasFilter ? cfg.recipient_status_filter : TIER2_STATUSES;
-    const lRes = await db.from("crm_leads").select("id, full_name, phone, email")
-      .eq("tenant_id", tenantId).eq("is_deleted", false).is("unsubscribed_at", null)
-      .in("status", statusList);
-    if (lRes.error) throw new Error(`recipients tier2: ${lRes.error.message}`);
-    let leads: Lead[] = lRes.data || [];
+    let leads = await paginate<Lead>(() =>
+      db.from("crm_leads").select("id, full_name, phone, email")
+        .eq("tenant_id", tenantId).eq("is_deleted", false).is("unsubscribed_at", null)
+        .in("status", statusList));
     if (recipientType === "tier2_excl_registered" && eventId) {
-      const xRes = await db.from("crm_event_attendees").select("lead_id")
-        .eq("tenant_id", tenantId).eq("event_id", eventId).eq("is_deleted", false);
-      if (xRes.error) throw new Error(`recipients exclude: ${xRes.error.message}`);
+      const xData = await paginate<{ lead_id: string | null }>(() =>
+        db.from("crm_event_attendees").select("lead_id")
+          .eq("tenant_id", tenantId).eq("event_id", eventId).eq("is_deleted", false));
       const excluded = new Set<string>();
-      (xRes.data || []).forEach((r: { lead_id: string | null }) => {
-        if (r.lead_id) excluded.add(r.lead_id);
-      });
+      xData.forEach((r) => { if (r.lead_id) excluded.add(r.lead_id); });
       leads = leads.filter((l) => !excluded.has(l.id));
     }
     return leads;
@@ -72,12 +92,12 @@ export async function resolveRecipients(
     // status set if attStatus is null (all_statuses → broad list covering
     // every active status the system uses today).
     const ALL = ["registered", "confirmed", "attended", "purchased", "no_show", "waiting_list", "invited", "cancelled"];
-    const aRes = await db.from("crm_event_attendees").select("lead_id")
-      .eq("tenant_id", tenantId).eq("event_id", eventId).eq("is_deleted", false)
-      .in("status", attStatus || ALL);
-    if (aRes.error) throw new Error(`recipients attendees: ${aRes.error.message}`);
+    const aData = await paginate<{ lead_id: string | null }>(() =>
+      db.from("crm_event_attendees").select("lead_id")
+        .eq("tenant_id", tenantId).eq("event_id", eventId).eq("is_deleted", false)
+        .in("status", attStatus || ALL));
     return await fetchLeadsByIds(db, tenantId,
-      (aRes.data || []).map((r: { lead_id: string | null }) => r.lead_id).filter((x: string | null): x is string => !!x));
+      aData.map((r) => r.lead_id).filter((x: string | null): x is string => !!x));
   }
 
   if (recipientType === "attendees_with_active_coupon") {
@@ -85,12 +105,12 @@ export async function resolveRecipients(
     // valid coupon (coupon_sent=true AND status != 'cancelled'). Mirrors UI
     // counter logic in crm-events-detail.js / crm-event-day-coupon.js.
     if (!eventId) return [];
-    const cRes = await db.from("crm_event_attendees").select("lead_id")
-      .eq("tenant_id", tenantId).eq("event_id", eventId).eq("is_deleted", false)
-      .eq("coupon_sent", true).neq("status", "cancelled");
-    if (cRes.error) throw new Error(`recipients attendees_with_active_coupon: ${cRes.error.message}`);
+    const cData = await paginate<{ lead_id: string | null }>(() =>
+      db.from("crm_event_attendees").select("lead_id")
+        .eq("tenant_id", tenantId).eq("event_id", eventId).eq("is_deleted", false)
+        .eq("coupon_sent", true).neq("status", "cancelled"));
     return await fetchLeadsByIds(db, tenantId,
-      (cRes.data || []).map((r: { lead_id: string | null }) => r.lead_id).filter((x: string | null): x is string => !!x));
+      cData.map((r) => r.lead_id).filter((x: string | null): x is string => !!x));
   }
 
   if (recipientType === "cross_event_active_waitlist") {
@@ -98,20 +118,20 @@ export async function resolveRecipients(
     // opened parallel event. Filter: attendee status 'waiting_list' or
     // 'invited' on a different event whose own status is registration_open
     // or waiting_list.
-    const attRes = await db.from("crm_event_attendees").select("event_id, lead_id, status")
-      .eq("tenant_id", tenantId)
-      .in("status", ["waiting_list", "invited"])
-      .eq("is_deleted", false);
-    if (attRes.error) throw new Error(`recipients cross_event: ${attRes.error.message}`);
     type AttRow = { event_id: string; lead_id: string; status: string };
-    const rows = (attRes.data || []).filter((r: AttRow) => r.event_id !== eventId);
+    const attData = await paginate<AttRow>(() =>
+      db.from("crm_event_attendees").select("event_id, lead_id, status")
+        .eq("tenant_id", tenantId)
+        .in("status", ["waiting_list", "invited"])
+        .eq("is_deleted", false));
+    const rows = attData.filter((r) => r.event_id !== eventId);
     if (!rows.length) return [];
-    const otherEventIds = Array.from(new Set(rows.map((r: AttRow) => r.event_id)));
-    const evRes = await db.from("crm_events").select("id, status, is_deleted")
-      .eq("tenant_id", tenantId).in("id", otherEventIds);
-    if (evRes.error) throw new Error(`recipients cross_event events: ${evRes.error.message}`);
+    const otherEventIds = Array.from(new Set(rows.map((r) => r.event_id)));
+    const evData = await paginate<{ id: string; status: string; is_deleted: boolean }>(() =>
+      db.from("crm_events").select("id, status, is_deleted")
+        .eq("tenant_id", tenantId).in("id", otherEventIds));
     const activeEvents = new Set<string>();
-    (evRes.data || []).forEach((e: { id: string; status: string; is_deleted: boolean }) => {
+    evData.forEach((e) => {
       if (!e.is_deleted && (e.status === "registration_open" || e.status === "waiting_list")) {
         activeEvents.add(e.id);
       }
@@ -138,10 +158,18 @@ export async function resolveRecipients(
 // resolve differently between authenticated-user and service-role contexts.
 async function fetchLeadsByIds(db: Db, tenantId: string, leadIds: string[]): Promise<Lead[]> {
   if (!leadIds.length) return [];
-  const r = await db.from("crm_leads")
-    .select("id, full_name, phone, email, unsubscribed_at, is_deleted")
-    .eq("tenant_id", tenantId)
-    .in("id", leadIds);
-  if (r.error) throw new Error(`fetchLeadsByIds: ${r.error.message}`);
-  return ((r.data || []) as Lead[]).filter((l) => !l.unsubscribed_at && !l.is_deleted);
+  // Chunk to keep .in('id', [...]) URL under PostgREST's ~8KB cap
+  // (200 UUIDs ≈ 7.5KB). Each chunk paginated to bypass the 1000-row default.
+  const CHUNK = 200;
+  const out: Lead[] = [];
+  for (let i = 0; i < leadIds.length; i += CHUNK) {
+    const slice = leadIds.slice(i, i + CHUNK);
+    const page = await paginate<Lead>(() =>
+      db.from("crm_leads")
+        .select("id, full_name, phone, email, unsubscribed_at, is_deleted")
+        .eq("tenant_id", tenantId)
+        .in("id", slice));
+    page.forEach((l) => { if (!l.unsubscribed_at && !l.is_deleted) out.push(l); });
+  }
+  return out;
 }
