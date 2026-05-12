@@ -32,9 +32,43 @@
 ### Tiers Prizma
 | Tier | סף עלייה (₪/שנה) | סף שמירה | מסגרות | עדשות | אחר |
 |---|---|---|---|---|---|
-| Silver (default) | 0 | 0 | 4% | 7% | 0% |
+| Basic-Free (auto-enrolled, no fee) | — | — | 0% | 0% | 0% |
+| Silver (default paid) | 0 | 0 | 4% | 7% | 0% |
 | Gold | 10,000 | 8,000 | 6% | 12% | 0% |
 | Diamond | 15,000 | 12,000 | 8% | 15% | 0% |
+
+#### Tier `basic-free` — auto-enrolled, no fee (amendment 2026-05-12)
+
+מסלול אוטומטי — לא נמכר, נוצר on-demand בלבד. מטרה: לשמור פונקציונליות "יתרת זיכוי" עבור לידים שקיבלו קרדיט אבל עוד לא רכשו חברות בתשלום.
+
+**איך נוצר:** אוטומטית באירוע מזכה ראשון של לקוח שאינו כבר member:
+- M9 הנפיק פיצוי (`compensation`) ללקוח בעקבות עיכוב מעבדה / בעיית-איכות / פתרון תלונה
+- חבר קיים המליץ על לקוח חדש המזכה את שניהם בבונוס Referral (slot עתידי — לא LIVE day-1, מבני בלבד)
+
+**מה כולל:**
+- ✅ קרדיט (סכום הפיצוי / בונוס ה-Referral עצמו) ב-`loyalty_credit_balance`
+- ✅ יכולת מימוש קרדיט בקופה (M7 Redeem Engine — אותו flow ללא שינוי)
+
+**מה לא כולל:**
+- ❌ דמי-חבר (חינם, `annual_fee_paid_at IS NULL`)
+- ❌ הטבות tier — `accrual_rate_*=0` ולכן לא צובר על קניות
+- ❌ בונוסים חוזרים, הארכת תוקף, הנחות מיוחדות
+- ❌ Welcome bonus (לא נוצר Welcome record — זה not-an-enrollment)
+- ❌ Family pooling (לא מצטרף ל-household אוטומטית)
+- ❌ Promotion/Downgrade engine pass — basic-free נמצא מחוץ ל-cron של 02:00
+
+**Upgrade path:** הלקוח יכול לשדרג ל-tier בתשלום (Silver / Gold / Diamond) דרך עמוד ההצטרפות הרגיל. בשדרוג:
+- `loyalty_membership.tier_id` מתעדכן ל-tier הנבחר
+- `annual_fee_paid_at = now()`
+- `expires_at = now() + 24 months` (mirror של חברות חדשה)
+- **יתרת הקרדיט נשמרת** — `loyalty_credit_balance.balance` ממשיך כרגיל; שדרוג ה-tier לא מאפס את הסל
+- אם מצטרף ל-household → מתבצע ב-flow שדרוג ידני
+
+**קיים ב-LIVE day-1:** לא — נוצר רק כשמתרחש אירוע מזכה ראשון.
+
+**Schema impact:** אין שינוי schema. אותה `loyalty_membership` שורה עם `tier_id` המצביע על שורת config ב-`loyalty_tier` שבה `slug='basic-free', annual_fee=0, accrual_rate_*=0, is_default_tier=false, is_active=true`. המנגנון אותו מנגנון; ה-config row נוסף ב-seed של M13 build.
+
+**Enrollment clarification:** הצטרפות **בתשלום** נשארת דרך אחת בלבד (עמוד באתר, D5). מסלול `basic-free` אינו "הצטרפות" אלא ייצוג עומס-קל ב-`loyalty_membership` ללקוח שקיבל קרדיט בלי לרכוש חברות — אין UI הצטרפות נפרד, אין מילוי form, נוצר אוטומטית על-ידי המנוע שגרם לאירוע המזכה (M9 או Referral slot).
 
 ### משפחה
 - מקסימום חברים: 5
@@ -349,6 +383,9 @@ M13 קורא ל-M12 `send_message_by_template`. ערוץ נקבע ב-M12 לפי 
 | D11 | Family scale_factor | 30% (Prizma) |
 | D12 | Welcome bonus | 5%, תקרה ₪150, 30 יום, ₪50/₪100 דמי-חבר |
 | D13 | Family balance | סל משותף, default פתוח, תקרת מימוש אופציונלית, two-tag traceability |
+| D14 | Basic-Free tier (amendment 2026-05-12) | חברות auto-enrolled (חינם, credits-only) שנוצרת על אירוע פיצוי M9 או Referral. אין accrual, אין הטבות tier, אין welcome. Upgrade ל-tier בתשלום שומר את יתרת הקרדיט. סוגר את הפער שצף ב-M9 D24. |
+
+**Amendment 2026-05-12:** D14 (basic-free tier) נוסף לאחר סגירת ה-Brief המקורי כתיקון נקודתי. הפער צף ב-M9 D24 (2026-05-10) — לידים שמקבלים פיצוי מ-M9 אבל אינם members מאבדים את ה-link ל-`loyalty_credit_balance`. ה-Amendment Brief: `M13_BRIEF_AMENDMENT_BRIEF.md`. ראה גם `decisions/M13.md` לתיעוד מלא של ההחלטה.
 
 ---
 
