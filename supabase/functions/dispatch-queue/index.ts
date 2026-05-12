@@ -181,7 +181,9 @@ Deno.serve(async (req: Request) => {
         .eq("id", r.id);
       failed++;
     }
-    await sleep(1000); // 1-second throttle between dispatches
+    // 2026-05-12: throttle per channel — email cheaper than SMS,
+    // can go 2x faster (0.5s vs 1s) without hitting vendor rate limits.
+    await sleep(r.channel === "email" ? 500 : 1000);
   }
 
   return jsonResp({ ok: true, processed: claimedIds.size, sent, failed, rejected });
