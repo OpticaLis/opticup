@@ -212,13 +212,19 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
 
   const r = await dispatchPlanDirect(db, itemsToDispatch, tenantId, anonKey, sendMessageUrl);
   if (runId) await finishRun(db, tenantId, runId, "completed");
+  // 2026-05-12 — dispatchPlanDirect now enqueues to crm_message_queue instead
+  // of fanning out parallel fetch() calls. r.queued is the number of rows
+  // inserted; actual sends happen async via dispatch-queue EF (pg_cron).
+  // r.sent is always 0 here; final counts land on the run row via the
+  // dispatch-queue → send-message → finishRun message-log scan, OR remain
+  // 0 if finishRun has already completed by then (current behavior).
   return {
     run_id: runId,
     fired: rules.length,
     sent: r.sent,
     failed: r.failed,
     rejected: r.rejected,
-    queued: totalQueued,
+    queued: totalQueued + (r.queued || 0),
     skipped,
   };
 }
