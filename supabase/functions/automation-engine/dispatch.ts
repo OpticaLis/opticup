@@ -1,19 +1,15 @@
 // dispatch.ts — route automation plan items into crm_message_queue.
 //
-// 2026-05-12: was previously "direct dispatch" (Promise.allSettled of N parallel
-// fetch() calls to send-message EF). At >~30 recipients the Edge Function hit
-// CPU/timeout limits and silently dropped the rest — Prizma confirmed 2325
-// recipients but only 30 actually sent. Same architectural failure mode that
-// the manual broadcast UI had pre-2026-05-12.
-//
-// Now: insert all plan items into crm_message_queue. dispatch-queue EF (pg_cron
-// every minute, throttled 500ms email / 1000ms SMS) drains the queue. Same path
-// as broadcast wizard + queue_send automation rules — single source of truth.
-//
-// promoteWaitingLeadsToInvited still runs immediately after enqueue (browser
-// parity) — promotion is deterministic per item, not gated on send success.
-
-import { promoteWaitingLeadsToInvited } from "./post-actions.ts";
+// History:
+// - Pre-2026-05-12: "direct dispatch" (Promise.allSettled of N parallel
+//   fetch() calls to send-message EF). Hit CPU/timeout at ~30 recipients.
+// - 2026-05-12 morning: switched to queue insertion + immediate eager
+//   promote-to-invited. Problem: promote ran BEFORE actual delivery, so a
+//   recipient whose send later failed was still marked 'invited'.
+// - 2026-05-12 evening: removed eager promote. Promotion is now event-driven
+//   via the DB trigger `trg_promote_lead_on_message_sent` (migration
+//   promote_lead_on_message_sent), which fires when crm_message_queue.status
+//   flips to 'sent'. Failed sends → lead stays 'waiting' as it should.
 
 // deno-lint-ignore no-explicit-any
 type Db = any;
@@ -22,7 +18,7 @@ export interface DispatchResult {
   sent: number;     // 0 — actual sends happen async via dispatch-queue
   failed: number;
   rejected: number;
-  queued: number;   // new — count of rows inserted into crm_message_queue
+  queued: number;   // count of rows inserted into crm_message_queue
 }
 
 const QUEUE_INSERT_CHUNK = 500;
@@ -72,13 +68,10 @@ export async function dispatchPlanDirect(
     }
   }
 
-  // promoteWaitingLeadsToInvited mirrors the browser-engine pattern of bumping
-  // any waiting lead to 'invited' once the rule fired. Treat every queued
-  // item as "ok" — the actual send happens later in dispatch-queue, but the
-  // commitment to send has been made.
-  const results = rows.map(() => ({ ok: true }));
-  try { await promoteWaitingLeadsToInvited(db, tenantId, items, results); }
-  catch (e) { console.error("automation-engine promoteWaitingLeadsToInvited:", (e as Error).message); }
+  // Lead status promotion (waiting → invited) used to happen here eagerly.
+  // Moved to DB trigger `trg_promote_lead_on_message_sent` (2026-05-12) so
+  // promotion only fires after the message is actually delivered, not at
+  // queue time. Failed sends now correctly leave the lead at 'waiting'.
 
   return { sent: 0, failed, rejected: 0, queued };
 }
