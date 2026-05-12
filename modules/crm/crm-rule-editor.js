@@ -52,6 +52,10 @@
     var seen = {};
     tpls.forEach(function (t) {
       if (!t || !t.slug) return;
+      // 2026-05-12 — hide templates explicitly opted out of automations.
+      // Authors can flip show_in_automations=false for free-text templates
+      // they only want to use from the manual broadcast wizard.
+      if (t.show_in_automations === false) return;
       var sfx = '_' + (t.channel || '') + '_' + (t.language || 'he');
       var base = (t.slug.slice(-sfx.length) === sfx) ? t.slug.slice(0, -sfx.length) : t.slug;
       if (!seen[base]) seen[base] = { base: base, name: (t.name || base).replace(/\s*[—-]\s*(SMS|Email|אימייל|WhatsApp)\s*$/i,'').trim() };
@@ -59,9 +63,18 @@
     return Object.keys(seen).sort().map(function (k) { return seen[k]; });
   }
 
+  // 2026-05-12 — no longer hard-filter by prefix. Show ALL templates (with
+  // show_in_automations=true), ordered so the board's "recommended" prefix
+  // surfaces first. Authors are still free to pick anything that fits.
   function _filterTemplatesByBoard(boardKey) {
     var prefixes = BOARD_TPL_PREFIX[boardKey] || [];
-    return _baseSlugsFromTemplates().filter(function (t) { return prefixes.some(function (p) { return t.base.indexOf(p) === 0; }); });
+    var all = _baseSlugsFromTemplates();
+    var recommended = [], others = [];
+    all.forEach(function (t) {
+      var match = prefixes.some(function (p) { return t.base.indexOf(p) === 0; });
+      (match ? recommended : others).push(t);
+    });
+    return recommended.concat(others);
   }
 
   function _summaryFor(s) {

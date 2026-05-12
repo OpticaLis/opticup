@@ -58,6 +58,7 @@
       if (!base) return;
       if (!groups[base]) {
         groups[base] = { baseSlug: base, name: stripChannelSuffix(r.name) || base, language: r.language || 'he',
+          showInAutomations: r.show_in_automations !== false,
           channels: { sms: emptyCh(), whatsapp: emptyCh(), email: emptyCh() } };
       }
       var g = groups[base];
@@ -65,6 +66,10 @@
         g.channels[r.channel] = { exists: !!r.is_active, id: r.id, body: r.body || '', subject: r.subject || null, original: r };
         if (r.is_active) g.name = stripChannelSuffix(r.name) || g.name;
       }
+      // Logical-template visibility is the AND of all channel rows (a single
+      // hidden row hides the whole logical template). In practice the editor
+      // saves all 3 channels with the same flag, so this is a tight invariant.
+      if (r.show_in_automations === false) g.showInAutomations = false;
     });
     return Object.keys(groups).sort().map(function (k) { return groups[k]; });
   }
@@ -74,7 +79,7 @@
     if (_loadPromise) return _loadPromise;
     var tid = getTenantId();
     _loadPromise = (async function () {
-      var q = sb.from('crm_message_templates').select('id, slug, name, channel, language, subject, body, is_active, created_at');
+      var q = sb.from('crm_message_templates').select('id, slug, name, channel, language, subject, body, is_active, show_in_automations, created_at');
       if (tid) q = q.eq('tenant_id', tid);
       q = q.order('name');
       var res = await q;
@@ -193,11 +198,12 @@
   function findLogicalByBase(base) { return _logical.filter(function (g) { return g.baseSlug === base; })[0] || null; }
 
   function newLogicalDraft() {
-    return { baseSlug: '', name: '', language: 'he',
+    return { baseSlug: '', name: '', language: 'he', showInAutomations: true,
       channels: { sms: emptyCh(), whatsapp: emptyCh(), email: emptyCh() }, isNew: true };
   }
   function cloneState(g) {
     return { baseSlug: g.baseSlug, name: g.name, language: g.language,
+      showInAutomations: g.showInAutomations !== false,
       channels: { sms: Object.assign({}, g.channels.sms), whatsapp: Object.assign({}, g.channels.whatsapp), email: Object.assign({}, g.channels.email) },
       isNew: !!g.isNew };
   }
