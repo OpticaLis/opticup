@@ -1,5 +1,49 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-12 — Migration #3: CRM Navy Accent Addition (3rd of 4 production migrations)
+
+SPEC: `MIGRATION_3_CRM` ([folder](specs/MIGRATION_3_CRM/))
+
+Third of 4 production-page migrations to Hybrid+Navy. CRM was already on a modern Slate palette (Slate 900 body text + Slate-toned sidebar dark theme), so this SPEC is an **accent insertion** (Navy `#1e3a8a` on primary actions, focus rings, view-toggle, sidebar active marker, theme-dot, loading spinner) — NOT a full re-skin. Slate 900 stays as the primary text color. Sidebar dark theme preserved. Full-Auto Pipeline ran end-to-end in ONE chat across all 5 hats (Foreman → Executor → Reviewer → Localhost-Tester → Foreman-Review).
+
+**Shape divergence from Migration #1+#2 (caught in §0 Reality Check):** CRM's primary actions / focus rings / view-toggle are inline Tailwind utility classes in `crm.html` (`bg-indigo-600`, `focus:ring-indigo-500`, etc.), NOT CSS rules in the 4 CRM CSS files. The page-scope `<style>` override pattern (the Migration #1/#2 vehicle) is the wrong tool here. New pattern validated: **swap inline Tailwind utility classes to arbitrary values** (`bg-[#1e3a8a]`, `focus:ring-[#1e3a8a]`). This is first-class Tailwind v3 JIT, avoids `!important` specificity wars with the page's `important:true` config, and preserves DOM tag count + line count (only the class-string token within an existing `class="..."` attribute changes).
+
+**Files changed:**
+- `crm.html` (419 lines, **unchanged**): 6 `indigo-*` inline utility class sites swapped to `[#1e3a8a]`/`[#1e40af]` arbitrary values + 1 theme-dot inline `style=` swap. 75 `<script>` + 12 `<link>` preserved verbatim.
+- `css/crm.css` (+8 lines): `--crm-accent` palette tokens swapped from Indigo (`#4f46e5`/`#4338ca`/`#eef2ff`) to Navy (`#1e3a8a`/`#1e40af`/`#e6f1fb`); added `box-shadow: inset -3px 0 0 #1e3a8a` on `.crm-nav-item.active` for Navy RTL start-edge marker (physical `-3px` offset paints on the right edge = RTL start; preserves layout — no padding shift); header comment refreshed.
+- `css/crm-components.css` (+4 lines): new `.crm-badge.crm-badge-primary { background: #1e3a8a; }` Navy variant (additive; existing `.crm-badge` callers using only the base class keep prior behavior).
+- `css/crm-screens.css`, `css/crm-visual.css`: **untouched** — both are post-B8 Tailwind-migration stubs with no accent-bearing rules (`crm-screens.css` is comment-only, `crm-visual.css` has only `.crm-pagination` + a legacy `crm-pulse` green keyframe with no live consumers). Filed F1 for future cleanup SPEC.
+- `shared/css/variables.css`: **byte-identical** — Navy tokens already added by Migration #1 (4 `--accent-navy*` tokens at lines 175-180), idempotent skip honored.
+
+**Verification:**
+- 18 of 18 SPEC §3 success criteria GREEN.
+- `grep -c "indigo-" crm.html` → **0** (was 6).
+- `grep -c "1e3a8a"` → **8** in crm.html, **2** in css/crm.css, **1** in css/crm-components.css.
+- `grep -ic "26215c|534ab7"` → **0** across all 4 CRM CSS files (no legacy purple anywhere — Brief §0 prediction confirmed).
+- `grep -ic "4f46e5|4338ca|eef2ff" css/crm.css` → **0** (legacy Indigo gone).
+- npm run smoke → **7/7 PASS** on demo tenant. npm run verify:integrity → exit 0 (46 files clean).
+- Page-scope confined: `curl localhost:3000/inventory.html | grep -c "1e3a8a"` → **0** (no leakage; other pages unaffected).
+- Pre-commit safety tag `pre-migration-crm` on `0dfa6b9` (pushed to origin). Rollback via `git revert HEAD` or `git reset --hard pre-migration-crm`.
+- Localhost-Tester GREEN on HTTP + payload + page-scope confinement checks (v1 boundary — Playwright deferred to v2).
+- 2 commits (C1 `1176a89` migration + C2 retrospective). C1 = 6 files, 610 ins / 12 del.
+
+**Two in-flight deviations (both resolved within the chat, no Foreman escalation):**
+- D1 (author defect): `## 6.5. Destructive Operations` heading blocked C1 commit (~20s); Iron-Rule-32 hook regex only accepts `\d+\.` or no prefix. Fixed by removing the prefix entirely (`## Destructive Operations`). Codified as opticup-strategic Author Proposal #1 — SPEC_TEMPLATE.md heading swapped + SKILL.md sentence added.
+- D2 (author defect): post-edit grep found 1 legacy Indigo hex `#4f46e5` inside the documentation comment line I just added. Criterion #11 expected 0. Fixed by removing the hex literal from the comment (kept word "Indigo" for context).
+
+**4 skill improvements harvested + applied (2 each to opticup-strategic + opticup-executor):**
+- **opticup-strategic Author #1:** No fractional section numbers in SPEC headings — `## 6.5.` / `## 3a.` collide with the Iron-Rule-32 hook regex for the Destructive Operations heading. Use plain integer prefixes (`## 6.`) or no prefix at all. SPEC_TEMPLATE.md updated.
+- **opticup-strategic Author #2:** Promote `§0 Pre-existing repo state` checkbox to permanent template item (4th SPEC in a row to make the same D1/D3 leave-alone decision). SPEC_TEMPLATE.md updated.
+- **opticup-executor #1:** Codify the "Tailwind arbitrary-value swap" pattern for CDN-Tailwind / compiled-Tailwind pages — prefer `bg-[#hex]` over CSS `!important` overrides; the inline-class swap preserves DOM count and is the safer migration vehicle when the target uses inline utilities.
+- **opticup-executor #2:** Pre-execution heading-regex check on SPEC headings — catch `## N.N. Destructive Operations` / `## §N. Destructive Operations` defects at SPEC-load time, not at commit time. Saves the ~20-second commit-rejection round-trip.
+
+**3 findings opened, all with actionable dispositions:**
+- F1 (LOW) → future SPEC `M1_5_CRM_CSS_STUB_CLEANUP` (delete `crm-screens.css` + `crm-visual.css` stubs; move `.crm-pagination` into `crm.css`; verify `crm-pulse` keyframe has zero consumers; -2 `<link>` tags from crm.html). Bundle with MIGRATION_2 F1's `M1_5_DEDUPLICATE_SETTINGS_EMPLOYEES_CSS`.
+- F2 (LOW) → TECH_DEBT (orphan Tailwind config color tokens in `crm.html` lines 26-37).
+- F3 (LOW / INFO) → TECH_DEBT (sidebar Navy marker uses physical `-3px` shadow offset — correct for RTL today; LTR fallback needs `[dir="ltr"]` override pair when CRM ever supports LTR).
+
+**3 of 4 production migrations now closed on develop.** Next: Migration #4 (Storefront Studio). After Migration #4 lands and passes QA → ONE batch merge to `main` (Brief Locked Decision #5).
+
 ## 2026-05-12 — Settings + Permissions Consolidation: tabbed settings.html (deferred from Migration #2)
 
 SPEC: `SETTINGS_PERMISSIONS_CONSOLIDATION` ([folder](specs/SETTINGS_PERMISSIONS_CONSOLIDATION/))

@@ -153,7 +153,7 @@ should include heavy payload columns verbatim (e.g. `blocks` JSONB on
 
 ---
 
-## 6.5. Destructive Operations
+## Destructive Operations
 
 Required by Iron Rule 32 (`scripts/checks/destructive-ops-declared.mjs` enforces this in pre-commit + CI). List every destructive operation this SPEC authorizes — file deletes, mass renames (≥5 files), `git rebase`, `git reset --hard`, `git push --force`, SQL `DROP`/`TRUNCATE`/`DELETE` without tenant scope, deletions from governance docs, modification of `main`. If none, write `None.` — the gate will then forbid ALL destructive ops for this SPEC's run.
 
