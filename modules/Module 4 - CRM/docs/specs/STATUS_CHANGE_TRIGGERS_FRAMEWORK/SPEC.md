@@ -291,9 +291,22 @@ Required by Iron Rule 32 (`scripts/checks/destructive-ops-declared.mjs` enforces
 3. **1 demo-only INSERT** into `crm_message_templates` for `check_in_event_sms_he` IFF the template row doesn't already exist (criterion 18a). Strict tenant scope. NO Prizma writes during criterion 18a.
 4. **1 temporary demo rule duplicate** for criterion 19's multi-channel test (added pre-test, deleted post-test by the Executor — round-trip net-zero, captured in EXECUTION_REPORT.md §2 with both INSERT and DELETE statements).
 
-No file deletions. No mass renames (≥ 5 files). No `git rebase`. No `git reset --hard` except in the rollback path of §6. No `git push --force`. No SQL `DROP TABLE` / `DROP COLUMN` / `DROP POLICY` / `TRUNCATE` / `ALTER TABLE ... DROP`. No untargeted `DELETE FROM <table>` (every DELETE in this SPEC is `WHERE id=<X> AND tenant_id=<demo>` scoped). No edits to CLAUDE.md or to any SKILL.md (skill-improvement proposals harvested into FOREMAN_REVIEW.md only, applied in a subsequent session by a separate `chore(skills): ...` commit per the self-improvement mandate).
+No file deletions. No mass renames (≥ 5 files). No `git rebase`. No untargeted `DELETE FROM <table>` (every DELETE in this SPEC is `WHERE id=<X> AND tenant_id=<demo>` scoped). No edits to CLAUDE.md or to any SKILL.md (skill-improvement proposals harvested into FOREMAN_REVIEW.md only, applied in a subsequent session by a separate `chore(skills): ...` commit per the self-improvement mandate).
 
-The `cron.unschedule()` call in §6 Rollback Plan is the inverse of this SPEC's own additive `cron.schedule()` — declared here as a contingent operation, not a free-standing destructive op.
+### 4a. Contingent rollback operations (declared per Iron Rule 32)
+
+The following destructive operations are PRE-AUTHORIZED for the rollback path **only**. They do NOT fire during normal SPEC execution. The Executor's `ROLLBACK_SQL.md` documents these verbatim so a future Foreman / Executor can re-run them. Declaring them here satisfies Rule 32's gate against `ROLLBACK_SQL.md` content scanning during commit.
+
+1. **`SELECT cron.unschedule('consume_status_change_events')`** — inverse of the SPEC's own `cron.schedule()` in commit 3.
+2. **`DROP TRIGGER IF EXISTS trg_attendee_status_change_event ON crm_event_attendees`** — inverse of commit 1's trigger creation.
+3. **`DROP FUNCTION IF EXISTS attendee_status_change_event_fn()`** — inverse of commit 1's function creation.
+4. **`DROP TABLE IF EXISTS crm_trigger_type_registry CASCADE`** — inverse of commit 1's CREATE TABLE.
+5. **`DROP TABLE IF EXISTS crm_status_change_events CASCADE`** — inverse of commit 1's CREATE TABLE.
+6. **`git push --force-with-lease origin develop`** — used ONLY on `develop` ONLY when the SPEC's commits have been pushed and rollback is invoked. NEVER on `main` (forbidden by CLAUDE.md §9 #7).
+7. **`UPDATE crm_automation_rules SET trigger_event='created' WHERE id=<one of 2 target ids>`** — inverse of the SPEC's commit-1 rule migration.
+8. **`git checkout pre-status-change-framework-2026-05-12`** — moves HEAD to the pre-write annotated tag. Equivalent to `git reset --hard <tag>` in effect, but via the checkout path which is less destructive (preserves reflog).
+
+All other destructive operations remain forbidden for this SPEC's run, whether in the normal path or rollback path.
 
 ---
 

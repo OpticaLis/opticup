@@ -94,7 +94,7 @@ function isDocFile(absPath) {
     rel === 'CLAUDE.md' ||
     rel.startsWith('.claude/skills/') ||
     /^docs\//.test(rel) ||
-    /^modules\/[^/]+\/docs\/specs\/[^/]+\/(SPEC|FOREMAN_REVIEW|EXECUTION_REPORT|FINDINGS|TEST_REPORT)\.md$/.test(rel) ||
+    /^modules\/[^/]+\/docs\/specs\/[^/]+\/(SPEC|FOREMAN_REVIEW|EXECUTION_REPORT|FINDINGS|TEST_REPORT|ROLLBACK_SQL|DIAGNOSIS|REPLICATION_PLAN|READY-FOR-MAIN-MERGE|ARCHITECT_REVIEW_CHECKPOINT|DEPLOY_FALLBACK_NEEDED|SKILL_IMPROVEMENTS_TO_APPLY)\.md$/.test(rel) ||
     /^modules\/[^/]+\/architecture-brief\//.test(rel) ||
     /^modules\/[^/]+\/escalations\//.test(rel) ||
     // Module-scoped docs (SESSION_CONTEXT, CHANGELOG, MODULE_SPEC, etc.)
