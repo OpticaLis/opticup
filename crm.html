@@ -161,7 +161,7 @@ tailwind.config = {
 
       <!-- Theme switcher (ready for future palettes) -->
       <div class="crm-theme-switcher" id="crm-theme-switcher">
-        <div class="crm-theme-dot active" data-theme="indigo" style="background:#4f46e5" title="Indigo"></div>
+        <div class="crm-theme-dot active" data-theme="indigo" style="background:#1e3a8a" title="Indigo"></div>
         <!-- Future: uncomment when palettes are defined
         <div class="crm-theme-dot" data-theme="teal" style="background:#0d9488" title="Teal"></div>
         <div class="crm-theme-dot" data-theme="ocean" style="background:#2563eb" title="Ocean"></div>
@@ -236,8 +236,8 @@ tailwind.config = {
             <span class="text-sm text-gray-500" id="crm-incoming-count"></span>
           </div>
           <div class="flex flex-wrap items-center gap-2 mb-2">
-            <input type="search" id="crm-incoming-search" class="flex-1 min-w-[220px] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="חיפוש לפי שם / טלפון / אימייל...">
-            <button type="button" id="crm-add-lead-btn" class="ms-auto px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">+ הוסף ליד</button>
+            <input type="search" id="crm-incoming-search" class="flex-1 min-w-[220px] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-[#1e3a8a]" placeholder="חיפוש לפי שם / טלפון / אימייל...">
+            <button type="button" id="crm-add-lead-btn" class="ms-auto px-3 py-2 bg-[#1e3a8a] hover:bg-[#1e40af] text-white font-semibold rounded-lg text-sm transition shadow-sm">+ הוסף ליד</button>
           </div>
           <div id="crm-incoming-advanced-filters"></div>
           <div id="crm-incoming-filter-chips" class="mb-2"></div>
@@ -250,14 +250,14 @@ tailwind.config = {
         <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           <div class="flex items-center justify-between mb-4">
             <div class="inline-flex gap-1 bg-gray-100 p-1 rounded-lg" id="crm-leads-view-toggle">
-              <button type="button" class="px-3 py-1.5 rounded-md text-sm font-medium bg-indigo-600 text-white" data-view="table" onclick="switchCrmLeadsView('table')">טבלה</button>
-              <button type="button" class="px-3 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-indigo-600" data-view="kanban" onclick="switchCrmLeadsView('kanban')">קנבן</button>
-              <button type="button" class="px-3 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-indigo-600" data-view="cards" onclick="switchCrmLeadsView('cards')">כרטיסים</button>
+              <button type="button" class="px-3 py-1.5 rounded-md text-sm font-medium bg-[#1e3a8a] text-white" data-view="table" onclick="switchCrmLeadsView('table')">טבלה</button>
+              <button type="button" class="px-3 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-[#1e3a8a]" data-view="kanban" onclick="switchCrmLeadsView('kanban')">קנבן</button>
+              <button type="button" class="px-3 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-[#1e3a8a]" data-view="cards" onclick="switchCrmLeadsView('cards')">כרטיסים</button>
             </div>
             <span class="text-sm text-gray-500" id="crm-leads-count"></span>
           </div>
           <div class="flex flex-wrap items-center gap-2 mb-2">
-            <input type="search" id="crm-leads-search" class="flex-1 min-w-[220px] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="חיפוש לפי שם / טלפון / אימייל...">
+            <input type="search" id="crm-leads-search" class="flex-1 min-w-[220px] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-[#1e3a8a]" placeholder="חיפוש לפי שם / טלפון / אימייל...">
             <select id="crm-leads-sort" class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
               <option value="full_name">מיון: שם</option>
               <option value="phone">מיון: טלפון</option>
@@ -283,7 +283,7 @@ tailwind.config = {
           <div class="flex flex-wrap items-center gap-2 mb-4">
             <select id="crm-events-filter-status" class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"><option value="">כל הסטטוסים</option></select>
             <button type="button" id="crm-events-status-colors-btn" title="ניהול צבעי סטטוס" aria-label="ניהול צבעי סטטוס" class="ms-auto w-9 h-9 flex items-center justify-center border border-gray-300 hover:bg-gray-50 text-gray-600 rounded-lg text-sm transition">⚙️</button>
-            <button type="button" id="crm-events-create-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm transition shadow-sm">יצירת אירוע +</button>
+            <button type="button" id="crm-events-create-btn" class="px-4 py-2 bg-[#1e3a8a] hover:bg-[#1e40af] text-white font-bold rounded-lg text-sm transition shadow-sm">יצירת אירוע +</button>
           </div>
           <div id="crm-events-table-wrap"></div>
         </div>

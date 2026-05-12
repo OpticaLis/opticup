@@ -1,7 +1,9 @@
 /* crm.css — Optic Up CRM foundation (palettes, base, sidebar, shell, role visibility, responsive). */
 /* Sister files: crm-components.css (cards/tables/buttons) + crm-screens.css (KPI/grids/screens). */
+/* Hybrid+Navy migration #3 (2026-05-12): accent swapped from legacy Indigo to Navy.
+   Sidebar dark theme + Slate body/text palette preserved (accent insertion, not full re-skin). */
 
-/* ---- Palette: Indigo (default) ---- */
+/* ---- Palette: Navy accent on Slate sidebar (data-crm-theme="indigo" retained as legacy hook) ---- */
 :root,
 [data-crm-theme="indigo"] {
   --crm-sidebar:        #1e293b;
@@ -10,9 +12,9 @@
   --crm-sidebar-active: #475569;
   --crm-sidebar-text:   #94a3b8;
   --crm-sidebar-text-h: #f1f5f9;
-  --crm-accent:         #4f46e5;
-  --crm-accent-hover:   #4338ca;
-  --crm-accent-light:   #eef2ff;
+  --crm-accent:         #1e3a8a;
+  --crm-accent-hover:   #1e40af;
+  --crm-accent-light:   #e6f1fb;
   --crm-accent-text:    #ffffff;
   --crm-bg:             #f8fafc;
   --crm-card:           #ffffff;
@@ -101,6 +103,8 @@ body.crm-page > header { display: none; }
 }
 .crm-nav-item.active {
   background: var(--crm-sidebar-active); color: var(--crm-sidebar-text-h); font-weight: 600;
+  /* Navy family-marker on START edge (RTL → physical right via -3px offset). Hybrid+Navy 2026-05-12. */
+  box-shadow: inset -3px 0 0 #1e3a8a;
 }
 .crm-nav-item .crm-nav-icon {
   width: 20px; height: 20px; flex-shrink: 0;

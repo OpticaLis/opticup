@@ -452,6 +452,14 @@ Step 1.5 DB Pre-Flight — intentionally. Defense in depth.
    "Cross-Reference Check completed 2026-04-14 against GLOBAL_SCHEMA rev X:
    0 collisions / N hits resolved." An empty or missing line = incomplete SPEC.
 
+5.1. **Color-form completeness (visual re-skin SPECs only — added 2026-05-12 from MIGRATION_4_STOREFRONT_STUDIO).** When authoring a visual re-skin SPEC, verify that every hex code in the swap map has been searched in BOTH `#hex` AND `rgba/rgb(...)` decimal-channel forms across the target files. A single-form audit will miss decorative halos / shadows / hover-tints written as rgba. The check is:
+   ```
+   { grep -oE '#[0-9a-fA-F]{3,8}\b' <file>; grep -oE 'rgb[a]?\([0-9 ,.]+\)' <file>; } | sort -u
+   ```
+   For each rgba hit, mentally convert decimal triple to `#hex` and verify the swap plan handles both forms. A SPEC that swaps `#6366f1` but misses its rgba sibling produces post-migration visual drift (MIGRATION_4 surfaced exactly this gap as Finding F1).
+
+5.2. **Multi-form count criteria in §5 (visual re-skin SPECs only — added 2026-05-12 from MIGRATION_4_STOREFRONT_STUDIO).** When a visual re-skin SPEC swaps target tokens to multiple output forms (literal hex + rgba + named accent), the §5 success criteria for "post-migration count" MUST enumerate each form separately. A single `>=N` count where the migration produces 3 different output tokens hides which sub-target failed. Use sub-counts like `≥5 literal #1e3a8a + ≥1 rgba(30,58,138,*) + ≥1 #e6f1fb` rather than `≥7 Navy-token-bearing sites`. (MIGRATION_4 C4 said `studio ≥6 literal Navy` but the work produced 5 literal + 1 rgba + 1 navy-soft — work was correct, criterion was wrong.)
+
 6. **DB-object role verification (MANDATORY — applied 2026-05-06 after 3-occurrence rule).**
    For every database object the SPEC will reference AS A WRITER OR READER of a
    target table (e.g., "submit_storefront_lead writes to cms_leads",
@@ -952,7 +960,9 @@ before dispatching.
 
 **Sweep criteria — link vs comment distinction.** If a §3 success criterion uses bare `grep -r "<old_name>"` to count references to a deleted/moved name, anticipate that **narrative comments** (file-history docstrings, tombstone comments, "merged from foo.html" headers) will collide with the criterion alongside **live links** (HTML `href`/`src`, JS `import`, string literals consumed at runtime). Either: (a) tighten the regex (`grep -E "(href=|src=|url:|require\(|from\s+).*<old_name>"`) so only live links are counted; OR (b) add a one-line note to the criterion authorizing the executor to reword narrative comments to satisfy the literal grep. Avoids reactive 1-line comment-reword edits mid-execution. (Harvested from `SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md` Author Proposal #1, 2026-05-12.)
 
-**Pre-existing untracked files — codify the leave-alone decision in §0.** Three Full-Auto Pipeline SPECs in a row (MIGRATION_1, MIGRATION_2, SETTINGS_PERMISSIONS_CONSOLIDATION) have made the SAME executor decision (D1) — leave pre-existing untracked architecture-brief files alone, use selective `git add` by filename throughout. Codify the survey + decision in §0 Reality Check itself so the Executor doesn't have to re-decide and re-document each time. SPEC_TEMPLATE.md §0 has been updated with a checkbox-style item; the Foreman should record the count and confirm the leave-alone disposition. (Harvested from `SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md` Author Proposal #2, 2026-05-12.)
+**Pre-existing untracked files — codify the leave-alone decision in §0.** Three Full-Auto Pipeline SPECs in a row (MIGRATION_1, MIGRATION_2, SETTINGS_PERMISSIONS_CONSOLIDATION) have made the SAME executor decision (D1) — leave pre-existing untracked architecture-brief files alone, use selective `git add` by filename throughout. Codify the survey + decision in §0 Reality Check itself so the Executor doesn't have to re-decide and re-document each time. SPEC_TEMPLATE.md §0 has been updated with a checkbox-style item; the Foreman should record the count and confirm the leave-alone disposition. (Harvested from `SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md` Author Proposal #2, 2026-05-12. Reaffirmed by MIGRATION_3_CRM D3, 2026-05-12 — 4th SPEC in a row.)
+
+**No fractional section numbers in SPEC headings.** Use plain integer prefixes (`## 6. Rollback`) or no prefix at all (`## Destructive Operations`). Fractional prefixes (`## 6.5. Destructive Operations`, `## 3a. Shared Edit Block`) collide with the Iron-Rule-32 hook regex (`scripts/checks/destructive-ops-declared.mjs`) which only accepts `\d+\.` or no number for the Destructive Operations heading specifically. Other sections may use fractional prefixes safely, but `## Destructive Operations` MUST be plain or integer. (Harvested from `MIGRATION_3_CRM/FOREMAN_REVIEW.md` Author Proposal #1, 2026-05-12 — `## 6.5. Destructive Operations` blocked C1 for ~20 seconds; SPEC_TEMPLATE.md heading swapped to plain form.)
 
 #### Numerical-bound criteria — Measure before bounding (added 2026-05-11)
 

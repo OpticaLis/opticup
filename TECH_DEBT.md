@@ -7,6 +7,44 @@
 
 ## Active Debt
 
+### #M1_5-DEBT-CRM-ORPHAN-TAILWIND-CONFIG — 🟢 CRM Tailwind config defines unused color tokens
+
+**Where:** `crm.html` lines 26-37 (inline Tailwind config `<script>` block). Surfaced by MIGRATION_3_CRM (2026-05-12) F2.
+
+**Why it's debt:** The `crm: { sidebar: '#1e1b4b', accent: '#6366f1', surface: '#f8fafc', card: '#ffffff', text: '#1e293b', muted: '#64748b' }` color tokens defined in the inline Tailwind config are NOT referenced by any `bg-crm-*` / `text-crm-*` / `border-crm-*` class in the markup. Zero usages. Rule 21 (No Orphans) candidate.
+
+**Why not fixed now:** Out of scope for the accent-insertion SPEC. The config block is documentation of intent — leaving it preserves history. Removal needs the same SPEC that does CRM CSS stub cleanup (F1 → `M1_5_CRM_CSS_STUB_CLEANUP`).
+
+**Planned fix:** Delete the `colors.crm.*` block (lines 26-37) when running `M1_5_CRM_CSS_STUB_CLEANUP`. May also consider removing the entire inline Tailwind config block (lines 19-39) if JIT defaults are sufficient.
+
+**Effort:** ~10 min, bundled with the stub-cleanup SPEC.
+
+### #M1_5-DEBT-EOF-NEWLINE-LEGACY-FILES — 🟢 Pre-existing trailing-newline gaps in legacy HTML/JS files
+
+**Where:** Project-wide — first surfaced on `storefront-content.html` (Iron Rule 31 gate warning during MIGRATION_4 C2 commit, `last byte: 0x3e`). Likely present in other legacy files that were authored before the gate existed.
+
+**Why it's debt:** The Iron Rule 31 integrity gate emits a **warning** (exit 2, not error/exit 1) when a source file does not end with a trailing newline — the gate suspects mid-statement truncation. Warning does NOT block commits, but produces noise on every commit that touches such a file and erodes signal-to-noise on the gate's output.
+
+**Why not fixed now:** Out of scope for visual re-skin SPECs (MIGRATION_4 only modified specific token lines via Edit tool, not the EOF). The fix is editorial (re-save each file with a trailing newline) and project-wide. Risk: a careless `sed -i` or batch-rewrite tool could introduce a different defect.
+
+**Planned fix:** A single EOL-normalization SPEC scoped to "add trailing newline to every text file in repo that lacks one" — gates can run per-file confirmation; commits per file or per directory; defer until next infrastructure-hygiene window. Migration #4 surfaced this as Finding F3.
+
+**Effort:** ~30 min for the SPEC + ~1 hour for the per-file editorial sweep + Reviewer pass.
+
+---
+
+### #M1_5-DEBT-CRM-SIDEBAR-MARKER-RTL-ONLY — 🟢 Sidebar Navy marker uses physical `-3px` offset (LTR fallback)
+
+**Where:** `css/crm.css` `.crm-nav-item.active` `box-shadow: inset -3px 0 0 #1e3a8a;`. Added by MIGRATION_3_CRM (2026-05-12); surfaced as F3.
+
+**Why it's debt:** The Navy left-edge marker is implemented as a physical-pixel inset shadow on the right edge. Correct for CRM today (Hebrew, `dir="rtl"` on `<html>`), where the right edge IS the start edge. If CRM ever supports LTR (Arabic-to-Hebrew bilingual or English fallback), the marker will paint on the wrong edge. CSS does not have a `box-shadow-inline-start` logical property.
+
+**Why not fixed now:** Nobody asks for LTR CRM today. The cost of fixing is real-but-low and the value lands only on hypothetical LTR expansion.
+
+**Planned fix:** Either (a) a CSS `[dir="ltr"] .crm-nav-item.active { box-shadow: inset 3px 0 0 #1e3a8a; }` override pair, or (b) a `::before` pseudo-element rendered marker positioned via logical `inset-inline-start`. Cosmetic-debt only — not a SPEC trigger.
+
+**Effort:** ~5 min when CRM starts LTR work.
+
 ### #M4-DEBT-CRM-AUTO-RULES-UPDATED-AT — 🟢 `crm_automation_rules` lacks `updated_at` column
 
 **Where:** Supabase table `public.crm_automation_rules`. Surfaced by `PRIZMA_CRM_BUGFIX_BACKPORT` (2026-05-12) Phase 1 pre-flight when a query requested `updated_at` and Postgres returned `42703: column "updated_at" does not exist`.

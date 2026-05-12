@@ -1,8 +1,12 @@
 /* crm-components.css — Minimal residual after B8 Tailwind migration. */
+/* Hybrid+Navy migration #3 (2026-05-12): added .crm-badge-primary Navy variant. */
 .crm-badge {
   display: inline-block; padding: 3px 10px;
   border-radius: 999px; font-size: 0.78rem; font-weight: 600;
   color: #ffffff; white-space: nowrap;
+}
+.crm-badge.crm-badge-primary {
+  background: #1e3a8a;
 }
 .crm-leads-view { display: none; }
 .crm-leads-view.active { display: block; }
