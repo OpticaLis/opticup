@@ -29,12 +29,19 @@
   // attendee_moved (Rung 2 / 2026-04-28): fired by Rung 3's manual-move RPC.
   // Inert pre-Rung-3 — rule rows for "manual move notification" sit in DB but
   // never fire until the move dialog wires up.
+  // attendee_status_change (STATUS_CHANGE_TRIGGERS_FRAMEWORK / 2026-05-12):
+  // fired by DB trigger trg_attendee_status_change_event → crm_status_change_events
+  // queue → automation-engine EF consumer (pg_cron). Browser code never invokes
+  // this trigger type directly; the entry exists so the rule editor can save
+  // rules with trigger_event='status_change' and the dispatch lifecycle is
+  // exclusively server-side.
   var TRIGGER_TYPES = {
-    event_status_change: { entity: 'event',    event: 'status_change' },
-    event_registration:  { entity: 'attendee', event: 'created'       },
-    lead_status_change:  { entity: 'lead',     event: 'status_change' },
-    lead_intake:         { entity: 'lead',     event: 'created'       },
-    attendee_moved:      { entity: 'attendee', event: 'moved'         }
+    event_status_change:     { entity: 'event',    event: 'status_change' },
+    event_registration:      { entity: 'attendee', event: 'created'       },
+    lead_status_change:      { entity: 'lead',     event: 'status_change' },
+    lead_intake:             { entity: 'lead',     event: 'created'       },
+    attendee_moved:          { entity: 'attendee', event: 'moved'         },
+    attendee_status_change:  { entity: 'attendee', event: 'status_change' }
   };
   window.CRM_AUTOMATION_TRIGGER_TYPES = TRIGGER_TYPES;
 
@@ -58,7 +65,14 @@
     },
     source_equals: function (cond, data) {
       return data.source === cond.source;
-    }
+    },
+    // STATUS_CHANGE_TRIGGERS_FRAMEWORK (2026-05-12): mirror engine.ts CONDITIONS.
+    // The server-side consumer populates triggerData.oldStatus + triggerData.newStatus
+    // from the crm_status_change_events row; the browser engine never fires these
+    // conditions today (UI saves rules; server evaluates), but the entries exist for
+    // parity so condition validation in the rule editor matches EF semantics.
+    status_changed_from: function (cond, data) { return data.oldStatus === cond.status; },
+    status_changed_to:   function (cond, data) { return data.newStatus === cond.status; }
   };
   window.CRM_AUTOMATION_CONDITIONS = CONDITIONS;
 

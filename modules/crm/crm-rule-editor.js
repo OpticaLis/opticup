@@ -4,6 +4,8 @@
 (function () {
   'use strict';
 
+  // STATUS_CHANGE_TRIGGERS_FRAMEWORK (2026-05-12): attendees board holds the
+  // default event 'created'; state.firesOn = 'status_change' switches variant.
   var BOARDS = {
     incoming:  { key: 'incoming',  icon: '📥', label: 'לידים נכנסים',     color: 'orange',  entity: 'lead',     event: 'created'       },
     tier2:     { key: 'tier2',     icon: '👥', label: 'רשומים',           color: 'blue',    entity: 'lead',     event: 'status_change' },
@@ -12,12 +14,22 @@
   };
   var BOARD_KEYS = ['incoming','tier2','events','attendees'];
 
+  // 'created' = fires when an attendee row is inserted with matching status (row defaults: registered / waiting_list).
+  // 'status_change' = fires on a status transition AFTER row creation (attended / no_show / purchased / etc.).
+  var ATTENDEES_FIRES_ON = [['created','📥 כשמישהו נרשם לאירוע (סטטוס ברירת מחדל)'], ['status_change','🔄 כשסטטוס הרשמה משתנה (לאחר ההרשמה)']];
+
   var COND_BY_BOARD = {
     incoming:  [['always','תמיד (כל ליד חדש)'], ['source_equals','מקור הליד שווה ל-']],
     tier2:     [['status_equals','סטטוס ליד משתנה ל-']],
     events:    [['status_equals','סטטוס אירוע משתנה ל-'], ['count_threshold','ספירה עוברת סף']],
     attendees: [['status_equals','סטטוס הרשמה הוא']]
   };
+  // Mirrors engine.ts CONDITIONS additions (status_changed_from / status_changed_to).
+  var COND_ATTENDEES_STATUS_CHANGE = [['status_equals','סטטוס משתנה ל-'], ['status_changed_from','סטטוס לפני השינוי הוא'], ['status_changed_to','סטטוס אחרי השינוי הוא']];
+
+  function _condsForState(s) {
+    return (s.boardKey === 'attendees' && s.firesOn === 'status_change') ? COND_ATTENDEES_STATUS_CHANGE : (COND_BY_BOARD[s.boardKey] || []);
+  }
 
   var RECIP_BY_BOARD = {
     incoming:  [['trigger_lead','הליד שהפעיל את החוק']],
@@ -43,6 +55,9 @@
   function _esc(s) { return window.escapeHtml ? escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s); }
 
   function _boardOf(entity, ev) {
+    // attendees board handles both attendee:created (registration) and
+    // attendee:status_change (transition). Variant lives in state.firesOn.
+    if (entity === 'attendee' && (ev === 'created' || ev === 'status_change')) return 'attendees';
     for (var k in BOARDS) { if (BOARDS[k].entity === entity && BOARDS[k].event === ev) return k; }
     return null;
   }
@@ -97,7 +112,13 @@
       if (s.conditionType === 'count_threshold') trig = 'כשספירת ' + _esc(s.countField || '?') + ' ' + _esc(s.countOp || '?') + ' ' + _esc(String(s.countNum || 0));
       else trig = 'כשסטטוס האירוע משתנה ל-<strong>' + _esc(s.conditionValue || '?') + '</strong>';
     } else if (s.boardKey === 'attendees') {
-      trig = 'כשמישהו נרשם לאירוע עם סטטוס <strong>' + _esc(s.conditionValue || '?') + '</strong>';
+      if (s.firesOn === 'status_change') {
+        trig = (s.conditionType === 'status_changed_from')
+          ? 'כשסטטוס הרשמה משתנה מ-<strong>' + _esc(s.conditionValue || '?') + '</strong>'
+          : 'כשסטטוס הרשמה משתנה ל-<strong>' + _esc(s.conditionValue || '?') + '</strong>';
+      } else {
+        trig = 'כשמישהו נרשם לאירוע עם סטטוס <strong>' + _esc(s.conditionValue || '?') + '</strong>';
+      }
     }
     return trig + ', יישלח <strong>' + chTxt + '</strong> מהתבנית "' + tplTxt + '" ל-<strong>' + _esc(recipTxt).replace('&lt;em&gt;','<em>').replace('&lt;/em&gt;','</em>') + '</strong>.';
   }
@@ -134,12 +155,15 @@
   }
 
   function _stateFromRow(row) {
-    if (!row) return { isNew: true, name: '', boardKey: null, conditionType: 'always', conditionValue: '', countField: 'attendee_count', countOp: '>', countNum: 0, templateSlug: '', channels: [], recipientType: '', recipientStatusFilter: [], _origActionConfig: null };
+    if (!row) return { isNew: true, name: '', boardKey: null, firesOn: 'created', conditionType: 'always', conditionValue: '', countField: 'attendee_count', countOp: '>', countNum: 0, templateSlug: '', channels: [], recipientType: '', recipientStatusFilter: [], _origActionConfig: null };
     var cfg = row.action_config || {};
     var cond = row.trigger_condition || {};
     return {
       isNew: false, ruleId: row.id, name: row.name || '',
       boardKey: _boardOf(row.trigger_entity, row.trigger_event),
+      // STATUS_CHANGE_TRIGGERS_FRAMEWORK: derive firesOn from the rule's existing
+      // trigger_event. Used only when boardKey==='attendees'; ignored otherwise.
+      firesOn: (row.trigger_entity === 'attendee' && row.trigger_event === 'status_change') ? 'status_change' : 'created',
       conditionType: cond.type || 'always',
       conditionValue: cond.status || cond.source || '',
       countField: cond.field || 'attendee_count', countOp: cond.operator || '>', countNum: cond.value || 0,
@@ -164,10 +188,16 @@
   function _renderCondBlock(s) {
     if (!s.boardKey) return '';
     var color = BOARDS[s.boardKey].color;
-    var condOpts = (COND_BY_BOARD[s.boardKey] || []).map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === s.conditionType ? ' selected' : '') + '>' + _esc(c[1]) + '</option>'; }).join('');
+    // STATUS_CHANGE_TRIGGERS_FRAMEWORK: attendees board sub-picker (created vs status_change).
+    var firesOnRow = '';
+    if (s.boardKey === 'attendees') {
+      var firesOpts = ATTENDEES_FIRES_ON.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === s.firesOn ? ' selected' : '') + '>' + _esc(o[1]) + '</option>'; }).join('');
+      firesOnRow = '<div><label class="block text-sm font-medium text-slate-700 mb-1">מתי החוק יופעל?</label><select id="rule-fires-on" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">' + firesOpts + '</select></div>';
+    }
+    var condOpts = _condsForState(s).map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === s.conditionType ? ' selected' : '') + '>' + _esc(c[1]) + '</option>'; }).join('');
     var statusOpts = (STATUSES_BY_BOARD[s.boardKey] || []).map(function (st) { return '<option value="' + st[0] + '"' + (st[0] === s.conditionValue ? ' selected' : '') + '>' + _esc(st[1]) + ' (' + st[0] + ')</option>'; }).join('');
     var recipOpts = (RECIP_BY_BOARD[s.boardKey] || []).map(function (r) { return '<option value="' + r[0] + '"' + (r[0] === s.recipientType ? ' selected' : '') + '>' + _esc(r[1]) + '</option>'; }).join('');
-    var statusVisible = (s.conditionType === 'status_equals') ? '' : 'hidden';
+    var statusVisible = (s.conditionType === 'status_equals' || s.conditionType === 'status_changed_from' || s.conditionType === 'status_changed_to') ? '' : 'hidden';
     var sourceVisible = (s.conditionType === 'source_equals') ? '' : 'hidden';
     var countVisible = (s.conditionType === 'count_threshold') ? '' : 'hidden';
     var tier2FilterVisible = (s.recipientType === 'tier2' || s.recipientType === 'tier2_excl_registered') ? '' : 'hidden';
@@ -175,9 +205,11 @@
       var chk = s.recipientStatusFilter.indexOf(f[0]) !== -1 ? ' checked' : '';
       return '<label class="inline-flex items-center gap-1.5 me-3 text-xs cursor-pointer"><input type="checkbox" name="rule-status-filter" value="' + f[0] + '"' + chk + '> <span>' + _esc(f[1]) + '</span></label>';
     }).join('');
+    var condTypeLabel = (s.boardKey === 'attendees') ? 'באיזה תנאי?' : 'מתי החוק יופעל?';
     return '<div class="text-xs text-' + color + '-700 font-semibold flex items-center gap-2 mb-2"><span>' + BOARDS[s.boardKey].icon + '</span><span>הגדרות בורד ' + _esc(BOARDS[s.boardKey].label) + '</span></div>' +
       '<div class="space-y-3">' +
-        '<div><label class="block text-sm font-medium text-slate-700 mb-1">מתי החוק יופעל?</label><select id="rule-cond-type" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">' + condOpts + '</select></div>' +
+        firesOnRow +
+        '<div><label class="block text-sm font-medium text-slate-700 mb-1">' + condTypeLabel + '</label><select id="rule-cond-type" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">' + condOpts + '</select></div>' +
         '<div id="rule-cond-status" class="' + statusVisible + '"><label class="block text-sm font-medium text-slate-700 mb-1">לאיזה סטטוס?</label><select id="rule-cond-status-val" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">' + statusOpts + '</select></div>' +
         '<div id="rule-cond-source" class="' + sourceVisible + '"><label class="block text-sm font-medium text-slate-700 mb-1">מקור הליד</label><input type="text" id="rule-cond-source-val" value="' + _esc(s.conditionValue) + '" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"></div>' +
         '<div id="rule-cond-count" class="' + countVisible + ' grid grid-cols-3 gap-2"><input type="text" id="rule-cond-field" placeholder="שדה" value="' + _esc(s.countField) + '" class="px-3 py-2 border border-slate-300 rounded-lg text-sm"><select id="rule-cond-op" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">' + ['>','>=','=','<','<='].map(function (o) { return '<option' + (o === s.countOp ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select><input type="number" id="rule-cond-num" placeholder="ערך" value="' + _esc(String(s.countNum)) + '" class="px-3 py-2 border border-slate-300 rounded-lg text-sm"></div>' +
@@ -231,6 +263,16 @@
       });
     }
     function wireCondBlockListeners() {
+      // STATUS_CHANGE_TRIGGERS_FRAMEWORK: fires_on sub-picker on attendees board.
+      var fo = document.querySelector('#rule-fires-on');
+      if (fo) fo.addEventListener('change', function () {
+        s.firesOn = fo.value;
+        // Reset conditionType to the first valid one for the new variant.
+        var conds = _condsForState(s);
+        s.conditionType = (conds[0] && conds[0][0]) || 'status_equals';
+        s.conditionValue = '';
+        rerenderCond(); refreshSummary();
+      });
       var ct = document.querySelector('#rule-cond-type');
       if (ct) ct.addEventListener('change', function () { s.conditionType = ct.value; s.conditionValue = ''; rerenderCond(); refreshSummary(); });
       var sv = document.querySelector('#rule-cond-status-val');
@@ -270,14 +312,18 @@
     if (!s.templateSlug) return 'יש לבחור תבנית';
     if (!s.channels.length) return 'יש לבחור לפחות ערוץ אחד';
     if (!s.recipientType) return 'יש לבחור סוג נמענים';
-    if ((s.conditionType === 'status_equals' || s.conditionType === 'source_equals') && !s.conditionValue) return 'יש להזין ערך לתנאי';
+    var needsStatusValue = s.conditionType === 'status_equals' || s.conditionType === 'status_changed_from' || s.conditionType === 'status_changed_to' || s.conditionType === 'source_equals';
+    if (needsStatusValue && !s.conditionValue) return 'יש להזין ערך לתנאי';
     return null;
   }
 
   function _buildSaveData(s, existing) {
     var b = BOARDS[s.boardKey];
+    // STATUS_CHANGE_TRIGGERS_FRAMEWORK: attendees board emits state.firesOn as
+    // trigger_event ('created' or 'status_change'); other boards use static b.event.
+    var triggerEvent = (s.boardKey === 'attendees') ? (s.firesOn || 'created') : b.event;
     var cond = { type: s.conditionType };
-    if (s.conditionType === 'status_equals') cond.status = s.conditionValue;
+    if (s.conditionType === 'status_equals' || s.conditionType === 'status_changed_from' || s.conditionType === 'status_changed_to') cond.status = s.conditionValue;
     else if (s.conditionType === 'source_equals') cond.source = s.conditionValue;
     else if (s.conditionType === 'count_threshold') { cond.field = s.countField; cond.operator = s.countOp; cond.value = s.countNum; }
     var actionConfig = Object.assign({}, s._origActionConfig || {}, { template_slug: s.templateSlug, channels: s.channels.slice(), recipient_type: s.recipientType });
@@ -285,7 +331,7 @@
       if (s.recipientStatusFilter && s.recipientStatusFilter.length) actionConfig.recipient_status_filter = s.recipientStatusFilter.slice();
       else delete actionConfig.recipient_status_filter;
     } else { delete actionConfig.recipient_status_filter; }
-    return { name: s.name.trim(), trigger_entity: b.entity, trigger_event: b.event, trigger_condition: cond, action_type: 'send_message', action_config: actionConfig };
+    return { name: s.name.trim(), trigger_entity: b.entity, trigger_event: triggerEvent, trigger_condition: cond, action_type: 'send_message', action_config: actionConfig };
   }
 
   window.CrmRuleEditor = { open: open, _boardOf: _boardOf, _summaryFor: _summaryFor, BOARDS: BOARDS };
