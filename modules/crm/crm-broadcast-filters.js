@@ -193,38 +193,45 @@
     var tid = getTenantId();
     var board = state.board || 'incoming';
 
-    var q = sb.from('crm_leads')
-      .select('id, full_name, phone, status, source, language')
-      .eq('is_deleted', false)
-      .is('unsubscribed_at', null);
-    if (tid) q = q.eq('tenant_id', tid);
-
+    // by_event branch: collect lead_ids from attendees first, then filter leads
+    // by those ids. Factory functions used per paginateQuery call so each page
+    // gets a fresh builder (PAGINATE_QUERY_RANGE_REBUILD fix, 2026-05-12).
+    var idFilter = null;
     if (board === 'by_event') {
       if (!state.events || !state.events.length) return [];
-      var att = sb.from('crm_event_attendees')
-        .select('lead_id')
-        .in('event_id', state.events)
-        .eq('is_deleted', false);
-      if (tid) att = att.eq('tenant_id', tid);
-      var attRows = await paginateQuery(att);
+      var attRows = await paginateQuery(function () {
+        var att = sb.from('crm_event_attendees').select('lead_id')
+          .in('event_id', state.events).eq('is_deleted', false);
+        if (tid) att = att.eq('tenant_id', tid);
+        return att;
+      });
       var ids = [];
       var seen = {};
       attRows.forEach(function (x) {
         if (x.lead_id && !seen[x.lead_id]) { seen[x.lead_id] = 1; ids.push(x.lead_id); }
       });
       if (!ids.length) return [];
-      q = q.in('id', ids);
-    } else {
-      var effectiveStatuses = (state.statuses && state.statuses.length)
-        ? state.statuses.slice()
-        : boardStatuses(board);
-      if (effectiveStatuses.length) q = q.in('status', effectiveStatuses);
+      idFilter = ids;
     }
 
-    if (state.language) q = q.eq('language', state.language);
-    if (state.source)   q = q.eq('source', state.source);
+    var effectiveStatuses = null;
+    if (board !== 'by_event') {
+      effectiveStatuses = (state.statuses && state.statuses.length)
+        ? state.statuses.slice()
+        : boardStatuses(board);
+    }
 
-    return await paginateQuery(q);
+    return await paginateQuery(function () {
+      var q = sb.from('crm_leads')
+        .select('id, full_name, phone, status, source, language')
+        .eq('is_deleted', false).is('unsubscribed_at', null);
+      if (tid) q = q.eq('tenant_id', tid);
+      if (idFilter) q = q.in('id', idFilter);
+      else if (effectiveStatuses && effectiveStatuses.length) q = q.in('status', effectiveStatuses);
+      if (state.language) q = q.eq('language', state.language);
+      if (state.source)   q = q.eq('source', state.source);
+      return q;
+    });
   }
 
   async function buildLeadIds(state) {
