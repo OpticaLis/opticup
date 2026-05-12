@@ -31,16 +31,40 @@ function enrichRow(row) {
 }
 
 // --- Pagination engine (Iron Rule 21: single source of pagination) ---
-// Wraps a Supabase PostgREST query builder with .range() pagination so any
+// Wraps a Supabase PostgREST query with .range() pagination so any
 // "select all" query can transparently exceed the PostgREST 1000-row cap.
-// Caller passes a fully-configured builder (table + select + filters); we
-// only set .range() per page and accumulate. Errors throw with the original
-// PostgREST message. Stops when a page returns fewer than pageSize rows.
-async function paginateQuery(queryBuilder, pageSize) {
+//
+// 2026-05-12 FIX: previously accepted a pre-built queryBuilder and called
+// .range() on it repeatedly. The Supabase JS client's PostgrestFilterBuilder
+// is a single-use object — calling .then() (via await) on it marks it
+// consumed; a second .range() call on the same instance returns the same
+// or empty results, silently capping at exactly pageSize rows. Net effect
+// in production: every broadcast/recipient resolver capped at 1000.
+//
+// New contract: `arg` is either
+//   (a) a FACTORY FUNCTION that returns a fresh builder each call
+//       — preferred: `paginateQuery(() => sb.from('x').select('y').eq(...))`
+//   (b) a pre-built builder — back-compat path for existing callers.
+//       We wrap it in a "first call returns it, subsequent calls warn"
+//       shim that mimics the old behavior so we don't silently drop pages.
+//       On the second call the shim throws so the caller fails loudly
+//       and can migrate to the factory form.
+async function paginateQuery(arg, pageSize) {
   pageSize = pageSize || 1000;
+  const isFactory = typeof arg === 'function';
+  let builderUsed = false;
+  const next = () => {
+    if (isFactory) return arg();
+    if (builderUsed) {
+      throw new Error('paginateQuery: pre-built builder cannot be re-ranged. ' +
+        'Pass a factory function instead: paginateQuery(() => sb.from(...)...)');
+    }
+    builderUsed = true;
+    return arg;
+  };
   let all = [], from = 0;
   while (true) {
-    const { data, error } = await queryBuilder.range(from, from + pageSize - 1);
+    const { data, error } = await next().range(from, from + pageSize - 1);
     if (error) throw new Error(error.message);
     if (!data || !data.length) break;
     all.push(...data);
@@ -53,21 +77,26 @@ async function paginateQuery(queryBuilder, pageSize) {
 // --- Supabase-backed fetchAll ---
 async function fetchAll(tableName, filters) {
   const tid = getTenantId();
-  let query = sb.from(tableName).select(tableName === 'inventory' ? '*, inventory_images(*)' : '*');
-  if (tid) query = query.eq('tenant_id', tid);
-  if (filters) {
-    for (const [col, op, val] of filters) {
-      if (op === 'eq') query = query.eq(col, val);
-      else if (op === 'in') query = query.in(col, val);
-      else if (op === 'ilike') query = query.ilike(col, val);
-      else if (op === 'neq') query = query.neq(col, val);
-      else if (op === 'gt') query = query.gt(col, val);
-      else if (op === 'gte') query = query.gte(col, val);
-      else if (op === 'lt') query = query.lt(col, val);
-      else if (op === 'lte') query = query.lte(col, val);
+  // Factory: paginateQuery now requires a fresh builder per page
+  // (PAGINATE_QUERY_RANGE_REBUILD, 2026-05-12).
+  const buildQuery = () => {
+    let query = sb.from(tableName).select(tableName === 'inventory' ? '*, inventory_images(*)' : '*');
+    if (tid) query = query.eq('tenant_id', tid);
+    if (filters) {
+      for (const [col, op, val] of filters) {
+        if (op === 'eq') query = query.eq(col, val);
+        else if (op === 'in') query = query.in(col, val);
+        else if (op === 'ilike') query = query.ilike(col, val);
+        else if (op === 'neq') query = query.neq(col, val);
+        else if (op === 'gt') query = query.gt(col, val);
+        else if (op === 'gte') query = query.gte(col, val);
+        else if (op === 'lt') query = query.lt(col, val);
+        else if (op === 'lte') query = query.lte(col, val);
+      }
     }
-  }
-  const all = await paginateQuery(query);
+    return query;
+  };
+  const all = await paginateQuery(buildQuery);
   return all.map(enrichRow);
 }
 

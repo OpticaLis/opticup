@@ -52,19 +52,19 @@
       var statusList = hasFilter ? cfg.recipient_status_filter : tier2;
       var leads;
       try {
-        leads = await paginateQuery(
-          sb.from('crm_leads').select('id, full_name, phone, email')
+        leads = await paginateQuery(function () {
+          return sb.from('crm_leads').select('id, full_name, phone, email')
             .eq('tenant_id', tenantId).eq('is_deleted', false).is('unsubscribed_at', null)
-            .in('status', statusList)
-        );
+            .in('status', statusList);
+        });
       } catch (e) { throw new Error('recipients tier2: ' + e.message); }
       if (recipientType === 'tier2_excl_registered' && eventId) {
         var excludeRows;
         try {
-          excludeRows = await paginateQuery(
-            sb.from('crm_event_attendees').select('lead_id')
-              .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false)
-          );
+          excludeRows = await paginateQuery(function () {
+            return sb.from('crm_event_attendees').select('lead_id')
+              .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false);
+          });
         } catch (e) { throw new Error('recipients exclude: ' + e.message); }
         var excluded = {};
         excludeRows.forEach(function (r) { if (r.lead_id) excluded[r.lead_id] = true; });
@@ -79,13 +79,16 @@
       if (recipientType === 'attendees_waiting') attStatus = ['waiting_list'];
       else if (recipientType === 'attendees_all_statuses') attStatus = null;
       else attStatus = ['registered','confirmed','attended','purchased','no_show'];
-      var q = sb.from('crm_event_attendees')
-        .select('crm_leads(id, full_name, phone, email, unsubscribed_at, is_deleted)')
-        .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false);
-      if (attStatus) q = q.in('status', attStatus);
       var aRows;
-      try { aRows = await paginateQuery(q); }
-      catch (e) { throw new Error('recipients attendees: ' + e.message); }
+      try {
+        aRows = await paginateQuery(function () {
+          var q = sb.from('crm_event_attendees')
+            .select('crm_leads(id, full_name, phone, email, unsubscribed_at, is_deleted)')
+            .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false);
+          if (attStatus) q = q.in('status', attStatus);
+          return q;
+        });
+      } catch (e) { throw new Error('recipients attendees: ' + e.message); }
       return aRows
         .map(function (r) { return r.crm_leads; })
         .filter(function (l) { return l && !l.unsubscribed_at && !l.is_deleted; });
@@ -101,12 +104,12 @@
       if (!eventId) return [];
       var cRows;
       try {
-        cRows = await paginateQuery(
-          sb.from('crm_event_attendees')
+        cRows = await paginateQuery(function () {
+          return sb.from('crm_event_attendees')
             .select('status, coupon_sent, crm_leads(id, full_name, phone, email, unsubscribed_at, is_deleted)')
             .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false)
-            .eq('coupon_sent', true).neq('status', 'cancelled')
-        );
+            .eq('coupon_sent', true).neq('status', 'cancelled');
+        });
       } catch (e) { throw new Error('recipients attendees_with_active_coupon: ' + e.message); }
       return cRows
         .map(function (r) { return r.crm_leads; })
@@ -120,23 +123,23 @@
       // registration_open / waiting_list (canonical crm_statuses.event slugs).
       var attRows;
       try {
-        attRows = await paginateQuery(
-          sb.from('crm_event_attendees')
+        attRows = await paginateQuery(function () {
+          return sb.from('crm_event_attendees')
             .select('event_id, lead_id, status, crm_leads(id, full_name, phone, email, unsubscribed_at, is_deleted)')
             .eq('tenant_id', tenantId)
             .in('status', ['waiting_list', 'invited'])
-            .eq('is_deleted', false)
-        );
+            .eq('is_deleted', false);
+        });
       } catch (e) { throw new Error('recipients cross_event: ' + e.message); }
       var rows = attRows.filter(function (r) { return r.event_id !== eventId; });
       if (!rows.length) return [];
       var otherEventIds = Array.from(new Set(rows.map(function (r) { return r.event_id; })));
       var evRows;
       try {
-        evRows = await paginateQuery(
-          sb.from('crm_events').select('id, status, is_deleted')
-            .eq('tenant_id', tenantId).in('id', otherEventIds)
-        );
+        evRows = await paginateQuery(function () {
+          return sb.from('crm_events').select('id, status, is_deleted')
+            .eq('tenant_id', tenantId).in('id', otherEventIds);
+        });
       } catch (e) { throw new Error('recipients cross_event events: ' + e.message); }
       var activeEvents = {};
       evRows.forEach(function (e) {
