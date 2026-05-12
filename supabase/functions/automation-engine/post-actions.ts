@@ -24,16 +24,24 @@ export async function executePostActions(
   if (!target || typeof target !== "string") return { updated: 0 };
   if (!Array.isArray(resolvedLeadIds) || !resolvedLeadIds.length) return { updated: 0 };
 
-  const res = await db.from("crm_leads")
-    .update({ status: target, updated_at: new Date().toISOString() })
-    .eq("tenant_id", tenantId)
-    .in("id", resolvedLeadIds)
-    .select("id, status");
-  if (res.error) {
-    console.error("automation-engine executePostActions:", res.error);
-    return { updated: 0 };
+  // 2026-05-12 — chunk .in("id", ids) to keep PostgREST URL under ~8KB cap.
+  // Same fix as promoteWaitingLeadsToInvited.
+  const CHUNK = 200;
+  let updated = 0;
+  for (let i = 0; i < resolvedLeadIds.length; i += CHUNK) {
+    const slice = resolvedLeadIds.slice(i, i + CHUNK);
+    const res = await db.from("crm_leads")
+      .update({ status: target, updated_at: new Date().toISOString() })
+      .eq("tenant_id", tenantId)
+      .in("id", slice)
+      .select("id, status");
+    if (res.error) {
+      console.error(`automation-engine executePostActions chunk ${i}:`, res.error);
+      continue;
+    }
+    updated += (res.data || []).length;
   }
-  return { updated: (res.data || []).length };
+  return { updated };
 }
 
 // Per-rule bulk: UPSERTs crm_event_attendees for resolved recipients +
@@ -53,20 +61,29 @@ export async function attendeeUpsert(
     return { upserted: 0 };
   }
 
-  const rows = resolvedLeadIds.map((lid) => ({
-    tenant_id: tenantId, event_id: eventId, lead_id: lid, status: cfg.status,
-  }));
-  const res = await db.from("crm_event_attendees").upsert(rows, {
-    onConflict: "tenant_id,lead_id,event_id",
-    ignoreDuplicates: false,
-  }).select("lead_id");
-  if (res.error) {
-    console.error("automation-engine attendeeUpsert:", res.error);
-    return { upserted: 0 };
+  // 2026-05-12 — chunk upserts to keep PostgREST request body / URL under cap.
+  const CHUNK = 200;
+  let upserted = 0;
+  const allUpsertedIds: string[] = [];
+  for (let i = 0; i < resolvedLeadIds.length; i += CHUNK) {
+    const slice = resolvedLeadIds.slice(i, i + CHUNK);
+    const rows = slice.map((lid) => ({
+      tenant_id: tenantId, event_id: eventId, lead_id: lid, status: cfg.status,
+    }));
+    const res = await db.from("crm_event_attendees").upsert(rows, {
+      onConflict: "tenant_id,lead_id,event_id",
+      ignoreDuplicates: false,
+    }).select("lead_id");
+    if (res.error) {
+      console.error(`automation-engine attendeeUpsert chunk ${i}:`, res.error);
+      continue;
+    }
+    const ids = (res.data || []).map((r: { lead_id: string }) => r.lead_id);
+    allUpsertedIds.push(...ids);
+    upserted += ids.length;
   }
-  const upsertedIds = (res.data || []).map((r: { lead_id: string }) => r.lead_id);
-  // M4_LEAD_STATUS_WAITLIST_SYNC: best-effort re-derive lead status.
-  for (const lid of upsertedIds) {
+  // M4_LEAD_STATUS_WAITLIST_SYNC: best-effort re-derive lead status, after all chunks.
+  for (const lid of allUpsertedIds) {
     try {
       await db.rpc("sync_lead_status_from_attendee", {
         p_lead_id: lid, p_tenant_id: tenantId,
@@ -75,7 +92,7 @@ export async function attendeeUpsert(
       console.warn("attendeeUpsert sync skipped:", (e as Error).message);
     }
   }
-  return { upserted: upsertedIds.length };
+  return { upserted };
 }
 
 // Per-dispatch-item: after a successful event-scoped dispatch, promote any
@@ -100,15 +117,25 @@ export async function promoteWaitingLeadsToInvited(
   });
   const ids = Object.keys(leadIds);
   if (!ids.length) return { promoted: 0 };
-  const res = await db.from("crm_leads")
-    .update({ status: "invited", updated_at: new Date().toISOString() })
-    .eq("tenant_id", tenantId)
-    .in("id", ids)
-    .eq("status", "waiting")
-    .select("id");
-  if (res.error) {
-    console.error("automation-engine promoteWaitingLeadsToInvited:", res.error);
-    return { promoted: 0 };
+  // 2026-05-12 — chunk .in("id", ids) to keep PostgREST URL under its ~8KB
+  // cap. A single .in() with 1144 UUIDs (~44KB query string) was silently
+  // rejected by the gateway, so this function was a no-op for any rule
+  // resolving >~200 recipients. Same chunking pattern as fetchLeadsByIds.
+  const CHUNK = 200;
+  let promoted = 0;
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const slice = ids.slice(i, i + CHUNK);
+    const res = await db.from("crm_leads")
+      .update({ status: "invited", updated_at: new Date().toISOString() })
+      .eq("tenant_id", tenantId)
+      .in("id", slice)
+      .eq("status", "waiting")
+      .select("id");
+    if (res.error) {
+      console.error(`automation-engine promoteWaitingLeadsToInvited chunk ${i}:`, res.error);
+      continue;
+    }
+    promoted += (res.data || []).length;
   }
-  return { promoted: (res.data || []).length };
+  return { promoted };
 }
