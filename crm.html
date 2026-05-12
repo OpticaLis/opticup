@@ -386,11 +386,14 @@ tailwind.config = {
 <script src="modules/crm/crm-event-day-manage.js"></script>
 <script src="modules/crm/crm-event-day-schedule.js"></script>
 <script src="modules/crm/crm-messaging-tab.js"></script>
-<script src="modules/crm/crm-template-section.js"></script>
-<script src="modules/crm/crm-messaging-templates.js"></script>
+<!-- crm-messaging-broadcast.js loaded before crm-template-section.js so the
+     shared CrmBroadcastClipboard.panelHtml/wire (variables widget) is available
+     when the template-section renders. -->
 <script src="modules/crm/crm-broadcast-filters.js"></script>
 <script src="modules/crm/crm-messaging-broadcast-queue.js"></script>
 <script src="modules/crm/crm-messaging-broadcast.js"></script>
+<script src="modules/crm/crm-template-section.js"></script>
+<script src="modules/crm/crm-messaging-templates.js"></script>
 <script src="modules/crm/crm-messaging-log.js"></script>
 <script src="modules/crm/crm-event-restore.js"></script>
 <script src="modules/crm/crm-activity-log.js"></script>

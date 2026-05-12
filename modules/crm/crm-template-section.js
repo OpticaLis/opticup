@@ -48,10 +48,19 @@
       '<input type="text" value="' + _esc(channelState.subject || '') + '" placeholder="נושא (אימייל)" class="w-full px-3 py-2 mb-2 border border-slate-300 rounded-lg text-sm" data-section-subject' + (active ? '' : ' disabled') + '>'
     ) : '';
 
+    // 2026-05-12 — variables panel (reuses CrmBroadcastClipboard.panelHtml so
+    // template-editor + broadcast-wizard share the same widget). Lets author
+    // click any %placeholder% to copy it to clipboard while editing.
+    var varPanelId = 'tplsec-var-' + channel;
+    var varPanel = (window.CrmBroadcastClipboard && typeof CrmBroadcastClipboard.panelHtml === 'function')
+      ? '<div class="mt-3">' + CrmBroadcastClipboard.panelHtml(varPanelId) + '</div>'
+      : '';
+
     var bodyHtml =
       '<div class="p-4 border-t border-slate-200 ' + bodyHidden + '" data-section-body>' +
         subjectField +
         '<textarea rows="' + (channel === 'email' ? 8 : 4) + '" class="w-full bg-slate-900 text-slate-100 p-3 border-0 font-mono text-sm rounded" style="direction:ltr;text-align:start" data-section-body-editor' + (active ? '' : ' disabled') + '>' + _esc(channelState.body || '') + '</textarea>' +
+        varPanel +
         '<div class="mt-3 bg-slate-50 border border-slate-200 rounded-lg p-3 max-w-md">' +
           '<div class="text-[10px] text-slate-500 font-semibold mb-1">תצוגה מקדימה</div>' +
           '<div class="bg-white rounded p-2 text-sm whitespace-pre-wrap" data-section-preview></div>' +
@@ -120,6 +129,11 @@
 
     // Initial preview render so it's not blank when the section opens.
     updatePreview(rootEl, channel, channelState.body || '', channelState.subject || null);
+
+    // Wire the variables panel (accordion toggle + click-to-copy chips).
+    if (window.CrmBroadcastClipboard && typeof CrmBroadcastClipboard.wire === 'function') {
+      CrmBroadcastClipboard.wire(rootEl, 'tplsec-var-' + channel);
+    }
   }
 
   function updatePreview(rootEl, channel, body, subject) {

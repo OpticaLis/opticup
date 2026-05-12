@@ -190,7 +190,12 @@
           '<span class="text-xs text-slate-500 ms-auto">' + escapeHtml(CHANNEL_LABELS[t.channel] || t.channel) + '</span>' +
         '</label>';
       }).join('');
+      var hasTpl = !!_wizard.templateId;
+      var clearBtn = hasTpl
+        ? '<button type="button" id="wiz-tpl-clear" class="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold rounded-md">✕ נקה בחירת תבנית</button>'
+        : '';
       return '<h4 class="text-base font-bold text-slate-800 mb-3">שלב 3 — תבנית</h4>' +
+        '<div class="flex items-center justify-between mb-2"><span class="text-xs text-slate-500">בחר תבנית כדי להעתיק את התוכן שלה, או השאר ריק וכתוב הודעה חופשית.</span>' + clearBtn + '</div>' +
         '<div class="space-y-2 mb-3 max-h-48 overflow-y-auto">' + (opts || '<div class="text-center text-slate-400 py-4">אין תבניות פעילות</div>') + '</div>' +
         '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">תוכן</label><textarea id="wiz-body" rows="4" placeholder="תוכן הודעה ידני (או בחר תבנית)" class="' + CLS_INPUT + '">' + escapeHtml(_wizard.body) + '</textarea></div>' +
         variablePanelHtml('wiz-var');
@@ -252,16 +257,39 @@
           var bodyEl = root.querySelector('#wiz-body');
           if (bodyEl && !bodyEl.value) bodyEl.value = t.body || '';
           _wizard.channel = t.channel;
+          // Re-render so the "נקה בחירת תבנית" button appears now that a tpl is picked.
+          captureStep(root); rerenderWizard(root);
         }
       });
     });
+    // 2026-05-12 — "clear template selection" button. Lets the user copy a
+    // template's body into the manual-text area and then strip the template
+    // link so the broadcast sends as raw body (otherwise the saved templateId
+    // overrides the edited body at send time).
+    var clearBtn = root.querySelector('#wiz-tpl-clear');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function () {
+        captureStep(root);
+        _wizard.templateId = null;
+        rerenderWizard(root);
+      });
+    }
     if (WIZARD_STEPS[_wizard.step].key === 'template') wireVariablePanel(root, 'wiz-var');
   }
 
   function captureStep(root) {
     // Step 1 (recipients) — state is maintained live by CrmBroadcastFilters.wireRecipientsStep.
     var chRadio = root.querySelector('input[name="wiz-channel"]:checked'); if (chRadio) _wizard.channel = chRadio.value;
-    var tplRadio = root.querySelector('input[name="wiz-tpl"]:checked');   if (tplRadio) _wizard.templateId = tplRadio.value;
+    // Template: capture the checked value if any, OR clear when the step is
+    // visible but no template is checked (the user clicked "clear template
+    // selection"). Without this, the wizard kept the previous selection alive
+    // after the user explicitly unselected — and would send the template body
+    // instead of their edited free-text.
+    var tplStep = root.querySelector('input[name="wiz-tpl"]');
+    if (tplStep) {
+      var tplRadio = root.querySelector('input[name="wiz-tpl"]:checked');
+      _wizard.templateId = tplRadio ? tplRadio.value : null;
+    }
     var bodyEl = root.querySelector('#wiz-body'); if (bodyEl) _wizard.body = bodyEl.value || '';
     var schRadio = root.querySelector('input[name="wiz-sched"]:checked'); if (schRadio) _wizard.schedule = schRadio.value;
     var nameEl = root.querySelector('#wiz-name'); if (nameEl) _wizard.name = nameEl.value || '';
