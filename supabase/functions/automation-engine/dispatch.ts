@@ -1,8 +1,17 @@
-// dispatch.ts — direct dispatch path (parity with crm-automation-dispatch.js).
-// Posts to send-message EF for each plan item. Used by:
-//   - cron path when rules return send_message planItems (no UI modal)
-//   - Rung 2 approve path when client passes already-approved items.
-// After dispatch, promoteWaitingLeadsToInvited runs (browser parity).
+// dispatch.ts — route automation plan items into crm_message_queue.
+//
+// 2026-05-12: was previously "direct dispatch" (Promise.allSettled of N parallel
+// fetch() calls to send-message EF). At >~30 recipients the Edge Function hit
+// CPU/timeout limits and silently dropped the rest — Prizma confirmed 2325
+// recipients but only 30 actually sent. Same architectural failure mode that
+// the manual broadcast UI had pre-2026-05-12.
+//
+// Now: insert all plan items into crm_message_queue. dispatch-queue EF (pg_cron
+// every minute, throttled 500ms email / 1000ms SMS) drains the queue. Same path
+// as broadcast wizard + queue_send automation rules — single source of truth.
+//
+// promoteWaitingLeadsToInvited still runs immediately after enqueue (browser
+// parity) — promotion is deterministic per item, not gated on send success.
 
 import { promoteWaitingLeadsToInvited } from "./post-actions.ts";
 
@@ -10,72 +19,66 @@ import { promoteWaitingLeadsToInvited } from "./post-actions.ts";
 type Db = any;
 
 export interface DispatchResult {
-  sent: number;
+  sent: number;     // 0 — actual sends happen async via dispatch-queue
   failed: number;
   rejected: number;
+  queued: number;   // new — count of rows inserted into crm_message_queue
 }
+
+const QUEUE_INSERT_CHUNK = 500;
 
 export async function dispatchPlanDirect(
   db: Db,
   // deno-lint-ignore no-explicit-any
   items: any[],
   tenantId: string,
-  anonKey: string,
-  sendMessageUrl: string,
+  _anonKey: string,
+  _sendMessageUrl: string,
 ): Promise<DispatchResult> {
   if (!Array.isArray(items) || !items.length) {
-    return { sent: 0, failed: 0, rejected: 0 };
+    return { sent: 0, failed: 0, rejected: 0, queued: 0 };
   }
 
-  const calls = items.map((it) => callSendMessage(it, tenantId, anonKey, sendMessageUrl));
-  const settled = await Promise.allSettled(calls);
-  let sent = 0, failed = 0, rejected = 0;
-  const results: { ok: boolean; error?: string }[] = [];
-  settled.forEach((r) => {
-    const v = r.status === "fulfilled" ? r.value : null;
-    if (v && v.ok) { sent++; results.push({ ok: true }); }
-    else if (v && v.error === "phone_not_allowed") { rejected++; results.push({ ok: false, error: "phone_not_allowed" }); }
-    else { failed++; results.push({ ok: false, error: v?.error }); }
-  });
+  const now = new Date().toISOString();
+  const rows = items
+    .filter((it) => it && it.lead_id && it.channel)
+    .map((it) => ({
+      tenant_id: tenantId,
+      lead_id: it.lead_id,
+      event_id: it.event_id || null,
+      run_id: it.run_id || null,
+      channel: it.channel,
+      template_slug: it.template_slug || null,
+      // No body/subject — send-message EF resolves the template from slug at
+      // dispatch time, so substitutions use the freshest data.
+      variables: it.variables || {},
+      language: it.language || "he",
+      status: "queued",
+      scheduled_at: now,
+    }));
+
+  if (!rows.length) return { sent: 0, failed: 0, rejected: 0, queued: 0 };
+
+  let queued = 0;
+  let failed = 0;
+  for (let i = 0; i < rows.length; i += QUEUE_INSERT_CHUNK) {
+    const chunk = rows.slice(i, i + QUEUE_INSERT_CHUNK);
+    const res = await db.from("crm_message_queue").insert(chunk);
+    if (res.error) {
+      console.error(`automation-engine queue insert chunk ${i}: ${res.error.message}`);
+      failed += chunk.length;
+    } else {
+      queued += chunk.length;
+    }
+  }
+
+  // promoteWaitingLeadsToInvited mirrors the browser-engine pattern of bumping
+  // any waiting lead to 'invited' once the rule fired. Treat every queued
+  // item as "ok" — the actual send happens later in dispatch-queue, but the
+  // commitment to send has been made.
+  const results = rows.map(() => ({ ok: true }));
   try { await promoteWaitingLeadsToInvited(db, tenantId, items, results); }
   catch (e) { console.error("automation-engine promoteWaitingLeadsToInvited:", (e as Error).message); }
-  return { sent, failed, rejected };
-}
 
-async function callSendMessage(
-  // deno-lint-ignore no-explicit-any
-  item: any,
-  tenantId: string, anonKey: string, sendMessageUrl: string,
-): Promise<{ ok: boolean; error?: string }> {
-  try {
-    const payload: Record<string, unknown> = {
-      tenant_id: tenantId,
-      lead_id: item.lead_id,
-      channel: item.channel,
-      template_slug: item.template_slug,
-      variables: item.variables || {},
-    };
-    if (item.event_id) payload.event_id = item.event_id;
-    if (item.run_id) payload.run_id = item.run_id;
-    if (item.language) payload.language = item.language;
-    const res = await fetch(sendMessageUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${anonKey}`,
-        "apikey": anonKey,
-      },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      console.error(`send-message ${item.channel}/${item.template_slug} HTTP ${res.status}: ${txt.slice(0, 200)}`);
-      const errData = txt.indexOf("phone_not_allowed") !== -1 ? "phone_not_allowed" : `http_${res.status}`;
-      return { ok: false, error: errData };
-    }
-    return { ok: true };
-  } catch (e) {
-    console.error("send-message exception:", (e as Error).message);
-    return { ok: false, error: "exception" };
-  }
+  return { sent: 0, failed, rejected: 0, queued };
 }
