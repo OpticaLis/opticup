@@ -28,6 +28,8 @@
     var slugField = _editorState.isNew  // editable on new (Hebrew names → empty); read-only on edit
       ? '<input type="text" id="tpl-slug" value="' + escapeHtml(_editorState.baseSlug || '') + '" placeholder="slug (אנגלית, ייגזר משם אם ריק)" class="' + ctx.CLS_INPUT + ' w-64 text-xs font-mono" dir="ltr">'
       : '<span class="px-3 py-2 text-xs text-slate-500 self-center font-mono" dir="ltr">slug: ' + escapeHtml(_editorState.baseSlug) + '</span>';
+    var showAuto = _editorState.showInAutomations !== false;
+    var showAutoToggle = '<label class="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm cursor-pointer"><input type="checkbox" id="tpl-show-auto"' + (showAuto ? ' checked' : '') + ' class="rounded"><span>הצג במסך אוטומציות</span></label>';
     main.innerHTML =
       '<div class="bg-white border border-slate-200 rounded-xl p-4">' +
         '<div class="flex flex-wrap gap-2">' +
@@ -36,6 +38,7 @@
             [['he','עברית'],['ru','רוסית'],['en','אנגלית']].map(function (l) { return '<option value="' + l[0] + '"' + (l[0] === _editorState.language ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') +
           '</select>' + slugField +
         '</div>' +
+        '<div class="mt-2">' + showAutoToggle + '</div>' +
       '</div>' +
       '<div id="tpl-section-sms"></div><div id="tpl-section-whatsapp"></div><div id="tpl-section-email"></div>' +
       '<div class="bg-white border border-slate-200 rounded-xl p-4 flex gap-2 justify-end">' +
@@ -89,6 +92,9 @@
     var emptyCh2 = _ctx.CHANNELS.filter(function (c) { return _editorState.channels[c].exists && !((_editorState.channels[c].body || '').trim()); })[0];
     if (emptyCh2) { _ctx.toast('error', 'תוכן חסר בערוץ ' + _ctx.CHANNEL_LABELS[emptyCh2]); return; }
 
+    var showAutoEl = document.getElementById('tpl-show-auto');
+    var showAuto = showAutoEl ? !!showAutoEl.checked : (_editorState.showInAutomations !== false);
+    _editorState.showInAutomations = showAuto;
     var ops = [], saved = 0, deactivated = 0, created = 0;
     _ctx.CHANNELS.forEach(function (ch) {
       var cs = _editorState.channels[ch];
@@ -97,11 +103,13 @@
       if (cs.exists) {
         if (cs.id) {
           ops.push(sb.from('crm_message_templates').update({ name: rowName, language: _editorState.language,
-            subject: ch === 'email' ? (cs.subject || null) : null, body: cs.body || '', is_active: true })
+            subject: ch === 'email' ? (cs.subject || null) : null, body: cs.body || '', is_active: true,
+            show_in_automations: showAuto })
             .eq('id', cs.id).eq('tenant_id', tid).then(function () { saved++; }));
         } else {
           ops.push(sb.from('crm_message_templates').insert({ tenant_id: tid, slug: fullSlug, name: rowName, channel: ch,
-            language: _editorState.language, subject: ch === 'email' ? (cs.subject || null) : null, body: cs.body || '', is_active: true })
+            language: _editorState.language, subject: ch === 'email' ? (cs.subject || null) : null, body: cs.body || '', is_active: true,
+            show_in_automations: showAuto })
             .select('id').single().then(function (res) { if (res && res.data) _editorState.channels[ch].id = res.data.id; created++; }));
         }
       } else if (cs.id) {
