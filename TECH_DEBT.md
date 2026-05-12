@@ -19,6 +19,20 @@
 
 **Effort:** ~10 min, bundled with the stub-cleanup SPEC.
 
+### #M1_5-DEBT-EOF-NEWLINE-LEGACY-FILES — 🟢 Pre-existing trailing-newline gaps in legacy HTML/JS files
+
+**Where:** Project-wide — first surfaced on `storefront-content.html` (Iron Rule 31 gate warning during MIGRATION_4 C2 commit, `last byte: 0x3e`). Likely present in other legacy files that were authored before the gate existed.
+
+**Why it's debt:** The Iron Rule 31 integrity gate emits a **warning** (exit 2, not error/exit 1) when a source file does not end with a trailing newline — the gate suspects mid-statement truncation. Warning does NOT block commits, but produces noise on every commit that touches such a file and erodes signal-to-noise on the gate's output.
+
+**Why not fixed now:** Out of scope for visual re-skin SPECs (MIGRATION_4 only modified specific token lines via Edit tool, not the EOF). The fix is editorial (re-save each file with a trailing newline) and project-wide. Risk: a careless `sed -i` or batch-rewrite tool could introduce a different defect.
+
+**Planned fix:** A single EOL-normalization SPEC scoped to "add trailing newline to every text file in repo that lacks one" — gates can run per-file confirmation; commits per file or per directory; defer until next infrastructure-hygiene window. Migration #4 surfaced this as Finding F3.
+
+**Effort:** ~30 min for the SPEC + ~1 hour for the per-file editorial sweep + Reviewer pass.
+
+---
+
 ### #M1_5-DEBT-CRM-SIDEBAR-MARKER-RTL-ONLY — 🟢 Sidebar Navy marker uses physical `-3px` offset (LTR fallback)
 
 **Where:** `css/crm.css` `.crm-nav-item.active` `box-shadow: inset -3px 0 0 #1e3a8a;`. Added by MIGRATION_3_CRM (2026-05-12); surfaced as F3.

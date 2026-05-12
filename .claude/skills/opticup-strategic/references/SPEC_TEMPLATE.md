@@ -22,8 +22,13 @@ actual repo state, not in Brief assumptions that may have drifted.
 - Where the Brief's assumptions diverge from repo reality, the SPEC's success criteria are written against repo reality (the Brief's intent applied to what's actually there), not against the Brief's literal claims.
 - Lessons applied from prior `FOREMAN_REVIEW.md` files in this module — list each one and how it was honored.
 - Pre-existing untracked files surveyed (`git status --porcelain | grep '^??'` count recorded). The Executor will leave them alone — selective `git add` by filename throughout. (See CLAUDE.md §1.4. Codified after 3 consecutive Pipeline SPECs — MIGRATION_1, MIGRATION_2, SETTINGS_PERMISSIONS_CONSOLIDATION — made the same D1 decision.)
+- **Color-form completeness check** (visual re-skin SPECs only): for every hex code in the swap map, also grep for the rgba/rgb decimal-channel equivalent in target files. A SPEC that swaps `#6366f1` but misses its rgba sibling (`rgba(99,102,241,*)`) produces post-migration visual drift. Use both:
+  ```
+  { grep -oE '#[0-9a-fA-F]{3,8}\b' <file>; grep -oE 'rgb[a]?\([0-9 ,.]+\)' <file>; } | sort -u
+  ```
+  For each rgba hit, mentally convert the decimal triple to `#hex` and verify the swap plan handles BOTH forms. (Harvested from `MIGRATION_4_STOREFRONT_STUDIO/FOREMAN_REVIEW.md` Author Proposal #1, 2026-05-12 — F1 `rgba(99,102,241,.08)` at blog:101 was missed by the §0 #hex-only audit.)
 
-(Harvested from `MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md` Author Proposal #2, 2026-05-11. Originally piloted in `M1_5_SKETCH_RESKIN_BATCH_3` as the Palette Pre-Audit. Untracked-files item added 2026-05-12 from `SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md` Author Proposal #2.)
+(Harvested from `MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md` Author Proposal #2, 2026-05-11. Originally piloted in `M1_5_SKETCH_RESKIN_BATCH_3` as the Palette Pre-Audit. Untracked-files item added 2026-05-12 from `SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md` Author Proposal #2. Color-form completeness added 2026-05-12 from `MIGRATION_4_STOREFRONT_STUDIO/FOREMAN_REVIEW.md` Author Proposal #1.)
 
 ---
 
@@ -79,6 +84,12 @@ whose execution ends with a null-byte ERROR in HEAD is not closed — it is open
 until the corruption is cleared. Reference: `scripts/verify-tree-integrity.mjs`.
 
 **Sweep criteria — link vs comment distinction.** When a §3 success criterion uses bare `grep -r "<old_name>"` to count references to a deleted/moved name, **narrative comments** in the surviving file (file-history docstrings, "merged from foo.html" headers, tombstone markers) will collide with the criterion alongside **live links** (HTML `href`/`src`, JS `import`, string literals consumed at runtime). Either: (a) tighten the regex (`grep -E "(href=|src=|url:|require\(|from\s+).*<old_name>"`) so only live links are counted; OR (b) add a one-line note authorizing the executor to reword narrative comments to satisfy the literal grep. Avoids reactive 1-line edits mid-execution. (Added 2026-05-12 from `SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md` Author Proposal #1.)
+
+**Multi-form count criteria** (visual re-skin SPECs only). When a SPEC's swap plan produces mixed output tokens (literal hex + rgba decimal + named accent), success criteria that count token instances MUST split the count per produced-token-form. Counting "Navy-token-bearing sites" as a single `≥N` number hides which sub-target was unmet.
+- WRONG: `studio ≥ 6 literal #1e3a8a` (when the 7 swap sites produce 5 literal + 1 rgba + 1 navy-soft).
+- RIGHT: `studio ≥ 5 literal #1e3a8a + ≥ 1 rgba(30,58,138,*) + ≥ 1 #e6f1fb` (three independently verifiable sub-counts).
+
+(Added 2026-05-12 from `MIGRATION_4_STOREFRONT_STUDIO/FOREMAN_REVIEW.md` Author Proposal #2 — SPEC §5 C4 said `≥6 literal Navy` but the work produced 5 literal + 1 rgba + 1 navy-soft. Work was correct; criterion was wrong.)
 
 ---
 

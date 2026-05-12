@@ -279,11 +279,23 @@ The SPEC author SHOULD pre-declare expected side-effects per the SPEC_TEMPLATE �
 
 ### Visual re-skin patterns (added 2026-05-11 from MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md):
 
-- **Pre-execution inline-hex audit.** Before editing a re-skin target, list every non-token hex code in the file:
+- **Pre-execution inline-hex audit (INCLUDES rgba decimal form, updated 2026-05-12).** Before editing a re-skin target, list every non-token color literal in the file — BOTH `#hex` AND `rgba/rgb` decimal-channel forms (the same color expressed two ways):
   ```
-  grep -oE '#[0-9a-fA-F]{3,8}\b' <file> | sort -u
+  { grep -oE '#[0-9a-fA-F]{3,8}\b' <file>; grep -oE 'rgb[a]?\([0-9 ,.]+\)' <file>; } | sort -u
   ```
-  Cross-reference the output against the SPEC's swap list. If any hex code in the file is NOT covered by the SPEC, escalate to Foreman as a finding before proceeding. Re-skin SPECs must be exhaustive; a stranded hex is a SPEC defect, not an Executor judgment call.
+  Cross-reference the output against the SPEC's swap list. For each rgba/rgb hit, mentally convert the decimal triple to its `#hex` equivalent (e.g. `rgba(99,102,241,*)` = `#6366f1`) and verify the SPEC handles that color in BOTH forms. If any literal in the file is NOT covered by the SPEC — escalate to Foreman as a finding BEFORE proceeding. A stranded rgba sibling is just as much a SPEC defect as a stranded #hex (MIGRATION_4 missed `rgba(99,102,241,.08)` at blog:101 because the pre-2026-05-12 recipe only caught `#hex`). Re-skin SPECs must be exhaustive across both color-literal forms. (Original recipe harvested from `MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md` Executor Proposal #1, 2026-05-11. rgba/rgb extension harvested from `MIGRATION_4_STOREFRONT_STUDIO/FOREMAN_REVIEW.md` Executor Proposal #1, 2026-05-12.)
+- **Post-edit single-file verification recipe (canonical, stopgap until `verify-reskin-page.mjs` ships).** After each per-file edit on a re-skin SPEC, run this 6-line Bash block instead of the ~7-command dance:
+  ```
+  f=storefront-blog.html  # change per file
+  BASE_LINES=377; BASE_SCRIPTS=21; BASE_LINKS=9; BASE_DOM=159  # captured at SPEC §0 Baselines
+  printf "  lines=%d  (BASE=%d)\n"   $(wc -l < "$f") $BASE_LINES
+  printf "  scripts=%d (BASE=%d)\n"  $(grep -c "<script" "$f") $BASE_SCRIPTS
+  printf "  links=%d   (BASE=%d)\n"  $(grep -c '<link rel="stylesheet"' "$f") $BASE_LINKS
+  printf "  DOM=%d     (BASE=%d ±2%%)\n" $(grep -oE '<[a-zA-Z][a-zA-Z0-9]*' "$f" | wc -l) $BASE_DOM
+  printf "  regression_purple=%d (expect 0)\n" $(grep -ic '26215c\|534ab7' "$f")
+  printf "  navy_literal=%d\n" $(grep -c "1e3a8a" "$f")
+  ```
+  Reduces chat noise + standardizes the verification surface across files. A future SPEC can build the equivalent into `scripts/verify-reskin-page.mjs` (MIGRATION_2's Executor Proposal #1 remains queued in TECH_DEBT). (Harvested from `MIGRATION_4_STOREFRONT_STUDIO/FOREMAN_REVIEW.md` Executor Proposal #2, 2026-05-12.)
 - **Page-scope `body { --primary }` override.** Validated migration vehicle for page-by-page visual migrations (Migrations #1–#4): instead of mutating the global `:root` in shared CSS, declare the override inside the page's own inline `<style>` block on the `body` selector. CSS cascade scopes the new palette to descendants of `<body>` of that page only; other pages inherit the legacy palette via cascade until they migrate. This is the pattern of choice when other pages still depend on the legacy tokens.
 - **Page-scope `<style>` block placement.** When inserting a NEW `<style>` block to override CSS variables on a single page, place it inside `<head>` AFTER the last `<link rel="stylesheet">` tag and immediately before `</head>`. The cascade order requires the override to load AFTER the linked CSS. Intervening `<script>` tags do not affect CSS cascade. If the page already has an inline `<style>` block, prefer extending it over adding a new one (preserves DOM tag count discipline). (Harvested from `MIGRATION_2_SETTINGS_PERMISSIONS/FOREMAN_REVIEW.md` Executor Proposal #2, 2026-05-11.)
 - **Re-skin verification runner (planned helper, MIGRATION_3 onwards).** After every per-page edit on a visual-migration SPEC, run `node scripts/verify-reskin-page.mjs --file <page> --regression-hex '26215c|534ab7' --new-hex 1e3a8a --expected-scripts <N> --expected-links <N> --line-min <N> --line-max <N> --dom-tag-min <N> --dom-tag-max <N>` BEFORE `git add`. The script emits a single-line PASS/FAIL summary and exits non-zero on any FAIL. Replaces the 6-command verification dance and avoids the Bash `&&`-chain abort-on-grep-no-match trap. NOTE: the helper script does not yet exist; build it lazily when Migration #3 starts (or use `;`-separated greps + PowerShell tag count individually until then). (Harvested from `MIGRATION_2_SETTINGS_PERMISSIONS/FOREMAN_REVIEW.md` Executor Proposal #1, 2026-05-11.)

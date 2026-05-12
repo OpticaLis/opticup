@@ -452,6 +452,14 @@ Step 1.5 DB Pre-Flight — intentionally. Defense in depth.
    "Cross-Reference Check completed 2026-04-14 against GLOBAL_SCHEMA rev X:
    0 collisions / N hits resolved." An empty or missing line = incomplete SPEC.
 
+5.1. **Color-form completeness (visual re-skin SPECs only — added 2026-05-12 from MIGRATION_4_STOREFRONT_STUDIO).** When authoring a visual re-skin SPEC, verify that every hex code in the swap map has been searched in BOTH `#hex` AND `rgba/rgb(...)` decimal-channel forms across the target files. A single-form audit will miss decorative halos / shadows / hover-tints written as rgba. The check is:
+   ```
+   { grep -oE '#[0-9a-fA-F]{3,8}\b' <file>; grep -oE 'rgb[a]?\([0-9 ,.]+\)' <file>; } | sort -u
+   ```
+   For each rgba hit, mentally convert decimal triple to `#hex` and verify the swap plan handles both forms. A SPEC that swaps `#6366f1` but misses its rgba sibling produces post-migration visual drift (MIGRATION_4 surfaced exactly this gap as Finding F1).
+
+5.2. **Multi-form count criteria in §5 (visual re-skin SPECs only — added 2026-05-12 from MIGRATION_4_STOREFRONT_STUDIO).** When a visual re-skin SPEC swaps target tokens to multiple output forms (literal hex + rgba + named accent), the §5 success criteria for "post-migration count" MUST enumerate each form separately. A single `>=N` count where the migration produces 3 different output tokens hides which sub-target failed. Use sub-counts like `≥5 literal #1e3a8a + ≥1 rgba(30,58,138,*) + ≥1 #e6f1fb` rather than `≥7 Navy-token-bearing sites`. (MIGRATION_4 C4 said `studio ≥6 literal Navy` but the work produced 5 literal + 1 rgba + 1 navy-soft — work was correct, criterion was wrong.)
+
 6. **DB-object role verification (MANDATORY — applied 2026-05-06 after 3-occurrence rule).**
    For every database object the SPEC will reference AS A WRITER OR READER of a
    target table (e.g., "submit_storefront_lead writes to cms_leads",
