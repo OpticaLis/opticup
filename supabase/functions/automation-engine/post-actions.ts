@@ -95,47 +95,17 @@ export async function attendeeUpsert(
   return { upserted };
 }
 
-// Per-dispatch-item: after a successful event-scoped dispatch, promote any
-// tier-2 lead currently in status='waiting' to 'invited'. Skip items with
-// skip_auto_promote=true (rules that own their own lifecycle, e.g.
-// post_action_status_update or explicit opt-out).
+// 2026-05-12 evening — promotion now lives in DB trigger
+// `trg_promote_lead_on_message_sent` (migration promote_lead_on_message_sent).
+// This function is kept as an exported no-op so any legacy caller compiles —
+// but it intentionally does nothing. Eager bulk promotion at queue time was
+// the source of "lead marked invited even though send failed" bug.
 export async function promoteWaitingLeadsToInvited(
-  db: Db, tenantId: string,
+  _db: Db, _tenantId: string,
   // deno-lint-ignore no-explicit-any
-  planItems: any[],
+  _planItems: any[],
   // deno-lint-ignore no-explicit-any
-  results: any[],
+  _results: any[],
 ): Promise<{ promoted: number }> {
-  if (!Array.isArray(planItems) || !planItems.length) return { promoted: 0 };
-  const leadIds: Record<string, true> = {};
-  planItems.forEach((it, i) => {
-    if (it.skip_auto_promote) return;
-    if (!it.event_id || !it.lead_id) return;
-    const r = results && results[i];
-    const ok = r && r.ok;
-    if (ok) leadIds[it.lead_id] = true;
-  });
-  const ids = Object.keys(leadIds);
-  if (!ids.length) return { promoted: 0 };
-  // 2026-05-12 — chunk .in("id", ids) to keep PostgREST URL under its ~8KB
-  // cap. A single .in() with 1144 UUIDs (~44KB query string) was silently
-  // rejected by the gateway, so this function was a no-op for any rule
-  // resolving >~200 recipients. Same chunking pattern as fetchLeadsByIds.
-  const CHUNK = 200;
-  let promoted = 0;
-  for (let i = 0; i < ids.length; i += CHUNK) {
-    const slice = ids.slice(i, i + CHUNK);
-    const res = await db.from("crm_leads")
-      .update({ status: "invited", updated_at: new Date().toISOString() })
-      .eq("tenant_id", tenantId)
-      .in("id", slice)
-      .eq("status", "waiting")
-      .select("id");
-    if (res.error) {
-      console.error(`automation-engine promoteWaitingLeadsToInvited chunk ${i}:`, res.error);
-      continue;
-    }
-    promoted += (res.data || []).length;
-  }
-  return { promoted };
+  return { promoted: 0 };
 }
