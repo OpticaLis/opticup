@@ -950,6 +950,10 @@ before dispatching.
 
 **Baselines as symbols.** When success criteria depend on a metric measured at SPEC-authoring time (file size, tag count, hex count, etc.), pin the value in §0 Pre-Authoring Reality Check under the "Baselines" sub-table and reference it symbolically in §3 Success Criteria (e.g., `BASE_SCRIPTS_settings`). Avoids drift if the file changes between Brief and SPEC. (Harvested from `MIGRATION_2_SETTINGS_PERMISSIONS/FOREMAN_REVIEW.md` Author Proposal #2, 2026-05-11.)
 
+**Sweep criteria — link vs comment distinction.** If a §3 success criterion uses bare `grep -r "<old_name>"` to count references to a deleted/moved name, anticipate that **narrative comments** (file-history docstrings, tombstone comments, "merged from foo.html" headers) will collide with the criterion alongside **live links** (HTML `href`/`src`, JS `import`, string literals consumed at runtime). Either: (a) tighten the regex (`grep -E "(href=|src=|url:|require\(|from\s+).*<old_name>"`) so only live links are counted; OR (b) add a one-line note to the criterion authorizing the executor to reword narrative comments to satisfy the literal grep. Avoids reactive 1-line comment-reword edits mid-execution. (Harvested from `SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md` Author Proposal #1, 2026-05-12.)
+
+**Pre-existing untracked files — codify the leave-alone decision in §0.** Three Full-Auto Pipeline SPECs in a row (MIGRATION_1, MIGRATION_2, SETTINGS_PERMISSIONS_CONSOLIDATION) have made the SAME executor decision (D1) — leave pre-existing untracked architecture-brief files alone, use selective `git add` by filename throughout. Codify the survey + decision in §0 Reality Check itself so the Executor doesn't have to re-decide and re-document each time. SPEC_TEMPLATE.md §0 has been updated with a checkbox-style item; the Foreman should record the count and confirm the leave-alone disposition. (Harvested from `SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md` Author Proposal #2, 2026-05-12.)
+
 #### Numerical-bound criteria — Measure before bounding (added 2026-05-11)
 
 Whenever a §3 success criterion is a NUMERICAL BOUND on the outcome of a

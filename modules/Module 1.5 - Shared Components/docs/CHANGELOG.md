@@ -1,5 +1,30 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-12 — Settings + Permissions Consolidation: tabbed settings.html (deferred from Migration #2)
+
+SPEC: `SETTINGS_PERMISSIONS_CONSOLIDATION` ([folder](specs/SETTINGS_PERMISSIONS_CONSOLIDATION/))
+
+Tactical migration. Executes the structural change Migration #2 deferred (per Daniel's 2026-05-11 decision). `employees.html` (former standalone permissions page) merged into `settings.html` as a "הרשאות" tab; original file archived to `_archive/pre-consolidation/employees.html` (git mv, 100% rename similarity). Single LIVE in-code link updated (`index.html` line 156 module tile). Full-Auto Pipeline ran end-to-end in ONE chat across all 4 hats (Foreman → Executor → Localhost-Tester → Foreman-review).
+
+**Iron Rule 21 (No Duplicates) reuse confirmed at SPEC author time:** existing `showTab()` in `js/shared-ui.js` reused (no new `activateTab`/`switchTab`); existing `<nav id="mainNav">` + `data-tab` + `data-tab-permission` pattern reused (matches inventory.html / shipments.html); existing `PermissionUI.apply()` auto-gating reused. The new code added by this SPEC: a 25-line page-local `goSettingsTab()` wrapper that adds hash routing + lazy permissions init, plus a 5-line `urlWithTenant()` helper in index.html that inserts `?t=...` BEFORE `#fragment`.
+
+**settings.html restructured:** 212 → 292 lines (+80, all additive structure — no logic change to existing settings sections). Adds tab bar (2 buttons), 2 tab content sections, 5 permission-side `<script>` tags (table-resize, plan-helpers, data-loading, employee-list, permission-matrix), `css/employees.css` `<link>`, inline tab-routing script. Page entry permission widened to "settings.view OR employees.view" — PermissionUI auto-hides whichever tab the user lacks.
+
+**Verification:**
+- 20 of 20 SPEC §3 success criteria GREEN.
+- `grep -r "employees.html" --include='*.html' --include='*.js' --include='*.sql' --exclude-dir=_archive --exclude-dir=.git .` → **0** LIVE references.
+- `GET /employees.html` → 404 (file no longer at root); `GET /_archive/pre-consolidation/employees.html` → 200 (archive reachable).
+- npm run smoke → **7/7 PASS** on demo tenant. npm run verify:integrity → exit 0 (39 files clean).
+- Pre-commit safety tag `pre-consolidation-settings-permissions` placed BEFORE any edit (rollback via `git reset --hard pre-consolidation-settings-permissions`).
+- Localhost-Tester GREEN on 18 HTTP+payload checks; runtime DOM/JS interaction deferred to v2 (Playwright) per established v1 boundary.
+- 4 commits (C1 SPEC + catalog, C2 consolidation + git mv, C3 sweep, C4 retrospective + master-doc updates). 6 files changed in commits C1–C3 (547 ins, 8 del); commit C4 adds 4 retro files + master-doc updates + 4 skill-improvement edits.
+
+4 skill improvements harvested + applied (2 each to opticup-strategic + opticup-executor):
+- **opticup-strategic Author #1:** SPEC criteria using bare `grep -r "<old_name>"` should distinguish live links from narrative comments — pre-anticipated rewords avoid reactive 1-line edits mid-execution.
+- **opticup-strategic Author #2:** §0 Reality Check should include a checkbox-style item for pre-existing-untracked files (3 SPECs in a row have made the same D1 decision; codify it).
+- **opticup-executor #1:** "Tombstone comment" pattern — when adding a `<!-- merged from foo.html -->` style comment to the surviving file, do not name the dead path as a literal string (avoids the round-trip seen as D4 in this SPEC's EXECUTION_REPORT).
+- **opticup-executor #2:** add a "SPA tab page" reference snippet to executor SKILL.md — three pages now use the same `<nav id="mainNav">` + `<section class="tab">` + `showTab()` pattern; CRM Migration #3 may need it.
+
 ## 2026-05-11 — Migration #2: Settings + Permissions → Hybrid+Navy (2 LIVE production pages)
 
 SPEC: `MIGRATION_2_SETTINGS_PERMISSIONS` ([folder](specs/MIGRATION_2_SETTINGS_PERMISSIONS/))

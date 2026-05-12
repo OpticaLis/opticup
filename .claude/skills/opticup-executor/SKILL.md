@@ -288,6 +288,66 @@ The SPEC author SHOULD pre-declare expected side-effects per the SPEC_TEMPLATE �
 - **Page-scope `<style>` block placement.** When inserting a NEW `<style>` block to override CSS variables on a single page, place it inside `<head>` AFTER the last `<link rel="stylesheet">` tag and immediately before `</head>`. The cascade order requires the override to load AFTER the linked CSS. Intervening `<script>` tags do not affect CSS cascade. If the page already has an inline `<style>` block, prefer extending it over adding a new one (preserves DOM tag count discipline). (Harvested from `MIGRATION_2_SETTINGS_PERMISSIONS/FOREMAN_REVIEW.md` Executor Proposal #2, 2026-05-11.)
 - **Re-skin verification runner (planned helper, MIGRATION_3 onwards).** After every per-page edit on a visual-migration SPEC, run `node scripts/verify-reskin-page.mjs --file <page> --regression-hex '26215c|534ab7' --new-hex 1e3a8a --expected-scripts <N> --expected-links <N> --line-min <N> --line-max <N> --dom-tag-min <N> --dom-tag-max <N>` BEFORE `git add`. The script emits a single-line PASS/FAIL summary and exits non-zero on any FAIL. Replaces the 6-command verification dance and avoids the Bash `&&`-chain abort-on-grep-no-match trap. NOTE: the helper script does not yet exist; build it lazily when Migration #3 starts (or use `;`-separated greps + PowerShell tag count individually until then). (Harvested from `MIGRATION_2_SETTINGS_PERMISSIONS/FOREMAN_REVIEW.md` Executor Proposal #1, 2026-05-11.)
 
+### Sweep & archive patterns (added 2026-05-12 from SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md):
+
+- **Tombstone comments — never name the dead path as a literal string.** When a consolidation/archive SPEC adds a header comment to the surviving file explaining its history (e.g., "merged from foo.html", "replaces bar.html"), do NOT include the dead path as a literal string. Use a description ("former standalone permissions page", "former shipments page") instead. Reason: SPEC sweep criteria use bare `grep` checks that treat narrative comments and live links identically — a single literal in a comment can flip a criterion from PASS to FAIL and force a reactive 1-line reword commit. See `SETTINGS_PERMISSIONS_CONSOLIDATION/EXECUTION_REPORT.md` D4 for an example. (Harvested from that SPEC's FOREMAN_REVIEW Executor Proposal #1, 2026-05-12.)
+
+### Common Page Patterns — SPA tab page (added 2026-05-12)
+
+When a SPEC asks for a tabbed single-page surface (multiple sections with their own URL fragments, lazy content init), reuse the project-wide pattern — do NOT invent a new tab activator (Iron Rule 21).
+
+**Canonical HTML skeleton:**
+
+```html
+<nav id="mainNav">
+  <button data-tab="general"     data-tab-permission="settings.view"  class="active" onclick="goXxxTab('general')">⚙️ כללי</button>
+  <button data-tab="permissions" data-tab-permission="employees.view"             onclick="goXxxTab('permissions')">🔐 הרשאות</button>
+</nav>
+
+<main>
+  <section id="tab-general" class="tab active"> ... </section>
+  <section id="tab-permissions" class="tab">
+    <div id="employees-container">טוען...</div>
+  </section>
+</main>
+```
+
+**Per-page wrapper (page-local; reuses global `showTab()` from `js/shared-ui.js`):**
+
+```js
+let _xxxLoaded = false;
+function goXxxTab(name) {
+  if (name === 'general'     && !hasPermission('settings.view'))  return;
+  if (name === 'permissions' && !hasPermission('employees.view')) return;
+  const desired = '#' + name;
+  if (window.location.hash !== desired) history.replaceState(null, '', desired);
+  showTab(name);                                  // global, in shared-ui.js
+  if (name === 'permissions' && !_xxxLoaded && typeof loadEmployeesTab === 'function') {
+    _xxxLoaded = true;
+    loadEmployeesTab();                           // lazy init, called once
+  }
+}
+window.addEventListener('hashchange', () => {
+  goXxxTab(location.hash === '#permissions' ? 'permissions' : 'general');
+});
+```
+
+**Bootstrap (in DOMContentLoaded):**
+
+```js
+const session = await loadSession();
+if (!session) { window.location.href = '/'; return; }
+// Page entry widened to "either permission" — PermissionUI auto-hides whichever tab is unauthorized
+if (!hasPermission('settings.view') && !hasPermission('employees.view')) { window.location.href = '/'; return; }
+if (hasPermission('settings.view')) await loadSettings();    // default tab content
+const initial = window.location.hash;
+if (initial === '#permissions' && hasPermission('employees.view')) goXxxTab('permissions');
+else if (hasPermission('settings.view'))                          goXxxTab('general');
+else                                                              goXxxTab('permissions');
+```
+
+**Live exemplars:** `inventory.html` (lines 37–50, multi-tab page), consolidated `settings.html` (lines 32–35 nav + 198–249 routing). When CRM Migration #3 or any future tabbed page starts, copy the skeleton from one of these — do NOT redesign tab activation. PermissionUI auto-gates `[data-tab-permission]` after `loadSession()` (via `js/auth-service.js:309`) — no manual gating call needed. (Harvested from `SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md` Executor Proposal #2, 2026-05-12.)
+
 ### Surgical File Transformation — Recipes (added 2026-05-11)
 
 When the Edit tool's `old_string` would exceed ~100 lines (typical for

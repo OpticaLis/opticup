@@ -21,8 +21,9 @@ actual repo state, not in Brief assumptions that may have drifted.
 - Every hex / token / table / column / function name the Brief assumes was grep-verified against the actual file content.
 - Where the Brief's assumptions diverge from repo reality, the SPEC's success criteria are written against repo reality (the Brief's intent applied to what's actually there), not against the Brief's literal claims.
 - Lessons applied from prior `FOREMAN_REVIEW.md` files in this module — list each one and how it was honored.
+- Pre-existing untracked files surveyed (`git status --porcelain | grep '^??'` count recorded). The Executor will leave them alone — selective `git add` by filename throughout. (See CLAUDE.md §1.4. Codified after 3 consecutive Pipeline SPECs — MIGRATION_1, MIGRATION_2, SETTINGS_PERMISSIONS_CONSOLIDATION — made the same D1 decision.)
 
-(Harvested from `MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md` Author Proposal #2, 2026-05-11. Originally piloted in `M1_5_SKETCH_RESKIN_BATCH_3` as the Palette Pre-Audit.)
+(Harvested from `MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md` Author Proposal #2, 2026-05-11. Originally piloted in `M1_5_SKETCH_RESKIN_BATCH_3` as the Palette Pre-Audit. Untracked-files item added 2026-05-12 from `SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md` Author Proposal #2.)
 
 ---
 
@@ -76,6 +77,8 @@ possible. If a criterion is not measurable, the SPEC is not ready.
 **Every SPEC must include an Integrity Gate criterion** (Iron Rule 31). A SPEC
 whose execution ends with a null-byte ERROR in HEAD is not closed — it is open
 until the corruption is cleared. Reference: `scripts/verify-tree-integrity.mjs`.
+
+**Sweep criteria — link vs comment distinction.** When a §3 success criterion uses bare `grep -r "<old_name>"` to count references to a deleted/moved name, **narrative comments** in the surviving file (file-history docstrings, "merged from foo.html" headers, tombstone markers) will collide with the criterion alongside **live links** (HTML `href`/`src`, JS `import`, string literals consumed at runtime). Either: (a) tighten the regex (`grep -E "(href=|src=|url:|require\(|from\s+).*<old_name>"`) so only live links are counted; OR (b) add a one-line note authorizing the executor to reword narrative comments to satisfy the literal grep. Avoids reactive 1-line edits mid-execution. (Added 2026-05-12 from `SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md` Author Proposal #1.)
 
 ---
 
