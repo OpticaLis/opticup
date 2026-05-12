@@ -287,36 +287,18 @@
     if (!_wizard.name) { CrmHelpers.toast('error', 'שם שליחה חובה'); _wizard.step = 3; return; }
     if (!_wizard.body && !_wizard.templateId) { CrmHelpers.toast('error', 'תוכן הודעה חובה'); _wizard.step = 2; return; }
     if (_wizard.channel !== 'sms' && _wizard.channel !== 'email') { CrmHelpers.toast('error', 'ערוץ ' + (CHANNEL_LABELS[_wizard.channel] || _wizard.channel) + ' אינו פעיל'); _wizard.step = 1; return; }
+    if (!window.CrmBroadcastQueue || !CrmBroadcastQueue.enqueueBroadcast) { CrmHelpers.toast('error', 'CrmBroadcastQueue לא זמין'); return; }
     var leadIds = await CrmBroadcastFilters.buildLeadIds(_wizard);
     if (!leadIds.length) { CrmHelpers.toast('warning', 'אין נמענים'); return; }
-    if (!window.CrmMessaging || !CrmMessaging.sendMessage) { CrmHelpers.toast('error', 'CrmMessaging לא זמין'); return; }
-    var tid = getTenantId(), emp = (typeof getCurrentEmployee === 'function') ? getCurrentEmployee() : null;
+    var emp = (typeof getCurrentEmployee === 'function') ? getCurrentEmployee() : null;
     if (!emp || !emp.id) { CrmHelpers.toast('error', 'משתמש לא מזוהה'); return; }
     try {
-      var leadRows = await paginateQuery(
-        sb.from('crm_leads').select('id, full_name, phone, email').eq('tenant_id', tid).in('id', leadIds)
-      );
-      var ins = await sb.from('crm_broadcasts').insert({
-        tenant_id: tid, employee_id: emp.id, name: _wizard.name, channel: _wizard.channel, template_id: _wizard.templateId || null,
-        filter_criteria: {
-          board: _wizard.board,
-          statuses: _wizard.statuses.slice(),
-          events: _wizard.events.slice(),
-          openEventsOnly: !!_wizard.openEventsOnly,
-          language: _wizard.language || null,
-          source: _wizard.source || null
-        },
-        total_recipients: leadIds.length, total_sent: 0, total_failed: 0, status: 'queued' }).select('id').single();
-      if (ins.error) throw new Error(ins.error.message);
-      CrmHelpers.logActivity('crm.broadcast.send', 'crm_broadcast', ins.data.id, { name: _wizard.name, recipients: leadIds.length });
-      var baseSlug = null, lang = _wizard.language || 'he', tpls = window._crmMessagingTemplates ? window._crmMessagingTemplates() : [];
-      var tpl = _wizard.templateId ? tpls.find(function (t) { return t.id === _wizard.templateId; }) : null;
-      if (tpl) { lang = tpl.language || lang; var sfx = '_' + tpl.channel + '_' + lang; baseSlug = (tpl.slug && tpl.slug.slice(-sfx.length) === sfx) ? tpl.slug.slice(0, -sfx.length) : (tpl.slug || null); }
-      var calls = leadRows.map(function (l) { var v = { name: l.full_name || '', phone: l.phone || '', email: l.email || '' }; return baseSlug ? CrmMessaging.sendMessage({ leadId: l.id, channel: _wizard.channel, templateSlug: baseSlug, variables: v, language: lang }) : CrmMessaging.sendMessage({ leadId: l.id, channel: _wizard.channel, body: _wizard.body, subject: _wizard.name || '', variables: v, language: lang }); });
-      var ok = 0, fail = 0;
-      (await Promise.allSettled(calls)).forEach(function (r) { if (r.status === 'fulfilled' && r.value && r.value.ok) ok++; else fail++; });
-      await sb.from('crm_broadcasts').update({ total_sent: ok, total_failed: fail, status: fail === 0 ? 'completed' : 'partial' }).eq('id', ins.data.id).eq('tenant_id', tid);
-      CrmHelpers.toast(fail === 0 ? 'success' : 'warning', 'נשלחו ' + ok + ' הודעות' + (fail ? ', ' + fail + ' נכשלו' : ''));
+      // 2026-05-12 BROADCAST_QUEUE_INTEGRATION — route through crm_message_queue
+      // instead of N parallel browser→send-message calls. Heavy lifting lives
+      // in CrmBroadcastQueue (sibling file). dispatch-queue EF drains the queue
+      // at the throttled rate (500ms email / 1000ms SMS).
+      var r = await CrmBroadcastQueue.enqueueBroadcast(_wizard, leadIds, emp.id, sb);
+      CrmHelpers.toast('success', r.inserted + ' הודעות הוכנסו לתור (משלוח צפוי תוך ~' + r.etaMin + ' דקות)');
       if (typeof Modal.close === 'function') Modal.close();
       if (typeof window.loadMessagingLog === 'function') window.loadMessagingLog();
     } catch (e) { CrmHelpers.toast('error', 'שגיאה: ' + (e.message || e)); }
