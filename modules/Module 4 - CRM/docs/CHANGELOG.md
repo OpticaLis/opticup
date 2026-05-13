@@ -2,6 +2,37 @@
 
 ---
 
+## M4_WAITLIST_SYNC_PRIORITY_FIX — sync RPC waitlist precedence + event-close recycle trigger + retroactive backfills 🟢
+
+| Hash | Message |
+|------|---------|
+| `821c1c6` | `feat(spec,m4): open M4_WAITLIST_SYNC_PRIORITY_FIX SPEC` |
+| `48766d2` | `feat(rpc,m4): sync_lead_status_from_attendee waitlist precedence (3.1)` |
+| `c57e32c` | `feat(trigger,m4): event-close recycle leads to waiting (3.3)` |
+| `38b582f` | `test(m4): demo smoke for event-close recycle trigger (3 Step 3)` |
+| `7b7185e` | `chore(m4): retroactive recycle past Prizma+Demo closed events (3.4)` |
+| `0add7b0` | `chore(m4): retroactive waitlist sync for Prizma (3.2)` |
+| (this) | `chore(spec,m4): close M4_WAITLIST_SYNC_PRIORITY_FIX with retrospective` |
+
+**Outcome:** Closes the gap surfaced in `WAITLIST_FLOW_INVESTIGATION_2026_05_13.md` between Daniel's product intent ("show me leads currently waitlisted") and the existing flow. Three concrete deliverables on the database:
+
+1. **`sync_lead_status_from_attendee` RPC body** — adds `ORDER BY (CASE WHEN a.status='waiting_list' THEN 0 ELSE 1 END), <original ORDER BY>` so a `waiting_list` attendee row on a non-closed event wins precedence over `attended`/`registered` rows on other active events. Brief Decision #1. Single in-place body change; no new RPC name; preserves the existing `e.status NOT IN ('completed','cancelled')` filter.
+2. **New trigger `trg_event_status_close_recycle_leads` on `crm_events`** — AFTER UPDATE OF status. When `OLD.status NOT IN ('closed','completed')` AND `NEW.status IN ('closed','completed')`, sets `lead.status='waiting'` for every lead whose attendee row on this event has `status IN ('invited','attended')` AND `is_deleted=false`. Tenant-scoped inner UPDATE (Iron Rule 22). Implements Brief Decision #3.
+3. **Retroactive backfills** — §3.4 recycle on 86 Prizma rows (84 `invited` + 2 `confirmed`); §3.2 sync on 8 Prizma leads (7 → `waiting`, 1 no-op). All 8 stuck Prizma leads from the March 2026 completed event now show as ready for the next event. Brief §3.4 + §3.2.
+
+**Demo smoke:** PASS — DO-block sentinel pattern verified 4/4 cases (`invited` recycles → `waiting`, `attended` recycles → `waiting`, `registered` does NOT recycle, `confirmed` does NOT recycle). Cleanup hard-deleted all test rows; post-cleanup leftover count = 0.
+
+**Verification:** Criterion #13 (Brief §3.2 acceptance) verified live —
+`count(Prizma leads.status='waitlist') = count(distinct Prizma leads with waiting_list attendee on non-closed/non-completed event) = 0; equal=true`.
+
+**Safety:** Master safety tag `pre-waitlist-sync-priority-fix-2026-05-14` at `9c36c26`. Per-row pre-state snapshot in `STEP4_PRE_POST_SNAPSHOT.md` + `STEP5_PRE_POST_SNAPSHOT.md` for row-by-row rollback. 0 columns touched outside `crm_leads.status`. 0 deletes outside the smoke-test rows the executor itself created. 0 merges to `main`.
+
+**Findings:** 1 INFO logged — 1 demo lead (`P55 Daniel Secondary`) with active waiting_list attendee out of Brief §3.2 scope; manual sync command included in `FINDINGS.md` if Daniel wants to QA the new priority logic on demo.
+
+**Run mode:** Full-Auto Pipeline. Sonnet model intent (Brief §3); actual run on Opus 4.7 1M-context.
+
+---
+
 ## M4_RAW_SB_WRAPPER_MIGRATION_PHASE_1 — 7 of 8 raw `sb.from()` calls in 3 hot files migrated to `DB.*` 🟢
 
 | Hash | Message |
