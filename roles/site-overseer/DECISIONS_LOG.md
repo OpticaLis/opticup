@@ -24,6 +24,27 @@
 
 ## Entries
 
+### 2026-05-13 — REVERSAL: REC-SITE-020 + REC-SITE-021 (B) reverted (wrong page edited)
+
+- **Context:** After both prior SPECs landed on `develop` (REC-SITE-020 via storefront commit `ac6eef6` merged to main via PR #21; REC-SITE-021 sub-item (B) via storefront commit `84e7e88` on develop only), Daniel reviewed and identified the page mismatch: he had been referring to `/supersale/` (the SuperSale landing page with lead form) the entire time, not `/quick-register/` (the QR-walk-in registration page, Module 4 CRM). The two pages have similar lead-form layouts but serve completely different flows — `/supersale/` is the public marketing entry, `/quick-register/` is staff-WhatsApp → QR → walk-in only.
+- **Decision:** Roll back BOTH commits on `/quick-register/` (verbatim restore to pre-2026-05-13 state) and re-target the correct page `/supersale/` in a separate SPEC `M3_SUPERSALE_MARKETING_CHECKBOX`. Daniel directive (verbatim): "להחזיר אחורה ואל תגע בעמוד הזה" — revert and don't touch `/quick-register/` again.
+- **Operational action (this entry — M3_QUICK_REGISTER_ROLLBACK SPEC):**
+  - Storefront `git revert 84e7e88 --no-edit` → commit `19d63824bcb9435cb007270695107c18e4695ccf` (undoes text expansion on line 165).
+  - Storefront `git revert ac6eef6 --no-edit` → commit `ee356ca622fd2d111c40d05d065850e24757b40f` (undoes pre-tick removal on line 164).
+  - Both reverts pushed to `origin develop`. No conflict (separate lines).
+  - File `src/pages/quick-register/index.astro` byte-equal to pre-2026-05-13 state on develop: line 164 = `'<label class="qr-check"><input type="checkbox" id="marketing" checked>' +`, line 165 = `'<span>אני מסכים/ה לקבל עדכונים שיווקיים והצעות מיוחדות</span>' +`. TERMS checkbox unchanged throughout.
+  - `npm run build` PASS (5.77s); image-proxy guard PASS (9 files, 0 violations).
+  - PR closure: `gh` not authenticated in executor shell — **Daniel-manual step required.** If an open PR exists for `develop → main` (e.g. the one Daniel may have opened for `84e7e88`), close it via GitHub UI with the comment template from SPEC §10. If no open PR exists, this step is moot.
+  - HANDOFF rows updated: REC-SITE-020 → `(reverted)`, REC-SITE-021 → `MEDIUM (PARTIAL — (B) reverted, (C) deferred)`.
+- **Important production state caveat:** `main` already contains `ac6eef6` (merged via PR #21 before the page-target error was caught). The two reverts on `develop` therefore leave `develop` 3 commits ahead of `main` (the original `84e7e88` + 2 reverts), with `develop` and `main` differing on line 164: `develop` has `checked` (pre-SPEC state), `main` has the unchecked version from `ac6eef6`. **To restore production to pre-2026-05-13 state, Daniel must open a follow-up rollback PR `develop → main` and merge it.** This SPEC does not auto-open that PR (cross-repo / no auth / Daniel-only authorization for main-bound merges).
+- **What the SPEC author got wrong (and what changed):**
+  - SPEC §3 Criterion 6 assumed `develop` was 2 commits ahead of `main` BEFORE this SPEC. Reality: 1 commit ahead. ac6eef6 had already been merged to main via PR #21.
+  - SPEC §3 Criterion 6 expected `develop` to match `main` AFTER (0 commits ahead). Unachievable without touching main — flagged in EXECUTION_REPORT for Foreman.
+  - The desired outcome (file content restored on develop) IS achieved; the "develop = main" condition can only be achieved by a follow-up Daniel-merge.
+- **Cross-refs:** `modules/Module 3 - Storefront/docs/specs/M3_QUICK_REGISTER_ROLLBACK/EXECUTION_REPORT.md`, `FINDINGS.md`, `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-020 + REC-SITE-021 rows). New SPEC for correct page: `M3_SUPERSALE_MARKETING_CHECKBOX` (to be drafted separately).
+
+---
+
 ### 2026-05-13 — pixel-verification + quick-register-pretick-removal (REC-SITE-020)
 
 - **Context:** Daniel asked Site Overseer to verify Meta Pixel `304574492100180` is correctly wired on the live site. Verification path: `storefront_config.analytics.facebook_pixel_id = "304574492100180"` ✅, homepage HTML emits `fbq('init','304574492100180') + fbq('track','PageView')` inside `consentGate(marketing===true)` per REC-SITE-010 architecture, plus 4 `pixel_events` rules wired to `/successfulsupersale/` (HE/EN/RU) + `/successfulmulti/` for Lead tracking. Verified clean on `/` and `/en/`.
