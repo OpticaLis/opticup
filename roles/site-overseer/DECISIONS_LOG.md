@@ -24,6 +24,37 @@
 
 ## Entries
 
+### 2026-05-13 — pixel-verification + quick-register-pretick-removal (REC-SITE-020)
+
+- **Context:** Daniel asked Site Overseer to verify Meta Pixel `304574492100180` is correctly wired on the live site. Verification path: `storefront_config.analytics.facebook_pixel_id = "304574492100180"` ✅, homepage HTML emits `fbq('init','304574492100180') + fbq('track','PageView')` inside `consentGate(marketing===true)` per REC-SITE-010 architecture, plus 4 `pixel_events` rules wired to `/successfulsupersale/` (HE/EN/RU) + `/successfulmulti/` for Lead tracking. Verified clean on `/` and `/en/`.
+- **Follow-up question from Daniel:** Whether the SuperSale lead form (`/quick-register/`) can auto-accept cookie consent on form submit (to avoid losing Pixel data on customers who don't engage with the consent banner). Surfaced two pre-existing issues during investigation: (1) the marketing-consent checkbox is `checked` by default — pre-ticked consent is illegal under Israeli Privacy Act 2024 amendment + Communications Act §30א; (2) there is no separate `/successfulsupersale/` thank-you page — success is inline, so the 4 `pixel_events` Lead rules never fire from `/quick-register/`. Site Overseer proposed 3 actions: (a) remove pre-tick — legal compliance, (b) expand marketing checkbox text to also cover marketing cookies — eliminates the need for separate consent on the SuperSale flow, (c) wire `fbq('track','Lead')` to fire on successful form submit if user consented. Daniel asked twice whether marketing consent could be made mandatory; Site Overseer recommended against — bundling consent for marketing/cookies with a required-to-register checkbox is "forced consent" and prohibited (fines up to ₪67,300 + class-action exposure).
+- **Question (asked in conversation 2026-05-13):** Approve all three actions, or subset?
+- **Decision:** Approve action (a) only — remove the `checked` attribute from the marketing-consent checkbox at `src/pages/quick-register/index.astro:164`. Actions (b) text expansion + (c) Lead pixel wiring deferred — Daniel said "כרגע תעדכן את זה בקשר לשאר הפעולות שהצעת נדבר כשתסיים".
+- **Rationale:** Daniel asked twice about pre-ticked / mandatory marketing consent; both times Site Overseer cited the legal prohibition (pre-ticked = invalid consent under Israeli Privacy Act 2024; mandatory = forced consent, also invalid). Daniel accepted the legal constraint and chose the minimal compliant fix first. Deferred actions remain on the table for a separate conversation.
+- **Operational action:**
+  - Verified live: Pixel `304574492100180` correctly wired on production, consent-gated per REC-SITE-010 design.
+  - SPEC to be drafted: `M3_QUICK_REGISTER_MARKETING_PRETICK_REMOVAL` — single-file change in opticup-storefront repo, remove `checked` attribute from line 164 marketing checkbox.
+  - HANDOFF updated: REC-SITE-020 added (PENDING-EXECUTION) for action (a); REC-SITE-021 added (DEFERRED) bundling actions (b) + (c).
+- **Cross-refs:** `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-020 + REC-SITE-021), `storefront_config.analytics` JSONB for prizma tenant, `tenants.ui_config.cookie_consent` (REC-SITE-010 architecture).
+
+#### Closure — 2026-05-13 (same day)
+
+- **SPEC executed:** `modules/Module 3 - Storefront/docs/specs/M3_QUICK_REGISTER_MARKETING_PRETICK_REMOVAL/SPEC.md` (Foreman-authored 2026-05-13 in opticup-strategic Site-Overseer hat).
+- **Executor:** opticup-executor (Bounded Autonomy, Claude Code Windows desktop).
+- **Result:** REC-SITE-020 closed. Single-line edit to `opticup-storefront/src/pages/quick-register/index.astro:164` — removed ` checked` token from marketing checkbox `<input>` tag. Storefront commit `ac6eef6ba77e721c326b2f3003c4136c115a8ecf`, pushed to `develop`. PR to `main` NOT auto-opened (`gh` not authenticated in executor shell, no `GH_TOKEN` env var) — Daniel must open via https://github.com/OpticaLis/opticup-storefront/compare/main...develop?expand=1 then merge to trigger Vercel auto-deploy. All 10 pre-deploy success criteria PASS (#11 live verify is post-merge).
+- **Verification evidence:**
+  - Criterion 2 (pre-flight): `grep -n 'id="marketing" checked' src/pages/quick-register/index.astro` → 1 match on line 164 ✅
+  - Criterion 3 (post-edit): `grep -n 'id="marketing"' src/pages/quick-register/index.astro` → 1 match, line 164 = `'<label class="qr-check"><input type="checkbox" id="marketing">' +` (no `checked`) ✅
+  - Criterion 4: 0 matches for `id="marketing" checked|checked.*id="marketing"` ✅
+  - Criterion 5: TERMS checkbox unchanged, line 161 still `id="terms" required` ✅
+  - Criterion 7: `git diff --stat` → "1 file changed, 1 insertion(+), 1 deletion(-)" ✅
+  - Criterion 8: `npm run build` exit 0 (Astro 4.37s; image-proxy guard PASS, 9 files scanned, 0 supabase.co/storage references) ✅
+  - Criterion 10: 1 commit on develop ✅
+- **Deferred (still on REC-SITE-021):** (B) marketing checkbox text expansion to also cover "קוקיז שיווקיים"; (C) `fbq('track','Lead')` wiring on form submit.
+- **Cross-refs:** `modules/Module 3 - Storefront/docs/specs/M3_QUICK_REGISTER_MARKETING_PRETICK_REMOVAL/EXECUTION_REPORT.md`, `FINDINGS.md` (if any), `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (row flipped to `(closed)`).
+
+---
+
 ### 2026-05-10 — rec019-tier1-slug-fix (M3_TIER1_CATEGORY_SLUG_FIX / REC-SITE-019)
 
 - **Context:** REC-SITE-019 — the Lighthouse cron's Tier 1 list (config in `roles/site-overseer/tools/lighthouse/config/tier1-pages.json`) cited `/categories/sunglasses/` and `/categories/eyeglasses/` (plural + trailing slash) which 404'd. Daniel discovered live 2026-05-10 that the actual routes are `/category/sunglasses` and `/category/eyeglasses` (singular, no trailing slash). M3-DATA-03 originally framed three closure paths (build dedicated routes / replace with equivalents / accept SKIP_404).
