@@ -49,40 +49,24 @@
     // server-authoritative bodies, search, deselection, etc. Falls through to
     // the legacy mode='evaluate' + v1 modal path if v2 is missing (preserves
     // backward compatibility during the gradual rollout).
-    var useV2 = (window.CrmConfirmSendV2 && typeof CrmConfirmSendV2.show === 'function');
+    var useV2 = (window.CrmConfirmSendV2 && typeof CrmConfirmSendV2.showAsync === 'function');
     if (useV2) {
-      var preview = await callEf({
+      // Brief §3.8 — incremental count display. Open the modal in loading
+      // state IMMEDIATELY (so the operator sees "🔄 מחשב נמענים..." rather
+      // than a blank screen), then hand it the preview promise; the modal
+      // hydrates when the EF returns.
+      var previewPromise = callEf({
         tenant_id: _tid,
         trigger_type: triggerType,
         trigger_data: triggerData || {},
         mode: 'dispatch_preview'
       });
-      if (!preview) return ZERO();
-      var runIdV2 = preview.run_id || null;
-      var firedBaseV2 = {
-        run_id: runIdV2,
-        fired: preview.fired || 0,
-        sent: 0, failed: 0, rejected: 0,
-        queued: preview.queued || 0,
-        skipped: preview.skipped || 0
-      };
-      var recipientsV2 = Array.isArray(preview.recipients_by_lead) ? preview.recipients_by_lead : [];
-      // No recipients (queue_send-only firings, or all leads filtered out) —
-      // skip the modal and emit evaluate-shape so callers see fired=N + queued=Q.
-      if (!recipientsV2.length) {
-        if (typeof onAfterConfirm === 'function') {
-          try { await onAfterConfirm(); }
-          catch (e) { console.warn('CrmAutomationClient onAfterConfirm threw (v2 empty):', e && e.message); }
-        }
-        return firedBaseV2;
-      }
-      CrmConfirmSendV2.show(preview, async function (choice, ctx) {
+      CrmConfirmSendV2.showAsync(previewPromise, async function (choice, ctx) {
         var dispatchRes = await callEf({
           tenant_id: _tid,
           trigger_type: triggerType,
           trigger_data: triggerData || {},
           mode: 'dispatch',
-          run_id: runIdV2,
           dispatch_messages: choice && choice.dispatch === true,
           exclude_lead_ids: (ctx && Array.isArray(ctx.excludeLeadIds)) ? ctx.excludeLeadIds : [],
           recipient_subset: (ctx && Array.isArray(ctx.recipientSubset)) ? ctx.recipientSubset : []
@@ -92,14 +76,13 @@
           catch (e) { console.warn('CrmAutomationClient onAfterConfirm threw (v2):', e && e.message); }
         }
         if (!dispatchRes) {
-          var blast = recipientsV2.length - ((ctx && ctx.excludeLeadIds) ? ctx.excludeLeadIds.length : 0);
-          return choice && choice.dispatch ? { sent: 0, failed: blast, rejected: 0 } : { sent: 0, failed: 0, rejected: 0 };
+          return choice && choice.dispatch ? { sent: 0, failed: 0, rejected: 0 } : { sent: 0, failed: 0, rejected: 0 };
         }
         return dispatchRes;
       });
-      firedBaseV2.pending_confirm = true;
-      firedBaseV2.planned = recipientsV2.length;
-      return firedBaseV2;
+      // Caller doesn't await dispatch — modal handles it. Return placeholder.
+      var pendingShape = { run_id: null, fired: 0, sent: 0, failed: 0, rejected: 0, queued: 0, skipped: 0, pending_confirm: true };
+      return pendingShape;
     }
 
     // Legacy v1 path: mode='evaluate' + CrmConfirmSend.show(planItems, ...)
