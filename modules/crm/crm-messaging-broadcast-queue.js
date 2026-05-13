@@ -81,7 +81,11 @@
         language: lang,
         variables: { name: l.full_name || '', phone: l.phone || '', email: l.email || '' },
         status: 'queued',
-        scheduled_at: now
+        scheduled_at: now,
+        // 2026-05-13 BROADCAST_EVENT_LINK_SUPPORT — carry event_id so the
+        // send-message EF can build %registration_url% via injectAutoUrls
+        // for each recipient. null when broadcast is not event-linked.
+        event_id: wizard.eventId || null
       };
       if (baseSlug) {
         row.template_slug = baseSlug;
@@ -117,7 +121,12 @@
         events: wizard.events.slice(),
         openEventsOnly: !!wizard.openEventsOnly,
         language: wizard.language || null,
-        source: wizard.source || null
+        source: wizard.source || null,
+        // 2026-05-13 BROADCAST_EVENT_LINK_SUPPORT — audit trail for the
+        // event the broadcast is linked to (separate from the filter
+        // events[] used for audience selection). Stored in jsonb to avoid
+        // DDL on crm_broadcasts.
+        event_id: wizard.eventId || null
       },
       total_recipients: totalRecipients,
       total_sent: 0,
