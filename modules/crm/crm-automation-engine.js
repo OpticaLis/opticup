@@ -35,6 +35,13 @@
   // this trigger type directly; the entry exists so the rule editor can save
   // rules with trigger_event='status_change' and the dispatch lifecycle is
   // exclusively server-side.
+  // M4_STATUS_TRIGGER_FRAMEWORK_EXTENSION (2026-05-14): lead_status_change AND
+  // event_status_change ALSO route through the queue now (DB triggers
+  // trg_lead_status_change_event + trg_event_status_change_event). The legacy
+  // in-process dispatch (crm-lead-actions.js, crm-event-actions.js direct
+  // CrmAutomationClient.evaluate calls) still runs in parallel — both paths
+  // are active intentionally; the queue path is a decoupled bus for monitoring
+  // and future-rule wiring.
   var TRIGGER_TYPES = {
     event_status_change:     { entity: 'event',    event: 'status_change' },
     event_registration:      { entity: 'attendee', event: 'created'       },
