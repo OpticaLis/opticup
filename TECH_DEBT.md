@@ -7,6 +7,34 @@
 
 ## Active Debt
 
+### #M2-DEBT-LOGO-PATH-CANONICALIZATION — 🟢 12 of 13 Prizma tenant-logos at legacy paths
+
+**Where:** Supabase Storage bucket `tenant-logos`. Audit captured during `SECURITY_HOTFIX_2026_05_13` §6.8 pre-step (2026-05-13).
+
+**What:** 13 logo files in the bucket. Only 1 file is at the canonical `<tenant_id>/<filename>` convention (`6ad0781b-37f0-47a9-92e3-be9ed1477e1c/logo.png`). The other 12 use legacy prefixes: 8 at `brands/<tenant_id>/<filename>` (brand-gallery uploads from earlier Module 3 work) and 4 at `tenants/<tenant_id>/<filename>` (versioned `site-logo_<timestamp>.png` uploads). Demo has 0 logos.
+
+**Why it's debt:** The `SECURITY_HOTFIX_2026_05_13` §6.8 storage policy was made **legacy-path-compatible** (accepts tenant_id at folder index `[1]` OR — after a `brands`/`tenants` prefix — at index `[2]`) precisely because Brief §5.3 forbade Prizma data writes during that hotfix. The policy as written is correct and secure for both conventions; the debt is purely architectural hygiene — having three path conventions in one bucket invites future bugs when adding a tenant or a new upload flow.
+
+**Why deferred:** Backfill requires moving 12 storage objects + updating FK references in `brands.logo_url` (8 files) and any other consumer of the legacy paths. That's data-migration territory, not security. Owns its own SPEC.
+
+**Planned fix:** Future SPEC `M2_TENANT_LOGOS_PATH_CANONICALIZATION` (small, 1-day scope) — enumerate consumers via grep across opticup + opticup-storefront, plan storage object renames + FK updates per tenant, smoke on demo (currently empty), apply on Prizma in a maintenance window, then drop the `OR (storage.foldername(name))[1] IN ('brands','tenants')` legacy branches from the storage policies. Until that SPEC ships, the current policy is correct and the security gap from audit Finding 11 is CLOSED.
+
+---
+
+### #M3-DEBT-V_STOREFRONT_CROSS_TENANT_HARDEN — 🟡 17 storefront views lack tenant filter inside the view
+
+**Where:** Views in `public`: `v_storefront_products`, `v_storefront_branches`, `v_storefront_config`, `v_public_tenant`, `v_ai_content`, `v_content_translations`, `v_tenant_i18n_overrides`, `v_translation_dashboard`, `v_crm_event_stats`, and 8 others (full list in `docs/guardian/SECURITY_ADVISOR_AUDIT_2026_05_13.md` Finding 14). All are SECURITY DEFINER, granted SELECT to anon per Iron Rule 13 ("Views-only for external reads"), and rely on the storefront supplying `?tenant_id=eq.<uuid>` as a URL query parameter to scope to a single tenant.
+
+**Why it's debt:** Today this is a no-op — Prizma is the only tenant in production, so a missing tenant filter exposes only Prizma data, which is already public-by-design for the storefront. **When tenant #2 onboards**, an anon caller who drops the `?tenant_id=eq.<x>` filter from any of these views' PostgREST URLs reads every published storefront's products / branches / config / campaign cards. That's a competitor-catalog leak path.
+
+**Why deferred:** Daniel locked decision Q4 in the SECURITY_HOTFIX brief: "DEFER to SaaS-readiness program before tenant #2 onboards." Single-tenant production today; competitor-catalog leak surfaces only at tenant-2 time.
+
+**Planned fix:** Future Module 3 SPEC `M3_V_STOREFRONT_TENANT_INVOKER_HARDEN` — convert each view to `security_invoker = true` + add an explicit tenant_id WHERE clause driven by JWT claim (requires storefront-side per-request JWT minting; the storefront's Astro origin would resolve `slug → tenant_id` at SSR time and mint a short-lived JWT for the browser to send on subsequent RPC/view calls). Out of scope until tenant #2 onboarding is scheduled.
+
+**Cross-reference:** `SECURITY_HOTFIX_2026_05_13_SUMMARY.md` §6 next-step #3; audit Finding 14.
+
+---
+
 ### #M1_5-DEBT-CRM-ORPHAN-TAILWIND-CONFIG — 🟢 CRM Tailwind config defines unused color tokens
 
 **Where:** `crm.html` lines 26-37 (inline Tailwind config `<script>` block). Surfaced by MIGRATION_3_CRM (2026-05-12) F2.

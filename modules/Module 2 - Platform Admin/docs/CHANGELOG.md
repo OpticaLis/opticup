@@ -2,6 +2,27 @@
 
 ---
 
+## SECURITY_HOTFIX_2026_05_13 — Cross-cutting hotfix (2026-05-13)
+
+**Status:** 🟢 CLOSED. Full Auto Pipeline (single chat, Opus, ~3 hours).
+**SPEC:** `modules/Module 2 - Platform Admin/docs/specs/SECURITY_HOTFIX_2026_05_13/`.
+**Driving audit:** `docs/guardian/SECURITY_ADVISOR_AUDIT_2026_05_13.md`.
+**Run summary:** `docs/guardian/SECURITY_HOTFIX_2026_05_13_SUMMARY.md`.
+
+Module-2-touched changes:
+- `create_tenant(text, text, text, text, text, uuid, text, text, uuid)` — REVOKE EXECUTE FROM PUBLIC, anon, authenticated. service_role retains.
+- 9 `v_admin_*` views (`v_admin_leads`, `v_admin_campaigns`, `v_admin_pages`, `v_admin_media`, `v_admin_reviews`, `v_admin_components`, `v_admin_product_picker`, `v_admin_campaign_templates`, `v_admin_component_presets`) — `ALTER VIEW … SET (security_invoker = true)` + `REVOKE SELECT FROM anon`. authenticated retains.
+- `tenant-logos` storage bucket — 3 PUBLIC-role overpermissive policies dropped (`tenant-logos all`, `Authenticated upload tenant logos`, `Authenticated update tenant logos`); 3 new policies created (`tenant_logos_authenticated_insert/_update/_delete`) restricted to authenticated role with JWT-claim tenant_id check; legacy-path-compatible (`<tenant_id>/<filename>` OR `brands/<tenant_id>/…` OR `tenants/<tenant_id>/…`); `Public read tenant logos` preserved for storefront display.
+- `platform_audit_log` — `audit_log_admin_insert` policy dropped (was `WITH CHECK true`). Reads still gated; writes via SECURITY DEFINER admin RPCs bypass RLS as postgres.
+
+Module 2 commits:
+- `fcd1e76` docs(spec,m2): author SECURITY_HOTFIX_2026_05_13 SPEC + 4 non-destructive migration pairs + MIGRATIONS_APPLIED runbook
+- `eaf5911` chore(db,m2): apply low-risk DDL group (§6.1 + §6.2 + §6.3 + §6.9)
+- `d6e5118` chore(db,m2): apply §6.8 tenant-logos policy (legacy-path-compatible)
+- (storefront + §6.4 + §6.5/6/7 changes are recorded under Modules 1/3/4 respectively; this entry tracks Module-2-owned objects only.)
+
+---
+
 ## QA Phase — Full Test (2026-03-26)
 
 ### Summary
