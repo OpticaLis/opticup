@@ -1,9 +1,12 @@
 # OVERNIGHT BLOCKER — SPEC #3 `M4_DEAD_WAITLIST_SLUG_CLEANUP`
 
+> **Status: ✅ RESOLVED 2026-05-13** — see `modules/Module 4 - CRM/docs/specs/M4_DEAD_WAITLIST_SLUG_CLEANUP/FOREMAN_REVIEW.md` for closure verdict and `modules/Module 4 - CRM/docs/audits/WAITLIST_FLOW_INVESTIGATION_2026_05_13.md` for the deeper investigation. Resolution: Daniel-approved single-row UPDATE moved the Prizma test lead from `status='waitlist'` to `status='waiting'`; the `waitlist` slug in `crm_statuses` is INTENTIONALLY RETAINED on both tenants per Daniel's directive ("שלא ימחק את הסטטוס בשום אופן"). Daniel's deeper truth: `waitlist` is NOT a dead slug — it is the TARGET of an automatic capacity-reached flow (`sync_lead_status_from_attendee` RPC) that is implemented end-to-end but has never fired in production. Decision on a follow-up `M4_WAITLIST_SYNC_PRIORITY_FIX` SPEC: pending Daniel's read of the investigation report. Verdict: 🟡 CLOSED-WITH-REVISED-SCOPE.
+
 > **Filed:** 2026-05-13/14 overnight Pipeline run
 > **Driving brief:** `modules/Module 4 - CRM/architecture-brief/M4_OVERNIGHT_AUDIT_HARVEST_BRIEF.md` §4.3 + §2.7
 > **Pipeline coordinator:** Claude Opus 4.7 (single-chat overnight Pipeline)
 > **Master safety tag:** `pre-overnight-m4-2026-05-13` → `e2892d4`
+> **Resolution safety tag:** `pre-waitlist-investigation-2026-05-13` → `b27b74f`
 
 ---
 
