@@ -235,6 +235,23 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
   };
 }
 
+// M4_STATUS_TRIGGER_FRAMEWORK_EXTENSION (2026-05-14): entity-aware payload
+// shaping for the queue consumer. Producer triggers per entity:
+//   attendee → payload={event_id, lead_id};      entity_id = attendee id
+//   lead     → payload={phone, source};          entity_id = lead id
+//   event    → payload={event_date, event_name}; entity_id = event id
+// Returns null for an unknown entity_type so the consumer treats it as poison-
+// pill skip (same as unregistered entity_type).
+type QueueRow = { id: string; entity_type: string; entity_id: string; old_status: string | null; new_status: string; payload: Record<string, unknown> | null };
+function buildTriggerDataForEntity(e: QueueRow): Record<string, unknown> | null {
+  const payload = (e.payload && typeof e.payload === "object") ? e.payload : {};
+  const base = { oldStatus: e.old_status, newStatus: e.new_status, status: e.new_status };
+  if (e.entity_type === "attendee") return { ...base, attendeeId: e.entity_id, leadId: typeof payload.lead_id === "string" ? payload.lead_id : null, eventId: typeof payload.event_id === "string" ? payload.event_id : null };
+  if (e.entity_type === "lead")     return { ...base, leadId: e.entity_id, eventId: null, attendeeId: null, phone: typeof payload.phone === "string" ? payload.phone : null, source: typeof payload.source === "string" ? payload.source : null };
+  if (e.entity_type === "event")    return { ...base, eventId: e.entity_id, leadId: null, attendeeId: null, eventDate: typeof payload.event_date === "string" ? payload.event_date : null, eventName: typeof payload.event_name === "string" ? payload.event_name : null };
+  return null;
+}
+
 // STATUS_CHANGE_TRIGGERS_FRAMEWORK (2026-05-12).
 // Consumer for the crm_status_change_events queue. Called once per minute per
 // tenant by the pg_cron job consume_status_change_events. Reads N unconsumed
@@ -277,7 +294,7 @@ export async function consumeStatusChangeEvents(
 
   let processed = 0, evaluated = 0, errors = 0;
   for (const ev of events) {
-    const e = ev as { id: string; entity_type: string; entity_id: string; old_status: string | null; new_status: string; payload: Record<string, unknown> | null };
+    const e = ev as QueueRow;
     try {
       const triggerType = registryMap.get(e.entity_type);
       if (!triggerType) {
@@ -289,15 +306,14 @@ export async function consumeStatusChangeEvents(
         processed++;
         continue;
       }
-      const payload = (e.payload && typeof e.payload === "object") ? e.payload : {};
-      const triggerData: Record<string, unknown> = {
-        oldStatus: e.old_status,
-        newStatus: e.new_status,
-        status: e.new_status,
-        attendeeId: e.entity_id,
-        leadId: typeof payload.lead_id === "string" ? payload.lead_id : null,
-        eventId: typeof payload.event_id === "string" ? payload.event_id : null,
-      };
+      const triggerData = buildTriggerDataForEntity(e);
+      if (!triggerData) {
+        await db.from("crm_status_change_events")
+          .update({ consumed_at: new Date().toISOString() })
+          .eq("id", e.id).eq("tenant_id", tenantId);
+        processed++;
+        continue;
+      }
       const r = await evaluate(db, {
         tenantId, triggerType, triggerData,
         mode: "dispatch", planItems: null, dispatchMessages: true,
