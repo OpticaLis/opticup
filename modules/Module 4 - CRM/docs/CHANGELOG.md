@@ -2,6 +2,22 @@
 
 ---
 
+## BROADCAST_EVENT_LINK_SUPPORT — wizard carries event_id end-to-end for `%registration_url%` 🟢
+
+| Hash | Message |
+|------|---------|
+| `4b03718` | `feat(crm-broadcast): carry event_id through wizard -> queue -> EF` |
+| (this)   | `docs(m4-crm): note BROADCAST_EVENT_LINK_SUPPORT in SESSION_CONTEXT + CHANGELOG + MODULE_MAP + MASTER_ROADMAP + OPEN_TASKS` |
+| (next)   | `chore(spec): close BROADCAST_EVENT_LINK_SUPPORT with retrospective` |
+
+**Outcome:** Event #24 rescue dispatch (Fri 2026-05-15 event, blocked 09:13 IL on 2026-05-13 by 552/552 failed broadcast carrying literal `%registration_url%`) is now unblocked. CRM Broadcast Wizard step 3 (template) carries an optional "Linked event" dropdown listing events with status IN (`scheduled`, `registration_open`, `event_day`) AND `is_deleted=false`, plus a leading "— ללא קישור לאירוע —" option mapping to null. `_wizard.eventId` flows through `CrmBroadcastQueue.enqueueBroadcast` → `crm_message_queue.event_id` (column already nullable, no DDL). `crm_broadcasts.filter_criteria.event_id` records the link in jsonb. The `send-message` EF v23 already supported event-linked broadcasts via `injectAutoUrls(db, leadId, tenantId, eventId, variables)`; the wizard simply never collected/forwarded `event_id`. Three demo E2E smokes verified: event-linked send produces real short-link `/r/<8-char>`, no-event send still works, event-linked + unknown placeholder fails on the unknown placeholder (NOT registration_url). Zero Prizma writes during dev/smoke.
+
+**Run mode:** Full-Auto Pipeline (Foreman SPEC authoring → Executor end-to-end → closure). 3-commit budget honored. Pre-spec safety tag `pre-broadcast-event-link-support`. Files modified: 2 JS (`modules/crm/crm-messaging-broadcast.js` 341→350 at file-size cap; `modules/crm/crm-messaging-broadcast-queue.js` 167→176). No schema change, no EF change, no Prizma rows touched.
+
+See `modules/Module 4 - CRM/docs/specs/BROADCAST_EVENT_LINK_SUPPORT/`.
+
+---
+
 ## STATUS_CHANGE_TRIGGERS_FRAMEWORK — generic status-change triggers + multi-channel parallel dispatch 🟢
 
 | Hash | Message |

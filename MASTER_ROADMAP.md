@@ -88,6 +88,11 @@ shipped 2026-05-04. Legacy Monday/WordPress pipeline decommissioned.
   (8 MultiSale archive events — needs `event_type` schema first).
 - 2 pending FOREMAN_REVIEWs: ACTIVITY_LOG_DEDUPLICATION_DELETE_EVENT,
   RESTORE_DELETED_EVENT_UI.
+- **2026-05-13 hotfix CLOSED:** `BROADCAST_EVENT_LINK_SUPPORT` — CRM
+  Broadcast Wizard now carries `event_id` end-to-end (step 3 dropdown →
+  `crm_message_queue.event_id` → `send-message` EF substitutes
+  `%registration_url%` per recipient). Unblocks Event #24 (Fri
+  2026-05-15) rescue dispatch to 1,187 Prizma leads.
 
 **Production discipline:** SPEC + Foreman + Executor flow on every change.
 PR-only merges to main. Read-only by default for Overseer. See
