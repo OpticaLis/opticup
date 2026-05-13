@@ -1,26 +1,12 @@
-/* =============================================================================
-   crm-confirm-send-v2.js — Server-authoritative confirmation modal (v2).
-   M4_DRY_RUN_PREVIEW_AND_DISPATCH — Phases 3-4 (2026-05-14).
-
-   Consumes the automation-engine EF's mode='dispatch_preview' response
-   (recipients_by_lead, rules, channels) and renders a recipient-first
-   preview. Operator can Cancel / "Confirm without notify" / "Confirm and send".
-
-   Phase 4 (this rev): in-list search, per-recipient checkboxes (default
-   checked → deselection captured in excluded set), expand-on-click body
-   preview (SMS + email when applicable). Phase 5: test-send button.
-   Phase 6: post-dispatch cancel toast. Phase 7: count progression + chip
-   filters + last-message line + sessionStorage.
-
-   API (stable across phases):
+/* crm-confirm-send-v2.js — Server-authoritative confirmation modal (v2).
+   M4_DRY_RUN_PREVIEW_AND_DISPATCH (Phases 3-5+, 2026-05-14).
+   Consumes EF mode='dispatch_preview' JSON; renders recipient-first preview
+   with search + checkboxes + body expand + test-send. Phase 6+ adds cancel
+   toast + chip filters + sessionStorage. API:
      CrmConfirmSendV2.show(previewResponse, onChoice)
-       previewResponse = full EF dispatch_preview JSON
-       onChoice = async function(choice, ctx) where
-         choice = { dispatch: true|false, action: 'dispatch'|'test_send'|'remaining' }
-         ctx    = { previewResponse, excludeLeadIds, recipientSubset }
-
-   Load order: AFTER shared/js/modal-builder.js + toast.js + escapeHtml.
-   ============================================================================= */
+       onChoice(choice, ctx) — choice.action in {dispatch, test_send};
+       ctx = {previewResponse, excludeLeadIds, recipientSubset}
+   Load AFTER modal-builder.js + toast.js. */
 (function () {
   'use strict';
 
@@ -48,14 +34,8 @@
     return _state.recipients.filter(function (r) { return matchesSearch(r, _state.search || ''); });
   }
 
-  // Render the expanded body-preview row that follows a recipient row when
-  // _state.expanded contains the lead_id. Iron Rule 8: bodies arrive from the
-  // EF which substitutes from server-resolved leads — but they originate
-  // ultimately from operator-edited templates, so render with escapeHtml +
-  // <pre> rather than trust as HTML. SMS is plain text; email is HTML — we
-  // render the email source verbatim in a <pre> for visual inspection (the
-  // recipient sees the rendered HTML at delivery; the operator sees the
-  // source here on purpose, so they can verify variable substitution).
+  // Iron Rule 8: render bodies via escapeHtml + <pre>. Email source (not
+  // rendered HTML) on purpose — operator inspects variable substitution here.
   function renderExpandedBody(r) {
     var smsBlock = '';
     if (r.message_body_sms && r.message_body_sms.length) {
@@ -84,10 +64,13 @@
     var checked = (!_state || !_state.excluded.has(leadId)) ? 'checked' : '';
     var expanded = _state && _state.expanded.has(leadId);
     var caret = expanded ? '▼' : '◀';
+    var testBadge = (_state && _state.testSent.has(leadId))
+      ? ' <span class="inline-block text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 ms-1">📤 נשלח טסט</span>'
+      : '';
     var mainRow =
       '<tr class="border-b border-slate-100" data-ccsv2-row="1" data-ccsv2-lead-id="' + escapeHtml(leadId) + '">' +
         '<td class="px-2 py-2 align-middle"><input type="checkbox" data-ccsv2-cb="1" data-ccsv2-lead-id="' + escapeHtml(leadId) + '" ' + checked + ' class="cursor-pointer"></td>' +
-        '<td class="px-3 py-2 text-slate-800 cursor-pointer" data-ccsv2-expand="1" data-ccsv2-lead-id="' + escapeHtml(leadId) + '"><span class="text-slate-400 me-1">' + caret + '</span>' + escapeHtml(r.full_name || '—') + '</td>' +
+        '<td class="px-3 py-2 text-slate-800 cursor-pointer" data-ccsv2-expand="1" data-ccsv2-lead-id="' + escapeHtml(leadId) + '"><span class="text-slate-400 me-1">' + caret + '</span>' + escapeHtml(r.full_name || '—') + testBadge + '</td>' +
         '<td class="px-3 py-2 text-slate-700 text-xs" style="direction:ltr;text-align:end">' + escapeHtml(fmtPhone(r.phone) || '—') + '</td>' +
         '<td class="px-3 py-2 text-slate-700 text-xs" style="direction:ltr">' + escapeHtml(r.email || '—') + '</td>' +
       '</tr>';
@@ -152,29 +135,54 @@
   }
 
   function renderFooter(total) {
+    var testDisabled = total < 3 ? ' disabled' : '';
     return (
       '<button type="button" id="ccsv2-cancel" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm hover:bg-slate-50 transition">ביטול</button>' +
+      '<button type="button" id="ccsv2-test-send" class="px-4 py-2 border border-emerald-500 bg-white text-emerald-700 hover:bg-emerald-50 font-semibold rounded-lg text-sm transition disabled:opacity-40 disabled:cursor-not-allowed" data-ccsv2-test="1"' + testDisabled + '>📤 שלח טסט ל-3 הראשונים</button>' +
       '<button type="button" id="ccsv2-confirm-no-notify" class="px-4 py-2 border border-slate-400 bg-white text-slate-700 hover:bg-slate-50 font-semibold rounded-lg text-sm transition">אישור ללא הודעות</button>' +
       '<button type="button" id="ccsv2-confirm-notify" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition shadow-sm" data-ccsv2-approve="1">אישור ושלח הודעות (' + total + ')</button>'
     );
   }
 
+  // First-3 alphabetical of the currently visible-and-checked-and-not-test-sent
+  // recipients. The EF already sorted alphabetically; we maintain that order
+  // through the filtering chain (Array.filter is stable in V8).
+  function pickFirst3() {
+    if (!_state) return [];
+    var pool = getVisibleRecipients().filter(function (r) {
+      var lid = r.lead_id || '';
+      return !_state.excluded.has(lid) && !_state.testSent.has(lid);
+    });
+    return pool.slice(0, 3);
+  }
+
   function refreshFooterLabels(modalEl) {
     if (!_state) return;
-    var btn = modalEl.querySelector('[data-ccsv2-approve="1"]');
-    var countEl = modalEl.querySelector('[data-ccsv2-count="1"]');
+    var approveBtn = modalEl.querySelector('[data-ccsv2-approve="1"]');
+    var testBtn    = modalEl.querySelector('[data-ccsv2-test="1"]');
+    var countEl    = modalEl.querySelector('[data-ccsv2-count="1"]');
     var total = _state.recipients.length;
-    var selected = total - _state.excluded.size;
-    if (btn) btn.textContent = 'אישור ושלח הודעות (' + selected + ')';
-    if (countEl) countEl.textContent = total + ' נמענים (' + selected + ' נבחרו)';
+    var excludedCount = _state.excluded.size + _state.testSent.size;
+    var remaining = total - excludedCount;
+    if (approveBtn) {
+      approveBtn.textContent = _state.testSent.size > 0
+        ? 'שלח לשאר (' + remaining + ')'
+        : 'אישור ושלח הודעות (' + remaining + ')';
+    }
+    if (testBtn) {
+      var eligible = pickFirst3().length;
+      testBtn.disabled = eligible < 3;
+    }
+    if (countEl) {
+      var sel = total - _state.excluded.size;
+      countEl.textContent = total + ' נמענים (' + sel + ' נבחרו, ' + _state.testSent.size + ' נשלחו טסט)';
+    }
   }
 
   function rerenderTable(modalEl) {
     if (!_state) return;
     var host = modalEl.querySelector('[data-ccsv2-content="1"]');
     if (!host) return;
-    // Phase 4: rerender ENTIRE body content so search + checkbox + expand row
-    // changes all reflect cleanly. ~50-2000 rows; one innerHTML pass is cheap.
     host.innerHTML = renderBody(_state.previewResponse);
     refreshFooterLabels(modalEl);
     wireBodyEvents(modalEl);
@@ -234,6 +242,7 @@
       recipients: previewResponse.recipients_by_lead.slice(),
       excluded: new Set(),
       expanded: new Set(),
+      testSent: new Set(),
       search: '',
       onChoice: onChoice,
     };
@@ -248,14 +257,19 @@
 
     var confirmNotifyBtn   = modal.el.querySelector('#ccsv2-confirm-notify');
     var confirmNoNotifyBtn = modal.el.querySelector('#ccsv2-confirm-no-notify');
+    var testBtn            = modal.el.querySelector('#ccsv2-test-send');
     var cancelBtn          = modal.el.querySelector('#ccsv2-cancel');
 
+    // Dispatch handler — terminal action that closes the modal.
     async function handleConfirm(choice, btnEl, busyText) {
       if (confirmNotifyBtn) confirmNotifyBtn.disabled = true;
       if (confirmNoNotifyBtn) confirmNoNotifyBtn.disabled = true;
+      if (testBtn) testBtn.disabled = true;
       if (cancelBtn) cancelBtn.disabled = true;
       btnEl.textContent = busyText;
-      var excludeLeadIds = Array.from(_state.excluded || []);
+      // Test-sent IDs are excluded from the final approve dispatch — they
+      // already received the message, no double-send.
+      var excludeLeadIds = Array.from(_state.excluded).concat(Array.from(_state.testSent));
       var ctx = { previewResponse: previewResponse, excludeLeadIds: excludeLeadIds, recipientSubset: null };
       var r;
       if (typeof onChoice === 'function') {
@@ -274,12 +288,47 @@
       _state = null;
     }
 
+    // Test-send handler — non-terminal: modal stays open after EF returns.
+    async function handleTestSend() {
+      if (!_state) return;
+      var subset = pickFirst3();
+      if (subset.length < 3) {
+        if (window.Toast) Toast.warning('אין מספיק נמענים זמינים לבדיקה (צריך 3).');
+        return;
+      }
+      var subsetIds = subset.map(function (r) { return r.lead_id; });
+      var origLabel = testBtn ? testBtn.textContent : '';
+      if (testBtn) { testBtn.disabled = true; testBtn.textContent = 'שולח טסט...'; }
+      if (confirmNotifyBtn) confirmNotifyBtn.disabled = true;
+      if (confirmNoNotifyBtn) confirmNoNotifyBtn.disabled = true;
+      var ctx = { previewResponse: previewResponse, excludeLeadIds: [], recipientSubset: subsetIds };
+      var r = null;
+      if (typeof onChoice === 'function') {
+        try { r = await onChoice({ dispatch: true, action: 'test_send' }, ctx); }
+        catch (e) { console.error('CrmConfirmSendV2 test_send threw:', e); }
+      }
+      var ok = r && (r.queued > 0 || r.sent > 0);
+      if (ok) {
+        subsetIds.forEach(function (lid) { _state.testSent.add(lid); });
+        if (window.Toast) Toast.success('✅ נשלח טסט ל-3 נמענים. בדוק וסמן "שלח לשאר" להמשך.');
+      } else {
+        if (window.Toast) Toast.warning('שליחת הטסט נכשלה. ראה קונסול.');
+        if (testBtn) testBtn.textContent = origLabel || '📤 שלח טסט ל-3 הראשונים';
+      }
+      if (confirmNotifyBtn) confirmNotifyBtn.disabled = false;
+      if (confirmNoNotifyBtn) confirmNoNotifyBtn.disabled = false;
+      rerenderTable(modal.el);
+    }
+
     confirmNotifyBtn.addEventListener('click', function () {
       handleConfirm({ dispatch: true,  action: 'dispatch' }, confirmNotifyBtn, 'שולח...');
     });
     confirmNoNotifyBtn.addEventListener('click', function () {
       handleConfirm({ dispatch: false, action: 'dispatch' }, confirmNoNotifyBtn, 'מעדכן...');
     });
+    if (testBtn) {
+      testBtn.addEventListener('click', handleTestSend);
+    }
     cancelBtn.addEventListener('click', function () {
       _state = null;
       if (typeof modal.close === 'function') modal.close();
