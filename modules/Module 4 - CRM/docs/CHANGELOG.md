@@ -2,6 +2,26 @@
 
 ---
 
+## STATUS_CHANGE_TRIGGERS_FRAMEWORK — generic status-change triggers + multi-channel parallel dispatch 🟢
+
+| Hash | Message |
+|------|---------|
+| `bb0c73a` | `docs(m4-crm): author STATUS_CHANGE_TRIGGERS_FRAMEWORK SPEC` |
+| `61018a1` | `feat(m4-crm,sql): status-change framework tables + trigger + 2 rule migrations` |
+| `8de4197` | `feat(m4-crm,ef): automation-engine consumes status-change events + parallel multi-channel dispatch` |
+| `c5dc7e9` | `chore(m4-crm,spec): pause STATUS_CHANGE_TRIGGERS_FRAMEWORK at criterion 21 -- Daniel CLI deploy needed` |
+| `7424553` | `feat(m4-crm,ui): rule editor fires_on picker on attendees board + browser engine mirror` |
+| `4214c1b` | `chore(m4-crm,cron): schedule consume_status_change_events every minute` |
+| (this) | `docs(m4-crm,spec): close STATUS_CHANGE_TRIGGERS_FRAMEWORK + EV-001 with EXECUTION_REPORT + FINDINGS` |
+
+**Outcome:** EV-001 closed. The generic framework lands: every entity table with a `status` column can opt into automations via a DB trigger that inserts into the new `crm_status_change_events` queue + a one-row insert in `crm_trigger_type_registry`. Attendee is wired as the first consumer; sale/payment/inventory/lab-job join in future SPECs without engine code change. Multi-channel parallel dispatch proven on demo: SMS + Email rows from a single status transition `processed_at` 38ms apart (was ~1000ms pre-fix — 26× improvement). Production fix: 2 silently-broken "צ'ק אין לאירוע" rules (1 demo + 1 Prizma) migrated from `trigger_event='created'` to `trigger_event='status_change'` — they will fire correctly on the next live event-day check-in.
+
+**Run mode:** Full-Auto Pipeline (Foreman SPEC authoring → Executor end-to-end → Daniel CLI deploy resume → Executor closure). Stop-trigger at criterion 21 (OPEN-021 MCP InternalServerError on EF deploy) resolved by SPEC's own fallback path. 5 findings logged in FINDINGS.md (1 HIGH — dispatch-queue verify_jwt regression to be reverted in a 1-commit follow-up; 1 MEDIUM — destructive-ops hook allowlist needs wildcard regex; 3 INFO).
+
+See `modules/Module 4 - CRM/docs/specs/STATUS_CHANGE_TRIGGERS_FRAMEWORK/`.
+
+---
+
 ## OVERNIGHT_HYGIENE_SWEEP_2026_05_09 — cross-cutting hygiene sweep (16 items, 12 closed) 🟡
 
 | Hash | Message |

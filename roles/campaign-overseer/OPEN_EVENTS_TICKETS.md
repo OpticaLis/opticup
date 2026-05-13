@@ -8,6 +8,39 @@ Last updated: 2026-05-12 evening
 
 ---
 
+## EV-001 — Status-change triggers framework (✅ CLOSED 2026-05-13)
+
+**Status:** SHIPPED via Full-Auto Pipeline (Foreman → Executor → CLI-deploy-resume → Foreman-Review). SPEC folder: `modules/Module 4 - CRM/docs/specs/STATUS_CHANGE_TRIGGERS_FRAMEWORK/`. Closing commits: `bb0c73a` (SPEC), `61018a1` (SQL migration + tables + RLS + DB trigger + 2 rule migrations), `8de4197` (EF code: consumer + parallel multi-channel dispatch), `c5dc7e9` (OPEN-021 pause marker), `7424553` (browser engine mirror + rule editor UI), `4214c1b` (pg_cron consumer schedule), Phase 5 closure commit.
+
+**E2E smoke proven on demo (2026-05-13):** attendee status transition `invited`→`attended` → DB trigger inserted into `crm_status_change_events` (sync) → consumer at next cron tick (lag 19.8s) → 2 queue rows enqueued at IDENTICAL `scheduled_at` (single DB transaction) → dispatch-queue parallel-by-group dispatched both within **38ms** of each other (was ~1000ms pre-fix — 26× improvement). Both SMS + email landed with `status='sent'`, log_ids populated. Prizma collateral canary green throughout.
+
+**Production rule fix shipped:** the 2 silently-broken "צ'ק אין לאירוע" rules (`b2a21d96-...` demo + `a9483a90-...` Prizma) had `trigger_event='created' + status_equals='attended'` and have never fired since they were authored. Both now `trigger_event='status_change'`. The check-in SMS will fire correctly on the next live event-day attendee transition to `attended`.
+
+**Open follow-ups recorded in `modules/Module 4 - CRM/docs/specs/STATUS_CHANGE_TRIGGERS_FRAMEWORK/FINDINGS.md`:**
+- F1 (HIGH): `dispatch-queue` EF flipped to `verify_jwt=true` during Daniel's CLI deploy (OPEN-021 fallback path). Workaround migration applied (`20260513030500_dispatch_queue_cron_auth_header_workaround.sql`); Daniel to redeploy with `--no-verify-jwt` when convenient.
+- F4 (MEDIUM): `destructive-ops-declared.mjs` allowlist hardcoded; needs wildcard regex (one-line follow-up).
+
+**Sealed (do not reopen).** Future entity types (sale, payment, inventory, lab job) plug into the same framework by inserting one row in `crm_trigger_type_registry` per tenant + attaching a one-line DB trigger to their status-bearing table. Zero engine code change required for the next entity.
+
+---
+
+## EV-001 — Status-change triggers framework (🟡 HANDED-OFF 2026-05-12 evening)
+
+**Status:** Architect-Daniel decision complete. Brief authored at
+`modules/Module 4 - CRM/architecture-brief/STATUS_CHANGE_TRIGGERS_FRAMEWORK_BRIEF.md`.
+Activation prompt for M4 Module Strategist at
+`modules/Module 4 - CRM/architecture-brief/STATUS_CHANGE_TRIGGERS_FRAMEWORK_ACTIVATION_PROMPT.md`.
+Pipeline kicks off when Daniel pastes the activation prompt into a fresh Claude Code chat.
+
+**Key architectural decisions added beyond the original ticket body below:**
+1. Framework implementation = **DB triggers → central queue table (`crm_status_change_events`) → automation-engine consumer**. NOT code-level `AutomationClient.evaluate()` calls.
+2. Each module owns its DB trigger DDL on its status-bearing table; M4 owns the consumer + queue + mapping registry.
+3. Bundled with multi-channel parallel dispatch: when template configured for SMS+Email and recipient has both → both queue rows in single transaction with identical `scheduled_for`.
+
+The original ticket body is preserved below for reference.
+
+---
+
 ## EV-001 — Status-change triggers framework (OPEN — HIGH PRIORITY)
 
 **The need.** The automation engine currently supports only 5 trigger types:
