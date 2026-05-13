@@ -1,6 +1,7 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { evaluate, consumeStatusChangeEvents } from "./engine.ts";
+import { previewDispatch } from "./preview.ts";
 
 // ============================================================
 // automation-engine — server-side rule evaluation Edge Function
@@ -64,9 +65,12 @@ Deno.serve(async (req: Request) => {
   }
 
   const tenantId = typeof body.tenant_id === "string" ? body.tenant_id : null;
-  // STATUS_CHANGE_TRIGGERS_FRAMEWORK (2026-05-12): new "consume_status_events"
+  // STATUS_CHANGE_TRIGGERS_FRAMEWORK (2026-05-12): "consume_status_events"
   // mode for the pg_cron consumer path. Requires tenant_id only; no trigger_type.
-  const mode = (body.mode === "evaluate" || body.mode === "dispatch" || body.mode === "consume_status_events")
+  // M4_DRY_RUN_PREVIEW (2026-05-14): "dispatch_preview" mode for the
+  // operator-facing CrmConfirmSend v2 modal — recipient-grouped JSON, ZERO writes.
+  const mode = (body.mode === "evaluate" || body.mode === "dispatch"
+                || body.mode === "consume_status_events" || body.mode === "dispatch_preview")
     ? body.mode
     : "dispatch";
 
@@ -75,6 +79,30 @@ Deno.serve(async (req: Request) => {
   const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+
+  // M4_DRY_RUN_PREVIEW (2026-05-14): server-authoritative preview path.
+  // Returns recipients-grouped JSON + final SMS/email bodies + history.
+  // No crm_message_queue inserts, no crm_message_log inserts, no post-actions.
+  if (mode === "dispatch_preview") {
+    if (!tenantId) return errorResponse("Missing tenant_id", 400);
+    const triggerTypePv = typeof body.trigger_type === "string" ? body.trigger_type : null;
+    if (!triggerTypePv) return errorResponse("Missing trigger_type", 400);
+    if (!VALID_TRIGGER_TYPES.has(triggerTypePv)) {
+      return errorResponse(`Unknown trigger_type: ${triggerTypePv}`, 400);
+    }
+    const triggerDataPv = (body.trigger_data && typeof body.trigger_data === "object")
+      ? body.trigger_data as Record<string, unknown>
+      : {};
+    try {
+      const result = await previewDispatch(db, {
+        tenantId, triggerType: triggerTypePv, triggerData: triggerDataPv,
+      });
+      return jsonResponse(result, 200);
+    } catch (e) {
+      console.error("automation-engine preview exception:", (e as Error).message || e);
+      return errorResponse("preview failed", 500);
+    }
+  }
 
   // Consumer mode: pg_cron tick reading crm_status_change_events.
   if (mode === "consume_status_events") {
@@ -101,6 +129,18 @@ Deno.serve(async (req: Request) => {
   // ATOMIC_CONFIRMATION_FLOW Part A: dispatch_messages flag (default true).
   // Set to false by client's "Confirm without notify" modal choice.
   const dispatchMessages = body.dispatch_messages === false ? false : true;
+  // M4_DRY_RUN_PREVIEW (2026-05-14): optional per-dispatch subset filters.
+  // exclude_lead_ids drops the operator's deselected recipients.
+  // recipient_subset whitelists for "test-send to first 3" partial dispatch.
+  // Either may be empty/undefined; both are applied at the engine level so
+  // post-actions only fire on the actually-dispatched lead set (no double-fire
+  // when a test-send is followed by "send to remaining").
+  const excludeLeadIds = Array.isArray(body.exclude_lead_ids)
+    ? (body.exclude_lead_ids as unknown[]).filter((x): x is string => typeof x === "string")
+    : [];
+  const recipientSubset = Array.isArray(body.recipient_subset)
+    ? (body.recipient_subset as unknown[]).filter((x): x is string => typeof x === "string")
+    : [];
 
   if (!tenantId) return errorResponse("Missing tenant_id", 400);
   if (!triggerType) return errorResponse("Missing trigger_type", 400);
@@ -116,6 +156,8 @@ Deno.serve(async (req: Request) => {
       mode: mode as "evaluate" | "dispatch",
       planItems,
       dispatchMessages,
+      excludeLeadIds,
+      recipientSubset,
       anonKey: ANON_KEY,
       sendMessageUrl: `${SUPABASE_URL}/functions/v1/send-message`,
     });
