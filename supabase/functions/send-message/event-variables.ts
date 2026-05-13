@@ -79,16 +79,28 @@ export async function injectEventVariables(
     const [y, m, d] = String(ev.event_date).split("-");
     vars.event_date = `${d}/${m}/${y}`;
   }
-  if (vars.event_time == null) {
-    // Format as "HH:MM - HH:MM" (start - end). Strip seconds from "HH:MM:SS".
+  // event_time canonical format is "HH:MM - HH:MM" (start - end).
+  // Historical callers (quick-register/dispatch.ts, event-register/index.ts,
+  // lead-intake) passed only `start_time` as `event_time`, producing strings
+  // like "09:00:00" or "09:00" in customer-facing messages instead of the
+  // expected range. We OVERWRITE here whenever the existing value doesn't
+  // already match the canonical range pattern. Strip seconds from "HH:MM:SS".
+  {
     const trim = (t: string | null | undefined) => (t ? String(t).slice(0, 5) : "");
     const startStr = trim(ev.start_time);
     const endStr = trim(ev.end_time);
+    let canonical: string;
     if (startStr && endStr) {
-      vars.event_time = `${startStr} - ${endStr}`;
+      canonical = `${startStr} - ${endStr}`;
     } else {
-      vars.event_time = startStr || endStr || "";
+      canonical = startStr || endStr || "";
     }
+    const current = typeof vars.event_time === "string" ? vars.event_time : "";
+    // Only KEEP a caller-supplied value if it already matches the canonical
+    // "HH:MM - HH:MM" pattern. Otherwise overwrite with the value built from
+    // event.start_time + event.end_time.
+    const isCanonical = /^\d{2}:\d{2}\s*-\s*\d{2}:\d{2}$/.test(current);
+    if (!isCanonical) vars.event_time = canonical;
   }
   if (vars.event_location == null) vars.event_location = ev.location_address || "";
 
@@ -206,6 +218,12 @@ export function scanForUnsubstitutedPlaceholders(text: string): string[] {
  * Inject unsubscribe_url + registration_url (when event_id present).
  * Caller-provided values are preserved unless they are placeholders ("[...").
  * Best-effort: errors are logged but never throw.
+ *
+ * 2026-05-14 (M4_MESSAGE_PERFORMANCE_TRACKING): returns the array of
+ * short_link row ids created during this call. dispatch.ts uses the ids
+ * to backfill short_links.message_log_id after the crm_message_log pending
+ * row is inserted. Short links that fell back to long URLs return a null
+ * id from createShortLink and are filtered out here.
  */
 const isPlaceholder = (v: unknown) =>
   typeof v === "string" && v.startsWith("[");
@@ -217,10 +235,13 @@ export async function injectAutoUrls(
   tenantId: string,
   eventId: string | null,
   vars: Record<string, unknown>,
-): Promise<void> {
+): Promise<string[]> {
+  const shortLinkIds: string[] = [];
   if (typeof vars.unsubscribe_url !== "string" || isPlaceholder(vars.unsubscribe_url)) {
     try {
-      vars.unsubscribe_url = await buildUnsubscribeUrl(db, leadId, tenantId);
+      const r = await buildUnsubscribeUrl(db, leadId, tenantId);
+      vars.unsubscribe_url = r.url;
+      if (r.id) shortLinkIds.push(r.id);
     } catch (e) {
       console.warn("unsubscribe_url generation failed:", (e as Error).message);
     }
@@ -231,10 +252,13 @@ export async function injectAutoUrls(
       /^https?:\/\//i.test(vars.registration_url);
     if (!hasOverride) {
       try {
-        vars.registration_url = await buildRegistrationUrl(db, leadId, tenantId, eventId);
+        const r = await buildRegistrationUrl(db, leadId, tenantId, eventId);
+        vars.registration_url = r.url;
+        if (r.id) shortLinkIds.push(r.id);
       } catch (e) {
         console.warn("registration_url generation failed:", (e as Error).message);
       }
     }
   }
+  return shortLinkIds;
 }

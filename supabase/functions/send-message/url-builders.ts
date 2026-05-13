@@ -9,12 +9,23 @@
 // replaced with tenant-scoped lookup via loadTenantConfig(). The two public
 // builders fetch the tenant's storefront_url once and thread it down into
 // createShortLink — 1 extra SELECT per builder call (negligible at our scale).
+//
+// 2026-05-14 (M4_MESSAGE_PERFORMANCE_TRACKING): createShortLink now returns
+// { url, id } so the caller can capture the short_link row id and link it
+// back to crm_message_log via UPDATE once the log row exists (see
+// dispatch.ts writeDispatchAndSend). buildRegistrationUrl + buildUnsubscribeUrl
+// likewise return { url, id }.
 
 import { loadTenantConfig } from "../_shared/tenant-config.ts";
 
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 export const TOKEN_TTL_SECONDS = 90 * 24 * 3600;
+
+export interface ShortLinkResult {
+  url: string;
+  id: string | null;  // null when createShortLink fell back to the long URL
+}
 
 function b64urlEncode(bytes: Uint8Array): string {
   let binary = "";
@@ -35,6 +46,7 @@ async function signToken(payload: string): Promise<string> {
 }
 
 async function createShortLink(
+  // deno-lint-ignore no-explicit-any
   db: any,
   tenantId: string,
   targetUrl: string,
@@ -42,7 +54,7 @@ async function createShortLink(
   leadId: string,
   eventId: string | null,
   storefrontOrigin: string,
-): Promise<string> {
+): Promise<ShortLinkResult> {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const genCode = () => {
@@ -60,27 +72,35 @@ async function createShortLink(
     expires_at: expiresAt,
   };
 
-  const { error } = await db.from("short_links").insert(row);
+  const { data, error } = await db
+    .from("short_links")
+    .insert(row)
+    .select("id, code")
+    .single();
   if (error) {
     // Astronomically unlikely 8-char collision — retry once with a new code.
     row.code = genCode();
-    const res2 = await db.from("short_links").insert(row);
+    const res2 = await db
+      .from("short_links")
+      .insert(row)
+      .select("id, code")
+      .single();
     if (res2.error) {
       console.warn(
         "short_links insert failed twice, falling back to long URL:",
         res2.error.message,
       );
-      return targetUrl;
+      return { url: targetUrl, id: null };
     }
-    return `${storefrontOrigin}/r/${row.code}`;
+    return { url: `${storefrontOrigin}/r/${res2.data.code}`, id: res2.data.id };
   }
-  return `${storefrontOrigin}/r/${row.code}`;
+  return { url: `${storefrontOrigin}/r/${data.code}`, id: data.id };
 }
 
 export async function buildUnsubscribeUrl(
   // deno-lint-ignore no-explicit-any
   db: any, leadId: string, tenantId: string,
-): Promise<string> {
+): Promise<ShortLinkResult> {
   const cfg = await loadTenantConfig(db, tenantId);
   const origin = cfg?.storefront_url;
   if (!origin) throw new Error("tenant_storefront_unconfigured");
@@ -93,7 +113,7 @@ export async function buildUnsubscribeUrl(
 export async function buildRegistrationUrl(
   // deno-lint-ignore no-explicit-any
   db: any, leadId: string, tenantId: string, eventId: string,
-): Promise<string> {
+): Promise<ShortLinkResult> {
   const cfg = await loadTenantConfig(db, tenantId);
   const origin = cfg?.storefront_url;
   if (!origin) throw new Error("tenant_storefront_unconfigured");

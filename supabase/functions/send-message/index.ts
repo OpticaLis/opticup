@@ -150,7 +150,11 @@ Deno.serve(async (req: Request) => {
   // --- Inject auto URLs (unsubscribe + registration) and event-derived vars ---
   // Rung 1 (P5_V2_REBUILD_RUNG1_PLUMBING): URL injectors moved to event-variables.ts
   // alongside event-bound substitutions to keep index.ts under Rule 12 cap.
-  await injectAutoUrls(db, leadId, tenantId, eventId, variables);
+  //
+  // 2026-05-14 (M4_MESSAGE_PERFORMANCE_TRACKING): injectAutoUrls now returns
+  // the short_link ids it created so we can link them to the crm_message_log
+  // row after dispatch.ts inserts it.
+  const shortLinkIds = await injectAutoUrls(db, leadId, tenantId, eventId, variables);
   if (eventId) {
     try {
       await injectEventVariables(db, eventId, tenantId, variables);
@@ -305,13 +309,14 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ ok: false, error: "email_not_allowed" }, 200);
   }
 
-  // --- Final-stage dispatch (write pending log → Make → mark sent/failed) ---
+  // --- Final-stage dispatch (write pending log → backfill short_links → Make → mark sent/failed) ---
   return await writeDispatchAndSend(
     db,
     {
       tenantId, leadId, eventId, runId, templateId,
       channel: channel as "sms" | "email",
       finalBody, finalSubject, recipientPhone, recipientEmail,
+      shortLinkIds,
     },
     MAKE_WEBHOOK_URL,
     jsonResponse,
