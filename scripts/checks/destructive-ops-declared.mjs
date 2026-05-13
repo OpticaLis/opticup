@@ -74,11 +74,12 @@ const DESTRUCTIVE_PATTERNS = [
   { re: /\bgit\s+push\s+--force\b/i,  label: 'git push --force' },
   { re: /\bgit\s+reset\s+--hard\b/i,  label: 'git reset --hard' },
   { re: /\bgit\s+rebase\b/i,          label: 'git rebase' },
-  // 2026-05-13 STATUS_CHANGE_TRIGGERS_FRAMEWORK: negative lookahead so the
-  // git-bypass `--no-verify` is caught, but the supabase CLI flag
-  // `--no-verify-jwt` (which intentionally disables a SPECIFIC EF gate, not
-  // pre-commit hooks) is not flagged.
-  { re: /--no-verify(?!-jwt)\b/i,     label: '--no-verify flag' },
+  // 2026-05-13 STATUS_CHANGE_TRIGGERS_FRAMEWORK R2: match the git-bypass
+  // flag only when `--no-verify` is followed by whitespace or end-of-line.
+  // Rejects supabase CLI's `--no-verify-jwt` AND any future hyphenated flag
+  // class that starts with `--no-verify-`. Cleaner than the prior negative
+  // lookahead which only covered `-jwt` specifically.
+  { re: /--no-verify(?:\s|$)/i,       label: '--no-verify flag' },
 ];
 
 // DELETE FROM <table> without a WHERE clause (or with WHERE 1=1)
@@ -98,7 +99,11 @@ function isDocFile(absPath) {
     rel === 'CLAUDE.md' ||
     rel.startsWith('.claude/skills/') ||
     /^docs\//.test(rel) ||
-    /^modules\/[^/]+\/docs\/specs\/[^/]+\/(SPEC|FOREMAN_REVIEW|EXECUTION_REPORT|FINDINGS|TEST_REPORT|ROLLBACK_SQL|DIAGNOSIS|REPLICATION_PLAN|READY-FOR-MAIN-MERGE|ARCHITECT_REVIEW_CHECKPOINT|DEPLOY_FALLBACK_NEEDED|SKILL_IMPROVEMENTS_TO_APPLY)\.md$/.test(rel) ||
+    // SPEC-folder doc artifacts: any UPPER_SNAKE_CASE.md file inside a SPEC
+    // folder is doc-context. Closes findings R2 + F4 from the Reviewer's
+    // STATUS_CHANGE_TRIGGERS_FRAMEWORK report (wildcard replaces the previous
+    // 12-name hardcoded allowlist that needed updating for every new SPEC).
+    /^modules\/[^/]+\/docs\/specs\/[^/]+\/[A-Z][A-Z0-9_-]+\.md$/.test(rel) ||
     /^modules\/[^/]+\/architecture-brief\//.test(rel) ||
     /^modules\/[^/]+\/escalations\//.test(rel) ||
     // Module-scoped docs (SESSION_CONTEXT, CHANGELOG, MODULE_SPEC, etc.)
