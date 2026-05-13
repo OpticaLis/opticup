@@ -2,6 +2,22 @@
 
 ---
 
+## M4_RAW_SB_WRAPPER_MIGRATION_PHASE_1 — 7 of 8 raw `sb.from()` calls in 3 hot files migrated to `DB.*` 🟢
+
+| Hash | Message |
+|------|---------|
+| (this) | `refactor(m4-crm): migrate 7 sb.from() to DB.* wrapper in crm-{helpers,leads-tab,events-tab}.js` |
+| (next) | `docs(m4-crm): note M4_RAW_SB_WRAPPER_MIGRATION_PHASE_1 in SESSION_CONTEXT + CHANGELOG + MODULE_MAP + MASTER_ROADMAP + OPEN_TASKS` |
+| (last) | `chore(spec): close M4_RAW_SB_WRAPPER_MIGRATION_PHASE_1 with retrospective` |
+
+**Outcome:** Phase 1 of Iron-Rule-7 cleanup for M4 (audit Rec 3 + `M4-DEBT-02`). 7 of 8 raw `sb.from()` chains in the 3 most-frequently-loaded CRM files (`crm-helpers.js`, `crm-leads-tab.js`, `crm-events-tab.js`) replaced with the canonical `DB.*` wrapper (`shared/js/supabase-client.js`). Module-wide bypass count: 136 → 129 (5% reduction in Phase 1; Brief expected 30-40 calls but those 3 files literally contained 8 — premise drift logged). 1 call site SKIPped: `crm-leads-tab.js:334` (move-lead handler) uses `.maybeSingle()` which `DB.select` does not expose; either wrapper extension or limit:1+array-form rewrite is needed for Phase 2. No behavioral change: each migrated call's `DB.select(...)` form translates 1:1 to the original `sb.from(t).select(c).eq(...)` chain via the wrapper's internal translation (auto tenant_id injection + columns + order + range pagination + rawFilters escape hatch for `.in()`/`.not()`/`.gte()`). Zero DB writes; SPEC is read-side refactor only. File sizes all within Iron Rule 12 (270 / 348 / 165 lines — all ≤ 350).
+
+**Run mode:** Full-Auto Pipeline. No automated browser smoke (Brief §4.4 stop-trigger acknowledged); relying on diff-based semantic-equivalence verification + post-merge manual smoke instructions in SPEC §5.
+
+See `modules/Module 4 - CRM/docs/specs/M4_RAW_SB_WRAPPER_MIGRATION_PHASE_1/`.
+
+---
+
 ## M4_AUTOMATION_RULES_UPDATED_AT — `crm_automation_rules.updated_at` column + trigger + backfill 🟢
 
 | Hash | Message |
