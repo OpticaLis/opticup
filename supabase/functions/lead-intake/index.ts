@@ -297,7 +297,14 @@ Deno.serve(async (req: Request) => {
     return errorResponse("Could not create lead", 500);
   }
 
-  await dispatchFreshLead(db, tenantId, inserted.id, name, phone, email);
+  // Background dispatch — Make webhooks can take 5-15s. Don't make the
+  // user wait for SMS+email; the lead is already persisted. Failure
+  // here is recovered via crm_message_log pending-row retry (manual
+  // for now; future cron in a follow-up SPEC).
+  EdgeRuntime.waitUntil(
+    dispatchFreshLead(db, tenantId, inserted.id, name, phone, email)
+      .catch((err) => console.error("[lead-intake] background dispatch failed", err)),
+  );
 
   return jsonResponse({
     id: inserted.id,

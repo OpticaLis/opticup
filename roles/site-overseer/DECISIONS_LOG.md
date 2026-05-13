@@ -24,6 +24,21 @@
 
 ## Entries
 
+### 2026-05-14 — REC-SITE-024 closed (lead-intake async dispatch via EdgeRuntime.waitUntil)
+
+Daniel observed 2026-05-13 a 10-15s delay between clicking "שריינו לי מקום" on `/supersale/` and arriving at `/successfulsupersale/`. Site Overseer pre-flight pinpointed the synchronous `await dispatchFreshLead(...)` call at `supabase/functions/lead-intake/index.ts:300` (SPEC said line 301; reality was line 300 — off-by-one, single grep match, semantically identical change). Three options surfaced in conversation 2026-05-14: (א) loading spinner only (cosmetic, doesn't fix the wait), (ב) fire-and-forget at the Make level (loses `crm_message_log` state transitions, breaks audit trail), (ג) background dispatch at lead-intake level via `EdgeRuntime.waitUntil()` (preserves audit trail; user gets 1-2s response; `send-message` EF still awaits Make internally so per-row state transitions correctly). Daniel chose (ג) with one-word "כן".
+
+- **SPEC executed:** `modules/Module 4 - CRM/docs/specs/M4_LEAD_INTAKE_ASYNC_DISPATCH/SPEC.md` (Foreman-authored 2026-05-14).
+- **Executor:** opticup-executor (Bounded Autonomy, Full-Auto Pipeline mode, Claude Code Windows desktop).
+- **Code change:** single edit at `supabase/functions/lead-intake/index.ts` lines 300-307 — replaced `await dispatchFreshLead(...)` with `EdgeRuntime.waitUntil(dispatchFreshLead(...).catch(err => console.error("[lead-intake] background dispatch failed", err)))` plus a 4-line explanatory comment block. The `crm_leads` INSERT at lines 252-256 remains synchronous BEFORE the response returns at line 309-312, preserving the audit-trail invariant.
+- **Deploy:** Supabase EF lead-intake version 23 → 24 via `supabase functions deploy lead-intake --project-ref tsxrrxzmdxaenlvocyit`. Two prior `mcp__claude_ai_Supabase__deploy_edge_function` attempts failed with `InternalServerErrorException` (transient MCP issue, not SPEC defect); CLI fallback succeeded on first try. verify_jwt=true preserved.
+- **Smoke test (Criterion #8) — deploy-aliveness only:** both demo-approved phones `+972537889878` and `+972503348349` (per memory `feedback_test_data_phones.md`) have ACTIVE `crm_leads` rows in demo (not soft-deleted), so curl smoke hit the duplicate path (HTTP 409, 7.7s wall-clock — duplicate path is INTENTIONALLY UNCHANGED, only fresh-lead path was wrapped). This confirms EF deploys + JWT works + duplicate path unchanged. Fresh-lead path measurement defers to Criterion #9 (Daniel's manual production test with a fresh phone). Logged as `M4-FIND-25` in SPEC's FINDINGS.md.
+- **Failure mode preserved (Criterion #10 — defers to Daniel manual):** if Make is down, lead is STILL saved (synchronous INSERT runs first); `crm_message_log` rows stay at `status='pending'`; user still gets the redirect. Recoverable via existing `retry-failed` EF (a future SPEC could add a cron — out of scope here).
+- **SaaS-clean:** works for any tenant calling `lead-intake` (not just prizma). Other forms using the EF (`/quick-register/`, homepage contact form, etc.) all benefit automatically.
+- **Cross-refs:** `modules/Module 4 - CRM/docs/specs/M4_LEAD_INTAKE_ASYNC_DISPATCH/EXECUTION_REPORT.md`, `FINDINGS.md`, `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-024 row added).
+
+---
+
 ### 2026-05-13 — REC-SITE-023 closed-partial (supersale checkbox comma fix)
 
 After REC-SITE-022 deployed, Daniel screenshot showed `/supersale/` rendering THREE checkboxes instead of TWO. Root cause: the `[lead_form]` shortcode's `checkboxes=` parameter splits on commas; the value-forward marketing label introduced in REC-SITE-022 contains an inner comma between the cookies clause and the `{link:/privacy/}` anchor (`...בקוקיז שיווקיים, {link:/privacy/}...`). The parser split at that comma → 3 checkboxes. Daniel chose the data-side fix (em-dash) rather than a parser change (`"נלך עם ההמלצה שלך. תתקן"`).
