@@ -24,6 +24,25 @@
 
 ## Entries
 
+### 2026-05-13 — REC-SITE-023 closed-partial (supersale checkbox comma fix)
+
+After REC-SITE-022 deployed, Daniel screenshot showed `/supersale/` rendering THREE checkboxes instead of TWO. Root cause: the `[lead_form]` shortcode's `checkboxes=` parameter splits on commas; the value-forward marketing label introduced in REC-SITE-022 contains an inner comma between the cookies clause and the `{link:/privacy/}` anchor (`...בקוקיז שיווקיים, {link:/privacy/}...`). The parser split at that comma → 3 checkboxes. Daniel chose the data-side fix (em-dash) rather than a parser change (`"נלך עם ההמלצה שלך. תתקן"`).
+
+- **SPEC executed:** `modules/Module 3 - Storefront/docs/specs/M3_SUPERSALE_CHECKBOX_COMMA_FIX/SPEC.md` (Foreman-authored 2026-05-13).
+- **Executor:** opticup-executor (Bounded Autonomy, Claude Code Windows desktop).
+- **DB change (Level 2, SPEC §7 pre-authorized):** 3 UPDATEs on `storefront_pages` (he/en/ru × prizma × `/supersale/`) — replaced `<lang_cookies>, {link:/privacy/}` with `<lang_cookies> — {link:/privacy/}` inside `blocks[1].data.html`. Parse-then-modify pattern (`jsonb_set` + `to_jsonb(replace(...))`) per L-PROJECT-002. Pre-update backups saved to `BACKUPS/{he,en,ru}_blocks_pre_update.json` BEFORE the UPDATE ran. All 3 UPDATEs in a single transaction with verification SELECT.
+- **Post-state evidence (verified within the same transaction):**
+  - HE: `still_buggy=false`, `has_emdash=true`, commas in checkboxes attr = 1 ✅ → 2 checkboxes will render
+  - EN: `still_buggy=false`, `has_emdash=true`, commas in checkboxes attr = 1 ✅ → 2 checkboxes will render
+  - RU: `still_buggy=false`, `has_emdash=true`, commas in checkboxes attr = **2** ⚠️ → **3 checkboxes** will still render
+- **RU caveat — partial closure:** the RU TERMS checkbox label (NOT touched by this SPEC per §8 Out of Scope) contains its OWN internal comma: `Я подтверждаю, что прочитал/а и согласился/ась с {link:/supersale-takanon/}правилами мероприятия и политикой залога{/link}`. That comma was pre-existing — it was already there before today's work, and the shortcode parser splits at it too. After this SPEC's fix, RU will render 3 checkboxes: (1) `Я подтверждаю` (orphan from RU TERMS comma), (2) `что прочитал/а ... залога` * (the rest of TERMS, retains the required `*`), (3) `Присылайте мне ... политика конфиденциальности` (marketing, now correctly intact). Daniel's screenshot was HE-only — the RU pre-existing issue was not on his radar today. Logged as **M3-DATA-23** in this SPEC's FINDINGS for a follow-up SPEC (~<30 min: same Level-2 UPDATE pattern, replace the inner comma in RU TERMS with " — " or remove the appositive entirely).
+- **Underlying structural finding:** the `[lead_form]` shortcode at `src/lib/shortcodes/lead-form.ts:parseCheckboxes()` (line 40) uses `str.split(',')` with no escape mechanism. Any inner comma — whether legitimately Hebrew/Russian-grammatical or stylistic — silently fragments the checkbox. Logged as **M3-DEBT-23** for a follow-up SPEC (~2 hrs: extend parser to accept `\\,` literal-comma escape OR shift `checkboxes=` from comma-delimited to JSON-array attribute, OR adopt a non-keyboard separator like `|`).
+- **Banner suppression on `/supersale/`** — unchanged. `page_type='campaign'` → `hideChrome=true` (per existing BaseLayout logic).
+- **Live (no deploy needed):** CMS reads from DB at request time. The fix is live immediately after the transaction COMMIT. Daniel can refresh `/supersale/` (HE or EN) and see exactly 2 checkboxes immediately. RU will still show 3 until M3-DATA-23 is addressed.
+- **Cross-refs:** `modules/Module 3 - Storefront/docs/specs/M3_SUPERSALE_CHECKBOX_COMMA_FIX/EXECUTION_REPORT.md`, `FINDINGS.md`, `BACKUPS/{he,en,ru}_blocks_pre_update.json`, `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-023 row added with "closed-partial" status + the RU caveat + the M3-DATA-23 / M3-DEBT-23 follow-up sizing).
+
+---
+
 ### 2026-05-13 — REC-SITE-022 closed (supersale marketing checkbox + cookie consent)
 
 After the `/quick-register/` rollback, Daniel re-dispatched the work against the CORRECT page `/supersale/`. SPEC `M3_SUPERSALE_MARKETING_CHECKBOX` authored 2026-05-13 by Foreman (Site-Overseer hat) and executed by opticup-executor under Bounded Autonomy.
