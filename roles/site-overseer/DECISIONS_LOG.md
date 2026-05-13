@@ -53,6 +53,26 @@
 - **Deferred (still on REC-SITE-021):** (B) marketing checkbox text expansion to also cover "קוקיז שיווקיים"; (C) `fbq('track','Lead')` wiring on form submit.
 - **Cross-refs:** `modules/Module 3 - Storefront/docs/specs/M3_QUICK_REGISTER_MARKETING_PRETICK_REMOVAL/EXECUTION_REPORT.md`, `FINDINGS.md` (if any), `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (row flipped to `(closed)`).
 
+#### Follow-up closure — 2026-05-13 (same day) — REC-SITE-021 sub-item (B)
+
+After REC-SITE-020 merged to `main` and deployed, Daniel reviewed the rendered form and chose to also ship REC-SITE-021 sub-item (B) — the marketing-consent label rewording with embedded marketing-cookies clause + privacy-policy link — as a single-checkbox compliance flow for the SuperSale form. Sub-item (C) Lead-pixel wiring remains DEFERRED.
+
+- **SPEC executed:** `modules/Module 3 - Storefront/docs/specs/M3_QUICK_REGISTER_MARKETING_TEXT_EXPANSION/SPEC.md` (Foreman-authored 2026-05-13).
+- **Executor:** opticup-executor (Bounded Autonomy, Claude Code Windows desktop).
+- **Wording (Daniel-approved):** "שלחו לי קופונים והטבות מיוחדות — לפני כולם (כולל שימוש בקוקיז שיווקיים, [מדיניות פרטיות](/privacy/))" — value-forward, suggests exclusivity, embeds cookie consent + policy link in one line.
+- **Result:** REC-SITE-021 sub-item (B) closed. Single-line edit to `opticup-storefront/src/pages/quick-register/index.astro:165` — `<span>` inner text replaced; inline anchor to `/privacy/` added with `target="_blank" rel="noopener"`. Storefront commit `84e7e88b86d81e521a7c663d5246cbe87742feef`, pushed to `develop`. PR to `main` NOT auto-opened (`gh` still not authenticated in executor shell, no `GH_TOKEN` env var — pre-flight per executor SKILL §4b confirmed at session start) — Daniel must open via https://github.com/OpticaLis/opticup-storefront/compare/main...develop?expand=1 then merge to trigger Vercel auto-deploy.
+- **Verification evidence:**
+  - Criterion 2 (pre-flight, REC-SITE-020 still in place): `grep -n 'id="marketing"' src/pages/quick-register/index.astro` → 1 match on line 164, no `checked` ✅
+  - Criterion 3 (pre-flight, current label): `grep -n 'עדכונים שיווקיים' src/pages/quick-register/index.astro` → 1 match on line 165 ✅
+  - Criterion 4 (post-edit, new label): `grep -n 'שלחו לי קופונים' src/pages/quick-register/index.astro` → 1 match on line 165 ✅
+  - Criterion 5 (old label removed): `grep -c 'עדכונים שיווקיים והצעות מיוחדות'` → 0 ✅
+  - Criterion 7 (REC-SITE-020 preserved): marketing checkbox still unchecked ✅
+  - Criterion 8 + 9: `git diff --stat` → "1 file changed, 1 insertion(+), 1 deletion(-)" ✅
+  - Criterion 10 + 11: `npm run build` exit 0 (Astro 5.53s; image-proxy guard PASS, 9 files scanned, 0 violations) ✅
+  - Criterion 12: 1 commit on develop ✅
+- **Still deferred:** REC-SITE-021 sub-item (C) — `fbq('track','Lead')` wiring on successful form submit. Current 4 `pixel_events` DB rules target `/successfulsupersale/` (3 langs) + `/successfulmulti/`, none of which exist on this storefront (success is inline). Without (C), Pixel never receives Lead events from SuperSale signups.
+- **Cross-refs:** `modules/Module 3 - Storefront/docs/specs/M3_QUICK_REGISTER_MARKETING_TEXT_EXPANSION/EXECUTION_REPORT.md`, `FINDINGS.md` (if any), `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-021 row flipped to PARTIAL — (B) closed, (C) deferred).
+
 ---
 
 ### 2026-05-10 — rec019-tier1-slug-fix (M3_TIER1_CATEGORY_SLUG_FIX / REC-SITE-019)
