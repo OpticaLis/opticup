@@ -277,13 +277,16 @@
         catch (e) { console.error('CrmConfirmSendV2 onChoice threw:', e); r = null; }
       }
       if (typeof modal.close === 'function') modal.close();
-      if (window.Toast) {
-        if (choice.dispatch) {
-          var sent = (r && typeof r.queued === 'number') ? r.queued : (r && r.sent) || 0;
-          Toast.success('נשלחו ' + sent + ' הודעות לתור.');
-        } else {
-          Toast.success('הסטטוסים עודכנו (ללא שליחת הודעות)');
-        }
+      // Phase 6: post-dispatch toast with cancel-by-run_id (Brief §3.7). If
+      // dispatch_messages=true and the EF returned a run_id + queued count,
+      // surface the cancel toast. Otherwise fall back to the basic Toast.
+      var queuedCount = (r && typeof r.queued === 'number') ? r.queued : 0;
+      var dispatchRunId = (r && r.run_id) || null;
+      if (choice.dispatch && dispatchRunId && queuedCount > 0 && window.CrmBroadcastCancel) {
+        CrmBroadcastCancel.showCancelToast({ runId: dispatchRunId, queuedCount: queuedCount });
+      } else if (window.Toast) {
+        if (choice.dispatch) Toast.success('נשלחו ' + queuedCount + ' הודעות לתור.');
+        else Toast.success('הסטטוסים עודכנו (ללא שליחת הודעות)');
       }
       _state = null;
     }
