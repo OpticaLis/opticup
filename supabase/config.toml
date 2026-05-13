@@ -387,9 +387,16 @@ s3_access_key = "env(S3_ACCESS_KEY)"
 # Configures AWS_SECRET_ACCESS_KEY for S3 bucket
 s3_secret_key = "env(S3_SECRET_KEY)"
 
+# M4_QUICK_HYGIENE_FIXES Rec 7 (2026-05-14) — pin-auth verify_jwt = false.
+# The live EF has verify_jwt=false (the storefront + ERP login flow calls
+# pin-auth before any JWT exists, so the gateway must not require one).
+# This block previously declared `verify_jwt = true`, which DRIFTED from
+# the live state — a future redeploy without --no-verify-jwt would have
+# flipped the live flag and silently broken login. Declarative truth now
+# matches deployed state.
 [functions.pin-auth]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/pin-auth/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
@@ -454,3 +461,71 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/whatsapp-catalog-flow/deno.json"
 entrypoint = "./functions/whatsapp-catalog-flow/index.ts"
+
+# ===========================================================================
+# M4_QUICK_HYGIENE_FIXES Rec 7 (2026-05-14) — explicit verify_jwt = false
+# blocks for the remaining public-facing Edge Functions whose live state is
+# verify_jwt=false but which had NO config.toml block. These were deployed
+# with `--no-verify-jwt` and have stayed that way only because subsequent
+# deploys preserved the flag. A redeploy without the flag would silently
+# flip verify_jwt to true and break public access. Each block below makes
+# the config the declarative source of truth so the CLI cannot drift.
+# Confirmed via mcp__supabase__list_edge_functions on 2026-05-14.
+# ===========================================================================
+
+# fetch-google-reviews — public read for storefront. No JWT available
+# (anonymous storefront visitor). verify_jwt = false enforced at gateway.
+[functions.fetch-google-reviews]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/fetch-google-reviews/index.ts"
+
+# generate-brand-content — public CMS helper called from anonymous storefront
+# studio session. verify_jwt = false enforced at gateway.
+[functions.generate-brand-content]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/generate-brand-content/index.ts"
+
+# translate-content — public CMS translation helper. verify_jwt = false
+# enforced at gateway; the EF self-authenticates via internal logic.
+[functions.translate-content]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/translate-content/index.ts"
+
+# event-register — public registration form (anonymous attendees can register
+# for a CRM event). verify_jwt = false enforced at gateway; the EF validates
+# the request body and writes via service_role.
+[functions.event-register]
+enabled = true
+verify_jwt = false
+import_map = "./functions/event-register/deno.json"
+entrypoint = "./functions/event-register/index.ts"
+
+# resolve-link — public short-link resolver (anonymous click-through). The EF
+# records the click and 302-redirects. verify_jwt = false enforced at gateway.
+[functions.resolve-link]
+enabled = true
+verify_jwt = false
+import_map = "./functions/resolve-link/deno.json"
+entrypoint = "./functions/resolve-link/index.ts"
+
+# dispatch-queue — called by pg_cron via net.http_post without a usable JWT
+# (the auth header workaround migration 20260513030500 documents this). The
+# EF self-authenticates via shared-secret in the body. verify_jwt = false
+# enforced at gateway.
+[functions.dispatch-queue]
+enabled = true
+verify_jwt = false
+import_map = "./functions/dispatch-queue/deno.json"
+entrypoint = "./functions/dispatch-queue/index.ts"
+
+# submit-lead — public lead-submission endpoint for landing pages and the
+# storefront. Anonymous submitters have no JWT. verify_jwt = false enforced
+# at gateway; the EF validates and writes via service_role.
+[functions.submit-lead]
+enabled = true
+verify_jwt = false
+import_map = "./functions/submit-lead/deno.json"
+entrypoint = "./functions/submit-lead/index.ts"
