@@ -8,14 +8,16 @@ import { createRun, finishRun } from "./runs.ts";
 import { executePostActions, attendeeUpsert } from "./post-actions.ts";
 import { dispatchPlanDirect } from "./dispatch.ts";
 
-// 5 client-side trigger types → {entity, event} columns in crm_automation_rules.
+// 6 client-side trigger types → {entity, event} columns in crm_automation_rules.
 // MUST mirror modules/crm/crm-automation-engine.js TRIGGER_TYPES exactly.
+// attendee_status_change added 2026-05-12 (STATUS_CHANGE_TRIGGERS_FRAMEWORK).
 export const TRIGGER_TYPES: Record<string, { entity: string; event: string }> = {
-  event_status_change: { entity: "event",    event: "status_change" },
-  event_registration:  { entity: "attendee", event: "created"       },
-  lead_status_change:  { entity: "lead",     event: "status_change" },
-  lead_intake:         { entity: "lead",     event: "created"       },
-  attendee_moved:      { entity: "attendee", event: "moved"         },
+  event_status_change:     { entity: "event",    event: "status_change" },
+  event_registration:      { entity: "attendee", event: "created"       },
+  lead_status_change:      { entity: "lead",     event: "status_change" },
+  lead_intake:             { entity: "lead",     event: "created"       },
+  attendee_moved:          { entity: "attendee", event: "moved"         },
+  attendee_status_change:  { entity: "attendee", event: "status_change" },
 };
 
 // Condition evaluators — mirror modules/crm/crm-automation-engine.js CONDITIONS.
@@ -39,6 +41,10 @@ const CONDITIONS: Record<string, ConditionFn> = {
     return false;
   },
   source_equals: (cond, data) => data.source === cond.source,
+  // STATUS_CHANGE_TRIGGERS_FRAMEWORK (2026-05-12): NULL-safe comparisons against
+  // the old/new status fields the consume_status_events path populates.
+  status_changed_from: (cond, data) => data.oldStatus === cond.status,
+  status_changed_to:   (cond, data) => data.newStatus === cond.status,
 };
 
 export function evaluateCondition(
@@ -227,4 +233,87 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
     queued: totalQueued + (r.queued || 0),
     skipped,
   };
+}
+
+// STATUS_CHANGE_TRIGGERS_FRAMEWORK (2026-05-12).
+// Consumer for the crm_status_change_events queue. Called once per minute per
+// tenant by the pg_cron job consume_status_change_events. Reads N unconsumed
+// rows for the tenant, derives the trigger_type via crm_trigger_type_registry,
+// invokes evaluate() in dispatch mode, marks consumed_at on success. Single-row
+// errors leave consumed_at NULL (retried next tick).
+export async function consumeStatusChangeEvents(
+  db: Db,
+  tenantId: string,
+  limit: number,
+  anonKey: string,
+  sendMessageUrl: string,
+): Promise<{ processed: number; evaluated: number; errors: number }> {
+  const cap = Math.min(Math.max(limit || 100, 1), 500);
+
+  const claimRes = await db.from("crm_status_change_events")
+    .select("id, entity_type, entity_id, old_status, new_status, payload")
+    .eq("tenant_id", tenantId)
+    .is("consumed_at", null)
+    .order("occurred_at", { ascending: true })
+    .limit(cap);
+  if (claimRes.error) {
+    console.error("consumeStatusChangeEvents claim:", claimRes.error);
+    return { processed: 0, evaluated: 0, errors: 1 };
+  }
+  const events = claimRes.data || [];
+  if (!events.length) return { processed: 0, evaluated: 0, errors: 0 };
+
+  const regRes = await db.from("crm_trigger_type_registry")
+    .select("entity_type, trigger_type_slug, is_active")
+    .eq("tenant_id", tenantId);
+  if (regRes.error) {
+    console.error("consumeStatusChangeEvents registry:", regRes.error);
+    return { processed: 0, evaluated: 0, errors: 1 };
+  }
+  const registryMap = new Map<string, string>();
+  (regRes.data || []).forEach((r: { entity_type: string; trigger_type_slug: string; is_active: boolean }) => {
+    if (r.is_active) registryMap.set(r.entity_type, r.trigger_type_slug);
+  });
+
+  let processed = 0, evaluated = 0, errors = 0;
+  for (const ev of events) {
+    const e = ev as { id: string; entity_type: string; entity_id: string; old_status: string | null; new_status: string; payload: Record<string, unknown> | null };
+    try {
+      const triggerType = registryMap.get(e.entity_type);
+      if (!triggerType) {
+        // entity_type not registered for this tenant — mark consumed to avoid
+        // poison-pill replay. Audit row remains for "why didn't it fire?".
+        await db.from("crm_status_change_events")
+          .update({ consumed_at: new Date().toISOString() })
+          .eq("id", e.id).eq("tenant_id", tenantId);
+        processed++;
+        continue;
+      }
+      const payload = (e.payload && typeof e.payload === "object") ? e.payload : {};
+      const triggerData: Record<string, unknown> = {
+        oldStatus: e.old_status,
+        newStatus: e.new_status,
+        status: e.new_status,
+        attendeeId: e.entity_id,
+        leadId: typeof payload.lead_id === "string" ? payload.lead_id : null,
+        eventId: typeof payload.event_id === "string" ? payload.event_id : null,
+      };
+      const r = await evaluate(db, {
+        tenantId, triggerType, triggerData,
+        mode: "dispatch", planItems: null, dispatchMessages: true,
+        anonKey, sendMessageUrl,
+      });
+      if (r.fired > 0) evaluated++;
+      await db.from("crm_status_change_events")
+        .update({ consumed_at: new Date().toISOString() })
+        .eq("id", e.id).eq("tenant_id", tenantId);
+      processed++;
+    } catch (err) {
+      console.error("consumeStatusChangeEvents event " + e.id + ":", (err as Error).message);
+      errors++;
+      // consumed_at left NULL — next tick retries this row.
+    }
+  }
+
+  return { processed, evaluated, errors };
 }

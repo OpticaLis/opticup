@@ -117,74 +117,117 @@ Deno.serve(async (req: Request) => {
     .update({ status: "processing" }).in("id", ids).eq("status", "queued").select("id");
   const claimedIds = new Set((flipRes.data || []).map((r: { id: string }) => r.id));
 
-  let sent = 0, failed = 0, rejected = 0;
+  // STATUS_CHANGE_TRIGGERS_FRAMEWORK (2026-05-12) — multi-channel parallel
+  // dispatch. Group claimed rows by (lead_id, scheduled_at_iso) — co-fire
+  // siblings. Each group dispatches via Promise.allSettled with a fan-out
+  // cap of 5 (EV-003 lesson: >30 parallel send-message fetch() hits CPU/
+  // timeout). Sleep ONCE per group, AFTER all parallel dispatches resolve.
+  // Pre-fix: sequential 0.5-1s sleep between EVERY row, so SMS+Email for
+  // the same lead landed ~1s apart at the customer. Post-fix: same group
+  // dispatched concurrently, processed_at deltas ≤ 200ms.
+  type ClaimedRow = {
+    id: string; tenant_id: string; run_id: string | null;
+    lead_id: string; event_id: string | null;
+    channel: "sms"|"email";
+    template_slug?: string; body?: string; subject?: string;
+    variables?: Record<string, unknown>;
+    language: string; scheduled_at: string; retries?: number;
+  };
+
+  const claimed: ClaimedRow[] = [];
   for (const row of rows) {
-    const r = row as { id: string; tenant_id: string; run_id: string | null; lead_id: string; event_id: string | null; channel: "sms"|"email"; template_slug?: string; body?: string; subject?: string; variables?: Record<string, unknown>; language: string };
-    if (!claimedIds.has(r.id)) continue; // another tick won the race
+    const r = row as ClaimedRow;
+    if (claimedIds.has(r.id)) claimed.push(r);
+  }
 
-    // Allowlist layer 2 — fail fast without hitting send-message.
-    const variables = (r.variables || {}) as Record<string, unknown>;
-    const phone = typeof variables.phone === "string" ? variables.phone : null;
-    if (r.channel === "sms" && !(await phoneAllowed(db, r.tenant_id, phone))) {
-      await db.from("crm_message_queue")
-        .update({ status: "rejected", processed_at: new Date().toISOString(), error_message: "phone_not_allowed: " + phone })
-        .eq("id", r.id);
-      rejected++;
-      await sleep(50); // light throttle on rejections too
-      continue;
-    }
+  const groups = new Map<string, ClaimedRow[]>();
+  for (const r of claimed) {
+    const key = `${r.lead_id}|${r.scheduled_at}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(r);
+  }
 
-    try {
-      const payload: Record<string, unknown> = {
-        tenant_id: r.tenant_id, lead_id: r.lead_id, event_id: r.event_id,
-        channel: r.channel, variables, language: r.language,
-      };
-      // 2026-04-29 cutover-blocker fix: forward run_id end-to-end so the
-      // queue → send-message → crm_message_log row carries the originating
-      // automation run, making queue_send rules visible in automation-history.
-      if (r.run_id) payload.run_id = r.run_id;
-      if (r.template_slug) payload.template_slug = r.template_slug;
-      if (r.body) payload.body = r.body;
-      if (r.subject) payload.subject = r.subject;
+  const PARALLEL_CAP = 5;
+  let sent = 0, failed = 0, rejected = 0;
 
-      const res = await fetch(SEND_MESSAGE_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${ANON_KEY}`,
-          "apikey": ANON_KEY,
-        },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json().catch(() => ({} as Record<string, unknown>));
-      const d = data as { ok?: boolean; log_id?: string; error?: string };
-      if (d.ok) {
-        await db.from("crm_message_queue")
-          .update({ status: "sent", processed_at: new Date().toISOString(), log_id: d.log_id || null })
-          .eq("id", r.id);
-        sent++;
-      } else if (d.error === "phone_not_allowed") {
-        await db.from("crm_message_queue")
-          .update({ status: "rejected", processed_at: new Date().toISOString(), error_message: "phone_not_allowed" })
-          .eq("id", r.id);
-        rejected++;
-      } else {
-        await db.from("crm_message_queue")
-          .update({ status: "failed", processed_at: new Date().toISOString(), error_message: String(d.error || res.status), retries: (row as { retries: number }).retries + 1 })
-          .eq("id", r.id);
-        failed++;
+  for (const group of groups.values()) {
+    for (let i = 0; i < group.length; i += PARALLEL_CAP) {
+      const slice = group.slice(i, i + PARALLEL_CAP);
+      const results = await Promise.allSettled(
+        slice.map((r) => dispatchOne(db, r)),
+      );
+      for (const res of results) {
+        if (res.status !== "fulfilled") { failed++; continue; }
+        if (res.value === "sent") sent++;
+        else if (res.value === "rejected") rejected++;
+        else failed++;
       }
-    } catch (e) {
-      console.error("dispatch-queue send exception:", (e as Error).message || e);
-      await db.from("crm_message_queue")
-        .update({ status: "failed", processed_at: new Date().toISOString(), error_message: "exception: " + ((e as Error).message || "?") })
-        .eq("id", r.id);
-      failed++;
     }
-    // 2026-05-12: throttle per channel — email cheaper than SMS,
-    // can go 2x faster (0.5s vs 1s) without hitting vendor rate limits.
-    await sleep(r.channel === "email" ? 500 : 1000);
+    // Sleep ONCE per group, AFTER parallel dispatches. Use the slowest
+    // channel's throttle (SMS=1000ms; email-only group=500ms).
+    const hasSms = group.some((r) => r.channel === "sms");
+    await sleep(hasSms ? 1000 : 500);
   }
 
   return jsonResp({ ok: true, processed: claimedIds.size, sent, failed, rejected });
 });
+
+// Per-row dispatch helper. Returns 'sent' | 'failed' | 'rejected' for the
+// caller's aggregation. Allowlist layer 2 + send-message POST + queue row
+// update happen here; the caller decides parallel grouping + sleep cadence.
+async function dispatchOne(db: any, r: any): Promise<"sent" | "failed" | "rejected"> {
+  const variables = (r.variables || {}) as Record<string, unknown>;
+  const phone = typeof variables.phone === "string" ? variables.phone : null;
+
+  if (r.channel === "sms" && !(await phoneAllowed(db, r.tenant_id, phone))) {
+    await db.from("crm_message_queue")
+      .update({ status: "rejected", processed_at: new Date().toISOString(), error_message: "phone_not_allowed: " + phone })
+      .eq("id", r.id);
+    return "rejected";
+  }
+
+  try {
+    const payload: Record<string, unknown> = {
+      tenant_id: r.tenant_id, lead_id: r.lead_id, event_id: r.event_id,
+      channel: r.channel, variables, language: r.language,
+    };
+    if (r.run_id) payload.run_id = r.run_id;
+    if (r.template_slug) payload.template_slug = r.template_slug;
+    if (r.body) payload.body = r.body;
+    if (r.subject) payload.subject = r.subject;
+
+    const res = await fetch(SEND_MESSAGE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${ANON_KEY}`,
+        "apikey": ANON_KEY,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({} as Record<string, unknown>));
+    const d = data as { ok?: boolean; log_id?: string; error?: string };
+    if (d.ok) {
+      await db.from("crm_message_queue")
+        .update({ status: "sent", processed_at: new Date().toISOString(), log_id: d.log_id || null })
+        .eq("id", r.id);
+      return "sent";
+    } else if (d.error === "phone_not_allowed") {
+      await db.from("crm_message_queue")
+        .update({ status: "rejected", processed_at: new Date().toISOString(), error_message: "phone_not_allowed" })
+        .eq("id", r.id);
+      return "rejected";
+    } else {
+      await db.from("crm_message_queue")
+        .update({ status: "failed", processed_at: new Date().toISOString(), error_message: String(d.error || res.status), retries: (r.retries || 0) + 1 })
+        .eq("id", r.id);
+      return "failed";
+    }
+  } catch (e) {
+    console.error("dispatchOne exception:", (e as Error).message || e);
+    await db.from("crm_message_queue")
+      .update({ status: "failed", processed_at: new Date().toISOString(), error_message: "exception: " + ((e as Error).message || "?") })
+      .eq("id", r.id);
+    return "failed";
+  }
+}

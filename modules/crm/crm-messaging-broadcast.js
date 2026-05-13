@@ -97,7 +97,7 @@
   async function loadEventsOnce() {
     if (_events.length) return;
     var tid = getTenantId();
-    var q = sb.from('crm_events').select('id, event_number, name, event_date').eq('is_deleted', false);
+    var q = sb.from('crm_events').select('id, event_number, name, event_date, status').eq('is_deleted', false);
     if (tid) q = q.eq('tenant_id', tid);
     q = q.order('event_date', { ascending: false });
     var res = await q;
@@ -135,6 +135,7 @@
       name: '',
       schedule: 'now',
       recipients: 0,
+      eventId: null,
       _matchedLeads: []
     };
     var modal = Modal.show({ title: 'אשף שליחה', size: 'lg', content: wizardHtml() });
@@ -194,9 +195,22 @@
       var clearBtn = hasTpl
         ? '<button type="button" id="wiz-tpl-clear" class="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold rounded-md">✕ נקה בחירת תבנית</button>'
         : '';
+      // 2026-05-13 BROADCAST_EVENT_LINK_SUPPORT — dropdown linking broadcast to
+      // an event so send-message EF builds %registration_url% per recipient.
+      // Without an eventId, injectAutoUrls skips the registration-token branch
+      // and any body referencing %registration_url% dies on the EF safety scan.
+      var LINKABLE_STATUSES = ['scheduled', 'registration_open', 'event_day'];
+      var linkable = _events.filter(function (e) { return LINKABLE_STATUSES.indexOf(e.status) !== -1; });
+      var evtOpts = '<option value="">— ללא קישור לאירוע —</option>' + linkable.map(function (e) {
+        var sel = (e.id === _wizard.eventId) ? ' selected' : '';
+        return '<option value="' + escapeHtml(e.id) + '"' + sel + '>#' + e.event_number + ' — ' + escapeHtml(e.name) + ' (' + e.event_date + ')</option>';
+      }).join('');
+      var eventDropdownHtml = '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">קישור לאירוע (אופציונלי — נדרש עבור <code>%registration_url%</code>)</label>' +
+        '<select id="wiz-event-link" class="' + CLS_INPUT + '">' + evtOpts + '</select></div>';
       return '<h4 class="text-base font-bold text-slate-800 mb-3">שלב 3 — תבנית</h4>' +
         '<div class="flex items-center justify-between mb-2"><span class="text-xs text-slate-500">בחר תבנית כדי להעתיק את התוכן שלה, או השאר ריק וכתוב הודעה חופשית.</span>' + clearBtn + '</div>' +
         '<div class="space-y-2 mb-3 max-h-48 overflow-y-auto">' + (opts || '<div class="text-center text-slate-400 py-4">אין תבניות פעילות</div>') + '</div>' +
+        eventDropdownHtml +
         '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">תוכן</label><textarea id="wiz-body" rows="4" placeholder="תוכן הודעה ידני (או בחר תבנית)" class="' + CLS_INPUT + '">' + escapeHtml(_wizard.body) + '</textarea></div>' +
         variablePanelHtml('wiz-var');
     }
@@ -291,6 +305,7 @@
       _wizard.templateId = tplRadio ? tplRadio.value : null;
     }
     var bodyEl = root.querySelector('#wiz-body'); if (bodyEl) _wizard.body = bodyEl.value || '';
+    var evtEl = root.querySelector('#wiz-event-link'); if (evtEl) _wizard.eventId = evtEl.value || null;
     var schRadio = root.querySelector('input[name="wiz-sched"]:checked'); if (schRadio) _wizard.schedule = schRadio.value;
     var nameEl = root.querySelector('#wiz-name'); if (nameEl) _wizard.name = nameEl.value || '';
   }

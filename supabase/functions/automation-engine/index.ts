@@ -1,6 +1,6 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { evaluate } from "./engine.ts";
+import { evaluate, consumeStatusChangeEvents } from "./engine.ts";
 
 // ============================================================
 // automation-engine — server-side rule evaluation Edge Function
@@ -49,6 +49,7 @@ const VALID_TRIGGER_TYPES = new Set([
   "lead_status_change",
   "lead_intake",
   "attendee_moved",
+  "attendee_status_change",
 ]);
 
 Deno.serve(async (req: Request) => {
@@ -63,11 +64,39 @@ Deno.serve(async (req: Request) => {
   }
 
   const tenantId = typeof body.tenant_id === "string" ? body.tenant_id : null;
+  // STATUS_CHANGE_TRIGGERS_FRAMEWORK (2026-05-12): new "consume_status_events"
+  // mode for the pg_cron consumer path. Requires tenant_id only; no trigger_type.
+  const mode = (body.mode === "evaluate" || body.mode === "dispatch" || body.mode === "consume_status_events")
+    ? body.mode
+    : "dispatch";
+
+  // Service-role DB client — bypasses RLS. Every query MUST manually filter
+  // by tenant_id (Iron Rule 22 defense-in-depth).
+  const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  // Consumer mode: pg_cron tick reading crm_status_change_events.
+  if (mode === "consume_status_events") {
+    if (!tenantId) return errorResponse("Missing tenant_id", 400);
+    const limit = typeof body.limit === "number" ? body.limit : 100;
+    try {
+      const result = await consumeStatusChangeEvents(
+        db, tenantId, limit, ANON_KEY,
+        `${SUPABASE_URL}/functions/v1/send-message`,
+      );
+      return jsonResponse({ ok: true, ...result }, 200);
+    } catch (e) {
+      console.error("consume_status_events exception:", (e as Error).message || e);
+      return errorResponse("consume failed", 500);
+    }
+  }
+
+  // Evaluate / dispatch mode (the existing path).
   const triggerType = typeof body.trigger_type === "string" ? body.trigger_type : null;
   const triggerData = (body.trigger_data && typeof body.trigger_data === "object")
     ? body.trigger_data as Record<string, unknown>
     : {};
-  const mode = (body.mode === "evaluate" || body.mode === "dispatch") ? body.mode : "dispatch";
   const planItems = Array.isArray(body.plan_items) ? body.plan_items : null;
   // ATOMIC_CONFIRMATION_FLOW Part A: dispatch_messages flag (default true).
   // Set to false by client's "Confirm without notify" modal choice.
@@ -79,18 +108,12 @@ Deno.serve(async (req: Request) => {
     return errorResponse(`Unknown trigger_type: ${triggerType}`, 400);
   }
 
-  // Service-role DB client — bypasses RLS. Every query MUST manually filter
-  // by tenant_id (Iron Rule 22 defense-in-depth).
-  const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-
   try {
     const result = await evaluate(db, {
       tenantId,
       triggerType,
       triggerData,
-      mode,
+      mode: mode as "evaluate" | "dispatch",
       planItems,
       dispatchMessages,
       anonKey: ANON_KEY,

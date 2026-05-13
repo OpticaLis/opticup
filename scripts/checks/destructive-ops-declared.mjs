@@ -74,7 +74,12 @@ const DESTRUCTIVE_PATTERNS = [
   { re: /\bgit\s+push\s+--force\b/i,  label: 'git push --force' },
   { re: /\bgit\s+reset\s+--hard\b/i,  label: 'git reset --hard' },
   { re: /\bgit\s+rebase\b/i,          label: 'git rebase' },
-  { re: /--no-verify\b/i,             label: '--no-verify flag' },
+  // 2026-05-13 STATUS_CHANGE_TRIGGERS_FRAMEWORK R2: match the git-bypass
+  // flag only when `--no-verify` is followed by whitespace or end-of-line.
+  // Rejects supabase CLI's `--no-verify-jwt` AND any future hyphenated flag
+  // class that starts with `--no-verify-`. Cleaner than the prior negative
+  // lookahead which only covered `-jwt` specifically.
+  { re: /--no-verify(?:\s|$)/i,       label: '--no-verify flag' },
 ];
 
 // DELETE FROM <table> without a WHERE clause (or with WHERE 1=1)
@@ -94,7 +99,11 @@ function isDocFile(absPath) {
     rel === 'CLAUDE.md' ||
     rel.startsWith('.claude/skills/') ||
     /^docs\//.test(rel) ||
-    /^modules\/[^/]+\/docs\/specs\/[^/]+\/(SPEC|FOREMAN_REVIEW|EXECUTION_REPORT|FINDINGS|TEST_REPORT)\.md$/.test(rel) ||
+    // SPEC-folder doc artifacts: any UPPER_SNAKE_CASE.md file inside a SPEC
+    // folder is doc-context. Closes findings R2 + F4 from the Reviewer's
+    // STATUS_CHANGE_TRIGGERS_FRAMEWORK report (wildcard replaces the previous
+    // 12-name hardcoded allowlist that needed updating for every new SPEC).
+    /^modules\/[^/]+\/docs\/specs\/[^/]+\/[A-Z][A-Z0-9_-]+\.md$/.test(rel) ||
     /^modules\/[^/]+\/architecture-brief\//.test(rel) ||
     /^modules\/[^/]+\/escalations\//.test(rel) ||
     // Module-scoped docs (SESSION_CONTEXT, CHANGELOG, MODULE_SPEC, etc.)
@@ -103,6 +112,10 @@ function isDocFile(absPath) {
     rel === 'MASTER_ROADMAP.md' ||
     rel === 'OPEN_TASKS.md' ||
     rel === 'TECH_DEBT.md' ||
+    // roles/<role>/ contains living .md files for each operational role
+    // (campaign-overseer, site-overseer, etc.) -- handoff logs, decisions,
+    // open-tickets. They reference destructive concepts by name routinely.
+    /^roles\/[^/]+\/[A-Za-z][A-Za-z0-9_-]+\.md$/.test(rel) ||
     // Check infrastructure itself: scripts/checks/*.mjs define the
     // patterns they look for; scripts/verify.mjs comments on them.
     // Treating these as live destructive ops would block the check
