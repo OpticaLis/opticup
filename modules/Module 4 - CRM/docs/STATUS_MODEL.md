@@ -410,18 +410,20 @@ Generic decoupled-event queue. Documented in its own brief (`architecture-brief/
 
 | Component | Status |
 |---|---|
-| Queue table `crm_status_change_events` | Live (2 rows total at audit time, both consumed) |
-| Producer trigger `trg_attendee_status_change_event` on `crm_event_attendees` | Live |
-| Producer trigger on `crm_leads` | **Not wired** |
-| Producer trigger on `crm_events` | **Not wired** |
-| Registry table `crm_trigger_type_registry` | Live, 1 row per tenant: `attendee → attendee_status_change` |
+| Queue table `crm_status_change_events` | Live |
+| Producer trigger `trg_attendee_status_change_event` on `crm_event_attendees` | Live (since 2026-05-12) |
+| Producer trigger `trg_lead_status_change_event` on `crm_leads` | **Live (since 2026-05-14, M4_STATUS_TRIGGER_FRAMEWORK_EXTENSION)** |
+| Producer trigger `trg_event_status_change_event` on `crm_events` | **Live (since 2026-05-14, M4_STATUS_TRIGGER_FRAMEWORK_EXTENSION)** |
+| Registry table `crm_trigger_type_registry` | Live, 3 rows per tenant: `attendee → attendee_status_change`, `lead → lead_status_change`, `event → event_status_change` |
 | Consumer pg_cron `consume_status_change_events` (per-minute) | Live |
-| Consumer code path `automation-engine` EF mode `consume_status_events` | Live (`engine.ts::consumeStatusChangeEvents`) |
-| `TRIGGER_TYPES` accepting `attendee_status_change` | Live (`engine.ts:20`) |
+| Consumer code path `automation-engine` EF mode `consume_status_events` | Live with entity-aware payload shaping (`engine.ts::consumeStatusChangeEvents` + `buildTriggerDataForEntity`) |
+| `TRIGGER_TYPES` accepting `attendee_status_change`, `lead_status_change`, `event_status_change` | Live (`engine.ts:14–21`) |
 
-Event status changes still fire automation rules via the **direct dispatch path** (`crm-event-actions.js::changeEventStatus` → `CrmAutomationClient.evaluate('event_status_change', …)` → `automation-engine` EF in `dispatch` mode). They do not pass through the queue. Same for `lead_status_change` (from `crm-lead-actions.js::changeLeadStatus`) and the four other registered trigger types (`event_registration`, `lead_intake`, `attendee_moved`, `attendee_status_change`).
+After `M4_STATUS_TRIGGER_FRAMEWORK_EXTENSION` (2026-05-14), the queue covers **all three** status-bearing CRM entities. Each transition produces a row whose `payload` is entity-shaped: `{event_id, lead_id}` for attendee, `{phone, source}` for lead, `{event_date, event_name}` for event. The consumer reads `crm_trigger_type_registry` to derive `trigger_type_slug` per entity and dispatches via `evaluate()`.
 
-**Therefore: the queue framework today is a parallel, attendee-only audit + dispatch path** that runs alongside the existing in-process dispatches. If/when more entity types get registered (lead, event) **plus** matching producer triggers, the queue becomes the canonical decoupled bus.
+The legacy **in-process direct-dispatch path** also remains active in parallel: `crm-event-actions.js::changeEventStatus` and `crm-lead-actions.js::changeLeadStatus` still call `CrmAutomationClient.evaluate(...)` synchronously. Both paths run today — intentionally. Decommissioning the in-process path is a future SPEC.
+
+**Therefore: the queue framework is now a parallel, multi-entity audit + dispatch path** running alongside the in-process dispatches. The queue is the canonical decoupled bus for monitoring and for future-rule wiring; the in-process path handles legacy rules untouched.
 
 ---
 
@@ -458,8 +460,8 @@ These are the inverse of §6.1 — the code expects a slug that `crm_statuses` d
 ### 6.4 Coupling gaps
 
 1. **Direct `.update({status})` writes bypass the sync RPC.** Examples:
-   - `crm-attendee-cancel.js:73,106` updates attendee → `cancelled` directly. Lead is not re-synced. A lead whose only active attendee row is cancelled keeps stale `status='confirmed'` until a later sync trigger fires.
-   - Operator dropdown attendee status changes (if any — not all writers traced) write directly without calling `sync_lead_status_from_attendee`.
+   - ~~`crm-attendee-cancel.js:73,106` updates attendee → `cancelled` directly. Lead is not re-synced.~~ (Fixed in `M4_CANCEL_SYNC_FIX`, 2026-05-14 — the cancel path now calls `sync_lead_status_from_attendee` after the attendee status flip.)
+   - Operator dropdown attendee status changes (if any — not all writers traced) write directly without calling `sync_lead_status_from_attendee`. (Still latent; not yet audited exhaustively.)
 2. **The `crm_status_change_events` queue is producer-asymmetric.** Attendee changes are queued, lead and event changes are not. A monitoring dashboard reading the queue therefore sees only one third of the system's status-change volume.
 3. **`event_status_close_recycle_leads_fn` and the closed/completed automation rules both recycle to `waiting`.** Two parallel paths to the same target with different recipient scopes. If one fires successfully and the other doesn't, the operator sees a partial recycle.
 4. **`pending_terms` and `waiting` share `sort_order=6`** in lead statuses on both tenants. The dropdown order between them is non-deterministic.
@@ -475,6 +477,17 @@ These are the inverse of §6.1 — the code expects a slug that `crm_statuses` d
 ### 6.7 Disabled automation rule that names `'unpaid'` / `'paid'` as attendee status
 
 Two active rules ("העברת משתתף ידנית - לא שילם", "העברת משתתף ידנית - שילם") condition on `trigger_event='moved'` with `trigger_condition.status` of `'unpaid'` and `'paid'`. Those values are **payment_status**, not the main `status` field. The `attendee_moved` trigger receives `newStatus` from `move_attendee_between_events` payload — if the dispatcher is passing `payment_status` into the `newStatus` slot, this works; if not, the rules silently never fire. Worth a focused investigation.
+
+### 6.8 Historical notes — same-day fixes (2026-05-14)
+
+This section captures fixes that landed AFTER the original 2026-05-13 doc draft. They change facts referenced elsewhere in this file; the elsewhere-references have been updated in place.
+
+- **`M4_CANCEL_SYNC_FIX` (2026-05-14):** The cancel path in `crm-attendee-cancel.js` now invokes `sync_lead_status_from_attendee` after the attendee.status→`cancelled` flip. §6.4 issue #1 was updated to reflect this.
+- **`M4_STALE_INVITED_LEADS_SWEEP` (2026-05-14):** 1042 demo-tenant leads whose `lead.status='invited'` had no remaining active attendee row were re-derived via the canonical sync RPC. Forward sweep; no row was force-set — every change went through the existing derivation logic. Prizma tenant was NOT swept; a similar Prizma sweep remains an open candidate (see F-CSF-1 below).
+- **`M4_STATUS_TRIGGER_FRAMEWORK_EXTENSION` (2026-05-14):** Wired `trg_lead_status_change_event` + `trg_event_status_change_event` and seeded the 4 new `crm_trigger_type_registry` rows. §5.4 was updated to show all 3 entities as Live. Issue F5 from the original draft is closed by this SPEC.
+- **`M4_STATUS_MODEL_FINETUNES` (2026-05-14):** Replaced the composite-NULL check in `sync_lead_status_from_attendee` with the canonical `IF NOT FOUND` idiom. F-CSF-3 from `M4_CANCEL_SYNC_FIX/FINDINGS.md` is resolved by this SPEC.
+- **F2 trigger naming inconsistency (still open, deferred):** Pre-flight by SPEC #3 of the overnight run found that all 3 M4 `updated_at` triggers already follow the new `<table>_set_updated_at_trg` convention. The 4 legacy-pattern triggers (`trg_brands_updated`, `trg_inventory_updated`, `trg_po_updated`, `trg_suppliers_updated`) are all in Module 1. Renaming them belongs to a future M1-scoped SPEC.
+- **F-CSF-1 (still open, deferred):** The forward-sweep proposal — extend `M4_STALE_INVITED_LEADS_SWEEP` to cover Prizma + any other staleness vector — has NOT been authored as a SPEC yet. The overnight run's queue did not include this work.
 
 ---
 
