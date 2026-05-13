@@ -1,8 +1,14 @@
 // dispatch.ts — final-stage dispatch helpers for send-message EF, extracted
 // from index.ts (P31 commit 0c) so the parent stays under the 350-line cap
-// after P31 adds injectLeadVariables + validateRequiredVariables. No logic
-// changes — the writeDispatchAndSend body is byte-for-byte the same as the
-// original code in index.ts after the allowlist+recipient checks.
+// after P31 adds injectLeadVariables + validateRequiredVariables.
+//
+// 2026-05-14 (M4_MESSAGE_PERFORMANCE_TRACKING): writeDispatchAndSend now
+// also accepts shortLinkIds (array of short_links row ids created by
+// injectAutoUrls earlier in the request) and backfills their message_log_id
+// FK column once the pending crm_message_log row is inserted. The backfill
+// is an awaited UPDATE so the linkage is durable before the function
+// returns — if it failed silently, the analytics view would show clicked
+// messages without their corresponding sent rows.
 
 interface DispatchParams {
   tenantId: string;
@@ -15,6 +21,7 @@ interface DispatchParams {
   finalSubject: string | null;
   recipientPhone: string | null;
   recipientEmail: string | null;
+  shortLinkIds: string[];
 }
 
 type JsonResponseFn = (body: Record<string, unknown>, status?: number) => Response;
@@ -45,6 +52,26 @@ export async function writeDispatchAndSend(
   if (logErr || !logRow) {
     console.error("Log insert failed:", logErr);
     return jsonResponse({ ok: false, error: "Could not create log entry" }, 500);
+  }
+
+  // --- Backfill short_links.message_log_id (M4_MESSAGE_PERFORMANCE_TRACKING) ---
+  // injectAutoUrls earlier in the request inserted 0..2 rows in short_links
+  // (unsubscribe + optional registration). Their message_log_id was NULL at
+  // insert time because the log row didn't exist yet. Now it does — link them.
+  if (p.shortLinkIds.length > 0) {
+    const { error: linkErr } = await db
+      .from("short_links")
+      .update({ message_log_id: logRow.id })
+      .in("id", p.shortLinkIds);
+    if (linkErr) {
+      // Non-fatal: the message will still send. Analytics view will miss
+      // these links until/unless someone backfills. Log loudly so it's
+      // visible in EF logs.
+      console.warn(
+        "short_links.message_log_id backfill failed for log",
+        logRow.id, ":", linkErr.message,
+      );
+    }
   }
 
   // --- Call Make webhook ---

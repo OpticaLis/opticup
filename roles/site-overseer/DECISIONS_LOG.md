@@ -24,6 +24,40 @@
 
 ## Entries
 
+### 2026-05-14 — REC-SITE-024 closed (lead-intake async dispatch via EdgeRuntime.waitUntil)
+
+Daniel observed 2026-05-13 a 10-15s delay between clicking "שריינו לי מקום" on `/supersale/` and arriving at `/successfulsupersale/`. Site Overseer pre-flight pinpointed the synchronous `await dispatchFreshLead(...)` call at `supabase/functions/lead-intake/index.ts:300` (SPEC said line 301; reality was line 300 — off-by-one, single grep match, semantically identical change). Three options surfaced in conversation 2026-05-14: (א) loading spinner only (cosmetic, doesn't fix the wait), (ב) fire-and-forget at the Make level (loses `crm_message_log` state transitions, breaks audit trail), (ג) background dispatch at lead-intake level via `EdgeRuntime.waitUntil()` (preserves audit trail; user gets 1-2s response; `send-message` EF still awaits Make internally so per-row state transitions correctly). Daniel chose (ג) with one-word "כן".
+
+- **SPEC executed:** `modules/Module 4 - CRM/docs/specs/M4_LEAD_INTAKE_ASYNC_DISPATCH/SPEC.md` (Foreman-authored 2026-05-14).
+- **Executor:** opticup-executor (Bounded Autonomy, Full-Auto Pipeline mode, Claude Code Windows desktop).
+- **Code change:** single edit at `supabase/functions/lead-intake/index.ts` lines 300-307 — replaced `await dispatchFreshLead(...)` with `EdgeRuntime.waitUntil(dispatchFreshLead(...).catch(err => console.error("[lead-intake] background dispatch failed", err)))` plus a 4-line explanatory comment block. The `crm_leads` INSERT at lines 252-256 remains synchronous BEFORE the response returns at line 309-312, preserving the audit-trail invariant.
+- **Deploy:** Supabase EF lead-intake version 23 → 24 via `supabase functions deploy lead-intake --project-ref tsxrrxzmdxaenlvocyit`. Two prior `mcp__claude_ai_Supabase__deploy_edge_function` attempts failed with `InternalServerErrorException` (transient MCP issue, not SPEC defect); CLI fallback succeeded on first try. verify_jwt=true preserved.
+- **Smoke test (Criterion #8) — deploy-aliveness only:** both demo-approved phones `+972537889878` and `+972503348349` (per memory `feedback_test_data_phones.md`) have ACTIVE `crm_leads` rows in demo (not soft-deleted), so curl smoke hit the duplicate path (HTTP 409, 7.7s wall-clock — duplicate path is INTENTIONALLY UNCHANGED, only fresh-lead path was wrapped). This confirms EF deploys + JWT works + duplicate path unchanged. Fresh-lead path measurement defers to Criterion #9 (Daniel's manual production test with a fresh phone). Logged as `M4-FIND-25` in SPEC's FINDINGS.md.
+- **Failure mode preserved (Criterion #10 — defers to Daniel manual):** if Make is down, lead is STILL saved (synchronous INSERT runs first); `crm_message_log` rows stay at `status='pending'`; user still gets the redirect. Recoverable via existing `retry-failed` EF (a future SPEC could add a cron — out of scope here).
+- **SaaS-clean:** works for any tenant calling `lead-intake` (not just prizma). Other forms using the EF (`/quick-register/`, homepage contact form, etc.) all benefit automatically.
+- **Cross-refs:** `modules/Module 4 - CRM/docs/specs/M4_LEAD_INTAKE_ASYNC_DISPATCH/EXECUTION_REPORT.md`, `FINDINGS.md`, `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-024 row added).
+
+---
+
+### 2026-05-13 — REC-SITE-023 closed-partial (supersale checkbox comma fix)
+
+After REC-SITE-022 deployed, Daniel screenshot showed `/supersale/` rendering THREE checkboxes instead of TWO. Root cause: the `[lead_form]` shortcode's `checkboxes=` parameter splits on commas; the value-forward marketing label introduced in REC-SITE-022 contains an inner comma between the cookies clause and the `{link:/privacy/}` anchor (`...בקוקיז שיווקיים, {link:/privacy/}...`). The parser split at that comma → 3 checkboxes. Daniel chose the data-side fix (em-dash) rather than a parser change (`"נלך עם ההמלצה שלך. תתקן"`).
+
+- **SPEC executed:** `modules/Module 3 - Storefront/docs/specs/M3_SUPERSALE_CHECKBOX_COMMA_FIX/SPEC.md` (Foreman-authored 2026-05-13).
+- **Executor:** opticup-executor (Bounded Autonomy, Claude Code Windows desktop).
+- **DB change (Level 2, SPEC §7 pre-authorized):** 3 UPDATEs on `storefront_pages` (he/en/ru × prizma × `/supersale/`) — replaced `<lang_cookies>, {link:/privacy/}` with `<lang_cookies> — {link:/privacy/}` inside `blocks[1].data.html`. Parse-then-modify pattern (`jsonb_set` + `to_jsonb(replace(...))`) per L-PROJECT-002. Pre-update backups saved to `BACKUPS/{he,en,ru}_blocks_pre_update.json` BEFORE the UPDATE ran. All 3 UPDATEs in a single transaction with verification SELECT.
+- **Post-state evidence (verified within the same transaction):**
+  - HE: `still_buggy=false`, `has_emdash=true`, commas in checkboxes attr = 1 ✅ → 2 checkboxes will render
+  - EN: `still_buggy=false`, `has_emdash=true`, commas in checkboxes attr = 1 ✅ → 2 checkboxes will render
+  - RU: `still_buggy=false`, `has_emdash=true`, commas in checkboxes attr = **2** ⚠️ → **3 checkboxes** will still render
+- **RU caveat — partial closure:** the RU TERMS checkbox label (NOT touched by this SPEC per §8 Out of Scope) contains its OWN internal comma: `Я подтверждаю, что прочитал/а и согласился/ась с {link:/supersale-takanon/}правилами мероприятия и политикой залога{/link}`. That comma was pre-existing — it was already there before today's work, and the shortcode parser splits at it too. After this SPEC's fix, RU will render 3 checkboxes: (1) `Я подтверждаю` (orphan from RU TERMS comma), (2) `что прочитал/а ... залога` * (the rest of TERMS, retains the required `*`), (3) `Присылайте мне ... политика конфиденциальности` (marketing, now correctly intact). Daniel's screenshot was HE-only — the RU pre-existing issue was not on his radar today. Logged as **M3-DATA-23** in this SPEC's FINDINGS for a follow-up SPEC (~<30 min: same Level-2 UPDATE pattern, replace the inner comma in RU TERMS with " — " or remove the appositive entirely).
+- **Underlying structural finding:** the `[lead_form]` shortcode at `src/lib/shortcodes/lead-form.ts:parseCheckboxes()` (line 40) uses `str.split(',')` with no escape mechanism. Any inner comma — whether legitimately Hebrew/Russian-grammatical or stylistic — silently fragments the checkbox. Logged as **M3-DEBT-23** for a follow-up SPEC (~2 hrs: extend parser to accept `\\,` literal-comma escape OR shift `checkboxes=` from comma-delimited to JSON-array attribute, OR adopt a non-keyboard separator like `|`).
+- **Banner suppression on `/supersale/`** — unchanged. `page_type='campaign'` → `hideChrome=true` (per existing BaseLayout logic).
+- **Live (no deploy needed):** CMS reads from DB at request time. The fix is live immediately after the transaction COMMIT. Daniel can refresh `/supersale/` (HE or EN) and see exactly 2 checkboxes immediately. RU will still show 3 until M3-DATA-23 is addressed.
+- **Cross-refs:** `modules/Module 3 - Storefront/docs/specs/M3_SUPERSALE_CHECKBOX_COMMA_FIX/EXECUTION_REPORT.md`, `FINDINGS.md`, `BACKUPS/{he,en,ru}_blocks_pre_update.json`, `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-023 row added with "closed-partial" status + the RU caveat + the M3-DATA-23 / M3-DEBT-23 follow-up sizing).
+
+---
+
 ### 2026-05-13 — REC-SITE-022 closed (supersale marketing checkbox + cookie consent)
 
 After the `/quick-register/` rollback, Daniel re-dispatched the work against the CORRECT page `/supersale/`. SPEC `M3_SUPERSALE_MARKETING_CHECKBOX` authored 2026-05-13 by Foreman (Site-Overseer hat) and executed by opticup-executor under Bounded Autonomy.
