@@ -2,6 +2,22 @@
 
 ---
 
+## M4_AUTOMATION_RULES_UPDATED_AT — `crm_automation_rules.updated_at` column + trigger + backfill 🟢
+
+| Hash | Message |
+|------|---------|
+| (this) | `feat(m4-crm,sql): add updated_at column + trigger to crm_automation_rules` |
+| (next) | `docs(m4-crm): note M4_AUTOMATION_RULES_UPDATED_AT in SESSION_CONTEXT + CHANGELOG + MODULE_MAP + MASTER_ROADMAP + OPEN_TASKS` |
+| (last) | `chore(spec): close M4_AUTOMATION_RULES_UPDATED_AT with retrospective` |
+
+**Outcome:** `M4-DEBT-CRM-AUTO-RULES-UPDATED-AT` closed. New column `updated_at timestamptz NOT NULL DEFAULT now()` on `crm_automation_rules` + trigger `crm_automation_rules_set_updated_at_trg` (BEFORE UPDATE, uses canonical generic `update_updated_at()` function — same one storefront_pages / storefront_components / crm_automation_runs use). Backfill set existing rows' `updated_at = created_at` (40 rows: 23 demo + 17 Prizma) — drift count post-backfill = 0. Smoke (no-op UPDATE on demo rule `e1f3e039`) advances `updated_at` from `2026-04-22 18:43:18` → `2026-05-13 08:28:15`. **Body-hash invariant:** demo + Prizma aggregate body hashes (md5 over id‖tenant_id‖name‖trigger_*‖action_*‖sort_order‖is_active‖created_at, excluding new `updated_at`) IDENTICAL pre/post — `aaafcf93...` (demo, 23 rows) and `f11174e8...` (Prizma, 17 rows). Zero collateral writes. Second SPEC of the overnight audit-harvest run.
+
+**Run mode:** Full-Auto Pipeline. Migration applied via Supabase MCP `apply_migration` (name `automation_rules_updated_at_2026_05_13`). Paired `_up.sql` + `_down.sql` committed.
+
+See `modules/Module 4 - CRM/docs/specs/M4_AUTOMATION_RULES_UPDATED_AT/`.
+
+---
+
 ## M4_INVITED_GHOST_ATTENDEE_FIX — `invited` rows stop occupying event capacity 🟢
 
 | Hash | Message |

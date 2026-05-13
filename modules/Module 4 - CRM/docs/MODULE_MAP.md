@@ -221,7 +221,7 @@ The `crm_event_attendees` table now carries a payment-lifecycle model:
 - **Removed at SPEC close:** legacy `booking_fee_paid` + `booking_fee_refunded` columns, plus the temporary `sync_booking_fee_paid_from_status` trigger that bridged the old and new fields during the carve-out.
 - **UI + automation work** depending on this schema lives in sibling SPECs `M4_ATTENDEE_PAYMENT_UI` (#2) and `M4_ATTENDEE_PAYMENT_AUTOMATION` (#3).
 | `crm_message_templates` | crm-messaging-templates.js, crm-messaging-rules.js, crm-messaging-broadcast.js | Templates CRUD, template picker in rules + broadcasts, name lookup for log display |
-| `crm_automation_rules` | crm-messaging-rules.js | Rules CRUD |
+| `crm_automation_rules` | crm-messaging-rules.js | Rules CRUD. **[M4_AUTOMATION_RULES_UPDATED_AT 2026-05-13]** Now carries `updated_at timestamptz NOT NULL DEFAULT now()` with BEFORE-UPDATE trigger via canonical `update_updated_at()` function (mirrors crm_automation_runs / storefront_pages pattern). Backfilled `updated_at = created_at` for all 40 existing rows (23 demo + 17 Prizma). |
 | `crm_broadcasts` | crm-messaging-broadcast.js | Broadcast records (insert on send) |
 | `crm_message_log` | crm-messaging-broadcast.js | Message history with channel/status/date filters, paginated |
 
