@@ -2,6 +2,24 @@
 
 ---
 
+## M4_STALE_INVITED_LEADS_SWEEP — retroactive sweep of 1,042 stale invited Prizma leads via existing sync RPC 🟢
+
+| Hash | Message |
+|------|---------|
+| (this) | `chore(spec,m4): close M4_STALE_INVITED_LEADS_SWEEP — sweep 1042 stale invited leads via sync RPC` |
+
+**Outcome:** Closes F-CSF-1 from `M4_CANCEL_SYNC_FIX/FINDINGS.md` (INFO, ~960). One-shot retroactive sweep on Prizma: 1,042 leads (within Brief band `[800, 1200]`) carrying stale `status='invited'` despite no active attendees → all 1,042 re-synced via `sync_lead_status_from_attendee` RPC → 100% landed at `status='waiting'`. Demo had 0 stale invited leads; no demo writes occurred. Post-sweep Prizma stale count = 0.
+
+**Method:** 11 batches via Supabase MCP `execute_sql` with CTE-wrapped RPC calls (1 smoke of 10 + 9 batches of 100 + 1 batch of 32 + 2 incidental parallel batches of 100 — all confirmed disjoint by predicate-count delta). RPC-only writes; zero DDL; zero direct `UPDATE crm_leads`. Iron Rule 12 file-size N/A (no code change); Iron Rule 31 integrity gate exit 0; Iron Rule 32 destructive-ops declared = the ~960-range RPC-mediated UPDATEs that actually landed as 1042.
+
+**Safety:** Master safety tag `pre-m4-stale-invited-leads-sweep-2026-05-14` at `12ca6be`. Rollback artifact in `PRE_POST_SNAPSHOT.md`: deterministic predicate + MD5 digest `badf3cdcd8fc6d755cf2a9e7aa22faaa` (n=1042) — re-identifies the exact swept set at any future time. Includes Step-3.1 digest-verification clause before any rollback UPDATE.
+
+**Findings:** No findings file written. One unrelated organic intake (Prizma lead `ed2e1c4b...`, `source='shortcode_lead_form'`, `status='new'`) was created during the sweep window — documented in `PRE_POST_SNAPSHOT.md §5` and `EXECUTION_REPORT.md §4` for transparency but not a finding from this SPEC.
+
+**12/12 success criteria PASS.** 1 commit on develop (under the 1–2 target, well under the 3-cap). 0 merges to main — Daniel handles the PR per CLAUDE.md §9.
+
+---
+
 ## M4_WAITLIST_SYNC_PRIORITY_FIX — sync RPC waitlist precedence + event-close recycle trigger + retroactive backfills 🟢
 
 | Hash | Message |
