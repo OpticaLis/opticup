@@ -192,3 +192,28 @@ ALTER TABLE crm_leads
 --
 -- Full migration in migrations/2026_05_06_revoke_anon_rpc_execute_up.sql.
 -- Companion rollback in migrations/2026_05_06_revoke_anon_rpc_execute_down.sql.
+
+-- =============================================================================
+-- updated_at columns + auto-stamp triggers (added 2026-05-14)
+-- =============================================================================
+-- SPEC: modules/Module 4 - CRM/docs/specs/M4_UPDATED_AT_BACKFILL/SPEC.md
+-- Closes Audit Rec 8 + debt M4-DEBT-CRM-AUTO-RULES-UPDATED-AT.
+-- Reuses project-shared function public.update_updated_at() (Rule 21).
+-- crm_automation_rules already had column + trigger pre-SPEC — verify-only.
+
+ALTER TABLE public.crm_lead_notes
+  ADD COLUMN updated_at timestamptz NOT NULL DEFAULT now();
+UPDATE public.crm_lead_notes SET updated_at = created_at;  -- backfill historical rows
+CREATE TRIGGER crm_lead_notes_set_updated_at_trg
+  BEFORE UPDATE ON public.crm_lead_notes
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+
+ALTER TABLE public.crm_event_attendees
+  ADD COLUMN updated_at timestamptz NOT NULL DEFAULT now();
+UPDATE public.crm_event_attendees SET updated_at = created_at;
+CREATE TRIGGER crm_event_attendees_set_updated_at_trg
+  BEFORE UPDATE ON public.crm_event_attendees
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+
+-- crm_automation_rules: pre-existing column + crm_automation_rules_set_updated_at_trg trigger.
+-- No DDL applied — Rule 21 (no duplicates). 0 NULL rows in updated_at confirmed pre-flight.
