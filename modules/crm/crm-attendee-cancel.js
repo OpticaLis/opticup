@@ -35,7 +35,7 @@
     if (!tenantId) { _cancelToast('error', 'לא זוהה tenant'); return; }
 
     var fetchRes = await sb.from('v_crm_event_attendees_full')
-      .select('id, full_name, status, payment_status, no_refund_due_marked')
+      .select('id, lead_id, event_id, full_name, status, payment_status, no_refund_due_marked')
       .eq('id', attendeeId).eq('tenant_id', tenantId).single();
     if (fetchRes.error || !fetchRes.data) {
       _cancelToast('error', 'לא נמצא רישום: ' + (fetchRes.error ? fetchRes.error.message : 'unknown'));
@@ -77,6 +77,13 @@
         _cancelToast('error', 'הביטול נכשל: ' + upd.error.message);
         return;
       }
+      // F4 fix: re-derive lead.status from remaining active attendee rows.
+      // Best-effort — sync errors do not fail the cancel UX.
+      if (attendee.lead_id) {
+        try {
+          await sb.rpc('sync_lead_status_from_attendee', { p_lead_id: attendee.lead_id, p_tenant_id: tenantId });
+        } catch (e) { console.warn('attendeeCancel sync skipped:', e); }
+      }
       _logCancel('crm.attendee.cancel', attendee.id, { from_status: attendee.status, payment_status: attendee.payment_status, path: 'simple' });
       _cancelToast('success', 'הרישום בוטל');
       if (modal.close) modal.close();
@@ -109,6 +116,13 @@
         btn.disabled = false;
         _cancelToast('error', 'הביטול נכשל: ' + upd.error.message);
         return;
+      }
+      // F4 fix: re-derive lead.status from remaining active attendee rows.
+      // Best-effort — sync errors do not fail the cancel UX.
+      if (attendee.lead_id) {
+        try {
+          await sb.rpc('sync_lead_status_from_attendee', { p_lead_id: attendee.lead_id, p_tenant_id: tenantId });
+        } catch (e) { console.warn('attendeeCancel sync skipped:', e); }
       }
       _logCancel('crm.attendee.cancel', attendee.id, { from_status: attendee.status, payment_status: attendee.payment_status, path: 'paid_refund_due' });
       _cancelToast('success', 'הרישום בוטל וההחזר מתבקש');
