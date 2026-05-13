@@ -40,8 +40,7 @@
     var tid = getTenantId(); _atRisk = {}; _openCredits = {};
     if (!tid) return;
     var horizonMs = Date.now() + 30 * 86400000;
-    var res = await sb.from('crm_event_attendees').select('lead_id, credit_expires_at')
-      .eq('tenant_id', tid).eq('payment_status', 'credit_pending').eq('is_deleted', false);
+    var res = await DB.select('crm_event_attendees', { payment_status: 'credit_pending', is_deleted: false }, { columns: 'lead_id, credit_expires_at', silent: true });
     (res.data || []).forEach(function (r) {
       var t = new Date(r.credit_expires_at).getTime();
       if (_openCredits[r.lead_id] === undefined) _openCredits[r.lead_id] = r.credit_expires_at;
@@ -54,9 +53,7 @@
     var tid = getTenantId();
     if (!tid) { _failedCounts = {}; return; }
     var since = new Date(Date.now() - 90 * 86400000).toISOString();
-    var res = await sb.from('crm_message_log').select('lead_id')
-      .eq('tenant_id', tid).eq('status', 'failed').not('lead_id', 'is', null)
-      .gte('created_at', since);
+    var res = await DB.select('crm_message_log', { status: 'failed' }, { columns: 'lead_id', rawFilters: function (q) { return q.not('lead_id', 'is', null).gte('created_at', since); }, silent: true });
     var m = {}; (res.data || []).forEach(function (r) { if (r.lead_id) m[r.lead_id] = (m[r.lead_id] || 0) + 1; });
     _failedCounts = m;
   }
@@ -65,11 +62,12 @@
     if (reset) { _svrOffset = 0; _svrHasMore = true; }
     if (!_svrHasMore) return [];
     var tid = getTenantId();
-    var q = sb.from('v_crm_leads_with_tags')
-      .select('id, full_name, phone, email, city, language, status, source, client_notes, eye_exam_default, terms_approved, marketing_consent, unsubscribed_at, created_at, updated_at, tag_names, tag_colors, utm_source, utm_medium, utm_campaign, utm_content, utm_term, utm_campaign_id, monday_item_id')
-      .eq('is_deleted', false);
-    if (tid) q = q.eq('tenant_id', tid);
-    var res = await q.order('full_name').range(_svrOffset, _svrOffset + SERVER_PAGE - 1);
+    var res = await DB.select('v_crm_leads_with_tags', { is_deleted: false }, {
+      columns: 'id, full_name, phone, email, city, language, status, source, client_notes, eye_exam_default, terms_approved, marketing_consent, unsubscribed_at, created_at, updated_at, tag_names, tag_colors, utm_source, utm_medium, utm_campaign, utm_content, utm_term, utm_campaign_id, monday_item_id',
+      order: 'full_name',
+      offset: _svrOffset,
+      limit: SERVER_PAGE
+    });
     if (res.error) throw new Error('Leads load failed: ' + res.error.message);
     var rows = res.data || [];
     _svrOffset += rows.length; if (rows.length && tid) await CrmHelpers.mergeLeadHistory(rows, tid);
@@ -90,7 +88,7 @@
         await loadFailedCounts();
         if (window.CrmLeadFilters) _lastNotesMap = await CrmLeadFilters.loadLastNotesMap();
         renderAdvancedFilterBar();
-        wireEvents();
+        wireLeadsTabEvents();
       })().catch(function (e) {
         _loadPromise = null;
         wrap.innerHTML = '<div class="text-center text-rose-500 py-6 font-semibold">שגיאה בטעינה: ' + escapeHtml(e.message || String(e)) + '</div>';
@@ -118,7 +116,7 @@
   }
 
   var _eventsWired = false;
-  function wireEvents() {
+  function wireLeadsTabEvents() {
     if (_eventsWired) return;
     _eventsWired = true;
     var searchEl = document.getElementById('crm-leads-search');
@@ -319,6 +317,7 @@
     });
     wrap.addEventListener('click', async function (e) {
       var b = e.target.closest('[data-move-lead]'); if (!b || !window.CrmAttendeeMove) return; e.stopPropagation();
+      // NOT migrated to DB.* in M4_RAW_SB_WRAPPER_PHASE_1: uses .maybeSingle(), wrapper has no equivalent. Phase 2 follow-up.
       var r = await sb.from('crm_event_attendees').select('id').eq('tenant_id', getTenantId()).eq('lead_id', b.getAttribute('data-move-lead')).in('status', ['waiting_list','invited','registered']).eq('is_deleted', false).order('created_at', { ascending: false }).limit(1).maybeSingle();
       if (r.error || !r.data) { if (window.Toast) Toast.warning('אין רישום פעיל ללקוח זה'); return; }
       CrmAttendeeMove.open(r.data.id, { onAfter: function () { renderLeadsTable(); } });

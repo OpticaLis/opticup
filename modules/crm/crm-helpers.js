@@ -116,11 +116,12 @@ if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLo
   // Fills window.CRM_STATUSES = { lead: { slug: {name_he, color, ...} }, event: {...}, attendee: {...} }
   async function loadStatusCache() {
     if (window.CRM_STATUSES && window.CRM_STATUSES._loaded) return window.CRM_STATUSES;
-    var tid = (typeof getTenantId === 'function') ? getTenantId() : null;
-    var q = sb.from('crm_statuses').select('entity_type, slug, name_he, name_en, color, sort_order, is_default');
-    if (tid) q = q.eq('tenant_id', tid);
-    q = q.eq('is_active', true).order('sort_order');
-    var res = await q;
+    // M4_RAW_SB_WRAPPER_MIGRATION_PHASE_1 (2026-05-13): replaced raw sb.from()
+    // with DB.select (auto tenant_id injection, Iron Rule 7).
+    var res = await DB.select('crm_statuses', { is_active: true }, {
+      columns: 'entity_type, slug, name_he, name_en, color, sort_order, is_default',
+      order: 'sort_order'
+    });
     if (res.error) throw new Error('crm_statuses load failed: ' + res.error.message);
     var byType = { lead: {}, event: {}, attendee: {}, _loaded: true, _all: res.data || [] };
     (res.data || []).forEach(function (r) {
@@ -212,9 +213,13 @@ if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLo
   async function mergeLeadHistory(rows, tenantId) {
     if (!rows || !rows.length || !tenantId) return;
     var ids = rows.map(function (r) { return r.id; });
-    var hRes = await sb.from('v_crm_lead_event_history')
-      .select('lead_id, total_events_attended, is_returning_customer')
-      .eq('tenant_id', tenantId).in('lead_id', ids);
+    // M4_RAW_SB_WRAPPER_MIGRATION_PHASE_1 (2026-05-13): replaced raw sb.from() with DB.select.
+    // silent:true preserves original "silent return on error" behavior.
+    var hRes = await DB.select('v_crm_lead_event_history', null, {
+      columns: 'lead_id, total_events_attended, is_returning_customer',
+      rawFilters: function (q) { return q.in('lead_id', ids); },
+      silent: true
+    });
     if (hRes.error) return;
     var byId = {};
     (hRes.data || []).forEach(function (h) { byId[h.lead_id] = h; });

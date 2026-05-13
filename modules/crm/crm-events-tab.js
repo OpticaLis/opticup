@@ -14,20 +14,20 @@
   var CLS_ROW   = 'hover:bg-indigo-50/40 cursor-pointer border-b border-slate-100 transition-colors';
 
   async function loadEvents() {
-    var tid = getTenantId();
-    var statsQ = sb.from('v_crm_event_stats')
-      .select('event_id, event_number, name, event_date, status, max_capacity, total_registered, total_confirmed, total_attended, total_purchased, total_revenue, spots_remaining, purchase_rate_pct');
-    if (tid) statsQ = statsQ.eq('tenant_id', tid);
-    statsQ = statsQ.order('event_number', { ascending: false });
+    // M4_RAW_SB_WRAPPER_MIGRATION_PHASE_1 (2026-05-13): raw sb.from() → DB.select (both).
+    // DB.select auto tenant-filters (line 111 of supabase-client.js).
+    var statsQ = DB.select('v_crm_event_stats', null, {
+      columns: 'event_id, event_number, name, event_date, status, max_capacity, total_registered, total_confirmed, total_attended, total_purchased, total_revenue, spots_remaining, purchase_rate_pct',
+      order: 'event_number.desc'
+    });
 
     // ATTENDEE_COUNTER_DISPLAY_FIX: bypass v_crm_event_stats.total_registered
     // (which is broader than the נרשמו semantics) by counting attendees in
     // REGISTERED_STATUSES per event_id client-side.
-    var regQ = sb.from('crm_event_attendees')
-      .select('event_id, status')
-      .eq('is_deleted', false)
-      .in('status', window.REGISTERED_STATUSES);
-    if (tid) regQ = regQ.eq('tenant_id', tid);
+    var regQ = DB.select('crm_event_attendees', { is_deleted: false }, {
+      columns: 'event_id, status',
+      rawFilters: function (q) { return q.in('status', window.REGISTERED_STATUSES); }
+    });
 
     var r = await Promise.all([statsQ, regQ]);
     if (r[0].error) throw new Error('Events load failed: ' + r[0].error.message);
@@ -49,7 +49,7 @@
         await ensureCrmStatusCache();
         _allEvents = await loadEvents();
         populateFilter();
-        wireEvents();
+        wireEventsTabEvents();
       })().catch(function (e) {
         _loadPromise = null;
         wrap.innerHTML = '<div class="text-center text-rose-500 py-6 font-semibold">שגיאה בטעינה: ' + escapeHtml(e.message || String(e)) + '</div>';
@@ -84,7 +84,7 @@
   }
 
   var _wired = false;
-  function wireEvents() {
+  function wireEventsTabEvents() {
     if (_wired) return;
     _wired = true;
     var sel = document.getElementById('crm-events-filter-status');

@@ -24,6 +24,99 @@
 
 ## Entries
 
+### 2026-05-13 — REC-SITE-022 closed (supersale marketing checkbox + cookie consent)
+
+After the `/quick-register/` rollback, Daniel re-dispatched the work against the CORRECT page `/supersale/`. SPEC `M3_SUPERSALE_MARKETING_CHECKBOX` authored 2026-05-13 by Foreman (Site-Overseer hat) and executed by opticup-executor under Bounded Autonomy.
+
+- **Two coupled changes, single REC-SITE-022:**
+  1. **DB Level 2 UPDATE (pre-authorized by SPEC §7):** marketing checkbox label rewritten on `storefront_pages` rows for (he, en, ru) × `slug='/supersale/'` × prizma. Old labels (verbatim) backed up to `modules/Module 3 - Storefront/docs/specs/M3_SUPERSALE_MARKETING_CHECKBOX/BACKUPS/{he,en,ru}_blocks_pre_update.json` BEFORE the UPDATE ran. Parse-then-modify pattern (`jsonb_set` + `to_jsonb(replace(blocks->1->'data'->>'html', OLD, NEW))`) per L-PROJECT-002.
+     - New HE: `שלחו לי קופונים והטבות מיוחדות — לפני כולם (כולל שימוש בקוקיז שיווקיים, {link:/privacy/}מדיניות פרטיות{/link})`
+     - New EN: `Send me exclusive coupons & special offers — before everyone else (includes use of marketing cookies, {link:/privacy/}privacy policy{/link})`
+     - New RU: `Присылайте мне эксклюзивные купоны и специальные предложения — раньше всех (включая маркетинговые куки, {link:/privacy/}политика конфиденциальности{/link})`
+     - Post-UPDATE verification (within the same transaction): `jsonb_typeof(blocks)='array'`, `jsonb_array_length(blocks)=12`, all 3 langs. TERMS checkbox label unchanged in all 3 langs.
+  2. **Storefront code (`opticup-storefront` commit `82f820be51ee93ffbabe32c5cff3bc25e38c5b4c` on `develop`):** `src/lib/shortcodes/lead-form-validation.ts` extended with an inline `_scWriteConsent(marketing)` helper that writes the v1 `cookie_consent` shape (`{necessary:true, analytics:false, marketing, version:'v1', accepted_at}`) to: (a) cookie `cookie_consent` with `max-age=31536000; path=/; SameSite=Lax`, (b) `localStorage.cookie_consent`, (c) `window.__consent`, AND dispatches `window.dispatchEvent(new CustomEvent('consent-changed', { detail }))`. Wired in two places: on `change` of `input[name="checkbox_1"]` when checked (warm-up so Pixel listeners initialize before submit), AND on successful submit when `data.marketing_consent === true` (guarantees consent is persisted even if the user ticks + submits in the same focus event). `npm run build` PASS (Astro 5.11s; image-proxy guard PASS, 9 files / 0 violations).
+- **Rule 21 note:** the new helper inlines the same write logic that already exists in `src/lib/consent.ts:setConsent` AND in `src/components/CookieBanner.astro:writeChoice` (inside a `<script is:inline>` block). This is now a **3-copy** duplication. SPEC §9 explicitly allowed inline duplication ("duplicating the small write logic is also acceptable if extraction is risky") because lead-form's inline script is NOT processed by Astro's module bundler — making it impossible to `import { setConsent } from '../consent'` from there without restructuring how shortcodes emit client-side code. Logged as finding M3-DEBT-22 for a future dedupe SPEC (extract a small `setConsent.client.js` that BaseLayout side-imports to expose `window.OpticConsent.setConsent`, then both CookieBanner and lead-form call it).
+- **Banner suppression on `/supersale/`** — verified unchanged. BaseLayout.astro guards banner render with `hideChrome={isCampaign}`; `/supersale/` has `page_type='campaign'` in storefront_pages, so the banner element never enters the DOM on this page. No code touched there.
+- **Post-deploy verification (Daniel-manual, Criteria #11 + #12 of SPEC):**
+  - Fill `/supersale/` form in a private window with test phone `0537889878` (per `feedback_test_data_phones` memory — Daniel's personal phone allow-listed for SuperSale smoke). Tick marketing checkbox → submit → on the `/successfulsupersale/` redirect, verify Network tab shows `connect.facebook.net/.../fbevents.js` AND a request to `facebook.com/tr/?...&id=304574492100180&ev=PageView` (and `Lead` if the 4 `pixel_events` rules fire for that route). Expected: Pixel fires.
+  - Repeat with the marketing checkbox NOT ticked. Expected: no Facebook network requests.
+- **PR / merge state caveat:** the `/quick-register/` rollback commits (`19d6382` + `ee356ca`) and this `/supersale/` commit (`82f820b`) ride together on `develop`. The single follow-up PR `develop → main` deploys both at once. There is no need to separate them — neither change conflicts with the other.
+- **Cross-refs:** `modules/Module 3 - Storefront/docs/specs/M3_SUPERSALE_MARKETING_CHECKBOX/EXECUTION_REPORT.md`, `FINDINGS.md`, `BACKUPS/{he,en,ru}_blocks_pre_update.json`, `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-022 row added).
+
+---
+
+### 2026-05-13 — REVERSAL: REC-SITE-020 + REC-SITE-021 (B) reverted (wrong page edited)
+
+- **Context:** After both prior SPECs landed on `develop` (REC-SITE-020 via storefront commit `ac6eef6` merged to main via PR #21; REC-SITE-021 sub-item (B) via storefront commit `84e7e88` on develop only), Daniel reviewed and identified the page mismatch: he had been referring to `/supersale/` (the SuperSale landing page with lead form) the entire time, not `/quick-register/` (the QR-walk-in registration page, Module 4 CRM). The two pages have similar lead-form layouts but serve completely different flows — `/supersale/` is the public marketing entry, `/quick-register/` is staff-WhatsApp → QR → walk-in only.
+- **Decision:** Roll back BOTH commits on `/quick-register/` (verbatim restore to pre-2026-05-13 state) and re-target the correct page `/supersale/` in a separate SPEC `M3_SUPERSALE_MARKETING_CHECKBOX`. Daniel directive (verbatim): "להחזיר אחורה ואל תגע בעמוד הזה" — revert and don't touch `/quick-register/` again.
+- **Operational action (this entry — M3_QUICK_REGISTER_ROLLBACK SPEC):**
+  - Storefront `git revert 84e7e88 --no-edit` → commit `19d63824bcb9435cb007270695107c18e4695ccf` (undoes text expansion on line 165).
+  - Storefront `git revert ac6eef6 --no-edit` → commit `ee356ca622fd2d111c40d05d065850e24757b40f` (undoes pre-tick removal on line 164).
+  - Both reverts pushed to `origin develop`. No conflict (separate lines).
+  - File `src/pages/quick-register/index.astro` byte-equal to pre-2026-05-13 state on develop: line 164 = `'<label class="qr-check"><input type="checkbox" id="marketing" checked>' +`, line 165 = `'<span>אני מסכים/ה לקבל עדכונים שיווקיים והצעות מיוחדות</span>' +`. TERMS checkbox unchanged throughout.
+  - `npm run build` PASS (5.77s); image-proxy guard PASS (9 files, 0 violations).
+  - PR closure: `gh` not authenticated in executor shell — **Daniel-manual step required.** If an open PR exists for `develop → main` (e.g. the one Daniel may have opened for `84e7e88`), close it via GitHub UI with the comment template from SPEC §10. If no open PR exists, this step is moot.
+  - HANDOFF rows updated: REC-SITE-020 → `(reverted)`, REC-SITE-021 → `MEDIUM (PARTIAL — (B) reverted, (C) deferred)`.
+- **Important production state caveat:** `main` already contains `ac6eef6` (merged via PR #21 before the page-target error was caught). The two reverts on `develop` therefore leave `develop` 3 commits ahead of `main` (the original `84e7e88` + 2 reverts), with `develop` and `main` differing on line 164: `develop` has `checked` (pre-SPEC state), `main` has the unchecked version from `ac6eef6`. **To restore production to pre-2026-05-13 state, Daniel must open a follow-up rollback PR `develop → main` and merge it.** This SPEC does not auto-open that PR (cross-repo / no auth / Daniel-only authorization for main-bound merges).
+- **What the SPEC author got wrong (and what changed):**
+  - SPEC §3 Criterion 6 assumed `develop` was 2 commits ahead of `main` BEFORE this SPEC. Reality: 1 commit ahead. ac6eef6 had already been merged to main via PR #21.
+  - SPEC §3 Criterion 6 expected `develop` to match `main` AFTER (0 commits ahead). Unachievable without touching main — flagged in EXECUTION_REPORT for Foreman.
+  - The desired outcome (file content restored on develop) IS achieved; the "develop = main" condition can only be achieved by a follow-up Daniel-merge.
+- **Cross-refs:** `modules/Module 3 - Storefront/docs/specs/M3_QUICK_REGISTER_ROLLBACK/EXECUTION_REPORT.md`, `FINDINGS.md`, `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-020 + REC-SITE-021 rows). New SPEC for correct page: `M3_SUPERSALE_MARKETING_CHECKBOX` (to be drafted separately).
+
+---
+
+### 2026-05-13 — pixel-verification + quick-register-pretick-removal (REC-SITE-020)
+
+- **Context:** Daniel asked Site Overseer to verify Meta Pixel `304574492100180` is correctly wired on the live site. Verification path: `storefront_config.analytics.facebook_pixel_id = "304574492100180"` ✅, homepage HTML emits `fbq('init','304574492100180') + fbq('track','PageView')` inside `consentGate(marketing===true)` per REC-SITE-010 architecture, plus 4 `pixel_events` rules wired to `/successfulsupersale/` (HE/EN/RU) + `/successfulmulti/` for Lead tracking. Verified clean on `/` and `/en/`.
+- **Follow-up question from Daniel:** Whether the SuperSale lead form (`/quick-register/`) can auto-accept cookie consent on form submit (to avoid losing Pixel data on customers who don't engage with the consent banner). Surfaced two pre-existing issues during investigation: (1) the marketing-consent checkbox is `checked` by default — pre-ticked consent is illegal under Israeli Privacy Act 2024 amendment + Communications Act §30א; (2) there is no separate `/successfulsupersale/` thank-you page — success is inline, so the 4 `pixel_events` Lead rules never fire from `/quick-register/`. Site Overseer proposed 3 actions: (a) remove pre-tick — legal compliance, (b) expand marketing checkbox text to also cover marketing cookies — eliminates the need for separate consent on the SuperSale flow, (c) wire `fbq('track','Lead')` to fire on successful form submit if user consented. Daniel asked twice whether marketing consent could be made mandatory; Site Overseer recommended against — bundling consent for marketing/cookies with a required-to-register checkbox is "forced consent" and prohibited (fines up to ₪67,300 + class-action exposure).
+- **Question (asked in conversation 2026-05-13):** Approve all three actions, or subset?
+- **Decision:** Approve action (a) only — remove the `checked` attribute from the marketing-consent checkbox at `src/pages/quick-register/index.astro:164`. Actions (b) text expansion + (c) Lead pixel wiring deferred — Daniel said "כרגע תעדכן את זה בקשר לשאר הפעולות שהצעת נדבר כשתסיים".
+- **Rationale:** Daniel asked twice about pre-ticked / mandatory marketing consent; both times Site Overseer cited the legal prohibition (pre-ticked = invalid consent under Israeli Privacy Act 2024; mandatory = forced consent, also invalid). Daniel accepted the legal constraint and chose the minimal compliant fix first. Deferred actions remain on the table for a separate conversation.
+- **Operational action:**
+  - Verified live: Pixel `304574492100180` correctly wired on production, consent-gated per REC-SITE-010 design.
+  - SPEC to be drafted: `M3_QUICK_REGISTER_MARKETING_PRETICK_REMOVAL` — single-file change in opticup-storefront repo, remove `checked` attribute from line 164 marketing checkbox.
+  - HANDOFF updated: REC-SITE-020 added (PENDING-EXECUTION) for action (a); REC-SITE-021 added (DEFERRED) bundling actions (b) + (c).
+- **Cross-refs:** `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-020 + REC-SITE-021), `storefront_config.analytics` JSONB for prizma tenant, `tenants.ui_config.cookie_consent` (REC-SITE-010 architecture).
+
+#### Closure — 2026-05-13 (same day)
+
+- **SPEC executed:** `modules/Module 3 - Storefront/docs/specs/M3_QUICK_REGISTER_MARKETING_PRETICK_REMOVAL/SPEC.md` (Foreman-authored 2026-05-13 in opticup-strategic Site-Overseer hat).
+- **Executor:** opticup-executor (Bounded Autonomy, Claude Code Windows desktop).
+- **Result:** REC-SITE-020 closed. Single-line edit to `opticup-storefront/src/pages/quick-register/index.astro:164` — removed ` checked` token from marketing checkbox `<input>` tag. Storefront commit `ac6eef6ba77e721c326b2f3003c4136c115a8ecf`, pushed to `develop`. PR to `main` NOT auto-opened (`gh` not authenticated in executor shell, no `GH_TOKEN` env var) — Daniel must open via https://github.com/OpticaLis/opticup-storefront/compare/main...develop?expand=1 then merge to trigger Vercel auto-deploy. All 10 pre-deploy success criteria PASS (#11 live verify is post-merge).
+- **Verification evidence:**
+  - Criterion 2 (pre-flight): `grep -n 'id="marketing" checked' src/pages/quick-register/index.astro` → 1 match on line 164 ✅
+  - Criterion 3 (post-edit): `grep -n 'id="marketing"' src/pages/quick-register/index.astro` → 1 match, line 164 = `'<label class="qr-check"><input type="checkbox" id="marketing">' +` (no `checked`) ✅
+  - Criterion 4: 0 matches for `id="marketing" checked|checked.*id="marketing"` ✅
+  - Criterion 5: TERMS checkbox unchanged, line 161 still `id="terms" required` ✅
+  - Criterion 7: `git diff --stat` → "1 file changed, 1 insertion(+), 1 deletion(-)" ✅
+  - Criterion 8: `npm run build` exit 0 (Astro 4.37s; image-proxy guard PASS, 9 files scanned, 0 supabase.co/storage references) ✅
+  - Criterion 10: 1 commit on develop ✅
+- **Deferred (still on REC-SITE-021):** (B) marketing checkbox text expansion to also cover "קוקיז שיווקיים"; (C) `fbq('track','Lead')` wiring on form submit.
+- **Cross-refs:** `modules/Module 3 - Storefront/docs/specs/M3_QUICK_REGISTER_MARKETING_PRETICK_REMOVAL/EXECUTION_REPORT.md`, `FINDINGS.md` (if any), `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (row flipped to `(closed)`).
+
+#### Follow-up closure — 2026-05-13 (same day) — REC-SITE-021 sub-item (B)
+
+After REC-SITE-020 merged to `main` and deployed, Daniel reviewed the rendered form and chose to also ship REC-SITE-021 sub-item (B) — the marketing-consent label rewording with embedded marketing-cookies clause + privacy-policy link — as a single-checkbox compliance flow for the SuperSale form. Sub-item (C) Lead-pixel wiring remains DEFERRED.
+
+- **SPEC executed:** `modules/Module 3 - Storefront/docs/specs/M3_QUICK_REGISTER_MARKETING_TEXT_EXPANSION/SPEC.md` (Foreman-authored 2026-05-13).
+- **Executor:** opticup-executor (Bounded Autonomy, Claude Code Windows desktop).
+- **Wording (Daniel-approved):** "שלחו לי קופונים והטבות מיוחדות — לפני כולם (כולל שימוש בקוקיז שיווקיים, [מדיניות פרטיות](/privacy/))" — value-forward, suggests exclusivity, embeds cookie consent + policy link in one line.
+- **Result:** REC-SITE-021 sub-item (B) closed. Single-line edit to `opticup-storefront/src/pages/quick-register/index.astro:165` — `<span>` inner text replaced; inline anchor to `/privacy/` added with `target="_blank" rel="noopener"`. Storefront commit `84e7e88b86d81e521a7c663d5246cbe87742feef`, pushed to `develop`. PR to `main` NOT auto-opened (`gh` still not authenticated in executor shell, no `GH_TOKEN` env var — pre-flight per executor SKILL §4b confirmed at session start) — Daniel must open via https://github.com/OpticaLis/opticup-storefront/compare/main...develop?expand=1 then merge to trigger Vercel auto-deploy.
+- **Verification evidence:**
+  - Criterion 2 (pre-flight, REC-SITE-020 still in place): `grep -n 'id="marketing"' src/pages/quick-register/index.astro` → 1 match on line 164, no `checked` ✅
+  - Criterion 3 (pre-flight, current label): `grep -n 'עדכונים שיווקיים' src/pages/quick-register/index.astro` → 1 match on line 165 ✅
+  - Criterion 4 (post-edit, new label): `grep -n 'שלחו לי קופונים' src/pages/quick-register/index.astro` → 1 match on line 165 ✅
+  - Criterion 5 (old label removed): `grep -c 'עדכונים שיווקיים והצעות מיוחדות'` → 0 ✅
+  - Criterion 7 (REC-SITE-020 preserved): marketing checkbox still unchecked ✅
+  - Criterion 8 + 9: `git diff --stat` → "1 file changed, 1 insertion(+), 1 deletion(-)" ✅
+  - Criterion 10 + 11: `npm run build` exit 0 (Astro 5.53s; image-proxy guard PASS, 9 files scanned, 0 violations) ✅
+  - Criterion 12: 1 commit on develop ✅
+- **Still deferred:** REC-SITE-021 sub-item (C) — `fbq('track','Lead')` wiring on successful form submit. Current 4 `pixel_events` DB rules target `/successfulsupersale/` (3 langs) + `/successfulmulti/`, none of which exist on this storefront (success is inline). Without (C), Pixel never receives Lead events from SuperSale signups.
+- **Cross-refs:** `modules/Module 3 - Storefront/docs/specs/M3_QUICK_REGISTER_MARKETING_TEXT_EXPANSION/EXECUTION_REPORT.md`, `FINDINGS.md` (if any), `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-021 row flipped to PARTIAL — (B) closed, (C) deferred).
+
+---
+
 ### 2026-05-10 — rec019-tier1-slug-fix (M3_TIER1_CATEGORY_SLUG_FIX / REC-SITE-019)
 
 - **Context:** REC-SITE-019 — the Lighthouse cron's Tier 1 list (config in `roles/site-overseer/tools/lighthouse/config/tier1-pages.json`) cited `/categories/sunglasses/` and `/categories/eyeglasses/` (plural + trailing slash) which 404'd. Daniel discovered live 2026-05-10 that the actual routes are `/category/sunglasses` and `/category/eyeglasses` (singular, no trailing slash). M3-DATA-03 originally framed three closure paths (build dedicated routes / replace with equivalents / accept SKIP_404).

@@ -107,8 +107,10 @@ function isDocFile(absPath) {
     /^modules\/[^/]+\/architecture-brief\//.test(rel) ||
     /^modules\/[^/]+\/escalations\//.test(rel) ||
     // Module-scoped docs (SESSION_CONTEXT, CHANGELOG, MODULE_SPEC, etc.)
-    // routinely describe destructive-op concepts by name.
-    /^modules\/[^/]+\/docs\/[^/]+\.md$/.test(rel) ||
+    // routinely describe destructive-op concepts by name. Includes subdirs
+    // under docs/ (e.g. docs/audits/, docs/specs/) which legitimately quote
+    // commands like `git reset --hard` in summary/rollback prose.
+    /^modules\/[^/]+\/docs\/.+\.md$/.test(rel) ||
     rel === 'MASTER_ROADMAP.md' ||
     rel === 'OPEN_TASKS.md' ||
     rel === 'TECH_DEBT.md' ||

@@ -1,13 +1,20 @@
 # Session Context — Module 2: Platform Admin
 
 ## Last Updated
-2026-03-26
+2026-05-13 (`SECURITY_HOTFIX_2026_05_13` 🟢 CLOSED)
 
-## Module Status: COMPLETE ✅
+## Module Status: COMPLETE ✅ (post-hotfix)
 
-Module 2 — Platform Admin is fully built and QA-tested. All 6 phases complete.
+Module 2 — Platform Admin is fully built and QA-tested. All 6 phases complete. Post-cutover security hotfix `SECURITY_HOTFIX_2026_05_13` closed on 2026-05-13 — see `docs/specs/SECURITY_HOTFIX_2026_05_13/` for SPEC + EXECUTION_REPORT + FINDINGS + FOREMAN_REVIEW + MIGRATIONS_APPLIED. Module-2-owned changes:
+- `create_tenant` RPC: anon EXECUTE revoked (service_role retained).
+- 9 `v_admin_*` views: `security_invoker=true` + anon SELECT revoked (admin UI access retained via authenticated role).
+- `tenant-logos` storage bucket: 3 new authenticated-scoped policies (legacy-path-compatible) replacing 3 PUBLIC-role overpermissive ones.
+- `platform_audit_log.audit_log_admin_insert` always-true INSERT policy: dropped. Reads still gated by `audit_log_admin_read`; writes still flow via SECURITY DEFINER admin RPCs that bypass RLS as postgres.
 
-## What Was Done This Session
+## What Was Done This Session (2026-05-13)
+**`SECURITY_HOTFIX_2026_05_13` 🟢 CLOSED** via Full Auto Pipeline (single chat, Opus, ~3 hours). Cross-cutting hotfix bundled under Module 2 because it touches Module 2 (Platform Admin: `create_tenant`, `platform_audit_log`, `tenant-logos`) + Module 1 (Inventory: 5 mutator RPCs + 1 view) + Module 3 (Storefront: `submit-lead` EF + 5 v_admin views) + Module 4 (CRM: 2 mutator RPCs + 3 v_admin views). All 9 LIVE-CUSTOMER-HARM + 11 STAFF-DATA-HARM Supabase Security Advisor findings closed. 5 opticup commits + 1 storefront commit + 0 escalations. Master safety tag `pre-security-hotfix-2026-05-13` @ `7870935`. Run summary: `docs/guardian/SECURITY_HOTFIX_2026_05_13_SUMMARY.md`. **READY FOR develop → main MERGE on both repos.**
+
+## What Was Done This Session (2026-03-26, prior)
 QA phase complete — 88 PASS, 0 FAIL, 4 SKIP out of 92 tests across 13 categories.
 
 ### QA Blocks Executed

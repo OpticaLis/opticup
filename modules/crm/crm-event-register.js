@@ -31,7 +31,8 @@
     if (ev.status !== 'registration_open') return { transitioned: false, reason: 'not_open' };
     var cRes = await sb.from('crm_event_attendees').select('id', { count: 'exact', head: true })
       .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false)
-      .neq('status', 'waiting_list').neq('status', 'cancelled').neq('status', 'duplicate');
+      .neq('status', 'waiting_list').neq('status', 'cancelled').neq('status', 'duplicate')
+      .neq('status', 'invited');  // M4_INVITED_GHOST_ATTENDEE_FIX 2026-05-13
     if (cRes.error) return { transitioned: false, error: cRes.error.message };
     var count = cRes.count || 0;
     if (count < ev.max_capacity) return { transitioned: false, count: count, max: ev.max_capacity };

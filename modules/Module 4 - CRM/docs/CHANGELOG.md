@@ -2,6 +2,54 @@
 
 ---
 
+## M4_RAW_SB_WRAPPER_MIGRATION_PHASE_1 — 7 of 8 raw `sb.from()` calls in 3 hot files migrated to `DB.*` 🟢
+
+| Hash | Message |
+|------|---------|
+| (this) | `refactor(m4-crm): migrate 7 sb.from() to DB.* wrapper in crm-{helpers,leads-tab,events-tab}.js` |
+| (next) | `docs(m4-crm): note M4_RAW_SB_WRAPPER_MIGRATION_PHASE_1 in SESSION_CONTEXT + CHANGELOG + MODULE_MAP + MASTER_ROADMAP + OPEN_TASKS` |
+| (last) | `chore(spec): close M4_RAW_SB_WRAPPER_MIGRATION_PHASE_1 with retrospective` |
+
+**Outcome:** Phase 1 of Iron-Rule-7 cleanup for M4 (audit Rec 3 + `M4-DEBT-02`). 7 of 8 raw `sb.from()` chains in the 3 most-frequently-loaded CRM files (`crm-helpers.js`, `crm-leads-tab.js`, `crm-events-tab.js`) replaced with the canonical `DB.*` wrapper (`shared/js/supabase-client.js`). Module-wide bypass count: 136 → 129 (5% reduction in Phase 1; Brief expected 30-40 calls but those 3 files literally contained 8 — premise drift logged). 1 call site SKIPped: `crm-leads-tab.js:334` (move-lead handler) uses `.maybeSingle()` which `DB.select` does not expose; either wrapper extension or limit:1+array-form rewrite is needed for Phase 2. No behavioral change: each migrated call's `DB.select(...)` form translates 1:1 to the original `sb.from(t).select(c).eq(...)` chain via the wrapper's internal translation (auto tenant_id injection + columns + order + range pagination + rawFilters escape hatch for `.in()`/`.not()`/`.gte()`). Zero DB writes; SPEC is read-side refactor only. File sizes all within Iron Rule 12 (270 / 348 / 165 lines — all ≤ 350).
+
+**Run mode:** Full-Auto Pipeline. No automated browser smoke (Brief §4.4 stop-trigger acknowledged); relying on diff-based semantic-equivalence verification + post-merge manual smoke instructions in SPEC §5.
+
+See `modules/Module 4 - CRM/docs/specs/M4_RAW_SB_WRAPPER_MIGRATION_PHASE_1/`.
+
+---
+
+## M4_AUTOMATION_RULES_UPDATED_AT — `crm_automation_rules.updated_at` column + trigger + backfill 🟢
+
+| Hash | Message |
+|------|---------|
+| (this) | `feat(m4-crm,sql): add updated_at column + trigger to crm_automation_rules` |
+| (next) | `docs(m4-crm): note M4_AUTOMATION_RULES_UPDATED_AT in SESSION_CONTEXT + CHANGELOG + MODULE_MAP + MASTER_ROADMAP + OPEN_TASKS` |
+| (last) | `chore(spec): close M4_AUTOMATION_RULES_UPDATED_AT with retrospective` |
+
+**Outcome:** `M4-DEBT-CRM-AUTO-RULES-UPDATED-AT` closed. New column `updated_at timestamptz NOT NULL DEFAULT now()` on `crm_automation_rules` + trigger `crm_automation_rules_set_updated_at_trg` (BEFORE UPDATE, uses canonical generic `update_updated_at()` function — same one storefront_pages / storefront_components / crm_automation_runs use). Backfill set existing rows' `updated_at = created_at` (40 rows: 23 demo + 17 Prizma) — drift count post-backfill = 0. Smoke (no-op UPDATE on demo rule `e1f3e039`) advances `updated_at` from `2026-04-22 18:43:18` → `2026-05-13 08:28:15`. **Body-hash invariant:** demo + Prizma aggregate body hashes (md5 over id‖tenant_id‖name‖trigger_*‖action_*‖sort_order‖is_active‖created_at, excluding new `updated_at`) IDENTICAL pre/post — `aaafcf93...` (demo, 23 rows) and `f11174e8...` (Prizma, 17 rows). Zero collateral writes. Second SPEC of the overnight audit-harvest run.
+
+**Run mode:** Full-Auto Pipeline. Migration applied via Supabase MCP `apply_migration` (name `automation_rules_updated_at_2026_05_13`). Paired `_up.sql` + `_down.sql` committed.
+
+See `modules/Module 4 - CRM/docs/specs/M4_AUTOMATION_RULES_UPDATED_AT/`.
+
+---
+
+## M4_INVITED_GHOST_ATTENDEE_FIX — `invited` rows stop occupying event capacity 🟢
+
+| Hash | Message |
+|------|---------|
+| (this) | `fix(m4-crm): exclude invited from event capacity counts (v_crm_event_stats + register_lead_to_event + checkAndAutoWaitingList)` |
+| (next) | `docs(m4-crm): note M4_INVITED_GHOST_ATTENDEE_FIX in SESSION_CONTEXT + CHANGELOG + MODULE_MAP + MASTER_ROADMAP + OPEN_TASKS` |
+| (last) | `chore(spec): close M4_INVITED_GHOST_ATTENDEE_FIX with retrospective` |
+
+**Outcome:** The three capacity enforcers (`v_crm_event_stats` view, `register_lead_to_event` RPC, `checkAndAutoWaitingList` storefront helper) now exclude `status='invited'` from `total_registered` / `spots_remaining` / the capacity-vs-max comparison. Matches the UI counter already patched in `ATTENDEE_COUNTER_DISPLAY_FIX` (2026-05-04). Invited rows still exist; they are marketing reach, not bookings, and no longer block fresh registrations from filling open seats. 4 demo E2E smokes PASS (view excludes invited; fresh registration succeeds when only invited rows held the slot; invited-promotion still works when capacity is open; true cap hit still waitlists). Zero Prizma writes during dev/smoke (234/3/4/1284 row baselines unchanged). First SPEC of the Brief `M4_OVERNIGHT_AUDIT_HARVEST_BRIEF.md` overnight run.
+
+**Run mode:** Full-Auto Pipeline (Foreman SPEC authoring → Executor end-to-end → closure). Master safety tag `pre-overnight-m4-2026-05-13` at `e2892d4`. Migration applied via Supabase MCP `apply_migration` (function name `invited_ghost_attendee_fix_2026_05_13`). Paired `_up.sql` + `_down.sql` files committed under `modules/Module 4 - CRM/migrations/` for offline reproducibility.
+
+See `modules/Module 4 - CRM/docs/specs/M4_INVITED_GHOST_ATTENDEE_FIX/`.
+
+---
+
 ## BROADCAST_EVENT_LINK_SUPPORT — wizard carries event_id end-to-end for `%registration_url%` 🟢
 
 | Hash | Message |
