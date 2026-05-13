@@ -24,6 +24,27 @@
 
 ## Entries
 
+### 2026-05-13 — REC-SITE-022 closed (supersale marketing checkbox + cookie consent)
+
+After the `/quick-register/` rollback, Daniel re-dispatched the work against the CORRECT page `/supersale/`. SPEC `M3_SUPERSALE_MARKETING_CHECKBOX` authored 2026-05-13 by Foreman (Site-Overseer hat) and executed by opticup-executor under Bounded Autonomy.
+
+- **Two coupled changes, single REC-SITE-022:**
+  1. **DB Level 2 UPDATE (pre-authorized by SPEC §7):** marketing checkbox label rewritten on `storefront_pages` rows for (he, en, ru) × `slug='/supersale/'` × prizma. Old labels (verbatim) backed up to `modules/Module 3 - Storefront/docs/specs/M3_SUPERSALE_MARKETING_CHECKBOX/BACKUPS/{he,en,ru}_blocks_pre_update.json` BEFORE the UPDATE ran. Parse-then-modify pattern (`jsonb_set` + `to_jsonb(replace(blocks->1->'data'->>'html', OLD, NEW))`) per L-PROJECT-002.
+     - New HE: `שלחו לי קופונים והטבות מיוחדות — לפני כולם (כולל שימוש בקוקיז שיווקיים, {link:/privacy/}מדיניות פרטיות{/link})`
+     - New EN: `Send me exclusive coupons & special offers — before everyone else (includes use of marketing cookies, {link:/privacy/}privacy policy{/link})`
+     - New RU: `Присылайте мне эксклюзивные купоны и специальные предложения — раньше всех (включая маркетинговые куки, {link:/privacy/}политика конфиденциальности{/link})`
+     - Post-UPDATE verification (within the same transaction): `jsonb_typeof(blocks)='array'`, `jsonb_array_length(blocks)=12`, all 3 langs. TERMS checkbox label unchanged in all 3 langs.
+  2. **Storefront code (`opticup-storefront` commit `82f820be51ee93ffbabe32c5cff3bc25e38c5b4c` on `develop`):** `src/lib/shortcodes/lead-form-validation.ts` extended with an inline `_scWriteConsent(marketing)` helper that writes the v1 `cookie_consent` shape (`{necessary:true, analytics:false, marketing, version:'v1', accepted_at}`) to: (a) cookie `cookie_consent` with `max-age=31536000; path=/; SameSite=Lax`, (b) `localStorage.cookie_consent`, (c) `window.__consent`, AND dispatches `window.dispatchEvent(new CustomEvent('consent-changed', { detail }))`. Wired in two places: on `change` of `input[name="checkbox_1"]` when checked (warm-up so Pixel listeners initialize before submit), AND on successful submit when `data.marketing_consent === true` (guarantees consent is persisted even if the user ticks + submits in the same focus event). `npm run build` PASS (Astro 5.11s; image-proxy guard PASS, 9 files / 0 violations).
+- **Rule 21 note:** the new helper inlines the same write logic that already exists in `src/lib/consent.ts:setConsent` AND in `src/components/CookieBanner.astro:writeChoice` (inside a `<script is:inline>` block). This is now a **3-copy** duplication. SPEC §9 explicitly allowed inline duplication ("duplicating the small write logic is also acceptable if extraction is risky") because lead-form's inline script is NOT processed by Astro's module bundler — making it impossible to `import { setConsent } from '../consent'` from there without restructuring how shortcodes emit client-side code. Logged as finding M3-DEBT-22 for a future dedupe SPEC (extract a small `setConsent.client.js` that BaseLayout side-imports to expose `window.OpticConsent.setConsent`, then both CookieBanner and lead-form call it).
+- **Banner suppression on `/supersale/`** — verified unchanged. BaseLayout.astro guards banner render with `hideChrome={isCampaign}`; `/supersale/` has `page_type='campaign'` in storefront_pages, so the banner element never enters the DOM on this page. No code touched there.
+- **Post-deploy verification (Daniel-manual, Criteria #11 + #12 of SPEC):**
+  - Fill `/supersale/` form in a private window with test phone `0537889878` (per `feedback_test_data_phones` memory — Daniel's personal phone allow-listed for SuperSale smoke). Tick marketing checkbox → submit → on the `/successfulsupersale/` redirect, verify Network tab shows `connect.facebook.net/.../fbevents.js` AND a request to `facebook.com/tr/?...&id=304574492100180&ev=PageView` (and `Lead` if the 4 `pixel_events` rules fire for that route). Expected: Pixel fires.
+  - Repeat with the marketing checkbox NOT ticked. Expected: no Facebook network requests.
+- **PR / merge state caveat:** the `/quick-register/` rollback commits (`19d6382` + `ee356ca`) and this `/supersale/` commit (`82f820b`) ride together on `develop`. The single follow-up PR `develop → main` deploys both at once. There is no need to separate them — neither change conflicts with the other.
+- **Cross-refs:** `modules/Module 3 - Storefront/docs/specs/M3_SUPERSALE_MARKETING_CHECKBOX/EXECUTION_REPORT.md`, `FINDINGS.md`, `BACKUPS/{he,en,ru}_blocks_pre_update.json`, `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` (REC-SITE-022 row added).
+
+---
+
 ### 2026-05-13 — REVERSAL: REC-SITE-020 + REC-SITE-021 (B) reverted (wrong page edited)
 
 - **Context:** After both prior SPECs landed on `develop` (REC-SITE-020 via storefront commit `ac6eef6` merged to main via PR #21; REC-SITE-021 sub-item (B) via storefront commit `84e7e88` on develop only), Daniel reviewed and identified the page mismatch: he had been referring to `/supersale/` (the SuperSale landing page with lead form) the entire time, not `/quick-register/` (the QR-walk-in registration page, Module 4 CRM). The two pages have similar lead-form layouts but serve completely different flows — `/supersale/` is the public marketing entry, `/quick-register/` is staff-WhatsApp → QR → walk-in only.
