@@ -1,6 +1,8 @@
 # Optic Up — Master Roadmap
 
-> **Last reconciled:** 2026-05-04 late night — Prizma cutover COMPLETE 2026-05-03 (production live). M4 post-cutover closure rolling: QUICK_REGISTER_QR_FLOW + DELETE_EMPTY_EVENT + ACTIVITY_LOG_DEDUP + RESTORE_DELETED_EVENT_UI all ✅ shipped. 60% Overseer rolling REC rate (10 decided). Open M4 tech-debt: TD-2 migrations git drift (SaaS-blocker), TD-3 multi-tenant URL strategy (deferred to tenant 2). Open M4 backlog: POST-1 ✅ closed, POST-7 ✅ closed, POST-4/5/6 + REC-005 (MultiSale archive needs event_type schema first).
+> **Last reconciled:** 2026-05-13/14 overnight — M4 overnight audit-harvest Pipeline run in progress. SPEC #1 `M4_INVITED_GHOST_ATTENDEE_FIX` 🟢 CLOSED (three capacity enforcers — view `v_crm_event_stats` + RPC `register_lead_to_event` + storefront helper `checkAndAutoWaitingList` — now exclude `status='invited'`, matching UI counter from `ATTENDEE_COUNTER_DISPLAY_FIX`). Brief `M4_OVERNIGHT_AUDIT_HARVEST_BRIEF.md` overnight queue continues with SPEC #2 (`M4_AUTOMATION_RULES_UPDATED_AT`) + #4 (`M4_RAW_SB_WRAPPER_MIGRATION_PHASE_1`) + optional #5 (`M4_FUNNEL_REPORT_FOUNDATION`). SPEC #3 (waitlist slug cleanup) ESCALATED — audit said 0 leads with `status='waitlist'` on Prizma; live data shows 1.
+>
+> **Previously (2026-05-04 late night):** Prizma cutover COMPLETE 2026-05-03 (production live). M4 post-cutover closure rolling: QUICK_REGISTER_QR_FLOW + DELETE_EMPTY_EVENT + ACTIVITY_LOG_DEDUP + RESTORE_DELETED_EVENT_UI all ✅ shipped. 60% Overseer rolling REC rate (10 decided). Open M4 tech-debt: TD-2 migrations git drift (SaaS-blocker), TD-3 multi-tenant URL strategy (deferred to tenant 2). Open M4 backlog: POST-1 ✅ closed, POST-7 ✅ closed, POST-4/5/6 + REC-005 (MultiSale archive needs event_type schema first).
 >
 > This document is the canonical **build sequence**, **decision log**, and
 > **known-debt register** for the Optic Up platform.

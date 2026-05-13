@@ -2,6 +2,22 @@
 
 ---
 
+## M4_INVITED_GHOST_ATTENDEE_FIX — `invited` rows stop occupying event capacity 🟢
+
+| Hash | Message |
+|------|---------|
+| (this) | `fix(m4-crm): exclude invited from event capacity counts (v_crm_event_stats + register_lead_to_event + checkAndAutoWaitingList)` |
+| (next) | `docs(m4-crm): note M4_INVITED_GHOST_ATTENDEE_FIX in SESSION_CONTEXT + CHANGELOG + MODULE_MAP + MASTER_ROADMAP + OPEN_TASKS` |
+| (last) | `chore(spec): close M4_INVITED_GHOST_ATTENDEE_FIX with retrospective` |
+
+**Outcome:** The three capacity enforcers (`v_crm_event_stats` view, `register_lead_to_event` RPC, `checkAndAutoWaitingList` storefront helper) now exclude `status='invited'` from `total_registered` / `spots_remaining` / the capacity-vs-max comparison. Matches the UI counter already patched in `ATTENDEE_COUNTER_DISPLAY_FIX` (2026-05-04). Invited rows still exist; they are marketing reach, not bookings, and no longer block fresh registrations from filling open seats. 4 demo E2E smokes PASS (view excludes invited; fresh registration succeeds when only invited rows held the slot; invited-promotion still works when capacity is open; true cap hit still waitlists). Zero Prizma writes during dev/smoke (234/3/4/1284 row baselines unchanged). First SPEC of the Brief `M4_OVERNIGHT_AUDIT_HARVEST_BRIEF.md` overnight run.
+
+**Run mode:** Full-Auto Pipeline (Foreman SPEC authoring → Executor end-to-end → closure). Master safety tag `pre-overnight-m4-2026-05-13` at `e2892d4`. Migration applied via Supabase MCP `apply_migration` (function name `invited_ghost_attendee_fix_2026_05_13`). Paired `_up.sql` + `_down.sql` files committed under `modules/Module 4 - CRM/migrations/` for offline reproducibility.
+
+See `modules/Module 4 - CRM/docs/specs/M4_INVITED_GHOST_ATTENDEE_FIX/`.
+
+---
+
 ## BROADCAST_EVENT_LINK_SUPPORT — wizard carries event_id end-to-end for `%registration_url%` 🟢
 
 | Hash | Message |
