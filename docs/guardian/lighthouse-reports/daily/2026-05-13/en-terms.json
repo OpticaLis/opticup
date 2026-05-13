@@ -1,0 +1,17 @@
+{
+  "url": "https://www.prizma-optic.co.il/en/terms/",
+  "lang": "en",
+  "path": "/terms/",
+  "label": "terms",
+  "http": 200,
+  "scores": {
+    "performance": 89,
+    "accessibility": 97,
+    "seo": 100,
+    "best-practices": 100
+  },
+  "axeViolationCount": 1,
+  "capturedAt": "2026-05-13T04:00:42.660Z",
+  "fetchTime": "2026-05-13T04:00:33.255Z",
+  "lighthouseVersion": "12.8.2"
+}
