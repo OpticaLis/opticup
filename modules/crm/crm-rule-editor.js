@@ -18,10 +18,15 @@
   // 'status_change' = fires on a status transition AFTER row creation (attended / no_show / purchased / etc.).
   var ATTENDEES_FIRES_ON = [['created','📥 כשמישהו נרשם לאירוע (סטטוס ברירת מחדל)'], ['status_change','🔄 כשסטטוס הרשמה משתנה (לאחר ההרשמה)']];
 
+  // M4_STATUS_TRIGGER_FRAMEWORK_EXTENSION (2026-05-14): now that lead + event
+  // status changes ALSO flow through the crm_status_change_events queue (the
+  // queue payload carries old_status + new_status), the engine's transition-shape
+  // conditions (status_changed_from / status_changed_to) work for those entities
+  // too. Surface them on the tier2 + events boards.
   var COND_BY_BOARD = {
     incoming:  [['always','תמיד (כל ליד חדש)'], ['source_equals','מקור הליד שווה ל-']],
-    tier2:     [['status_equals','סטטוס ליד משתנה ל-']],
-    events:    [['status_equals','סטטוס אירוע משתנה ל-'], ['count_threshold','ספירה עוברת סף']],
+    tier2:     [['status_equals','סטטוס ליד משתנה ל-'], ['status_changed_from','סטטוס ליד לפני השינוי הוא'], ['status_changed_to','סטטוס ליד אחרי השינוי הוא']],
+    events:    [['status_equals','סטטוס אירוע משתנה ל-'], ['status_changed_from','סטטוס אירוע לפני השינוי הוא'], ['status_changed_to','סטטוס אירוע אחרי השינוי הוא'], ['count_threshold','ספירה עוברת סף']],
     attendees: [['status_equals','סטטוס הרשמה הוא']]
   };
   // Mirrors engine.ts CONDITIONS additions (status_changed_from / status_changed_to).
