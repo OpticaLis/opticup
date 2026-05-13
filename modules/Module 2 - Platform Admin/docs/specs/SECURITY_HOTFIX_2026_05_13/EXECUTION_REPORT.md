@@ -65,9 +65,15 @@
 - Audit Finding 10 closed (8 of 9; `submit_storefront_lead` deferred to §6.7 post-cutover).
 - Bonus: audit Finding 17 (`function_search_path_mutable`) closed for these 8 specific functions.
 
-### §6.8 tenant-logos storage policy — PENDING
+### §6.8 tenant-logos storage policy — DONE
 
-(To be filled in at C4.)
+- Applied via `mcp__claude_ai_Supabase__apply_migration` (migration name `security_hotfix_2026_05_13_tenant_logos_storage_policy`).
+- 3 overpermissive PUBLIC-role policies removed: `tenant-logos all`, `Authenticated upload tenant logos`, `Authenticated update tenant logos`.
+- 3 new policies created: `tenant_logos_authenticated_insert` / `_update` / `_delete`. Each is restricted to the `authenticated` role with JWT-claim tenant scope. Legacy-path-compatible: tenant_id must appear at folder index `[1]` OR (after `brands` / `tenants` prefix) at index `[2]`.
+- `Public read tenant logos` (PUBLIC, SELECT) preserved for storefront display.
+- Smoke: `pg_policy` query confirms only 4 policies on tenant-logos: 1 PUBLIC SELECT (Public read tenant logos) + 3 authenticated CRUD (insert/update/delete). ✅
+- Audit Finding 11 closed.
+- TECH_DEBT note: canonicalize 12 of 13 Prizma logo paths from `brands/<id>/…` and `tenants/<id>/…` to `<id>/<filename>` — deferred to a future SPEC.
 
 ### §6.5 submit-lead Edge Function — PENDING
 
