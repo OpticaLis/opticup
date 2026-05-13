@@ -75,17 +75,37 @@
 - Audit Finding 11 closed.
 - TECH_DEBT note: canonicalize 12 of 13 Prizma logo paths from `brands/<id>/…` and `tenants/<id>/…` to `<id>/<filename>` — deferred to a future SPEC.
 
-### §6.5 submit-lead Edge Function — PENDING
+### §6.5 submit-lead Edge Function — DONE
 
-(To be filled in at C5.)
+- Authored `supabase/functions/submit-lead/index.ts` (≈140 lines incl. comments) + `deno.json`.
+- Deployed via `mcp__claude_ai_Supabase__deploy_edge_function` with `verify_jwt=false` (per executor skill mandatory rule 5h — anonymous storefront browsers have no Supabase JWT; auth is via Origin allowlist).
+- MCP returned `version: 1, status: ACTIVE` on first call — no OPEN-021 fallback needed.
+- Allowed Origins: `prizma-optic.co.il` + `www.`, `opticalis.co.il` + `www.`, `app.opticalis.co.il`, `opticup-storefront.vercel.app`, regex for Vercel previews `opticup-storefront-{branch}-{hash}.vercel.app`, plus `localhost:4321`, `localhost:3000`, and the `127.0.0.1` equivalents for dev.
+- Behavior: validates Origin → parses JSON body → UUID-format-checks `tenant_id` + `inventory_id` → set-membership-checks `contact_type` in {phone,email} → bounds-checks `contact_value` (1..200 chars) → service_role client → tenant active check → call `submit_storefront_lead` as service_role → return `{ok:true, lead_id}` or `{ok:false, error}`.
+- Smoke 1 (no Origin): HTTP 403 `forbidden_origin` ✅
+- Smoke 2 (evil Origin): HTTP 403 `forbidden_origin` ✅
+- Smoke 3 (bad tenant_id): HTTP 400 `invalid_tenant_id` ✅
+- Smoke 4 (valid phone payload): HTTP 200 `{ok:true, lead_id:"7eaff973-…"}` — verified row landed in `storefront_leads` for demo tenant; cleaned up. ✅
+- Smoke 5 (valid email payload): HTTP 200 `{ok:true, lead_id:"4910eb23-…"}` — verified + cleaned up. ✅
+- Smoke 6 (CORS preflight from localhost:4321): HTTP 204 with `Access-Control-Allow-Origin: http://localhost:4321` echoed back ✅
 
-### §6.6 Storefront repo cutover — PENDING
+### §6.6 Storefront repo cutover — DONE
 
-(To be filled in at storefront-repo commit.)
+- Located the only call site: `opticup-storefront/src/components/NotifyMe.astro:96` ("Notify Me" form on product detail pages).
+- Edited the fetch URL from `${supabaseUrl}/rest/v1/rpc/submit_storefront_lead` to `${supabaseUrl}/functions/v1/submit-lead`. Removed `apikey` + `Authorization` headers (EF has `verify_jwt=false`). Renamed body fields from `p_*` prefix to bare names.
+- Committed in `opticup-storefront` repo on `develop`: commit `2226854` "feat(forms): submit NotifyMe leads via submit-lead Edge Function instead of direct RPC". Pushed.
+- End-to-end smoke is the same code path as Smokes 4/5 above (storefront → EF → service_role → RPC → DB). Verified working.
 
-### §6.7 submit_storefront_lead REVOKE — PENDING
+### §6.7 submit_storefront_lead REVOKE — DONE
 
-(Applied LAST after §6.6 verified. To be filled in at C6.)
+- Applied via `mcp__claude_ai_Supabase__apply_migration` (migration name `security_hotfix_2026_05_13_submit_storefront_lead_revoke`).
+- Statements applied:
+  - `REVOKE EXECUTE ON FUNCTION public.submit_storefront_lead(uuid,uuid,text,text) FROM PUBLIC, anon, authenticated;`
+  - `GRANT EXECUTE ON FUNCTION public.submit_storefront_lead(uuid,uuid,text,text) TO service_role;`
+- Smoke 7 (privilege check): `anon_exec=false`, `authd_exec=false`, `svc_exec=true` ✅
+- Smoke 8 (EF still works after revoke): HTTP 200 + lead_id (the EF uses service_role internally; cleaned up). ✅
+- Smoke 9 (direct anon RPC call after revoke): HTTP 401 `42501 permission denied for function submit_storefront_lead` ✅ — the audit-flagged STAFF-DATA-HARM path is **CLOSED**.
+- Audit Finding 10's remaining 1-of-9 item closed (`submit_storefront_lead`).
 
 ---
 
