@@ -52,9 +52,18 @@
 - Smoke: `pg_policy` query against `platform_audit_log` returns only `audit_log_admin_read` (SELECT, gated to active platform_admins). The insert-anything policy is **gone**. ✅
 - Audit Finding 12 closed.
 
-### §6.4 8 mutator RPCs JWT-gate + REVOKE — IN PROGRESS
+### §6.4 8 mutator RPCs JWT-gate + REVOKE — DONE
 
-(To be filled in at C3.)
+- Applied via `mcp__claude_ai_Supabase__apply_migration` (migration name `security_hotfix_2026_05_13_mutator_rpcs_jwt_gate`).
+- All 8 functions recreated with: JWT-claim tenant validation prepend + `SET search_path = 'public'` + REVOKE FROM PUBLIC,anon,authenticated + GRANT TO authenticated.
+- Smoke (single query checked all 8 in parallel): `apply_stock_count_delta`, `increment_shipment_counters`, `next_box_number`, `next_po_number`, `next_return_number`, `next_internal_doc_number`, `record_purchase`, `register_lead_to_event` — ALL ROWS report:
+  - `anon_exec = false` ✅
+  - `authd_exec = true` ✅
+  - `svc_exec = true` ✅
+  - `has_jwt_check = true` (function body contains `request.jwt.claims`) ✅
+  - `has_search_path = true` (function definition contains `search_path`) ✅
+- Audit Finding 10 closed (8 of 9; `submit_storefront_lead` deferred to §6.7 post-cutover).
+- Bonus: audit Finding 17 (`function_search_path_mutable`) closed for these 8 specific functions.
 
 ### §6.8 tenant-logos storage policy — PENDING
 
