@@ -6,10 +6,11 @@
   'use strict';
 
   var SUB_TABS = [
-    { key: 'templates', label: '📝 תבניות' },
-    { key: 'rules',     label: '⚡ כללי אוטומציה' },
-    { key: 'broadcast', label: '📢 שליחה ידנית' },
-    { key: 'log',       label: '📜 היסטוריה' }
+    { key: 'templates',   label: '📝 תבניות' },
+    { key: 'rules',       label: '⚡ כללי אוטומציה' },
+    { key: 'broadcast',   label: '📢 שליחה ידנית' },
+    { key: 'log',         label: '📜 היסטוריה' },
+    { key: 'performance', label: '📊 ביצועי הודעות' }
   ];
 
   var CLS_SUBTAB_BAR = 'flex gap-1 border-b border-slate-200 bg-white rounded-t-xl px-3 pt-3 overflow-x-auto';
@@ -84,6 +85,7 @@
     else if (_state.subTab === 'rules') renderer = window.renderMessagingRules;
     else if (_state.subTab === 'broadcast') renderer = window.renderMessagingBroadcast;
     else if (_state.subTab === 'log') renderer = window.renderMessagingLog;
+    else if (_state.subTab === 'performance') renderer = window.renderMessagingPerformance;
 
     if (typeof renderer === 'function') {
       try {
