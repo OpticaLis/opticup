@@ -63,7 +63,7 @@ target, not by tenant.
 
 | Module | Name | Status | Repo | Scope |
 |--------|------|--------|------|-------|
-| 1 | Inventory Management | ✅ Complete | opticup | Full ERP: inventory, purchasing, receipts, debt, returns, shipments, AI-OCR, alerts, stock counts, Access sync |
+| 1 | Inventory Management | ✅ Complete (frames era); **🟡 Lens Phase 1A complete (2026-05-14)** — 17 new tables + 9 RPCs + K3 trigger + K5 view + Platform Catalog Admin screen + lens-catalog-import EF; Phase 1B (6 customer-facing screens) pending | opticup | Full ERP: inventory, purchasing, receipts, debt, returns, shipments, AI-OCR, alerts, stock counts, Access sync. **Lens schema sealed** — see `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_INVENTORY_PHASE_1A_SCHEMA_PLATFORM_ADMIN/` |
 | 1.5 | Shared Components | ✅ Complete | opticup | Cross-module UI/JS infrastructure: activity_log, auth/permissions, Modal/Toast/TableBuilder components, PIN modal, plan helpers, tenant config |
 | 2 | Platform Admin | ✅ Complete (v2.0) | opticup | Super-admin control plane: tenant provisioning, plans/limits/features, audit log, PIN reset, suspend/activate/delete |
 | 3 | Storefront | 🟡 Phase B remediation | opticup-storefront | Public storefront: CMS pages, campaigns, blog, AI content, translations, media library, lead forms, brand pages, SEO |
@@ -176,7 +176,8 @@ renames, and checkbox→boolean coercion.
 | Tenant lifecycle | activate/create/delete/suspend/update_tenant, get_all_tenants_overview, get_tenant_* (3), validate_slug | 10 |
 | Plan / feature gates | check_plan_limit, is_feature_enabled, is_platform_super_admin | 3 |
 | Inventory atomics | increment/decrement/set_inventory_qty, apply_stock_count_delta, get_low_stock_brands | 5 |
-| Sequential numbers (Iron Rule #13) | next_po_number, next_return_number, next_box_number, next_internal_doc_number, next_crm_event_number | 5 |
+| Sequential numbers (Iron Rule #13) | next_po_number, next_return_number, next_box_number, next_internal_doc_number, next_crm_event_number, **next_lens_variant_display_id, next_lot_number, next_transfer_number, next_receipt_number** (M1 Lens Phase 1A) | 9 |
+| **M1 Lens atomics (Iron Rule #1)** (Phase 1A 2026-05-14) | record_stock_movement (FOR UPDATE on lot), record_transfer (parent+2 children+dest lot), record_adjustment_found (lot+movement), effective_price (overlay+VAT resolver), m1_create_receipt_from_box (K2 contract orchestrator), m9_lens_received_for_sale_order_trg_fn (K3 trigger fn) | 6 |
 | Shipments / debt / payments | increment_shipment_counters, increment_paid_amount, increment_prepaid_used, get_po_aggregates | 4 |
 | Auth | reset_employee_pin | 1 |
 | Alerts | generate_daily_alerts | 1 |

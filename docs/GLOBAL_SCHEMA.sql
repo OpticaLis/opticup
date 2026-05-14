@@ -96,6 +96,39 @@
 --
 --   Shipments (Phase 5.9):
 --     courier_companies, shipments, shipment_items
+--
+--   M1 Lens Inventory (Phase 1A — added 2026-05-14, 17 new tables + 9 RPCs + 1 trigger + 1 view):
+--     Catalog (platform-owned, owner_tenant_id NULL today):
+--       lens_brand, lens_design, lens_variant, supplier_brand_distribution
+--     Commercial:
+--       supplier_catalog_offering, pricing_overlay,
+--       vat_rates (GLOBAL — Iron Rule 14 documented exception, seeded with Israel 18%)
+--     Retailer:
+--       tenant_location, tenant_active_offerings, tenant_lens_stock
+--     Operations (FIFO + receipts):
+--       stock_lot, stock_movement, stock_transfer,
+--       purchase_receipt, purchase_receipt_line  (NEW lens flow per Q1 option (c) divergence
+--                                                  — frames keep legacy goods_receipts)
+--     Governance:
+--       supplier_permissions, change_approval_log
+--     Sequence-state:
+--       lens_variant_display_seq (singleton, scope='global'; powers next_lens_variant_display_id RPC)
+--     M9 contract durability:
+--       pending_lens_advancement_queue (K3 trigger enqueues here; M9 consumes when built)
+--
+--   M1 Lens Phase 1A FUNCTIONS (9 atomic RPCs + 1 trigger function — see FUNCTIONS section):
+--     Sequential generators: next_lens_variant_display_id, next_lot_number,
+--                             next_transfer_number, next_receipt_number
+--     Ledger atomics:        record_stock_movement (FOR UPDATE on lot),
+--                             record_transfer (parent + 2 children + dest lot),
+--                             record_adjustment_found (creates lot + movement)
+--     Pricing resolver:      effective_price (overlays in application_order + VAT)
+--     K2 contract:           m1_create_receipt_from_box (orchestrator;
+--                             auto-fires K3 trigger when sale_order_id present)
+--     K3 trigger fn:         m9_lens_received_for_sale_order_trg_fn
+--                             (AFTER INSERT on stock_movement → pending_lens_advancement_queue)
+--   M1 Lens Phase 1A VIEWS:
+--     v_suppliers_for_m9 (K5 contract; security_invoker=on; read-only for M9)
 
 -- ------------------------------------------------------------
 -- Module 1.5 — Shared Components (14 tables)

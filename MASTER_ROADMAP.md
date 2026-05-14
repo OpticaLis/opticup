@@ -98,6 +98,13 @@ shipped 2026-05-04. Legacy Monday/WordPress pipeline decommissioned.
   `%registration_url%` per recipient). Unblocks Event #24 (Fri
   2026-05-15) rescue dispatch to 1,187 Prizma leads.
 
+**🟡 M1 Lens Inventory Phase 1A COMPLETE — 2026-05-14.** Schema half of M1
+lens expansion shipped (17 new tables + 9 atomic RPCs + K3 trigger + K5 view +
+Platform Catalog Admin screen + lens-catalog-import EF). Unblocks M7 (Orders)
+and M9 (Lab/KDS) future builds. Phase 1B (6 customer-facing screens) deferred
+to a sibling SPEC after Phase 1A FOREMAN_REVIEW closes. SPEC + EXECUTION_REPORT
+in `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_INVENTORY_PHASE_1A_SCHEMA_PLATFORM_ADMIN/`.
+
 **🎉 Phase 1 of `roles/site-overseer/FUNNEL_ROADMAP.md` COMPLETE — 2026-05-14.**
 All 4 Phase 1 SPECs closed in ONE calendar day via Full-Auto Pipeline:
 P1.4 (`M4_REGISTER_LEAD_TO_EVENT_RPC_MAP`) + P1.4-followup

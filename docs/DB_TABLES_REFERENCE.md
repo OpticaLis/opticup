@@ -130,6 +130,71 @@ These T constants are used by the ERP's Studio (`modules/storefront/`) to manage
 
 ---
 
+## M1 Lens Inventory (Phase 1A — added 2026-05-14)
+
+Three-layer architecture: Global Catalog (platform-owned, `owner_tenant_id` NULL today) → Commercial Layer (tenant-scoped offerings + tiered overlays) → Retailer Layer (tenant-scoped active offerings + POINT-prescription stock) → Operations Layer (FIFO lots + event ledger + transfers + receipts) + Governance.
+
+### Global Catalog (platform-owned)
+
+| Constant | Table | Key columns |
+|---|---|---|
+| `T.LENS_BRANDS` | `lens_brand` | id, owner_tenant_id (NULL=platform), name, is_published, lifecycle_status |
+| `T.LENS_DESIGNS` | `lens_design` | id, owner_tenant_id, brand_id, name, lens_type ENUM, material, is_published |
+| `T.LENS_VARIANTS` | `lens_variant` | id, owner_tenant_id, design_id, **display_id** (LV-NNNNNN from RPC), refractive_index, diameter_mm, coating, tint, sph/cyl/add ranges + steps, version, superseded_by_id, canonical_root_id, is_published |
+| `T.SUPPLIER_BRAND_DIST` | `supplier_brand_distribution` | id, tenant_id, brand_id, supplier_id, status, effective_from/until. UNIQUE (tenant_id, brand_id) WHERE status='active' enforces 1:1 today; drop partial UNIQUE for 1:N future. |
+
+### Commercial Layer
+
+| Constant | Table | Key columns |
+|---|---|---|
+| `T.SUPPLIER_CATALOG` | `supplier_catalog_offering` | id, tenant_id, supplier_id, variant_id, supplier_brand_distribution_id, **production_type ENUM('stock','custom')** (D-M1-01 — primary filter on every M1 screen), price_amount, currency_code, is_vat_inclusive, vat_rate_id, supplier_sku_code, status |
+| `T.PRICING_OVERLAY` | `pricing_overlay` | id, tenant_id, offering_id, scope_variant_id / scope_design_id / scope_supplier_id (CHECK exactly-one-NOT-NULL — D-M1-05 tiered), overlay_type, discount_pct OR fixed_amount, stacking_rule, application_order, status workflow proposed→active→rejected/superseded/expired |
+| `T.VAT_RATES` | `vat_rates` | id, owner_tenant_id (NULL=global), country_code, rate_pct, effective_from/until, supersedes_id. **GLOBAL — Iron Rule 14 documented exception.** Seeded with Israel 18%. |
+
+### Retailer Layer
+
+| Constant | Table | Key columns |
+|---|---|---|
+| `T.TENANT_LOCATIONS` | `tenant_location` | id, tenant_id, name, short_code, address, **is_default** (partial UNIQUE one per tenant), is_active |
+| `T.TENANT_ACTIVE_OFFERINGS` | `tenant_active_offerings` | id, tenant_id, offering_id, location_id (NULL = all locations), is_active |
+| `T.TENANT_LENS_STOCK` | `tenant_lens_stock` | id, tenant_id, variant_id, location_id, sph/cyl/add_value (POINT, not range), **qty_on_hand** (denormalized projection — maintained by trigger from stock_movement; NEVER hand-update), reorder_threshold/qty |
+
+### Operations Layer (FIFO + receipts)
+
+| Constant | Table | Key columns |
+|---|---|---|
+| `T.STOCK_LOTS` | `stock_lot` | id, tenant_id, variant_id, location_id, **origin_type ENUM('purchase','customer_return','adjustment_found','transfer_in')**, supplier_offering_id, purchase_order_id (FK deferred), purchase_receipt_id, original_lot_id (transfer chain), qty_received, qty_remaining, **unit_cost VAT-EXCLUSIVE** in tenant base currency, fx_rate_snapshot, lot_number from RPC |
+| `T.STOCK_MOVEMENTS` | `stock_movement` | id, tenant_id, source_lot_id, variant_id, location_id, movement_type ENUM, qty_delta (positive=in, negative=out), cost_basis_at_movement (snapshot — never changes), CHECK exactly-one of (sale_order_id / customer_return_id / purchase_receipt_id / transfer_id / adjustment_id) NOT NULL. **K3 trigger fires here** when sale_order_id + purchase_receipt_id both NOT NULL. |
+| `T.STOCK_TRANSFERS` | `stock_transfer` | id, tenant_id, from_location_id, to_location_id, transfer_number from RPC, status ENUM, variant_id, qty_sent, actual_received_qty (D-M1-10 reconciliation), CHECK from<>to |
+| `T.PURCHASE_RECEIPT` | `purchase_receipt` | id, tenant_id, supplier_id, receipt_number from RPC, purchase_order_id, **delivery_note_number NOT NULL** (D-M1-09), delivery_note_received_at + goods_received_at, scanned_doc_url, **shipping_box_id** (NULL — FK clause added when M9 builds shipping_boxes), shipping_box_supplier_barcode, status ENUM. **NEW for lens flow** per Q1 option (c) divergence — frames keep `goods_receipts`. |
+| `T.PURCHASE_RECEIPT_LINE` | `purchase_receipt_line` | id, tenant_id, receipt_id, variant_id, location_id, sph/cyl/add_value POINT, qty_received, unit_cost, ordered_qty + discrepancy_qty + discrepancy_reason + discrepancy_status (D-M1-10 reconciliation-agent readiness), sale_order_id (D-M1-07 custom-per-customer), stock_lot_id (filled by m1_create_receipt_from_box RPC), is_manual_addition |
+
+### Governance (catalog/price audit only — stock changes log to stock_movement)
+
+| Constant | Table | Key columns |
+|---|---|---|
+| `T.SUPPLIER_PERMS` | `supplier_permissions` | id, tenant_id, supplier_id, action ENUM, permission_level ENUM('auto','requires_platform_approval','requires_retailer_approval','denied'), effective_from/until. UNIQUE active per (tenant, supplier, action). Future supplier portal (Phase 2+) reads this. |
+| `T.CHANGE_APPROVAL` | `change_approval_log` | id, tenant_id, entity_type ENUM (lens_brand/design/variant/supplier_catalog_offering/pricing_overlay/supplier_permissions), entity_id, change_type ENUM, before_state JSONB, after_state JSONB, proposed_by, approved_by, rejection_reason. **Only catalog/price changes — stock movements log to stock_movement.** |
+
+### Phase 1A RPCs (9 atomic functions, all SECURITY DEFINER — Iron Rules 1+11)
+
+- `next_lens_variant_display_id() RETURNS TEXT` — global LV-NNNNNN generator (lens_variant_display_seq state table)
+- `next_lot_number(p_tenant_id) RETURNS TEXT` — LOT-NNNNNN per tenant
+- `next_transfer_number(p_tenant_id) RETURNS TEXT` — TRN-NNNNNN per tenant
+- `next_receipt_number(p_tenant_id, p_supplier_number) RETURNS TEXT` — RCP-{sup}-NNNN per tenant
+- `record_stock_movement(...) RETURNS UUID` — atomic ledger insert + lot qty_remaining + tenant_lens_stock projection (FOR UPDATE on lot)
+- `record_transfer(...) RETURNS UUID` — atomic parent + 2 child movements + dest lot creation (cost basis preserved)
+- `record_adjustment_found(...) RETURNS UUID` — creates lot (origin=adjustment_found, unit_cost from latest active offering) + movement
+- `effective_price(p_offering_id, p_tenant_id, p_as_of_ts) RETURNS NUMERIC` — overlay resolver in application_order, then VAT
+- `m1_create_receipt_from_box(...) RETURNS UUID` — **K2 contract** orchestrator (auto-fires K3 trigger when sale_order_id present)
+
+### Phase 1A trigger + view (M1↔M9 contracts)
+
+- **K3 trigger:** `m9_lens_received_for_sale_order_trg` AFTER INSERT on `stock_movement` — enqueues to `pending_lens_advancement_queue` when both sale_order_id AND purchase_receipt_id NOT NULL. M9 (when built) consumes via cron and advances `lab_jobs.status`.
+- **K5 view:** `v_suppliers_for_m9` (security_invoker=on so RLS applies) — read-only suppliers projection for M9. Active rows only.
+
+---
+
 ## Key Globals (from `js/shared.js`)
 
 - `sb` — Supabase client (NOT `supabase` — that's a reserved name)
