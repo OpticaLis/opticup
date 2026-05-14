@@ -119,7 +119,6 @@ Auth fixture for test 2.
     safeUnstage(FIX_DIR);
     if (committed) {
       execSync('git reset --soft HEAD~1', { cwd: REPO, stdio: 'ignore' });
-      execSync('git reset HEAD --', { cwd: REPO, stdio: 'ignore' });
       committed = false;
     }
 
@@ -130,7 +129,6 @@ Auth fixture for test 2.
     safeUnstage(FIX_DIR);
     if (committed) {
       try { execSync('git reset --soft HEAD~1', { cwd: REPO, stdio: 'ignore' }); } catch {}
-      try { execSync('git reset HEAD --', { cwd: REPO, stdio: 'ignore' }); } catch {}
     }
   }
 });
@@ -157,7 +155,6 @@ test('3: integration — staged delete + NO auth SPEC → exit 1', () => {
     safeUnstage(FIX_DIR);
     if (committed) {
       execSync('git reset --soft HEAD~1', { cwd: REPO, stdio: 'ignore' });
-      execSync('git reset HEAD --', { cwd: REPO, stdio: 'ignore' });
       committed = false;
     }
 
@@ -167,7 +164,6 @@ test('3: integration — staged delete + NO auth SPEC → exit 1', () => {
     safeUnstage(FIX_DIR);
     if (committed) {
       try { execSync('git reset --soft HEAD~1', { cwd: REPO, stdio: 'ignore' }); } catch {}
-      try { execSync('git reset HEAD --', { cwd: REPO, stdio: 'ignore' }); } catch {}
     }
   }
 });
