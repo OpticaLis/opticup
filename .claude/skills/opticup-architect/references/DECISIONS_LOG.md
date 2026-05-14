@@ -61,6 +61,7 @@ Format for full entries (in `decisions/<MODULE>.md`): situation → my recommend
 |---|---|---|---|
 | 1 | 2026-05-12 | Lens Inventory schema sealed | 18 tables, FIFO, 1:1 brand-supplier, 3 adversarial review rounds. |
 | 2 | 2026-05-14 | Mockup review — 11 decisions, 3 new screens, 7 schema deltas | Stock/custom flag on supplier_catalog_offering; tiered discount; inline+bulk pricing; manual-send PO; 3 new screens; reconciliation schema; debt at receipt-time. |
+| 3 | 2026-05-14 | M1 ↔ M9 overlap investigation — verdict PROCEED-WITH-M1-AS-IS | 0 genuine overlaps, 5 clean hand-offs. 2 FK schema deltas + 5 contract declarations (K1-K5) added to M1 decisions. 1 mockup tweak applied (Goods Receipt v3 — M9 box linkage + status hint correction). Report: `modules/Module 1 - Inventory Management/architecture-brief/M1_M9_OVERLAP_REPORT.md`. |
 
 ---
 

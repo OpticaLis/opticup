@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<title>הזמנות פתוחות — עדשות (Mockup)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; color: #1e293b; padding: 16px; direction: rtl; }
+
+  .mockup-note { background: #fef3c7; border-right: 4px solid #f59e0b; padding: 10px 14px; margin-bottom: 12px; font-size: 12px; color: #92400e; border-radius: 4px; }
+
+  /* HEADER */
+  .page-header { background: white; padding: 14px 20px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .page-title { font-size: 20px; font-weight: 600; color: #1e293b; }
+  .page-title .badge { font-size: 11px; background: #dbeafe; color: #1e3a8a; padding: 3px 8px; border-radius: 10px; margin-right: 8px; font-weight: normal; }
+
+  .btn { padding: 8px 14px; border: 1px solid #cbd5e1; background: white; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { background: #f1f5f9; }
+  .btn-primary { background: #1e3a8a; color: white; border-color: #1e3a8a; }
+  .btn-primary:hover { background: #1e40af; }
+  .btn-success { background: #059669; color: white; border-color: #059669; }
+
+  /* STAT CARDS */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+    margin-bottom: 12px;
+  }
+  .stat-card {
+    background: white; padding: 14px 16px; border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-right: 4px solid #cbd5e1; cursor: pointer; transition: all 0.15s;
+  }
+  .stat-card:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+  .stat-card.active { border-right-color: #1e3a8a; background: #eff6ff; }
+  .stat-card.draft { border-right-color: #64748b; }
+  .stat-card.sent { border-right-color: #3b82f6; }
+  .stat-card.partial { border-right-color: #d97706; }
+  .stat-card.received { border-right-color: #059669; }
+  .stat-card.overdue { border-right-color: #dc2626; }
+
+  .stat-card .stat-label {
+    font-size: 11px; color: #64748b; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;
+  }
+  .stat-card .stat-value { font-size: 24px; font-weight: 700; color: #1e293b; }
+  .stat-card .stat-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+  /* FILTERS BAR */
+  .filters-bar {
+    background: white; padding: 12px 18px; border-radius: 8px;
+    margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  }
+  .filters-bar .filter-label { font-size: 11px; color: #64748b; font-weight: 700; }
+  .filters-bar select, .filters-bar input {
+    padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 5px;
+    font-size: 12px; font-family: inherit;
+  }
+  .filters-bar input[type="text"] { width: 240px; }
+  .filters-bar select:focus, .filters-bar input:focus {
+    outline: none; border-color: #1e3a8a;
+  }
+  .filters-bar .filter-divider { color: #cbd5e1; }
+
+  /* TABLE */
+  .panel { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+  .panel-header {
+    padding: 13px 18px; border-bottom: 1px solid #e2e8f0;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .panel-header h3 { font-size: 14px; color: #1e293b; font-weight: 600; }
+  .panel-header .results-count { font-size: 12px; color: #64748b; }
+
+  .po-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+  .po-table thead th {
+    text-align: right; padding: 11px 14px; background: #f8fafc;
+    color: #475569; font-weight: 600; font-size: 11px;
+    border-bottom: 2px solid #e2e8f0; white-space: nowrap;
+  }
+  .po-table thead th.sortable { cursor: pointer; user-select: none; }
+  .po-table thead th.sortable::after { content: " ↕"; color: #cbd5e1; font-size: 10px; }
+  .po-table thead th.sortable.sorted-desc::after { content: " ↓"; color: #1e3a8a; font-weight: 700; }
+
+  .po-table tbody td {
+    padding: 12px 14px; border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+  }
+  .po-table tbody tr { cursor: pointer; transition: background 0.1s; }
+  .po-table tbody tr:hover { background: #f8fafc; }
+  .po-table tbody tr.overdue-row { background: #fef2f2; }
+  .po-table tbody tr.overdue-row:hover { background: #fee2e2; }
+
+  /* PO number cell */
+  .po-id {
+    font-weight: 700; color: #1e3a8a; font-size: 13px;
+  }
+  .po-id .po-sub {
+    font-size: 10px; color: #94a3b8; font-weight: normal; margin-top: 2px;
+    display: block;
+  }
+
+  .supplier-name { font-weight: 600; color: #1e293b; }
+  .supplier-name .supplier-sub {
+    font-size: 10px; color: #94a3b8; margin-top: 2px; font-weight: normal;
+    display: block;
+  }
+
+  /* STATUS chips */
+  .chip {
+    display: inline-block; padding: 4px 10px; border-radius: 12px;
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+  }
+  .chip-draft { background: #f1f5f9; color: #475569; }
+  .chip-sent { background: #dbeafe; color: #1e3a8a; }
+  .chip-partial { background: #fef3c7; color: #92400e; }
+  .chip-received { background: #d1fae5; color: #065f46; }
+  .chip-overdue { background: #fee2e2; color: #991b1b; }
+
+  /* PROGRESS bar */
+  .progress-wrapper { display: flex; align-items: center; gap: 8px; }
+  .progress-bar {
+    width: 100px; height: 8px; background: #e2e8f0; border-radius: 4px;
+    overflow: hidden; position: relative;
+  }
+  .progress-fill { height: 100%; background: #059669; border-radius: 4px; }
+  .progress-fill.partial { background: #d97706; }
+  .progress-fill.empty { background: #cbd5e1; }
+  .progress-label { font-size: 11px; color: #64748b; font-weight: 600; }
+
+  /* DATE cells */
+  .date-cell { color: #475569; }
+  .date-cell.overdue { color: #dc2626; font-weight: 700; }
+  .date-cell .date-sub { font-size: 10px; color: #94a3b8; margin-top: 2px; display: block; }
+
+  .src-badge {
+    display: inline-block; padding: 2px 7px; border-radius: 8px;
+    font-size: 10px; font-weight: 600; margin-left: 4px;
+  }
+  .src-stock { background: #dbeafe; color: #1e3a8a; }
+  .src-custom { background: #fef3c7; color: #92400e; }
+  .src-mixed { background: #ede9fe; color: #6d28d9; }
+
+  /* Row actions */
+  .row-actions { display: flex; gap: 4px; }
+  .row-action {
+    padding: 5px 10px; border: 1px solid #e2e8f0; background: white;
+    border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500;
+    color: #475569;
+  }
+  .row-action:hover { background: #f1f5f9; border-color: #1e3a8a; color: #1e3a8a; }
+  .row-action.primary {
+    background: #1e3a8a; color: white; border-color: #1e3a8a; font-weight: 600;
+  }
+  .row-action.primary:hover { background: #1e40af; }
+  .row-action.warn { color: #d97706; border-color: #fde68a; background: #fffbeb; }
+
+  /* Quick "open PO" indicator strip */
+  .quick-actions-strip {
+    background: #eff6ff; padding: 10px 18px;
+    border-bottom: 1px solid #bfdbfe; font-size: 12px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .quick-actions-strip .left { color: #1e3a8a; font-weight: 600; }
+  .quick-actions-strip .right { display: flex; gap: 8px; }
+</style>
+</head>
+<body>
+
+<div class="mockup-note">
+  📋 <strong>סקיצה — מסך 6: רשימת הזמנות פתוחות (v2)</strong> · Mockup 14.5.26.
+  <br>מטרת המסך: <strong>תצוגה בלבד</strong> — מנהל החנות רואה באיזה מצב כל הזמנה פעילה.
+  לחיצה על "👁 פתח" → צופים בפרטי ההזמנה. תפריט ⋮ → פעולות (ביטול הזמנה, סימון כהושלם ידנית, שכפול).
+  <br><strong>אין קבלת סחורה במסך הזה</strong> — היא נמצאת במסך 7 הייעודי, נכנסים אליה מהתפריט הראשי.
+</div>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="page-title">
+    📋 הזמנות פתוחות — עדשות
+    <span class="badge">12 הזמנות פעילות</span>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <button class="btn">📊 ייצא Excel</button>
+    <button class="btn">📥 דוח חוסרים</button>
+    <button class="btn btn-primary">➕ הזמנה חדשה</button>
+  </div>
+</div>
+
+<!-- STAT CARDS -->
+<div class="stats-row">
+  <div class="stat-card active">
+    <div class="stat-label">הכל</div>
+    <div class="stat-value">12</div>
+    <div class="stat-sub">₪38,420 בסה"כ</div>
+  </div>
+  <div class="stat-card draft">
+    <div class="stat-label">טיוטות</div>
+    <div class="stat-value">2</div>
+    <div class="stat-sub">טרם נשלחו לספק</div>
+  </div>
+  <div class="stat-card sent">
+    <div class="stat-label">נשלחו לספק</div>
+    <div class="stat-value">5</div>
+    <div class="stat-sub">בהמתנה לסחורה</div>
+  </div>
+  <div class="stat-card partial">
+    <div class="stat-label">חלקיות</div>
+    <div class="stat-value">3</div>
+    <div class="stat-sub">חלק התקבל</div>
+  </div>
+  <div class="stat-card overdue">
+    <div class="stat-label">⚠️ באיחור</div>
+    <div class="stat-value">2</div>
+    <div class="stat-sub">חלף יעד אספקה</div>
+  </div>
+</div>
+
+<!-- FILTERS BAR -->
+<div class="filters-bar">
+  <span class="filter-label">סינון:</span>
+  <select>
+    <option>📍 סוג: הכל</option>
+    <option>📦 מדף</option>
+    <option>🏭 ייצור (ללקוח)</option>
+    <option>🔀 מעורב</option>
+  </select>
+  <select>
+    <option>🏢 ספק: הכל</option>
+    <option>לפידות בע"מ</option>
+    <option>בדולח עדשות</option>
+    <option>סגם בע"מ</option>
+    <option>אופטיגל</option>
+  </select>
+  <select>
+    <option>🗓 פרק זמן: כל הזמן</option>
+    <option>30 ימים אחרונים</option>
+    <option>3 חודשים אחרונים</option>
+    <option>השנה</option>
+    <option>טווח מותאם...</option>
+  </select>
+  <span class="filter-divider">|</span>
+  <input type="text" placeholder="🔍 חיפוש: PO#, ספק, לקוח..." />
+  <span class="filter-divider">|</span>
+  <button class="btn" style="font-size:11px; padding:5px 10px;">⟲ נקה סינון</button>
+</div>
+
+<!-- TABLE -->
+<div class="panel">
+  <div class="panel-header">
+    <h3>הזמנות פתוחות</h3>
+    <span class="results-count">מציג 12 מתוך 12 הזמנות</span>
+  </div>
+
+  <table class="po-table">
+    <thead>
+      <tr>
+        <th class="sortable sorted-desc">PO #</th>
+        <th>ספק</th>
+        <th class="sortable">תאריך הזמנה</th>
+        <th class="sortable">צפי אספקה</th>
+        <th>סטטוס</th>
+        <th>סוג</th>
+        <th>שורות</th>
+        <th>התקבל</th>
+        <th class="sortable">ערך</th>
+        <th>פעולות</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <!-- PARTIAL — most urgent visible -->
+      <tr>
+        <td>
+          <div class="po-id">#2607
+            <span class="po-sub">נוצר 12.5.26</span>
+          </div>
+        </td>
+        <td>
+          <div class="supplier-name">לפידות בע"מ
+            <span class="supplier-sub">שוטף+30</span>
+          </div>
+        </td>
+        <td class="date-cell">12.5.26 <span class="date-sub">לפני יומיים</span></td>
+        <td class="date-cell">14.5.26 <span class="date-sub">היום</span></td>
+        <td><span class="chip chip-partial">חלקית התקבל</span></td>
+        <td>
+          <span class="src-badge src-mixed">מעורב</span>
+          <div style="font-size:10px; color:#94a3b8; margin-top:3px;">
+            מדף (13) + ייצור-לקוח (4)
+          </div>
+        </td>
+        <td>17 שורות / 52 יח׳</td>
+        <td>
+          <div class="progress-wrapper">
+            <div class="progress-bar"><div class="progress-fill partial" style="width:76%;"></div></div>
+            <span class="progress-label">76%</span>
+          </div>
+          <div style="font-size:10px; color:#94a3b8; margin-top:3px;">40 / 52 יח׳</div>
+        </td>
+        <td style="font-weight:700;">₪6,749</td>
+        <td>
+          <div class="row-actions">
+            <button class="row-action primary">👁 פתח</button>
+            <button class="row-action" title="פעולות נוספות">⋮</button>
+          </div>
+        </td>
+      </tr>
+
+      <!-- OVERDUE — sent, not received -->
+      <tr class="overdue-row">
+        <td>
+          <div class="po-id">#2603
+            <span class="po-sub">נוצר 6.5.26</span>
+          </div>
+        </td>
+        <td>
+          <div class="supplier-name">בדולח עדשות
+            <span class="supplier-sub">שוטף+45</span>
+          </div>
+        </td>
+        <td class="date-cell">6.5.26 <span class="date-sub">לפני 8 ימים</span></td>
+        <td class="date-cell overdue">10.5.26 <span class="date-sub">איחור 4 ימים</span></td>
+        <td><span class="chip chip-overdue">⚠️ באיחור</span></td>
+        <td>
+          <span class="src-badge src-stock">מדף</span>
+        </td>
+        <td>9 שורות / 28 יח׳</td>
+        <td>
+          <div class="progress-wrapper">
+            <div class="progress-bar"><div class="progress-fill empty" style="width:0%;"></div></div>
+            <span class="progress-label">0%</span>
+          </div>
+          <div style="font-size:10px; color:#94a3b8; margin-top:3px;">0 / 28 יח׳</div>
+        </td>
+        <td style="font-weight:700;">₪4,120</td>
+        <td>
+          <div class="row-actions">
+            <button class="row-action warn">📞 ברר עם ספק</button>
+            <button class="row-action">👁</button>
+            <button class="row-action">⋮</button>
+          </div>
+        </td>
+      </tr>
+
+      <!-- SENT — waiting -->
+      <tr>
+        <td>
+          <div class="po-id">#2608
+            <span class="po-sub">נוצר 13.5.26</span>
+          </div>
+        </td>
+        <td>
+          <div class="supplier-name">לפידות בע"מ
+            <span class="supplier-sub">שוטף+30</span>
+          </div>
+        </td>
+        <td class="date-cell">13.5.26 <span class="date-sub">אתמול</span></td>
+        <td class="date-cell">15.5.26 <span class="date-sub">מחר</span></td>
+        <td><span class="chip chip-sent">נשלח לספק</span></td>
+        <td>
+          <span class="src-badge src-custom">ייצור</span>
+          <div style="font-size:10px; color:#94a3b8; margin-top:3px;">
+            ללקוחות: שרה כהן, יוסי לוי
+          </div>
+        </td>
+        <td>6 שורות / 14 יח׳</td>
+        <td>
+          <div class="progress-wrapper">
+            <div class="progress-bar"><div class="progress-fill empty" style="width:0%;"></div></div>
+            <span class="progress-label">0%</span>
+          </div>
+          <div style="font-size:10px; color:#94a3b8; margin-top:3px;">0 / 14 יח׳</div>
+        </td>
+        <td style="font-weight:700;">₪3,210</td>
+        <td>
+          <div class="row-actions">
+            <button class="row-action primary">👁 פתח</button>
+            <button class="row-action" title="פעולות נוספות">⋮</button>
+          </div>
+        </td>
+      </tr>
+
+      <!-- DRAFT — not yet sent -->
+      <tr>
+        <td>
+          <div class="po-id">#2611
+            <span class="po-sub">נוצר 14.5.26</span>
+          </div>
+        </td>
+        <td>
+          <div class="supplier-name">סגם בע"מ
+            <span class="supplier-sub">שוטף+30</span>
+          </div>
+        </td>
+        <td class="date-cell">היום</td>
+        <td class="date-cell">—</td>
+        <td><span class="chip chip-draft">טיוטה</span></td>
+        <td>
+          <span class="src-badge src-stock">מדף</span>
+          <div style="font-size:10px; color:#94a3b8; margin-top:3px;">חוסרי מלאי</div>
+        </td>
+        <td>4 שורות / 7 יח׳</td>
+        <td>
+          <div style="font-size:10px; color:#94a3b8;">—</div>
+        </td>
+        <td style="font-weight:700;">₪2,480</td>
+        <td>
+          <div class="row-actions">
+            <button class="row-action primary">📝 ערוך ושלח</button>
+            <button class="row-action">👁</button>
+            <button class="row-action">⋮</button>
+          </div>
+        </td>
+      </tr>
+
+      <!-- SENT — custom only -->
+      <tr>
+        <td>
+          <div class="po-id">#2609
+            <span class="po-sub">נוצר 13.5.26</span>
+          </div>
+        </td>
+        <td>
+          <div class="supplier-name">אופטיגל
+            <span class="supplier-sub">שוטף+60</span>
+          </div>
+        </td>
+        <td class="date-cell">13.5.26</td>
+        <td class="date-cell">20.5.26 <span class="date-sub">בעוד שבוע</span></td>
+        <td><span class="chip chip-sent">נשלח לספק</span></td>
+        <td>
+          <span class="src-badge src-custom">ייצור</span>
+          <div style="font-size:10px; color:#94a3b8; margin-top:3px;">ללקוח: דנה ברק</div>
+        </td>
+        <td>1 שורה / 2 יח׳</td>
+        <td>
+          <div class="progress-wrapper">
+            <div class="progress-bar"><div class="progress-fill empty" style="width:0%;"></div></div>
+            <span class="progress-label">0%</span>
+          </div>
+          <div style="font-size:10px; color:#94a3b8; margin-top:3px;">0 / 2 יח׳</div>
+        </td>
+        <td style="font-weight:700;">₪890</td>
+        <td>
+          <div class="row-actions">
+            <button class="row-action primary">👁 פתח</button>
+            <button class="row-action" title="פעולות נוספות">⋮</button>
+          </div>
+        </td>
+      </tr>
+
+      <!-- OVERDUE custom — high pressure -->
+      <tr class="overdue-row">
+        <td>
+          <div class="po-id">#2601
+            <span class="po-sub">נוצר 4.5.26</span>
+          </div>
+        </td>
+        <td>
+          <div class="supplier-name">לפידות בע"מ
+            <span class="supplier-sub">שוטף+30</span>
+          </div>
+        </td>
+        <td class="date-cell">4.5.26 <span class="date-sub">לפני 10 ימים</span></td>
+        <td class="date-cell overdue">8.5.26 <span class="date-sub">איחור 6 ימים</span></td>
+        <td><span class="chip chip-overdue">⚠️ באיחור</span></td>
+        <td>
+          <span class="src-badge src-custom">ייצור</span>
+          <div style="font-size:10px; color:#94a3b8; margin-top:3px;">ללקוח: אריאל מזרחי</div>
+        </td>
+        <td>1 שורה / 2 יח׳</td>
+        <td>
+          <div class="progress-wrapper">
+            <div class="progress-bar"><div class="progress-fill empty" style="width:0%;"></div></div>
+            <span class="progress-label">0%</span>
+          </div>
+        </td>
+        <td style="font-weight:700;">₪1,240</td>
+        <td>
+          <div class="row-actions">
+            <button class="row-action warn">📞 ברר עם ספק</button>
+            <button class="row-action">👁</button>
+            <button class="row-action">⋮</button>
+          </div>
+        </td>
+      </tr>
+
+      <!-- summary row -->
+      <tr><td colspan="10" style="text-align:center; padding:14px; color:#94a3b8; font-size:11px;">... ועוד 6 הזמנות פתוחות</td></tr>
+
+    </tbody>
+  </table>
+
+  <!-- Footer summary -->
+  <div style="background:#f8fafc; padding:12px 18px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; font-size:12px; color:#475569;">
+    <div>
+      סה"כ: <strong style="color:#1e293b;">12 הזמנות</strong>
+      · <strong style="color:#1e293b;">237 יחידות</strong> בהמתנה
+      · <strong style="color:#1e293b;">₪38,420</strong> ערך מצטבר
+    </div>
+    <div>
+      <span style="color:#dc2626; font-weight:700;">⚠️ 2 הזמנות באיחור</span>
+      · <span style="color:#d97706; font-weight:700;">3 חלקיות</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -296,3 +296,39 @@ stock_transfer
 3. After all 7 mockups sealed → write SPEC at `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_INVENTORY_PHASE_1/` and hand off to Module Strategist.
 
 *End of 2026-05-14 mockup review section.*
+
+---
+
+## 2026-05-14 — M1 ↔ M9 Overlap Investigation (verdict: clean)
+
+Architect mandate ran independent investigation of M1 ↔ M9 boundary. Verdict: 🟢 PROCEED-WITH-M1-AS-IS.
+
+### Boundary
+
+- **M1** = commercial/accounting record (catalog, FIFO, PO, debt, transfers, supplier identity)
+- **M9** = operational service flow (lab_jobs, shipping_boxes, compensation)
+
+### Contract points (3)
+
+1. Supplier identity — M1 is source-of-truth, M9 reads read-only (View)
+2. Stock-inbound box hand-off — M9 closes box → M1 GR screen imports, links back to box
+3. Goods-received event — M1 receipt of custom-per-customer lens → M9 advances lab_job status
+
+### Additive schema deltas (no breaking changes)
+
+- `purchase_receipt.shipping_box_id UUID NULL` (M1 SPEC)
+- `lab_jobs.purchase_receipt_id UUID NULL` (M9 SPEC)
+
+### 5 contract functions (K1-K5)
+
+See `decisions/M1.md` D-M1-13 for full table. Includes RPCs `m1_create_receipt_from_box`, `m1_record_lens_loss`, the AFTER-INSERT trigger event, and View `v_suppliers_for_m9`.
+
+### Mockup #7 (Goods Receipt) refined
+
+Two corrections applied per report §6.5.1 — M9 box linkage field + status-owner hint correction.
+
+### Legacy `shipments` deprecation
+
+Confirmed dormant. M1 Lens Phase 1 doesn't reference it. Cleanup is M9 SPEC scope.
+
+**Full report:** `M1_M9_OVERLAP_REPORT.md` (commit 2199191)

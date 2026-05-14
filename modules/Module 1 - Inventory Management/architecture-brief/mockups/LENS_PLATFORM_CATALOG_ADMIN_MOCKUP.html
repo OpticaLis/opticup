@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<title>Platform Catalog Admin — Optic Up (Mockup v2)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f172a; color: #e2e8f0; padding: 16px; direction: rtl; }
+
+  .mockup-note { background: #422006; border-right: 4px solid #f59e0b; padding: 10px 14px; margin-bottom: 12px; font-size: 12px; color: #fde68a; border-radius: 4px; }
+
+  .platform-banner {
+    background: linear-gradient(90deg, #7c2d12 0%, #991b1b 100%);
+    padding: 8px 18px; border-radius: 6px; margin-bottom: 12px;
+    font-size: 12px; font-weight: 700; color: white; text-align: center;
+    letter-spacing: 0.5px;
+  }
+
+  /* HEADER */
+  .page-header {
+    background: #1e293b; padding: 14px 20px; border-radius: 8px;
+    margin-bottom: 12px; display: flex; justify-content: space-between;
+    align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    border: 1px solid #334155;
+  }
+  .page-title { font-size: 20px; font-weight: 600; color: #f1f5f9; }
+  .page-title .badge {
+    font-size: 11px; background: #1e3a8a; color: #dbeafe;
+    padding: 3px 8px; border-radius: 10px; margin-right: 8px; font-weight: normal;
+  }
+
+  .btn {
+    padding: 8px 14px; border: 1px solid #475569; background: #334155;
+    color: #e2e8f0; border-radius: 6px; cursor: pointer;
+    font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { background: #475569; }
+  .btn-primary { background: #1e3a8a; color: white; border-color: #1e3a8a; }
+  .btn-primary:hover { background: #1e40af; }
+  .btn-success { background: #065f46; color: white; border-color: #065f46; }
+  .btn-success:hover { background: #047857; }
+  .btn-import { background: #7c3aed; color: white; border-color: #7c3aed; }
+  .btn-import:hover { background: #6d28d9; }
+
+  /* MAIN LAYOUT — 4 columns */
+  .main-content {
+    display: grid;
+    grid-template-columns: 220px 220px 240px 1fr;
+    gap: 10px;
+    height: calc(100vh - 180px);
+    min-height: 600px;
+  }
+
+  /* COLUMN base */
+  .col {
+    background: #1e293b; border-radius: 8px; overflow: hidden;
+    border: 1px solid #334155; display: flex; flex-direction: column;
+  }
+  .col-header {
+    padding: 12px 16px; border-bottom: 1px solid #334155;
+    background: #0f172a;
+  }
+  .col-header-top {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .col-header h3 {
+    font-size: 13px; color: #f1f5f9; font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  .col-header .col-count {
+    font-size: 11px; color: #64748b; font-weight: 600;
+    background: #334155; padding: 2px 8px; border-radius: 10px;
+  }
+  .col-header .col-context {
+    font-size: 10px; color: #94a3b8; margin-top: 4px;
+  }
+  .col-header .col-context strong { color: #cbd5e1; }
+
+  .col-search {
+    padding: 10px 14px; border-bottom: 1px solid #334155;
+  }
+  .col-search input {
+    width: 100%; padding: 7px 10px; border: 1px solid #475569;
+    background: #0f172a; color: #e2e8f0; border-radius: 5px;
+    font-size: 12px; font-family: inherit;
+  }
+  .col-search input::placeholder { color: #64748b; }
+  .col-search input:focus { outline: none; border-color: #1e3a8a; }
+  .col-body { flex: 1; overflow-y: auto; }
+  .col-footer {
+    padding: 8px 12px; border-top: 1px solid #334155;
+    background: #0f172a; display: flex; flex-direction: column; gap: 6px;
+  }
+  .col-footer .add-btn {
+    width: 100%; padding: 7px; background: transparent;
+    border: 1px dashed #475569; color: #94a3b8; border-radius: 5px;
+    cursor: pointer; font-size: 11px; font-weight: 600;
+  }
+  .col-footer .add-btn:hover { border-color: #1e3a8a; color: #93c5fd; }
+  .col-footer .import-btn {
+    width: 100%; padding: 7px; background: #5b21b6;
+    border: 1px solid #7c3aed; color: white; border-radius: 5px;
+    cursor: pointer; font-size: 11px; font-weight: 700;
+  }
+  .col-footer .import-btn:hover { background: #6d28d9; }
+
+  /* LIST item */
+  .list-item {
+    padding: 11px 14px; border-bottom: 1px solid #334155;
+    cursor: pointer; transition: background 0.1s;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .list-item:hover { background: #334155; }
+  .list-item.active {
+    background: #1e3a8a;
+    border-right: 3px solid #60a5fa;
+    padding-right: 11px;
+  }
+  .list-item.active .item-title { color: white; font-weight: 700; }
+  .list-item.active .item-sub { color: #bfdbfe; }
+
+  .item-title { font-size: 13px; color: #f1f5f9; font-weight: 600; }
+  .item-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+  .item-count {
+    font-size: 11px; color: #64748b; background: #0f172a;
+    padding: 2px 8px; border-radius: 10px; font-weight: 600;
+  }
+  .list-item.active .item-count {
+    background: #1e40af; color: #bfdbfe;
+  }
+
+  /* Brand action overlay */
+  .brand-card {
+    padding: 11px 14px; border-bottom: 1px solid #334155;
+    cursor: pointer; transition: background 0.1s;
+  }
+  .brand-card:hover { background: #334155; }
+  .brand-card.active {
+    background: #1e3a8a;
+    border-right: 3px solid #60a5fa;
+    padding-right: 11px;
+  }
+  .brand-card.active .brand-name { color: white; font-weight: 700; }
+  .brand-card .brand-top {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .brand-name { font-size: 13px; color: #f1f5f9; font-weight: 600; }
+  .brand-stats { font-size: 11px; color: #94a3b8; margin-top: 4px; display: flex; gap: 10px; }
+  .brand-card.active .brand-stats { color: #bfdbfe; }
+  .brand-card .quick-import {
+    margin-top: 6px; padding: 4px 8px;
+    background: #4c1d95; border: 1px solid #6d28d9;
+    color: #ddd6fe; border-radius: 4px; cursor: pointer;
+    font-size: 10px; font-weight: 700; width: 100%;
+  }
+  .brand-card .quick-import:hover { background: #5b21b6; }
+
+  /* Series chip */
+  .series-chip {
+    display: inline-block; padding: 2px 7px; border-radius: 4px;
+    font-size: 10px; font-weight: 600; margin-right: 4px;
+  }
+  .series-chip.stock { background: #1e3a8a; color: #bfdbfe; }
+  .series-chip.custom { background: #78350f; color: #fde68a; }
+
+  /* DETAIL PANEL */
+  .detail-col { overflow: hidden; }
+  .detail-header {
+    padding: 14px 18px; border-bottom: 1px solid #334155;
+    background: #0f172a;
+  }
+  .detail-title {
+    font-size: 16px; color: #f1f5f9; font-weight: 700; margin-bottom: 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .detail-meta {
+    font-size: 11px; color: #94a3b8;
+    display: flex; gap: 14px; flex-wrap: wrap;
+  }
+  .detail-meta strong { color: #cbd5e1; }
+
+  .detail-body { flex: 1; overflow-y: auto; padding: 18px; }
+
+  /* Section in detail */
+  .detail-section { margin-bottom: 24px; }
+  .detail-section-header {
+    font-size: 11px; color: #64748b; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .detail-section-header .section-action {
+    color: #60a5fa; cursor: pointer; font-weight: 600;
+    text-transform: none; letter-spacing: 0;
+  }
+  .detail-section-header .section-action:hover { text-decoration: underline; }
+
+  /* Form fields */
+  .field-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    margin-bottom: 14px;
+  }
+  .field {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .field label {
+    font-size: 11px; color: #94a3b8; font-weight: 600;
+  }
+  .field input, .field select, .field textarea {
+    padding: 8px 10px; border: 1px solid #475569;
+    background: #0f172a; color: #e2e8f0; border-radius: 5px;
+    font-size: 13px; font-family: inherit;
+  }
+  .field input:focus, .field select:focus {
+    outline: none; border-color: #1e3a8a;
+    box-shadow: 0 0 0 2px rgba(30,58,138,0.3);
+  }
+  .field-required label::after { content: " *"; color: #f87171; }
+
+  /* Toggle */
+  .toggle-group {
+    display: flex; gap: 6px; padding: 4px;
+    background: #0f172a; border-radius: 6px; border: 1px solid #475569;
+  }
+  .toggle-btn {
+    flex: 1; padding: 6px 12px; border: none; background: transparent;
+    color: #94a3b8; border-radius: 4px; cursor: pointer;
+    font-size: 12px; font-weight: 600;
+  }
+  .toggle-btn.active.stock { background: #1e3a8a; color: white; }
+  .toggle-btn.active.custom { background: #78350f; color: #fde68a; }
+
+  /* Variants table */
+  .variants-table {
+    width: 100%; font-size: 12px; border-collapse: collapse;
+    background: #0f172a; border-radius: 6px; overflow: hidden;
+    border: 1px solid #334155;
+  }
+  .variants-table thead th {
+    text-align: right; padding: 9px 12px; background: #1e293b;
+    color: #94a3b8; font-weight: 700; font-size: 10px;
+    border-bottom: 1px solid #334155; text-transform: uppercase;
+  }
+  .variants-table td {
+    padding: 9px 12px; border-bottom: 1px solid #1e293b;
+    color: #e2e8f0;
+  }
+  .variants-table tbody tr:hover { background: #1e293b; }
+
+  .var-id { font-family: 'Consolas', monospace; color: #94a3b8; font-size: 11px; }
+
+  .save-bar {
+    margin-top: 14px; padding: 14px 18px;
+    background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .save-bar .save-info { font-size: 11px; color: #94a3b8; }
+  .save-bar .save-info strong { color: #fde68a; }
+
+  .ver-badge {
+    display: inline-block; padding: 2px 7px; background: #064e3b;
+    color: #6ee7b7; border-radius: 4px; font-size: 10px; font-weight: 600;
+  }
+  .ver-badge.draft { background: #422006; color: #fcd34d; }
+
+  .publish-state {
+    display: flex; gap: 12px; padding: 10px 14px;
+    background: #0f172a; border-radius: 6px; border: 1px solid #334155;
+    margin-bottom: 14px;
+  }
+  .publish-state .ps-item { flex: 1; }
+  .publish-state .ps-label { font-size: 10px; color: #64748b; text-transform: uppercase; }
+  .publish-state .ps-value { font-size: 13px; color: #e2e8f0; font-weight: 700; margin-top: 2px; }
+  .publish-state .ps-value.green { color: #6ee7b7; }
+  .publish-state .ps-value.amber { color: #fcd34d; }
+
+  .small-action {
+    padding: 5px 10px; border: 1px solid #475569;
+    background: #0f172a; color: #94a3b8; border-radius: 4px;
+    cursor: pointer; font-size: 11px; font-weight: 500;
+  }
+  .small-action:hover { color: #60a5fa; border-color: #60a5fa; }
+
+  /* Bulk import card — shown when brand selected with no series yet */
+  .bulk-import-card {
+    background: linear-gradient(135deg, #4c1d95 0%, #5b21b6 100%);
+    border-radius: 8px; padding: 20px 24px; margin-bottom: 20px;
+    border: 1px solid #7c3aed; color: white;
+  }
+  .bulk-import-card h4 {
+    font-size: 15px; font-weight: 700; margin-bottom: 8px;
+  }
+  .bulk-import-card p {
+    font-size: 13px; line-height: 1.6; color: #ddd6fe; margin-bottom: 12px;
+  }
+  .bulk-import-card .import-options {
+    display: flex; gap: 8px;
+  }
+  .bulk-import-card .import-options button {
+    padding: 9px 16px; background: white; color: #5b21b6;
+    border: none; border-radius: 6px; cursor: pointer;
+    font-size: 13px; font-weight: 700;
+  }
+  .bulk-import-card .import-options button:hover { background: #f3e8ff; }
+  .bulk-import-card .import-options button.secondary {
+    background: transparent; color: white; border: 1px solid white;
+  }
+  .bulk-import-card .import-options button.secondary:hover {
+    background: rgba(255,255,255,0.1);
+  }
+</style>
+</head>
+<body>
+
+<div class="mockup-note">
+  🔧 <strong>סקיצה — מסך 5: Platform Catalog Admin (v2 — אחרי משוב Daniel)</strong> · 14.5.26.
+  <br><strong>היררכיה מתוקנת:</strong> ספק → מותג → סדרה → וריאנטים (4 רמות, כמו בכל שאר המסכים).
+  <br><strong>תוספת:</strong> ייבוא קטלוג מותג שלם בלחיצה — מעלים PDF/Excel של מותג, אייג'נט יוצר את כל הסדרות והוריאנטים אוטומטית.
+</div>
+
+<div class="platform-banner">
+  🔐 PLATFORM ADMIN — אזור ניהול גלובלי (Optic Up Team Only)
+</div>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="page-title">
+    🌐 ניהול קטלוגי עדשות
+    <span class="badge">4 ספקים · 29 מותגים · 47 סדרות · 6,420 וריאנטים</span>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <button class="btn btn-import">📥 ייבוא קטלוג מותג</button>
+    <button class="btn">📊 ייצוא Excel</button>
+    <button class="btn">📝 לוג שינויים</button>
+    <button class="btn btn-primary">➕ ספק חדש</button>
+  </div>
+</div>
+
+<!-- MAIN — 4 columns -->
+<div class="main-content">
+
+  <!-- COL 1: SUPPLIERS -->
+  <div class="col">
+    <div class="col-header">
+      <div class="col-header-top">
+        <h3>🏢 ספקים</h3>
+        <span class="col-count">4</span>
+      </div>
+    </div>
+    <div class="col-search">
+      <input type="text" placeholder="🔍 חיפוש..." />
+    </div>
+    <div class="col-body">
+      <div class="list-item active">
+        <div>
+          <div class="item-title">לפידות בע"מ</div>
+          <div class="item-sub">🇮🇱 ישראל</div>
+        </div>
+        <span class="item-count">12</span>
+      </div>
+      <div class="list-item">
+        <div>
+          <div class="item-title">בדולח עדשות</div>
+          <div class="item-sub">🇮🇱 ישראל</div>
+        </div>
+        <span class="item-count">8</span>
+      </div>
+      <div class="list-item">
+        <div>
+          <div class="item-title">סגם בע"מ</div>
+          <div class="item-sub">🇮🇱 ישראל</div>
+        </div>
+        <span class="item-count">5</span>
+      </div>
+      <div class="list-item">
+        <div>
+          <div class="item-title">אופטיגל</div>
+          <div class="item-sub">🇮🇱 ישראל</div>
+        </div>
+        <span class="item-count">4</span>
+      </div>
+    </div>
+    <div class="col-footer">
+      <button class="add-btn">➕ ספק חדש</button>
+    </div>
+  </div>
+
+  <!-- COL 2: BRANDS for selected supplier -->
+  <div class="col">
+    <div class="col-header">
+      <div class="col-header-top">
+        <h3>🏷 מותגים</h3>
+        <span class="col-count">12</span>
+      </div>
+      <div class="col-context">ל-<strong>לפידות בע"מ</strong></div>
+    </div>
+    <div class="col-search">
+      <input type="text" placeholder="🔍 חיפוש מותג..." />
+    </div>
+    <div class="col-body">
+      <div class="brand-card active">
+        <div class="brand-top">
+          <div class="brand-name">HOYA</div>
+          <span class="item-count" style="background:#1e40af; color:#bfdbfe;">8</span>
+        </div>
+        <div class="brand-stats">
+          <span>1,540 וריאנטים</span>
+        </div>
+      </div>
+      <div class="brand-card">
+        <div class="brand-top">
+          <div class="brand-name">Essilor</div>
+          <span class="item-count">3</span>
+        </div>
+        <div class="brand-stats">
+          <span>680 וריאנטים</span>
+        </div>
+        <button class="quick-import">📥 ייבוא קטלוג מותג</button>
+      </div>
+      <div class="brand-card">
+        <div class="brand-top">
+          <div class="brand-name">Tokai</div>
+          <span class="item-count">1</span>
+        </div>
+        <div class="brand-stats">
+          <span>90 וריאנטים</span>
+        </div>
+        <button class="quick-import">📥 ייבוא קטלוג מותג</button>
+      </div>
+      <div class="brand-card">
+        <div class="brand-top">
+          <div class="brand-name">Nikon Lens</div>
+          <span class="item-count">0</span>
+        </div>
+        <div class="brand-stats">
+          <span style="color:#fcd34d;">⚠ ללא סדרות</span>
+        </div>
+        <button class="quick-import">📥 ייבוא קטלוג מותג</button>
+      </div>
+      <div style="padding:8px 14px; text-align:center; color:#475569; font-size:11px;">
+        ... 8 מותגים נוספים
+      </div>
+    </div>
+    <div class="col-footer">
+      <button class="add-btn">➕ מותג חדש</button>
+    </div>
+  </div>
+
+  <!-- COL 3: SERIES for selected brand -->
+  <div class="col">
+    <div class="col-header">
+      <div class="col-header-top">
+        <h3>📚 סדרות</h3>
+        <span class="col-count">8</span>
+      </div>
+      <div class="col-context">ל-<strong>HOYA</strong> · לפידות</div>
+    </div>
+    <div class="col-search">
+      <input type="text" placeholder="🔍 חיפוש סדרה..." />
+    </div>
+    <div class="col-body">
+      <div class="list-item active">
+        <div>
+          <div class="item-title">
+            Hilux EYAS BLC
+          </div>
+          <div class="item-sub">
+            <span class="series-chip stock">מדף</span>
+            1.5–1.74
+          </div>
+        </div>
+        <span class="item-count">240</span>
+      </div>
+      <div class="list-item">
+        <div>
+          <div class="item-title">Hoyalux iD MyStyle V+</div>
+          <div class="item-sub">
+            <span class="series-chip custom">ייצור</span>
+            Multifocal
+          </div>
+        </div>
+        <span class="item-count">320</span>
+      </div>
+      <div class="list-item">
+        <div>
+          <div class="item-title">Hilux UV Control Photo</div>
+          <div class="item-sub">
+            <span class="series-chip stock">מדף</span>
+            Photochromic
+          </div>
+        </div>
+        <span class="item-count">180</span>
+      </div>
+      <div class="list-item">
+        <div>
+          <div class="item-title">Defender UV 420 SN</div>
+          <div class="item-sub">
+            <span class="series-chip stock">מדף</span>
+            Blue Cut
+          </div>
+        </div>
+        <span class="item-count">150</span>
+      </div>
+      <div class="list-item">
+        <div>
+          <div class="item-title">Hoyalux iD LifeStyle V+</div>
+          <div class="item-sub">
+            <span class="series-chip custom">ייצור</span>
+            Multifocal Premium
+          </div>
+        </div>
+        <span class="item-count">280</span>
+      </div>
+      <div style="padding:8px 14px; text-align:center; color:#475569; font-size:11px;">
+        ... 3 סדרות נוספות
+      </div>
+    </div>
+    <div class="col-footer">
+      <button class="import-btn">📥 ייבוא קטלוג מותג שלם</button>
+      <button class="add-btn">➕ סדרה ידנית</button>
+    </div>
+  </div>
+
+  <!-- COL 4: SERIES DETAIL + VARIANTS -->
+  <div class="col detail-col">
+    <div class="detail-header">
+      <div class="detail-title">
+        Hilux EYAS BLC
+        <span class="series-chip stock">מדף</span>
+        <span class="ver-badge">v3 · פעיל</span>
+      </div>
+      <div class="detail-meta">
+        <span><strong>ספק:</strong> לפידות בע"מ</span>
+        <span><strong>מותג:</strong> HOYA</span>
+        <span><strong>240 וריאנטים</strong></span>
+        <span><strong>עודכן:</strong> 12.5.26 · Optic Up Admin</span>
+      </div>
+    </div>
+
+    <div class="detail-body">
+
+      <!-- Publish state -->
+      <div class="publish-state">
+        <div class="ps-item">
+          <div class="ps-label">סטטוס</div>
+          <div class="ps-value green">✓ פעיל לכל האופטיקאיות</div>
+        </div>
+        <div class="ps-item">
+          <div class="ps-label">אופטיקאיות שאימצו</div>
+          <div class="ps-value">3 / 4</div>
+        </div>
+        <div class="ps-item">
+          <div class="ps-label">השינוי האחרון</div>
+          <div class="ps-value amber">12.5.26 · עדכון מחיר בסיס</div>
+        </div>
+      </div>
+
+      <!-- Series core fields -->
+      <div class="detail-section">
+        <div class="detail-section-header">
+          <span>פרטי סדרה</span>
+          <span class="section-action">✏️ עריכה</span>
+        </div>
+        <div class="field-grid">
+          <div class="field field-required">
+            <label>שם הסדרה</label>
+            <input type="text" value="Hilux EYAS BLC" />
+          </div>
+          <div class="field">
+            <label>סוג ייצור (דגל פנימי)</label>
+            <div class="toggle-group">
+              <button class="toggle-btn active stock">📦 מדף</button>
+              <button class="toggle-btn custom">🏭 ייצור</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>קטגוריה</label>
+            <select>
+              <option>Single Vision</option>
+              <option>Bifocal</option>
+              <option>Multifocal / Progressive</option>
+              <option>Photochromic</option>
+              <option>Blue Cut</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>תיאור (אופציונלי)</label>
+            <input type="text" placeholder="..." />
+          </div>
+        </div>
+      </div>
+
+      <!-- Variants -->
+      <div class="detail-section">
+        <div class="detail-section-header">
+          <span>וריאנטים (240) · אינדקס × קוטינג × קוטר</span>
+          <span class="section-action">➕ הוסף · 📥 ייבוא וריאנטים מקובץ</span>
+        </div>
+        <table class="variants-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>אינדקס</th>
+              <th>קוטינג</th>
+              <th>קוטר</th>
+              <th>טווח SPH</th>
+              <th>טווח CYL</th>
+              <th>מחיר בסיס</th>
+              <th>סטטוס</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="var-id">V-001847</td><td>1.5</td><td>AR Clear</td><td>70</td>
+              <td>-8.00 → +6.00</td><td>0.00 → -2.00</td><td>₪65</td>
+              <td><span class="ver-badge">פעיל</span></td>
+              <td><button class="small-action">✏️</button></td>
+            </tr>
+            <tr>
+              <td class="var-id">V-001848</td><td>1.56</td><td>AR Clear</td><td>70</td>
+              <td>-6.00 → +4.00</td><td>0.00 → -2.00</td><td>₪85</td>
+              <td><span class="ver-badge">פעיל</span></td>
+              <td><button class="small-action">✏️</button></td>
+            </tr>
+            <tr>
+              <td class="var-id">V-001849</td><td>1.6</td><td>AR Clear</td><td>70</td>
+              <td>-8.00 → +4.00</td><td>0.00 → -2.00</td><td>₪95</td>
+              <td><span class="ver-badge">פעיל</span></td>
+              <td><button class="small-action">✏️</button></td>
+            </tr>
+            <tr>
+              <td class="var-id">V-001850</td><td>1.67</td><td>AR Clear</td><td>70</td>
+              <td>-12.00 → +6.00</td><td>0.00 → -2.00</td><td>₪110</td>
+              <td><span class="ver-badge">פעיל</span></td>
+              <td><button class="small-action">✏️</button></td>
+            </tr>
+            <tr>
+              <td class="var-id">V-001851</td><td>1.74</td><td>AR Clear</td><td>70</td>
+              <td>-15.00 → +8.00</td><td>0.00 → -2.00</td><td>₪145</td>
+              <td><span class="ver-badge">פעיל</span></td>
+              <td><button class="small-action">✏️</button></td>
+            </tr>
+            <tr style="background:#1e293b;">
+              <td colspan="9" style="text-align:center; padding:14px; color:#64748b; font-size:11px;">
+                ... ועוד 235 וריאנטים
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Save -->
+      <div class="save-bar">
+        <div class="save-info">
+          <strong>⚠️ אין שינויים שטרם נשמרו.</strong>
+          <br>שמירה תיצור גרסה חדשה (v4) ותתריע לאופטיקאיות שאימצו את הסדרה.
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn">📋 שכפל</button>
+          <button class="btn" style="color:#fca5a5;">🗑 השבת</button>
+          <button class="btn btn-success">💾 שמור גרסה</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<title>בחירת סדרות עדשה — Optic Up (Mockup)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f6fa; color: #333; padding: 16px; direction: rtl; }
+
+  .mockup-note {
+    background: #fff3cd; border-right: 4px solid #f4c430; padding: 10px 14px;
+    margin-bottom: 12px; font-size: 12px; color: #856404; border-radius: 4px;
+  }
+
+  .page-header {
+    background: white; padding: 14px 20px; border-radius: 8px; margin-bottom: 12px;
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .page-title { font-size: 20px; font-weight: 600; color: #2c3e50; }
+  .page-title .badge {
+    font-size: 11px; background: #e8eaf6; color: #3949ab;
+    padding: 3px 8px; border-radius: 10px; margin-right: 8px; font-weight: normal;
+  }
+  .btn {
+    padding: 8px 14px; border: 1px solid #d0d4d9; background: white;
+    border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;
+    transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { background: #f0f2f5; }
+  .btn-primary { background: #c9a555; color: white; border-color: #c9a555; }
+  .btn-primary:hover { background: #b8954a; }
+
+  /* Stats banner */
+  .stats-banner {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    margin-bottom: 12px;
+  }
+  .stat-card {
+    background: white; padding: 16px 18px; border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-right: 4px solid #c9a555;
+  }
+  .stat-card .label { font-size: 11px; color: #5d6d7e; letter-spacing: 0.3px; font-weight: 600; }
+  .stat-card .value { font-size: 24px; font-weight: 700; color: #2c3e50; margin-top: 4px; }
+  .stat-card .sub { font-size: 11px; color: #95a5a6; }
+  .stat-card.active { border-right-color: #27ae60; }
+  .stat-card.active .value { color: #27ae60; }
+  .stat-card.pending { border-right-color: #f4c430; }
+  .stat-card.pending .value { color: #d39e00; }
+  .stat-card.disabled { border-right-color: #95a5a6; }
+
+  /* Filters bar */
+  .filters-panel {
+    background: white; padding: 14px 20px; border-radius: 8px;
+    margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .filter-row:last-child { margin-bottom: 0; }
+  .filter-label { min-width: 80px; font-size: 13px; color: #5d6d7e; font-weight: 500; }
+  .chip {
+    padding: 6px 14px; border: 1px solid #c9a555; background: white;
+    border-radius: 20px; font-size: 12px; cursor: pointer; color: #5d6d7e; white-space: nowrap;
+  }
+  .chip:hover { background: #faf3e0; }
+  .chip.active { background: #c9a555; color: white; }
+  .chip.secondary { border-color: #95a5a6; }
+  .chip.secondary.active { background: #34495e; border-color: #34495e; }
+  .search-box {
+    padding: 8px 14px; border: 1px solid #d0d4d9; border-radius: 6px;
+    font-size: 13px; min-width: 280px; flex: 1; max-width: 400px;
+  }
+
+  /* Main layout */
+  .main-content {
+    display: grid; grid-template-columns: 1fr 380px; gap: 12px;
+  }
+
+  /* Catalog browser (left) */
+  .catalog-panel {
+    background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden;
+  }
+  .catalog-header {
+    padding: 12px 20px; border-bottom: 1px solid #ecf0f1;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .catalog-header h3 { font-size: 14px; color: #2c3e50; }
+  .view-toggle { display: flex; gap: 4px; }
+  .view-toggle button {
+    padding: 4px 10px; font-size: 11px; border: 1px solid #d0d4d9;
+    background: white; cursor: pointer; border-radius: 4px;
+  }
+  .view-toggle button.active { background: #c9a555; color: white; border-color: #c9a555; }
+
+  /* Brand groups */
+  .brand-group { border-bottom: 1px solid #ecf0f1; }
+  .brand-header {
+    padding: 12px 20px; background: #f8f9fb; display: flex; justify-content: space-between;
+    align-items: center; cursor: pointer; transition: background 0.15s;
+  }
+  .brand-header:hover { background: #f0f2f5; }
+  .brand-header .brand-info { display: flex; align-items: center; gap: 12px; }
+  .brand-logo {
+    width: 32px; height: 32px; border-radius: 6px; background: #34495e;
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+  }
+  .brand-name { font-size: 14px; font-weight: 600; color: #2c3e50; }
+  .brand-meta { font-size: 11px; color: #5d6d7e; margin-top: 2px; }
+  .brand-stats {
+    display: flex; gap: 16px; font-size: 11px; color: #5d6d7e; align-items: center;
+  }
+  .brand-stats .num { font-size: 14px; font-weight: 700; color: #2c3e50; }
+  .toggle-arrow { font-size: 16px; color: #95a5a6; }
+
+  /* Designs table */
+  .designs-table { width: 100%; font-size: 13px; }
+  .designs-table thead th {
+    text-align: right; padding: 10px 16px; background: #fafbfc;
+    color: #5d6d7e; font-weight: 600; font-size: 11px; border-bottom: 1px solid #ecf0f1;
+  }
+  .designs-table td { padding: 12px 16px; border-bottom: 1px solid #f5f6fa; vertical-align: middle; }
+  .designs-table tbody tr { transition: background 0.1s; }
+  .designs-table tbody tr:hover { background: #faf3e0; }
+  .designs-table tbody tr.selected { background: #fdf6e3; }
+
+  .design-name { font-weight: 600; color: #2c3e50; }
+  .design-attrs { font-size: 11px; color: #95a5a6; margin-top: 2px; display: flex; gap: 10px; }
+  .lens-type-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 10px; font-weight: 600; background: #e8eaf6; color: #3949ab;
+  }
+  .material-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 10px; font-weight: 600;
+  }
+  .material-badge.clear { background: #ecf0f1; color: #5d6d7e; }
+  .material-badge.photo { background: #fff3cd; color: #856404; }
+  .material-badge.tint { background: #d4edda; color: #1e8449; }
+
+  /* Variants count */
+  .variants-pill {
+    display: inline-block; padding: 3px 10px; background: #f0f2f5;
+    border-radius: 12px; font-size: 11px; color: #5d6d7e; font-weight: 600;
+  }
+
+  /* Toggle switch */
+  .toggle-switch {
+    position: relative; display: inline-block; width: 44px; height: 24px;
+  }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; cursor: pointer; top:0; right:0; left:0; bottom:0;
+    background-color: #d0d4d9; transition: 0.3s; border-radius: 24px;
+  }
+  .toggle-slider:before {
+    position: absolute; content: ""; height: 18px; width: 18px;
+    left: auto; right: 3px; bottom: 3px;
+    background-color: white; transition: 0.3s; border-radius: 50%;
+  }
+  .toggle-switch input:checked + .toggle-slider { background-color: #27ae60; }
+  .toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(-20px);
+  }
+
+  /* Locations per design */
+  .location-pills { display: flex; gap: 4px; flex-wrap: wrap; }
+  .location-pill {
+    padding: 3px 10px; font-size: 10px; border: 1px solid #d0d4d9;
+    border-radius: 10px; color: #5d6d7e; cursor: pointer; font-weight: 500;
+  }
+  .location-pill.active { background: #c9a555; color: white; border-color: #c9a555; }
+
+  /* Right panel — Details */
+  .side-panel { display: flex; flex-direction: column; gap: 12px; }
+  .panel-card {
+    background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden;
+  }
+  .panel-card-header {
+    padding: 12px 18px; background: linear-gradient(135deg, #c9a555 0%, #b8954a 100%);
+    color: white; font-size: 14px; font-weight: 600;
+  }
+  .panel-card-body { padding: 16px 18px; }
+
+  .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f5f6fa; font-size: 13px; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .key { color: #5d6d7e; }
+  .detail-row .val { font-weight: 600; color: #2c3e50; }
+
+  /* Variants table inside detail */
+  .variants-table { width: 100%; font-size: 11px; margin-top: 8px; }
+  .variants-table th { background: #f8f9fb; padding: 6px 8px; text-align: right; color: #5d6d7e; font-weight: 600; border-bottom: 1px solid #ecf0f1; }
+  .variants-table td { padding: 6px 8px; border-bottom: 1px solid #f5f6fa; }
+
+  .alert-info {
+    background: #d1ecf1; border-right: 4px solid #0c5460; padding: 10px 14px;
+    border-radius: 6px; font-size: 12px; color: #0c5460; margin-bottom: 12px;
+  }
+  .alert-warning {
+    background: #fff3cd; border-right: 4px solid #856404; padding: 10px 14px;
+    border-radius: 6px; font-size: 12px; color: #856404; margin-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="mockup-note">
+  📋 <strong>סקיצה</strong> — מסך בחירת סדרות עדשה (M1 Expansion). זהו המסך הראשון שאופטיקאי רואה כשהוא מתחיל לעבוד עם מודול עדשות־ראייה. כאן הוא בוחר אילו סדרות מהקטלוג הגלובלי יופיעו לו במסך ניהול המלאי.
+</div>
+
+<!-- HEADER -->
+<div class="page-header">
+  <div class="page-title">
+    בחירת סדרות עדשה (קטלוג גלובלי)
+    <span class="badge">Optic Up · אופטיקה פריזמה · 2 סניפים</span>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <button class="btn">📥 ייצוא רשימה</button>
+    <button class="btn">🔄 רענן מקטלוג ספקים</button>
+    <button class="btn" style="border-color:#3949ab; color:#3949ab;">➕ צור סדרה ידנית</button>
+    <button class="btn btn-primary">✓ שמור שינויים</button>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-banner">
+  <div class="stat-card active">
+    <div class="label">סדרות פעילות</div>
+    <div class="value">14</div>
+    <div class="sub">מתוך 247 בקטלוג</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">וריאנטים פעילים</div>
+    <div class="value">86</div>
+    <div class="sub">(אינדקס × קוטר × ציפוי)</div>
+  </div>
+  <div class="stat-card" style="border-right-color:#3949ab;">
+    <div class="label">סדרות פרטיות שלי</div>
+    <div class="value" style="color:#3949ab;">2</div>
+    <div class="sub">ייבוא עצמי / ספקים ידניים</div>
+  </div>
+  <div class="stat-card disabled">
+    <div class="label">סדרות שעוד לא בחרת</div>
+    <div class="value">233</div>
+    <div class="sub">זמינים להפעלה</div>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters-panel">
+  <div class="filter-row" style="background:#eff6ff; border-radius:6px; padding:10px 14px; margin-bottom:10px; border:1px solid #bfdbfe;">
+    <span class="filter-label" style="color:#1e3a8a; font-weight:700;">סוג עדשה:</span>
+    <button class="chip active" style="background:#1e3a8a; color:white; border-color:#1e3a8a;">📦 מדף (Stock)</button>
+    <button class="chip" style="border-color:#d97706; color:#92400e;">🏭 ייצור (Custom)</button>
+    <button class="chip secondary">🔀 שתיהן</button>
+    <span style="font-size:11px; color:#64748b; margin-right:auto;">
+      💡 הסינון מסנן את כל המסך — גריד, חוסרים, מצב מלאי
+    </span>
+  </div>
+  <div class="filter-row">
+    <span class="filter-label">סטטוס:</span>
+    <span class="chip active">הכל (247)</span>
+    <span class="chip" style="border-color:#27ae60; color:#1e8449;">🟢 פעיל אצלי (14)</span>
+    <span class="chip secondary">⚪ זמין לבחירה (233)</span>
+    <span class="chip" style="border-color:#3949ab; color:#3949ab;">🔵 פרטי שלי (2)</span>
+    <input type="text" class="search-box" placeholder="🔍 חפש סדרה / מותג / ספק..." style="margin-right:auto;" />
+  </div>
+  <div class="filter-row">
+    <span class="filter-label">סוג עדשה:</span>
+    <span class="chip active">הכל</span>
+    <span class="chip">חד-מוקדי</span>
+    <span class="chip">דו-מוקדי</span>
+    <span class="chip">מולטיפוקל</span>
+    <span class="chip">פרוגרסיב משרדית</span>
+  </div>
+  <div class="filter-row">
+    <span class="filter-label">מותג:</span>
+    <span class="chip secondary">Hoya (89)</span>
+    <span class="chip secondary">Essilor (67)</span>
+    <span class="chip secondary">Zeiss (42)</span>
+    <span class="chip secondary">Shamir (28)</span>
+    <span class="chip secondary">Rodenstock (21)</span>
+    <span class="filter-label" style="margin-right:20px;">ספק:</span>
+    <span class="chip secondary active">לפידות</span>
+    <span class="chip secondary">בדולח</span>
+    <span class="chip secondary">סגם</span>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+
+  <!-- CATALOG BROWSER (left/main) -->
+  <div class="catalog-panel">
+    <div class="catalog-header">
+      <h3>קטלוג סדרות עדשה — לפי מותג</h3>
+      <div class="view-toggle">
+        <button class="active">📂 לפי מותג</button>
+        <button>📋 רשימה שטוחה</button>
+        <button>🔲 כרטיסים</button>
+      </div>
+    </div>
+
+    <!-- Brand Group: Hoya (expanded) -->
+    <div class="brand-group">
+      <div class="brand-header">
+        <div class="brand-info">
+          <div class="brand-logo">HOYA</div>
+          <div>
+            <div class="brand-name">Hoya</div>
+            <div class="brand-meta">יפן · מיובא ע"י לפידות · 89 סדרות בקטלוג</div>
+          </div>
+        </div>
+        <div class="brand-stats">
+          <span><strong class="num" style="color:#27ae60;">8</strong> פעיל</span>
+          <span>·</span>
+          <span><strong class="num">81</strong> זמין</span>
+          <span class="toggle-arrow">▾</span>
+        </div>
+      </div>
+
+      <table class="designs-table">
+        <thead>
+          <tr>
+            <th style="width:36px;"></th>
+            <th>סדרה</th>
+            <th>סוג</th>
+            <th>חומר</th>
+            <th>וריאנטים</th>
+            <th>סניפים פעילים</th>
+            <th style="text-align:center;">הפעל</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="selected">
+            <td>⋮⋮</td>
+            <td>
+              <div class="design-name">Hilux EYAS BLC</div>
+              <div class="design-attrs">
+                <span>1.5 / 1.56 / 1.6 / 1.67 / 1.74</span> · <span>AR Coating</span>
+              </div>
+            </td>
+            <td><span class="lens-type-badge">חד-מוקדי</span></td>
+            <td><span class="material-badge clear">שקוף</span></td>
+            <td><span class="variants-pill">12 וריאנטים</span></td>
+            <td>
+              <div class="location-pills">
+                <span class="location-pill active">ראשי</span>
+                <span class="location-pill active">שני</span>
+              </div>
+            </td>
+            <td style="text-align:center;">
+              <label class="toggle-switch"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+            </td>
+          </tr>
+          <tr>
+            <td>⋮⋮</td>
+            <td>
+              <div class="design-name">Hilux EYAS UVC HVLL</div>
+              <div class="design-attrs"><span>1.5 / 1.56 / 1.6 / 1.67</span> · <span>UV + HVLL Coating</span></div>
+            </td>
+            <td><span class="lens-type-badge">חד-מוקדי</span></td>
+            <td><span class="material-badge clear">שקוף</span></td>
+            <td><span class="variants-pill">8 וריאנטים</span></td>
+            <td>
+              <div class="location-pills">
+                <span class="location-pill active">ראשי</span>
+                <span class="location-pill">שני</span>
+              </div>
+            </td>
+            <td style="text-align:center;">
+              <label class="toggle-switch"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+            </td>
+          </tr>
+          <tr>
+            <td>⋮⋮</td>
+            <td>
+              <div class="design-name">Hilux UV Control Photo</div>
+              <div class="design-attrs"><span>1.5 / 1.56 / 1.6</span> · <span>Photochromic + UV</span></div>
+            </td>
+            <td><span class="lens-type-badge">חד-מוקדי</span></td>
+            <td><span class="material-badge photo">מתכהה</span></td>
+            <td><span class="variants-pill">6 וריאנטים</span></td>
+            <td>
+              <div class="location-pills">
+                <span class="location-pill active">ראשי</span>
+                <span class="location-pill active">שני</span>
+              </div>
+            </td>
+            <td style="text-align:center;">
+              <label class="toggle-switch"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+            </td>
+          </tr>
+          <tr>
+            <td>⋮⋮</td>
+            <td>
+              <div class="design-name">Defender UV 420 SN</div>
+              <div class="design-attrs"><span>1.5 / 1.56 / 1.6 / 1.67</span> · <span>Blue Cut + UV420</span></div>
+            </td>
+            <td><span class="lens-type-badge">חד-מוקדי</span></td>
+            <td><span class="material-badge clear">שקוף</span></td>
+            <td><span class="variants-pill">10 וריאנטים</span></td>
+            <td>
+              <div class="location-pills">
+                <span class="location-pill active">ראשי</span>
+                <span class="location-pill active">שני</span>
+              </div>
+            </td>
+            <td style="text-align:center;">
+              <label class="toggle-switch"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+            </td>
+          </tr>
+          <tr>
+            <td>⋮⋮</td>
+            <td>
+              <div class="design-name">Hoyalux iD MyStyle V+</div>
+              <div class="design-attrs"><span>1.5 / 1.6 / 1.67 / 1.74</span> · <span>Premium Coating</span></div>
+            </td>
+            <td><span class="lens-type-badge" style="background:#fce4ec; color:#c2185b;">מולטיפוקל</span></td>
+            <td><span class="material-badge clear">שקוף</span></td>
+            <td><span class="variants-pill">16 וריאנטים</span></td>
+            <td>
+              <div class="location-pills">
+                <span class="location-pill active">ראשי</span>
+                <span class="location-pill">שני</span>
+              </div>
+            </td>
+            <td style="text-align:center;">
+              <label class="toggle-switch"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+            </td>
+          </tr>
+          <tr style="opacity:0.6;">
+            <td>⋮⋮</td>
+            <td>
+              <div class="design-name">Hoyalux Tact Sport</div>
+              <div class="design-attrs"><span>1.5 / 1.6</span> · <span>Sport AR</span></div>
+            </td>
+            <td><span class="lens-type-badge" style="background:#fce4ec; color:#c2185b;">מולטיפוקל</span></td>
+            <td><span class="material-badge tint">צבע</span></td>
+            <td><span class="variants-pill">4 וריאנטים</span></td>
+            <td>
+              <div class="location-pills">
+                <span class="location-pill">ראשי</span>
+                <span class="location-pill">שני</span>
+              </div>
+            </td>
+            <td style="text-align:center;">
+              <label class="toggle-switch"><input type="checkbox" /><span class="toggle-slider"></span></label>
+            </td>
+          </tr>
+          <tr style="opacity:0.6;">
+            <td>⋮⋮</td>
+            <td>
+              <div class="design-name">Sync III (Office Lens)</div>
+              <div class="design-attrs"><span>1.5 / 1.6</span> · <span>Office / Mid-range</span></div>
+            </td>
+            <td><span class="lens-type-badge" style="background:#e1f5fe; color:#01579b;">משרדית</span></td>
+            <td><span class="material-badge clear">שקוף</span></td>
+            <td><span class="variants-pill">3 וריאנטים</span></td>
+            <td><span style="font-size:11px; color:#95a5a6;">— לא פעיל —</span></td>
+            <td style="text-align:center;">
+              <label class="toggle-switch"><input type="checkbox" /><span class="toggle-slider"></span></label>
+            </td>
+          </tr>
+          <tr style="background:#fff3cd;">
+            <td>⋮⋮</td>
+            <td>
+              <div class="design-name">Hilux EYAS BLC Pro <span style="background:#f4c430; color:white; padding:1px 6px; border-radius:8px; font-size:9px; margin-right:4px;">חדש בקטלוג</span></div>
+              <div class="design-attrs"><span>1.6 / 1.67</span> · <span>Enhanced AR</span></div>
+            </td>
+            <td><span class="lens-type-badge">חד-מוקדי</span></td>
+            <td><span class="material-badge clear">שקוף</span></td>
+            <td><span class="variants-pill">4 וריאנטים</span></td>
+            <td><span style="font-size:11px; color:#856404;">— זמין מ-1.6.26 —</span></td>
+            <td style="text-align:center;">
+              <label class="toggle-switch"><input type="checkbox" /><span class="toggle-slider"></span></label>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Brand Group: Private (user-created) -->
+    <div class="brand-group">
+      <div class="brand-header">
+        <div class="brand-info">
+          <div class="brand-logo" style="background:#3949ab;">★</div>
+          <div>
+            <div class="brand-name">פרטי שלי <span style="background:#3949ab; color:white; padding:2px 8px; border-radius:10px; font-size:10px; margin-right:6px;">PRIVATE</span></div>
+            <div class="brand-meta">סדרות שיצרת בעצמך · ייבוא עצמי / ספקים ידניים · 2 סדרות</div>
+          </div>
+        </div>
+        <div class="brand-stats">
+          <span><strong class="num" style="color:#27ae60;">2</strong> פעיל</span>
+          <span class="toggle-arrow">▾</span>
+        </div>
+      </div>
+
+      <table class="designs-table">
+        <thead>
+          <tr>
+            <th style="width:36px;"></th>
+            <th>סדרה</th>
+            <th>סוג</th>
+            <th>חומר</th>
+            <th>וריאנטים</th>
+            <th>סניפים פעילים</th>
+            <th style="text-align:center;">הפעל</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>⋮⋮</td>
+            <td>
+              <div class="design-name">עדשה ישראלית מקומית <span style="background:#3949ab; color:white; padding:1px 6px; border-radius:8px; font-size:9px; margin-right:4px;">פרטי</span></div>
+              <div class="design-attrs"><span>1.5 / 1.6</span> · <span>ללא ברקוד · יצרן לא מתועד</span></div>
+            </td>
+            <td><span class="lens-type-badge">חד-מוקדי</span></td>
+            <td><span class="material-badge clear">שקוף</span></td>
+            <td><span class="variants-pill">3 וריאנטים</span></td>
+            <td>
+              <div class="location-pills">
+                <span class="location-pill active">ראשי</span>
+                <span class="location-pill">שני</span>
+              </div>
+            </td>
+            <td style="text-align:center;">
+              <label class="toggle-switch"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+            </td>
+          </tr>
+          <tr>
+            <td>⋮⋮</td>
+            <td>
+              <div class="design-name">ייבוא ישיר — Premium <span style="background:#3949ab; color:white; padding:1px 6px; border-radius:8px; font-size:9px; margin-right:4px;">פרטי</span></div>
+              <div class="design-attrs"><span>1.67</span> · <span>AR · ברקודים פנימיים</span></div>
+            </td>
+            <td><span class="lens-type-badge">חד-מוקדי</span></td>
+            <td><span class="material-badge photo">מתכהה</span></td>
+            <td><span class="variants-pill">1 וריאנט</span></td>
+            <td>
+              <div class="location-pills">
+                <span class="location-pill active">ראשי</span>
+                <span class="location-pill active">שני</span>
+              </div>
+            </td>
+            <td style="text-align:center;">
+              <label class="toggle-switch"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Brand Group: Essilor (collapsed) -->
+    <div class="brand-group">
+      <div class="brand-header">
+        <div class="brand-info">
+          <div class="brand-logo" style="background:#0066b3;">ESS</div>
+          <div>
+            <div class="brand-name">Essilor</div>
+            <div class="brand-meta">צרפת · מיובא ע"י בדולח · 67 סדרות בקטלוג</div>
+          </div>
+        </div>
+        <div class="brand-stats">
+          <span><strong class="num" style="color:#27ae60;">4</strong> פעיל</span>
+          <span>·</span>
+          <span><strong class="num">63</strong> זמין</span>
+          <span class="toggle-arrow">▸</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Brand Group: Zeiss (collapsed) -->
+    <div class="brand-group">
+      <div class="brand-header">
+        <div class="brand-info">
+          <div class="brand-logo" style="background:#003e6b;">Z</div>
+          <div>
+            <div class="brand-name">Zeiss</div>
+            <div class="brand-meta">גרמניה · מיובא ע"י סגם · 42 סדרות בקטלוג</div>
+          </div>
+        </div>
+        <div class="brand-stats">
+          <span><strong class="num" style="color:#27ae60;">2</strong> פעיל</span>
+          <span>·</span>
+          <span><strong class="num">40</strong> זמין</span>
+          <span class="toggle-arrow">▸</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Brand Group: Shamir (collapsed) -->
+    <div class="brand-group">
+      <div class="brand-header">
+        <div class="brand-info">
+          <div class="brand-logo" style="background:#005a9c;">SH</div>
+          <div>
+            <div class="brand-name">Shamir</div>
+            <div class="brand-meta">ישראל (יצרן מקומי) · 28 סדרות בקטלוג</div>
+          </div>
+        </div>
+        <div class="brand-stats">
+          <span><strong class="num">0</strong> פעיל</span>
+          <span>·</span>
+          <span><strong class="num">28</strong> זמין</span>
+          <span class="toggle-arrow">▸</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Brand Group: Rodenstock (collapsed) -->
+    <div class="brand-group">
+      <div class="brand-header" style="border-bottom:none;">
+        <div class="brand-info">
+          <div class="brand-logo" style="background:#1f4e79;">RO</div>
+          <div>
+            <div class="brand-name">Rodenstock</div>
+            <div class="brand-meta">גרמניה · מיובא ע"י בדולח · 21 סדרות בקטלוג</div>
+          </div>
+        </div>
+        <div class="brand-stats">
+          <span><strong class="num">0</strong> פעיל</span>
+          <span>·</span>
+          <span><strong class="num">21</strong> זמין</span>
+          <span class="toggle-arrow">▸</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SIDE PANEL — Selected design details -->
+  <div class="side-panel">
+
+    <div class="panel-card">
+      <div class="panel-card-header">פרטי סדרה: Hilux EYAS BLC</div>
+      <div class="panel-card-body">
+
+        <div class="detail-row"><span class="key">מותג</span><span class="val">Hoya (יפן)</span></div>
+        <div class="detail-row"><span class="key">ספק מייבא</span><span class="val">לפידות</span></div>
+        <div class="detail-row"><span class="key">סוג</span><span class="val">חד-מוקדי</span></div>
+        <div class="detail-row"><span class="key">חומר</span><span class="val">שקוף</span></div>
+        <div class="detail-row"><span class="key">ציפוי</span><span class="val">AR Coating</span></div>
+        <div class="detail-row"><span class="key">קוטים זמינים</span><span class="val">65mm / 70mm / 75mm</span></div>
+        <div class="detail-row"><span class="key">מחיר קטלוג (1.67)</span><span class="val">₪220 / יח׳</span></div>
+        <div class="detail-row"><span class="key">הנחה אישית שלך</span><span class="val" style="color:#27ae60;">−50% (=₪110)</span></div>
+
+        <h4 style="font-size:13px; color:#2c3e50; margin-top:16px; margin-bottom:8px;">וריאנטים זמינים (12)</h4>
+        <table class="variants-table">
+          <thead>
+            <tr><th>Index</th><th>קוטר</th><th>טווח SPH</th><th>טווח CYL</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1.5</td><td>70mm</td><td>-10..+6</td><td>0..-4</td></tr>
+            <tr><td>1.56</td><td>70mm</td><td>-10..+6</td><td>0..-4</td></tr>
+            <tr><td>1.6</td><td>70mm</td><td>-10..+6</td><td>0..-4</td></tr>
+            <tr><td>1.6</td><td>65mm</td><td>-8..+4</td><td>0..-2</td></tr>
+            <tr><td>1.67</td><td>70mm</td><td>-10..+6</td><td>0..-4</td></tr>
+            <tr><td>1.74</td><td>70mm</td><td>-12..+8</td><td>0..-4</td></tr>
+            <tr><td colspan="4" style="text-align:center; color:#95a5a6;">+ 6 וריאנטים נוספים</td></tr>
+          </tbody>
+        </table>
+
+        <div style="margin-top:14px;">
+          <h4 style="font-size:13px; color:#2c3e50; margin-bottom:8px;">סניפים פעילים</h4>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; background:#f8f9fb; border-radius:6px; font-size:13px;">
+              <span>📍 סניף ראשי</span>
+              <label class="toggle-switch"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+            </label>
+            <label style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; background:#f8f9fb; border-radius:6px; font-size:13px;">
+              <span>📍 סניף שני</span>
+              <label class="toggle-switch"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+            </label>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; padding-top:14px; border-top:1px solid #ecf0f1;">
+          <button class="btn btn-primary" style="width:100%; justify-content:center;">📋 פתח במסך ניהול מלאי →</button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="panel-card">
+      <div class="panel-card-header" style="background:#34495e;">סטטיסטיקות מלאי לסדרה זו</div>
+      <div class="panel-card-body">
+        <div class="detail-row"><span class="key">סה"כ יחידות במלאי</span><span class="val">412</span></div>
+        <div class="detail-row"><span class="key">ערך מלאי (לא כולל מע"מ)</span><span class="val">₪35,420</span></div>
+        <div class="detail-row"><span class="key">חסרים מהיעד</span><span class="val" style="color:#c0392b;">14 יחידות</span></div>
+        <div class="detail-row"><span class="key">בעודף מעל היעד</span><span class="val" style="color:#0e7a6a;">8 יחידות</span></div>
+        <div class="detail-row"><span class="key">תנועה ב-30 יום אחרון</span><span class="val">−42 / +18</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
