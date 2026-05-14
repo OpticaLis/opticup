@@ -85,7 +85,17 @@
 --     purchase_orders, purchase_order_items,
 --     goods_receipts, goods_receipt_items,
 --     document_types, document_links, payment_methods, payment_allocations,
---     currencies, prepaid_deals, prepaid_checks, expense_folders
+--     prepaid_deals, prepaid_checks, expense_folders
+--     (currencies moved to GLOBALS block below — see "Global reference tables")
+--
+--   Global reference tables (Iron Rule 14 documented exception — universal data,
+--   identical for every tenant; RLS read-anywhere + writes gated on
+--   is_platform_super_admin()):
+--     currencies — ISO-4217 codes (M1A-DEBT-01 hotfix 2026-05-14: PK on `code`,
+--                  6 columns: code, name_he, symbol, decimal_digits, is_active, created_at;
+--                  seeded ILS/USD/EUR; see modules/Module 1 - Inventory Management/
+--                  docs/specs/M1A_CURRENCIES_GLOBAL_HOTFIX/)
+--     (vat_rates is similar but documented under M1 Lens Phase 1A below)
 --
 --   Sync & stock counting:
 --     sync_log, pending_sales, watcher_heartbeat,

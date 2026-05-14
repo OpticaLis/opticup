@@ -70,6 +70,7 @@
 | `T.SUP_PAYMENTS` | `supplier_payments` | id, supplier_id, amount, payment_date, payment_method, withholding_tax_rate, status, tenant_id |
 | `T.PAY_ALLOC` | `payment_allocations` | id, payment_id, document_id, allocated_amount, tenant_id |
 | `T.PAY_METHODS` | `payment_methods` | id, code, name_he, name_en, is_system, tenant_id |
+| _(no T const)_ | `currencies` | code (PK), name_he, symbol, decimal_digits, is_active, created_at. **GLOBAL — Iron Rule 14 documented exception (M1A-DEBT-01 hotfix 2026-05-14).** RLS: read_anywhere + write/update/delete gated on `is_platform_super_admin()` + service_bypass. Seeded with ILS / USD / EUR. T-constant + FIELD_MAP wiring deferred (no current consumer reads via `DB.fetchAll`). |
 | `T.PREPAID_DEALS` | `prepaid_deals` | id, supplier_id, total_prepaid, total_used, total_remaining, status, tenant_id |
 | `T.PREPAID_CHECKS` | `prepaid_checks` | id, prepaid_deal_id, check_number, amount, check_date, status, tenant_id |
 
