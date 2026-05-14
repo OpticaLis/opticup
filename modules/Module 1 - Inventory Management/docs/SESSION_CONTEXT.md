@@ -1,7 +1,41 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-RECEIPT_FORM_FIXES_FROM_MANAGER — 2026-05-06
+M1_LENS_INVENTORY_PHASE_1A_SCHEMA_PLATFORM_ADMIN — 2026-05-14
+
+## 2026-05-14 — M1 Lens Inventory Phase 1A — Schema + Platform Catalog Admin (✅ SHIPPED)
+
+**Goal:** Ship the schema half of M1's lens expansion so M7 (Orders) and M9
+(Lab/KDS) can be built. Architect's recommended 2-sub-phase split:
+- **Phase 1A** (this session): 17 new tables + 9 RPCs + K3 trigger + K5 view +
+  Platform Catalog Admin screen + lens-catalog-import EF + 17 T-constants +
+  FIELD_MAP entries + global docs merge.
+- **Phase 1B** (sibling SPEC, deferred): 6 customer-facing screens. Will be
+  authored after Phase 1A FOREMAN_REVIEW.
+
+**Architecture (3 layers + governance + M9 contracts):**
+GLOBAL CATALOG (platform-owned) → COMMERCIAL (tenant) → RETAILER (tenant) →
+OPERATIONS (FIFO + receipts) + GOVERNANCE + M9 contracts (K2/K3/K5).
+
+**Open question resolutions** (Brief §7):
+- **Q1:** option (c) divergence — new `purchase_receipt` for lenses; legacy
+  `goods_receipts` untouched. Code reuse via product_category dispatcher in 1B.
+- **Q2:** UUID PK + `display_id TEXT UNIQUE` LV-NNNNNN via atomic RPC.
+- **Q3:** 2 sub-phases per Architect rec.
+- **Q4:** Structured xlsx Phase 1A; LLM agent Phase 2+.
+
+**SPEC adaptations** (logged in FINDINGS.md): M1A-SPEC-01..05 + M1A-INFRA-01..03.
+
+**Status:**
+- ✅ All 17 new tables in live DB; RLS + canonical patterns verified
+- ✅ 9 RPCs + K3 trigger + K5 view + EF + Platform Catalog Admin shipped
+- ✅ 17 T-constants + FIELD_MAP entries; global docs merged
+- ✅ ROADMAP updated (Lens-1A → ✅, Lens-1B → ⬜)
+- 🟡 Awaiting FOREMAN_REVIEW
+
+**Smoke test (demo tenant):** RLS isolation verified — cross-tenant read denied.
+
+---
 
 ## 2026-05-06 — Goods Receipt Form: 3-fix bundle from branch manager
 

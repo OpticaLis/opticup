@@ -1,6 +1,37 @@
-# Changelog — מלאי מסגרות
+# Changelog — מלאי מסגרות + עדשות-ראייה
 
-> כל השינויים במודול מלאי מסגרות מהתחלה ועד היום
+> כל השינויים במודול ניהול מלאי (מסגרות + עדשות-ראייה מ-2026-05-14)
+
+---
+
+## M1_LENS_INVENTORY_PHASE_1A_SCHEMA_PLATFORM_ADMIN — 2026-05-14 (✅)
+
+**Phase 1A** of M1 Lens Expansion — schema + Platform Catalog Admin screen.
+17 new tables + 9 atomic RPCs + K3 trigger + K5 view + Platform Catalog Admin
+screen + lens-catalog-import EF + 17 T-constants + FIELD_MAP entries.
+
+### Commits (Phase 1A)
+- `285b5d6` docs(spec): seal M1 Lens Inventory Phase 1A SPEC + 1B stub + ROADMAP extension
+- `09d993c` feat(m1,db): create lens_brand + lens_design + lens_variant + supplier_brand_distribution (1/5)
+- `255f965` feat(m1,db): create supplier_catalog_offering + pricing_overlay + vat_rates (2/5)
+- `d998c6d` feat(m1,db): create tenant_active_offerings + tenant_lens_stock + tenant_location (3/5)
+- `7f6018b` feat(m1,db): create FIFO + receipt + governance tables (4/5)
+- `ee132c6` feat(m1,db): deploy 9 atomic RPCs + K3 trigger + K5 v_suppliers_for_m9 View (5/5)
+- `4a7c6ea` feat(m1,ef): lens-catalog-import EF — JSON catalog rows → tables
+- `bbae0ff` feat(m1): Platform Catalog Admin screen (Optic Up team only)
+- `48b150c` chore(m1,shared): add 17 T-constants + FIELD_MAP entries
+- `0cf6123` docs(global): merge M1 Lens Phase 1A schema + functions + screen + EF into GLOBAL_*
+- `<NEXT>` docs(m1): module-level docs reflect Phase 1A close
+- `<NEXT>` chore(spec): close M1_LENS_INVENTORY_PHASE_1A_SCHEMA_PLATFORM_ADMIN with EXECUTION_REPORT + FINDINGS
+
+### Highlights
+- Brief sealed in `b4a3745`; Architect's 2-sub-phase split honored
+- All 4 Brief §7 open questions resolved by Module Strategist
+- 8 SPEC-precision adaptations logged in FINDINGS — `currencies` empty + per-tenant,
+  `tenants.default_currency` already exists, hook regex fixes for owner_tenant_id +
+  schema prefix + global singleton exemption
+- Smoke test on demo tenant: RLS cross-tenant isolation verified
+- Phase 1B (6 customer-facing screens) deferred to sibling SPEC
 
 ---
 
