@@ -177,6 +177,42 @@ Status values observed (DISTINCT scan): `invited, registered, waiting_list, conf
 
 **MEASURED:** registration_method on paths 2 and 3. **UNMEASURED:** on path 1 (server-side invite from active-event lookup) the row has `registration_method=null`. So "how was this attendee created?" cannot be fully answered from a single column.
 
+### Fast-Path Automation Registry (D2 — Q10 decision, 2026-05-14)
+
+**What this is.** A fast-path is any code path that calls `send-message` (and writes `crm_message_log` + a synthetic `crm_automation_runs` row) **directly from an Edge Function**, without first consulting `crm_automation_rules.evaluate` or `automation-engine`. Daniel's Q10 decision (FUNNEL_ROADMAP.md) accepted these as intentional optimizations — the registry below is the canonical inventory so future SPEC authors don't accidentally duplicate or undermine them.
+
+**Why fast-paths exist (Daniel, Q10):** "The goal was that if someone joins the event-system and there's an open event, they shouldn't go through the whole flow — they go straight to 'registered' board and get the message." Latency + simplicity for inbound, user-initiated paths where the trigger is already deterministic (form submit, QR scan, intake EF). Going through `crm_automation_rules` would add a SELECT + rule-eval + queue insert for zero behavioral gain.
+
+**Registry — 3 fast-paths in production (verified 2026-05-14):**
+
+| # | Fast-path slug | Trigger | Target EF + template(s) | Bypassed layer | Why bypassed | Code anchor |
+|---|---|---|---|---|---|---|
+| FP-1 | `event_invite_new` | `lead-intake` finds an active event (`crm_events.status IN ('registration_open','waiting_list')`) on a fresh-lead success | `send-message` → T5 `event_invite_new_sms_he` / `event_invite_new_email_he` + upsert `crm_event_attendees(status='invited')` + flip `crm_leads.status='invited'` | `crm_automation_rules.evaluate` (browser engine + status-change consumer) | Active-event invite is deterministic on the intake side — no rule needed. Round-trip via automation-engine would add a SELECT+eval for no decision. Synthetic `crm_automation_runs` row preserves history visibility. | `supabase/functions/lead-intake/dispatch.ts:137-176` (fresh-lead branch) + `dispatch.ts:76-96` (intake messages helper) |
+| FP-2 | `event_registration_confirmation` / `event_waiting_list_confirmation` | Public form posts to `event-register` and `register_lead_to_event` RPC returns `status IN ('registered','waiting_list')` | `send-message` → T (registered) or waiting-list template (SMS + optional email) | `crm_automation_rules.evaluate` | Public-form path is the canonical "registered" trigger; rule lookup would just rediscover the same hardcoded mapping (commented as "matches rules #9/#10 on demo"). | `supabase/functions/event-register/index.ts:316-336` (template selection + dispatch) + `index.ts:95-105` (dispatch helper) |
+| FP-3 | `event_coupon_delivery` / `event_waiting_list_confirmation` (QR walk-in branch) | `quick-register` (QR walk-in) calls `register_lead_to_event` with `p_method='quick_register_qr'` and gets back a non-`already_registered` status | `send-message` → T `event_coupon_delivery` (registered) or waiting-list template; on success also flips `crm_event_attendees.coupon_sent=true` | `crm_automation_rules.evaluate` | QR walk-in needs the coupon SMS in <1s so the customer sees it on the device they just scanned with. Going through queue+cron would add up to 60s latency. `coupon_sent=true` flip mirrors the manual operator UI to prevent duplicate sends. | `supabase/functions/quick-register/index.ts:307-338` + `supabase/functions/quick-register/dispatch.ts:37-85` |
+
+**Decision rule — when is it OK to add a new fast-path?**
+
+A new fast-path is acceptable **only when ALL of these hold:**
+
+1. **Trigger is deterministic at the EF boundary.** The decision "send this template now" is fully knowable from the EF's existing inputs — no operator choice, no scheduled phase, no cross-lead aggregation.
+2. **Latency is user-visible.** The customer is actively waiting for the SMS (form-submit confirmation, QR-scan coupon, intake reply) — adding `crm_automation_rules.evaluate` + `crm_message_queue` + pg_cron drain (up to 60s) would degrade UX.
+3. **Single template family.** The fast-path picks from a hardcoded template-base slug (or waiting-list variant) — NOT a list of rules that could change per tenant per event.
+4. **Synthetic run is recorded.** The path opens a `crm_automation_runs` row (`trigger_type='lead_intake'` or equivalent) and stamps `run_id` on every `send-message` call, so operator history still shows the fire (see `lead-intake/dispatch.ts:openRun/closeRun`).
+5. **Touchpoint is recorded (P1.1 era and later).** Any fast-path that creates or revives a `crm_event_attendees` row must result in a `crm_lead_touchpoints` row (either directly or via the RPC). Without this, MTA (E1) loses the touchpoint.
+
+**If ANY criterion fails — DO NOT add a fast-path.** Route through `crm_automation_rules` or `automation-engine` so the rule is operator-visible, tenant-configurable, and historically auditable. Examples that MUST go through the engine: status-driven blasts (`registration_open`, `event_day`, `2_3d_before`), broadcast wizard sends, multi-rule cascades, anything an operator can toggle on/off per tenant.
+
+**SPEC-author checklist (mandatory before changing automation behavior):**
+
+- [ ] Read this Fast-Path Automation Registry. Identify which fast-path (if any) the SPEC touches.
+- [ ] If extending an existing fast-path: confirm all 5 decision-rule criteria still hold; update the registry row above in the same SPEC.
+- [ ] If adding a new fast-path: justify each of the 5 criteria explicitly in the SPEC §4 design section; add a new FP-N row to the registry; flag for Site Overseer review.
+- [ ] If removing a fast-path (e.g., migrating to `automation-engine`): plan latency impact + operator UX + history continuity (synthetic `crm_automation_runs` rows must still appear).
+- [ ] If modifying `crm_automation_rules` evaluation: check that no fast-path template slug above is also a rule — if it is, the fast-path will fire FIRST and the rule may be a no-op or worse, a duplicate.
+
+**Maintenance.** Update this registry whenever a new fast-path is added, removed, or its trigger/template changes. The registry is co-located with Layer 4 (event system) because all 3 current fast-paths are event-system-adjacent — if a non-event fast-path is ever added, consider promoting the registry to its own Layer.
+
 ---
 
 ## Layer 5 — Broadcasts
