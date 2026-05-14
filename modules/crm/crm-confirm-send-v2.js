@@ -138,6 +138,17 @@
         rerender(modalEl);
       });
     });
+    // Restore quick-undo (Brief §3.1) — clears the restored exclusions so all
+    // recipients are re-selected without forcing the operator to tick each box.
+    var undoBtn = modalEl.querySelector('[data-ccsv2-undo-restore="1"]');
+    if (undoBtn) {
+      undoBtn.addEventListener('click', function () {
+        if (!_state) return;
+        _state.excluded = new Set();
+        _state.restored = false;
+        rerender(modalEl);
+      });
+    }
   }
 
   function _ensureState(previewResponse, onChoice) {
@@ -151,6 +162,7 @@
       chip: restored ? (restored.chip || 'all') : 'all',
       search: restored ? (restored.search || '') : '',
       phase: previewResponse ? 'loaded' : 'loading',
+      restored: !!restored,
       onChoice: onChoice,
     };
   }
@@ -251,7 +263,20 @@
     _state.recipients = (previewResponse && previewResponse.recipients_by_lead)
       ? previewResponse.recipients_by_lead.slice() : [];
     _state.phase = 'loaded';
-    // Reconcile restored excluded set with new recipient list (drop stale ids).
+    // showAsync path enters _ensureState with previewResponse=null, so the
+    // initial _loadSession could not match a rule key. Retry now that rules
+    // are known — this is the load-on-open wire for M4-V2-SESSION-RESTORE-01.
+    if (!_state.restored) {
+      var late = _loadSession(previewResponse);
+      if (late) {
+        _state.excluded = new Set(late.excluded);
+        _state.chip = late.chip || 'all';
+        _state.search = late.search || '';
+        _state.restored = true;
+      }
+    }
+    // Reconcile restored excluded set with new recipient list (drop stale ids
+    // silently — Brief §3.1 stale-lead reconciliation).
     var validIds = new Set(_state.recipients.map(function (r) { return r.lead_id; }));
     Array.from(_state.excluded).forEach(function (id) { if (!validIds.has(id)) _state.excluded.delete(id); });
     rerender(modal.el);
