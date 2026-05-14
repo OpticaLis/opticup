@@ -98,6 +98,22 @@ shipped 2026-05-04. Legacy Monday/WordPress pipeline decommissioned.
   `%registration_url%` per recipient). Unblocks Event #24 (Fri
   2026-05-15) rescue dispatch to 1,187 Prizma leads.
 
+**🎉 Phase 1 of `roles/site-overseer/FUNNEL_ROADMAP.md` COMPLETE — 2026-05-14.**
+All 4 Phase 1 SPECs closed in ONE calendar day via Full-Auto Pipeline:
+P1.4 (`M4_REGISTER_LEAD_TO_EVENT_RPC_MAP`) + P1.4-followup
+(`M4_REGISTER_LEAD_TO_EVENT_RETURN_SHAPE_FIX`) + P1.1
+(`M3_UTM_TRIPLE_LAYER_PERSISTENCE`) + P1.2 (`M4_BROADCAST_ID_PROPAGATION`)
++ P1.3 (`M3_SHORTGY_TO_INTERNAL_REDIRECT`). Click→broadcast→touchpoint
+attribution chain now intact end-to-end: every customer-facing short-link
+click flows through internal `resolve-link` EF and produces
+`short_link_clicks` + `crm_lead_touchpoints` rows with `broadcast_id`
+attribution. Layer 5 Gap #1 (counter rot) + Gap #2 (broadcast_id never
+propagated) + Layer 7 (short.gy bypass) all closed structurally. Phase 4
+E1 + E7 (MTA + Customer Journey Analytics) flipped BLOCK → SUPPORT. New
+MVP "🔗 קישורים קצרים" tab live in CRM. **Phase 2 unblocked** —
+P2.1 (`M4_FB_CAPI_HYBRID_DEDUPLICATION`, HIGH PRIORITY, 6-8 hrs) is
+the natural next SPEC to author; P2.2 + P2.3 can follow.
+
 **Production discipline:** SPEC + Foreman + Executor flow on every change.
 PR-only merges to main. Read-only by default for Overseer. See
 `feedback_production_discipline_post_cutover.md`.
