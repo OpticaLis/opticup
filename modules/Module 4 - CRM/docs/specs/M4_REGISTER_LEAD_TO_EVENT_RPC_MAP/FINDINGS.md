@@ -4,9 +4,11 @@
 
 ---
 
-## FIND-1 — MEDIUM — Fresh-insert over-capacity branch returns hardcoded `'waiting_list'` even when row was inserted as `'event_closed'`
+## FIND-1 — ✅ RESOLVED 2026-05-14 (commit `fb17ee6`) — Fresh-insert over-capacity branch returns hardcoded `'waiting_list'` even when row was inserted as `'event_closed'`
 
-**Severity:** MEDIUM
+> **RESOLVED 2026-05-14** by SPEC `M4_REGISTER_LEAD_TO_EVENT_RETURN_SHAPE_FIX` (migration `20260514130219_register_lead_to_event_return_shape_fix`, commit `fb17ee6`). The fresh-INSERT over-capacity branch's `RETURN jsonb_build_object(...)` payload now uses the same `CASE WHEN v_event.status = 'closed' THEN 'event_closed' ELSE 'waiting_list' END` expression that the INSERT itself uses two lines above. Body md5 transitioned `dbd2ccd1eb068b494edfec5cf7788563` → `31fea2eaf0086cf917d0d65a8595d41c` (+71 bytes). Demo integration test (closed event + capacity 1/1 + fresh lead) confirmed RPC return `status=event_closed` matches DB row `status=event_closed`. Prizma counts bit-identical pre/post. Smoke 7/7 PASS pre and post.
+
+**Severity:** MEDIUM (now RESOLVED)
 **Location:** `RPC_BODY.sql` L70–L73 (the over-capacity fresh-INSERT terminal)
 
 ### Description

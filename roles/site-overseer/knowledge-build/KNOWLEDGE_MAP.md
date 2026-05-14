@@ -146,7 +146,7 @@ The intended transition order (inferred from rule names + timing rules): `planni
 
 ### Capacity logic
 
-`crm_events` has `max_capacity` (int), `max_coupons` (int), `extra_coupons` (int). The RPC `register_lead_to_event` is the single source of truth that enforces capacity, dedup, and waiting-list transition (referenced by both `event-register/index.ts:270` and `quick-register/index.ts:308`). The RPC body lives in DB; the migration history is in `modules/Module 4 - CRM/migrations/2026_05_13_invited_ghost_attendee_fix_up.sql` and earlier (verified via Grep). **The RPC body itself was NOT read line-by-line in this SPEC** — full RPC mapping is a follow-up.
+`crm_events` has `max_capacity` (int), `max_coupons` (int), `extra_coupons` (int). The RPC `register_lead_to_event` is the single source of truth that enforces capacity, dedup, and waiting-list transition (referenced by both `event-register/index.ts:270` and `quick-register/index.ts:308`). The RPC body lives in DB; the migration history is in `modules/Module 4 - CRM/migrations/2026_05_13_invited_ghost_attendee_fix_up.sql` and `modules/Module 4 - CRM/migrations/2026_05_14_register_lead_to_event_return_shape_fix_up.sql` (latest). **Full line-by-line RPC mapping completed 2026-05-14** in SPEC `M4_REGISTER_LEAD_TO_EVENT_RPC_MAP` (P1.4 — see `modules/Module 4 - CRM/docs/specs/M4_REGISTER_LEAD_TO_EVENT_RPC_MAP/STATE_TRANSITIONS.md` for the 8-terminal state diagram + line-annotation table). FIND-1 from that mapping (return-shape inconsistency on the fresh-INSERT closed-and-full branch) was closed 2026-05-14 by SPEC `M4_REGISTER_LEAD_TO_EVENT_RETURN_SHAPE_FIX` — the RPC now returns `status='event_closed'` (not `'waiting_list'`) when the event is closed AND capacity is full AND no existing same-event row exists.
 
 ### `crm_event_attendees` columns + status values
 
@@ -363,7 +363,7 @@ The HMAC is signed with `SERVICE_ROLE_KEY`. TTL = 90 days (TOKEN_TTL_SECONDS, ur
 | `/supersale/` submit, fresh lead, NO active event | INSERT (status='new') | none | lead.status='new' |
 | `/supersale/` submit, fresh lead, active event exists | INSERT (status='new', then UPDATE → 'invited') | UPSERT (status='invited') | both 'invited' |
 | `/supersale/` submit, duplicate (existing phone) | UPDATE unsubscribed_at=null only | none | unchanged |
-| `/event-register?token=...` submit by invited lead | UPDATE updated_at only (via RPC) | `register_lead_to_event` RPC: insert or transition `invited → registered/waiting_list` | attendee.status='registered' or 'waiting_list' |
+| `/event-register?token=...` submit by invited lead | UPDATE updated_at only (via RPC) | `register_lead_to_event` RPC: insert or transition `invited → registered/waiting_list/event_closed` | attendee.status='registered' OR 'waiting_list' (event open + full) OR 'event_closed' (event closed + full); RPC return matches row state after 2026-05-14 fix |
 | `/quick-register/?event=N` walk-in, fresh | INSERT (status='new') | RPC → `registered` (or `waiting_list` if capped) | attendee.coupon_sent=true after dispatch |
 | `/quick-register/?event=N` walk-in, existing lead | UPDATE `unsubscribed_at=null, acquired_via=quick_register_qr` | RPC same as above | same |
 
