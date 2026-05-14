@@ -9,11 +9,18 @@ const CREATE_TABLE_RE = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(\w+)\s*\(([^
 // lens_design, lens_variant.
 const TENANT_COL_RE = /(?:owner_)?tenant_id\s+UUID(?:\s+NOT\s+NULL)?/i;
 
-// Global singleton/sequence-state tables that intentionally have no tenant
-// attribution (platform-managed). Adding a table here requires Foreman
+// Global singleton/sequence-state/reference tables that intentionally have no
+// tenant attribution (platform-managed). Adding a table here requires Foreman
 // approval and a comment in the migration explaining the exception.
+//
+// Two categories so far:
+//   (a) Singleton/sequence-state — `lens_variant_display_seq` (scope='global'
+//       for the next_lens_variant_display_id() RPC; lens_variant is platform-owned).
+//   (b) Universal reference — `currencies` (ISO-4217 codes, identical for every
+//       tenant; M1A-DEBT-01 hotfix 2026-05-14 documented exception).
 const GLOBAL_SINGLETON_EXEMPT = new Set([
-  'lens_variant_display_seq',  // M1 Lens Phase 1A: scope='global' singleton for next_lens_variant_display_id() RPC; lens_variant is platform-owned.
+  'lens_variant_display_seq',  // (a) M1 Lens Phase 1A: scope='global' singleton for next_lens_variant_display_id() RPC; lens_variant is platform-owned.
+  'currencies',                // (b) M1A-DEBT-01 hotfix 2026-05-14: GLOBAL ISO-4217 reference table; RLS read_anywhere + write_platform_only via is_platform_super_admin().
 ]);
 
 function isMigration(filePath) {
