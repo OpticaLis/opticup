@@ -1,6 +1,5 @@
 # SPEC — {SPEC_SLUG}
 
-> **Template version:** v3 (2026-05-14) — supersedes v2 (archived at `_archive/spec-template-versions/v2_2026_05_14/`).
 > **Location:** `modules/Module X - [Name]/docs/specs/{SPEC_SLUG}/SPEC.md`
 > **Authored by:** opticup-strategic (Foreman)
 > **Authored on:** YYYY-MM-DD
@@ -9,31 +8,6 @@
 > **Author signature:** {chat name / session id}
 
 > **Heading convention:** Use `## N. Title` (plain numbered). Do NOT prefix headings with `§` — the Iron-Rule-32 pre-commit hook's regex (`scripts/checks/destructive-ops-declared.mjs`) does not accept the section-symbol prefix and will block the SPEC's own commit. (Harvested from `MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md` Author Proposal #1, 2026-05-11.)
-
-> **Required Sections Matrix.** Every section below is either REQUIRED FOR EVERY SPEC or REQUIRED ONLY FOR <type>. Trim sections that don't apply, but never silently skip a REQUIRED-EVERY one.
->
-> | § | Section | When required |
-> |---|---|---|
-> | 0 | Pre-Authoring Reality Check | EVERY |
-> | 1 | Goal | EVERY |
-> | 2 | Background & Motivation | EVERY |
-> | 3 | Success Criteria (Measurable) | EVERY |
-> | 3a | Shared Edit Block | ONLY multi-file SPECs (N>1 same edit) |
-> | 4 | Autonomy Envelope | EVERY |
-> | 5 | Stop-on-Deviation Triggers | EVERY |
-> | 6 | Rollback Plan | EVERY (write "no DB/code changes" if N/A) |
-> | 7 | Destructive Operations | EVERY (write `**None.**` if N/A) |
-> | 8 | Out of Scope | EVERY |
-> | 9 | Expected Final State | EVERY |
-> | 10 | Commit Plan | EVERY |
-> | 11 | Dependencies / Preconditions | EVERY |
-> | 12 | Lessons Already Incorporated | EVERY |
-> | 13 | Pre-Merge Checklist | EVERY |
-> | 14 | Smoke Test Cases | EVERY (mark `Type:` per case — see template at §14) |
-> | 15 | Daniel-Decision Sub-Questions | ONLY when SPEC declares any STOP-on-Daniel-decision in §5 |
-> | App. A | Common Gotchas | reference-only |
-
-> **Self-improvement footprint (P-EX-03, mandatory).** Every EXECUTION_REPORT.md MUST include §7 SPEC_TEMPLATE Version Footprint listing which template patterns were exercised (or the literal string "No new template improvements to footprint this run" if empty). Foreman hard-fails closure if absent. Current adoption pre-v3 was 5.6% (10 of 177 EXECUTION_REPORTs). v3 elevates this to first-class.
 
 ---
 
@@ -48,7 +22,6 @@ actual repo state, not in Brief assumptions that may have drifted.
 - Where the Brief's assumptions diverge from repo reality, the SPEC's success criteria are written against repo reality (the Brief's intent applied to what's actually there), not against the Brief's literal claims.
 - Lessons applied from prior `FOREMAN_REVIEW.md` files in this module — list each one and how it was honored.
 - Pre-existing untracked files surveyed (`git status --porcelain | grep '^??'` count recorded). The Executor will leave them alone — selective `git add` by filename throughout. (See CLAUDE.md §1.4. Codified after 3 consecutive Pipeline SPECs — MIGRATION_1, MIGRATION_2, SETTINGS_PERMISSIONS_CONSOLIDATION — made the same D1 decision.)
-- **`.gitignore`-awareness for §9 New Files.** Every path the SPEC will list under §9 Expected Final State "New files" MUST be checked against `.gitignore` BEFORE the Executor runs `git add`. Paths in `modules/*/backups/`, `node_modules/`, `dist/`, `.cache/` are on-disk-only deliverables — mark them explicitly `[on-disk only, gitignored]` so the Executor does not waste time on a failed `git add`. (Added 2026-05-14 from T3.1 P-ST-01 — `M4_REGISTER_LEAD_TO_EVENT_RETURN_SHAPE_FIX/FOREMAN_REVIEW.md` + `EXECUTOR_SKILL_EF_DEPLOY_CLI_FALLBACK/FOREMAN_REVIEW.md` Proposal #2.)
 - **Color-form completeness check** (visual re-skin SPECs only): for every hex code in the swap map, also grep for the rgba/rgb decimal-channel equivalent in target files. A SPEC that swaps `#6366f1` but misses its rgba sibling (`rgba(99,102,241,*)`) produces post-migration visual drift. Use both:
   ```
   { grep -oE '#[0-9a-fA-F]{3,8}\b' <file>; grep -oE 'rgb[a]?\([0-9 ,.]+\)' <file>; } | sort -u
@@ -111,14 +84,6 @@ possible. If a criterion is not measurable, the SPEC is not ready.
 **Every SPEC must include an Integrity Gate criterion** (Iron Rule 31). A SPEC
 whose execution ends with a null-byte ERROR in HEAD is not closed — it is open
 until the corruption is cleared. Reference: `scripts/verify-tree-integrity.mjs`.
-
-**CRLF-aware diff recipe (Windows-executed SPECs).** Any §3 criterion that uses `diff` against git content MUST include `--strip-trailing-cr`. Without the flag, CRLF normalization on Windows produces alarming false-positives (e.g. 990-deletion ghosts). Standard form:
-
-```
-diff --strip-trailing-cr <(git show HEAD:<path>) <path>
-```
-
-(Added 2026-05-14 from T3.1 P-ST-04 — `M1_5_CSS_HOUSEKEEPING_POST_FIX/FOREMAN_REVIEW.md` Author Proposal #1.)
 
 **Sweep criteria — link vs comment distinction.** When a §3 success criterion uses bare `grep -r "<old_name>"` to count references to a deleted/moved name, **narrative comments** in the surviving file (file-history docstrings, "merged from foo.html" headers, tombstone markers) will collide with the criterion alongside **live links** (HTML `href`/`src`, JS `import`, string literals consumed at runtime). Either: (a) tighten the regex (`grep -E "(href=|src=|url:|require\(|from\s+).*<old_name>"`) so only live links are counted; OR (b) add a one-line note authorizing the executor to reword narrative comments to satisfy the literal grep. Avoids reactive 1-line edits mid-execution. (Added 2026-05-12 from `SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md` Author Proposal #1.)
 
@@ -199,15 +164,9 @@ should include heavy payload columns verbatim (e.g. `blocks` JSONB on
 
 (Source: improvement A2 from M3_REC014_ORPHAN_CLEANUP FOREMAN_REVIEW, 2026-05-09.)
 
-### Rollback SQL must live in `ROLLBACK.md`, not standalone `_down.sql`
-
-When a SPEC needs rollback SQL containing `DROP TABLE`, `DROP POLICY`, `TRUNCATE`, or unscoped `DELETE FROM` literals, those statements MUST live inside a doc-context file (`ROLLBACK.md` in the SPEC folder), fenced as ```sql blocks. Standalone `_down.sql` files trigger the destructive-ops gate because `.sql` files are not in the doc allowlist — even if §7 Destructive Operations declares them. The doc-context allowlist accepts `ROLLBACK.md` automatically.
-
-(Added 2026-05-14 from T3.1 P-ST-03 — `M3_UTM_TRIPLE_LAYER_PERSISTENCE/FOREMAN_REVIEW.md` Author Proposal #1.)
-
 ---
 
-## 7. Destructive Operations
+## Destructive Operations
 
 Required by Iron Rule 32 (`scripts/checks/destructive-ops-declared.mjs` enforces this in pre-commit + CI). List every destructive operation this SPEC authorizes — file deletes, mass renames (≥5 files), `git rebase`, `git reset --hard`, `git push --force`, SQL `DROP`/`TRUNCATE`/`DELETE` without tenant scope, deletions from governance docs, modification of `main`. If none, write `None.` — the gate will then forbid ALL destructive ops for this SPEC's run.
 
@@ -221,7 +180,7 @@ Example:
 
 ---
 
-## 8. Out of Scope (explicit)
+## 7. Out of Scope (explicit)
 
 Things that look related but MUST NOT be touched in this SPEC:
 - [file or module]
@@ -256,7 +215,7 @@ immediately and doesn't have to read both sections to reconcile.
 
 ---
 
-## 9. Expected Final State
+## 8. Expected Final State
 
 After the executor finishes, the repo should contain:
 
@@ -315,7 +274,7 @@ restore vs include without authorial guidance.
 
 ---
 
-## 10. Commit Plan
+## 9. Commit Plan
 
 Specify how commits should be grouped. Example:
 - Commit 1: `feat(m3): add DNS readiness script` — files A, B
@@ -324,7 +283,7 @@ Specify how commits should be grouped. Example:
 
 ---
 
-## 11. Dependencies / Preconditions
+## 10. Dependencies / Preconditions
 
 - Previous SPEC {X} must be closed
 - Tool {Y} must be available (version {Z})
@@ -344,7 +303,7 @@ If the SPEC's verification is purely SQL/HTTP/script-based and no browser action
 
 ---
 
-## 12. Lessons Already Incorporated
+## 11. Lessons Already Incorporated
 
 List every FOREMAN_REVIEW proposal from prior SPECs that was considered and
 explain whether this SPEC applies it. This proves the learning loop is
@@ -355,7 +314,7 @@ closing, not just accumulating.
 
 ---
 
-## 13. Pre-Merge Checklist
+## 12. Pre-Merge Checklist
 
 Every SPEC must pass these items before the executor closes it. Any item
 failing → SPEC is REOPEN, not CLOSED.
@@ -365,90 +324,4 @@ failing → SPEC is REOPEN, not CLOSED.
 - [ ] `git status --short` returns empty (clean tree).
 - [ ] HEAD pushed to `origin/develop`.
 - [ ] EXECUTION_REPORT.md + FINDINGS.md written in the SPEC folder.
-- [ ] **EXECUTION_REPORT.md §7 SPEC_TEMPLATE Version Footprint present** (literal string "No new template improvements to footprint this run" if empty). Foreman hard-fails closure if absent — P-EX-03, current pre-v3 adoption 5.6%.
 - [ ] Module ROADMAP / SESSION_CONTEXT / CHANGELOG updated if applicable.
-
----
-
-## 14. Smoke Test Cases
-
-Each smoke case MUST carry a `Type:` field. Cases marked `visual-browser` MUST NOT appear in an overnight Pipeline SPEC unless the Brief authorizes browser-driving (daytime, chrome-devtools MCP active). For overnight runs, downgrade `visual-browser` cases to `code-review` with a fallback rationale OR defer the case to a daytime follow-up SPEC.
-
-| Case | Type | Inputs | Expected | Pass/Fail rule |
-|---|---|---|---|---|
-| 1 | db | SQL query | Row count = N | exact match |
-| 2 | api | curl request | HTTP 200, JSON shape `{...}` | shape + status |
-| 3 | code-review | grep / read | N occurrences of literal | exact count |
-| 4 | visual-browser | URL load + DOM probe | element renders | manual or chrome-devtools |
-
-Types:
-- **`db`** — pure SQL query against Supabase (MCP `execute_sql`). Deterministic.
-- **`api`** — curl/HTTP request against an EF or external endpoint.
-- **`code-review`** — grep / file read / static analysis. No runtime.
-- **`visual-browser`** — requires a browser session. Day-time only OR fallback to `code-review`.
-
-(Added 2026-05-14 from T3.1 P-ST-05 — `M4_FIX_UNSUBSTITUTED_PLACEHOLDER/FOREMAN_REVIEW.md` Proposal 1. Overnight SPEC's smoke #7 was "open the rule editor and check the dropdown" — only meaningful with a human or chrome-devtools driver, neither available overnight.)
-
----
-
-## 15. Daniel-Decision Sub-Questions (ONLY if §5 declares STOP-on-Daniel-decision triggers)
-
-When a SPEC declares any §5 stop-trigger that requires Daniel's input (e.g. "if event is closed AND scope expands beyond pre-identified rows → STOP, write escalation"), this section MUST enumerate the specific sub-questions the Executor will ask in the escalation file.
-
-Required structure per Daniel-decision STOP trigger:
-1. **Trigger summary** — 1-2 sentences describing the condition.
-2. **Sub-questions** — explicit questions, numbered. Each question's answer drives one Option (A/B/C/D) in the resulting escalation file.
-3. **Pre-baked Option matrix** — table of (Option | What it does | Trade-offs). Foreman authors this UP FRONT so the Executor doesn't have to invent it at escalation time.
-
-Example (from T1.1 of OVERNIGHT_BUNDLE_2_2026_05_14):
-
-> **Trigger:** repair phase requires re-send to N customers for a now-closed event.
-> **Sub-questions:**
-> 1. Was the event's `status='closed'` deliberate? (yes → C; no → A or D)
-> 2. Is current capacity (max M, registered N) honest?
-> 3. Is the marketing template's content still appropriate at this delay?
->
-> **Options:** A re-open+resend | B resend-anyway | C accept-loss | D partial-resend (waitlist intersect).
-
-(Added 2026-05-14 from `M4_FIX_UNSUBSTITUTED_PLACEHOLDER_REGISTRATION_URL_PRIZMA/FOREMAN_REVIEW.md` P-T1.1-1 — Foreman pre-bakes the decision tree so the Executor's escalation file writes itself.)
-
----
-
-## Appendix A — Common Gotchas (harvested from recent FINDINGS)
-
-Cross-SPEC patterns to watch for. Not section-bound — apply where relevant.
-
-### A1 — Body md5 invariants for RPC bodies
-
-When an RPC body changes (CREATE OR REPLACE), record `pg_get_functiondef(...)` md5 before and after. Many recent SPECs (`M4_REGISTER_LEAD_TO_EVENT_*`, `M3_UTM_TRIPLE_LAYER_PERSISTENCE`, `M4_BROADCAST_ID_PROPAGATION`) cite "body md5 X → Y (+Z bytes)" as a precise change signature. Catches silent regressions when a re-deploy goes through the wrong path.
-
-### A2 — Aggregate hash for bulk row backups
-
-When backing up N rows before a mass UPDATE, capture an aggregate hash (`md5(string_agg(...))`) so a future replay can integrity-check the population. Pattern from `M4_FIX_UNSUBSTITUTED_PLACEHOLDER_REGISTRATION_URL_PRIZMA` (758-row backup, aggregate md5 `7b66b5789a3c61658d01c3a6366daee9`).
-
-### A3 — `core.autocrlf` warnings on Windows
-
-Edits made on Windows trigger `warning: in the working copy of <path>, LF will be replaced by CRLF the next time Git touches it`. This is informational, NOT a violation. The integrity gate (Iron Rule 31) intentionally excludes CRLF checks because each developer machine's `core.autocrlf` handles line endings.
-
-### A4 — Pre-existing dirty repo at session start
-
-The First Action protocol (CLAUDE.md §1) says: if pre-existing modified/untracked files surface at session start, ask Daniel ONCE, then proceed with selective `git add` by filename. Bundle/overnight SPECs MUST work on a partially-dirty repo without disturbing the unrelated files.
-
-### A5 — EF deploy 5xx pivot
-
-MCP `deploy_edge_function` returns 5xx/InternalServerErrorException ≥7× per month. Pattern OPEN-021: immediately fall through to `supabase functions deploy <fn>` per `opticup-executor` SKILL §5i. Pre-authorize in SPEC §4 Autonomy Envelope. Do NOT escalate — Daniel's answer has been identical every time.
-
-### A6 — Iron Rule 32 false-positive shapes
-
-Three shapes trigger the destructive-ops gate despite legitimate use:
-1. **Staged file deletes** — RESOLVED 2026-05-14 by T2.1's auth-parser. Declare in §7 Destructive Operations and they pass.
-2. **`_down.sql` rollback artifacts containing DROP** — move SQL into `ROLLBACK.md` inside the SPEC folder.
-3. **Keyword-literals in `.js`/`.ts`/`.html` doc comments** — reword (`// DROP a table` → `// removes a table`) or extract prose into adjacent `.md`.
-
-### A7 — UNIQUE constraint must include tenant_id (Iron Rule 18)
-
-Every UNIQUE constraint on a tenant-bearing table MUST include `tenant_id`. The 2026-05-14 architecture debt sweep surfaced 2 critical violations: `auth_sessions.token` and `short_links.code`. Both block multi-tenant coexistence at the constraint level.
-
----
-
-*End of SPEC_TEMPLATE v3 (2026-05-14). Author: opticup-strategic. v2 archived at `_archive/spec-template-versions/v2_2026_05_14/SPEC_TEMPLATE_v2.md`.*

@@ -133,7 +133,15 @@ function isDocFile(absPath) {
     // prevent the test infrastructure from ever updating itself.
     // Added 2026-05-14 by M1_5_FIX_DESTRUCTIVE_OPS_CHECK_DECLARATION_PARSING.
     /^scripts\/test-[A-Za-z0-9_-]+\.mjs$/.test(rel) ||
-    rel === 'scripts/destructive-ops-auth-parser.mjs'
+    rel === 'scripts/destructive-ops-auth-parser.mjs' ||
+    // `_archive/` is CLAUDE.md §0.5 Category 2 (canonical archive vault).
+    // Archived governance docs (e.g. SPEC_TEMPLATE v2, retired SKILL versions,
+    // module pre-consolidation snapshots) routinely contain destructive-op
+    // literals as templates / examples. Treating them as live destructive ops
+    // would block legitimate archival commits.
+    // Added 2026-05-14 mid-OVERNIGHT_BUNDLE_2 when SPEC_TEMPLATE v2 archival
+    // surfaced the gap.
+    /^_archive\//.test(rel)
   );
 }
 

@@ -964,6 +964,8 @@ before dispatching.
 
 **No fractional section numbers in SPEC headings.** Use plain integer prefixes (`## 6. Rollback`) or no prefix at all (`## Destructive Operations`). Fractional prefixes (`## 6.5. Destructive Operations`, `## 3a. Shared Edit Block`) collide with the Iron-Rule-32 hook regex (`scripts/checks/destructive-ops-declared.mjs`) which only accepts `\d+\.` or no number for the Destructive Operations heading specifically. Other sections may use fractional prefixes safely, but `## Destructive Operations` MUST be plain or integer. (Harvested from `MIGRATION_3_CRM/FOREMAN_REVIEW.md` Author Proposal #1, 2026-05-12 — `## 6.5. Destructive Operations` blocked C1 for ~20 seconds; SPEC_TEMPLATE.md heading swapped to plain form.)
 
+**Multi-channel SPECs must enumerate ALL channel-variant templates needed for tests.** If the SPEC's §3 success criteria include multi-channel proof (SMS + email + WhatsApp in any combination), the criterion that authorizes template seeds MUST enumerate EVERY channel-variant template slug the smoke test needs, NOT just the immediate one. Example: `check_in_event_sms_he` AND `check_in_event_email_he` BOTH required if a subsequent criterion proves SMS+Email parallel dispatch. Author should walk the smoke-test chain: for each message dispatch step, list every (channel × language) variant the recipient will receive, and ensure §3 explicitly authorizes seeding each one. Same pattern will recur in M12 (Communications Hub) and any future multi-channel automation work. (Harvested from `STATUS_CHANGE_TRIGGERS_FRAMEWORK/FOREMAN_REVIEW.md` Author Proposal #2, 2026-05-13 — criterion 18a authorized SMS template only; criterion 19 silently required email variant too; Executor used judgment correctly per D3 but a stronger SPEC would have stated both.)
+
 #### Numerical-bound criteria — Measure before bounding (added 2026-05-11)
 
 Whenever a §3 success criterion is a NUMERICAL BOUND on the outcome of a
@@ -1247,3 +1249,34 @@ The Foreman emits exactly ONE Hebrew status line at the end of each phase it own
 - `🛑 נתקעתי על {topic} — escalation: {path}`
 
 These lines are the only chat output between phases. Verbose output, the SPEC body, the EXECUTION_REPORT body — none of those appear in the chat in full-auto mode; they live in commits and on disk.
+
+---
+
+## Patterns from SKILL_HARDENING_AUDIT_2026_05_14 (2 applied, ROI ~25 min/SPEC saved)
+
+Source: T3.1 of OVERNIGHT_BUNDLE_2_2026_05_14. Full report at `modules/Module 1.5 - Shared Components/architecture-brief/SKILL_HARDENING_AUDIT_2026_05_14_REPORT.md`.
+
+### P-ST-01 (HIGH) — Codify `.gitignore`-awareness check in §0 Pre-Authoring Reality Check
+
+For every path the SPEC will list under §8 New Files, verify it is NOT matched by `.gitignore`. Paths in `modules/*/backups/`, `node_modules/`, `dist/`, `.cache/` are on-disk-only — mark explicitly `[on-disk only, gitignored]` in §8 so the Executor doesn't waste time on a failed `git add`.
+
+**Evidence:** `M4_REGISTER_LEAD_TO_EVENT_RETURN_SHAPE_FIX/FOREMAN_REVIEW.md` (only proposal in SPEC) + `EXECUTOR_SKILL_EF_DEPLOY_CLI_FALLBACK/FOREMAN_REVIEW.md` Proposal #2. Two recent SPECs both lost time when §8 listed paths inside gitignored backup folders.
+
+**ROI:** ~2 min/backup-bearing SPEC.
+
+### P-ST-02 (HIGH) — Pipeline-mode escalation pre-authorization for known-recurrent pivots
+
+When authoring a SPEC, the Foreman MUST pre-authorize the executor for known-recurrent pivots:
+- **Pattern OPEN-021** — MCP `deploy_edge_function` 5xx → CLI fallback (`supabase functions deploy <fn>`). State in §4 Autonomy Envelope as 'Authorized without asking: CLI fallback on EF deploy when MCP returns 5xx/InternalServerError'.
+- **Pattern STAGED-NULL** — null-byte at staging → restore from git index (`git checkout HEAD -- <path>`).
+
+Eliminates ~3 min of AskUserQuestion per occurrence — OPEN-021 alone has fired ≥7× in the last month.
+
+**Evidence:** `M3_UTM_TRIPLE_LAYER_PERSISTENCE/FOREMAN_REVIEW.md` Author Proposal #2 + `M4_BROADCAST_ID_PROPAGATION/FOREMAN_REVIEW.md` §6 (3-strikes mandate activated). Each time the Executor escalates via AskUserQuestion and Daniel answers identically.
+
+**ROI:** ~3 min × ≥7 occurrences/month saved.
+
+### Proposed but NOT applied (these belong in SPEC_TEMPLATE v3 — see T4 of this bundle)
+- P-ST-03 (MEDIUM) — `_down.sql` / rollback-artifact gate-compatibility note → SPEC_TEMPLATE §6.
+- P-ST-04 (MEDIUM) — CRLF-aware diff recipe → SPEC_TEMPLATE §3 boilerplate.
+- P-ST-05 (MEDIUM) — Smoke-type taxonomy (`Type: db | api | code-review | visual-browser`) → SPEC_TEMPLATE §12.

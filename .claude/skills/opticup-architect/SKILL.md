@@ -1022,3 +1022,45 @@ A clean close means the next session starts with full context, not "where were w
 
 *Skill version: v1 (created 2026-05-06).*
 *Self-improvement: lessons accumulate in DECISIONS_LOG.md → applied to this file at module-close points.*
+
+---
+
+## Patterns from SKILL_HARDENING_AUDIT_2026_05_14 (3 applied, ROI ~85 min/SPEC saved)
+
+Source: T3.1 of OVERNIGHT_BUNDLE_2_2026_05_14. Full report at `modules/Module 1.5 - Shared Components/architecture-brief/SKILL_HARDENING_AUDIT_2026_05_14_REPORT.md`.
+
+### P-AR-01 (CRITICAL) — Brief decisions with pre-step audit conditions MUST embed quantitative thresholds
+
+When a Brief locks a decision conditional on a pre-step audit result ("if audit finds X → do A, else B"), encode an explicit numeric threshold inside the locked decision (e.g. "0-3 → backfill; 4+ → legacy-compatible policy + TECH_DEBT"). Decisions without thresholds force the downstream Pipeline to escalate or invent the cutoff — both kill autonomy.
+
+**Evidence:** `SECURITY_HOTFIX_2026_05_13/FOREMAN_REVIEW.md` Author Proposal #2 (Brief Q5 "audit logo paths; if any non-canonical → backfill" with no threshold → pipeline invented cutoff mid-run → TECH_DEBT recovery). Same shape in `M1_LENS_INVENTORY_PHASE_1A` `currencies`-empty discovery.
+
+**ROI:** 10-15 min saved per pre-step-audit SPEC + eliminates one escalation class.
+
+### P-AR-02 (HIGH) — Live-DB probe mandatory at Brief authoring when Brief names DB shape assumptions
+
+When a Brief names a DB shape ("table X has column Y", "table Z is global", "FK to W exists"), the Architect MUST run `mcp__claude_ai_Supabase__execute_sql` probes against live DB at Brief authoring and pin actuals into the `Locked Decisions` block. Probe forms: `information_schema.columns WHERE table_name='X'`, `SELECT count(*) FROM <ref-table>`. Stale Brief assumptions cascade into Module-Strategist SPECs that fail at executor pre-flight.
+
+**Evidence:** `M1_LENS_INVENTORY_PHASE_1A/FOREMAN_REVIEW.md` §6 — 4 of 5 SPEC defects traced to Brief assumptions (`tenants.base_currency_code` doesn't exist, `currencies` empty + per-tenant not global, `default_courier_company_id` missing).
+
+**ROI:** 20-30 min saved per schema-touching Brief.
+
+### P-AR-03 (HIGH) — Cross-module overlap analysis required BEFORE handing off a Brief touching adjacent module's entity surface
+
+Before sealing a Brief that adds entities or FKs touching another module's surface (M1↔M7/M9, M5↔M7, etc.), run an `OVERLAP_REPORT.md` probe: list every entity in the new Brief, grep adjacent module Briefs for same nouns, classify each as (a) clean hand-off via contract, (b) genuine overlap needing one-owner decision, (c) coincidental name. Path: `modules/Module N - Name/architecture-brief/MN_MX_OVERLAP_REPORT.md`.
+
+**Evidence:** `decisions/M1.md` + `DECISIONS_LOG.md` entry 2026-05-14 M1↔M9 overlap investigation surfaced 0 genuine overlaps + 5 clean hand-offs + 2 FK schema deltas + 5 contract declarations (K1-K5) that would have been discovered mid-build otherwise.
+
+**ROI:** 45-60 min per cross-module Brief; prevents mid-build reframes.
+
+### P-AR-05 (MEDIUM) — Brief must enumerate BOTH SMS and Email surfaces when authorizing messaging-channel work
+
+Any Brief touching message dispatch, allowlists, templates, or recipient logic MUST address BOTH SMS and email surfaces explicitly — even when day-1 only ships one. Default phrasing: 'SMS: <decision>. Email: <decision OR explicit deferral with reason>.' Single-channel Briefs become two-SPEC backlogs.
+
+**Evidence:** `STATUS_CHANGE_TRIGGERS_FRAMEWORK/FOREMAN_REVIEW.md` §2.2 Weaknesses #2-3. Same pattern in `DEMO_WHITELIST_UPDATE` → `DEMO_EMAIL_ALLOWLIST_INFRA` split.
+
+**ROI:** 30-40 min per messaging Brief.
+
+### Proposed but NOT applied (in audit report only)
+- P-AR-04 (MEDIUM) — Brief deliverables enumerate verify-hook compatibility envelope.
+- P-AR-06 (LOW) — Module Close Ceremony harvest Architect-targeted patterns separately.
