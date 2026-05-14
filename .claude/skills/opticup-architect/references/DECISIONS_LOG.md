@@ -85,6 +85,7 @@ Format for full entries (in `decisions/<MODULE>.md`): situation → my recommend
 | 12 | 2026-05-07 | M5 customers-list: 3 sketches → Split Workspace approved | Layout decision. |
 | 13 | 2026-05-07 | M5 customers-list: Activity-first columns + tenant-config | Per-tenant column set + dual-mode search. |
 | 14 | 2026-05-07 | M5 customers-list: row-click + actions + sort/density | Composite client number. |
+| 15 | 2026-05-14 | **Module Close Ceremony — M5 (backlog batch)** | Brief sealed 2026-05-07. 14 decisions reviewed. P21 (lifecycle_stage collapse) + P18 (audit-is-fields-brief-is-structure) originated here. Contributed to 3-strike promotion of **P40** (configurable-per-tenant default). Lesson promoted: composite-identifier display-vs-storage distinction is reusable for any future "smart number" UX (M7 order_number, M13 loyalty_card_number). No 3-strike single-module-only candidate. |
 
 ---
 
@@ -97,6 +98,7 @@ Format for full entries (in `decisions/<MODULE>.md`): situation → my recommend
 | 1 | 2026-05-06 | M6 state-machines: explicit, not boolean | Cross-module pattern — state enum > boolean. |
 | 2 | 2026-05-06 | M6 prescription_glasses vs prescription_contacts | TWO entities, not one with discriminator. |
 | 3 | 2026-05-06 | M6 split: eye_exams (act) vs prescriptions (output) | Separate entities — different lifecycles. |
+| 4 | 2026-05-14 | **Module Close Ceremony — M6 (backlog batch)** | Brief sealed 2026-05-06. 3 entity-architecture decisions reviewed. P19 (config-table-not-enum) + P20 (no-tech-detail-in-chat) originated here. Lesson promoted: "two-entity-for-disjoint-fields default" pattern (M6 glasses vs contacts) — applies to any future entity where field overlap < 30%. No 3-strike single-module candidate. |
 
 ---
 
@@ -116,6 +118,7 @@ Format for full entries (in `decisions/<MODULE>.md`): situation → my recommend
 | 8 | 2026-05-07 | M7 forms consistency pass + 5 fixes | Locked: 4 sub-order types only; 7-day reservation default; manual convert-to-order. |
 | 9 | 2026-05-07 | M7 Architecture Brief CLOSED | 17 locked decisions; 3-table model. |
 | 10 | 2026-05-11 | M7 V7 sketch selected: Variant A locked as canonical | Daniel chose two-pane + sticky tools strip; V6 + 2 sibling variants archived. |
+| 11 | 2026-05-14 | **Module Close Ceremony — M7 (backlog batch)** | Brief sealed 2026-05-07 (17 decisions); V7 sketch locked 2026-05-11. P22 (STRICT 3-line chat format) originated here. Forms catalog + state-dependent button visibility + granularity-tier discipline = 3 reusable patterns. Contributed to 3-strike promotion of **P41** (manual-now-with-auto-twin-hook — M7 was the strongest example with 5 manual forms + future Comms-module auto-twin). |
 
 ---
 
@@ -126,6 +129,7 @@ Format for full entries (in `decisions/<MODULE>.md`): situation → my recommend
 | # | Date | Topic | One-liner |
 |---|---|---|---|
 | 1 | 2026-05-09 | M8 Architecture Brief CLOSED | 9+ locked: עוסק-מורשה, ERP-orchestrating-POS, Provider Adapter Pattern. |
+| 2 | 2026-05-14 | **Module Close Ceremony — M8 (backlog batch)** | Brief sealed 2026-05-09 (17 locked: 11 Daniel design + 6 architectural). P23 (research-first via subagent for external integrations) reconfirmed here — 4 subagent dossiers caught critical wrong assumptions (tax status, Linet API, reverse-sync, legal). Provider Adapter Pattern (3-layer: code adapter / DB manifest / tenant config UI) is reusable for ANY future external-integration module (M9 lab APIs, M12 BSP rotation, future printers). Lesson promoted: "tax-status / legal-status assumption check FIRST" pattern — Daniel corrected my עוסק-פטור assumption mid-session. No new 3-strike pattern. |
 
 ---
 
@@ -136,6 +140,7 @@ Format for full entries (in `decisions/<MODULE>.md`): situation → my recommend
 | # | Date | Topic | One-liner |
 |---|---|---|---|
 | 1 | 2026-05-09 | M11 Architecture Brief CLOSED | 22 locked + 5 modularity reinforcements; view-layer not data-owner. |
+| 2 | 2026-05-14 | **Module Close Ceremony — M11 (backlog batch)** | Brief sealed 2026-05-09 (22 locked + 5 modularity reinforcements). Contributed to 3-strike promotion of **P40** (configurable-per-tenant default — M11 categories + report-sets + visibility + column-overrides + filter expressions are ALL per-tenant). Pattern reinforced: "layer-not-owner" — M11 reads from other modules' Views, never owns business data; this is the canonical pattern for any future cross-module aggregation module (Finance Hub, Analytics Hub). Lesson promoted: "tenant-modified copy hides default + ↺ restore" UI pattern is reusable for any system-vs-tenant config table. No new 3-strike single-module pattern. |
 
 ---
 
@@ -159,6 +164,7 @@ Format for full entries (in `decisions/<MODULE>.md`): situation → my recommend
 | 12 | 2026-05-09 | Consent: 3 separate flags + audit log + transactional/marketing split | Legal hard requirement, not optional. |
 | 13 | 2026-05-09 | DECISIONS_LOG documentation (Daniel-prompted self-correction) | Log in flight, not session-end. |
 | 14 | 2026-05-09 | M12 Architecture Brief CLOSED | 15 locked decisions; 8 entities + 2 reserved for AI. |
+| 15 | 2026-05-14 | **Module Close Ceremony — M12 (backlog batch)** | Brief sealed 2026-05-09. Note: a prior partial ceremony 2026-05-09 already promoted P24+P25+P26 from M12-derived patterns. This 2026-05-14 close formalizes the remaining lessons: M12's **fact-vs-rule split is the canonical architecture for cross-module rule engines** (M6 facts → M12 rules; future M9 production-events → M12 routing; future M8 payment-events → M12 confirmations). Contributed to 3-strike promotion of **P41** (manual-now-with-auto-twin-hook — M12 channel configs + templates are manual day-1; AI auto-fill slot reserved). No new 3-strike single-module candidate. |
 
 ---
 
@@ -196,6 +202,28 @@ Format for full entries (in `decisions/<MODULE>.md`): situation → my recommend
 
 ---
 
+## M14 — Appointments
+
+→ Full detail: [`decisions/M14.md`](decisions/M14.md)
+
+| # | Date | Topic | One-liner |
+|---|---|---|---|
+| 1 | 2026-05-07 | M14 Architecture Brief CLOSED | 26 locked decisions, 11 entities, 6 Views, 8 RPCs, 4 approved mockups. Public booking flow + dual-color appointments (type-fill + status-outline) + resource-level notifications. |
+| 2 | 2026-05-14 | **Module Close Ceremony — M14 (backlog batch)** | Contributed to 3-strike promotion of **P40** (configurable-per-tenant default — M14 has 4 config tables: appointment_types + appointment_statuses system+tenant + cancellation_reasons + branch_hours_exceptions) and **P41** (manual-now-with-auto-twin — `send_notification` checkbox is manual gate for M12 future engine). Lesson promoted: **resource-level notifications** (each `resources` row has phone+email+`send_notifications` toggle) — resources are not just data containers, they are notification destinations. Generalizes to any future "assigned-to" entity (M9 stations, M7 lab technicians). Lesson promoted: **dual-axis visual encoding** (type-fill + status-outline) for any future entity with two orthogonal classifications. |
+
+---
+
+## M15 — Queue (Walk-in)
+
+→ Full detail: [`decisions/M15.md`](decisions/M15.md)
+
+| # | Date | Topic | One-liner |
+|---|---|---|---|
+| 1 | 2026-05-07 | M15 Architecture Brief CLOSED | 11 locked decisions; 4 states; UI = embedded panel inside M14 calendar, not separate screen. Pattern 14 (cross-module atomic state sync via RPC) introduced. Domain-neutral. |
+| 2 | 2026-05-14 | **Module Close Ceremony — M15 (backlog batch)** | Contributed to 3-strike promotion of **P41** (manual-now-with-auto-twin — queue manual-add only day-1, auto-from-appointments deferred). **Pattern 14 — cross-module atomic state sync via RPC** introduced here as module-internal pattern (M15 ↔ M14 status sync); NOT promoted to a Pn yet — kept as Brief-internal pattern pending a second use case (M7 ↔ M8 lock-on-close documented in Brief §4.4). Re-evaluate promotion at first M7 build SPEC. Lesson promoted: **"embedded panel inside parent-module screen"** as a UX pattern for closely-related secondary modules (M15 inside M14 calendar) — better than separate screens when the two modules share a primary entity (here: appointment ↔ queue_entry). |
+
+---
+
 ## Pattern Recurrence Tracker (3-strike rule)
 
 When a pattern surfaces in 3 or more independent decisions across modules, formalize it as a `Pattern Pn` in `SKILL.md`. Patterns currently tracked:
@@ -215,6 +243,9 @@ When a pattern surfaces in 3 or more independent decisions across modules, forma
 | **Reframe scope → reopen previously-locked decisions** | M9 D2 (M9 reframe overturned year-old shipping-extension decision) | ✅ promoted to **P37** |
 | **Settings sketch FIRST when config-heavy** | M9 (operational-first led to late surfacing of M1 ↔ M9 supplier sync question) | ✅ promoted to **P38** |
 | **Manager max-addition is additive, not absolute** | M9 D9 (compensation matrix manager cap) | ✅ promoted to **P39** |
+| **Configurable-per-tenant DEFAULT for UI layout / type / category / option lists** | M5 (customer-list density/columns/sub-line/row-actions), M11 (categories + report-set + visibility + column-overrides), M14 (statuses + cancellation_reasons + appointment_types + booking config) | ✅ 3 strikes — promoted to **P40** (2026-05-14 backlog batch) |
+| **Manual-now-with-auto-twin-hook is the right shape for future-automatable actions** | M7 (5 print forms — manual + state-driven visibility), M12 (channel configs + templates manual, AI slot reserved), M14 (cancellation `send_notification` checkbox), M15 (queue manual-add only day-1) | ✅ 4 strikes — promoted to **P41** (2026-05-14 backlog batch) |
+| **Cross-module atomic state sync via RPC (Pattern 14 internal)** | M15 D11 (queue_entry.status ↔ appointment.status); future M7↔M8 documented but not yet implemented | ⏸ Single instance + transformational; kept module-internal as "Pattern 14" pending a second use case (M7↔M8 lock-on-close). Re-evaluate at first M7 build SPEC. |
 
 ---
 
@@ -235,6 +266,7 @@ When a module's Architecture Brief is sealed:
 - **STRUCTURE_PROTECTIONS — 2026-05-09** — promoted P31 to SKILL.md.
 - **M13 — 2026-05-10** — promoted P32 + P33 (pending merge: SKILL_PENDING_M13_CLOSE.md).
 - **M9 — 2026-05-10** — promoted P34 + P35 + P36 + P37 + P38 + P39 (pending merge: SKILL_PENDING_M9_PATTERNS.md + SKILL_PENDING_M9_CLOSE.md).
+- **M5 / M6 / M7 / M8 / M11 / M12 / M14 / M15 — 2026-05-14 (backlog batch close, OVERNIGHT_BUNDLE_2026_05_14 Tier D)** — 8 backlog Module Close ceremonies executed in one commit. Per-module lessons logged in `references/decisions/M{5,6,7,8,11,12,14,15}.md` Module-Close-Ceremony 2026-05-14 entries (M14 + M15 decisions files newly created). Two 3-strike patterns promoted to SKILL.md: P40 (configurable-per-tenant default for UI layout) + P41 (manual-now-with-auto-twin-hook). Pattern 14 (cross-module atomic state sync) noted but kept module-internal pending a second use case.
 
 **Post-LIVE Action:** ALL Architecture Briefs sealed (M5/M6/M7/M8/M9/M11/M12/M13/M14/M15). Module Strategists begin SPEC authoring with M1-extension as first blocker.
 
