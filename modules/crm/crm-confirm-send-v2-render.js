@@ -206,6 +206,21 @@
     return '<div class="text-sm text-slate-700 mb-2" data-ccsv2-count="1">' + total + ' נמענים (' + sel + ' נבחרו, ' + state.testSent.size + ' נשלחו טסט)</div>';
   }
 
+  // M4_V2_MODAL_SESSION_RESTORE_FIX (2026-05-14): notice + quick-undo shown
+  // when the modal opened with a non-empty restored excluded set from
+  // sessionStorage. Brief §3.1 — "Restored your previous selections" surface.
+  function renderRestoredNotice(state) {
+    if (!state || !state.restored) return '';
+    var n = state.excluded.size;
+    if (n === 0) return '';
+    return (
+      '<div class="flex items-center gap-2 mb-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900" data-ccsv2-restored-notice="1">' +
+        '<span>♻️ שוחזרו ' + n + ' בחירות קודמות (התעלמויות שמורות).</span>' +
+        '<button type="button" data-ccsv2-undo-restore="1" class="ms-auto px-2 py-0.5 border border-amber-300 bg-white text-amber-800 hover:bg-amber-100 rounded text-xs cursor-pointer">בטל שחזור</button>' +
+      '</div>'
+    );
+  }
+
   function renderBody(state) {
     if (!state || state.phase === 'loading') {
       return (
@@ -216,6 +231,7 @@
     }
     return (
       renderHeader(state) +
+      renderRestoredNotice(state) +
       renderControls(state) +
       renderCountLine(state) +
       renderRecipientTable(state)
