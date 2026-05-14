@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<title>הזמנה לספק — Optic Up (Mockup)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f6fa; color: #333; padding: 16px; direction: rtl; }
+  .mockup-note { background: #fff3cd; border-right: 4px solid #f4c430; padding: 10px 14px; margin-bottom: 12px; font-size: 12px; color: #856404; border-radius: 4px; }
+
+  .page-header { background: white; padding: 14px 20px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .page-title { font-size: 20px; font-weight: 600; color: #2c3e50; }
+  .page-title .badge { font-size: 11px; background: #e8eaf6; color: #3949ab; padding: 3px 8px; border-radius: 10px; margin-right: 8px; font-weight: normal; }
+  .btn { padding: 8px 14px; border: 1px solid #d0d4d9; background: white; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { background: #f0f2f5; }
+  .btn-primary { background: #c9a555; color: white; border-color: #c9a555; }
+  .btn-success { background: #27ae60; color: white; border-color: #27ae60; }
+  .btn-ghost { background: transparent; border-color: transparent; color: #5d6d7e; }
+
+  /* Wizard steps indicator */
+  .wizard-steps {
+    background: white; padding: 16px 24px; border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 12px;
+    display: flex; align-items: center; gap: 0;
+  }
+  .wstep { display: flex; align-items: center; gap: 10px; flex: 1; }
+  .wstep-circle {
+    width: 32px; height: 32px; border-radius: 50%; background: #ecf0f1;
+    color: #95a5a6; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px;
+  }
+  .wstep.done .wstep-circle { background: #27ae60; color: white; }
+  .wstep.active .wstep-circle { background: #c9a555; color: white; box-shadow: 0 0 0 4px #faf3e0; }
+  .wstep-label { font-size: 13px; color: #5d6d7e; font-weight: 500; }
+  .wstep.active .wstep-label { color: #c9a555; font-weight: 700; }
+  .wstep.done .wstep-label { color: #27ae60; }
+  .wstep-line { flex: 1; height: 2px; background: #ecf0f1; margin: 0 12px; }
+  .wstep.done + .wstep-line { background: #27ae60; }
+
+  /* Main layout */
+  .main-content { display: grid; grid-template-columns: 1fr 380px; gap: 12px; }
+
+  /* Items panel */
+  .items-panel { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+  .items-header { padding: 14px 20px; border-bottom: 1px solid #ecf0f1; display: flex; justify-content: space-between; align-items: center; }
+  .items-header h3 { font-size: 14px; color: #2c3e50; }
+  .items-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+  .items-table thead th { text-align: right; padding: 10px 12px; background: #f8f9fb; color: #5d6d7e; font-weight: 600; font-size: 11px; border-bottom: 2px solid #ecf0f1; }
+  .items-table td { padding: 10px 12px; border-bottom: 1px solid #f5f6fa; vertical-align: middle; }
+
+  .design-cell { font-weight: 600; color: #2c3e50; font-size: 12px; }
+  .design-cell .sub { font-size: 10px; color: #95a5a6; margin-top: 2px; font-weight: normal; }
+
+  .qty-input { width: 50px; padding: 5px 8px; border: 1px solid #d0d4d9; border-radius: 4px; font-size: 12px; text-align: center; font-weight: 600; }
+  .row-action { padding: 4px 8px; border: 1px solid #ecf0f1; background: white; border-radius: 4px; cursor: pointer; font-size: 11px; }
+  .row-action.remove { color: #e74c3c; border-color: #fbe5e2; }
+
+  .auto-flag { display: inline-block; padding: 2px 8px; background: #d1f5ef; color: #0e7a6a; border-radius: 10px; font-size: 10px; font-weight: 600; margin-right: 4px; }
+  .manual-flag { display: inline-block; padding: 2px 8px; background: #e8eaf6; color: #3949ab; border-radius: 10px; font-size: 10px; font-weight: 600; margin-right: 4px; }
+
+  /* Right panel */
+  .side-panel { display: flex; flex-direction: column; gap: 12px; }
+  .panel-card { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+  .panel-card-header { padding: 12px 18px; color: white; font-size: 14px; font-weight: 600; }
+  .panel-card-body { padding: 16px 18px; }
+
+  .summary-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; }
+  .summary-row.total { font-size: 16px; font-weight: 700; padding: 12px 0; border-top: 2px solid #ecf0f1; margin-top: 6px; color: #c9a555; }
+  .summary-row .key { color: #5d6d7e; }
+  .summary-row .val { font-weight: 600; color: #2c3e50; }
+
+  .supplier-info { background: #fdf6e3; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; }
+  .supplier-info h4 { font-size: 12px; color: #856404; margin-bottom: 6px; }
+  .supplier-info p { font-size: 11px; color: #5d6d7e; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<div class="mockup-note">
+  📋 <strong>סקיצה</strong> — מסך הזמנה לספק (M1 Expansion). מסך זה נפתח כשלוחצים על "הזמן חוסרים מהספק" במודאל הדוחות, או דרך תפריט "הזמנות". המערכת ממלאת אוטומטית את החוסרים, ניתן לערוך, להוסיף ידנית, ולשלוח לספק.
+</div>
+
+<!-- HEADER -->
+<div class="page-header">
+  <div class="page-title">
+    הזמנה לספק — הזמנה #2607
+    <span class="badge">טיוטה · אופטיקה פריזמה · סניף ראשי</span>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <button class="btn">💾 שמור טיוטה</button>
+    <button class="btn btn-primary">📄 ייצא PDF</button>
+    <button class="btn btn-primary">📊 ייצא Excel</button>
+    <button class="btn" title="הפלואו הנוכחי: השליחה מתבצעת ידנית (PDF/Excel דרך מייל/וואטסאפ). הסימון רק מעדכן את הסטטוס במערכת.">📨 סמן כנשלח לספק</button>
+  </div>
+</div>
+
+<!-- WIZARD STEPS -->
+<div class="wizard-steps">
+  <div class="wstep done">
+    <div class="wstep-circle">✓</div>
+    <div class="wstep-label">בחירת ספק</div>
+  </div>
+  <div class="wstep-line"></div>
+  <div class="wstep active">
+    <div class="wstep-circle">2</div>
+    <div class="wstep-label">פריטים להזמנה</div>
+  </div>
+  <div class="wstep-line"></div>
+  <div class="wstep">
+    <div class="wstep-circle">3</div>
+    <div class="wstep-label">בדיקה וסיכום</div>
+  </div>
+  <div class="wstep-line"></div>
+  <div class="wstep">
+    <div class="wstep-circle">4</div>
+    <div class="wstep-label">שליחה לספק</div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+
+  <!-- ITEMS PANEL -->
+  <div class="items-panel">
+    <div class="items-header">
+      <h3>פריטים בהזמנה (17 שורות)</h3>
+      <div style="display:flex; gap:8px;">
+        <button class="btn" style="font-size:12px;">🔄 רענן חוסרים</button>
+        <button class="btn" style="font-size:12px;">➕ הוסף פריט ידנית</button>
+        <button class="btn" style="font-size:12px;">🗑️ נקה הכל</button>
+      </div>
+    </div>
+
+    <div style="padding:10px 20px; background:#fff3cd; border-bottom:1px solid #ecf0f1; font-size:12px; color:#856404;">
+      💡 14 שורות נוספו <strong>אוטומטית</strong> מדוח חוסרים. 3 שורות נוספו <strong>ידנית</strong>. ניתן לערוך כמויות, להסיר, או להוסיף שורות.
+    </div>
+
+    <div style="max-height:550px; overflow-y:auto;">
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>סדרה / וריאנט</th>
+            <th>ללקוח</th>
+            <th style="text-align:center;">SPH</th>
+            <th style="text-align:center;">CYL</th>
+            <th style="text-align:center;">חסר</th>
+            <th style="text-align:center;">להזמין</th>
+            <th style="text-align:left;">מחיר יח׳</th>
+            <th style="text-align:left;">סה"כ</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- SOURCE-GROUP: Custom — for customers -->
+          <tr>
+            <td colspan="10" style="background:#faf5ff; padding:10px 16px; font-size:12px; color:#6d28d9; font-weight:700; border-top:2px solid #d8b4fe;">
+              🧍 ייצור — ללקוחות <span style="font-weight:normal; color:#7c3aed; margin-right:8px;">(3 שורות / 8 יח׳)</span>
+            </td>
+          </tr>
+          <tr style="background:#faf5ff;">
+            <td><span class="auto-flag" style="background:#ede9fe; color:#6d28d9;">M7</span></td>
+            <td><div class="design-cell">Hoyalux iD MyStyle V+<div class="sub">1.67 · 70mm · Multifocal</div></div></td>
+            <td style="font-size:11px;"><strong style="color:#6d28d9;">דניאל לויטין</strong><br><a href="#" style="color:#7c3aed; text-decoration:underline; font-size:10px;">OS#3142</a></td>
+            <td style="text-align:center; font-weight:600;">-1.50</td>
+            <td style="text-align:center; font-weight:600;">-0.25</td>
+            <td style="text-align:center; color:#5d6d7e;">—</td>
+            <td style="text-align:center;"><input type="number" class="qty-input" value="2" /></td>
+            <td style="text-align:left;">₪390</td>
+            <td style="text-align:left; font-weight:600;">₪780</td>
+            <td><button class="row-action remove">✕</button></td>
+          </tr>
+          <tr style="background:#faf5ff;">
+            <td><span class="auto-flag" style="background:#ede9fe; color:#6d28d9;">M7</span></td>
+            <td><div class="design-cell">Hilux UV Control Photo<div class="sub">1.6 · 70mm · Photochromic</div></div></td>
+            <td style="font-size:11px;"><strong style="color:#6d28d9;">שרה כהן</strong><br><a href="#" style="color:#7c3aed; text-decoration:underline; font-size:10px;">OS#3145</a></td>
+            <td style="text-align:center; font-weight:600;">-2.50</td>
+            <td style="text-align:center; font-weight:600;">-0.50</td>
+            <td style="text-align:center; color:#5d6d7e;">—</td>
+            <td style="text-align:center;"><input type="number" class="qty-input" value="3" /></td>
+            <td style="text-align:left;">₪151</td>
+            <td style="text-align:left; font-weight:600;">₪453</td>
+            <td><button class="row-action remove">✕</button></td>
+          </tr>
+          <tr style="background:#faf5ff;">
+            <td><span class="auto-flag" style="background:#ede9fe; color:#6d28d9;">M7</span></td>
+            <td><div class="design-cell">Hoyalux iD LifeStyle V+<div class="sub">1.6 · 70mm · Multifocal Premium</div></div></td>
+            <td style="font-size:11px;"><strong style="color:#6d28d9;">יוסי לוי</strong><br><a href="#" style="color:#7c3aed; text-decoration:underline; font-size:10px;">OS#3148</a></td>
+            <td style="text-align:center; font-weight:600;">-3.00</td>
+            <td style="text-align:center; font-weight:600;">-0.75</td>
+            <td style="text-align:center; color:#5d6d7e;">—</td>
+            <td style="text-align:center;"><input type="number" class="qty-input" value="3" /></td>
+            <td style="text-align:left;">₪420</td>
+            <td style="text-align:left; font-weight:600;">₪1,260</td>
+            <td><button class="row-action remove">✕</button></td>
+          </tr>
+
+          <!-- SOURCE-GROUP: Stock — shortages -->
+          <tr>
+            <td colspan="10" style="background:#eff6ff; padding:10px 16px; font-size:12px; color:#1e3a8a; font-weight:700; border-top:2px solid #bfdbfe;">
+              📦 מדף — חוסרים <span style="font-weight:normal; color:#3b82f6; margin-right:8px;">(12 שורות / 38 יח׳)</span>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="auto-flag">אוטו</span></td>
+            <td><div class="design-cell">Hilux EYAS BLC<div class="sub">1.67 · 70mm · AR Clear</div></div></td>
+            <td style="text-align:center; color:#94a3b8;">—</td>
+            <td style="text-align:center; font-weight:600;">-3.50</td>
+            <td style="text-align:center; font-weight:600;">-0.75</td>
+            <td style="text-align:center; color:#c0392b; font-weight:700;">-2</td>
+            <td style="text-align:center;"><input type="number" class="qty-input" value="3" /></td>
+            <td style="text-align:left;">₪110</td>
+            <td style="text-align:left; font-weight:600;">₪330</td>
+            <td><button class="row-action remove">✕</button></td>
+          </tr>
+          <tr>
+            <td><span class="auto-flag">אוטו</span></td>
+            <td><div class="design-cell">Hilux EYAS BLC<div class="sub">1.67 · 70mm · AR Clear</div></div></td>
+            <td style="text-align:center; color:#94a3b8;">—</td>
+            <td style="text-align:center; font-weight:600;">-4.00</td>
+            <td style="text-align:center; font-weight:600;">-1.00</td>
+            <td style="text-align:center; color:#c0392b; font-weight:700;">-2</td>
+            <td style="text-align:center;"><input type="number" class="qty-input" value="3" /></td>
+            <td style="text-align:left;">₪110</td>
+            <td style="text-align:left; font-weight:600;">₪330</td>
+            <td><button class="row-action remove">✕</button></td>
+          </tr>
+          <tr>
+            <td><span class="auto-flag">אוטו</span></td>
+            <td><div class="design-cell">Hilux EYAS BLC<div class="sub">1.67 · 70mm · AR Clear</div></div></td>
+            <td style="text-align:center; color:#94a3b8;">—</td>
+            <td style="text-align:center; font-weight:600;">-5.00</td>
+            <td style="text-align:center; font-weight:600;">-1.50</td>
+            <td style="text-align:center; color:#c0392b; font-weight:700;">-2</td>
+            <td style="text-align:center;"><input type="number" class="qty-input" value="2" /></td>
+            <td style="text-align:left;">₪110</td>
+            <td style="text-align:left; font-weight:600;">₪220</td>
+            <td><button class="row-action remove">✕</button></td>
+          </tr>
+          <tr>
+            <td><span class="auto-flag">אוטו</span></td>
+            <td><div class="design-cell">Hilux EYAS UVC HVLL<div class="sub">1.6 · 70mm · UV+HVLL</div></div></td>
+            <td style="text-align:center; color:#94a3b8;">—</td>
+            <td style="text-align:center; font-weight:600;">+1.50</td>
+            <td style="text-align:center; font-weight:600;">-0.50</td>
+            <td style="text-align:center; color:#c0392b; font-weight:700;">-3</td>
+            <td style="text-align:center;"><input type="number" class="qty-input" value="4" /></td>
+            <td style="text-align:left;">₪125</td>
+            <td style="text-align:left; font-weight:600;">₪500</td>
+            <td><button class="row-action remove">✕</button></td>
+          </tr>
+          <tr>
+            <td><span class="auto-flag">אוטו</span></td>
+            <td><div class="design-cell">Defender UV 420 SN<div class="sub">1.6 · 70mm · Blue Cut</div></div></td>
+            <td style="text-align:center; color:#94a3b8;">—</td>
+            <td style="text-align:center; font-weight:600;">-2.00</td>
+            <td style="text-align:center; font-weight:600;">0.00</td>
+            <td style="text-align:center; color:#c0392b; font-weight:700;">-4</td>
+            <td style="text-align:center;"><input type="number" class="qty-input" value="5" /></td>
+            <td style="text-align:left;">₪95</td>
+            <td style="text-align:left; font-weight:600;">₪475</td>
+            <td><button class="row-action remove">✕</button></td>
+          </tr>
+          <tr><td colspan="10" style="text-align:center; padding:10px; color:#95a5a6; font-size:11px;">... ועוד 7 שורות מדף</td></tr>
+
+          <!-- SOURCE-GROUP: Manual additions -->
+          <tr>
+            <td colspan="10" style="background:#fffbeb; padding:10px 16px; font-size:12px; color:#92400e; font-weight:700; border-top:2px solid #fde68a;">
+              ✏️ הוספות ידניות <span style="font-weight:normal; color:#d97706; margin-right:8px;">(2 שורות / 6 יח׳)</span>
+            </td>
+          </tr>
+          <tr style="background:#fffbeb;">
+            <td><span class="manual-flag" style="background:#fef3c7; color:#92400e;">ידני</span></td>
+            <td><div class="design-cell">Hilux EYAS BLC<div class="sub">1.6 · 70mm · AR Clear</div></div></td>
+            <td style="text-align:center; color:#94a3b8;">—</td>
+            <td style="text-align:center; font-weight:600;">+1.00</td>
+            <td style="text-align:center; font-weight:600;">0.00</td>
+            <td style="text-align:center; color:#5d6d7e;">—</td>
+            <td style="text-align:center;"><input type="number" class="qty-input" value="3" /></td>
+            <td style="text-align:left;">₪90</td>
+            <td style="text-align:left; font-weight:600;">₪270</td>
+            <td><button class="row-action remove">✕</button></td>
+          </tr>
+          <tr style="background:#fffbeb;">
+            <td><span class="manual-flag" style="background:#fef3c7; color:#92400e;">ידני</span></td>
+            <td><div class="design-cell">Hoya Sensity Dark<div class="sub">1.6 · 70mm · Photochromic</div></div></td>
+            <td style="text-align:center; color:#94a3b8;">—</td>
+            <td style="text-align:center; font-weight:600;">-1.00</td>
+            <td style="text-align:center; font-weight:600;">-0.25</td>
+            <td style="text-align:center; color:#5d6d7e;">—</td>
+            <td style="text-align:center;"><input type="number" class="qty-input" value="3" /></td>
+            <td style="text-align:left;">₪140</td>
+            <td style="text-align:left; font-weight:600;">₪420</td>
+            <td><button class="row-action remove">✕</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SIDE PANEL -->
+  <div class="side-panel">
+
+    <!-- Supplier info -->
+    <div class="supplier-info">
+      <h4>🏢 ספק: לפידות בע"מ</h4>
+      <p>
+        איש קשר: רן כהן · 052-1234567<br>
+        אימייל הזמנות: orders@lapidot.co.il<br>
+        זמן אספקה ממוצע: <strong>2-3 ימי עסקים</strong><br>
+        תנאי תשלום: שוטף+30
+      </p>
+    </div>
+
+    <!-- Order summary -->
+    <div class="panel-card">
+      <div class="panel-card-header" style="background: linear-gradient(135deg, #c9a555 0%, #b8954a 100%);">
+        סיכום ההזמנה
+      </div>
+      <div class="panel-card-body">
+        <div class="summary-row">
+          <span class="key">סה"כ שורות</span>
+          <span class="val">17</span>
+        </div>
+        <div class="summary-row">
+          <span class="key">סה"כ יחידות</span>
+          <span class="val">52</span>
+        </div>
+        <div class="summary-row">
+          <span class="key">מתוכן אוטומטיות (חוסרים)</span>
+          <span class="val" style="color:#0e7a6a;">14 שורות / 39 יח׳</span>
+        </div>
+        <div class="summary-row">
+          <span class="key">מתוכן ידניות</span>
+          <span class="val" style="color:#3949ab;">3 שורות / 13 יח׳</span>
+        </div>
+        <div class="summary-row" style="padding-top:10px; border-top:1px dashed #ecf0f1;">
+          <span class="key">סכום נטו (ללא מע"מ)</span>
+          <span class="val">₪5,720</span>
+        </div>
+        <div class="summary-row">
+          <span class="key">מע"מ 18%</span>
+          <span class="val">₪1,029.60</span>
+        </div>
+        <div class="summary-row total">
+          <span>סה"כ לתשלום</span>
+          <span>₪6,749.60</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delivery -->
+    <div class="panel-card">
+      <div class="panel-card-header" style="background:#34495e;">משלוח ויעד</div>
+      <div class="panel-card-body">
+        <div style="font-size:12px; color:#5d6d7e; margin-bottom:4px;">סניף יעד:</div>
+        <select style="width:100%; padding:8px 12px; border:1px solid #d0d4d9; border-radius:6px; font-size:13px; margin-bottom:10px;">
+          <option>📍 סניף ראשי</option>
+          <option>📍 סניף שני</option>
+        </select>
+        <div style="font-size:12px; color:#5d6d7e; margin-bottom:4px;">תאריך אספקה מבוקש:</div>
+        <input type="date" value="2026-05-15" style="width:100%; padding:8px 12px; border:1px solid #d0d4d9; border-radius:6px; font-size:13px; margin-bottom:10px;" />
+        <div style="font-size:12px; color:#5d6d7e; margin-bottom:4px;">הערות לספק:</div>
+        <textarea placeholder="(אופציונלי)" style="width:100%; padding:8px 12px; border:1px solid #d0d4d9; border-radius:6px; font-size:13px; min-height:60px; font-family:inherit;"></textarea>
+      </div>
+    </div>
+
+    <!-- Settings note (per D-M1-07) -->
+    <div style="background:#f0f9ff; border-right:4px solid #1e3a8a; padding:10px 14px; border-radius:4px; margin-top:14px; font-size:12px; color:#475569;">
+      💡 <strong>הגדרת ברירת מחדל (כרגע: ידני):</strong>
+      הזמנות custom ממכירת לקוח ב-M7 מתווספות לטיוטה ולא נשלחות אוטומטית.
+      <br>בעתיד (Phase 2+) ניתן יהיה להפעיל שליחה אוטומטית בהגדרות המודול.
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <button class="btn" style="justify-content:center; padding:12px;" title="הפלואו הנוכחי: השליחה מתבצעת ידנית (PDF/Excel דרך מייל/וואטסאפ). הסימון רק מעדכן את הסטטוס במערכת.">📨 סמן כנשלח לספק</button>
+      <button class="btn" style="justify-content:center;">💾 שמור כטיוטה</button>
+      <button class="btn btn-ghost" style="justify-content:center;">⬅ חזור לשלב 1</button>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

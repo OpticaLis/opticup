@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<title>קבלת סחורה — עדשות (Mockup)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; color: #1e293b; padding: 16px; direction: rtl; }
+
+  .mockup-note { background: #fef3c7; border-right: 4px solid #f59e0b; padding: 10px 14px; margin-bottom: 12px; font-size: 12px; color: #92400e; border-radius: 4px; }
+
+  /* HEADER */
+  .page-header { background: white; padding: 14px 20px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .page-title { font-size: 20px; font-weight: 600; color: #1e293b; }
+  .page-title .badge { font-size: 11px; background: #dbeafe; color: #1e3a8a; padding: 3px 8px; border-radius: 10px; margin-right: 8px; font-weight: normal; }
+
+  .btn { padding: 8px 14px; border: 1px solid #cbd5e1; background: white; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { background: #f1f5f9; }
+  .btn-primary { background: #1e3a8a; color: white; border-color: #1e3a8a; }
+  .btn-primary:hover { background: #1e40af; }
+  .btn-success { background: #059669; color: white; border-color: #059669; }
+  .btn-ghost { background: transparent; border-color: transparent; color: #64748b; }
+
+  /* STEP 1 — supplier + delivery note (compact, top) */
+  .step-meta {
+    background: white; padding: 16px 20px; border-radius: 8px;
+    margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    display: grid; grid-template-columns: 1.3fr 1fr 0.9fr 1.2fr 1.3fr; gap: 12px;
+    align-items: end;
+  }
+
+  /* M9 box linkage field — special styling */
+  .field-m9-box select, .field-m9-box input {
+    border: 1px solid #c4b5fd; background: #faf5ff; color: #5b21b6;
+    font-weight: 600;
+  }
+  .field-m9-box label { color: #6d28d9; font-weight: 700; }
+  .field-m9-box .field-hint {
+    font-size: 10px; color: #7c3aed; margin-top: 3px;
+  }
+  .field-group { display: flex; flex-direction: column; gap: 4px; }
+  .field-group label { font-size: 11px; color: #64748b; font-weight: 600; }
+  .field-group .label-required::after { content: " *"; color: #dc2626; }
+  .field-group input, .field-group select {
+    padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 5px;
+    font-size: 13px; font-family: inherit; background: white;
+  }
+  .field-group input:focus, .field-group select:focus {
+    outline: none; border-color: #1e3a8a; box-shadow: 0 0 0 2px rgba(30,58,138,0.1);
+  }
+
+  /* SUPPLIER select — emphasised (this is the primary filter) */
+  .field-supplier select {
+    font-size: 14px; font-weight: 700; color: #1e3a8a;
+    border: 2px solid #1e3a8a; padding: 10px 12px;
+  }
+  .field-supplier label { color: #1e3a8a; font-weight: 700; }
+
+  /* UPLOAD area */
+  .upload-area {
+    border: 2px dashed #cbd5e1; padding: 8px 10px; border-radius: 6px;
+    text-align: center; font-size: 11px; color: #64748b;
+    background: #f8fafc; cursor: pointer;
+  }
+  .upload-area:hover { border-color: #1e3a8a; background: #f1f5f9; }
+  .upload-area .upload-actions { display: flex; gap: 6px; justify-content: center; margin-top: 2px; }
+  .upload-area .upload-actions button {
+    font-size: 10px; padding: 2px 6px; border: 1px solid #cbd5e1;
+    background: white; border-radius: 4px; cursor: pointer;
+  }
+
+  /* SCAN bar */
+  .scan-bar {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+    padding: 14px 20px; border-radius: 8px; margin-bottom: 12px;
+    color: white; display: flex; gap: 12px; align-items: center;
+  }
+  .scan-bar input {
+    flex: 1; padding: 10px 14px; border: none; border-radius: 6px;
+    font-size: 14px; font-family: inherit; background: white; color: #1e293b;
+  }
+  .scan-bar input::placeholder { color: #94a3b8; }
+  .scan-bar .scan-info { font-size: 12px; opacity: 0.9; }
+
+  /* SUPPLIER CONTEXT BANNER */
+  .supplier-context {
+    background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;
+    padding: 12px 18px; margin-bottom: 12px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .supplier-context .ctx-left { display: flex; align-items: center; gap: 14px; font-size: 13px; }
+  .supplier-context .ctx-left strong { color: #1e3a8a; font-size: 15px; }
+  .supplier-context .ctx-stat { color: #64748b; font-size: 12px; }
+  .supplier-context .ctx-stat strong { color: #1e293b; }
+
+  /* MAIN content */
+  .main-content { display: grid; grid-template-columns: 1fr 360px; gap: 12px; }
+
+  /* TABLE panel */
+  .panel { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+  .panel-header {
+    padding: 13px 18px; border-bottom: 1px solid #e2e8f0;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .panel-header h3 { font-size: 14px; color: #1e293b; font-weight: 600; }
+  .panel-header .search-mini {
+    width: 240px; padding: 6px 10px; border: 1px solid #cbd5e1;
+    border-radius: 6px; font-size: 12px;
+  }
+
+  /* RECEIPT TABLE */
+  .receipt-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+  .receipt-table thead th {
+    text-align: right; padding: 10px 12px; background: #f8fafc;
+    color: #475569; font-weight: 600; font-size: 11px;
+    border-bottom: 2px solid #e2e8f0; white-space: nowrap;
+  }
+  .receipt-table td {
+    padding: 10px 12px; border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+  }
+  .receipt-table tbody tr:hover { background: #f8fafc; }
+  .receipt-table tbody tr.received { background: #f0fdf4; }
+  .receipt-table tbody tr.partial { background: #fffbeb; }
+  .receipt-table tbody tr.manual { background: #faf5ff; }
+  .receipt-table tbody tr.scanned { background: #eff6ff; }
+
+  /* PO grouping headers */
+  .po-group-header {
+    background: #f8fafc; border-top: 2px solid #cbd5e1;
+  }
+  .po-group-header td {
+    padding: 10px 12px; font-size: 12px; color: #1e293b; font-weight: 700;
+  }
+  .po-group-header .po-meta {
+    font-weight: normal; color: #64748b; font-size: 11px; margin-right: 10px;
+  }
+
+  .design-cell { font-weight: 600; color: #1e293b; font-size: 12px; }
+  .design-cell .sub { font-size: 10px; color: #94a3b8; margin-top: 2px; font-weight: normal; }
+  .design-cell .meta { font-size: 10px; color: #64748b; margin-top: 2px; }
+
+  .qty-cell { display: flex; align-items: center; gap: 4px; justify-content: center; }
+  .qty-input { width: 50px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; text-align: center; font-weight: 700; }
+  .qty-input:focus { outline: none; border-color: #1e3a8a; }
+  .qty-expected { color: #64748b; font-size: 11px; }
+  .qty-divider { color: #cbd5e1; }
+
+  /* STATUS chips */
+  .chip { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+  .chip-stock { background: #dbeafe; color: #1e3a8a; }
+  .chip-custom { background: #fef3c7; color: #92400e; }
+  .chip-customer { background: #ede9fe; color: #6d28d9; }
+  .chip-manual { background: #f3e8ff; color: #7c3aed; }
+  .chip-complete { background: #d1fae5; color: #065f46; }
+  .chip-partial { background: #fef3c7; color: #92400e; }
+  .chip-discrepancy { background: #fee2e2; color: #991b1b; }
+
+  .row-action {
+    padding: 4px 8px; border: 1px solid #e2e8f0; background: white;
+    border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500;
+  }
+  .row-action.remove { color: #dc2626; border-color: #fecaca; }
+  .row-action.note { color: #1e3a8a; }
+  .row-action:hover { background: #f8fafc; }
+
+  /* DISCREPANCY hint */
+  .discrepancy-cell {
+    background: #fee2e2; padding: 3px 7px; border-radius: 4px;
+    font-size: 11px; color: #991b1b; font-weight: 600; display: inline-block;
+  }
+
+  /* SIDE panel cards */
+  .side-panel { display: flex; flex-direction: column; gap: 12px; }
+  .card { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+  .card-header {
+    padding: 12px 16px; color: white; font-size: 13px; font-weight: 600;
+    background: #1e3a8a;
+  }
+  .card-header.amber { background: #d97706; }
+  .card-header.green { background: #059669; }
+  .card-body { padding: 14px 16px; }
+
+  .summary-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+  .summary-row .key { color: #64748b; }
+  .summary-row .val { font-weight: 600; color: #1e293b; }
+  .summary-row.warning .val { color: #d97706; }
+  .summary-row.success .val { color: #059669; }
+  .summary-row.danger .val { color: #dc2626; }
+
+  /* Filter row above table */
+  .filter-row {
+    display: flex; gap: 10px; padding: 10px 18px; background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0; align-items: center; font-size: 12px;
+  }
+  .filter-row .filter-btn {
+    padding: 5px 12px; border: 1px solid #cbd5e1; background: white;
+    border-radius: 14px; font-size: 11px; cursor: pointer; font-weight: 500;
+  }
+  .filter-row .filter-btn.active { background: #1e3a8a; color: white; border-color: #1e3a8a; }
+  .filter-row .filter-btn .count { font-weight: 700; margin-right: 3px; }
+
+  .manual-add-banner {
+    padding: 12px 18px; background: #faf5ff; text-align: center;
+    border-top: 2px dashed #d8b4fe;
+  }
+</style>
+</head>
+<body>
+
+<div class="mockup-note">
+  📦 <strong>סקיצה — מסך 7: קבלת סחורה (עדשות) v3</strong> · Mockup 14.5.26 (אחרי משוב Daniel + דו"ח חפיפה M1↔M9).
+  <br>בחירת ספק היא ה-driver של המסך — כל הסחורה בחבילה היא מספק אחד.
+  אם נכנס מתוך הזמנה (מסך 6) — הספק כבר נבחר אוטומטית.
+  <br><strong>v3 שינויים:</strong> נוסף שדה "קופסה נכנסת מ-M9" (אופציונלי) — קישור לקופסה שנסגרה ב-M9. תוקן הניסוח של סטטוס לקוח (M9 בעל הסטטוס, לא M7).
+</div>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="page-title">
+    📦 קבלת סחורה — עדשות
+    <span class="badge">קבלה חדשה · טיוטה</span>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <button class="btn">💾 שמור טיוטה</button>
+    <button class="btn">❌ ביטול</button>
+    <button class="btn btn-success">✅ אשר וצור רשומות מלאי</button>
+  </div>
+</div>
+
+<!-- STEP META — supplier-first -->
+<div class="step-meta">
+  <div class="field-group field-supplier">
+    <label class="label-required">ספק</label>
+    <select>
+      <option>לפידות בע"מ</option>
+      <option>בדולח עדשות</option>
+      <option>סגם בע"מ</option>
+      <option>אופטיגל</option>
+    </select>
+  </div>
+  <div class="field-group">
+    <label class="label-required">מספר תעודת משלוח / חשבונית</label>
+    <input type="text" placeholder="DN-2026-1147" value="DN-2026-1147" />
+  </div>
+  <div class="field-group">
+    <label class="label-required">תאריך הקבלה</label>
+    <input type="date" value="2026-05-14" />
+  </div>
+  <div class="field-group field-m9-box">
+    <label>📦 קופסה נכנסת מ-M9 (אופציונלי)</label>
+    <select>
+      <option value="">— אין קישור לקופסה —</option>
+      <option value="1247" selected>Box #1247 · LUX-9912 · כץ ↗</option>
+      <option value="1248">Box #1248 · LUX-9913 · כץ</option>
+      <option value="1251">Box #1251 · עצמי</option>
+    </select>
+    <div class="field-hint">
+      💡 קישור קופסה → מספרי התעודות יועברו אוטומטית
+    </div>
+  </div>
+  <div class="field-group">
+    <label>סורק / העלאת מסמך (אופציונלי)</label>
+    <div class="upload-area">
+      📎 גרור קובץ או לחץ
+      <div class="upload-actions">
+        <button>📷 צילום בטלפון</button>
+        <button>📁 בחר קובץ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUPPLIER CONTEXT BANNER -->
+<div class="supplier-context">
+  <div class="ctx-left">
+    <span style="font-size:22px;">🏢</span>
+    <div>
+      <strong>לפידות בע"מ</strong>
+      <div style="font-size:11px; color:#64748b; margin-top:2px;">
+        איש קשר: רן כהן · 052-1234567 · orders@lapidot.co.il
+      </div>
+    </div>
+  </div>
+  <div style="display:flex; gap:18px; font-size:12px;">
+    <div class="ctx-stat">הזמנות פתוחות: <strong>3</strong></div>
+    <div class="ctx-stat">פריטים בהמתנה: <strong>34 יח׳</strong></div>
+    <div class="ctx-stat">ערך מצטבר: <strong>₪12,440</strong></div>
+  </div>
+</div>
+
+<!-- SCAN BAR -->
+<div class="scan-bar">
+  <span style="font-size:20px;">🔎</span>
+  <input type="text" placeholder="סרוק ברקוד (אם קיים על העטיפה) או הקלד מספר ברקוד..." autofocus />
+  <div class="scan-info">
+    💡 ברקוד שנמצא ב-PO של הספק → תוסף +1 אוטומטית.<br>
+    ברקוד שלא נמצא → תיפתח הוספה ידנית.
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main-content">
+
+  <!-- ITEMS PANEL -->
+  <div class="panel">
+    <div class="panel-header">
+      <h3>פריטים בהמתנה לקבלה — לפידות בע"מ</h3>
+      <input type="text" class="search-mini" placeholder="🔍 סינון: סדרה, SPH, CYL, לקוח..." />
+    </div>
+
+    <!-- FILTER pills -->
+    <div class="filter-row">
+      <span style="color:#64748b; font-weight:600;">סינון מהיר:</span>
+      <button class="filter-btn active"><span class="count">34</span> הכל</button>
+      <button class="filter-btn"><span class="count">22</span> מדף</button>
+      <button class="filter-btn"><span class="count">12</span> ייצור (ללקוח)</button>
+      <button class="filter-btn"><span class="count">0</span> סומן כהתקבל</button>
+    </div>
+
+    <!-- TABLE -->
+    <div style="max-height:560px; overflow-y:auto;">
+      <table class="receipt-table">
+        <thead>
+          <tr>
+            <th style="width:30px;"></th>
+            <th>סדרה / וריאנט</th>
+            <th style="text-align:center;">SPH</th>
+            <th style="text-align:center;">CYL</th>
+            <th style="text-align:center;">סוג</th>
+            <th style="text-align:center;">הוזמן</th>
+            <th style="text-align:center;">התקבל</th>
+            <th style="text-align:center;">סטטוס</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- PO #2607 group header -->
+          <tr class="po-group-header">
+            <td colspan="9">
+              📋 PO #2607 <span class="po-meta">· נשלח 12.5.26 · 17 שורות / 52 יח׳ · ₪6,749</span>
+            </td>
+          </tr>
+
+          <!-- PO #2607 — Row 1: Stock, fully received -->
+          <tr class="received">
+            <td style="text-align:center;">✅</td>
+            <td><div class="design-cell">Hilux EYAS BLC<div class="sub">1.67 · 70mm · AR Clear</div></div></td>
+            <td style="text-align:center; font-weight:600;">-3.50</td>
+            <td style="text-align:center; font-weight:600;">-0.75</td>
+            <td style="text-align:center;"><span class="chip chip-stock">מדף</span></td>
+            <td style="text-align:center;"><span class="qty-expected">3</span></td>
+            <td>
+              <div class="qty-cell">
+                <input type="number" class="qty-input" value="3" />
+                <span class="qty-divider">/</span>
+                <span class="qty-expected">3</span>
+              </div>
+            </td>
+            <td style="text-align:center;"><span class="chip chip-complete">✓ מלא</span></td>
+            <td><button class="row-action note">📝</button></td>
+          </tr>
+
+          <!-- PO #2607 — Row 2: Stock, partial -->
+          <tr class="partial">
+            <td style="text-align:center;">⚠️</td>
+            <td><div class="design-cell">Hilux EYAS BLC<div class="sub">1.67 · 70mm · AR Clear</div></div></td>
+            <td style="text-align:center; font-weight:600;">-4.00</td>
+            <td style="text-align:center; font-weight:600;">-1.00</td>
+            <td style="text-align:center;"><span class="chip chip-stock">מדף</span></td>
+            <td style="text-align:center;"><span class="qty-expected">3</span></td>
+            <td>
+              <div class="qty-cell">
+                <input type="number" class="qty-input" value="2" />
+                <span class="qty-divider">/</span>
+                <span class="qty-expected">3</span>
+              </div>
+              <div style="margin-top:4px;"><span class="discrepancy-cell">חסר -1 יחידה</span></div>
+            </td>
+            <td style="text-align:center;"><span class="chip chip-partial">חלקי</span></td>
+            <td><button class="row-action note">📝 סיבה</button></td>
+          </tr>
+
+          <!-- PO #2607 — Row 3: Custom for customer -->
+          <tr class="received">
+            <td style="text-align:center;">✅</td>
+            <td>
+              <div class="design-cell">Hoyalux iD MyStyle V+<div class="sub">1.67 · 70mm · Multifocal</div>
+                <div class="meta">🧍 ללקוח: <strong>דניאל לויטין</strong> · OS#3142</div>
+              </div>
+            </td>
+            <td style="text-align:center; font-weight:600;">-1.50</td>
+            <td style="text-align:center; font-weight:600;">-0.25</td>
+            <td style="text-align:center;"><span class="chip chip-custom">ייצור</span><br><span class="chip chip-customer" style="margin-top:2px;">לקוח</span></td>
+            <td style="text-align:center;"><span class="qty-expected">2</span></td>
+            <td>
+              <div class="qty-cell">
+                <input type="number" class="qty-input" value="2" />
+                <span class="qty-divider">/</span>
+                <span class="qty-expected">2</span>
+              </div>
+            </td>
+            <td style="text-align:center;"><span class="chip chip-complete">✓ מלא</span></td>
+            <td><button class="row-action note">📝</button></td>
+          </tr>
+
+          <!-- ... more rows from PO #2607 -->
+          <tr><td colspan="9" style="text-align:center; padding:8px; color:#94a3b8; font-size:11px;">... ועוד 14 שורות מ-PO #2607</td></tr>
+
+          <!-- PO #2608 group header -->
+          <tr class="po-group-header">
+            <td colspan="9">
+              📋 PO #2608 <span class="po-meta">· נשלח 13.5.26 · 6 שורות / 14 יח׳ · ₪3,210</span>
+            </td>
+          </tr>
+
+          <!-- PO #2608 — Row 1: Stock, fully received via scan -->
+          <tr class="received scanned">
+            <td style="text-align:center;">📡</td>
+            <td><div class="design-cell">Hilux EYAS UVC HVLL<div class="sub">1.6 · 70mm · UV+HVLL</div><div class="meta">סרוק: 7290015749002</div></div></td>
+            <td style="text-align:center; font-weight:600;">+1.50</td>
+            <td style="text-align:center; font-weight:600;">-0.50</td>
+            <td style="text-align:center;"><span class="chip chip-stock">מדף</span></td>
+            <td style="text-align:center;"><span class="qty-expected">4</span></td>
+            <td>
+              <div class="qty-cell">
+                <input type="number" class="qty-input" value="4" />
+                <span class="qty-divider">/</span>
+                <span class="qty-expected">4</span>
+              </div>
+            </td>
+            <td style="text-align:center;"><span class="chip chip-complete">✓ מלא</span></td>
+            <td><button class="row-action">✕</button></td>
+          </tr>
+
+          <!-- PO #2608 — Row 2: Custom for customer -->
+          <tr class="received">
+            <td style="text-align:center;">✅</td>
+            <td>
+              <div class="design-cell">Hilux UV Control Photo<div class="sub">1.6 · 70mm · Photochromic</div>
+                <div class="meta">🧍 ללקוח: <strong>שרה כהן</strong> · OS#3145</div>
+              </div>
+            </td>
+            <td style="text-align:center; font-weight:600;">-2.50</td>
+            <td style="text-align:center; font-weight:600;">-0.50</td>
+            <td style="text-align:center;"><span class="chip chip-custom">ייצור</span><br><span class="chip chip-customer" style="margin-top:2px;">לקוח</span></td>
+            <td style="text-align:center;"><span class="qty-expected">2</span></td>
+            <td>
+              <div class="qty-cell">
+                <input type="number" class="qty-input" value="2" />
+                <span class="qty-divider">/</span>
+                <span class="qty-expected">2</span>
+              </div>
+            </td>
+            <td style="text-align:center;"><span class="chip chip-complete">✓ מלא</span></td>
+            <td><button class="row-action note">📝</button></td>
+          </tr>
+
+          <!-- PO #2608 — Not received -->
+          <tr style="background:#fef2f2;">
+            <td style="text-align:center;">❌</td>
+            <td><div class="design-cell">Defender UV 420 SN<div class="sub">1.6 · 70mm · Blue Cut</div></div></td>
+            <td style="text-align:center; font-weight:600;">-2.00</td>
+            <td style="text-align:center; font-weight:600;">0.00</td>
+            <td style="text-align:center;"><span class="chip chip-stock">מדף</span></td>
+            <td style="text-align:center;"><span class="qty-expected">5</span></td>
+            <td>
+              <div class="qty-cell">
+                <input type="number" class="qty-input" value="0" />
+                <span class="qty-divider">/</span>
+                <span class="qty-expected">5</span>
+              </div>
+              <div style="margin-top:4px;"><span class="discrepancy-cell">לא התקבל</span></div>
+            </td>
+            <td style="text-align:center;"><span class="chip chip-discrepancy">חסר</span></td>
+            <td><button class="row-action note">📝 סיבה</button></td>
+          </tr>
+
+          <!-- PO #2611 group header (older, still pending) -->
+          <tr class="po-group-header">
+            <td colspan="9">
+              📋 PO #2611 <span class="po-meta">· נשלח 8.5.26 · 4 שורות / 7 יח׳ · ₪2,480 — לא בקבלה זו</span>
+            </td>
+          </tr>
+          <tr><td colspan="9" style="text-align:center; padding:8px; color:#94a3b8; font-size:11px;">לא נמצאו פריטים מ-PO #2611 בתעודה זו (העתידיים יישארו בהמתנה)</td></tr>
+
+          <!-- MANUAL section -->
+          <tr>
+            <td colspan="9" style="background:#faf5ff; padding:10px 18px; font-size:12px; color:#6d28d9; font-weight:700; border-top:2px solid #d8b4fe;">
+              ✏️ הוספות ידניות — פריטים שהגיעו ולא בהזמנה (יתועדו כידני)
+            </td>
+          </tr>
+
+          <tr class="manual">
+            <td style="text-align:center;">✏️</td>
+            <td><div class="design-cell">Hilux EYAS BLC<div class="sub">1.67 · 70mm · AR Clear</div><div class="meta">מזהה ידני: דוגמית בונוס מהספק</div></div></td>
+            <td style="text-align:center; font-weight:600;">+2.00</td>
+            <td style="text-align:center; font-weight:600;">0.00</td>
+            <td style="text-align:center;"><span class="chip chip-stock">מדף</span></td>
+            <td style="text-align:center;"><span class="qty-expected">—</span></td>
+            <td>
+              <div class="qty-cell">
+                <input type="number" class="qty-input" value="1" />
+              </div>
+            </td>
+            <td style="text-align:center;"><span class="chip chip-manual">ידני</span></td>
+            <td><button class="row-action remove">✕</button></td>
+          </tr>
+
+          <tr class="manual scanned">
+            <td style="text-align:center;">📡✏️</td>
+            <td><div class="design-cell">Hoya Sensity Dark<div class="sub">1.6 · 70mm · Photochromic</div><div class="meta">סרוק: 7290011243888 · ידני</div></div></td>
+            <td style="text-align:center; font-weight:600;">-1.00</td>
+            <td style="text-align:center; font-weight:600;">-0.25</td>
+            <td style="text-align:center;"><span class="chip chip-stock">מדף</span></td>
+            <td style="text-align:center;"><span class="qty-expected">—</span></td>
+            <td>
+              <div class="qty-cell">
+                <input type="number" class="qty-input" value="2" />
+              </div>
+            </td>
+            <td style="text-align:center;"><span class="chip chip-manual">ידני</span></td>
+            <td><button class="row-action remove">✕</button></td>
+          </tr>
+
+          <!-- Manual-add inline button -->
+          <tr>
+            <td colspan="9" class="manual-add-banner">
+              <button class="btn" style="background:#7c3aed; color:white; border-color:#7c3aed; font-weight:600;">
+                ➕ הוסף פריט ידנית
+              </button>
+              <span style="font-size:11px; color:#64748b; margin-right:12px;">
+                (לפריטים שלא היו ב-PO; יחושב על פי מחיר קטלוגי נוכחי)
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SIDE PANEL -->
+  <div class="side-panel">
+
+    <!-- Receipt summary -->
+    <div class="card">
+      <div class="card-header">📊 סיכום הקבלה</div>
+      <div class="card-body">
+        <div class="summary-row">
+          <span class="key">פריטים שסומנו כהתקבלו</span>
+          <span class="val">13 שורות</span>
+        </div>
+        <div class="summary-row success">
+          <span class="key">מלאות</span>
+          <span class="val">10 שורות</span>
+        </div>
+        <div class="summary-row warning">
+          <span class="key">חלקיות</span>
+          <span class="val">1 שורה (-1 יח׳)</span>
+        </div>
+        <div class="summary-row danger">
+          <span class="key">חסרות</span>
+          <span class="val">2 שורות (-9 יח׳)</span>
+        </div>
+        <div class="summary-row" style="border-top:1px dashed #e2e8f0; padding-top:10px; margin-top:6px;">
+          <span class="key">תוספות ידניות</span>
+          <span class="val">3 פריטים</span>
+        </div>
+        <div class="summary-row success" style="border-top:1px solid #e2e8f0; padding-top:10px; margin-top:6px;">
+          <span class="key">סה"כ יחידות למלאי</span>
+          <span class="val">46 יח׳</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Customer-tied lenses -->
+    <div class="card">
+      <div class="card-header green">🧍 עדשות ללקוחות</div>
+      <div class="card-body">
+        <div style="font-size:12px; color:#475569; margin-bottom:10px;">
+          עדשות ייצור בקבלה זו שיוקצו אוטומטית למכירת לקוח:
+        </div>
+        <div style="font-size:12px; padding:8px 10px; background:#f0fdf4; border-radius:5px; margin-bottom:6px;">
+          ✅ <strong>דניאל לויטין</strong> · OS#3142 · Multifocal<br>
+          <span style="color:#64748b; font-size:11px;">→ M9 lab_job יתקדם: "עדשה הגיעה — מוכן למיסגור"</span><br>
+          <span style="color:#94a3b8; font-size:10px;">(הלקוח יראה "מוכן" בכרטיס שלו ב-M7 — נגזר מ-M9)</span>
+        </div>
+        <div style="font-size:12px; padding:8px 10px; background:#f0fdf4; border-radius:5px;">
+          ✅ <strong>שרה כהן</strong> · OS#3145 · Photochromic<br>
+          <span style="color:#64748b; font-size:11px;">→ M9 lab_job יתקדם: "עדשה הגיעה — מוכן למיסגור"</span><br>
+          <span style="color:#94a3b8; font-size:10px;">(הלקוח יראה "מוכן" בכרטיס שלו ב-M7 — נגזר מ-M9)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Debt creation preview -->
+    <div class="card">
+      <div class="card-header amber">💰 חוב שייווצר</div>
+      <div class="card-body">
+        <div style="font-size:12px; color:#64748b; margin-bottom:8px;">
+          על בסיס תעודת משלוח <strong>DN-2026-1147</strong>:
+        </div>
+        <div class="summary-row">
+          <span class="key">סכום מצטבר נטו</span>
+          <span class="val">₪5,060</span>
+        </div>
+        <div class="summary-row">
+          <span class="key">מע"מ 18%</span>
+          <span class="val">₪910.80</span>
+        </div>
+        <div class="summary-row" style="border-top:1px solid #e2e8f0; padding-top:6px; font-weight:700;">
+          <span class="key">סה"כ חוב</span>
+          <span class="val" style="color:#1e3a8a;">₪5,970.80</span>
+        </div>
+        <div style="font-size:11px; color:#64748b; margin-top:8px; padding:8px 10px; background:#f8fafc; border-radius:5px;">
+          💡 החוב ייווצר במודול חובות ספקים, מקושר לקבלה זו.
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom actions -->
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <button class="btn btn-success" style="justify-content:center; padding:12px; font-weight:700;">
+        ✅ אשר וצור רשומות מלאי
+      </button>
+      <button class="btn" style="justify-content:center;">
+        💾 שמור טיוטה (אפשר להמשיך מאוחר יותר)
+      </button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

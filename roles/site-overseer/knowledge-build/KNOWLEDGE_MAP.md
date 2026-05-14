@@ -66,6 +66,18 @@ Source-of-truth for the field list: `crm_leads` columns (verified via `informati
 ### Open question for Daniel
 Q: should the duplicate-branch update `utm_*` when fresh values arrive in the body (last-touch model)? Or persist first-touch forever and add a separate per-event-attendee `acquisition_source` column for second-touch?
 
+### Update 2026-05-14 (M3_UTM_TRIPLE_LAYER_PERSISTENCE — Phase 1 P1.1 closed)
+
+The first-touch trap above is **partially closed** — `crm_leads.utm_*` columns still freeze at first insert (intentional, per Daniel's Q1 decision in FUNNEL_ROADMAP) BUT every active funnel interaction now also writes a row to a new table `crm_lead_touchpoints` with its own UTM bag + timestamp + type (`short_link_click`, `lead_submit`, `event_register`). Touchpoint capture is wired in:
+
+- **`resolve-link` Edge Function** (v6): on every `/r/<code>` short-link click, records a `short_link_click` touchpoint with UTMs parsed from `short_links.target_url`. `lead_id` is pre-filled from `short_links.lead_id` when present (per-recipient broadcast SMS); otherwise NULL.
+- **`lead-intake` Edge Function** (v25): on every form submit (fresh + duplicate + race branches), records a `lead_submit` touchpoint with UTMs from the request body. Then async-queues `resolve_touchpoints_to_lead` via `EdgeRuntime.waitUntil` to backfill `lead_id` on prior anonymous touchpoints (30-day window, matched by `phone_normalized`).
+- **`register_lead_to_event` RPC** (signature expanded 4→13 params, old callers unaffected): on every state-changing terminal (T3 auto-move, T4 invited-promote, T6 undelete, T7 fresh over-cap, T8 fresh under-cap), records an `event_register` touchpoint with UTMs forwarded as RPC params. Dedupe_key uses `attendee_id` so revivals of the same attendee don't double-record.
+
+**The Layer 2 wrong-conclusion trap from 2026-05-14 morning is now reading-only — for new touchpoints recorded post-P1.1. Pre-P1.1 leads will only have `crm_leads.utm_*` (historical first-touch) and no journey rows. The new view `v_crm_lead_first_touch` falls back to `crm_leads.utm_*` for those.**
+
+The architectural debt FIND-2 from `M4_REGISTER_LEAD_TO_EVENT_RPC_MAP/FINDINGS.md` is **structurally resolved** by this SPEC — Phase 4 E1 (MTA Engine) now has its substrate. E7 (Customer Journey Analytics) now has its event log. See `modules/Module 4 - CRM/docs/specs/M3_UTM_TRIPLE_LAYER_PERSISTENCE/`.
+
 ---
 
 ## Layer 3 — Automation Rules
@@ -146,7 +158,9 @@ The intended transition order (inferred from rule names + timing rules): `planni
 
 ### Capacity logic
 
-`crm_events` has `max_capacity` (int), `max_coupons` (int), `extra_coupons` (int). The RPC `register_lead_to_event` is the single source of truth that enforces capacity, dedup, and waiting-list transition (referenced by both `event-register/index.ts:270` and `quick-register/index.ts:308`). The RPC body lives in DB; the migration history is in `modules/Module 4 - CRM/migrations/2026_05_13_invited_ghost_attendee_fix_up.sql` and earlier (verified via Grep). **The RPC body itself was NOT read line-by-line in this SPEC** — full RPC mapping is a follow-up.
+`crm_events` has `max_capacity` (int), `max_coupons` (int), `extra_coupons` (int). The RPC `register_lead_to_event` is the single source of truth that enforces capacity, dedup, and waiting-list transition (referenced by both `event-register/index.ts:270` and `quick-register/index.ts:308`). The RPC body lives in DB; the migration history is in `modules/Module 4 - CRM/migrations/2026_05_13_invited_ghost_attendee_fix_up.sql`, `modules/Module 4 - CRM/migrations/2026_05_14_register_lead_to_event_return_shape_fix_up.sql`, and (latest) `modules/Module 4 - CRM/migrations/2026_05_14_M3_UTM_TRIPLE_LAYER_04_register_lead_to_event_up.sql`. **Full line-by-line RPC mapping completed 2026-05-14** in SPEC `M4_REGISTER_LEAD_TO_EVENT_RPC_MAP` (P1.4 — see `modules/Module 4 - CRM/docs/specs/M4_REGISTER_LEAD_TO_EVENT_RPC_MAP/STATE_TRANSITIONS.md` for the 8-terminal state diagram + line-annotation table). FIND-1 from that mapping (return-shape inconsistency on the fresh-INSERT closed-and-full branch) was closed 2026-05-14 by SPEC `M4_REGISTER_LEAD_TO_EVENT_RETURN_SHAPE_FIX` — the RPC now returns `status='event_closed'` (not `'waiting_list'`) when the event is closed AND capacity is full AND no existing same-event row exists.
+
+**Update 2026-05-14 (M3_UTM_TRIPLE_LAYER_PERSISTENCE — Phase 1 P1.1 closed):** the RPC signature was expanded from 4 to 13 params (9 new optional UTM/context params with NULL defaults; old 4-arg callers unaffected). On every state-changing terminal (T3 auto-move, T4 invited-promote, T6 undelete, T7 fresh over-cap, T8 fresh under-cap), the RPC now also records an `event_register` touchpoint in `crm_lead_touchpoints` via `PERFORM public._record_touchpoint(...)`. Dedupe_key = `'event_register:' || attendee_id::text` ensures revival of the same attendee does NOT create a duplicate touchpoint row (ON CONFLICT DO NOTHING in helper RPC). T1 (RAISE 42501), T2 (event_not_found), T5 (already_registered) — no touchpoint (no registration state change). Body md5 transitioned `31fea2ea...` → `07e1904a...`. P1.4's FIND-2 (RPC writes no journey log) is structurally resolved by this change.
 
 ### `crm_event_attendees` columns + status values
 
@@ -317,7 +331,7 @@ The `message_log_id` FK (added 2026-05-14) is backfilled by send-message/dispatc
 |---|---|---|
 | Click on `/r/<code>` (storefront short link inside SMS or email body) | ✅ Per-click row in `short_link_clicks` + `click_count++` on `short_links` | resolve-link/index.ts:176-188 |
 | Click on `/r.html?...` legacy redirector (rare today) | ❌ Not tracked | r.html:12-18 — JS-only redirect, no fetch |
-| Click on raw `https://prizmaoptic.short.gy/...` (external short.gy service) | ❌ Not tracked in our DB | No code path touches short.gy ; tracking lives in short.gy's own dashboard |
+| Click on raw `https://prizmaoptic.short.gy/...` (external short.gy service) | ⚠️ **DEPRECATED 2026-05-14 (M3_SHORTGY_TO_INTERNAL_REDIRECT, P1.3)** — every statically-embedded short.gy reference migrated to internal `/r/<code>` (templates + tenants.payment_links). Historical short.gy clicks stay in short.gy's UI; no backfill. From 2026-05-14 forward all new clicks are internal + tracked. | Templates / tenants.payment_links DB queries return zero short.gy refs post-migration. `crm_message_log.content` (4,370 rows) + `crm_message_queue.body` status=sent (1,170 rows) remain immutable historical record. |
 | Email open | ❌ No tracking pixel injected today | No `<img>` open-tracker URL builder in templates |
 | Email bounce | ❌ No bounce handler hooked from Gmail | Make scenario 9104395 has Gmail module but no error-route bounce handler |
 | SMS delivery (DLR) | ❌ Not captured | Make 9104395 returns success on webhook accept, not on telco confirm |
@@ -363,7 +377,7 @@ The HMAC is signed with `SERVICE_ROLE_KEY`. TTL = 90 days (TOKEN_TTL_SECONDS, ur
 | `/supersale/` submit, fresh lead, NO active event | INSERT (status='new') | none | lead.status='new' |
 | `/supersale/` submit, fresh lead, active event exists | INSERT (status='new', then UPDATE → 'invited') | UPSERT (status='invited') | both 'invited' |
 | `/supersale/` submit, duplicate (existing phone) | UPDATE unsubscribed_at=null only | none | unchanged |
-| `/event-register?token=...` submit by invited lead | UPDATE updated_at only (via RPC) | `register_lead_to_event` RPC: insert or transition `invited → registered/waiting_list` | attendee.status='registered' or 'waiting_list' |
+| `/event-register?token=...` submit by invited lead | UPDATE updated_at only (via RPC) | `register_lead_to_event` RPC: insert or transition `invited → registered/waiting_list/event_closed` | attendee.status='registered' OR 'waiting_list' (event open + full) OR 'event_closed' (event closed + full); RPC return matches row state after 2026-05-14 fix |
 | `/quick-register/?event=N` walk-in, fresh | INSERT (status='new') | RPC → `registered` (or `waiting_list` if capped) | attendee.coupon_sent=true after dispatch |
 | `/quick-register/?event=N` walk-in, existing lead | UPDATE `unsubscribed_at=null, acquired_via=quick_register_qr` | RPC same as above | same |
 
@@ -473,26 +487,27 @@ Make returning 200 to send-message means the vendor (Global SMS or Gmail) return
 | Email bounced | **UNMEASURED** | No bounce route in Make scenario 9104395 |
 | SMS link clicked | **MEASURED** | `short_link_clicks` for `/r/<code>` URLs (post-2026-05-14) |
 | External short.gy link clicked | **UNMEASURED** in our DB | Lives only in short.gy's dashboard |
-| Click → which broadcast / which message | **BROKEN** | `crm_message_log.broadcast_id` exists but is never written (post-2026-05-12) |
+| Click → which broadcast / which message | **MEASURED (post-2026-05-14 P1.2)** | `crm_message_log.broadcast_id` populated via send-message EF v25; `short_links.broadcast_id` stamped at link-build time (X1 substrate); `short_link_clicks.broadcast_id` + `crm_lead_touchpoints.broadcast_id` populated by resolve-link EF v7. See `M4_BROADCAST_ID_PROPAGATION` (P1.2). |
 | Form arrival (landed on event-register page) | **UNMEASURED** | No "arrived from short-link" log; the click is logged but the landing is not |
 | Event registration submit | **MEASURED** | RPC `register_lead_to_event` → `crm_event_attendees` row |
 | Walk-in QR registration | **MEASURED** | `registration_method='quick_register_qr'` on attendee row |
 | Attendee checked in at event | **MEASURED** | `crm_event_attendees.checked_in_at` |
 | Attendee purchased | **MEASURED** | `crm_event_attendees.purchased_at, purchase_amount` |
 | Purchase → FB CAPI for ROAS | **UNMEASURED** | Scenario 8542928 exists but is INACTIVE; no graph.facebook.com call in code |
-| Broadcast aggregate counters | **BROKEN** | `crm_broadcasts.total_sent/total_failed/status` never updated since 2026-05-12 |
+| Broadcast aggregate counters | **MEASURED (post-2026-05-14 P1.2)** | pg_cron `crm_broadcast_total_sent_refresh` updates `total_sent`/`total_failed`/`status` every minute from `crm_message_log` aggregation. See `M4_BROADCAST_ID_PROPAGATION`. |
 
 ---
 
 ## Top 5 Tracking Gaps
 
-### Gap #1 — Broadcast bookkeeping is dead (CRITICAL, infra)
-Every broadcast since 2026-05-12 stays `crm_broadcasts.status='queued', total_sent=0` forever. The send-message → message_log path writes neither `broadcast_id` (on log rows) nor counter updates (on the broadcast row). Evidence: `crm_broadcasts` DB scan + repo-wide grep for `crm_broadcasts.*update` returns zero hits.
-**Impact:** any UI or report that reads `crm_broadcasts` for "how did this blast do" shows a lie. Also caused SPEC §2 wrong-conclusion #1.
+### Gap #1 — Broadcast bookkeeping is dead (RESOLVED 2026-05-14 by `M4_BROADCAST_ID_PROPAGATION` P1.2)
+**Previously:** Every broadcast since 2026-05-12 stayed `crm_broadcasts.status='queued', total_sent=0` forever.
+**Fix:** pg_cron job `crm_broadcast_total_sent_refresh` runs every minute, aggregates `crm_message_log` by `broadcast_id`, updates `total_sent` / `total_failed` / flips `status` from 'queued'/'sending' to 'sent' when all queue rows drained. Idempotent via `WHERE b.status IN ('queued','sending')` so finished broadcasts are never re-touched.
+**Backfill note:** 2026-05-12 → 2026-05-14 historical broadcasts remain at `total_sent=0` by design (Option-X choice — no heuristic backfill). Phase 2.5 dashboards filter "broadcasts after 2026-05-14" for clean charts.
 
-### Gap #2 — No `broadcast_id` propagation from broadcast → queue → log (HIGH)
-`crm_message_queue` schema has no `broadcast_id` column. `crm_message_log.broadcast_id` exists but is never populated. The link from "a specific click in `short_link_clicks`" back to "which broadcast caused it" is unrecoverable today. Evidence: `crm_message_queue` columns + repo-wide grep for `broadcast_id`.
-**Impact:** "what's the click-through rate of broadcast X?" cannot be answered without per-row inference.
+### Gap #2 — No `broadcast_id` propagation from broadcast → queue → log (RESOLVED 2026-05-14 by `M4_BROADCAST_ID_PROPAGATION` P1.2)
+**Previously:** `crm_message_queue` schema had no `broadcast_id`; `crm_message_log.broadcast_id` existed but was never populated.
+**Fix:** End-to-end X1 chain wired — `crm_message_queue.broadcast_id` column added; `crm-messaging-broadcast-queue.js` `buildQueueRows` stamps it on every queue row; `dispatch-queue` EF v14 SELECTs + forwards to `send-message` payload; `send-message` EF v25 writes `broadcast_id` on `crm_message_log` row (all 8 insert paths) AND threads it through `injectAutoUrls` → `createShortLink` to stamp `short_links.broadcast_id`; `resolve-link` EF v7 reads `short_links.broadcast_id` at click time, writes it to `short_link_clicks.broadcast_id` + `crm_lead_touchpoints.broadcast_id`. All hops carry `broadcast_id` end-to-end. `register_lead_to_event` RPC also gained 14th param `p_broadcast_id uuid DEFAULT NULL` so the event_register touchpoint can carry the attribution when callers know the broadcast (current ERP/EF callers pass NULL — wiring deferred to a future SPEC).
 
 ### Gap #3 — `registration_method` is NULL for server-side invites (MEDIUM)
 The lead-intake server-side path (`dispatch.ts:153-159`) upserts `crm_event_attendees` with `status='invited'` and no `registration_method`. So `attendees WHERE registration_method='form'` excludes server-invited rows. The 4 paths in Layer 4 collapse to 3 distinguishable in the data.

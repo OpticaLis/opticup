@@ -217,3 +217,153 @@ CREATE TRIGGER crm_event_attendees_set_updated_at_trg
 
 -- crm_automation_rules: pre-existing column + crm_automation_rules_set_updated_at_trg trigger.
 -- No DDL applied — Rule 21 (no duplicates). 0 NULL rows in updated_at confirmed pre-flight.
+
+-- =============================================================================
+-- M3_UTM_TRIPLE_LAYER_PERSISTENCE — Phase 1 P1.1 (2026-05-14)
+-- =============================================================================
+-- New table crm_lead_touchpoints + 2 RPCs + 1 view.
+-- See modules/Module 4 - CRM/migrations/2026_05_14_M3_UTM_TRIPLE_LAYER_*.sql
+-- for canonical migrations. Below is the declarative summary.
+
+CREATE TABLE crm_lead_touchpoints (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id           uuid NOT NULL REFERENCES public.tenants(id),
+  lead_id             uuid NULL REFERENCES public.crm_leads(id) ON DELETE SET NULL,
+  phone_normalized    text NULL,
+  touchpoint_type     text NOT NULL,
+  occurred_at         timestamptz NOT NULL DEFAULT now(),
+  utm_source          text NULL,
+  utm_medium          text NULL,
+  utm_campaign        text NULL,
+  utm_content         text NULL,
+  utm_term            text NULL,
+  utm_campaign_id     text NULL,
+  referrer_url        text NULL,
+  landing_url         text NULL,
+  short_link_code     text NULL,
+  short_link_id       uuid NULL REFERENCES public.short_links(id) ON DELETE SET NULL,
+  broadcast_id        uuid NULL,  -- reserved for Phase 1 P1.2
+  event_id            uuid NULL REFERENCES public.crm_events(id) ON DELETE SET NULL,
+  attendee_id         uuid NULL REFERENCES public.crm_event_attendees(id) ON DELETE SET NULL,
+  dedupe_key          text NOT NULL,
+  created_at          timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT crm_lead_touchpoints_type_check CHECK (
+    touchpoint_type IN ('short_link_click', 'lead_submit', 'event_register')
+  ),
+  CONSTRAINT crm_lead_touchpoints_tenant_dedupe_uq UNIQUE (tenant_id, dedupe_key)
+);
+
+-- Indices: 4 explicit + 1 PK auto + 1 UNIQUE auto = 6 total.
+CREATE INDEX idx_crm_lead_touchpoints_tenant_lead_occurred
+  ON public.crm_lead_touchpoints (tenant_id, lead_id, occurred_at);
+CREATE INDEX idx_crm_lead_touchpoints_tenant_phone_type_occurred
+  ON public.crm_lead_touchpoints (tenant_id, phone_normalized, touchpoint_type, occurred_at);
+CREATE INDEX idx_crm_lead_touchpoints_tenant_occurred
+  ON public.crm_lead_touchpoints (tenant_id, occurred_at DESC);
+CREATE INDEX idx_crm_lead_touchpoints_tenant_short_link
+  ON public.crm_lead_touchpoints (tenant_id, short_link_id)
+  WHERE short_link_id IS NOT NULL;
+
+-- Canonical JWT-claim RLS pattern (Iron Rule 15).
+ALTER TABLE public.crm_lead_touchpoints ENABLE ROW LEVEL SECURITY;
+CREATE POLICY service_bypass ON public.crm_lead_touchpoints
+  AS PERMISSIVE FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY tenant_isolation ON public.crm_lead_touchpoints
+  AS PERMISSIVE FOR ALL TO public
+  USING (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json ->> 'tenant_id'::text))::uuid)
+  WITH CHECK (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json ->> 'tenant_id'::text))::uuid);
+
+GRANT SELECT, INSERT ON public.crm_lead_touchpoints TO authenticated, anon;
+GRANT ALL ON public.crm_lead_touchpoints TO service_role;
+
+-- Helper RPC (SECURITY DEFINER, search_path=public).
+-- See migration 02_rpcs_up.sql for full body.
+-- public._record_touchpoint(...) RETURNS uuid — ON CONFLICT DO NOTHING.
+
+-- Deferred resolver (SECURITY DEFINER, search_path=public, JWT-claim gated).
+-- public.resolve_touchpoints_to_lead(p_tenant_id, p_lead_id, p_phone_normalized) RETURNS int
+
+-- First-touch view (security_invoker=true).
+-- public.v_crm_lead_first_touch returns per-(tenant,lead) earliest UTM bag,
+-- preferring lead_submit > short_link_click > event_register, with fallback
+-- to crm_leads.utm_* when no touchpoint exists.
+
+-- ========================================================================
+-- M4_BROADCAST_ID_PROPAGATION (Phase 1 P1.2, 2026-05-14)
+-- ========================================================================
+-- Closes KNOWLEDGE_MAP Layer 5 Gap #1 + Gap #2. X1 substrate: broadcast_id
+-- stamped on short_links at link-build time; propagates end-to-end through
+-- queue→log→short_links→clicks→touchpoints. pg_cron periodic counter.
+-- See modules/Module 4 - CRM/docs/specs/M4_BROADCAST_ID_PROPAGATION/.
+
+-- 4 new broadcast_id columns + 5 FKs to crm_broadcasts(id) ON DELETE SET NULL:
+ALTER TABLE crm_message_queue  ADD COLUMN broadcast_id uuid NULL REFERENCES crm_broadcasts(id) ON DELETE SET NULL;
+ALTER TABLE short_link_clicks  ADD COLUMN broadcast_id uuid NULL REFERENCES crm_broadcasts(id) ON DELETE SET NULL;
+ALTER TABLE short_links        ADD COLUMN broadcast_id uuid NULL REFERENCES crm_broadcasts(id) ON DELETE SET NULL;
+-- crm_lead_touchpoints.broadcast_id column already added by P1.1 (M3_UTM_TRIPLE_LAYER);
+-- P1.2 adds the FK that P1.1 deliberately deferred:
+ALTER TABLE crm_lead_touchpoints
+  ADD CONSTRAINT crm_lead_touchpoints_broadcast_id_fkey
+  FOREIGN KEY (broadcast_id) REFERENCES crm_broadcasts(id) ON DELETE SET NULL;
+-- crm_message_log.broadcast_id column + FK predate this SPEC.
+
+-- 5 partial composite indices WHERE broadcast_id IS NOT NULL:
+CREATE INDEX idx_crm_message_queue_tenant_broadcast_created    ON crm_message_queue   (tenant_id, broadcast_id, created_at)  WHERE broadcast_id IS NOT NULL;
+CREATE INDEX idx_crm_message_log_tenant_broadcast_created      ON crm_message_log     (tenant_id, broadcast_id, created_at)  WHERE broadcast_id IS NOT NULL;
+CREATE INDEX idx_short_link_clicks_tenant_broadcast_clicked    ON short_link_clicks   (tenant_id, broadcast_id, clicked_at)  WHERE broadcast_id IS NOT NULL;
+CREATE INDEX idx_short_links_tenant_broadcast                  ON short_links         (tenant_id, broadcast_id)              WHERE broadcast_id IS NOT NULL;
+CREATE INDEX idx_crm_lead_touchpoints_tenant_broadcast_occurred ON crm_lead_touchpoints (tenant_id, broadcast_id, occurred_at) WHERE broadcast_id IS NOT NULL;
+
+-- register_lead_to_event RPC: 13→14 params. New 14th param: p_broadcast_id uuid DEFAULT NULL.
+-- DROP FUNCTION required on old 13-arg signature (Postgres treats different arg counts
+-- as different overloads; CREATE OR REPLACE alone wouldn't replace it).
+-- Body propagates p_broadcast_id into each PERFORM public._record_touchpoint(...) call
+-- in place of the prior NULL literal at position 9. See migration 02 in P1.2 SPEC folder.
+
+-- pg_cron job: crm_broadcast_total_sent_refresh
+-- Schedule: '* * * * *' (every minute). Pattern: direct SQL UPDATE (no EF round-trip).
+-- Idempotent: WHERE b.status IN ('queued','sending'). Tenant-agnostic: JOIN on broadcast_id only.
+-- Updates total_sent + total_failed from crm_message_log COUNT(*) FILTER status='sent'/'failed';
+-- flips status 'queued'→'sending'→'sent' when (sent+failed+rejected) >= total_recipients.
+-- See migration 03 in P1.2 SPEC folder for full body.
+
+-- ========================================================================
+-- M3_SHORTGY_TO_INTERNAL_REDIRECT (Phase 1 P1.3, 2026-05-14)
+-- ========================================================================
+-- Migrates statically-embedded prizmaoptic.short.gy URLs to internal /r/<code>
+-- so every customer click flows through resolve-link EF and produces
+-- short_link_clicks + crm_lead_touchpoints rows (P1.1+P1.2 chain).
+-- Phase 1 COMPLETE with this SPEC. See SPEC folder:
+-- modules/Module 4 - CRM/docs/specs/M3_SHORTGY_TO_INTERNAL_REDIRECT/.
+
+-- DATA ONLY — no DDL. 6 new short_links rows + 10 template body UPDATEs +
+-- 2 tenants.payment_links UPDATEs.
+
+-- New short_links rows (link_type='template_static', expires_at='2099-12-31'):
+--   demo:   dsruWc1z → gpw.gamaf.co.il/?id=IzQNzbZPhyDU&sid=... (Gama ₪50 deposit, Daniel-approved as known partner)
+--           NCoQWzbd → www.prizma-optic.co.il/supersale-takanon/
+--   prizma: KvSzd3Zz → (same gamaf URL as demo)
+--           f9Avttrn → www.prizma-optic.co.il/supersale-takanon/
+--           CEiBGCWj → www.prizma-optic.co.il/supersalepricescatalog/
+--           5CBy1Do4 → www.prizma-optic.co.il/supersale-stock/
+-- Code generation pattern: 8-char alphanumeric (62-char alphabet, A-Za-z0-9),
+-- matching send-message/url-builders.ts createShortLink() runtime pattern.
+-- Iron Rule 18 advisory: the existing code-uniqueness constraint on short_links
+-- is project-wide rather than tenant-bound — pre-existing debt, not in scope here.
+
+-- Templates UPDATEd (10 rows, all tenant-scoped):
+--   demo: 292f7bc7 (registration confirmation Email), 4d42b03f (coupon Email), 784cdf1c (coupon SMS)
+--   prizma: 988bca26, f00620cc, c60f47ff, 679c4510, b325481a, d3e19217, 2f4e7585
+
+-- Tenants UPDATEd (2 rows): demo.payment_links.50 + prizma.payment_links.50
+-- both gmapy → internal /r/<code> at their respective storefront origins.
+
+-- NEW ERP file: modules/crm/crm-short-links-stats.js (192 lines)
+-- New CRM tab "קישורים קצרים" (data-tab="short-links") in crm.html.
+-- MVP — sortable table by total_clicks DESC, no charts/filters/exports.
+
+-- Out-of-scope SURFACES (verified untouched):
+--   crm_message_log.content: 4,370 rows with short.gy (historical audit, immutable)
+--   crm_message_queue.body status='sent': 1,170 rows (historical render, immutable)
+--   storefront_pages.blocks: 0 rows (pre-existing clean)
+--   ERP source / storefront source: 0 rows (pre-existing clean)

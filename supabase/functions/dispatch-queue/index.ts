@@ -100,7 +100,9 @@ Deno.serve(async (req: Request) => {
   // ticks because the UPDATE only flips status='queued' → 'processing'.
   const claimRes = await db
     .from("crm_message_queue")
-    .select("id, tenant_id, run_id, lead_id, event_id, channel, template_slug, body, subject, variables, language")
+    // 2026-05-14 M4_BROADCAST_ID_PROPAGATION (P1.2) — also fetch broadcast_id
+    // so it can be forwarded to send-message in the dispatch payload.
+    .select("id, tenant_id, run_id, lead_id, event_id, channel, template_slug, body, subject, variables, language, broadcast_id, scheduled_at")
     .eq("status", "queued")
     .lte("scheduled_at", new Date().toISOString())
     .order("scheduled_at", { ascending: true })
@@ -128,6 +130,7 @@ Deno.serve(async (req: Request) => {
   type ClaimedRow = {
     id: string; tenant_id: string; run_id: string | null;
     lead_id: string; event_id: string | null;
+    broadcast_id: string | null;
     channel: "sms"|"email";
     template_slug?: string; body?: string; subject?: string;
     variables?: Record<string, unknown>;
@@ -195,6 +198,10 @@ async function dispatchOne(db: any, r: any): Promise<"sent" | "failed" | "reject
     if (r.template_slug) payload.template_slug = r.template_slug;
     if (r.body) payload.body = r.body;
     if (r.subject) payload.subject = r.subject;
+    // 2026-05-14 M4_BROADCAST_ID_PROPAGATION (P1.2) — forward to send-message
+    // so it writes broadcast_id on crm_message_log + stamps it on short_links
+    // created by injectAutoUrls. NULL for non-broadcast queue rows.
+    if (r.broadcast_id) payload.broadcast_id = r.broadcast_id;
 
     const res = await fetch(SEND_MESSAGE_URL, {
       method: "POST",

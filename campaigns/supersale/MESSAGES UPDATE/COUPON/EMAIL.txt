@@ -174,7 +174,7 @@ CONTENT:
 
                             <!-- ═══ TAKANON ═══ -->
                             <p style="margin:0 0 20px 0; font-size:12px; color:#666666; text-align:center; line-height:1.5;">
-                                *רכישה באירוע כפופה ל<a href="https://prizmaoptic.short.gy/dgUUIn" style="color:#d4af37; text-decoration:underline;">תקנון האירוע</a>.
+                                *רכישה באירוע כפופה ל<a href="https://prizma-optic.co.il/r/f9Avttrn" style="color:#d4af37; text-decoration:underline;">תקנון האירוע</a>.
                             </p>
 
                             <!-- ═══ SIGN OFF ═══ -->

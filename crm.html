@@ -149,6 +149,14 @@ tailwind.config = {
         </svg>
         <span>לוג פעילות</span>
       </button>
+
+      <button class="crm-nav-item" data-tab="short-links" onclick="showCrmTab('short-links')">
+        <svg class="crm-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M13.828 10.172a4 4 0 015.656 0l1.414 1.414a4 4 0 010 5.656l-3 3a4 4 0 01-5.656 0M10.172 13.828a4 4 0 01-5.656 0L3.1 12.414a4 4 0 010-5.656l3-3a4 4 0 015.656 0"/>
+        </svg>
+        <span>קישורים קצרים</span>
+      </button>
     </nav>
 
     <!-- Sidebar Footer -->
@@ -329,6 +337,11 @@ tailwind.config = {
         <div id="activity-log-host"></div>
       </section>
 
+      <!-- ========== TAB 9: SHORT LINKS STATS ========== -->
+      <section id="tab-short-links" class="crm-tab">
+        <div id="short-links-host"></div>
+      </section>
+
     </div>
   </div>
 </div>
@@ -414,6 +427,7 @@ tailwind.config = {
 <script src="modules/crm/crm-automation-runs.js"></script>
 <script src="modules/crm/crm-automation-history.js"></script>
 <script src="modules/crm/crm-queue-live.js"></script>
+<script src="modules/crm/crm-short-links-stats.js"></script>
 <script src="modules/crm/crm-event-delete.js"></script>
 <script src="modules/crm/crm-event-edit.js"></script>
 <script src="modules/crm/crm-confirm-send.js"></script>

@@ -26,6 +26,10 @@
       var alHost = document.getElementById('activity-log-host');
       if (alHost) renderActivityLog(alHost);
     }
+    if (name === 'short-links' && typeof loadCrmShortLinksStats === 'function') {
+      var slHost = document.getElementById('short-links-host');
+      if (slHost) loadCrmShortLinksStats(slHost);
+    }
   }
   window.showCrmTab = showCrmTab;
 

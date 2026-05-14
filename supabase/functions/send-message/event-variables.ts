@@ -235,11 +235,12 @@ export async function injectAutoUrls(
   tenantId: string,
   eventId: string | null,
   vars: Record<string, unknown>,
+  broadcastId: string | null = null,
 ): Promise<string[]> {
   const shortLinkIds: string[] = [];
   if (typeof vars.unsubscribe_url !== "string" || isPlaceholder(vars.unsubscribe_url)) {
     try {
-      const r = await buildUnsubscribeUrl(db, leadId, tenantId);
+      const r = await buildUnsubscribeUrl(db, leadId, tenantId, broadcastId);
       vars.unsubscribe_url = r.url;
       if (r.id) shortLinkIds.push(r.id);
     } catch (e) {
@@ -252,7 +253,7 @@ export async function injectAutoUrls(
       /^https?:\/\//i.test(vars.registration_url);
     if (!hasOverride) {
       try {
-        const r = await buildRegistrationUrl(db, leadId, tenantId, eventId);
+        const r = await buildRegistrationUrl(db, leadId, tenantId, eventId, broadcastId);
         vars.registration_url = r.url;
         if (r.id) shortLinkIds.push(r.id);
       } catch (e) {

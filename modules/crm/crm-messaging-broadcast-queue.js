@@ -71,7 +71,7 @@
    * name/phone/email) — send-message EF's injectLeadVariables will still
    * fill any gaps from crm_leads at dispatch time.
    */
-  function buildQueueRows(tenantId, wizard, leadRows, baseSlug, lang) {
+  function buildQueueRows(tenantId, wizard, leadRows, baseSlug, lang, broadcastId) {
     var now = new Date().toISOString();
     return leadRows.map(function (l) {
       var row = {
@@ -85,7 +85,13 @@
         // 2026-05-13 BROADCAST_EVENT_LINK_SUPPORT — carry event_id so the
         // send-message EF can build %registration_url% via injectAutoUrls
         // for each recipient. null when broadcast is not event-linked.
-        event_id: wizard.eventId || null
+        event_id: wizard.eventId || null,
+        // 2026-05-14 M4_BROADCAST_ID_PROPAGATION (P1.2) — stamp broadcast_id
+        // on every queue row so it flows through dispatch-queue → send-message
+        // → crm_message_log → short_links → short_link_clicks → touchpoints,
+        // and so the pg_cron crm_broadcast_total_sent_refresh job can update
+        // crm_broadcasts.total_sent by aggregating message_log rows per broadcast_id.
+        broadcast_id: broadcastId
       };
       if (baseSlug) {
         row.template_slug = baseSlug;
@@ -163,7 +169,7 @@
       });
     }
 
-    var queueRows = buildQueueRows(tenantId, wizard, leadRows, t.baseSlug, t.lang);
+    var queueRows = buildQueueRows(tenantId, wizard, leadRows, t.baseSlug, t.lang, broadcastId);
     var inserted = await insertQueueRowsChunked(sb, queueRows);
 
     var perMsgMs = THROTTLE_MS[wizard.channel] || 1000;

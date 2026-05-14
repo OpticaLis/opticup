@@ -5,21 +5,21 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // lead-intake — Edge Function for public lead form submission
 // Module 4 CRM — Go-Live Phase P1 (+ P4 dispatch wiring, 2026-04-22)
 // ============================================================
-// Flow: POST { tenant_slug, name, phone, ... } → validate →
-//       resolve tenant → normalize phone → duplicate check →
-//       INSERT crm_leads (or return existing) → dispatch
-//       SMS + email via `send-message` Edge Function.
-// Replaces the old Monday.com + Make lead-creation pipeline.
+// 2026-05-14 (M3_UTM_TRIPLE_LAYER_PERSISTENCE, Phase 1 P1.1): every
+// lead-intake POST records a lead_submit touchpoint in
+// crm_lead_touchpoints (fresh + duplicate + race branches all emit one).
+// dedupe_key = 'lead_submit:' + lead_id + ':' + epoch_seconds so
+// repeated submits across time are recorded individually while same-
+// second collisions fold gracefully. Following the fresh-insert path
+// the EF also enqueues an async resolve_touchpoints_to_lead via
+// EdgeRuntime.waitUntil so prior anonymous touchpoints linked by
+// phone_normalized within 30 days are backfilled. Async — does NOT
+// block the 201/409 response.
 // ============================================================
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// Legacy JWT-format anon key — the gateway's verify_jwt rejects the newer
-// `sb_publishable_*` key format that `SUPABASE_ANON_KEY` env var returns.
-// This is the same key already present in js/shared.js (git-tracked), so
-// hardcoding here is not a new exposure. Supabase issue:
-// https://github.com/supabase/supabase/issues/ — see project publishable keys.
 const ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeHJyeHptZHhhZW5sdm9jeWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjIxNzIsImV4cCI6MjA4ODUzODE3Mn0.7Z_lrqHctUqm1offIvZxA17wCI4kRopFWgL1jCDJ9ZU";
 
@@ -59,51 +59,53 @@ function boolOrFalse(v: unknown): boolean {
   return v === true || v === "true" || v === 1 || v === "1";
 }
 
-/**
- * Normalize a phone number to E.164.
- * Accepts Israeli local format (0XXXXXXXXX, 10 digits starting with 0)
- * or already-international (+972..., 972...).
- * Returns the canonical +CC... string, or null if invalid.
- */
 function normalizePhone(raw: string): string | null {
   if (!raw) return null;
-  // Keep leading + if present, strip everything else non-digit.
   const hasPlus = raw.trim().startsWith("+");
   const digits = raw.replace(/\D/g, "");
   if (digits.length === 0) return null;
 
   let e164: string;
-
   if (hasPlus) {
-    // Already international — trust the country code as typed.
     e164 = "+" + digits;
   } else if (digits.startsWith("972")) {
-    // 972... without plus → just add +
     e164 = "+" + digits;
   } else if (digits.startsWith("0") && digits.length === 10) {
-    // Israeli local 0XXXXXXXXX → +972XXXXXXXXX
     e164 = "+972" + digits.slice(1);
   } else {
-    // Unknown format — reject rather than guess.
     return null;
   }
 
-  // E.164 allows 8–15 digits after the +. Require at least 10 for real phones.
   const withoutPlus = e164.slice(1);
   if (!/^\d{10,15}$/.test(withoutPlus)) return null;
 
   return e164;
 }
 
-// Rung 2 (P5_V2_REBUILD_RUNG2_RULES_REWIRE): dispatch helpers extracted to
-// dispatch.ts to keep this file under Rule 12 cap and to add the Rule 2.1
-// fresh-lead path (active-event lookup + T5/T1 branch + attendee upsert).
 import { dispatchFreshLead, dispatchIntakeMessages } from "./dispatch.ts";
+
+// M3_UTM_TRIPLE_LAYER_PERSISTENCE — record a lead_submit touchpoint.
+// Synchronous (no waitUntil); errors swallowed (lead is already persisted).
+type UtmBag = { utm_source: string | null; utm_medium: string | null; utm_campaign: string | null; utm_content: string | null; utm_term: string | null; utm_campaign_id: string | null };
+// deno-lint-ignore no-explicit-any
+async function recordLeadSubmitTouchpoint(db: any, tenantId: string, leadId: string, phoneNormalized: string, utms: UtmBag, refererUrl: string | null, landingUrl: string | null): Promise<void> {
+  try {
+    const dedupeKey = `lead_submit:${leadId}:${Math.floor(Date.now() / 1000)}`;
+    const { error } = await db.rpc("_record_touchpoint", {
+      p_tenant_id: tenantId, p_lead_id: leadId, p_phone_normalized: phoneNormalized,
+      p_touchpoint_type: "lead_submit",
+      p_event_id: null, p_attendee_id: null, p_short_link_id: null, p_short_link_code: null, p_broadcast_id: null,
+      p_utm_source: utms.utm_source, p_utm_medium: utms.utm_medium, p_utm_campaign: utms.utm_campaign,
+      p_utm_content: utms.utm_content, p_utm_term: utms.utm_term, p_utm_campaign_id: utms.utm_campaign_id,
+      p_referrer_url: refererUrl, p_landing_url: landingUrl, p_dedupe_key: dedupeKey,
+    });
+    if (error) console.warn("lead_submit touchpoint insert failed:", error.message);
+  } catch (e) { console.warn("recordLeadSubmitTouchpoint exception:", (e as Error).message); }
+}
 
 // --- Main handler ---
 
 Deno.serve(async (req: Request) => {
-  // CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -112,7 +114,6 @@ Deno.serve(async (req: Request) => {
     return errorResponse("Method not allowed", 405);
   }
 
-  // --- Parse body ---
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -120,11 +121,6 @@ Deno.serve(async (req: Request) => {
     return errorResponse("Invalid JSON body", 400);
   }
 
-  // --- Validate required fields ---
-  // Email made REQUIRED 2026-04-29 (post-cutover-prep): every CRM lead must
-  // carry both phone AND email so T1/T2/T5 templates can dispatch on both
-  // channels. Defense-in-depth: storefront form is also expected to enforce
-  // email-required client-side (P5_7_STOREFRONT_FORM_REWIRE).
   const tenantSlug = trimOrNull(body.tenant_slug);
   const name = trimOrNull(body.name);
   const phoneRaw = trimOrNull(body.phone);
@@ -136,14 +132,9 @@ Deno.serve(async (req: Request) => {
   if (!emailRaw) return errorResponse("Missing email", 400);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) return errorResponse("Invalid email format", 400);
 
-  // --- Normalize phone ---
   const phone = normalizePhone(phoneRaw);
   if (!phone) return errorResponse("Invalid phone number", 400);
 
-  // --- Optional fields ---
-  // Email lowercased for canonical storage (P5_7_STOREFRONT_FORM_REWIRE Part D3,
-  // 2026-05-03). Phone is the duplicate-check key, not email, so casing changes
-  // don't affect duplicate detection. Existing mixed-case rows are not rewritten.
   const email = emailRaw.toLowerCase();
   const eyeExam = trimOrNull(body.eye_exam);
   if (eyeExam !== null && !EYE_EXAM_OPTIONS.includes(eyeExam)) {
@@ -158,19 +149,20 @@ Deno.serve(async (req: Request) => {
   const utm_content = trimOrNull(body.utm_content);
   const utm_term = trimOrNull(body.utm_term);
   const utm_campaign_id = trimOrNull(body.utm_campaign_id);
+  // M3_UTM_TRIPLE_LAYER_PERSISTENCE — optional context for touchpoint capture.
+  // The storefront /supersale/ form may pass these in the future; today they
+  // arrive as NULL on most submits and the touchpoint records that fact.
+  const referrer_url = trimOrNull(body.referrer_url);
+  const landing_url = trimOrNull(body.landing_url);
   const termsApproved = boolOrFalse(body.terms_approved);
   const marketingConsent = boolOrFalse(body.marketing_consent);
 
-  // eye_exam now writes to crm_leads.eye_exam_default directly (Rung 1, 2026-05-03).
-  // client_notes carries only the free-text notes field, if any.
   const clientNotes: string | null = notes ? notes : null;
 
-  // --- Service-role DB client (bypasses RLS, server-side only) ---
   const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // --- Resolve tenant from slug ---
   const { data: tenant, error: tenantErr } = await db
     .from("tenants")
     .select("id, is_active")
@@ -186,7 +178,11 @@ Deno.serve(async (req: Request) => {
 
   const tenantId: string = tenant.id;
 
-  // --- Duplicate check (tenant-scoped, by normalized phone) ---
+  const utmsBag = {
+    utm_source, utm_medium, utm_campaign, utm_content, utm_term, utm_campaign_id,
+  };
+
+  // --- Duplicate check ---
   const { data: existing, error: dupErr } = await db
     .from("crm_leads")
     .select("id, full_name")
@@ -202,12 +198,14 @@ Deno.serve(async (req: Request) => {
   }
 
   if (existing) {
-    // If the returning lead was unsubscribed, clear it — re-registration = implicit resubscribe
     await db.from("crm_leads")
       .update({ unsubscribed_at: null, updated_at: new Date().toISOString() })
       .eq("id", existing.id)
       .eq("tenant_id", tenantId)
       .not("unsubscribed_at", "is", null);
+
+    // M3_UTM_TRIPLE_LAYER_PERSISTENCE — record duplicate submit touchpoint.
+    await recordLeadSubmitTouchpoint(db, tenantId, existing.id, phone, utmsBag, referrer_url, landing_url);
 
     await dispatchIntakeMessages(
       db,
@@ -226,7 +224,6 @@ Deno.serve(async (req: Request) => {
     }, 409);
   }
 
-  // --- Build insert row ---
   const nowIso = new Date().toISOString();
   const row: Record<string, unknown> = {
     tenant_id: tenantId,
@@ -256,17 +253,9 @@ Deno.serve(async (req: Request) => {
     .single();
 
   if (insErr || !inserted) {
-    // Race condition safety: if the UNIQUE constraint fires between our
-    // duplicate-check and the insert (concurrent submit of same phone),
-    // Postgres returns a 23505. Treat it as a duplicate, look up the row,
-    // and return a 409 — matches the non-race duplicate branch.
     // deno-lint-ignore no-explicit-any
     const code = (insErr as any)?.code;
     if (code === "23505") {
-      // 23505: race-safety — return existing ACTIVE lead (is_deleted=false).
-      // The partial unique index `WHERE is_deleted=false` enforces that a
-      // soft-deleted row never blocks a new active row at the DB level; this
-      // mirrors that filter at the application level.
       const { data: racedRow } = await db
         .from("crm_leads")
         .select("id, full_name")
@@ -276,6 +265,10 @@ Deno.serve(async (req: Request) => {
         .limit(1)
         .maybeSingle();
       if (racedRow?.id) {
+        // M3_UTM_TRIPLE_LAYER_PERSISTENCE — record touchpoint for the race
+        // branch too so attribution is captured even on the lost-race path.
+        await recordLeadSubmitTouchpoint(db, tenantId, racedRow.id, phone, utmsBag, referrer_url, landing_url);
+
         await dispatchIntakeMessages(
           db,
           tenantId,
@@ -297,10 +290,27 @@ Deno.serve(async (req: Request) => {
     return errorResponse("Could not create lead", 500);
   }
 
-  // Background dispatch — Make webhooks can take 5-15s. Don't make the
-  // user wait for SMS+email; the lead is already persisted. Failure
-  // here is recovered via crm_message_log pending-row retry (manual
-  // for now; future cron in a follow-up SPEC).
+  // M3_UTM_TRIPLE_LAYER_PERSISTENCE — record fresh-insert touchpoint
+  // BEFORE dispatch so the row is committed before the response returns.
+  await recordLeadSubmitTouchpoint(db, tenantId, inserted.id, phone, utmsBag, referrer_url, landing_url);
+
+  // Background: M3_UTM_TRIPLE_LAYER_PERSISTENCE — async resolve prior
+  // anonymous touchpoints to this lead. Does NOT block the response.
+  EdgeRuntime.waitUntil(
+    db.rpc("resolve_touchpoints_to_lead", {
+      p_tenant_id: tenantId,
+      p_lead_id: inserted.id,
+      p_phone_normalized: phone,
+    }).then((res: { error: { message: string } | null }) => {
+      if (res.error) {
+        console.warn("[lead-intake] resolve_touchpoints_to_lead failed:", res.error.message);
+      }
+    }).catch((err: Error) => {
+      console.warn("[lead-intake] resolve_touchpoints_to_lead exception:", err.message);
+    }),
+  );
+
+  // Background: existing dispatch (T1/T5) — unchanged.
   EdgeRuntime.waitUntil(
     dispatchFreshLead(db, tenantId, inserted.id, name, phone, email)
       .catch((err) => console.error("[lead-intake] background dispatch failed", err)),

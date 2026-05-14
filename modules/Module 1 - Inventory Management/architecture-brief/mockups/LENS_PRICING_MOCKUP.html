@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<title>קטלוג ומחירים — Optic Up (Mockup)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f6fa; color: #333; padding: 16px; direction: rtl; }
+  .mockup-note { background: #fff3cd; border-right: 4px solid #f4c430; padding: 10px 14px; margin-bottom: 12px; font-size: 12px; color: #856404; border-radius: 4px; }
+
+  .page-header { background: white; padding: 14px 20px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .page-title { font-size: 20px; font-weight: 600; color: #2c3e50; }
+  .page-title .badge { font-size: 11px; background: #e8eaf6; color: #3949ab; padding: 3px 8px; border-radius: 10px; margin-right: 8px; font-weight: normal; }
+  .btn { padding: 8px 14px; border: 1px solid #d0d4d9; background: white; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { background: #f0f2f5; }
+  .btn-primary { background: #c9a555; color: white; border-color: #c9a555; }
+  .btn-success { background: #27ae60; color: white; border-color: #27ae60; }
+  .btn-danger { background: #e74c3c; color: white; border-color: #e74c3c; }
+
+  /* Top tabs */
+  .top-tabs { display: flex; background: white; border-radius: 8px 8px 0 0; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; margin-bottom: 0; }
+  .top-tab { padding: 14px 24px; cursor: pointer; font-size: 14px; font-weight: 500; color: #5d6d7e; border-bottom: 3px solid transparent; transition: all 0.15s; }
+  .top-tab:hover { background: #f0f2f5; }
+  .top-tab.active { color: #c9a555; border-bottom-color: #c9a555; background: #fdf6e3; }
+  .top-tab .badge-num { background: #e74c3c; color: white; padding: 1px 7px; border-radius: 10px; font-size: 11px; margin-right: 6px; font-weight: 700; }
+
+  /* Filters */
+  .filters-panel { background: white; padding: 14px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 12px; border-radius: 0 0 8px 8px; }
+  .filter-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .chip { padding: 6px 14px; border: 1px solid #c9a555; background: white; border-radius: 20px; font-size: 12px; cursor: pointer; color: #5d6d7e; }
+  .chip:hover { background: #faf3e0; }
+  .chip.active { background: #c9a555; color: white; }
+  .chip.secondary { border-color: #95a5a6; }
+  .chip.secondary.active { background: #34495e; border-color: #34495e; }
+  .search-box { padding: 8px 14px; border: 1px solid #d0d4d9; border-radius: 6px; font-size: 13px; min-width: 280px; }
+
+  /* Main content */
+  .main-content { display: grid; grid-template-columns: 1fr 380px; gap: 12px; }
+
+  /* Pricing table */
+  .pricing-panel { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+  .panel-header { padding: 12px 20px; border-bottom: 1px solid #ecf0f1; display: flex; justify-content: space-between; align-items: center; }
+  .panel-header h3 { font-size: 14px; color: #2c3e50; }
+
+  .pricing-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+  .pricing-table thead th { text-align: right; padding: 10px 14px; background: #f8f9fb; color: #5d6d7e; font-weight: 600; font-size: 11px; border-bottom: 2px solid #ecf0f1; position: sticky; top: 0; }
+  .pricing-table td { padding: 10px 14px; border-bottom: 1px solid #f5f6fa; vertical-align: middle; }
+  .pricing-table tbody tr { transition: background 0.1s; }
+  .pricing-table tbody tr:hover { background: #faf3e0; }
+  .pricing-table tbody tr.selected { background: #fdf6e3; }
+  .pricing-table tbody tr.pending { background: #fff3cd; }
+
+  .design-cell { font-weight: 600; color: #2c3e50; }
+  .design-cell .sub { font-size: 11px; color: #95a5a6; margin-top: 2px; font-weight: normal; }
+
+  .price-cell { font-weight: 600; }
+  .price-list { color: #95a5a6; text-decoration: line-through; font-size: 11px; }
+  .price-net { color: #27ae60; font-size: 14px; }
+  .discount-tag { display: inline-block; background: #d4edda; color: #155724; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+
+  .currency-tag { display: inline-block; background: #e8eaf6; color: #3949ab; padding: 2px 6px; border-radius: 8px; font-size: 10px; font-weight: 600; }
+
+  .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .status-active { background: #d4edda; color: #155724; }
+  .status-pending { background: #fff3cd; color: #856404; }
+  .status-promo { background: #cfe2ff; color: #084298; }
+  .status-expired { background: #e2e3e5; color: #495057; }
+
+  /* Right panel */
+  .side-panel { display: flex; flex-direction: column; gap: 12px; }
+  .panel-card { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+  .panel-card-header { padding: 12px 18px; color: white; font-size: 14px; font-weight: 600; }
+  .panel-card-body { padding: 16px 18px; }
+  .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f5f6fa; font-size: 13px; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .key { color: #5d6d7e; }
+  .detail-row .val { font-weight: 600; color: #2c3e50; }
+
+  .approval-card { background: #fff3cd; border: 2px solid #f4c430; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+  .approval-card h4 { font-size: 13px; color: #856404; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .change-preview { background: white; border-radius: 6px; padding: 12px; margin: 10px 0; }
+  .change-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 12px; }
+  .change-arrow { color: #856404; font-weight: 600; }
+  .old-price { color: #95a5a6; text-decoration: line-through; }
+  .new-price { color: #c0392b; font-weight: 700; }
+
+  .alert-info { background: #d1ecf1; border-right: 4px solid #0c5460; padding: 10px 14px; border-radius: 6px; font-size: 12px; color: #0c5460; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<div class="mockup-note">
+  📋 <strong>סקיצה</strong> — מסך קטלוג ומחירים (M1 Expansion). כאן אתה רואה את מחירי הקטלוג של הספקים, ההנחות האישיות שלך, וכל שינוי שספק מציע מופיע לאישור שלך לפני שהוא משפיע על עלויות המלאי.
+</div>
+
+<!-- HEADER -->
+<div class="page-header">
+  <div class="page-title">
+    קטלוג ומחירים — עדשות־ראייה
+    <span class="badge">Optic Up · אופטיקה פריזמה</span>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <button class="btn">📥 ייצוא Excel</button>
+    <button class="btn">📊 דוח רווחיות</button>
+    <button class="btn btn-primary">📝 צור הסכם הנחה חדש</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="top-tabs">
+  <div class="top-tab active">💰 מחירים פעילים</div>
+  <div class="top-tab"><span class="badge-num">3</span> ממתינים לאישור</div>
+  <div class="top-tab">📅 מבצעים זמניים (2)</div>
+  <div class="top-tab">📜 היסטוריית מחירים</div>
+  <div class="top-tab">📊 ניתוח רווחיות</div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters-panel">
+  <div class="filter-row" style="background:#eff6ff; border-radius:6px; padding:10px 14px; margin-bottom:10px; border:1px solid #bfdbfe;">
+    <span style="font-size:13px; color:#1e3a8a; font-weight:700;">סוג עדשה:</span>
+    <button class="chip active" style="background:#1e3a8a; color:white; border-color:#1e3a8a;">📦 מדף (Stock)</button>
+    <button class="chip" style="border-color:#d97706; color:#92400e;">🏭 ייצור (Custom)</button>
+    <button class="chip secondary">🔀 שתיהן</button>
+    <span style="font-size:11px; color:#64748b; margin-right:auto;">
+      💡 הסינון מסנן את כל המסך — גריד, חוסרים, מצב מלאי
+    </span>
+  </div>
+  <div class="filter-row">
+    <span style="font-size:13px; color:#5d6d7e; font-weight:500;">ספק:</span>
+    <span class="chip secondary active">לפידות (43)</span>
+    <span class="chip secondary">בדולח (12)</span>
+    <span class="chip secondary">סגם (8)</span>
+    <span style="font-size:13px; color:#5d6d7e; margin-right:16px; font-weight:500;">מותג:</span>
+    <span class="chip active">הכל</span>
+    <span class="chip">Hoya</span>
+    <span class="chip">Essilor</span>
+    <input type="text" class="search-box" placeholder="🔍 חפש סדרה..." style="margin-right:auto;" />
+  </div>
+</div>
+
+<!-- ALERT -->
+<div class="alert-info" style="margin-top:12px;">
+  ℹ️ הספק לפידות מציע 3 שינויי מחיר. <strong>אישור נדרש</strong> לפני שהשינויים ישפיעו על עלויות המלאי שלך (cost_basis). <a href="#" style="color:#0c5460; font-weight:600;">פתח טאב "ממתינים לאישור" →</a>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+
+  <!-- PRICING TABLE -->
+  <div class="pricing-panel">
+    <div class="panel-header">
+      <h3>מחירים פעילים — Hoya (לפידות)</h3>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn" style="font-size:11px; padding:5px 10px;">☑ בחר הכל</button>
+        <button class="btn" style="font-size:11px; padding:5px 10px;">☑ בחר הכל המסונן</button>
+        <span style="font-size:11px; color:#5d6d7e;">43 שורות · עודכן: 7.5.26</span>
+      </div>
+    </div>
+
+    <!-- BULK TOOLBAR (3.4) — shown when ≥1 row selected -->
+    <div class="bulk-toolbar" style="display:flex; gap:8px; align-items:center; background:#fef3c7; border:1px solid #f59e0b; border-top:none; padding:10px 14px; flex-wrap:wrap;">
+      <span style="font-weight:700; color:#92400e; font-size:12px;">⚡ פעולות מסיביות (3 שורות נבחרו)</span>
+      <span style="color:#cbd5e1;">|</span>
+      <label style="font-size:11px; color:#92400e;">קבע הנחה אחידה: <input type="number" placeholder="X%" style="width:50px; padding:3px 6px; border:1px solid #fde68a; border-radius:4px; font-size:11px;" /></label>
+      <label style="font-size:11px; color:#92400e;">הוסף להנחה: <input type="number" placeholder="+N%" style="width:50px; padding:3px 6px; border:1px solid #fde68a; border-radius:4px; font-size:11px;" /></label>
+      <label style="font-size:11px; color:#92400e;">הכפל מחיר: <input type="number" placeholder="×X" style="width:50px; padding:3px 6px; border:1px solid #fde68a; border-radius:4px; font-size:11px;" /></label>
+      <span style="margin-right:auto;"></span>
+      <button class="btn btn-primary" style="font-size:11px; padding:5px 12px;">תצוגה מקדימה ←</button>
+    </div>
+
+    <div style="max-height:600px; overflow-y:auto;">
+      <table class="pricing-table">
+        <thead>
+          <tr>
+            <th style="width:34px; text-align:center;"><input type="checkbox" /></th>
+            <th>סדרה / וריאנט</th>
+            <th>מותג</th>
+            <th style="text-align:left;">מחיר קטלוגי</th>
+            <th style="text-align:left;">הנחה %</th>
+            <th style="text-align:left;">מחיר סופי</th>
+            <th>מע"מ</th>
+            <th>תוקף עד</th>
+            <th>סטטוס</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- ===== SERIES 1: Hilux EYAS BLC — Default 50% (3.3 tiered) ===== -->
+          <tr style="background:#eff6ff; border-top:2px solid #bfdbfe;">
+            <td style="text-align:center;"><input type="checkbox" checked /></td>
+            <td style="font-weight:700; color:#1e3a8a;">▼ Hilux EYAS BLC <span style="font-size:10px; font-weight:normal; color:#64748b;">(כל הוריאנטים)</span></td>
+            <td style="color:#1e3a8a; font-weight:600;">Hoya</td>
+            <td style="text-align:left; color:#64748b; font-size:11px;">—</td>
+            <td style="text-align:left;">
+              <select style="padding:4px 8px; border:1px solid #1e3a8a; border-radius:4px; background:white; color:#1e3a8a; font-weight:700;">
+                <option>−50%</option><option>−40%</option><option>−45%</option><option>−55%</option>
+              </select>
+              <span style="background:#1e3a8a; color:white; padding:2px 8px; border-radius:8px; font-size:9px; font-weight:700; margin-right:4px;">DEFAULT</span>
+            </td>
+            <td style="text-align:left; color:#64748b; font-size:11px;">נגזר מקטלוג</td>
+            <td>—</td>
+            <td>—</td>
+            <td><span class="status-badge status-active">ברירת מחדל לסדרה</span></td>
+          </tr>
+          <tr class="selected">
+            <td style="text-align:center;"><input type="checkbox" checked /></td>
+            <td style="padding-right:30px;">
+              <div class="design-cell">├ V-001847
+                <div class="sub">1.5 · 70mm · AR Clear</div>
+              </div>
+            </td>
+            <td>Hoya</td>
+            <td style="text-align:left;"><span class="currency-tag">₪</span> <span style="font-weight:600;">₪150</span></td>
+            <td style="text-align:left;"><span style="color:#64748b; font-size:11px;">50%</span> <span style="font-size:9px; color:#94a3b8;">(יורש)</span></td>
+            <td style="text-align:left;"><input type="text" value="₪75" style="width:70px; padding:4px 6px; border:1px solid #d0d4d9; border-radius:4px; font-size:12px; font-weight:600; color:#27ae60;" /></td>
+            <td>18% נפרד</td>
+            <td>—</td>
+            <td><span class="status-badge status-active">✓ פעיל</span></td>
+          </tr>
+          <tr>
+            <td style="text-align:center;"><input type="checkbox" checked /></td>
+            <td style="padding-right:30px;">
+              <div class="design-cell">├ V-001848
+                <div class="sub">1.6 · 70mm · AR Clear</div>
+              </div>
+            </td>
+            <td>Hoya</td>
+            <td style="text-align:left;"><span class="currency-tag">₪</span> <span style="font-weight:600;">₪180</span></td>
+            <td style="text-align:left;"><span style="color:#64748b; font-size:11px;">50%</span> <span style="font-size:9px; color:#94a3b8;">(יורש)</span></td>
+            <td style="text-align:left;"><input type="text" value="₪90" style="width:70px; padding:4px 6px; border:1px solid #d0d4d9; border-radius:4px; font-size:12px; font-weight:600; color:#27ae60;" /></td>
+            <td>18% נפרד</td>
+            <td>—</td>
+            <td><span class="status-badge status-active">✓ פעיל</span></td>
+          </tr>
+          <tr>
+            <td style="text-align:center;"><input type="checkbox" /></td>
+            <td style="padding-right:30px;">
+              <div class="design-cell">├ V-001850
+                <div class="sub">1.67 · 70mm · AR Clear</div>
+              </div>
+            </td>
+            <td>Hoya</td>
+            <td style="text-align:left;"><span class="currency-tag">₪</span> <span style="font-weight:600;">₪220</span></td>
+            <td style="text-align:left;"><span style="color:#64748b; font-size:11px;">50%</span> <span style="font-size:9px; color:#94a3b8;">(יורש)</span></td>
+            <td style="text-align:left;"><input type="text" value="₪110" style="width:70px; padding:4px 6px; border:1px solid #d0d4d9; border-radius:4px; font-size:12px; font-weight:600; color:#27ae60;" /></td>
+            <td>18% נפרד</td>
+            <td>—</td>
+            <td><span class="status-badge status-active">✓ פעיל</span></td>
+          </tr>
+          <tr style="background:#fffbeb;">
+            <td style="text-align:center;"><input type="checkbox" /></td>
+            <td style="padding-right:30px;">
+              <div class="design-cell">└ V-001851
+                <div class="sub">1.74 · 70mm · AR Clear</div>
+              </div>
+            </td>
+            <td>Hoya</td>
+            <td style="text-align:left;"><span class="currency-tag">₪</span> <span style="font-weight:600;">₪380</span></td>
+            <td style="text-align:left;">
+              <input type="number" value="45" style="width:55px; padding:4px 6px; border:1px solid #d97706; border-radius:4px; font-size:12px; font-weight:700; color:#92400e;" />%
+              <span style="background:#fef3c7; color:#92400e; padding:2px 6px; border-radius:8px; font-size:9px; font-weight:700; margin-right:4px;">חריג</span>
+            </td>
+            <td style="text-align:left;"><input type="text" value="₪209" style="width:70px; padding:4px 6px; border:1px solid #d0d4d9; border-radius:4px; font-size:12px; font-weight:600; color:#27ae60;" /></td>
+            <td>18% נפרד</td>
+            <td>—</td>
+            <td><span class="status-badge status-active">✓ פעיל</span></td>
+          </tr>
+          <tr class="pending">
+            <td style="text-align:center;"><input type="checkbox" /></td>
+            <td style="padding-right:30px;">
+              <div class="design-cell">└ V-001850 <span style="font-size:9px; color:#856404; font-weight:700;">⏳ הצעת ספק</span>
+                <div class="sub">1.67 · 70mm · AR Clear · עליית מחיר 3%</div>
+              </div>
+            </td>
+            <td>Hoya</td>
+            <td style="text-align:left;"><span class="currency-tag">₪</span> <span class="old-price">₪220</span> → <span class="new-price">₪227</span></td>
+            <td style="text-align:left;"><span style="color:#64748b; font-size:11px;">50%</span></td>
+            <td style="text-align:left;"><span class="old-price">₪110</span> → <span class="new-price">₪113.50</span></td>
+            <td>18% נפרד</td>
+            <td>החל מ-1.6</td>
+            <td><span class="status-badge status-pending">⏳ ממתין</span></td>
+          </tr>
+
+          <!-- ===== SERIES 2: Hilux EYAS UVC HVLL — Default 48% ===== -->
+          <tr style="background:#eff6ff; border-top:2px solid #bfdbfe;">
+            <td style="text-align:center;"><input type="checkbox" /></td>
+            <td style="font-weight:700; color:#1e3a8a;">▼ Hilux EYAS UVC HVLL <span style="font-size:10px; font-weight:normal; color:#64748b;">(כל הוריאנטים)</span></td>
+            <td style="color:#1e3a8a; font-weight:600;">Hoya</td>
+            <td style="text-align:left; color:#64748b; font-size:11px;">—</td>
+            <td style="text-align:left;">
+              <select style="padding:4px 8px; border:1px solid #1e3a8a; border-radius:4px; background:white; color:#1e3a8a; font-weight:700;">
+                <option>−48%</option><option>−40%</option><option>−50%</option>
+              </select>
+              <span style="background:#1e3a8a; color:white; padding:2px 8px; border-radius:8px; font-size:9px; font-weight:700; margin-right:4px;">DEFAULT</span>
+            </td>
+            <td style="text-align:left; color:#64748b; font-size:11px;">נגזר מקטלוג</td>
+            <td>—</td>
+            <td>—</td>
+            <td><span class="status-badge status-active">ברירת מחדל לסדרה</span></td>
+          </tr>
+          <tr>
+            <td style="text-align:center;"><input type="checkbox" /></td>
+            <td style="padding-right:30px;">
+              <div class="design-cell">└ V-001852
+                <div class="sub">1.6 · 70mm · UV+HVLL</div>
+              </div>
+            </td>
+            <td>Hoya</td>
+            <td style="text-align:left;"><span class="currency-tag">₪</span> <span style="font-weight:600;">₪240</span></td>
+            <td style="text-align:left;"><span style="color:#64748b; font-size:11px;">48%</span> <span style="font-size:9px; color:#94a3b8;">(יורש)</span></td>
+            <td style="text-align:left;"><input type="text" value="₪125" style="width:70px; padding:4px 6px; border:1px solid #d0d4d9; border-radius:4px; font-size:12px; font-weight:600; color:#27ae60;" /></td>
+            <td>18% נפרד</td>
+            <td>—</td>
+            <td><span class="status-badge status-active">✓ פעיל</span></td>
+          </tr>
+
+          <!-- ===== SERIES 3: Defender UV 420 SN — Default 55% (PROMO) ===== -->
+          <tr style="background:#cfe2ff; border-top:2px solid #93c5fd;">
+            <td style="text-align:center;"><input type="checkbox" /></td>
+            <td style="font-weight:700; color:#084298;">▼ Defender UV 420 SN <span style="font-size:10px; font-weight:normal; color:#1e3a8a;">(מבצע)</span></td>
+            <td style="color:#084298; font-weight:600;">Hoya</td>
+            <td style="text-align:left; color:#64748b; font-size:11px;">—</td>
+            <td style="text-align:left;">
+              <select style="padding:4px 8px; border:1px solid #084298; border-radius:4px; background:white; color:#084298; font-weight:700;">
+                <option>−55% מבצע</option><option>−40%</option>
+              </select>
+              <span style="background:#084298; color:white; padding:2px 8px; border-radius:8px; font-size:9px; font-weight:700; margin-right:4px;">DEFAULT</span>
+            </td>
+            <td style="text-align:left; color:#64748b; font-size:11px;">נגזר מקטלוג</td>
+            <td>—</td>
+            <td style="color:#084298; font-weight:600;">31.5.26</td>
+            <td><span class="status-badge status-promo">🎯 מבצע זמני</span></td>
+          </tr>
+          <tr style="background:#eff6ff;">
+            <td style="text-align:center;"><input type="checkbox" /></td>
+            <td style="padding-right:30px;">
+              <div class="design-cell">└ V-001853
+                <div class="sub">1.67 · 70mm · Blue Cut</div>
+              </div>
+            </td>
+            <td>Hoya</td>
+            <td style="text-align:left;"><span class="currency-tag">₪</span> <span style="font-weight:600;">₪280</span></td>
+            <td style="text-align:left;"><span style="color:#64748b; font-size:11px;">55%</span> <span style="font-size:9px; color:#94a3b8;">(יורש)</span></td>
+            <td style="text-align:left;"><input type="text" value="₪126" style="width:70px; padding:4px 6px; border:1px solid #d0d4d9; border-radius:4px; font-size:12px; font-weight:600; color:#27ae60;" /></td>
+            <td>18% נפרד</td>
+            <td style="color:#084298; font-weight:600;">31.5.26</td>
+            <td><span class="status-badge status-promo">🎯 מבצע זמני</span></td>
+          </tr>
+
+          <!-- ===== SERIES 4: Hoyalux iD MyStyle V+ — Default 40% (Custom) ===== -->
+          <tr style="background:#fef3c7; border-top:2px solid #fde68a;">
+            <td style="text-align:center;"><input type="checkbox" /></td>
+            <td style="font-weight:700; color:#92400e;">▼ Hoyalux iD MyStyle V+ <span style="font-size:10px; font-weight:normal; color:#d97706;">🏭 ייצור · כל הוריאנטים</span></td>
+            <td style="color:#92400e; font-weight:600;">Hoya</td>
+            <td style="text-align:left; color:#64748b; font-size:11px;">—</td>
+            <td style="text-align:left;">
+              <select style="padding:4px 8px; border:1px solid #d97706; border-radius:4px; background:white; color:#92400e; font-weight:700;">
+                <option>−40%</option><option>−35%</option><option>−45%</option>
+              </select>
+              <span style="background:#d97706; color:white; padding:2px 8px; border-radius:8px; font-size:9px; font-weight:700; margin-right:4px;">DEFAULT</span>
+            </td>
+            <td style="text-align:left; color:#64748b; font-size:11px;">נגזר מקטלוג</td>
+            <td>—</td>
+            <td>—</td>
+            <td><span class="status-badge status-active">ברירת מחדל לסדרה</span></td>
+          </tr>
+          <tr>
+            <td style="text-align:center;"><input type="checkbox" /></td>
+            <td style="padding-right:30px;">
+              <div class="design-cell">└ V-001870
+                <div class="sub">1.6 · 70mm · Multifocal</div>
+              </div>
+            </td>
+            <td>Hoya</td>
+            <td style="text-align:left;"><span class="currency-tag">₪</span> <span style="font-weight:600;">₪650</span></td>
+            <td style="text-align:left;"><span style="color:#64748b; font-size:11px;">40%</span> <span style="font-size:9px; color:#94a3b8;">(יורש)</span></td>
+            <td style="text-align:left;"><input type="text" value="₪390" style="width:70px; padding:4px 6px; border:1px solid #d0d4d9; border-radius:4px; font-size:12px; font-weight:600; color:#27ae60;" /></td>
+            <td>18% נפרד</td>
+            <td>—</td>
+            <td><span class="status-badge status-active">✓ פעיל</span></td>
+          </tr>
+
+          <tr><td colspan="9" style="text-align:center; padding:14px; color:#95a5a6; font-size:11px;">... ועוד 4 סדרות (Hilux UV Control Photo · Hoyalux iD LifeStyle V+ · ...)</td></tr>
+
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- SIDE PANEL -->
+  <div class="side-panel">
+
+    <!-- Pending approval -->
+    <div class="approval-card">
+      <h4>⏳ ממתין לאישור שלך</h4>
+      <div style="font-size:12px; color:#856404; line-height:1.5;">
+        הספק <strong>לפידות</strong> מציע עליית מחיר של 3% על Hilux EYAS BLC, החל מ-1.6.26.
+      </div>
+      <div class="change-preview">
+        <div class="change-row">
+          <span>1.5 · 70mm</span>
+          <span><span class="old-price">₪150</span> <span class="change-arrow">→</span> <span class="new-price">₪154.50</span></span>
+        </div>
+        <div class="change-row">
+          <span>1.6 · 70mm</span>
+          <span><span class="old-price">₪180</span> <span class="change-arrow">→</span> <span class="new-price">₪185.40</span></span>
+        </div>
+        <div class="change-row">
+          <span>1.67 · 70mm</span>
+          <span><span class="old-price">₪220</span> <span class="change-arrow">→</span> <span class="new-price">₪226.60</span></span>
+        </div>
+        <div style="border-top:1px dashed #f4c430; padding-top:6px; margin-top:6px; font-size:11px; color:#856404;">
+          השפעה משוערת על cost_basis: <strong>+₪240 / חודש</strong> (לפי תנועה ממוצעת)
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button class="btn btn-success" style="flex:1; justify-content:center;">✓ אשר</button>
+        <button class="btn btn-danger" style="flex:1; justify-content:center;">✕ דחה</button>
+        <button class="btn" style="padding:8px 10px;" title="צור קשר עם הספק">💬</button>
+      </div>
+      <div style="font-size:11px; color:#856404; margin-top:8px; text-align:center;">
+        ⏰ אישור אוטומטי בעוד 4 ימים אם לא תפעל
+      </div>
+    </div>
+
+    <!-- Selected pricing details -->
+    <div class="panel-card">
+      <div class="panel-card-header" style="background: linear-gradient(135deg, #c9a555 0%, #b8954a 100%);">
+        פירוט מחיר — Hilux EYAS BLC 1.67
+      </div>
+      <div class="panel-card-body">
+        <div class="detail-row"><span class="key">מותג</span><span class="val">Hoya</span></div>
+        <div class="detail-row"><span class="key">ספק</span><span class="val">לפידות</span></div>
+        <div class="detail-row"><span class="key">קוד SKU</span><span class="val" style="font-family:monospace;">HOY-HX167-AR</span></div>
+        <div class="detail-row"><span class="key">מטבע</span><span class="val">₪ (ILS)</span></div>
+        <div class="detail-row"><span class="key">מחיר קטלוג</span><span class="val">₪220.00</span></div>
+        <div class="detail-row"><span class="key">הנחה אישית</span><span class="val" style="color:#27ae60;">−50%</span></div>
+        <div class="detail-row"><span class="key">מחיר נטו (ללא מע"מ)</span><span class="val">₪110.00</span></div>
+        <div class="detail-row"><span class="key">מע"מ (18%)</span><span class="val">₪19.80</span></div>
+        <div class="detail-row" style="font-size:14px;"><span class="key" style="color:#2c3e50; font-weight:600;">סה"כ כולל מע"מ</span><span class="val" style="color:#c9a555; font-size:18px;">₪129.80</span></div>
+
+        <h4 style="font-size:12px; color:#2c3e50; margin-top:14px; margin-bottom:8px; padding-top:10px; border-top:1px solid #ecf0f1;">היסטוריית מחיר</h4>
+        <div style="font-size:11px; color:#5d6d7e;">
+          <div style="padding:4px 0;">1.1.26 — ₪200 (קטלוג)</div>
+          <div style="padding:4px 0;">15.3.26 — ₪220 (+10%, אישרת)</div>
+          <div style="padding:4px 0; color:#856404;">1.6.26 — ₪227 (+3%, ממתין)</div>
+        </div>
+
+        <button class="btn" style="width:100%; justify-content:center; margin-top:12px;">📝 ערוך הנחה אישית</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="panel-card">
+      <div class="panel-card-header" style="background:#34495e;">סטטיסטיקה — קטלוג שלי</div>
+      <div class="panel-card-body">
+        <div class="detail-row"><span class="key">סה"כ שורות מחיר</span><span class="val">63</span></div>
+        <div class="detail-row"><span class="key">פעילות</span><span class="val" style="color:#27ae60;">58</span></div>
+        <div class="detail-row"><span class="key">ממתינות לאישור</span><span class="val" style="color:#856404;">3</span></div>
+        <div class="detail-row"><span class="key">מבצעים זמניים</span><span class="val" style="color:#0c5460;">2</span></div>
+        <div class="detail-row"><span class="key">הנחה ממוצעת</span><span class="val">47%</span></div>
+        <div class="detail-row"><span class="key">חיסכון שנתי משוער</span><span class="val" style="color:#27ae60;">₪185,400</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

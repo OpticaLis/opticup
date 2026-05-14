@@ -648,6 +648,77 @@ view, new RPC, new migration, or even new field in an existing table), you MUST:
    Document the substitution in EXECUTION_REPORT §3 Deviations + flag for
    Daniel UAT. Don't escalate — Daniel UAT is the right place for UI sanity.
    Source: M4_TENANT_ISOLATION_HARDENING_PART1 + PART2 (2-occurrence pattern).
+
+5g. **Multi-channel allowlist pre-flight (MANDATORY — added 2026-05-13).**
+   For any SPEC that may trigger multi-channel dispatch via `crm_message_queue`
+   (i.e. queue writes with `channel='sms'` AND/OR `channel='email'`),
+   capture BOTH allowlists in EXECUTION_REPORT.md §2 Pre-state baselines
+   before the smoke test runs:
+   ```sql
+   SELECT
+     test_mode_sms_allowlist,
+     ui_config->>'test_mode_email_allowlist' AS email_allowlist
+   FROM tenants
+   WHERE id = '<test_tenant_id>';
+   ```
+   Confirm the test recipient's phone passes `test_mode_sms_allowlist` AND
+   the test recipient's email passes the email allowlist BEFORE proceeding
+   with the smoke. Catching a missing-email-allowlist mid-smoke (and
+   especially after a queue row has been written) is more disruptive than
+   one extra pre-flight query. Source: STATUS_CHANGE_TRIGGERS_FRAMEWORK
+   Executor Proposal #1, 2026-05-13 — smoke required clearance on both
+   channels; pre-flight captured SMS only; email check happened mid-test.
+
+5h. **When MCP `deploy_edge_function` fails — `DEPLOY_FALLBACK_NEEDED.md` MUST warn about CLI default `verify_jwt` (MANDATORY — added 2026-05-13).**
+   When MCP `deploy_edge_function` returns `InternalServerError` (OPEN-021 pattern), the Executor writes a `DEPLOY_FALLBACK_NEEDED.md` file in the SPEC folder telling Daniel which EF(s) to redeploy via CLI from his Windows machine. That file MUST include the **explicit current `verify_jwt` value** for EACH EF the user is about to redeploy. Default Supabase CLI behavior is `verify_jwt=true`; deploying via CLI without `--no-verify-jwt` silently flips the gateway gate to true for EFs that were previously configured `verify_jwt=false` (e.g., `dispatch-queue` called by pg_cron without an Authorization header, or any other `verify_jwt: false` function called by non-authenticated callers).
+
+   **Required content in `DEPLOY_FALLBACK_NEEDED.md`** — one block per EF:
+   ```
+   EF: <slug>
+   Current verify_jwt: <true | false>   ← from get_edge_function MCP call
+   Command:
+     supabase functions deploy <slug> --project-ref <ref>[ --no-verify-jwt]
+   ⚠️ If `Current verify_jwt: false` above → MUST pass `--no-verify-jwt` to preserve the gate. Default CLI behavior is verify_jwt=true and will silently break the EF for unauthenticated callers (pg_cron, public-facing forms, webhooks).
+   ```
+
+   Before writing the file, run `mcp__supabase__get_edge_function` (or `list_edge_functions`) for each EF in the fallback list and read the `verify_jwt` field. Quote the exact value. Do NOT guess.
+
+   Post-deploy verification: after Daniel reports the CLI deploy succeeded, re-run `get_edge_function` / `list_edge_functions` and confirm `verify_jwt` matches the pre-deploy value. If it flipped → that's an F-class finding for FINDINGS.md and a follow-up redeploy.
+
+   Source: STATUS_CHANGE_TRIGGERS_FRAMEWORK F1 (HIGH), 2026-05-13 — `dispatch-queue` was deployed via CLI without `--no-verify-jwt`, silently flipping its gate to `verify_jwt=true`. The queue was broken for hours (cron calls without auth → 401) before the Executor caught it mid-smoke. A workaround migration had to ship the same SPEC. A pre-deploy warning in `DEPLOY_FALLBACK_NEEDED.md` would have prevented the entire regression class.
+
+5i. **Edge Function deploy — MCP-first with automatic CLI fallback (OPEN-021 closure, added 2026-05-14).**
+
+   The Supabase MCP `deploy_edge_function` endpoint has returned `InternalServerErrorException` (5xx) on 3+ consecutive SPECs (2026-05-13 `STATUS_CHANGE_TRIGGERS_FRAMEWORK` F1; 2026-05-14 `M3_UTM_TRIPLE_LAYER_PERSISTENCE` Executor Proposal #1; pattern OPEN-021). Supabase CLI deploy from the repo root has succeeded **100%** of the time MCP has failed. The Executor therefore treats CLI as the canonical fallback path and does NOT escalate to Daniel.
+
+   **Sequence:**
+
+   1. **First attempt:** call `mcp__claude_ai_Supabase__deploy_edge_function` with the EF source.
+   2. **Retry rule:** ONE retry on 5xx (`InternalServerErrorException`, generic `5xx`). Use a minimal payload (single-function deploy, no `import_map_path` unless required) for the retry.
+   3. **Fallback trigger:** **second 5xx → auto-fallback to Supabase CLI without asking Daniel.** Do NOT write `DEPLOY_FALLBACK_NEEDED.md` (per §5h) any more — that file was the manual-Daniel-redeploy path and is now superseded by this section for the `deploy_edge_function` case. (§5h itself is preserved as the residual escape hatch for environments where the Executor lacks shell access.)
+   4. **`verify_jwt` determination — MANDATORY (the §5h safeguard applies in full to the CLI fallback too):** before invoking the CLI, determine the function's intended `verify_jwt` value:
+      - Read `supabase/config.toml` for an explicit `[functions.<slug>]\nverify_jwt = false` block — if present, `verify_jwt=false` is the intended value.
+      - If no such block exists, the intended value is `verify_jwt=true` (Supabase default).
+      - Cross-check against the live value via `mcp__claude_ai_Supabase__get_edge_function` (this MCP read endpoint works even when the deploy endpoint is degraded — empirically verified across OPEN-021 incidents).
+      - If `verify_jwt=false` is the intended value, the CLI MUST pass `--no-verify-jwt`. Default CLI behavior is `verify_jwt=true` and would silently flip the gate (per §5h Source line — the 2026-05-13 `dispatch-queue` regression).
+   5. **CLI command template:**
+      ```
+      supabase functions deploy <name> --project-ref tsxrrxzmdxaenlvocyit [--no-verify-jwt]
+      ```
+      Replace `<name>` with the EF slug. Append `--no-verify-jwt` if and only if step 4 determined `verify_jwt=false`. Run from repo root.
+   6. **Execution mode:** invoke via the `Bash` tool with the command above. No `AskUserQuestion`, no `DEPLOY_FALLBACK_NEEDED.md`. If the CLI binary is missing (`supabase: command not found`) or the deploy returns non-zero exit, log a FINDING and fall back to the §5h manual path as the residual escape hatch.
+   7. **Post-deploy verification — MANDATORY:** after the CLI returns success, call `mcp__claude_ai_Supabase__get_edge_function` for the same slug and confirm (a) the new version was published (version number increased), (b) `verify_jwt` matches the value determined in step 4. If `verify_jwt` flipped → log a HIGH-severity FINDING and redeploy immediately with the corrected flag.
+   8. **Logging — MANDATORY:** every CLI fallback gets a 2-line entry under a `## EF deploy fallback` section in `EXECUTION_REPORT.md`:
+      ```
+      ## EF deploy fallback
+      - <function-slug> v<N> — reason: MCP <error-code-or-message>; CLI <success|failure>; verify_jwt preserved at <true|false> (post-deploy get_edge_function confirmed).
+      ```
+      Add one bullet per function deployed via fallback. Cite the MCP error code/message verbatim (e.g., `InternalServerErrorException`, `502 Bad Gateway`).
+
+   **Why this is default behavior and not an escalation:** OPEN-021 has manifested 5+ times; every time the answer has been Option 2 (CLI deploy). The 3-strikes mandate (per `opticup-strategic` SKILL.md *"If 3 consecutive reviews have called out the same issue, the next session MUST apply the change before starting any other work"*) was formally activated by `M3_UTM_TRIPLE_LAYER_PERSISTENCE/FOREMAN_REVIEW.md` Executor Proposal #1, 2026-05-14.
+
+   **Scope:** this auto-fallback applies ONLY to `mcp__claude_ai_Supabase__deploy_edge_function`. It does NOT generalize to `apply_migration`, `execute_sql`, `create_branch`, `merge_branch`, or any other Supabase MCP tool. Those tools retain the existing "Retry once. If still fails → STOP and report" pattern from the §"When in doubt" decision table.
+
 6. **Field-reuse check:** if the SPEC adds a field that semantically overlaps
    an existing one (e.g. `phone`, `phone_number`, `mobile`, `contact_phone`),
    STOP and escalate. Foreman decides: reuse existing vs create new.
@@ -853,6 +924,7 @@ approved. Ask yourself before any question:
 | New finding discovered | Log to FINDINGS.md. Continue. |
 | Scope expansion tempting | No. One concern per task (CLAUDE.md §9). Log to FINDINGS.md. |
 | Tool fails unexpectedly | Retry once. If still fails → STOP and report. |
+| `mcp__claude_ai_Supabase__deploy_edge_function` returns 5xx (e.g., `InternalServerErrorException`) | Exception to the row above: auto-fallback to Supabase CLI per §5i — do NOT escalate (OPEN-021 closure, added 2026-05-14). |
 | Pre-commit hook fails | Fix root cause, re-stage, new commit (never --amend, never --no-verify). |
 | Uncertainty in "should I check with user?" sense | No. Safety comes from stopping on deviation, not on success. Continue. |
 
