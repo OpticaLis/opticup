@@ -42,6 +42,29 @@ const T = {
   BAL_ADJ: 'supplier_balance_adjustments',
   STOREFRONT_CONFIG: 'storefront_config',
   STOREFRONT_LEADS: 'storefront_leads',
+  // ─── M1 Lens Inventory Phase 1A (2026-05-14) ─────────────────
+  // Catalog (platform-owned, owner_tenant_id NULL today):
+  LENS_BRANDS: 'lens_brand',
+  LENS_DESIGNS: 'lens_design',
+  LENS_VARIANTS: 'lens_variant',
+  SUPPLIER_BRAND_DIST: 'supplier_brand_distribution',
+  // Commercial (tenant-scoped + global vat):
+  SUPPLIER_CATALOG: 'supplier_catalog_offering',
+  PRICING_OVERLAY: 'pricing_overlay',
+  VAT_RATES: 'vat_rates',
+  // Retailer (tenant-scoped):
+  TENANT_ACTIVE_OFFERINGS: 'tenant_active_offerings',
+  TENANT_LENS_STOCK: 'tenant_lens_stock',
+  TENANT_LOCATIONS: 'tenant_location',
+  // Operations (tenant-scoped FIFO + receipts):
+  STOCK_LOTS: 'stock_lot',
+  STOCK_MOVEMENTS: 'stock_movement',
+  STOCK_TRANSFERS: 'stock_transfer',
+  PURCHASE_RECEIPT: 'purchase_receipt',
+  PURCHASE_RECEIPT_LINE: 'purchase_receipt_line',
+  // Governance (tenant-scoped):
+  SUPPLIER_PERMS: 'supplier_permissions',
+  CHANGE_APPROVAL: 'change_approval_log',
 };
 
 // Tenant slug — set synchronously from URL/sessionStorage for immediate availability.
