@@ -28,6 +28,13 @@
 import { readFile } from 'node:fs/promises';
 import { execSync } from 'node:child_process';
 import { resolve, relative } from 'node:path';
+// Authorization parsing + SPEC-path detection extracted to
+// ../destructive-ops-auth-parser.mjs (2026-05-14 by
+// M1_5_FIX_DESTRUCTIVE_OPS_CHECK_DECLARATION_PARSING) to keep this file
+// under Iron Rule 12. SPEC_HEADING_RE is duplicated; isSpecPath /
+// auth-parsing live ONLY in the helper. Tests in
+// scripts/test-destructive-ops-gate.mjs guard against drift.
+import { collectAuthorizedDeletes, isSpecPath as isSpecPathAbs } from '../destructive-ops-auth-parser.mjs';
 
 const REPO = resolve(import.meta.dirname || '.', '..', '..');
 
@@ -85,11 +92,6 @@ const DESTRUCTIVE_PATTERNS = [
 // DELETE FROM <table> without a WHERE clause (or with WHERE 1=1)
 const UNSCOPED_DELETE_RE = /\bDELETE\s+FROM\s+\w+(?:\s*;|\s+WHERE\s+1\s*=\s*1\b)/i;
 
-function isSpecPath(absPath) {
-  const rel = relative(REPO, absPath).replace(/\\/g, '/');
-  return /^modules\/[^/]+\/docs\/specs\/[^/]+\/SPEC\.md$/.test(rel);
-}
-
 function isDocFile(absPath) {
   const rel = relative(REPO, absPath).replace(/\\/g, '/');
   // Documentation-context files where destructive patterns are quoted
@@ -123,7 +125,15 @@ function isDocFile(absPath) {
     // Treating these as live destructive ops would block the check
     // from ever updating itself.
     /^scripts\/checks\/.+\.mjs$/.test(rel) ||
-    rel === 'scripts/verify.mjs'
+    rel === 'scripts/verify.mjs' ||
+    // Test files for the check infrastructure itself: scripts/test-*.mjs
+    // legitimately contain destructive-pattern literals (e.g. `--no-verify`
+    // strings in test-fixture git invocations to bypass the very hooks
+    // they are testing). Treating them as live destructive ops would
+    // prevent the test infrastructure from ever updating itself.
+    // Added 2026-05-14 by M1_5_FIX_DESTRUCTIVE_OPS_CHECK_DECLARATION_PARSING.
+    /^scripts\/test-[A-Za-z0-9_-]+\.mjs$/.test(rel) ||
+    rel === 'scripts/destructive-ops-auth-parser.mjs'
   );
 }
 
@@ -218,7 +228,7 @@ export default async function destructiveOpsDeclared(files, _opts) {
 
   // (A) Any staged SPEC.md must have a § Destructive Operations section.
   for (const f of files) {
-    if (isSpecPath(f)) {
+    if (isSpecPathAbs(f, REPO)) {
       const result = await checkSpecHasSection(f);
       if (!result.ok) {
         violations.push({
@@ -231,9 +241,15 @@ export default async function destructiveOpsDeclared(files, _opts) {
     }
   }
 
-  // (B) Staged file deletes — destructive unless declared.
+  // (B) Staged file deletes — destructive unless declared in a staged
+  //     SPEC.md's "## Destructive Operations" section per Iron Rule 32.
+  //     Fix authored 2026-05-14 by M1_5_FIX_DESTRUCTIVE_OPS_CHECK_DECLARATION_PARSING.
+  //     Before this fix, the section unconditionally flagged every staged
+  //     deletion as a violation, blocking even properly-declared SPEC closures.
   const deletes = getStagedDeletes();
+  const authorizedDeletes = await collectAuthorizedDeletes(files, deletes, REPO);
   for (const del of deletes) {
+    if (authorizedDeletes.has(del)) continue;
     violations.push({
       check: 'destructive-ops-declared',
       path: resolve(REPO, del),
