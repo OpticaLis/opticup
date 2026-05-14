@@ -5,12 +5,30 @@
 
 import { resolveRecipients, type Lead } from "./recipients.ts";
 import { prepareQueueSend } from "./queue-send.ts";
+// M4_TEMPLATE_VALIDATION_UNIFIED (2026-05-14 Phase 2 P2.3): pre-enqueue
+// scan so doomed templates (any %unsubstituted_var% surviving plan-time
+// substitution) never reach crm_message_queue. Closes KNOWLEDGE_MAP Layer 6
+// gap; replicates send-message's at-dispatch fail-CLOSED gate at plan-time.
+import { validateTemplateOutput, type ValidationResult } from "../_shared/template-validation.ts";
 
 export interface PreparedPlan {
   items: unknown[];
   skipped: number;
   resolvedLeadIds: string[];
   queued: number;
+  // M4_TEMPLATE_VALIDATION_UNIFIED — number of plan items rejected pre-enqueue
+  // by validateTemplateOutput. Counted SEPARATELY from `skipped` so callers
+  // can tell apart "no recipients / no template / channel skip" (skipped)
+  // vs "doomed template would have produced unsubstituted_placeholder"
+  // (validation_failures). Engine layer aggregates these into
+  // EvaluateResult.validation_failures and writes a per-rule last_error.
+  validation_failures?: number;
+  // String summary for the rule's last_error column (engine layer reads this
+  // and writes to crm_automation_rules.last_error WHERE id=rule.id AND
+  // tenant_id=tenantId). Format: 'unsubstituted_placeholder: X,Y (slug=foo)'
+  // or 'payment_url_mismatch: payment_link_missing_or_mismatch:50 (slug=foo)'.
+  // Null/undefined when no validation failure occurred for this rule.
+  validation_error_summary?: string | null;
 }
 
 // deno-lint-ignore no-explicit-any
@@ -154,6 +172,12 @@ export async function prepareRulePlan(
 
   const items: unknown[] = [];
   const eventId = (typeof triggerData.eventId === "string") ? triggerData.eventId : null;
+  // M4_TEMPLATE_VALIDATION_UNIFIED: per-rule accumulators for pre-enqueue
+  // validation failures. We rejection-log to crm_message_log AND surface the
+  // missing-placeholder set on the rule's last_error column (via engine.ts).
+  let validationFailures = 0;
+  const failedMissing = new Set<string>();
+  let firstPaymentError: string | null = null;
   for (const lead of leads) {
     const vars = await buildVariables(db, tenantId, triggerData, lead);
     for (const ch of channels) {
@@ -163,6 +187,42 @@ export async function prepareRulePlan(
       const composedBody = tpl
         ? substituteVars(tpl.body, vars)
         : `[תבנית לא נמצאה: ${tplBase}_${ch}_${language}]`;
+      // Subject substitution is not performed at plan-time today (send-message
+      // EF re-substitutes from vars at dispatch); however the queue row stores
+      // a frozen body for the send_message path. Scan body only — matches the
+      // surface dispatchPlanDirect freezes onto the queue.
+      const verdict: ValidationResult = validateTemplateOutput(composedBody);
+      if (!verdict.ok) {
+        // Per-failure crm_message_log row — same shape as send-message at-dispatch
+        // failure path. Iron Rule 22 defense-in-depth: explicit tenant_id on insert.
+        const errMsg = verdict.error === "unsubstituted_placeholder"
+          ? `unsubstituted_placeholder: ${(verdict.missing || []).join(",")}`
+          : (verdict.message || "validation_failed");
+        try {
+          await db.from("crm_message_log").insert({
+            tenant_id: tenantId,
+            lead_id: lead.id,
+            event_id: eventId,
+            run_id: runId,
+            template_id: tpl ? tpl.id : null,
+            channel: ch,
+            content: composedBody,
+            status: "rejected",
+            error_message: errMsg,
+          });
+        } catch (e) {
+          console.error("automation-engine validate-reject log:", (e as Error).message);
+        }
+        validationFailures += 1;
+        if (verdict.error === "unsubstituted_placeholder") {
+          (verdict.missing || []).forEach((k) => failedMissing.add(k));
+        } else if (verdict.error === "payment_url_mismatch" && !firstPaymentError) {
+          firstPaymentError = verdict.message || "payment_url_mismatch";
+        }
+        // Do NOT push to items — this is the whole point: doomed messages
+        // never reach crm_message_queue.
+        continue;
+      }
       items.push({
         rule_name: rule.name || "",
         template_slug: tplBase,
@@ -178,5 +238,24 @@ export async function prepareRulePlan(
       });
     }
   }
-  return { items, skipped: 0, resolvedLeadIds, queued: 0 };
+  // Build the rule-level last_error string. Engine layer will UPDATE the rule
+  // (or CLEAR to NULL when validationFailures === 0). Format chosen for
+  // operator readability — slug + concrete missing-var names.
+  let summary: string | null = null;
+  if (validationFailures > 0) {
+    if (firstPaymentError) {
+      summary = `${firstPaymentError} (slug=${tplBase})`;
+    } else {
+      const missingList = Array.from(failedMissing).sort().join(",");
+      summary = `unsubstituted_placeholder: ${missingList} (slug=${tplBase})`;
+    }
+  }
+  return {
+    items,
+    skipped: 0,
+    resolvedLeadIds,
+    queued: 0,
+    validation_failures: validationFailures,
+    validation_error_summary: summary,
+  };
 }

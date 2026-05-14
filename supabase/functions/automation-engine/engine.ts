@@ -103,10 +103,18 @@ export interface EvaluateResult {
   queued: number;
   skipped: number;
   plan_items?: unknown[];
+  // M4_TEMPLATE_VALIDATION_UNIFIED (2026-05-14 Phase 2 P2.3): number of plan
+  // items rejected pre-enqueue by validateTemplateOutput. Each is logged as
+  // a crm_message_log row with status='rejected' AND the originating rule's
+  // last_error column gets a structured summary. Counted SEPARATELY from
+  // rejected/failed/skipped so reporting can tell apart "doomed template"
+  // vs "phone_not_allowed" vs "no recipients".
+  validation_failures?: number;
 }
 
 const ZERO: EvaluateResult = {
   run_id: null, fired: 0, sent: 0, failed: 0, rejected: 0, queued: 0, skipped: 0,
+  validation_failures: 0,
 };
 
 export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateResult> {
@@ -168,13 +176,41 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
   let allItems: unknown[] = [];
   let skipped = 0;
   let totalQueued = 0;
+  let totalValidationFailures = 0;
   const ruleResolvedIds: string[][] = [];
   perRule.forEach((v, i) => {
     allItems = allItems.concat(v.items || []);
     skipped += v.skipped || 0;
     totalQueued += v.queued || 0;
+    totalValidationFailures += v.validation_failures || 0;
     ruleResolvedIds[i] = v.resolvedLeadIds || [];
   });
+
+  // M4_TEMPLATE_VALIDATION_UNIFIED — write per-rule last_error (or clear when
+  // the rule passed clean). Defense-in-depth (Iron Rule 22): explicit
+  // tenant_id on every UPDATE alongside the rule id. Rule stays
+  // is_active=true regardless (Daniel's directive: operator SEES the error;
+  // it's a hint, not a kill-switch). Only fires in dispatch mode — evaluate
+  // mode is preview-only and must not mutate the rule.
+  if (mode === "dispatch") {
+    for (let i = 0; i < rules.length; i++) {
+      const r = rules[i] as { id: string };
+      const v = perRule[i];
+      const newSummary = v.validation_error_summary || null;
+      // Both write paths (set + clear) call UPDATE; "clear to NULL" runs
+      // unconditionally so a previously-broken rule that's been fixed by
+      // operator-edit shows clean on its next firing. Cost: one UPDATE per
+      // rule per cron tick (~17 rules / tenant currently). Acceptable.
+      try {
+        await db.from("crm_automation_rules")
+          .update({ last_error: newSummary })
+          .eq("id", r.id)
+          .eq("tenant_id", tenantId);
+      } catch (e) {
+        console.error("automation-engine last_error UPDATE:", (e as Error).message);
+      }
+    }
+  }
 
   // M4_DRY_RUN_PREVIEW (2026-05-14): apply subset filters BEFORE post-actions
   // + dispatch. Filter every item that carries a lead_id (send_message items)
@@ -235,6 +271,7 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
       queued: totalQueued,
       skipped,
       plan_items: allItems,
+      validation_failures: totalValidationFailures,
     };
   }
 
@@ -263,6 +300,7 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
     return {
       run_id: runId, fired: rules.length, sent: 0, failed: 0, rejected: 0,
       queued: totalQueued, skipped,
+      validation_failures: totalValidationFailures,
     };
   }
 
@@ -282,6 +320,7 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
     rejected: r.rejected,
     queued: totalQueued + (r.queued || 0),
     skipped,
+    validation_failures: totalValidationFailures,
   };
 }
 
