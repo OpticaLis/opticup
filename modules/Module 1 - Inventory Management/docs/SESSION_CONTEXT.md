@@ -1,7 +1,32 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1_LENS_INVENTORY_PHASE_1A_SCHEMA_PLATFORM_ADMIN — 2026-05-14
+M1A_CURRENCIES_GLOBAL_HOTFIX — 2026-05-14
+
+## 2026-05-14 — M1A Currencies Global Hotfix (✅ SHIPPED — Full Auto Pipeline single chat)
+
+**Goal:** Close M1A-DEBT-01 from Phase 1A FOREMAN review — convert `public.currencies` from per-tenant to GLOBAL ISO-4217 reference table so tenant-2 onboarding is no longer blocked.
+
+**What shipped:**
+- Migration applied via Supabase MCP (`m1a_currencies_global_hotfix`): DROP tenant_id + id + is_default + old constraints + old RLS policies; ADD decimal_digits INT NOT NULL DEFAULT 2; PK on `code`; 5 new RLS policies (read_anywhere + write/update/delete gated on `is_platform_super_admin()` + service_bypass); seed ILS/USD/EUR with Hebrew names.
+- 25 success criteria verified: 10 DB-state criteria PASS, 11 file/commit criteria PASS, smoke 2/2 PASS (anon SELECT = 3 rows; anon INSERT denied — handled by Localhost-Tester).
+- Rule 14 `GLOBAL_SINGLETON_EXEMPT` extended to include `currencies` (second category: universal reference table; first was `lens_variant_display_seq` singleton).
+- D-M1-16 logged in `decisions/M1.md`.
+
+**Decisions logged:**
+- New RLS pattern (read_anywhere + write_platform_only via `is_platform_super_admin()`) — first instance project-wide; Iron Rule 15 canonical-pattern doc update deferred to a dedicated constitution-edit chat.
+- Migration applied via MCP only (no `supabase/migrations/*.sql`) — Iron Rule 32 boundary; consistent with pre-existing TD-2 (git drift).
+- Module's `docs/db-schema.sql` update deferred per Phase 1A precedent (5 pre-existing rule-18 violations) — finding linked to M1A-DEBT-02.
+- T.CURRENCIES constant + FIELD_MAP entry deferred (no current consumer reads via `DB.fetchAll`) — finding for future cleanup.
+
+**Status:**
+- ✅ Migration live on Supabase (project tsxrrxzmdxaenlvocyit).
+- ✅ `MASTER_ROADMAP.md` §3 + §5 marked resolved.
+- ✅ Canonical docs aligned (`GLOBAL_SCHEMA.sql`, `DB_TABLES_REFERENCE.md`).
+- ✅ Tenant-2 onboarding unblocked.
+- 🟡 Awaiting Reviewer + Localhost-Tester + FOREMAN_REVIEW.
+
+---
 
 ## 2026-05-14 — M1 Lens Inventory Phase 1A — Schema + Platform Catalog Admin (✅ SHIPPED)
 

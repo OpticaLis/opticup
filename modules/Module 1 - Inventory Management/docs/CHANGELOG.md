@@ -4,6 +4,30 @@
 
 ---
 
+## M1A_CURRENCIES_GLOBAL_HOTFIX — 2026-05-14 (✅ M1A-DEBT-01 closed)
+
+Phase 1A corrective hotfix — `public.currencies` converted from per-tenant to GLOBAL ISO-4217 reference table per Iron Rule 14 documented exception. New RLS pattern: read-anywhere + writes gated on `is_platform_super_admin()`. Seeded ILS / USD / EUR. Unblocks tenant-2 onboarding.
+
+### Commits (M1A Currencies Hotfix)
+- `bb341fb` docs(m1): seal currencies-global hotfix brief
+- `43a35ee` docs(m1,spec): author M1A_CURRENCIES_GLOBAL_HOTFIX SPEC (closes M1A-DEBT-01 planning)
+- `eb1a283` feat(m1,db): currencies global reference table (M1A-DEBT-01)
+- `ed3196e` docs(m1,schema): align canonical docs with currencies-global hotfix
+- _(this commit)_ docs(m1): close M1A-DEBT-01 — MASTER_ROADMAP + D-M1-16 + module artifacts
+- _(later)_ chore(spec): close M1A_CURRENCIES_GLOBAL_HOTFIX with retrospective
+
+### DB delta
+- `public.currencies` DROP COLUMN: id, tenant_id, is_default + 3 constraints + 2 policies.
+- `public.currencies` ADD COLUMN: decimal_digits INT NOT NULL DEFAULT 2.
+- `public.currencies` ADD PRIMARY KEY (code).
+- `public.currencies` 5 new RLS policies: read_anywhere, write_platform_only, update_platform_only, delete_platform_only, service_bypass.
+- Seed: 3 rows (ILS, USD, EUR).
+
+### Migration name
+- Supabase: `m1a_currencies_global_hotfix` (applied via MCP only — not in `supabase/migrations/*.sql` per SPEC §7 + TD-2 drift policy).
+
+---
+
 ## M1_LENS_INVENTORY_PHASE_1A_SCHEMA_PLATFORM_ADMIN — 2026-05-14 (✅)
 
 **Phase 1A** of M1 Lens Expansion — schema + Platform Catalog Admin screen.

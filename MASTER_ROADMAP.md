@@ -105,6 +105,18 @@ and M9 (Lab/KDS) future builds. Phase 1B (6 customer-facing screens) deferred
 to a sibling SPEC after Phase 1A FOREMAN_REVIEW closes. SPEC + EXECUTION_REPORT
 in `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_INVENTORY_PHASE_1A_SCHEMA_PLATFORM_ADMIN/`.
 
+**✅ M1A-DEBT-01 RESOLVED — 2026-05-14 (Full Auto Pipeline single chat).** Phase 1A
+hotfix `M1A_CURRENCIES_GLOBAL_HOTFIX` converted `public.currencies` from per-tenant
+to GLOBAL ISO-4217 reference table per Iron Rule 14 documented exception (same
+category as `vat_rates`). DROP COLUMN tenant_id + id + is_default; new PK on `code`;
+added `decimal_digits INT NOT NULL DEFAULT 2`; RLS pattern flipped from tenant_isolation
+to `read_anywhere` + write/update/delete gated on `is_platform_super_admin()` +
+service_bypass; seeded ILS / USD / EUR. Unblocks tenant-2 onboarding. SPEC folder:
+`modules/Module 1 - Inventory Management/docs/specs/M1A_CURRENCIES_GLOBAL_HOTFIX/`.
+TD-2 (migrations git drift) note: migration applied via Supabase MCP only — not mirrored
+in `supabase/migrations/*.sql` to avoid Iron Rule 32 destructive-pattern block; documented
+in SPEC §7 + sweep into future TD-2 SPEC.
+
 **🎉 Phase 1 of `roles/site-overseer/FUNNEL_ROADMAP.md` COMPLETE — 2026-05-14.**
 All 4 Phase 1 SPECs closed in ONE calendar day via Full-Auto Pipeline:
 P1.4 (`M4_REGISTER_LEAD_TO_EVENT_RPC_MAP`) + P1.4-followup
@@ -310,6 +322,7 @@ Items are tracked — not fixed — in this document.
 |----|-------------|--------|-------------|
 | MISC-1 | **CSS file-size violations** — `css/employees.css` (397 lines) + historical `archive/` HTML files exceed 350-line limit. Pre-existing from Phase 0A baseline (417 violations, 39 warnings). | `TECH_DEBT.md` #3 (Phase 0A baseline snapshot) | Address when modules are next touched |
 | MISC-2 | **GLOBAL_SCHEMA.sql previously declared zero views** — now fixed in Phase 3A Part 2 (commit `3857b8a`). | Phase 1A §4 punch list | ✅ Resolved |
+| M1A-DEBT-01 | ~~**`currencies` table was per-tenant + empty** — blocked tenant-2 onboarding and forced supplier_catalog_offering.currency_code to default TEXT 'ILS' instead of FK-validating against currencies(code).~~ | Phase 1A FOREMAN_REVIEW findings M1A-SPEC-02 + M1A-SPEC-05 | ✅ **RESOLVED 2026-05-14** via `M1A_CURRENCIES_GLOBAL_HOTFIX` SPEC. Currencies is now GLOBAL ISO-4217 reference; seeded ILS/USD/EUR; RLS read-anywhere + platform-admin-write. |
 
 ---
 
