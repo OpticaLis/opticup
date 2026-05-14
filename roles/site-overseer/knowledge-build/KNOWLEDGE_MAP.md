@@ -66,6 +66,18 @@ Source-of-truth for the field list: `crm_leads` columns (verified via `informati
 ### Open question for Daniel
 Q: should the duplicate-branch update `utm_*` when fresh values arrive in the body (last-touch model)? Or persist first-touch forever and add a separate per-event-attendee `acquisition_source` column for second-touch?
 
+### Update 2026-05-14 (M3_UTM_TRIPLE_LAYER_PERSISTENCE — Phase 1 P1.1 closed)
+
+The first-touch trap above is **partially closed** — `crm_leads.utm_*` columns still freeze at first insert (intentional, per Daniel's Q1 decision in FUNNEL_ROADMAP) BUT every active funnel interaction now also writes a row to a new table `crm_lead_touchpoints` with its own UTM bag + timestamp + type (`short_link_click`, `lead_submit`, `event_register`). Touchpoint capture is wired in:
+
+- **`resolve-link` Edge Function** (v6): on every `/r/<code>` short-link click, records a `short_link_click` touchpoint with UTMs parsed from `short_links.target_url`. `lead_id` is pre-filled from `short_links.lead_id` when present (per-recipient broadcast SMS); otherwise NULL.
+- **`lead-intake` Edge Function** (v25): on every form submit (fresh + duplicate + race branches), records a `lead_submit` touchpoint with UTMs from the request body. Then async-queues `resolve_touchpoints_to_lead` via `EdgeRuntime.waitUntil` to backfill `lead_id` on prior anonymous touchpoints (30-day window, matched by `phone_normalized`).
+- **`register_lead_to_event` RPC** (signature expanded 4→13 params, old callers unaffected): on every state-changing terminal (T3 auto-move, T4 invited-promote, T6 undelete, T7 fresh over-cap, T8 fresh under-cap), records an `event_register` touchpoint with UTMs forwarded as RPC params. Dedupe_key uses `attendee_id` so revivals of the same attendee don't double-record.
+
+**The Layer 2 wrong-conclusion trap from 2026-05-14 morning is now reading-only — for new touchpoints recorded post-P1.1. Pre-P1.1 leads will only have `crm_leads.utm_*` (historical first-touch) and no journey rows. The new view `v_crm_lead_first_touch` falls back to `crm_leads.utm_*` for those.**
+
+The architectural debt FIND-2 from `M4_REGISTER_LEAD_TO_EVENT_RPC_MAP/FINDINGS.md` is **structurally resolved** by this SPEC — Phase 4 E1 (MTA Engine) now has its substrate. E7 (Customer Journey Analytics) now has its event log. See `modules/Module 4 - CRM/docs/specs/M3_UTM_TRIPLE_LAYER_PERSISTENCE/`.
+
 ---
 
 ## Layer 3 — Automation Rules
@@ -146,7 +158,9 @@ The intended transition order (inferred from rule names + timing rules): `planni
 
 ### Capacity logic
 
-`crm_events` has `max_capacity` (int), `max_coupons` (int), `extra_coupons` (int). The RPC `register_lead_to_event` is the single source of truth that enforces capacity, dedup, and waiting-list transition (referenced by both `event-register/index.ts:270` and `quick-register/index.ts:308`). The RPC body lives in DB; the migration history is in `modules/Module 4 - CRM/migrations/2026_05_13_invited_ghost_attendee_fix_up.sql` and `modules/Module 4 - CRM/migrations/2026_05_14_register_lead_to_event_return_shape_fix_up.sql` (latest). **Full line-by-line RPC mapping completed 2026-05-14** in SPEC `M4_REGISTER_LEAD_TO_EVENT_RPC_MAP` (P1.4 — see `modules/Module 4 - CRM/docs/specs/M4_REGISTER_LEAD_TO_EVENT_RPC_MAP/STATE_TRANSITIONS.md` for the 8-terminal state diagram + line-annotation table). FIND-1 from that mapping (return-shape inconsistency on the fresh-INSERT closed-and-full branch) was closed 2026-05-14 by SPEC `M4_REGISTER_LEAD_TO_EVENT_RETURN_SHAPE_FIX` — the RPC now returns `status='event_closed'` (not `'waiting_list'`) when the event is closed AND capacity is full AND no existing same-event row exists.
+`crm_events` has `max_capacity` (int), `max_coupons` (int), `extra_coupons` (int). The RPC `register_lead_to_event` is the single source of truth that enforces capacity, dedup, and waiting-list transition (referenced by both `event-register/index.ts:270` and `quick-register/index.ts:308`). The RPC body lives in DB; the migration history is in `modules/Module 4 - CRM/migrations/2026_05_13_invited_ghost_attendee_fix_up.sql`, `modules/Module 4 - CRM/migrations/2026_05_14_register_lead_to_event_return_shape_fix_up.sql`, and (latest) `modules/Module 4 - CRM/migrations/2026_05_14_M3_UTM_TRIPLE_LAYER_04_register_lead_to_event_up.sql`. **Full line-by-line RPC mapping completed 2026-05-14** in SPEC `M4_REGISTER_LEAD_TO_EVENT_RPC_MAP` (P1.4 — see `modules/Module 4 - CRM/docs/specs/M4_REGISTER_LEAD_TO_EVENT_RPC_MAP/STATE_TRANSITIONS.md` for the 8-terminal state diagram + line-annotation table). FIND-1 from that mapping (return-shape inconsistency on the fresh-INSERT closed-and-full branch) was closed 2026-05-14 by SPEC `M4_REGISTER_LEAD_TO_EVENT_RETURN_SHAPE_FIX` — the RPC now returns `status='event_closed'` (not `'waiting_list'`) when the event is closed AND capacity is full AND no existing same-event row exists.
+
+**Update 2026-05-14 (M3_UTM_TRIPLE_LAYER_PERSISTENCE — Phase 1 P1.1 closed):** the RPC signature was expanded from 4 to 13 params (9 new optional UTM/context params with NULL defaults; old 4-arg callers unaffected). On every state-changing terminal (T3 auto-move, T4 invited-promote, T6 undelete, T7 fresh over-cap, T8 fresh under-cap), the RPC now also records an `event_register` touchpoint in `crm_lead_touchpoints` via `PERFORM public._record_touchpoint(...)`. Dedupe_key = `'event_register:' || attendee_id::text` ensures revival of the same attendee does NOT create a duplicate touchpoint row (ON CONFLICT DO NOTHING in helper RPC). T1 (RAISE 42501), T2 (event_not_found), T5 (already_registered) — no touchpoint (no registration state change). Body md5 transitioned `31fea2ea...` → `07e1904a...`. P1.4's FIND-2 (RPC writes no journey log) is structurally resolved by this change.
 
 ### `crm_event_attendees` columns + status values
 

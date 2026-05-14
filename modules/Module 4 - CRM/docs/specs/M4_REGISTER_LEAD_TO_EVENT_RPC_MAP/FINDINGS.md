@@ -46,9 +46,11 @@ L44–L50 uses the variable `v_promote_status` (assigned by the same `CASE WHEN`
 
 ---
 
-## FIND-2 — MEDIUM — RPC writes no structured touchpoint / journey log; only mutates state
+## FIND-2 — ✅ RESOLVED 2026-05-14 — RPC writes no structured touchpoint / journey log; only mutates state
 
-**Severity:** MEDIUM (architectural debt blocking Phase 4 E1 + partial E7 per FUNNEL_ROADMAP)
+> **RESOLVED 2026-05-14** by SPEC `M3_UTM_TRIPLE_LAYER_PERSISTENCE` (Phase 1 P1.1 of FUNNEL_ROADMAP). New table `crm_lead_touchpoints` is the structured journey-event log; `register_lead_to_event` was extended with 9 new optional UTM/context params (NULL defaults — old callers unaffected) and now records an `event_register` touchpoint at every state-changing terminal (T3 auto-move, T4 invited-promote, T6 undelete, T7 fresh over-cap, T8 fresh under-cap). The 3 no-state-change terminals (T1 RAISE, T2 event_not_found, T5 already_registered) correctly skip touchpoint recording. Phase 4 E1 verdict flipped BLOCK→SUPPORT; E7 BLOCK→SUPPORT; E2 noted improvement (touchpoint_id becomes the stable handle for M5/M7/M13 revenue-row tagging). Body md5 transitioned `31fea2eaf0086cf917d0d65a8595d41c` → `07e1904a315275e88a223eb088e1d30c`. See `modules/Module 4 - CRM/docs/specs/M3_UTM_TRIPLE_LAYER_PERSISTENCE/`.
+
+**Severity:** MEDIUM (now RESOLVED)
 **Location:** Whole RPC body — every terminal branch.
 
 ### Description
