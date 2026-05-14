@@ -1,0 +1,17 @@
+{
+  "url": "https://www.prizma-optic.co.il/ru/privacy/",
+  "lang": "ru",
+  "path": "/privacy/",
+  "label": "privacy",
+  "http": 200,
+  "scores": {
+    "performance": 89,
+    "accessibility": 95,
+    "seo": 100,
+    "best-practices": 100
+  },
+  "axeViolationCount": 2,
+  "capturedAt": "2026-05-14T04:00:33.048Z",
+  "fetchTime": "2026-05-14T04:00:23.592Z",
+  "lighthouseVersion": "12.8.2"
+}

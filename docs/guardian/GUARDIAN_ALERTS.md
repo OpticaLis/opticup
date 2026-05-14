@@ -203,3 +203,14 @@ Stable; no change. **L-20 enrichment this scan:** `tenants.ui_config.test_mode_e
 
 **ALL CLEAR** — 30/30 URLs OK; 0 comparisons against no prior baseline; 0 regressions. avg perf 87, avg a11y 95.
 → Full report: `docs/guardian/lighthouse-reports/daily/2026-05-13/SUMMARY.md`
+
+## Daily run — 2026-05-14 <!-- run:daily:2026-05-14 -->
+
+**REGRESSION** — 2 regression(s) detected vs. 2026-05-13:
+
+| URL | metric | prior | current | delta/floor | report |
+|-----|--------|-------|---------|-------------|--------|
+| https://www.prizma-optic.co.il/supersale/ | performance | 85 | 76 | < floor 80 | [json](docs/guardian/lighthouse-reports/daily/2026-05-14/he-supersale.json) |
+| https://www.prizma-optic.co.il/ru/supersale/ | performance | 79 | 77 | < floor 80 | [json](docs/guardian/lighthouse-reports/daily/2026-05-14/ru-supersale.json) |
+
+→ Full report: `docs/guardian/lighthouse-reports/daily/2026-05-14/SUMMARY.md`
