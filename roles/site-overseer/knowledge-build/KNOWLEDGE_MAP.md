@@ -487,26 +487,27 @@ Make returning 200 to send-message means the vendor (Global SMS or Gmail) return
 | Email bounced | **UNMEASURED** | No bounce route in Make scenario 9104395 |
 | SMS link clicked | **MEASURED** | `short_link_clicks` for `/r/<code>` URLs (post-2026-05-14) |
 | External short.gy link clicked | **UNMEASURED** in our DB | Lives only in short.gy's dashboard |
-| Click → which broadcast / which message | **BROKEN** | `crm_message_log.broadcast_id` exists but is never written (post-2026-05-12) |
+| Click → which broadcast / which message | **MEASURED (post-2026-05-14 P1.2)** | `crm_message_log.broadcast_id` populated via send-message EF v25; `short_links.broadcast_id` stamped at link-build time (X1 substrate); `short_link_clicks.broadcast_id` + `crm_lead_touchpoints.broadcast_id` populated by resolve-link EF v7. See `M4_BROADCAST_ID_PROPAGATION` (P1.2). |
 | Form arrival (landed on event-register page) | **UNMEASURED** | No "arrived from short-link" log; the click is logged but the landing is not |
 | Event registration submit | **MEASURED** | RPC `register_lead_to_event` → `crm_event_attendees` row |
 | Walk-in QR registration | **MEASURED** | `registration_method='quick_register_qr'` on attendee row |
 | Attendee checked in at event | **MEASURED** | `crm_event_attendees.checked_in_at` |
 | Attendee purchased | **MEASURED** | `crm_event_attendees.purchased_at, purchase_amount` |
 | Purchase → FB CAPI for ROAS | **UNMEASURED** | Scenario 8542928 exists but is INACTIVE; no graph.facebook.com call in code |
-| Broadcast aggregate counters | **BROKEN** | `crm_broadcasts.total_sent/total_failed/status` never updated since 2026-05-12 |
+| Broadcast aggregate counters | **MEASURED (post-2026-05-14 P1.2)** | pg_cron `crm_broadcast_total_sent_refresh` updates `total_sent`/`total_failed`/`status` every minute from `crm_message_log` aggregation. See `M4_BROADCAST_ID_PROPAGATION`. |
 
 ---
 
 ## Top 5 Tracking Gaps
 
-### Gap #1 — Broadcast bookkeeping is dead (CRITICAL, infra)
-Every broadcast since 2026-05-12 stays `crm_broadcasts.status='queued', total_sent=0` forever. The send-message → message_log path writes neither `broadcast_id` (on log rows) nor counter updates (on the broadcast row). Evidence: `crm_broadcasts` DB scan + repo-wide grep for `crm_broadcasts.*update` returns zero hits.
-**Impact:** any UI or report that reads `crm_broadcasts` for "how did this blast do" shows a lie. Also caused SPEC §2 wrong-conclusion #1.
+### Gap #1 — Broadcast bookkeeping is dead (RESOLVED 2026-05-14 by `M4_BROADCAST_ID_PROPAGATION` P1.2)
+**Previously:** Every broadcast since 2026-05-12 stayed `crm_broadcasts.status='queued', total_sent=0` forever.
+**Fix:** pg_cron job `crm_broadcast_total_sent_refresh` runs every minute, aggregates `crm_message_log` by `broadcast_id`, updates `total_sent` / `total_failed` / flips `status` from 'queued'/'sending' to 'sent' when all queue rows drained. Idempotent via `WHERE b.status IN ('queued','sending')` so finished broadcasts are never re-touched.
+**Backfill note:** 2026-05-12 → 2026-05-14 historical broadcasts remain at `total_sent=0` by design (Option-X choice — no heuristic backfill). Phase 2.5 dashboards filter "broadcasts after 2026-05-14" for clean charts.
 
-### Gap #2 — No `broadcast_id` propagation from broadcast → queue → log (HIGH)
-`crm_message_queue` schema has no `broadcast_id` column. `crm_message_log.broadcast_id` exists but is never populated. The link from "a specific click in `short_link_clicks`" back to "which broadcast caused it" is unrecoverable today. Evidence: `crm_message_queue` columns + repo-wide grep for `broadcast_id`.
-**Impact:** "what's the click-through rate of broadcast X?" cannot be answered without per-row inference.
+### Gap #2 — No `broadcast_id` propagation from broadcast → queue → log (RESOLVED 2026-05-14 by `M4_BROADCAST_ID_PROPAGATION` P1.2)
+**Previously:** `crm_message_queue` schema had no `broadcast_id`; `crm_message_log.broadcast_id` existed but was never populated.
+**Fix:** End-to-end X1 chain wired — `crm_message_queue.broadcast_id` column added; `crm-messaging-broadcast-queue.js` `buildQueueRows` stamps it on every queue row; `dispatch-queue` EF v14 SELECTs + forwards to `send-message` payload; `send-message` EF v25 writes `broadcast_id` on `crm_message_log` row (all 8 insert paths) AND threads it through `injectAutoUrls` → `createShortLink` to stamp `short_links.broadcast_id`; `resolve-link` EF v7 reads `short_links.broadcast_id` at click time, writes it to `short_link_clicks.broadcast_id` + `crm_lead_touchpoints.broadcast_id`. All hops carry `broadcast_id` end-to-end. `register_lead_to_event` RPC also gained 14th param `p_broadcast_id uuid DEFAULT NULL` so the event_register touchpoint can carry the attribution when callers know the broadcast (current ERP/EF callers pass NULL — wiring deferred to a future SPEC).
 
 ### Gap #3 — `registration_method` is NULL for server-side invites (MEDIUM)
 The lead-intake server-side path (`dispatch.ts:153-159`) upserts `crm_event_attendees` with `status='invited'` and no `registration_method`. So `attendees WHERE registration_method='form'` excludes server-invited rows. The 4 paths in Layer 4 collapse to 3 distinguishable in the data.

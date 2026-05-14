@@ -99,6 +99,10 @@ Deno.serve(async (req: Request) => {
   const leadId = trimOrNull(payload.lead_id);
   const eventId = trimOrNull(payload.event_id);
   const runId = trimOrNull(payload.run_id);
+  // 2026-05-14 M4_BROADCAST_ID_PROPAGATION (P1.2) — propagated from dispatch-queue
+  // when this dispatch was triggered by draining a broadcast queue row. NULL for
+  // automation runs, manual sends, event-register lead-intake auto-message.
+  const broadcastId = trimOrNull(payload.broadcast_id);
   const channel = trimOrNull(payload.channel);
   const templateSlug = trimOrNull(payload.template_slug);
   const rawBody = trimOrNull(payload.body);
@@ -141,6 +145,7 @@ Deno.serve(async (req: Request) => {
   if (supRow && (supRow.unsubscribed_at != null || supRow.status === "unsubscribed")) {
     await db.from("crm_message_log").insert({
       tenant_id: tenantId, lead_id: leadId, event_id: eventId, run_id: runId,
+      broadcast_id: broadcastId,
       template_id: null, channel, content: "",
       status: "rejected", error_message: "lead_unsubscribed",
     });
@@ -154,7 +159,7 @@ Deno.serve(async (req: Request) => {
   // 2026-05-14 (M4_MESSAGE_PERFORMANCE_TRACKING): injectAutoUrls now returns
   // the short_link ids it created so we can link them to the crm_message_log
   // row after dispatch.ts inserts it.
-  const shortLinkIds = await injectAutoUrls(db, leadId, tenantId, eventId, variables);
+  const shortLinkIds = await injectAutoUrls(db, leadId, tenantId, eventId, variables, broadcastId);
   if (eventId) {
     try {
       await injectEventVariables(db, eventId, tenantId, variables);
@@ -195,6 +200,7 @@ Deno.serve(async (req: Request) => {
         lead_id: leadId,
         event_id: eventId,
         run_id: runId,
+        broadcast_id: broadcastId,
         channel,
         content: "",
         status: "failed",
@@ -224,6 +230,7 @@ Deno.serve(async (req: Request) => {
         event_id: eventId,
         run_id: runId,
         template_id: tpl.id,
+        broadcast_id: broadcastId,
         channel,
         content: "",
         status: "failed",
@@ -250,7 +257,7 @@ Deno.serve(async (req: Request) => {
   if (paymentUrlError) {
     await db.from("crm_message_log").insert({
       tenant_id: tenantId, lead_id: leadId, event_id: eventId, run_id: runId,
-      template_id: templateId, channel, content: finalBody,
+      template_id: templateId, broadcast_id: broadcastId, channel, content: finalBody,
       status: "failed", error_message: paymentUrlError,
     });
     return jsonResponse({ ok: false, error: paymentUrlError }, 422);
@@ -267,7 +274,7 @@ Deno.serve(async (req: Request) => {
     const errMsg = "unsubstituted_placeholder: " + unsubstituted.join(",");
     await db.from("crm_message_log").insert({
       tenant_id: tenantId, lead_id: leadId, event_id: eventId, run_id: runId,
-      template_id: templateId, channel, content: finalBody,
+      template_id: templateId, broadcast_id: broadcastId, channel, content: finalBody,
       status: "failed", error_message: errMsg,
     });
     return jsonResponse(
@@ -295,7 +302,7 @@ Deno.serve(async (req: Request) => {
   if (channel === "sms" && !(await phoneAllowed(db, tenantId, recipientPhone))) {
     await db.from("crm_message_log").insert({
       tenant_id: tenantId, lead_id: leadId, event_id: eventId, run_id: runId,
-      template_id: templateId, channel, content: finalBody,
+      template_id: templateId, broadcast_id: broadcastId, channel, content: finalBody,
       status: "rejected", error_message: "phone_not_allowed: " + recipientPhone,
     });
     return jsonResponse({ ok: false, error: "phone_not_allowed" }, 200);
@@ -303,7 +310,7 @@ Deno.serve(async (req: Request) => {
   if (channel === "email" && !(await emailAllowed(db, tenantId, recipientEmail))) {
     await db.from("crm_message_log").insert({
       tenant_id: tenantId, lead_id: leadId, event_id: eventId, run_id: runId,
-      template_id: templateId, channel, content: finalBody,
+      template_id: templateId, broadcast_id: broadcastId, channel, content: finalBody,
       status: "rejected", error_message: "email_not_allowed: " + recipientEmail,
     });
     return jsonResponse({ ok: false, error: "email_not_allowed" }, 200);
@@ -314,6 +321,7 @@ Deno.serve(async (req: Request) => {
     db,
     {
       tenantId, leadId, eventId, runId, templateId,
+      broadcastId,
       channel: channel as "sms" | "email",
       finalBody, finalSubject, recipientPhone, recipientEmail,
       shortLinkIds,

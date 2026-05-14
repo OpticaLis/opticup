@@ -16,6 +16,7 @@ interface DispatchParams {
   eventId: string | null;
   runId: string | null;
   templateId: string | null;
+  broadcastId: string | null;
   channel: "sms" | "email";
   finalBody: string;
   finalSubject: string | null;
@@ -42,6 +43,11 @@ export async function writeDispatchAndSend(
       event_id: p.eventId,
       run_id: p.runId,
       template_id: p.templateId,
+      // 2026-05-14 M4_BROADCAST_ID_PROPAGATION (P1.2) — closes Layer 5 Gap #2.
+      // Forwarded from dispatch-queue payload when a queue row was a broadcast
+      // row; NULL for non-broadcast dispatches (automation rules, manual sends,
+      // event-register lead-intake auto-message).
+      broadcast_id: p.broadcastId,
       channel: p.channel,
       content: p.finalBody,
       status: "pending",

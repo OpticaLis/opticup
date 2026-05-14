@@ -102,6 +102,7 @@ function recordClickAsync(
   rawIp: string,
   userAgent: string | null,
   referer: string | null,
+  broadcastId: string | null,
 ): void {
   (async () => {
     try {
@@ -129,6 +130,10 @@ function recordClickAsync(
           ip_hash: ipHash,
           user_agent: userAgent,
           referer,
+          // 2026-05-14 M4_BROADCAST_ID_PROPAGATION (P1.2) — X1 chain hop. Read
+          // from short_links.broadcast_id at click time. NULL when the clicked
+          // short_link wasn't from a broadcast.
+          broadcast_id: broadcastId,
         });
       if (insErr) {
         console.warn("short_link_clicks insert failed:", insErr.message);
@@ -154,6 +159,7 @@ function recordTouchpointAsync(
   targetUrl: string | null,
   refererHdr: string | null,
   rawIp: string,
+  broadcastId: string | null,
 ): void {
   (async () => {
     try {
@@ -177,7 +183,9 @@ function recordTouchpointAsync(
         p_attendee_id: null,
         p_short_link_id: shortLinkId,
         p_short_link_code: shortLinkCode,
-        p_broadcast_id: null,
+        // 2026-05-14 M4_BROADCAST_ID_PROPAGATION (P1.2) — replaces the P1.1
+        // placeholder. Read from short_links.broadcast_id at click time.
+        p_broadcast_id: broadcastId,
         p_utm_source: utms.utm_source,
         p_utm_medium: utms.utm_medium,
         p_utm_campaign: utms.utm_campaign,
@@ -215,7 +223,7 @@ Deno.serve(async (req: Request) => {
 
   const { data, error } = await db
     .from("short_links")
-    .select("target_url, expires_at, id, click_count, tenant_id, lead_id, event_id")
+    .select("target_url, expires_at, id, click_count, tenant_id, lead_id, event_id, broadcast_id")
     .eq("code", code)
     .maybeSingle();
 
@@ -246,9 +254,12 @@ Deno.serve(async (req: Request) => {
   const rawIp = getClientIp(req);
   const ua = truncate(req.headers.get("user-agent"), UA_REF_MAX);
   const ref = truncate(req.headers.get("referer"), UA_REF_MAX);
-  recordClickAsync(db, data.id, data.tenant_id, rawIp, ua, ref);
+  recordClickAsync(db, data.id, data.tenant_id, rawIp, ua, ref, data.broadcast_id || null);
 
   // Fire-and-forget: M3_UTM_TRIPLE_LAYER_PERSISTENCE touchpoint capture.
+  // 2026-05-14 M4_BROADCAST_ID_PROPAGATION — broadcast_id forwarded as the
+  // X1-chain hop from short_links into both the per-click ledger AND the
+  // journey-level touchpoint row.
   recordTouchpointAsync(
     db,
     data.id,
@@ -259,6 +270,7 @@ Deno.serve(async (req: Request) => {
     data.target_url,
     ref,
     rawIp,
+    data.broadcast_id || null,
   );
 
   return new Response(null, {

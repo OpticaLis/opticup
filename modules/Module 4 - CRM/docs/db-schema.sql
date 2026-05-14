@@ -287,3 +287,42 @@ GRANT ALL ON public.crm_lead_touchpoints TO service_role;
 -- public.v_crm_lead_first_touch returns per-(tenant,lead) earliest UTM bag,
 -- preferring lead_submit > short_link_click > event_register, with fallback
 -- to crm_leads.utm_* when no touchpoint exists.
+
+-- ========================================================================
+-- M4_BROADCAST_ID_PROPAGATION (Phase 1 P1.2, 2026-05-14)
+-- ========================================================================
+-- Closes KNOWLEDGE_MAP Layer 5 Gap #1 + Gap #2. X1 substrate: broadcast_id
+-- stamped on short_links at link-build time; propagates end-to-end through
+-- queue→log→short_links→clicks→touchpoints. pg_cron periodic counter.
+-- See modules/Module 4 - CRM/docs/specs/M4_BROADCAST_ID_PROPAGATION/.
+
+-- 4 new broadcast_id columns + 5 FKs to crm_broadcasts(id) ON DELETE SET NULL:
+ALTER TABLE crm_message_queue  ADD COLUMN broadcast_id uuid NULL REFERENCES crm_broadcasts(id) ON DELETE SET NULL;
+ALTER TABLE short_link_clicks  ADD COLUMN broadcast_id uuid NULL REFERENCES crm_broadcasts(id) ON DELETE SET NULL;
+ALTER TABLE short_links        ADD COLUMN broadcast_id uuid NULL REFERENCES crm_broadcasts(id) ON DELETE SET NULL;
+-- crm_lead_touchpoints.broadcast_id column already added by P1.1 (M3_UTM_TRIPLE_LAYER);
+-- P1.2 adds the FK that P1.1 deliberately deferred:
+ALTER TABLE crm_lead_touchpoints
+  ADD CONSTRAINT crm_lead_touchpoints_broadcast_id_fkey
+  FOREIGN KEY (broadcast_id) REFERENCES crm_broadcasts(id) ON DELETE SET NULL;
+-- crm_message_log.broadcast_id column + FK predate this SPEC.
+
+-- 5 partial composite indices WHERE broadcast_id IS NOT NULL:
+CREATE INDEX idx_crm_message_queue_tenant_broadcast_created    ON crm_message_queue   (tenant_id, broadcast_id, created_at)  WHERE broadcast_id IS NOT NULL;
+CREATE INDEX idx_crm_message_log_tenant_broadcast_created      ON crm_message_log     (tenant_id, broadcast_id, created_at)  WHERE broadcast_id IS NOT NULL;
+CREATE INDEX idx_short_link_clicks_tenant_broadcast_clicked    ON short_link_clicks   (tenant_id, broadcast_id, clicked_at)  WHERE broadcast_id IS NOT NULL;
+CREATE INDEX idx_short_links_tenant_broadcast                  ON short_links         (tenant_id, broadcast_id)              WHERE broadcast_id IS NOT NULL;
+CREATE INDEX idx_crm_lead_touchpoints_tenant_broadcast_occurred ON crm_lead_touchpoints (tenant_id, broadcast_id, occurred_at) WHERE broadcast_id IS NOT NULL;
+
+-- register_lead_to_event RPC: 13→14 params. New 14th param: p_broadcast_id uuid DEFAULT NULL.
+-- DROP FUNCTION required on old 13-arg signature (Postgres treats different arg counts
+-- as different overloads; CREATE OR REPLACE alone wouldn't replace it).
+-- Body propagates p_broadcast_id into each PERFORM public._record_touchpoint(...) call
+-- in place of the prior NULL literal at position 9. See migration 02 in P1.2 SPEC folder.
+
+-- pg_cron job: crm_broadcast_total_sent_refresh
+-- Schedule: '* * * * *' (every minute). Pattern: direct SQL UPDATE (no EF round-trip).
+-- Idempotent: WHERE b.status IN ('queued','sending'). Tenant-agnostic: JOIN on broadcast_id only.
+-- Updates total_sent + total_failed from crm_message_log COUNT(*) FILTER status='sent'/'failed';
+-- flips status 'queued'→'sending'→'sent' when (sent+failed+rejected) >= total_recipients.
+-- See migration 03 in P1.2 SPEC folder for full body.

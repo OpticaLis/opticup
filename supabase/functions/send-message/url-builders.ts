@@ -54,6 +54,7 @@ async function createShortLink(
   leadId: string,
   eventId: string | null,
   storefrontOrigin: string,
+  broadcastId: string | null,
 ): Promise<ShortLinkResult> {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -70,6 +71,11 @@ async function createShortLink(
     lead_id: leadId,
     event_id: eventId,
     expires_at: expiresAt,
+    // 2026-05-14 M4_BROADCAST_ID_PROPAGATION (P1.2) — X1 substrate. Null
+    // for non-broadcast short_links (unsubscribe + reg links built from
+    // event-register / quick-register flows). Non-null only when send-message
+    // is called by dispatch-queue draining a broadcast queue row.
+    broadcast_id: broadcastId,
   };
 
   const { data, error } = await db
@@ -100,6 +106,7 @@ async function createShortLink(
 export async function buildUnsubscribeUrl(
   // deno-lint-ignore no-explicit-any
   db: any, leadId: string, tenantId: string,
+  broadcastId: string | null = null,
 ): Promise<ShortLinkResult> {
   const cfg = await loadTenantConfig(db, tenantId);
   const origin = cfg?.storefront_url;
@@ -107,12 +114,13 @@ export async function buildUnsubscribeUrl(
   const exp = Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS;
   const token = await signToken(`${leadId}:${tenantId}:${exp}`);
   const fullUrl = `${origin}/unsubscribe?token=${token}`;
-  return createShortLink(db, tenantId, fullUrl, "unsubscribe", leadId, null, origin);
+  return createShortLink(db, tenantId, fullUrl, "unsubscribe", leadId, null, origin, broadcastId);
 }
 
 export async function buildRegistrationUrl(
   // deno-lint-ignore no-explicit-any
   db: any, leadId: string, tenantId: string, eventId: string,
+  broadcastId: string | null = null,
 ): Promise<ShortLinkResult> {
   const cfg = await loadTenantConfig(db, tenantId);
   const origin = cfg?.storefront_url;
@@ -120,5 +128,5 @@ export async function buildRegistrationUrl(
   const exp = Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS;
   const token = await signToken(`${leadId}:${tenantId}:${eventId}:${exp}`);
   const fullUrl = `${origin}/event-register?token=${token}`;
-  return createShortLink(db, tenantId, fullUrl, "registration", leadId, eventId, origin);
+  return createShortLink(db, tenantId, fullUrl, "registration", leadId, eventId, origin, broadcastId);
 }
