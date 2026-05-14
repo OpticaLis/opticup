@@ -1,7 +1,13 @@
 import { readFile } from 'node:fs/promises';
 
 const CREATE_TABLE_RE = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(\w+)\s*\(([^;]+?)\);/gis;
-const TENANT_COL_RE = /tenant_id\s+UUID\s+NOT\s+NULL/i;
+// Accepts either `tenant_id UUID NOT NULL` (standard tenant-scoped tables)
+// or `owner_tenant_id UUID` (platform-owned tables — owner_tenant_id NULL means
+// platform-owned, NOT NULL means specific tenant adopted; both satisfy Rule 14's
+// spirit of "every table carries tenant attribution"). Documented exception
+// pattern from M1 Lens Phase 1A handoff §"RLS pattern" for lens_brand,
+// lens_design, lens_variant.
+const TENANT_COL_RE = /(?:owner_)?tenant_id\s+UUID(?:\s+NOT\s+NULL)?/i;
 
 function isMigration(filePath) {
   return filePath.endsWith('.sql') && filePath.includes('migrations');

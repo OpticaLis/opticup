@@ -1,0 +1,110 @@
+{
+  "captured_at": "2026-05-14T17:58:30Z",
+  "captured_by": "opticup-executor (Full Auto Pipeline)",
+  "spec_folder": "modules/Module 1 - Inventory Management/docs/specs/M1_LENS_INVENTORY_PHASE_1A_SCHEMA_PLATFORM_ADMIN",
+  "git": {
+    "start_commit": "1e76a274d626dc8ac3fa29a60cf66f45916eb205",
+    "branch": "develop",
+    "remote": "https://github.com/OpticaLis/opticup.git"
+  },
+  "tenants": {
+    "demo":   { "id": "8d8cfa7e-ef58-49af-9702-a862d459cccb", "name": "אופטיקה דמו (בדיקה)" },
+    "prizma": { "id": "6ad0781b-37f0-47a9-92e3-be9ed1477e1c", "name": "אופטיקה פריזמה" }
+  },
+  "supabase_project": {
+    "id": "tsxrrxzmdxaenlvocyit",
+    "name": "prizma-optic",
+    "region": "eu-west-1",
+    "postgres_version": "17.6.1.063"
+  },
+  "baselines_pre_change": {
+    "shared_js_T_constants_count": 40,
+    "shared_js_FIELD_MAP_anchor_present": true,
+    "global_schema_lines": 678,
+    "modules_goods_receipts_files": 20,
+    "modules_goods_receipts_loc": 4473,
+    "m1_specs_count_before_phase_1a": 12,
+    "supabase_migrations_naming_convention": "YYYYMMDDHHMMSS_<slug>.sql under supabase/migrations/",
+    "migration_timestamp_base_for_phase_1a": "20260514175900"
+  },
+  "name_collision_check": {
+    "names_checked": 20,
+    "collisions_found": 1,
+    "details": {
+      "currencies": "PRE-EXISTS — tenant-scoped table (id, tenant_id, code, name_he, symbol, is_default, is_active, created_at). 0 rows for either demo or prizma. ADAPTATION: lens tables use `currency_code TEXT NOT NULL DEFAULT 'ILS'` instead of FK to currencies. See FINDINGS M1A-SPEC-05.",
+      "lens_brand": "clean",
+      "lens_design": "clean",
+      "lens_variant": "clean",
+      "supplier_brand_distribution": "clean",
+      "supplier_catalog_offering": "clean",
+      "pricing_overlay": "clean",
+      "tenant_active_offerings": "clean",
+      "tenant_lens_stock": "clean",
+      "tenant_location": "clean",
+      "stock_lot": "clean",
+      "stock_movement": "clean",
+      "stock_transfer": "clean",
+      "vat_rates": "clean (greenfield — will be created as global no-tenant_id, Iron Rule 14 documented exception)",
+      "supplier_permissions": "clean",
+      "change_approval_log": "clean",
+      "purchase_receipt": "clean",
+      "purchase_receipt_line": "clean",
+      "pending_lens_advancement_queue": "clean",
+      "lens_variant_display_seq": "clean (sequence-state table for display_id RPC)"
+    }
+  },
+  "rpc_collision_check": {
+    "names_checked": 9,
+    "collisions_found": 0,
+    "names": ["record_stock_movement", "record_transfer", "record_adjustment_found", "next_lot_number", "next_transfer_number", "next_receipt_number", "next_lens_variant_display_id", "effective_price", "m1_create_receipt_from_box"]
+  },
+  "tenants_columns_check": {
+    "default_currency": "EXISTS — text DEFAULT 'ILS', NULLABLE — semantically equivalent to SPEC's proposed base_currency_code. ADAPTATION: SKIP base_currency_code, reuse default_currency. See FINDINGS M1A-SPEC-01.",
+    "base_currency_code": "DOES NOT EXIST",
+    "base_currency": "DOES NOT EXIST"
+  },
+  "suppliers_columns_check": {
+    "id": "uuid NOT NULL",
+    "name": "text NOT NULL",
+    "phone": "text NULLABLE",
+    "email": "text NULLABLE",
+    "active": "boolean NOT NULL",
+    "supplier_number": "integer NULLABLE",
+    "tenant_id": "uuid NOT NULL",
+    "default_courier_company_id": "DOES NOT EXIST. ADAPTATION: drop from v_suppliers_for_m9 SPEC. See FINDINGS M1A-SPEC-04."
+  },
+  "next_po_number_pattern_reference": "PERFORM id FROM tenants WHERE id = p_tenant_id FOR UPDATE; SELECT COALESCE(MAX(...))+1; SECURITY DEFINER; JWT-claim verification at top. Mirror this pattern for next_lot_number, next_transfer_number, next_receipt_number.",
+  "is_platform_super_admin_exists": true,
+  "spec_adaptations_applied": [
+    {
+      "code": "M1A-SPEC-01",
+      "severity": "MEDIUM",
+      "what": "tenants.base_currency_code SPEC proposal duplicates existing tenants.default_currency",
+      "decision": "SKIP new column; lens tables reference existing default_currency via tenant lookup OR carry their own currency_code TEXT field"
+    },
+    {
+      "code": "M1A-SPEC-02",
+      "severity": "MEDIUM",
+      "what": "currencies table is per-tenant, not global ISO-4217 reference as Brief §3 row 14 stated",
+      "decision": "Lens tables use currency_code TEXT NOT NULL DEFAULT 'ILS' columns, no FK to currencies. Document as future improvement — when currencies seed migration ships, add FK then"
+    },
+    {
+      "code": "M1A-SPEC-03",
+      "severity": "LOW",
+      "what": "SPEC §3 #14 path 'migrations/' is the legacy folder; actual Supabase migrations live in supabase/migrations/ with YYYYMMDDHHMMSS_<slug>.sql naming",
+      "decision": "Use supabase/migrations/ + timestamp prefix per existing convention"
+    },
+    {
+      "code": "M1A-SPEC-04",
+      "severity": "LOW",
+      "what": "SPEC §3 #11 v_suppliers_for_m9 includes default_courier_company_id; suppliers table doesn't have this column",
+      "decision": "Drop default_courier_company_id from v_suppliers_for_m9 columns. M9 reads courier from its own lab_couriers (when M9 builds it). View columns: (id, name, supplier_number, contact, phone, email, tenant_id, active)"
+    },
+    {
+      "code": "M1A-SPEC-05",
+      "severity": "HIGH",
+      "what": "currencies table has 0 rows for both demo and prizma — Brief assumed populated reference",
+      "decision": "Same as M1A-SPEC-02: use currency_code TEXT columns instead of currency_id FK. No seed migration needed in Phase 1A. Defer to future SPEC if/when ISO 4217 reference table is needed"
+    }
+  ]
+}
