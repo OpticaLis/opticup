@@ -179,40 +179,14 @@ export function withDisplayPhone(vars: Record<string, unknown>): Record<string, 
   return { ...vars, phone: "0" + m[1] };
 }
 
-/**
- * Post-substitution scan for un-resolved payment_url placeholders.
- * Runs on the FINAL body after substituteVariables. If any %payment_url_\d+%
- * remains, the send must fail loudly per Pattern P12.
- *
- * Returns null if clean, or an error code string if a placeholder was found.
- */
-export function scanForPaymentUrlMismatch(body: string): string | null {
-  const m = body.match(/%payment_url_(\d+)%/);
-  if (!m) return null;
-  return `payment_link_missing_or_mismatch:${m[1]}`;
-}
-
-/**
- * Universal post-substitution placeholder scan (P33 Fix B). After
- * substituteVariables runs, ANY remaining %lowercase_var% literal means a
- * placeholder failed to substitute. The dispatch MUST be rejected so the
- * literal never reaches the customer.
- *
- * Returns array of distinct placeholder names found (empty array if clean).
- * Caller is responsible for writing the failed crm_message_log row + the
- * HTTP 400 response.
- *
- * Regex matches the same lowercase-first-char pattern as P31's template body
- * parser. URL-encoded hex sequences like %D7% (Hebrew in wa.me click-to-chat
- * URLs) are excluded by the lowercase-first-char rule.
- */
-export function scanForUnsubstitutedPlaceholders(text: string): string[] {
-  const seen = new Set<string>();
-  const re = /%([a-z][a-z0-9_]*)%/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) seen.add(m[1]);
-  return Array.from(seen).sort();
-}
+// Template-output validation moved to `_shared/template-validation.ts`
+// (M4_TEMPLATE_VALIDATION_UNIFIED, 2026-05-14). The exports below are
+// thin re-exports so existing `import { scanForPaymentUrlMismatch,
+// scanForUnsubstitutedPlaceholders } from "./event-variables.ts"` continues
+// to work in send-message/index.ts. Any new caller should import directly
+// from `_shared/template-validation.ts` and prefer `validateTemplateOutput`
+// for the structured one-call gate.
+export { scanForPaymentUrlMismatch, scanForUnsubstitutedPlaceholders } from "../_shared/template-validation.ts";
 
 /**
  * Inject unsubscribe_url + registration_url (when event_id present).
