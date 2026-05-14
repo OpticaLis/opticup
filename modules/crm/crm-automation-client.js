@@ -44,7 +44,48 @@
     var _tid = (typeof getTenantId === 'function') ? getTenantId() : null;
     if (!_tid || !triggerType) return ZERO();
 
-    // Step 1 — evaluate-mode call: get plan_items + run_id from EF.
+    // M4_DRY_RUN_PREVIEW (2026-05-14): prefer mode='dispatch_preview' + the v2
+    // modal when both are available. The v2 path is recipient-first with
+    // server-authoritative bodies, search, deselection, etc. Falls through to
+    // the legacy mode='evaluate' + v1 modal path if v2 is missing (preserves
+    // backward compatibility during the gradual rollout).
+    var useV2 = (window.CrmConfirmSendV2 && typeof CrmConfirmSendV2.showAsync === 'function');
+    if (useV2) {
+      // Brief §3.8 — incremental count display. Open the modal in loading
+      // state IMMEDIATELY (so the operator sees "🔄 מחשב נמענים..." rather
+      // than a blank screen), then hand it the preview promise; the modal
+      // hydrates when the EF returns.
+      var previewPromise = callEf({
+        tenant_id: _tid,
+        trigger_type: triggerType,
+        trigger_data: triggerData || {},
+        mode: 'dispatch_preview'
+      });
+      CrmConfirmSendV2.showAsync(previewPromise, async function (choice, ctx) {
+        var dispatchRes = await callEf({
+          tenant_id: _tid,
+          trigger_type: triggerType,
+          trigger_data: triggerData || {},
+          mode: 'dispatch',
+          dispatch_messages: choice && choice.dispatch === true,
+          exclude_lead_ids: (ctx && Array.isArray(ctx.excludeLeadIds)) ? ctx.excludeLeadIds : [],
+          recipient_subset: (ctx && Array.isArray(ctx.recipientSubset)) ? ctx.recipientSubset : []
+        });
+        if (typeof onAfterConfirm === 'function') {
+          try { await onAfterConfirm(); }
+          catch (e) { console.warn('CrmAutomationClient onAfterConfirm threw (v2):', e && e.message); }
+        }
+        if (!dispatchRes) {
+          return choice && choice.dispatch ? { sent: 0, failed: 0, rejected: 0 } : { sent: 0, failed: 0, rejected: 0 };
+        }
+        return dispatchRes;
+      });
+      // Caller doesn't await dispatch — modal handles it. Return placeholder.
+      var pendingShape = { run_id: null, fired: 0, sent: 0, failed: 0, rejected: 0, queued: 0, skipped: 0, pending_confirm: true };
+      return pendingShape;
+    }
+
+    // Legacy v1 path: mode='evaluate' + CrmConfirmSend.show(planItems, ...)
     var evalRes = await callEf({
       tenant_id: _tid,
       trigger_type: triggerType,

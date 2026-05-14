@@ -1,0 +1,17 @@
+{
+  "url": "https://www.prizma-optic.co.il/en/category/eyeglasses",
+  "lang": "en",
+  "path": "/category/eyeglasses",
+  "label": "eyeglasses-cat",
+  "http": 200,
+  "scores": {
+    "performance": 86,
+    "accessibility": 95,
+    "seo": 100,
+    "best-practices": 100
+  },
+  "axeViolationCount": 2,
+  "capturedAt": "2026-05-14T03:58:20.550Z",
+  "fetchTime": "2026-05-14T03:58:08.687Z",
+  "lighthouseVersion": "12.8.2"
+}

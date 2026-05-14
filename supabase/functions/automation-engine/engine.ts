@@ -81,6 +81,15 @@ export interface EvaluateInput {
   // dispatch mode regardless. Default true (cron path + confirm-and-notify).
   // Set to false by client's "Confirm without notify" modal choice.
   dispatchMessages: boolean;
+  // M4_DRY_RUN_PREVIEW (2026-05-14): per-dispatch recipient filters. Applied
+  // to BOTH plan items (the dispatched messages) AND resolvedLeadIds (the set
+  // post-actions + queue_send eligibility runs against), so a deselected lead
+  // gets neither the message nor the side-effects. Filters are AFTER recipient
+  // resolution (operator can't add a non-eligible lead — only narrow the set).
+  // Both default to empty arrays (no filtering) for backward compatibility
+  // with all existing callsites (cron, browser-modal-pre-v2, etc).
+  excludeLeadIds?: string[];
+  recipientSubset?: string[];
   anonKey: string;
   sendMessageUrl: string;
 }
@@ -101,7 +110,14 @@ const ZERO: EvaluateResult = {
 };
 
 export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateResult> {
-  const { tenantId, triggerType, triggerData, mode, planItems, dispatchMessages, anonKey, sendMessageUrl } = input;
+  const {
+    tenantId, triggerType, triggerData, mode, planItems,
+    dispatchMessages, anonKey, sendMessageUrl,
+  } = input;
+  // M4_DRY_RUN_PREVIEW (2026-05-14): subset filters. Both optional/empty by default.
+  const excludeSet  = new Set<string>(Array.isArray(input.excludeLeadIds)  ? input.excludeLeadIds  : []);
+  const includeSet  = new Set<string>(Array.isArray(input.recipientSubset) ? input.recipientSubset : []);
+  const hasInclude  = includeSet.size > 0;
 
   // ATOMIC_CONFIRMATION_FLOW Part A: Rung-2 short-circuit DROPPED.
   // Dispatch mode now MUST run rule re-evaluation so post-actions + queue_send
@@ -160,6 +176,28 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
     ruleResolvedIds[i] = v.resolvedLeadIds || [];
   });
 
+  // M4_DRY_RUN_PREVIEW (2026-05-14): apply subset filters BEFORE post-actions
+  // + dispatch. Filter every item that carries a lead_id (send_message items)
+  // and every resolvedLeadIds list (post-action eligibility). queue_send rules
+  // contribute no items (they wrote directly to crm_message_queue inside
+  // prepareRulePlan) — those are unaffected here; this is intentional because
+  // queue_send semantics are "delayed background send for this lead regardless
+  // of operator curation", and operator-level deselection of a recipient does
+  // not retroactively cancel a queue_send. The Phase 6 cancel-by-run_id flow
+  // covers post-write cancellation of all rows including queue_send.
+  if (excludeSet.size > 0 || hasInclude) {
+    const passes = (id: string | null | undefined): boolean => {
+      if (!id) return true; // non-lead items (defensive); send_message items always have lead_id
+      if (excludeSet.has(id)) return false;
+      if (hasInclude && !includeSet.has(id)) return false;
+      return true;
+    };
+    allItems = allItems.filter((it) => passes((it as { lead_id?: string }).lead_id));
+    for (let i = 0; i < ruleResolvedIds.length; i++) {
+      ruleResolvedIds[i] = (ruleResolvedIds[i] || []).filter(passes);
+    }
+  }
+
   // ATOMIC_CONFIRMATION_FLOW Part A: post-actions + attendee-upsert ONLY in
   // dispatch mode. evaluate mode is preview-only — no side effects.
   if (mode === "dispatch") {
@@ -207,7 +245,19 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
   // Then: dispatchMessages flag gates the actual message send. False =
   // post-actions ran (committed) but no SMS/email dispatch ("confirm without
   // notify"). True = full dispatch (cron default OR "confirm and notify").
-  const itemsToDispatch = (Array.isArray(planItems) && planItems.length > 0) ? planItems : allItems;
+  let itemsToDispatch = (Array.isArray(planItems) && planItems.length > 0) ? planItems : allItems;
+  // M4_DRY_RUN_PREVIEW (2026-05-14): subset filters apply to plan_items too
+  // (defensive — if a client passes both planItems and exclude_lead_ids, both
+  // must be honored).
+  if ((excludeSet.size > 0 || hasInclude) && itemsToDispatch === planItems) {
+    itemsToDispatch = (planItems || []).filter((it) => {
+      const id = (it as { lead_id?: string }).lead_id;
+      if (!id) return true;
+      if (excludeSet.has(id)) return false;
+      if (hasInclude && !includeSet.has(id)) return false;
+      return true;
+    });
+  }
   if (!dispatchMessages || itemsToDispatch.length === 0) {
     if (runId) await finishRun(db, tenantId, runId, "completed");
     return {
@@ -235,101 +285,8 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
   };
 }
 
-// M4_STATUS_TRIGGER_FRAMEWORK_EXTENSION (2026-05-14): entity-aware payload
-// shaping for the queue consumer. Producer triggers per entity:
-//   attendee → payload={event_id, lead_id};      entity_id = attendee id
-//   lead     → payload={phone, source};          entity_id = lead id
-//   event    → payload={event_date, event_name}; entity_id = event id
-// Returns null for an unknown entity_type so the consumer treats it as poison-
-// pill skip (same as unregistered entity_type).
-type QueueRow = { id: string; entity_type: string; entity_id: string; old_status: string | null; new_status: string; payload: Record<string, unknown> | null };
-function buildTriggerDataForEntity(e: QueueRow): Record<string, unknown> | null {
-  const payload = (e.payload && typeof e.payload === "object") ? e.payload : {};
-  const base = { oldStatus: e.old_status, newStatus: e.new_status, status: e.new_status };
-  if (e.entity_type === "attendee") return { ...base, attendeeId: e.entity_id, leadId: typeof payload.lead_id === "string" ? payload.lead_id : null, eventId: typeof payload.event_id === "string" ? payload.event_id : null };
-  if (e.entity_type === "lead")     return { ...base, leadId: e.entity_id, eventId: null, attendeeId: null, phone: typeof payload.phone === "string" ? payload.phone : null, source: typeof payload.source === "string" ? payload.source : null };
-  if (e.entity_type === "event")    return { ...base, eventId: e.entity_id, leadId: null, attendeeId: null, eventDate: typeof payload.event_date === "string" ? payload.event_date : null, eventName: typeof payload.event_name === "string" ? payload.event_name : null };
-  return null;
-}
-
-// STATUS_CHANGE_TRIGGERS_FRAMEWORK (2026-05-12).
-// Consumer for the crm_status_change_events queue. Called once per minute per
-// tenant by the pg_cron job consume_status_change_events. Reads N unconsumed
-// rows for the tenant, derives the trigger_type via crm_trigger_type_registry,
-// invokes evaluate() in dispatch mode, marks consumed_at on success. Single-row
-// errors leave consumed_at NULL (retried next tick).
-export async function consumeStatusChangeEvents(
-  db: Db,
-  tenantId: string,
-  limit: number,
-  anonKey: string,
-  sendMessageUrl: string,
-): Promise<{ processed: number; evaluated: number; errors: number }> {
-  const cap = Math.min(Math.max(limit || 100, 1), 500);
-
-  const claimRes = await db.from("crm_status_change_events")
-    .select("id, entity_type, entity_id, old_status, new_status, payload")
-    .eq("tenant_id", tenantId)
-    .is("consumed_at", null)
-    .order("occurred_at", { ascending: true })
-    .limit(cap);
-  if (claimRes.error) {
-    console.error("consumeStatusChangeEvents claim:", claimRes.error);
-    return { processed: 0, evaluated: 0, errors: 1 };
-  }
-  const events = claimRes.data || [];
-  if (!events.length) return { processed: 0, evaluated: 0, errors: 0 };
-
-  const regRes = await db.from("crm_trigger_type_registry")
-    .select("entity_type, trigger_type_slug, is_active")
-    .eq("tenant_id", tenantId);
-  if (regRes.error) {
-    console.error("consumeStatusChangeEvents registry:", regRes.error);
-    return { processed: 0, evaluated: 0, errors: 1 };
-  }
-  const registryMap = new Map<string, string>();
-  (regRes.data || []).forEach((r: { entity_type: string; trigger_type_slug: string; is_active: boolean }) => {
-    if (r.is_active) registryMap.set(r.entity_type, r.trigger_type_slug);
-  });
-
-  let processed = 0, evaluated = 0, errors = 0;
-  for (const ev of events) {
-    const e = ev as QueueRow;
-    try {
-      const triggerType = registryMap.get(e.entity_type);
-      if (!triggerType) {
-        // entity_type not registered for this tenant — mark consumed to avoid
-        // poison-pill replay. Audit row remains for "why didn't it fire?".
-        await db.from("crm_status_change_events")
-          .update({ consumed_at: new Date().toISOString() })
-          .eq("id", e.id).eq("tenant_id", tenantId);
-        processed++;
-        continue;
-      }
-      const triggerData = buildTriggerDataForEntity(e);
-      if (!triggerData) {
-        await db.from("crm_status_change_events")
-          .update({ consumed_at: new Date().toISOString() })
-          .eq("id", e.id).eq("tenant_id", tenantId);
-        processed++;
-        continue;
-      }
-      const r = await evaluate(db, {
-        tenantId, triggerType, triggerData,
-        mode: "dispatch", planItems: null, dispatchMessages: true,
-        anonKey, sendMessageUrl,
-      });
-      if (r.fired > 0) evaluated++;
-      await db.from("crm_status_change_events")
-        .update({ consumed_at: new Date().toISOString() })
-        .eq("id", e.id).eq("tenant_id", tenantId);
-      processed++;
-    } catch (err) {
-      console.error("consumeStatusChangeEvents event " + e.id + ":", (err as Error).message);
-      errors++;
-      // consumed_at left NULL — next tick retries this row.
-    }
-  }
-
-  return { processed, evaluated, errors };
-}
+// STATUS_CHANGE_TRIGGERS_FRAMEWORK (2026-05-12) consumer moved to consumer.ts
+// on 2026-05-14 (M4_DRY_RUN_PREVIEW Phase 2) to keep engine.ts under the
+// Iron Rule 12 cap. Re-exported here so callers that imported it from engine.ts
+// continue to work.
+export { consumeStatusChangeEvents } from "./consumer.ts";
