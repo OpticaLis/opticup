@@ -331,7 +331,7 @@ The `message_log_id` FK (added 2026-05-14) is backfilled by send-message/dispatc
 |---|---|---|
 | Click on `/r/<code>` (storefront short link inside SMS or email body) | ✅ Per-click row in `short_link_clicks` + `click_count++` on `short_links` | resolve-link/index.ts:176-188 |
 | Click on `/r.html?...` legacy redirector (rare today) | ❌ Not tracked | r.html:12-18 — JS-only redirect, no fetch |
-| Click on raw `https://prizmaoptic.short.gy/...` (external short.gy service) | ❌ Not tracked in our DB | No code path touches short.gy ; tracking lives in short.gy's own dashboard |
+| Click on raw `https://prizmaoptic.short.gy/...` (external short.gy service) | ⚠️ **DEPRECATED 2026-05-14 (M3_SHORTGY_TO_INTERNAL_REDIRECT, P1.3)** — every statically-embedded short.gy reference migrated to internal `/r/<code>` (templates + tenants.payment_links). Historical short.gy clicks stay in short.gy's UI; no backfill. From 2026-05-14 forward all new clicks are internal + tracked. | Templates / tenants.payment_links DB queries return zero short.gy refs post-migration. `crm_message_log.content` (4,370 rows) + `crm_message_queue.body` status=sent (1,170 rows) remain immutable historical record. |
 | Email open | ❌ No tracking pixel injected today | No `<img>` open-tracker URL builder in templates |
 | Email bounce | ❌ No bounce handler hooked from Gmail | Make scenario 9104395 has Gmail module but no error-route bounce handler |
 | SMS delivery (DLR) | ❌ Not captured | Make 9104395 returns success on webhook accept, not on telco confirm |

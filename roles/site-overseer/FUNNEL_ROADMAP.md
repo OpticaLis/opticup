@@ -146,7 +146,9 @@ On 2026-05-14, three wrong diagnoses in a row about event #24's funnel drop reve
 | 1 | P1.4 | M4_REGISTER_LEAD_TO_EVENT_RPC_MAP | 4 | opticup-strategic (M4) | 1-2 hrs (read-only) | ✅ CLOSED 2026-05-14 (🟡 with FIND-1 → 15-min follow-up SPEC queued) |
 | 2 | P1.1 | M3_UTM_TRIPLE_LAYER_PERSISTENCE | 2 | cross-cut (M3 storefront + M4 lead-intake EF + DB schema; M4 owns the touchpoint table) | 4-6 hrs (actual: closed in ~3.5 hrs) | ✅ CLOSED 2026-05-14 — `modules/Module 4 - CRM/docs/specs/M3_UTM_TRIPLE_LAYER_PERSISTENCE/` |
 | 3 | P1.2 | M4_BROADCAST_ID_PROPAGATION | 5 | opticup-strategic (M4) | 3-4 hrs | ✅ CLOSED 2026-05-14 — `modules/Module 4 - CRM/docs/specs/M4_BROADCAST_ID_PROPAGATION/`. X1 (short_links.broadcast_id substrate) + pg_cron 1-min direct-SQL counter refresh. Layer 5 Gap #1 + Gap #2 RESOLVED. End-to-end chain verified on demo: queue→log→short_links→clicks→touchpoints all attributed with broadcast_id; `total_sent=0→1` after cron tick. |
-| 4 | P1.3 | M3_SHORTGY_TO_INTERNAL_REDIRECT | 7 | Site Overseer (storefront templates + new ERP stats page) | 2-3 hrs | PLANNED |
+| 4 | P1.3 | M3_SHORTGY_TO_INTERNAL_REDIRECT | 7 | Site Overseer (storefront templates + new ERP stats page) | 2-3 hrs | ✅ CLOSED 2026-05-14 — `modules/Module 4 - CRM/docs/specs/M3_SHORTGY_TO_INTERNAL_REDIRECT/`. 10 template rows + 2 tenants.payment_links rows migrated; 6 new `short_links` (link_type='template_static') created; 4 content drafts synced; MVP "קישורים קצרים" tab live in CRM. `gmapy` → gpw.gamaf.co.il authorized by Daniel 2026-05-14 (Prizma's contracted ₪50 deposit gateway). Layer 7 marked DEPRECATED for short.gy internal usage. |
+
+**🎉 Phase 1 COMPLETE — 2026-05-14.** All 4 SPECs closed in one calendar day (P1.4 + P1.1 + P1.2 + P1.3). Click→broadcast→touchpoint attribution chain now intact end-to-end. Phase 2 (Measurement Quality — CAPI hybrid dedup, pixel validation, template validation) UNBLOCKED.
 
 **Total Phase 1:** ~10-15 hours of executor work, runnable as 4 separate Claude Code sessions.
 

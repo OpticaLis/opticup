@@ -326,3 +326,44 @@ CREATE INDEX idx_crm_lead_touchpoints_tenant_broadcast_occurred ON crm_lead_touc
 -- Updates total_sent + total_failed from crm_message_log COUNT(*) FILTER status='sent'/'failed';
 -- flips status 'queued'→'sending'→'sent' when (sent+failed+rejected) >= total_recipients.
 -- See migration 03 in P1.2 SPEC folder for full body.
+
+-- ========================================================================
+-- M3_SHORTGY_TO_INTERNAL_REDIRECT (Phase 1 P1.3, 2026-05-14)
+-- ========================================================================
+-- Migrates statically-embedded prizmaoptic.short.gy URLs to internal /r/<code>
+-- so every customer click flows through resolve-link EF and produces
+-- short_link_clicks + crm_lead_touchpoints rows (P1.1+P1.2 chain).
+-- Phase 1 COMPLETE with this SPEC. See SPEC folder:
+-- modules/Module 4 - CRM/docs/specs/M3_SHORTGY_TO_INTERNAL_REDIRECT/.
+
+-- DATA ONLY — no DDL. 6 new short_links rows + 10 template body UPDATEs +
+-- 2 tenants.payment_links UPDATEs.
+
+-- New short_links rows (link_type='template_static', expires_at='2099-12-31'):
+--   demo:   dsruWc1z → gpw.gamaf.co.il/?id=IzQNzbZPhyDU&sid=... (Gama ₪50 deposit, Daniel-approved as known partner)
+--           NCoQWzbd → www.prizma-optic.co.il/supersale-takanon/
+--   prizma: KvSzd3Zz → (same gamaf URL as demo)
+--           f9Avttrn → www.prizma-optic.co.il/supersale-takanon/
+--           CEiBGCWj → www.prizma-optic.co.il/supersalepricescatalog/
+--           5CBy1Do4 → www.prizma-optic.co.il/supersale-stock/
+-- Code generation pattern: 8-char alphanumeric (62-char alphabet, A-Za-z0-9),
+-- matching send-message/url-builders.ts createShortLink() runtime pattern.
+-- Iron Rule 18 advisory: the existing code-uniqueness constraint on short_links
+-- is project-wide rather than tenant-bound — pre-existing debt, not in scope here.
+
+-- Templates UPDATEd (10 rows, all tenant-scoped):
+--   demo: 292f7bc7 (registration confirmation Email), 4d42b03f (coupon Email), 784cdf1c (coupon SMS)
+--   prizma: 988bca26, f00620cc, c60f47ff, 679c4510, b325481a, d3e19217, 2f4e7585
+
+-- Tenants UPDATEd (2 rows): demo.payment_links.50 + prizma.payment_links.50
+-- both gmapy → internal /r/<code> at their respective storefront origins.
+
+-- NEW ERP file: modules/crm/crm-short-links-stats.js (192 lines)
+-- New CRM tab "קישורים קצרים" (data-tab="short-links") in crm.html.
+-- MVP — sortable table by total_clicks DESC, no charts/filters/exports.
+
+-- Out-of-scope SURFACES (verified untouched):
+--   crm_message_log.content: 4,370 rows with short.gy (historical audit, immutable)
+--   crm_message_queue.body status='sent': 1,170 rows (historical render, immutable)
+--   storefront_pages.blocks: 0 rows (pre-existing clean)
+--   ERP source / storefront source: 0 rows (pre-existing clean)
