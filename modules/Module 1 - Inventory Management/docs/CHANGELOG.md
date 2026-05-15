@@ -4,6 +4,45 @@
 
 ---
 
+## M1_LENS_PHASE_1B_PROCUREMENT — 2026-05-15 (🟡 CLOSED WITH FOLLOW-UPS — 3 procurement screens + ➕➖ wiring + 11 commits)
+
+Procurement half of Phase 1B — closes Phase 1B alongside the foundation half.
+
+**3 net-new screens (24 net-new files, all ≤217 lines per Iron Rule 12):**
+- `lens-purchase-order.html` + `modules/lens-purchase-order/` (6 JS files): main, supplier, shortages (with inline reorder_threshold edit), manual, create (place_purchase_order + mark_po_sent), pdf (window.print + print stylesheet).
+- `lens-pos-list.html` + `modules/lens-pos-list/` (4 JS files): main, table, filters, actions (cancel via cancel_purchase_order + mark-sent).
+- `lens-goods-receipt.html` + `modules/lens-goods-receipt/` (8 JS files): main, supplier, delivery-note, lines, manual, shipping-box (M9 placeholder), pre-fill (?variant_id deep-link), close (m1_create_receipt_from_box K2 RPC).
+
+**Foundation modification (1 file):** `modules/lens-inventory/lens-inventory-modals.js` 32→195 lines — replaced foundation stub with real ➕➖ wiring. Document-level capture listener on `.qty-btn` records sph/cyl context BEFORE foundation grid's bubble handler dispatches (avoids modifying foundation grid file per SPEC §7).
+
+**Permission seed triplet (a)+(b)+(c):** 6 new keys × 2 tenants = 12 perm rows + 34 role_permission rows. ceo+manager get all 6; team_lead/viewer/worker get view-only (lens.po.view); worker+team_lead also get lens.gr.create (receiving role). Permission OUTCOME smoke matrix: 36/36 PASS (18 positive CEO × 6 keys + 18 negative non-CEO × 6 keys on demo).
+
+**11 commits (`f4a9945` ↔ this):**
+- `f4a9945` chore(spec): seal SPEC + BRIEF + ACTIVATION_PROMPT
+- `8ccc7b2` feat(m1.permissions): seed 6 keys + 34 role_perms (via execute_sql per SC #9)
+- `5d55543` chore(allowlist): root-allowlist.json — 3 new HTML entries
+- `c59024a` feat(m1.lens-po): scaffold lens-purchase-order screen + 6 JS files
+- `cfb09d1` feat(m1.lens-pos-list): scaffold lens-pos-list screen + 4 JS files
+- `b9018e3` feat(m1.lens-gr): scaffold lens-goods-receipt screen + 8 JS files
+- `c721f26` feat(m1.lens-inventory): wire ➕➖ — deep-link + PIN-gated adjust
+- `80c0fa8` fix(m1.lens-procurement): 5 JS bugs from Phase A smoke (location_id, UUID return, ➖ Phase 2 guard, manual variant filter)
+- `c231c60` fix(m1.lens-procurement): fetchAll signature — array-of-tuples
+- `ac39ebc` test(m1.procurement): TEST_REPORT — Phase A 11/14 + Phase B 4/4 + Phase C 36/36 — verdict 🟡
+- _(this commit)_ chore(spec): close — EXECUTION + FINDINGS + ROLLBACK + SESSION_CONTEXT + CHANGELOG
+
+**Smoke results:** Phase A functional 11/14 + 1 partial + 2 K2-blocked; Phase B UI 4/4 PASS (zero console errors after fetchAll fix); Phase C OUTCOME 36/36 PASS.
+
+**3 HIGH findings (M1B0/M1A foundational gaps, all out of scope per §7):**
+- F-1: K2 doesn't update PO state → `M1_K2_RECEIPT_COMPLETION` Phase 2 SPEC queued.
+- F-2: K2 cannot accept variant-less manual lines (stock_lot.variant_id NOT NULL) → `M1_RECEIPT_VARIANT_LESS_LINES` Phase 2 SPEC queued.
+- F-3: ➖ adjust missing `record_adjustment_lost` RPC + `stock_adjustment` table → `M1_STOCK_ADJUSTMENT_INFRA` Phase 2 SPEC queued.
+
+**Iron Rules:** 17/17 in-scope rules PASS. Iron Rule 32 §Destructive Operations = `None.` Integrity Gate exit 0 across all 11 commits.
+
+**P-AUTHOR-1 counter advances 1/3 → 2/3** (session-cache staleness fired exactly as predicted by foundation hotfix; documented in F-4 INFO).
+
+---
+
 ## M1_LENS_PHASE_1B_FOUNDATION — 2026-05-15 (🟢 closing — 3 read screens + 3 RPCs + 9/9 smoke PASS)
 
 Foundation half of Phase 1B — 3 read-heavy lens screens (`lens-inventory.html` + 5 JS files, `lens-active-designs.html` + 3 JS files, `lens-pricing.html` + 5 JS files = 13 JS files all ≤163 lines per Iron Rule 12) + 3 metadata RPCs (`toggle_active_offering` UPSERT on `tenant_active_offerings`, `upsert_pricing_overlay` SELECT-then-UPDATE-or-INSERT, `bulk_apply_pricing_overlay` atomic `INSERT...SELECT FROM unnest`) + 3 permission keys × 2 tenants seeded. All 9 functional smoke cases on demo PASS. One mid-pipeline pivot (Block 2 v1 ON CONFLICT ON CONSTRAINT failed because the partial unique index isn't a constraint — v2 CREATE OR REPLACE with `ON CONFLICT (cols) WHERE pred` index-inference, SPEC §0 D11 pre-authorized fallback). Iron Rule 32 §7 = `None.` throughout 10 commits. Zero Prizma data written. Live-browser smoke (Smoke #9) deferred to Daniel manual QA per Brief plan.

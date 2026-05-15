@@ -1,7 +1,31 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1B_FOUNDATION_PERMISSIONS_HOTFIX — 2026-05-15
+M1_LENS_PHASE_1B_PROCUREMENT — 2026-05-15 (🟡 closing — 11 commits, Phase 1B procurement-half done)
+
+## 2026-05-15 — M1_LENS_PHASE_1B_PROCUREMENT (🟡 CLOSED WITH FOLLOW-UPS — Full Auto Pipeline single chat)
+
+**Goal:** Ship Phase 1B procurement-half — 3 write-heavy screens (Purchase Order, Active POs List, Goods Receipt) wiring M1B0 RPCs through user-facing UI + replace foundation Inventory ➕➖ stubs with real wiring. Closes Phase 1B (paired with M1_LENS_PHASE_1B_FOUNDATION).
+
+**What shipped (11 commits):** SPEC seal → permission seed (12 perms + 34 role_perms across demo + prizma per §0.D matrix) → root-allowlist → PO screen (HTML + 6 JS) → POs List screen (HTML + 4 JS) → GR screen (HTML + 8 JS) → ➕➖ wiring on lens-inventory-modals.js (32 → 195 lines, foundation grid file untouched per SPEC §7) → 5 JS bug fixes from smoke discovery → fetchAll signature fix → TEST_REPORT → close commit.
+
+**Smoke results:**
+- Phase A (functional, demo + JWT-direct via SET LOCAL): 11/14 PASS, 1 partial, 2 fail (variant-less manual K2-rejected; ➖ adjust missing infrastructure).
+- Phase B (UI-level, Chrome MCP, Prizma CEO @ localhost:3000?t=prizma): 4/4 screens render with zero console errors. P-AUTHOR-1 counter 1/3 → 2/3 (session-cache staleness fired exactly as predicted).
+- Phase C (permission OUTCOME matrix replicating getEffectivePermissions): 36/36 (18 positive CEO × 6 keys + 18 negative non-CEO × 6 keys on demo).
+
+**3 HIGH findings queued for Phase 2 SPECs (all M1B0/M1A foundational gaps, out of scope per §7):**
+- F-1 — `m1_create_receipt_from_box` doesn't update PO.status nor PO_line.qty_received nor discrepancy_qty → SPEC `M1_K2_RECEIPT_COMPLETION` queued.
+- F-2 — K2 cannot accept variant-less manual receipt lines (stock_lot.variant_id NOT NULL) → SPEC `M1_RECEIPT_VARIANT_LESS_LINES` queued.
+- F-3 — ➖ adjust flow has no functioning RPC (no record_adjustment_lost RPC, no stock_adjustment table) → SPEC `M1_STOCK_ADJUSTMENT_INFRA` queued.
+
+**Iron Rules:** 17/17 in-scope rules PASS. Iron Rule 32 §Destructive Operations = `None.` held throughout. Integrity Gate exit 0 across all 11 commits.
+
+**Status:** 🟡 Executor scope CLOSED. Awaiting Reviewer + Foreman. 75% of GR/PO use cases work today; 3 Phase 2 SPECs needed to unblock the remaining 25%. Daniel logout/login required on real-user sessions before screens are accessible (P-AUTHOR-1 known cache-staleness).
+
+**Next:** Reviewer re-runs §3 SCs against live state + advisors-for-objects sweep + 3 spot-checks; Foreman writes FOREMAN_REVIEW.md + queues 3 Phase 2 SPEC stubs + Hebrew status line; Module 1 Close Ceremony triggered per opticup-architect SKILL.md.
+
+---
 
 ## 2026-05-15 — M1B_FOUNDATION_PERMISSIONS_HOTFIX (🟢 closing — Full Auto Pipeline single chat, 8/8 smoke PASS)
 
