@@ -168,6 +168,7 @@ These were decided and locked. Do not relitigate without explicit cause.
 7. **Configuration over code.** SaaS litmus test: second tenant, different country, zero code changes.
 8. **Single source of truth.** Every information type has one authoritative home (see Authority Matrix in CLAUDE.md §7).
 9. **Decision criteria BEFORE data.** When delegating investigation, pre-commit to what each finding means.
+10. **Global reference tables get a distinct RLS pattern.** When authoring a SPEC for a table holding universal data (ISO-4217 currency codes, ISO-3166 country codes, IANA timezones, language codes, document-type catalogs, lens-brand global catalog), use the global-reference RLS pattern in [`references/RLS_PATTERN_GLOBAL_REFERENCE.md`](references/RLS_PATTERN_GLOBAL_REFERENCE.md) — `read_anywhere` + `write/update/delete_platform_only` (gated on `is_platform_super_admin()`) + `service_bypass` — NOT the tenant-isolation pattern from CLAUDE.md §4 Iron Rule 15. Tenant-isolation is for tenant-scoped data; this is for universal reference data. Precedent: `vat_rates` (partial), `currencies` (M1A_CURRENCIES_GLOBAL_HOTFIX, 2026-05-14).
 
 ## Behavior Patterns
 
