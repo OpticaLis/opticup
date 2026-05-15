@@ -764,7 +764,7 @@ CREATE INDEX IF NOT EXISTS idx_supdocs_tenant_due ON supplier_documents(tenant_i
 CREATE INDEX IF NOT EXISTS idx_supdocs_parent ON supplier_documents(parent_invoice_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_supdocs_internal_unique
   ON supplier_documents(tenant_id, internal_number)
-  WHERE internal_number IS NOT NULL;                         -- partial unique (022)
+  WHERE internal_number IS NOT NULL;                         -- partial unique, migration 022
 CREATE UNIQUE INDEX IF NOT EXISTS idx_supplier_documents_goods_receipt_unique
   ON supplier_documents(goods_receipt_id)
   WHERE goods_receipt_id IS NOT NULL;                         -- one doc per receipt (Phase 2a)
@@ -779,7 +779,7 @@ CREATE TABLE IF NOT EXISTS document_links (
   child_document_id   UUID NOT NULL REFERENCES supplier_documents(id),
   amount_on_invoice   DECIMAL(12,2),
   created_at          TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(parent_document_id, child_document_id)
+  UNIQUE(tenant_id, parent_document_id, child_document_id)
 );
 CREATE INDEX IF NOT EXISTS idx_doclinks_parent ON document_links(parent_document_id);
 CREATE INDEX IF NOT EXISTS idx_doclinks_child ON document_links(child_document_id);
@@ -823,7 +823,7 @@ CREATE TABLE IF NOT EXISTS payment_allocations (
   document_id       UUID NOT NULL REFERENCES supplier_documents(id),
   allocated_amount  DECIMAL(12,2) NOT NULL,
   created_at        TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(payment_id, document_id)
+  UNIQUE(tenant_id, payment_id, document_id)
 );
 CREATE INDEX IF NOT EXISTS idx_payalloc_tenant ON payment_allocations(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_payalloc_payment ON payment_allocations(payment_id);
@@ -1552,7 +1552,7 @@ CREATE TABLE IF NOT EXISTS conversation_participants (
   joined_at         TIMESTAMPTZ DEFAULT now(),
   left_at           TIMESTAMPTZ,
   is_active         BOOLEAN DEFAULT true,
-  UNIQUE(conversation_id, participant_type, participant_id)
+  UNIQUE(tenant_id, conversation_id, participant_type, participant_id)
 );
 
 CREATE INDEX idx_conv_participants_tenant ON conversation_participants(tenant_id);
@@ -1659,7 +1659,7 @@ CREATE TABLE IF NOT EXISTS message_reactions (
   employee_id       UUID NOT NULL REFERENCES employees(id),
   reaction          TEXT NOT NULL,
   created_at        TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(message_id, employee_id, reaction)
+  UNIQUE(tenant_id, message_id, employee_id, reaction)
 );
 
 CREATE INDEX idx_reactions_message ON message_reactions(message_id);
@@ -1952,7 +1952,10 @@ CREATE TABLE IF NOT EXISTS expense_folders (
   created_at      TIMESTAMPTZ DEFAULT now(),
   UNIQUE(tenant_id, name)
 );
--- RLS: tenant_isolation + service_bypass
+ALTER TABLE expense_folders ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "tenant_isolation" ON expense_folders FOR ALL
+  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
+CREATE POLICY "service_bypass" ON expense_folders FOR ALL TO service_role USING (true);
 -- Index: idx_expense_folders_tenant ON expense_folders(tenant_id)
 -- supplier_documents.expense_folder_id UUID REFERENCES expense_folders(id) added
 
@@ -1962,3 +1965,71 @@ CREATE TABLE IF NOT EXISTS expense_folders (
 ALTER TABLE supplier_documents ADD COLUMN IF NOT EXISTS document_numbers TEXT[] DEFAULT '{}';
 ALTER TABLE supplier_documents ADD COLUMN IF NOT EXISTS document_amounts JSONB DEFAULT '[]';
 CREATE INDEX IF NOT EXISTS idx_supdocs_doc_numbers ON supplier_documents USING GIN(document_numbers) WHERE document_numbers != '{}';
+
+-- ============================================================
+-- Phase 1A — Lens Inventory Schema (M1A) — appended 2026-05-15
+-- ============================================================
+-- Phase 1A shipped 17 new lens-domain tables + 9 atomic RPCs + 1 K3 trigger
+-- + 1 K5 view + 1 Edge Function (lens-catalog-import). Authoritative DDL lives
+-- in supabase/migrations/20260514180*.sql per the Phase 1A SPEC §9 (folder
+-- convention); this section is the per-module documentation merge per the
+-- Phase 1A FOREMAN_REVIEW §4 (deferred) and M1A_DEBT_SWEEP SPEC closure.
+--
+-- For full column definitions and RLS policies, see:
+--   - supabase/migrations/20260514180000_m1_lens_phase_1a_part1.sql (and parts 2–5)
+--   - docs/GLOBAL_SCHEMA.sql (merged at Phase 1A integration commit 0cf6123)
+--   - docs/DB_TABLES_REFERENCE.md "M1 Lens Inventory" section
+--
+-- 17 new tables (3-layer architecture + governance + M9 contracts):
+--   GLOBAL CATALOG (platform-owned, owner_tenant_id):
+--     1. lens_brand
+--     2. lens_design
+--     3. lens_variant
+--   COMMERCIAL (tenant-scoped):
+--     4. supplier_brand_distribution
+--     5. supplier_catalog_offering
+--     6. pricing_overlay
+--     7. vat_rates
+--     8. tenant_active_offerings
+--   RETAILER + OPERATIONS (tenant-scoped):
+--     9. tenant_lens_stock
+--    10. tenant_location
+--    11. stock_lot
+--    12. stock_movement
+--    13. stock_transfer
+--    14. purchase_receipt
+--    15. purchase_receipt_line
+--   GOVERNANCE (tenant-scoped):
+--    16. supplier_permissions
+--    17. change_approval_log
+-- Supporting (2):
+--   - lens_variant_display_seq (global singleton, GLOBAL_SINGLETON_EXEMPT)
+--   - pending_lens_advancement_queue (M9 contract queue)
+--
+-- 9 atomic RPCs (all SECURITY DEFINER, FOR UPDATE-locked where applicable):
+--   1. next_lens_variant_display_id()                — global LV-NNNNNN
+--   2. next_lot_number(p_tenant_id)                  — per-tenant lot sequence
+--   3. next_transfer_number(p_tenant_id)             — per-tenant transfer sequence
+--   4. next_receipt_number(p_tenant_id, p_supplier_number) — per-tenant×supplier receipt sequence
+--   5. record_stock_movement(...)                    — atomic stock change + lot-aware
+--   6. record_transfer(...)                          — atomic location-to-location transfer
+--   7. record_adjustment_found(...)                  — atomic found-during-count adjustment
+--   8. effective_price(...)                          — pricing overlay resolution
+--   9. m1_create_receipt_from_box(...)               — atomic receipt-from-shipment-box
+--
+-- K3 trigger (M1↔M9 contract):
+--   - m9_lens_received_for_sale_order_trg AFTER INSERT ON stock_movement
+--     → enqueues lens-received events into pending_lens_advancement_queue
+--     → trigger function: m9_lens_received_for_sale_order_trg_fn()
+--
+-- K5 view (M1↔M9 contract):
+--   - v_suppliers_for_m9 (security_invoker=on)
+--     Columns: id, tenant_id, name, supplier_number, phone, email, active
+--
+-- Edge Function:
+--   - lens-catalog-import (v1, ACTIVE, verify_jwt=true, SECURITY DEFINER +
+--     is_platform_super_admin() gate) — bulk import xlsx → lens_brand/design/variant.
+--
+-- Phase 1A close commit: 285b5d6 (2026-05-14).
+-- Phase 1A integration commit (GLOBAL_* + docs merge): 0cf6123.
+-- ============================================================
