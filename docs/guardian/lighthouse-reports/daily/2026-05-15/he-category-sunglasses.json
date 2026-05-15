@@ -1,0 +1,17 @@
+{
+  "url": "https://www.prizma-optic.co.il/category/sunglasses",
+  "lang": "he",
+  "path": "/category/sunglasses",
+  "label": "sunglasses-cat",
+  "http": 200,
+  "scores": {
+    "performance": 83,
+    "accessibility": 95,
+    "seo": 100,
+    "best-practices": 100
+  },
+  "axeViolationCount": 2,
+  "capturedAt": "2026-05-15T04:01:36.848Z",
+  "fetchTime": "2026-05-15T04:01:21.641Z",
+  "lighthouseVersion": "12.8.2"
+}
