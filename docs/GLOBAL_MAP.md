@@ -83,24 +83,27 @@ The storefront reads exclusively through Supabase Views granted to `anon`.
 Full view definitions live in `modules/Module 3.1 - Project Reconstruction/db-audit/03-views.md`.
 Summary in `docs/GLOBAL_SCHEMA.sql` VIEWS section.
 
+**Public-data-layer (since `STOREFRONT_PUBLIC_DATA_LAYER_2026_05_15`):** the 8 storefront `v_storefront_*` views below are now `security_invoker=on` and source from the 6 mirror tables in §4.6, NOT from private base tables. Anon SELECT on `inventory`, `brands`, `media_library`, `tenant_branches`, `storefront_config`, `inventory_images`, and `v_crm_lead_first_touch` has been REVOKEd. `tenants` and `ai_content` stay anon-readable via their existing USING policies (intentional).
+
 **Key views consumed by the storefront:**
 
-| View | Purpose | Consumer in storefront |
-|------|---------|----------------------|
-| `v_public_tenant` | Secure tenant resolution (10-column projection of tenants + storefront_config) | `src/lib/tenant.ts` |
-| `v_storefront_products` | Product catalog — GOLDEN REFERENCE (images subquery, website_sync filter, resolved_mode) | `src/lib/products.ts` |
-| `v_storefront_brands` | Brand index with product_count filter | `src/lib/brands.ts` |
-| `v_storefront_brand_page` | Brand landing pages (brand_page_enabled + has-products check) | `src/lib/brands.ts` |
-| `v_storefront_pages` | Published CMS pages only | `src/lib/pages.ts` |
-| `v_storefront_blog_posts` | Published blog posts | `src/lib/blog-posts.ts` |
-| `v_storefront_categories` | Product type aggregates | `src/lib/products.ts` |
-| `v_storefront_components` | Active CTA/lead-form/banner/sticky-bar components | `src/lib/components.ts` |
-| `v_storefront_config` | Per-tenant storefront settings (WhatsApp, analytics, hero, i18n) | `src/lib/tenant.ts` |
-| `v_storefront_reviews` | Visible Google/manual reviews | (reviews component) |
-| `v_storefront_media` | Media library (public shape, is_deleted filtered) | (media rendering) |
-| `v_content_translations` | Approved + draft content translations | `src/lib/content-translations.ts` |
-| `v_ai_content` | Active AI-generated content rows | (product descriptions) |
-| `v_tenant_i18n_overrides` | Per-tenant i18n string overrides | `src/lib/tenant-i18n.ts` |
+| View | Purpose | New FROM source (2026-05-15) | Consumer in storefront |
+|------|---------|------------------------------|----------------------|
+| `v_public_tenant` | Secure tenant resolution (15-col projection) | `tenants` JOIN `storefront_config_public` | `src/lib/tenant.ts` |
+| `v_storefront_products` | Product catalog — GOLDEN REFERENCE | `inventory_public` JOIN `brands_public` (cached AI cols + image_paths) | `src/lib/products.ts` |
+| `v_storefront_brands` | Brand index with product_count filter | `brands_public` (chained `inventory_public` + `media_public`; filters `has_sellable_inventory=true`) | `src/lib/brands.ts` |
+| `v_storefront_brand_page` | Brand landing pages (brand_page_enabled + has-products) | `brands_public` (chained `v_storefront_products` EXISTS + `media_public`) | `src/lib/brands.ts` |
+| `v_storefront_pages` | Published CMS pages only | (unchanged — outside §4.6 scope; reads `storefront_pages` with anon RLS) | `src/lib/pages.ts` |
+| `v_storefront_blog_posts` | Published blog posts | (unchanged — outside §4.6 scope; reads `blog_posts` with anon RLS) | `src/lib/blog-posts.ts` |
+| `v_storefront_categories` | Product type aggregates | chained on `v_storefront_products` (GROUP BY) | `src/lib/products.ts` |
+| `v_storefront_components` | Active CTA/lead-form/banner/sticky-bar components | (unchanged — outside §4.6 scope) | `src/lib/components.ts` |
+| `v_storefront_config` | Per-tenant storefront settings (WhatsApp, analytics, hero, i18n) | `storefront_config_public` | `src/lib/tenant.ts` |
+| `v_storefront_reviews` | Visible Google/manual reviews | (unchanged — outside §4.6 scope) | (reviews component) |
+| `v_storefront_media` | Media library (public shape, is_deleted filtered) | `media_public` | (media rendering) |
+| `v_storefront_branches` | Branch directory (published, undeleted) | `branches_public` | `src/lib/branches.ts` |
+| `v_content_translations` | Approved + draft content translations | (unchanged — outside §4.6 scope) | `src/lib/content-translations.ts` |
+| `v_ai_content` | Active AI-generated content rows | (unchanged — outside §4.6 scope) | (product descriptions) |
+| `v_tenant_i18n_overrides` | Per-tenant i18n string overrides | (unchanged — outside §4.6 scope) | `src/lib/tenant-i18n.ts` |
 
 ### 4.2 RPCs consumed cross-repo
 
@@ -160,6 +163,29 @@ optional attributes — `submit_url` (presence triggers EF mode) and
 `lead-form-validation.ts:buildScript`. The body transform inside the
 generated script handles tenant_id→tenant_slug, Hebrew→English field
 renames, and checkbox→boolean coercion.
+
+### 4.6 Public Data Layer (since 2026-05-15)
+
+**Owner:** Module 1.5 — Shared Components.
+**Canonical reference:** `docs/PUBLIC_DATA_LAYER.md` (≤200 lines).
+**Originating SPEC:** `modules/Module 1.5 - Shared Components/docs/specs/STOREFRONT_PUBLIC_DATA_LAYER_2026_05_15/`.
+
+A structurally-separate set of **mirror tables** sitting between private source-of-truth tables and every public anon-facing consumer. Closes Supabase advisor F-CRIT-2 (8 → 0) and seals anon SELECT on the private bases regardless of future column additions or policy drift.
+
+**6 mirror tables registered here:**
+
+| Mirror | Source private base | Public filter | Notes |
+|--------|--------------------|----|---|
+| `branches_public`            | `tenant_branches`  | `status='published' AND is_deleted=false` | 33 cols. |
+| `storefront_config_public`   | `storefront_config`| `enabled=true`                            | 25 cols (union v_storefront_config + v_public_tenant). |
+| `media_public`               | `media_library`   | `is_deleted=false`                        | 10 cols. |
+| `brands_public`              | `brands`          | `is_deleted=false AND active=true AND exclude_website IS NOT TRUE` | 16 + 1 cached col `has_sellable_inventory`. |
+| `inventory_images_public`    | `inventory_images`| none (flat mirror)                         | 6 cols. |
+| `inventory_public`           | `inventory`       | 8-condition (per v_storefront_products)    | 15 cols incl. AI cache + image_paths text[]. |
+
+**Sync triggers:** 6 main + 3 satellites (ai_content → inventory_public, inventory_images → inventory_public, inventory → brands_public.has_sellable_inventory).
+
+**Template for new public-projections:** see `docs/PUBLIC_DATA_LAYER.md` §3.
 
 ---
 

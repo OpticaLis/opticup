@@ -1,5 +1,73 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-15 evening — STOREFRONT_PUBLIC_DATA_LAYER — Pattern A mirror architecture (replaces SECURITY_HOTFIX_4)
+
+SPEC: `STOREFRONT_PUBLIC_DATA_LAYER_2026_05_15` ([folder](specs/STOREFRONT_PUBLIC_DATA_LAYER_2026_05_15/))
+
+**Foundational architectural SPEC.** Replaces `SECURITY_HOTFIX_4_BRIEF.md` (stub retired by Architect same-day per Daniel directive — *"בלי פלסטרים — תמיד אפשר לשפר בלי לחזור ולתקן"*). Instead of "extend RLS + GRANT anon on private base tables" (procedural discipline, fragile), build a **dedicated public-data layer** of structurally-separate mirror tables (mechanical separation, durable).
+
+**6 commits in chain (collapsed from SPEC's 11 — real-time decision logged in commit messages 2-4):**
+
+- `2f2a89c` — `chore(spec): seal STOREFRONT_PUBLIC_DATA_LAYER SPEC + ACTIVATION_PROMPT` — Foreman SPEC + ACTIVATION_PROMPT + retire HOTFIX_4 stub. Heading-convention fix (Iron Rule 32 hook regex requires exact `## Destructive Operations` line termination).
+- `0d76b5a` — `feat(public-data-layer): demo - branches_public + storefront_config_public + media_public` — 3 smallest mirrors + RLS + GRANT + triggers; global infrastructure, demo-cycle E2E (12/12 PASS).
+- `028fdbf` — `feat(public-data-layer): demo - brands_public + inventory_images_public + inventory_public` — 3 larger mirrors. inventory_public caches 3 ai_content columns + image_paths text[]; 2 satellite triggers on ai_content + inventory_images. E2E 14/14 PASS (incl. visibility-by-image transition + ai_content satellite path). Cumulative 26/18+ E2E cases.
+- `d10bf80` — `feat(public-data-layer): GLOBAL - rewrite 8 v_storefront_* views + flip security_invoker=on` — global view rewrites + ALTER VIEW SET (security_invoker=on) × 8 + brands_public.has_sellable_inventory cache + 3rd satellite trigger (inventory → brands_public.has_sellable). All 8 Prizma row counts match BASE exactly. F-CRIT-2 8→0.
+- `d75494f` — `feat(public-data-layer): GLOBAL - REVOKE anon from 6 private bases + v_crm_lead_first_touch` — 7 REVOKEs. Mechanical separation complete.
+- `8fc2080` — `chore(public-data-layer): post-REVOKE verification` — Prizma storefront page smoke + STT-11 both tenants + latency check (products 480→44ms) + advisor delta.
+
+**Migrations applied (via Supabase MCP apply_migration; recorded in supabase_migrations.schema_migrations):**
+- `create_branches_public_layer`
+- `create_storefront_config_public_layer`
+- `create_media_public_layer`
+- `create_brands_public_layer`
+- `create_inventory_images_public_layer`
+- `create_inventory_public_layer` (3 functions + 3 triggers — main + 2 satellites)
+- `fix_mirror_column_precision_to_match_source` (latitude/longitude numeric(9,6), google_rating numeric(2,1))
+- `rewrite_8_storefront_views_source_from_public_layer_v2` (8 CREATE OR REPLACE VIEW + 8 ALTER VIEW SET security_invoker=on + 8 GRANT defensively)
+- `add_has_sellable_inventory_to_brands_public` (1 ALTER ADD COLUMN + 1 backfill UPDATE + 1 ALTER FUNCTION (re-defined trigger) + 1 CREATE FUNCTION + 1 CREATE TRIGGER + 1 CREATE OR REPLACE VIEW for v_storefront_brands filter switch)
+- `revoke_anon_select_from_private_bases_and_crm_view` (7 REVOKE SELECT)
+
+**Verdict 🟢 CLOSED.** Smoke 7/7 PASS post-migration on demo. All 8 view Prizma counts match BASE exactly (1133/155/45/2/1/1/276/1). STT-11 cross-tenant leak probe: 0 leaks for both tenant JWTs. v_storefront_products latency 480.91ms → 44.69ms via EXPLAIN ANALYZE (10.8× speedup — Pattern A's AI cache eliminated 3×1133 subquery loops). F-CRIT-2 advisor 8→0; no new lint TYPES introduced (+10 instances of existing types from 9 new SECDEF trigger functions, FINDING-LOW). 7 REVOKEs sealed anon access to 6 private bases + v_crm_lead_first_touch.
+
+**Real-time decision** (logged in commit 2 + EXECUTION_REPORT §5): The SPEC's "demo-first then Prizma" Commits 4-9 collapsed to 4 commits because views + REVOKE are inherently global Postgres operations. Global infrastructure (CREATE TABLE/TRIGGER/POLICY) landed in Commits 2-3 with backfill matching project-wide row counts. View rewrite (Commit 4) and REVOKE (Commit 5) are global single ops. Commits 6-9 from the original plan consolidated into Commit 6 (verification report). Tenant-isolation safety is preserved by per-row RLS, not per-commit phasing.
+
+**Brief gap caught + fixed:** Original v_storefront_brands EXISTS check used looser `inventory WHERE is_deleted=false AND website_sync<>'none'` filter (155 Prizma brands). Naive rewrite using inventory_public's strict 8-condition filter yielded 47 brands — STT-2 row-count drift. Fixed in Commit 4 by caching `has_sellable_inventory` boolean on brands_public, refreshed by main brands trigger + a 3rd satellite trigger on inventory. Preserves baseline.
+
+**SPEC heading-defect caught:** SPEC's `## 3. Destructive Operations (...)` collided with `## 3. Success Criteria` AND violated Iron-Rule-32 hook regex (which requires line termination exactly at "Destructive Operations"). Renamed to bare `## Destructive Operations` + sibling parenthetical paragraph. Pre-commit hook now passes. Logged as FINDING for next Foreman pass to renumber whole SPEC monotonically.
+
+**Open follow-ups (FINDINGS):**
+1. SPEC-defect heading renumbering (already noted in SPEC.md).
+2. Brand state changes (active=false, exclude_website=true) don't auto-refresh inventory_public visibility — 4th satellite trigger on brands would close this. LOW severity, eventually consistent.
+3. 10 new SECDEF function findings (`authenticated_security_definer_function_executable` ×9, `anon_security_definer_function_executable` ×1) — REVOKE EXECUTE FROM anon, authenticated on the 9 trigger functions would close them. LOW severity; functions only fire as triggers, not callable.
+4. /brands/<slug>/ and /about/ Prizma routes 404 — PRE-EXISTING storefront-app routing, not migration regression (sitemap-dynamic.xml doesn't enumerate these URLs). FINDING-INFO.
+
+---
+
+## 2026-05-15 afternoon — SECURITY_HOTFIX_3 — residual F-CRIT-2 + 15 F-CRIT-3 carry RPCs (Daniel Option B)
+
+SPEC: `SECURITY_HOTFIX_3_2026_05_15` ([folder](specs/SECURITY_HOTFIX_3_2026_05_15/))
+
+**Production security hotfix.** Sequel to `SECURITY_HOTFIX_2_2026_05_15` (closed earlier today 🟡). Pre-flight surfaced Brief §1.1 3-table scope insufficient for §1.2 15-view closure — Daniel Option B approved (scope-out unsafe views, ship smaller hotfix). 1 escalation RESOLVED pre-SPEC-seal.
+
+**Migrations applied (5 sequential, smallest blast radius first):**
+- `20260515093000_hotfix3_s1_3_admin_view_lockdowns.sql` — §1.3 lock 5 admin views (REVOKE anon SELECT + `security_invoker=on` on `v_ai_content`, `v_content_translations`, `v_tenant_i18n_overrides`, `v_translation_dashboard`, `v_crm_event_stats`). SHA `635281b`.
+- `20260515093500_hotfix3_s1_4_save_translation_memory_batch_2nd_overload.sql` — §1.4 harden 2nd overload (`p_entries jsonb`) with 3-role-aware Block A adapted for entry-level tenant_id derivation + SET search_path + REVOKE anon EXECUTE. SHA `a20343a`.
+- `20260515094000_hotfix3_s1_5_carry_rpcs_block_a_and_revokes.sql` — §1.5 14 Option B + 1 Option C. 5 RPCs got NEW 3-role-aware Block A: `increment_paid_amount`/`increment_prepaid_used`/`mark_translations_stale` via JOIN-derived tenant; `register_lead_to_event` + `resolve_touchpoints_to_lead` upgraded from weaker variants. 3 RPCs got new search_path (`is_platform_super_admin`, `promote_to_platform`, `promote_lead_on_message_sent`). 14 REVOKE EXECUTE FROM anon + explicit GRANT TO authenticated, service_role. `validate_slug` retained anon (Option C — pure validation, no side effects). SHA `e64f9c9`.
+- `20260515094500_hotfix3_s1_1_base_table_rls_expansion.sql` — §1.1 new RLS policies `blog_posts_public_read_published` + `ai_content_public_read_published` (anon SELECT USING `status='published'`). `storefront_pages_anon_read` pre-existing policy kept verbatim (Rule 21). GRANT SELECT TO anon on all 3 base tables. SHA `6fa5083`.
+- `20260515095000_hotfix3_s1_2_flip_v_storefront_blog_posts.sql` — §1.2a flip `v_storefront_blog_posts` to `security_invoker=on` with rollback tag `pre-hotfix3-view-v_storefront_blog_posts`. Anon probe: 174 rows visible (matches pre-migration). SHA `d4e6fa3`.
+- `20260515095500_hotfix3_s1_2_flip_v_storefront_pages.sql` — §1.2b flip `v_storefront_pages` to `security_invoker=on` with rollback tag `pre-hotfix3-view-v_storefront_pages`. Anon probe: 81 rows visible. SHA `2625c34`.
+
+**Escalation (RESOLVED pre-SPEC-seal + filed under `escalations/`):**
+- `2026-05-15T0917Z_hotfix3_brief_scope_insufficient_for_15_view_closure.md` — Pre-flight surfaced Brief §1.1 3-table scope cannot enable §1.2 15-view goal (11 base tables actually needed). Daniel chose Option B (scope-out unsafe views).
+
+**Verdict 🟡 CLOSED WITH FOLLOW-UPS:** F-CRIT-2 advisor 15→8 (7 closed: 5 admin + 2 storefront); F-CRIT-3 17→2 (15 closed: 14 Option B + 1 §1.4); total advisors 119→93. Demo wrong-tenant tests T1-T5 PASS (5 Block-A-bearing RPCs raise 42501); service_role bypass T6 PASS. Smoke 7/7 PASS post-migration. Zero data row writes on any tenant. 8 findings logged in FINDINGS.md (5 closed in SPEC as collateral pre-existing bugs; 3 carry forward to HOTFIX_4 / audit-SPEC / Iron Rule 32 hook fix).
+
+**Skill improvements applied:** P-AUTHOR-1 (status-column semantics probe in Step 1.5.3) + P-AUTHOR-2 (gitignore-aware backup criterion in SPEC_TEMPLATE) + P-EXEC-1 (NEW reference file `BLOCK_A_DEMO_TESTS.sql`) + P-EXEC-2 (SQL-comment word-avoidance bullet in opticup-executor SKILL.md).
+
+**Audit reports updated:** `OVERNIGHT_BUNDLE_2_2026_05_14_REPORT.md` findings #2 + #3 marked RESOLVED-IN-PART / RESOLVED. `SENTINEL_DEEP_DIVE_2026_05_14_REPORT.md` RPC #9 + #10 + #11 + #12 all marked RESOLVED. `SECURITY_HOTFIX_2_2026_05_15/FOREMAN_REVIEW.md` §10 SECURITY_HOTFIX_3 declaration marked RESOLVED.
+
+---
+
 ## 2026-05-15 — SECURITY_HOTFIX_2 — Bundle 2 F-CRIT-1/2/3 closure (PARTIAL F-CRIT-2)
 
 SPEC: `SECURITY_HOTFIX_2_2026_05_15` ([folder](specs/SECURITY_HOTFIX_2_2026_05_15/))

@@ -154,9 +154,9 @@ All required updates either DONE or queued for the closeout commit immediately f
 
 ## 10. Follow-Ups Opened
 
-### SECURITY_HOTFIX_3 — declaration (mandatory next SPEC)
+### SECURITY_HOTFIX_3 — 🟢 RESOLVED 2026-05-15 (closeout SHA range `dc63e54..2dab09f` + Foreman closeout commit pending)
 
-**Status:** Brief to be authored by Architect next session. Activation queued in `OPEN_TASKS.md`.
+**Status:** Brief authored 2026-05-15 by Architect. Executed end-to-end via Full-Auto Pipeline same day. Verdict 🟡 CLOSED WITH FOLLOW-UPS per Daniel Option B (scope-out unsafe views). 7 of 15 deferred views closed (5 admin lockdowns + 2 storefront flips); 15 of 17 F-CRIT-3 carry RPCs closed. F-CRIT-2 advisor 15→8; F-CRIT-3 17→2; total 119→93. Smoke 7/7 PASS post-migration. Zero data writes. 8 remaining storefront views + 5 base tables deferred to `SECURITY_HOTFIX_4` (stub authored in HOTFIX_3 Commit 1). Full retrospective at `modules/Module 1.5 - Shared Components/docs/specs/SECURITY_HOTFIX_3_2026_05_15/FOREMAN_REVIEW.md`.
 
 **Scope outline:**
 

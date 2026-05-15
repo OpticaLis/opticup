@@ -1,11 +1,20 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
 ## Current Status
-- **Phase:** **SECURITY_HOTFIX_2 CLOSED WITH FOLLOW-UPS 🟡** (2026-05-15). F-CRIT-1 + F-CRIT-3 fully closed; F-CRIT-2 partially closed (2 of 17 views — 15 deferred to `SECURITY_HOTFIX_3` per RESOLVED escalation 2026-05-15T1110Z). 3 escalations resolved by Daniel in-session. All 24 in-scope SECURITY DEFINER RPCs now carry 3-role-aware Block A (service_role bypass + strict non-service-role JWT-tenant-claim check); 16 admin RPCs lost anon EXECUTE; `verify_campaign_page_password` retained anon (Option A — Block A-alt slug validation). See `docs/specs/SECURITY_HOTFIX_2_2026_05_15/` for SPEC + EXECUTION_REPORT + FINDINGS.
+- **Phase:** **STOREFRONT_PUBLIC_DATA_LAYER CLOSED 🟢** (2026-05-15 evening). Pattern A public-data-layer architecture LIVE on demo + Prizma: 6 mirror tables (`branches_public`, `storefront_config_public`, `media_public`, `brands_public`, `inventory_images_public`, `inventory_public`) + 9 trigger functions (6 main + 3 satellites for ai_content/inventory_images/brands.has_sellable cache) + 18 RLS policies + 6 anon GRANTs + 8 v_storefront_* views REWRITTEN to source from layer + flipped `security_invoker=on` + 7 REVOKEs (6 private bases + v_crm_lead_first_touch). F-CRIT-2 advisor **8 → 0** (CLOSED — replaces SECURITY_HOTFIX_4 which was the procedural-discipline alternative). HOTFIX_4 stub retired. v_storefront_products latency 480ms → 44ms (10.8× speedup from cached AI columns + image_paths). All 8 view Prizma row counts match BASE_PRIZMA_* exactly (1133/155/45/2/1/1/276/1). STT-11 cross-tenant leak probe: 0 leaks both directions. Smoke 7/7 PASS post-migration on demo + 5/5 existing storefront routes 200 on Prizma + demo. See `docs/specs/STOREFRONT_PUBLIC_DATA_LAYER_2026_05_15/` for SPEC + EXECUTION_REPORT + FINDINGS + REVIEW + TEST_REPORT + FOREMAN_REVIEW + VIEW_REWRITE_SUMMARY + REVOKE_SUMMARY + VERIFICATION_REPORT. Canonical layer reference: `docs/PUBLIC_DATA_LAYER.md`.
 - **Branch:** develop
-- **Last updated:** 2026-05-15 (SECURITY_HOTFIX_2 closed).
+- **Last updated:** 2026-05-15 evening (STOREFRONT_PUBLIC_DATA_LAYER closed).
 
-## 2026-05-15 — SECURITY_HOTFIX_2 (Bundle 2 F-CRIT-1/2/3 — partial F-CRIT-2)
+## Previous — 2026-05-15 afternoon — SECURITY_HOTFIX_3 (closed with follow-ups 🟡)
+- F-CRIT-2 advisor 15→8 (−7); F-CRIT-3 advisor 17→2 (−15). Total Supabase advisors 119→93. Daniel Option B (scope-out unsafe views, ship smaller hotfix). 8 remaining storefront views + 5 base tables routed to `STOREFRONT_PUBLIC_DATA_LAYER_2026_05_15` (this evening's SPEC, which superseded the original HOTFIX_4 stub). 4 skill improvements applied. See `docs/specs/SECURITY_HOTFIX_3_2026_05_15/`.
+
+## 2026-05-15 afternoon — SECURITY_HOTFIX_3 (closes deferred F-CRIT-2 + 15 F-CRIT-3 carry RPCs per Option B)
+
+See `docs/specs/SECURITY_HOTFIX_3_2026_05_15/FOREMAN_REVIEW.md` + CHANGELOG.md entry below. 1 pre-SPEC escalation RESOLVED (`escalations/2026-05-15T0917Z_hotfix3_brief_scope_insufficient_for_15_view_closure.md`) — Daniel Option B: 7 of 15 views closed in this hotfix, 8 deferred. Per-view rollback tags in place for the 2 storefront flips. 8 commits in chain: `dc63e54..2dab09f`.
+
+Follow-up SPECs queued (3): `SECURITY_HOTFIX_4` (8 deferred views + 5 base tables), `SECURITY_AUDIT_PRE_2026_03_RPCS` (sweep pre-2026-03 SECURITY DEFINER RPCs for missing/weak Block A), `IRON_RULE_32_HOOK_COMMENT_AWARENESS` (fix hook to skip SQL/shell/JS comment lines).
+
+## Historical — 2026-05-15 morning — SECURITY_HOTFIX_2 (Bundle 2 F-CRIT-1/2/3 — partial F-CRIT-2)
 
 See `docs/specs/SECURITY_HOTFIX_2_2026_05_15/EXECUTION_REPORT.md` + CHANGELOG.md entry above. Three escalations RESOLVED + filed under `escalations/`:
 - Anon-callable count inverted in Brief (7 → 17 actual).
