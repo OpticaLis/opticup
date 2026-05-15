@@ -8,6 +8,79 @@
 
 ---
 
+## Block #6 DOWN — `record_transfer` restore pre-amendment body (17-arg call form)
+
+```sql
+-- Restore pre-Amendment-#1 record_transfer body (the original 17-positional-arg form).
+-- WARNING: the pre-amendment body raises 42883 at runtime per discovery 2026-05-15.
+-- This DOWN block is for symmetry only; rolling back Fix #9 re-introduces the runtime bug.
+CREATE OR REPLACE FUNCTION public.record_transfer(
+  p_tenant_id uuid,
+  p_from_location_id uuid,
+  p_to_location_id uuid,
+  p_variant_id uuid,
+  p_qty_sent integer,
+  p_source_lot_id uuid,
+  p_initiated_by uuid DEFAULT NULL::uuid,
+  p_notes text DEFAULT NULL::text
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_transfer_id UUID;
+  v_transfer_number TEXT;
+  v_dest_lot_id UUID;
+  v_source_unit_cost NUMERIC(12,4);
+  v_source_received_at TIMESTAMPTZ;
+  v_jwt_tenant uuid := nullif(((current_setting('request.jwt.claims', true))::json ->> 'tenant_id'), '')::uuid;
+BEGIN
+  IF v_jwt_tenant IS NULL OR v_jwt_tenant <> p_tenant_id THEN
+    RAISE EXCEPTION 'Unauthorized: tenant_id mismatch' USING ERRCODE = '42501';
+  END IF;
+  IF p_from_location_id = p_to_location_id THEN
+    RAISE EXCEPTION 'transfer source and destination must differ' USING ERRCODE = 'P0001';
+  END IF;
+  v_transfer_number := next_transfer_number(p_tenant_id);
+  INSERT INTO stock_transfer(
+    tenant_id, from_location_id, to_location_id, transfer_number, status, variant_id,
+    qty_sent, initiated_by, notes
+  ) VALUES (
+    p_tenant_id, p_from_location_id, p_to_location_id, v_transfer_number, 'in_transit',
+    p_variant_id, p_qty_sent, p_initiated_by, p_notes
+  ) RETURNING id INTO v_transfer_id;
+  SELECT unit_cost, received_at INTO v_source_unit_cost, v_source_received_at
+    FROM stock_lot WHERE id = p_source_lot_id;
+  INSERT INTO stock_lot(
+    tenant_id, variant_id, location_id, origin_type,
+    qty_received, qty_remaining, unit_cost, lot_number,
+    received_at, original_lot_id
+  ) VALUES (
+    p_tenant_id, p_variant_id, p_to_location_id, 'transfer_in',
+    p_qty_sent, p_qty_sent, v_source_unit_cost, next_lot_number(p_tenant_id),
+    v_source_received_at, p_source_lot_id
+  ) RETURNING id INTO v_dest_lot_id;
+  PERFORM record_stock_movement(
+    p_tenant_id, p_source_lot_id, p_variant_id, p_from_location_id,
+    'transfer_out', -p_qty_sent,
+    NULL, NULL, NULL, NULL, v_transfer_id, NULL, v_source_unit_cost, NULL, NULL,
+    p_initiated_by, p_notes
+  );
+  PERFORM record_stock_movement(
+    p_tenant_id, v_dest_lot_id, p_variant_id, p_to_location_id,
+    'transfer_in', p_qty_sent,
+    NULL, NULL, NULL, NULL, v_transfer_id, NULL, v_source_unit_cost, NULL, NULL,
+    p_initiated_by, p_notes
+  );
+  RETURN v_transfer_id;
+END;
+$function$;
+```
+
+---
+
 ## Block #5 DOWN — K3 queue idempotency
 
 ```sql

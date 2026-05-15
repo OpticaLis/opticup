@@ -321,6 +321,118 @@ verify_jwt = true
 
 Append after the last existing `[functions.…]` block. Do NOT modify any pre-existing block.
 
+### Fix #9 — `record_transfer` body — pass 19 positional args (Amendment #1, 2026-05-15)
+
+**Migration name:** `m1a_record_transfer_arg_mismatch_fix`
+
+**Authored by:** Foreman, after executor escalation at 2026-05-15 07:25 UTC. Escalation file: `modules/Module 1 - Inventory Management/escalations/2026-05-15T07-25-00Z_record_transfer_arg_mismatch.md`.
+
+**Bug discovered during functional smoke Case 3:** Pre-existing `record_transfer` body has two inner `record_stock_movement` calls, each with only **17 positional arguments**. The function signature is 19 params (last 3 = `p_sph`, `p_cyl`, `p_add_value` numeric with DEFAULTs). PG fills positions 1..17; position 17 = `p_sph numeric` receives `p_notes` (text). Type collision ⇒ `42883: function record_stock_movement(... unknown) does not exist`. Phase 1A's smoke (single lens_brand INSERT) never invoked `record_transfer` so this DOA bug went undetected.
+
+**Defect class:** identical to Fix #1 (record_stock_movement double-add) — runtime orchestrator defect, undetected because Phase 1A skipped functional smoke. This is exactly the failure mode the M1A_OPERATIONS_RPCS_FIX Pipeline exists to surface. Foreman authorizes inclusion in-pipeline rather than deferring (single-chat Full-Auto Pipeline; Daniel offline; defect blocks Brief §1 purpose).
+
+**Fix:** CREATE OR REPLACE the function with each inner call passing 19 positional args (3 trailing NULLs for sph/cyl/add_value). Body is otherwise unchanged.
+
+```sql
+CREATE OR REPLACE FUNCTION public.record_transfer(
+  p_tenant_id uuid,
+  p_from_location_id uuid,
+  p_to_location_id uuid,
+  p_variant_id uuid,
+  p_qty_sent integer,
+  p_source_lot_id uuid,
+  p_initiated_by uuid DEFAULT NULL::uuid,
+  p_notes text DEFAULT NULL::text
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_transfer_id UUID;
+  v_transfer_number TEXT;
+  v_dest_lot_id UUID;
+  v_source_unit_cost NUMERIC(12,4);
+  v_source_received_at TIMESTAMPTZ;
+  v_jwt_tenant uuid := nullif(((current_setting('request.jwt.claims', true))::json ->> 'tenant_id'), '')::uuid;
+BEGIN
+  IF v_jwt_tenant IS NULL OR v_jwt_tenant <> p_tenant_id THEN
+    RAISE EXCEPTION 'Unauthorized: tenant_id mismatch' USING ERRCODE = '42501';
+  END IF;
+  IF p_from_location_id = p_to_location_id THEN
+    RAISE EXCEPTION 'transfer source and destination must differ' USING ERRCODE = 'P0001';
+  END IF;
+
+  v_transfer_number := next_transfer_number(p_tenant_id);
+  INSERT INTO stock_transfer(
+    tenant_id, from_location_id, to_location_id, transfer_number, status, variant_id,
+    qty_sent, initiated_by, notes
+  ) VALUES (
+    p_tenant_id, p_from_location_id, p_to_location_id, v_transfer_number, 'in_transit',
+    p_variant_id, p_qty_sent, p_initiated_by, p_notes
+  ) RETURNING id INTO v_transfer_id;
+
+  SELECT unit_cost, received_at INTO v_source_unit_cost, v_source_received_at
+    FROM stock_lot WHERE id = p_source_lot_id;
+
+  INSERT INTO stock_lot(
+    tenant_id, variant_id, location_id, origin_type,
+    qty_received, qty_remaining, unit_cost, lot_number,
+    received_at, original_lot_id
+  ) VALUES (
+    p_tenant_id, p_variant_id, p_to_location_id, 'transfer_in',
+    p_qty_sent, p_qty_sent, v_source_unit_cost, next_lot_number(p_tenant_id),
+    v_source_received_at, p_source_lot_id
+  ) RETURNING id INTO v_dest_lot_id;
+
+  -- transfer_out movement (consuming): 19 positional args, NULLs for sph/cyl/add_value.
+  -- Fix #9 (M1A_OPERATIONS_RPCS_FIX Amendment #1, 2026-05-15) — was 17 positional → 42883.
+  PERFORM record_stock_movement(
+    p_tenant_id, p_source_lot_id, p_variant_id, p_from_location_id,
+    'transfer_out', -p_qty_sent,
+    NULL, NULL, NULL, v_transfer_id, NULL,
+    v_source_unit_cost, NULL, NULL,
+    p_initiated_by, p_notes,
+    NULL, NULL, NULL
+  );
+
+  -- transfer_in movement (creation): 19 positional args.
+  PERFORM record_stock_movement(
+    p_tenant_id, v_dest_lot_id, p_variant_id, p_to_location_id,
+    'transfer_in', p_qty_sent,
+    NULL, NULL, NULL, v_transfer_id, NULL,
+    v_source_unit_cost, NULL, NULL,
+    p_initiated_by, p_notes,
+    NULL, NULL, NULL
+  );
+
+  RETURN v_transfer_id;
+END;
+$function$;
+
+-- CREATE OR REPLACE re-grants EXECUTE TO PUBLIC by default. Restore the post-Block-#2 ACL.
+REVOKE EXECUTE ON FUNCTION public.record_transfer(
+  p_tenant_id uuid, p_from_location_id uuid, p_to_location_id uuid,
+  p_variant_id uuid, p_qty_sent integer, p_source_lot_id uuid,
+  p_initiated_by uuid, p_notes text
+) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.record_transfer(
+  p_tenant_id uuid, p_from_location_id uuid, p_to_location_id uuid,
+  p_variant_id uuid, p_qty_sent integer, p_source_lot_id uuid,
+  p_initiated_by uuid, p_notes text
+) TO authenticated;
+
+COMMENT ON FUNCTION public.record_transfer(
+  uuid, uuid, uuid, uuid, integer, uuid, uuid, text
+) IS 'M1A_OPERATIONS_RPCS_FIX Amendment #1 (2026-05-15): Fix #9 — inner record_stock_movement calls now pass 19 positional args (3 trailing NULLs for sph/cyl/add_value) so they match the function signature. Pre-existing 17-arg form raised 42883 at runtime.';
+```
+
+**Apply notes:**
+- Post-apply verify: `pg_get_functiondef('record_transfer'::regproc)` body contains BOTH `'transfer_out', -p_qty_sent,` AND `'transfer_in', p_qty_sent,` followed by 3 trailing `NULL` after `p_notes` in each call. ACL: zero anon/PUBLIC EXECUTE; 1 authenticated EXECUTE row.
+
+---
+
 ### Fix #7 — `supabase/functions/lens-catalog-import/index.ts` — invert gate to fail-closed
 
 Replace the block at lines 73–85 (per §0 BASE_LCI_GATE_LINE — re-confirm by reading the file first as line numbers may have shifted):
@@ -382,6 +494,7 @@ Recorded by the Executor as each block is applied live via MCP `apply_migration`
 | #3 | `m1a_next_lens_variant_display_id_jwt_guard` | 2026-05-15 | `has_jwt_guard=true`, `has_42501=true`, `has_LV_format=true`, `anon/auth/PUBLIC EXECUTE=0` (post-CREATE-OR-REPLACE re-REVOKE applied) |
 | #4 | `m1a_v_suppliers_for_m9_revoke_anon` | 2026-05-15 | `anon/PUBLIC rows=0`, `authenticated SELECT=1`, `authenticated other=0`, `service_role SELECT=1` |
 | #5 | `m1a_k3_queue_idempotency` | 2026-05-15 | `unique_idx_count=1`, `index_is_unique=1`, `has_onconflict_donothing=true`, `anon/auth/PUBLIC EXECUTE=0` (post-CREATE-OR-REPLACE re-REVOKE applied) |
+| #6 (Amendment #1) | `m1a_record_transfer_arg_mismatch_fix` | 2026-05-15 | `has_xfer_out_19args=true`, `has_xfer_in_19args=true`, `anon/PUBLIC EXECUTE=0`, `authenticated EXECUTE=1` |
 
 ---
 

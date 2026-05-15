@@ -421,3 +421,45 @@ CONSUMING movements (existing lot; KEEP qty_remaining UPDATE): `'sale'`, `'trans
 ---
 
 *End of SPEC. Author: opticup-strategic. v3 template. 2026-05-15 — Full-Auto Pipeline.*
+
+---
+
+## Amendment #1 — Fix #9 added (2026-05-15, mid-Pipeline)
+
+**Authored by:** opticup-strategic (Foreman) at ~07:30 UTC, after the executor's escalation file `modules/Module 1 - Inventory Management/escalations/2026-05-15T07-25-00Z_record_transfer_arg_mismatch.md`.
+
+**Context:** During functional smoke Case 3, the executor surfaced a pre-existing 42883 runtime error inside `record_transfer`'s body — both inner `record_stock_movement` calls pass 17 positional args, but the function signature has 19 params (last 3 = `p_sph`, `p_cyl`, `p_add_value` with DEFAULTs). PG types position 17 as `p_sph numeric` and rejects the `p_notes` (text) value passed there. Phase 1A never invoked `record_transfer` (smoke was a single lens_brand INSERT), so this DOA bug went undetected. Defect class is identical to Fix #1 (orchestrator runtime defect, smoke-skip caused undetection).
+
+**Foreman decision:** authorize Fix #9 in-place rather than defer to a follow-up SPEC. Rationale:
+- Brief §1 Purpose: "All three orchestrator RPCs chain through it." Leaving 1 of 3 broken contradicts the stated purpose of the Pipeline.
+- Brief §5 criterion 10 + Locked Decision #3 mandate functional smoke for ALL three orchestrators.
+- Same defect class as Fix #1 (the SPEC was already authorized to fix this defect class).
+- Iron Rule 32 still **None** — Fix #9 uses CREATE OR REPLACE FUNCTION (in-place body change), no DROPs, no destructive ops.
+- Cost: ~5 min in-place vs ~30 min follow-up Pipeline + Phase 1B drag.
+
+**Scope additions (deltas vs original SPEC):**
+
+### §3 — new success criterion 24
+
+| 24 | `record_transfer` no longer raises 42883 mid-body | Smoke Case 3 completes; demo loc A → loc B transfer of qty=2 returns transfer_id UUID; source lot qty_remaining decreased by 2; dest lot qty_remaining = 2; 2 stock_movement rows (transfer_out + transfer_in) exist with `transfer_id` = the new transfer | §14 Case 3 (db) |
+
+### §4 — Autonomy Envelope add 6th fix domain
+
+The executor is pre-authorized (under Amendment #1) to apply a 6th DDL block via `mcp__supabase__apply_migration`:
+6. `record_transfer` body fix (CREATE OR REPLACE inside the existing 8-param signature; no signature change; positional-args inner calls expanded to 19 per the canonical pattern used by `m1_create_receipt_from_box` and `record_adjustment_found`).
+
+### §10 — Commit Plan insert Commit 8.5
+
+Commit 8.5 (new, between original Commits 8 and 9): `fix(m1,rpc): record_transfer — pass 19 positional args to inner record_stock_movement calls (Amendment #1)`. Apply MIGRATION.md Block #6 via `apply_migration name=m1a_record_transfer_arg_mismatch_fix`. Update MIGRATION.md Applied Log row #6.
+
+### §6 / §9 — Rollback + Expected Final State
+
+ROLLBACK.md Block #6 DOWN added (restores pre-amendment 17-arg body — note: rolling back re-introduces the runtime bug; DOWN is for git-symmetry only).
+
+### Smoke continuation
+
+After Commit 8.5 lands, executor resumes from Case 3 (smoke). Cases 1, 2 already PASS pre-amendment. Cases 3, 4, 5, 6 run post-amendment.
+
+**Foreman signature:** opticup-strategic, single-chat Full-Auto Pipeline, 2026-05-15 07:30 UTC. No Daniel input received (Daniel offline; Foreman's judgment-call within Brief-stated purpose).
+
+*End of Amendment #1.*
