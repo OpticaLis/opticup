@@ -6,7 +6,7 @@ This file records every `apply_migration` call this SPEC issues to the live Supa
 
 | # | ISO Timestamp (UTC) | Migration Name | Object Type | Outcome | Notes |
 |---|---|---|---|---|---|
-| _(rows appended below as migrations are applied)_ | | | | | |
+| 1 | 2026-05-15T~execute~ | `m1b_foundation_permissions_hotfix_seed_lens_role_permissions` | DML — 18 INSERTs to `role_permissions` (demo + prizma, all 3 lens.* keys × 5 roles matrix) | ✅ `{success: true}` | Verified post-apply: count=18, demo=9, prizma=9, all `granted=true`, matrix matches SPEC §0.C exactly. ON CONFLICT clause did not fire (0 rows pre-existing). |
 
 ## Pending block (paste-ready for MCP apply_migration)
 
