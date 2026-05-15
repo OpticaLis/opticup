@@ -924,6 +924,8 @@ execution quality.
 ### Step 2 — Execute under Bounded Autonomy
 Follow the Execution Loop (above). Match → continue. Mismatch → STOP.
 
+**Applied Log convention (MCP-only SPECs).** When the SPEC uses MCP `apply_migration` and produces no `supabase/migrations/*.sql` files on disk: create `<SPEC_FOLDER>/MIGRATION.md` with an Applied Log table. Columns: `# | Migration name | Block (SPEC §6) | Applied (UTC) | Verify result`. Append one row per `apply_migration` call, in the commit that semantically represents that block. This satisfies the SPEC §10 commit-row granularity rule by giving every MCP-only commit a real file delta — otherwise a "Block N applied" commit has nothing in the working tree to commit, breaking the per-block one-commit pattern. (Promoted from M1A + M1B0 FOREMAN_REVIEW Executor Proposals 2026-05-15, 2-of-3 consecutive-reviews threshold; M1B0 voluntarily adopted this and confirmed it works in practice.)
+
 ### Step 3 — Log findings as you go
 If during execution you discover something NOT in the SPEC that is a real
 issue (new bug, new tech debt, Rule violation in untouched code, stale doc,
