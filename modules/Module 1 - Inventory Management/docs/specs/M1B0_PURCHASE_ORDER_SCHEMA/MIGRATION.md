@@ -12,6 +12,10 @@
 | 2 | `m1b0_create_purchase_order_line` | Block 2 | 2026-05-15T~11Z | `relrowsecurity=t`, 2 policies, UNIQUE partial idx present. ✓ |
 | 3 | `m1b0_create_supplier_debt` | Block 3 | 2026-05-15T~11Z | `relrowsecurity=t`, 2 policies, UNIQUE partial idx present. ✓ |
 | 4 | `m1b0_add_purchase_order_fk_backpointers` | Block 4 | 2026-05-15T~11Z | `stock_lot_purchase_order_fk` + `purchase_receipt_purchase_order_fk` present with `ON DELETE SET NULL`. ✓ |
+| 5 | `m1b0_create_next_purchase_order_number` | Block 5 | 2026-05-15T~11Z | SECDEF, `search_path=public`, JWT-claim guard + `42501` raise, REVOKE/GRANT applied (no PUBLIC/anon). ✓ |
+| 6 | `m1b0_create_place_purchase_order` | Block 6 | 2026-05-15T~11Z | Same discipline. Inner call to `next_purchase_order_number(1 arg)` matches callee `pronargs=1`. ✓ |
+| 7 | `m1b0_create_mark_po_sent` | Block 7 | 2026-05-15T~11Z | Same discipline. `GET DIAGNOSTICS ROW_COUNT` + `22023` raise on not-found. ✓ |
+| 8 | `m1b0_create_cancel_purchase_order` | Block 8 | 2026-05-15T~11Z | Same discipline. `FOR UPDATE` + status-check gate. ✓ |
 
 (Updated incrementally — rows added at each commit's MCP-apply step.)
 
