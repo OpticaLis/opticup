@@ -13,6 +13,8 @@
 | 1a | 2026-05-15T~19:00Z | `m1_gap_closure_block1_stock_adjustment_tables` | failed — FK target `locations` does not exist (table is `tenant_location` singular) | ❌ rejected by Postgres |
 | 1b | 2026-05-15T~19:01Z | `m1_gap_closure_block1_stock_adjustment_tables_v2` | 2 tables (`stock_adjustment_reason`, `stock_adjustment`) + 4 RLS policies + 3 indexes + 8 seed rows (4 demo + 4 prizma reasons) + 3 COMMENT entries | ✅ applied |
 | 2 | 2026-05-15T~19:05Z | `m1_gap_closure_block2_record_adjustment_lost` | 1 SECDEF function `record_adjustment_lost(uuid,uuid,uuid,uuid,integer,uuid,uuid,text,numeric,numeric,numeric)` + 1 COMMENT + REVOKE FROM PUBLIC,anon + GRANT TO authenticated. Body uses canonical project JWT-claim guard (matches `record_stock_movement` + `record_adjustment_found`); delegates lot decrement + TLS UPSERT to `record_stock_movement` (simpler than the SPEC §2.3 first draft, which manually duplicated the FOR UPDATE + TLS UPSERT). Decision logged in EXECUTION_REPORT §5. | ✅ applied |
+| 3a | 2026-05-15T~19:08Z | `m1_gap_closure_block3_receipt_line_variant_nullable` | failed — `schema_migrations_pkey` collision (concurrent session committed a migration at the same timestamp slot) | ❌ MCP registry collision |
+| 3b | 2026-05-15T~19:09Z | (execute_sql fallback) | `ALTER TABLE purchase_receipt_line ALTER COLUMN variant_id DROP NOT NULL` + COMMENT. Verified `is_nullable='YES'`. No `supabase/migrations/*.sql` per TD-2; concurrent-session collision documented as D-2 in EXECUTION_REPORT. | ✅ applied |
 
 ---
 
