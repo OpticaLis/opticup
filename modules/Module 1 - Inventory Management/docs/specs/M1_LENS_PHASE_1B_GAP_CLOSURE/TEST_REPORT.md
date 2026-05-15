@@ -143,4 +143,58 @@ Next M1 SPEC reuses or sweeps via tenant-clean script per project precedent.
 
 ---
 
-*End of TEST_REPORT.md. Verdict: 🟢 at executor scope. Stage 3 Reviewer + Stage 4 Localhost-Tester pending.*
+*End of executor-scope section.*
+
+---
+
+# Localhost-Tester pass — 2026-05-15 evening
+
+**Tester:** opticup-localhost-tester (skill v1)
+**Repo:** opticalis/opticup, branch develop, HEAD `ca3159e`
+**Status:** 🟢 GREEN
+
+## Servers
+
+- ERP        http://localhost:3000  → HTTP 200 in 205ms
+- Storefront http://localhost:4321  → HTTP 200 in 2476ms
+
+## Baseline (tests/smoke/baseline.test.mjs) — SC #9
+
+**7/7 PASS:**
+
+| # | Test | Result |
+|---|---|---|
+| 1 | PIN login → JWT with tenant_id=demo | PASS (696ms) |
+| 2 | Create CRM lead succeeds (M4) | PASS (129ms) |
+| 3 | Read inventory count for demo tenant (M1) | PASS (206ms) |
+| 4 | Storefront homepage returns 200 | PASS (1257ms) |
+| 5 | Storefront /supersale lead-form page returns 200 | PASS (868ms) |
+| 6 | Cross-module: lead from test-2 visible via crm_leads SELECT | PASS (130ms) |
+| 7 | No 5xx on critical pages (HEAD only) | PASS (1009ms) |
+
+## SC #11 — 4 lens HTML pages HTTP 200
+
+| Page | HTTP code |
+|---|---|
+| lens-inventory.html?t=demo | 200 ✅ |
+| lens-pricing.html?t=demo | 200 ✅ |
+| lens-active-designs.html?t=demo | 200 ✅ |
+| lens-goods-receipt.html?t=demo | 200 ✅ |
+
+All 4 lens HTML pages load. The 4th (lens-goods-receipt.html) was confirmed by the Brief §7.11 wording "all 4 LENS_* HTML pages"; the actual filenames in repo follow the kebab-case `lens-*` pattern.
+
+## F-1/F-2/F-3 DB-level functional smoke
+
+Already executed by Executor pre-Localhost-Tester (see §SC #1–#7 above). All 14 measurable criteria PASS at executor + Reviewer scope. Localhost-Tester does not re-execute F-1/F-2/F-3 smoke — they live in DB-state and require write-side fixture setup that the smoke harness intentionally avoids (the smoke is read-light and cleanup-disciplined). The Reviewer's spot-checks (REVIEW.md §1) provide the independent confirmation. UI exercise of the ➖ button on `lens-inventory.html` is deferred to Daniel's manual final-mile QA per project pattern (CLAUDE.md §1).
+
+## Failures
+
+None.
+
+## Hand-off
+
+🟢 GREEN → handing back to Foreman (opticup-strategic) for FOREMAN_REVIEW.md + Hebrew status line + skill self-improvement harvest.
+
+---
+
+*End of TEST_REPORT.md. Stage 4 Localhost-Tester scope CLOSED 🟢. Stage 5 Foreman pending.*
