@@ -381,7 +381,7 @@ Recorded by the Executor as each block is applied live via MCP `apply_migration`
 | #2 | `m1a_revoke_execute_phase1a_secdef` | 2026-05-15 | `expect_0_anon_public=0`, `expect_8_authn_user_rpcs=8`, `expect_0_authn_internal=0`, `service_role_rows=10` |
 | #3 | `m1a_next_lens_variant_display_id_jwt_guard` | 2026-05-15 | `has_jwt_guard=true`, `has_42501=true`, `has_LV_format=true`, `anon/auth/PUBLIC EXECUTE=0` (post-CREATE-OR-REPLACE re-REVOKE applied) |
 | #4 | `m1a_v_suppliers_for_m9_revoke_anon` | 2026-05-15 | `anon/PUBLIC rows=0`, `authenticated SELECT=1`, `authenticated other=0`, `service_role SELECT=1` |
-| #5 | _pending_ | — | — |
+| #5 | `m1a_k3_queue_idempotency` | 2026-05-15 | `unique_idx_count=1`, `index_is_unique=1`, `has_onconflict_donothing=true`, `anon/auth/PUBLIC EXECUTE=0` (post-CREATE-OR-REPLACE re-REVOKE applied) |
 
 ---
 
