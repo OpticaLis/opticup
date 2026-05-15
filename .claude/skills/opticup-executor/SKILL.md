@@ -915,6 +915,38 @@ Daniel's highest priority is that you execute an entire SPEC without asking
 him questions. The SPEC is your authority. Treat it as the plan Daniel
 approved. Ask yourself before any question:
 
+### Pre-commit discipline (proactive — added 2026-05-14 from M1A_CURRENCIES_GLOBAL_HOTFIX Executor Proposal #1)
+
+Before EVERY `git commit`, run BOTH of these checks — in this order — every
+time, no exceptions:
+
+1. **`git diff --cached --name-only`** — print the exact staged set. Verify
+   that every listed file is in your intended scope for this commit and that
+   no unexpected file appears (especially critical in Full-Auto Pipeline mode
+   where concurrent SPEC sessions may share the staging area). If unexpected
+   files are present, `git reset HEAD -- <unexpected-file>` to remove them
+   BEFORE committing — do NOT proceed past this check.
+2. **`node scripts/verify.mjs --staged`** — invoke the verify pipeline DIRECTLY
+   (not via husky's `git commit` hook). This instantiates all hook imports and
+   surfaces any concurrent-session-induced breakage (e.g., a sibling SPEC
+   modifying a check script) BEFORE husky runs the same check inside the commit
+   pipeline. If verify exits non-zero, fix the underlying issue and re-stage —
+   do NOT proceed to `git commit` yet.
+
+Only after BOTH checks pass cleanly do you run `git commit`. This 5-second
+discipline prevents:
+- Picking up unrelated files from parallel-session staging pollution (saw this
+  in Phase 1A's bad `f1789c7` commit — 1 file from M4 parallel work).
+- Transient pre-commit failures caused by a concurrent session editing a
+  check script (saw this in M1A_CURRENCIES_GLOBAL_HOTFIX Commit 1 — required
+  a retry that was otherwise avoidable).
+
+Skipping the proactive check and relying solely on husky's reactive run is
+the cause of every "pre-commit hook failed and I had to retry" entry in the
+SPEC retro corpus. Run both checks every time.
+
+### Situation table (reactive)
+
 | Situation | What to do |
 |-----------|-----------|
 | Step output matches expected | Continue. No chat. |
@@ -925,7 +957,7 @@ approved. Ask yourself before any question:
 | Scope expansion tempting | No. One concern per task (CLAUDE.md §9). Log to FINDINGS.md. |
 | Tool fails unexpectedly | Retry once. If still fails → STOP and report. |
 | `mcp__claude_ai_Supabase__deploy_edge_function` returns 5xx (e.g., `InternalServerErrorException`) | Exception to the row above: auto-fallback to Supabase CLI per §5i — do NOT escalate (OPEN-021 closure, added 2026-05-14). |
-| Pre-commit hook fails | Fix root cause, re-stage, new commit (never --amend, never --no-verify). |
+| Pre-commit hook fails despite proactive check (rare; usually means a concurrent session broke the gate between your check and your commit) | Fix root cause, re-stage, NEW commit (never `--amend`, never `--no-verify`). Re-run BOTH proactive checks before retrying. |
 | Uncertainty in "should I check with user?" sense | No. Safety comes from stopping on deviation, not on success. Continue. |
 
 **You may NOT escalate to Daniel directly.** If an escalation is needed, you
