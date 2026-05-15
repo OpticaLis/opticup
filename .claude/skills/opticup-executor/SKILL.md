@@ -469,6 +469,54 @@ shortcuts every future cleanup-with-verification SPEC.)
 - CREATE/ALTER TABLE, CREATE/ALTER/DROP POLICY, DISABLE RLS, GRANT/REVOKE
 - Always stops at Daniel. No exceptions.
 
+### Level 3a — DDL with destructive patterns (Rule 32 boundary; added 2026-05-14 from M1A_CURRENCIES_GLOBAL_HOTFIX Executor Proposal #2)
+
+When a SPEC's migration body contains ANY of: `DROP COLUMN`, `DROP POLICY`,
+`DROP TABLE`, `DROP CONSTRAINT`, `TRUNCATE`, `ALTER TABLE ... DROP`, or
+unscoped `DELETE FROM <table>` — Iron Rule 32 (Destructive Operations Gate)
+applies. The SPEC author chose ONE of two paths (see strategic skill Step 5.3
+DDL boundary scan); you follow that choice exactly:
+
+- **Path A — MCP-only apply (SPEC §10 names this path).** Steps:
+  1. Apply the migration body via Supabase MCP `apply_migration` against the
+     live DB (this is the Level-3 DDL execution authorized by the SPEC).
+  2. Preserve the migration SQL body in git as `<SPEC_FOLDER>/MIGRATION.md`
+     (UPPER_SNAKE_CASE `.md`). This file is doc-file-exempt per
+     `destructive-ops-declared.mjs` `isDocFile()` — the destructive-ops gate
+     accepts the SQL text inside an `.md` file.
+  3. Do NOT write to `supabase/migrations/*.sql`. The drift between live
+     schema and `supabase/migrations/` is intentional and authorized by the
+     SPEC's Path A choice.
+  4. Log a finding in `FINDINGS.md` linking to TD-2 (migrations git drift)
+     so the future TD-2 resolution SPEC sweeps the drift retroactively.
+  5. In `EXECUTION_REPORT.md`, record the migration's recorded entry from
+     Supabase `schema_migrations` (verify via MCP `list_migrations`).
+
+- **Path B — Daniel-bypass (SPEC §10 names this path).** Steps:
+  1. Write the migration body to `supabase/migrations/<timestamp>_<slug>.sql`
+     per project convention.
+  2. Pre-commit gate WILL fire — destructive-ops-declared.mjs blocks the
+     commit even though the SPEC declared the destructive op (the gate has
+     no concept of "this is OK because the SPEC said so"; it blocks all
+     destructive patterns on tracked files).
+  3. STOP, write an escalation file at
+     `modules/Module N/escalations/{ISO_TS}_destructive_op_supabase_migration.md`
+     citing the SPEC's §4 Destructive Operations authorization, and emit
+     ONE Hebrew line to Daniel summarizing the migration + asking for explicit
+     chat-line approval (never `--no-verify`).
+  4. After Daniel's approval, commit. The Foreman records the bypass in
+     `FOREMAN_REVIEW.md` as a logged Rule 32 event.
+
+**The SPEC dictates path; you do not deliberate.** If the SPEC §10 Commit Plan
+doesn't name a path (A or B), STOP and report to dispatcher — that's a SPEC
+authoring gap. Do not improvise the choice mid-execution.
+
+**Precedent (Path A, first instance):** `M1A_CURRENCIES_GLOBAL_HOTFIX`
+(2026-05-14) — DROP tenant_id + DROP id + DROP is_default + DROP 4 RLS
+policies + DROP pkey on `currencies` table, applied via MCP, preserved in
+`<spec-folder>/MIGRATION.md`, no `supabase/migrations/*.sql` write, TD-2
+finding logged.
+
 ## Verification After Changes
 
 After every file modification:
