@@ -298,6 +298,10 @@ pointer only.
 All three are tracked for remediation in `MASTER_ROADMAP.md` (Module 3 Phase B
 preamble checklist, pending Step 9 rewrite).
 
+### Discipline notes
+
+- **M1A operations RPCs (2026-05-15, `M1A_OPERATIONS_RPCS_FIX`):** the 10 M1 Phase 1A SECURITY DEFINER functions REVOKE EXECUTE from PUBLIC/anon; only `authenticated` retains EXECUTE for the 8 user-callable RPCs (`effective_price`, `m1_create_receipt_from_box`, `next_lot_number`, `next_receipt_number`, `next_transfer_number`, `record_adjustment_found`, `record_stock_movement`, `record_transfer`). `next_lens_variant_display_id` and `m9_lens_received_for_sale_order_trg_fn` are platform-admin/internal-trigger only (no `authenticated` GRANT). `next_lens_variant_display_id` has an in-body JWT-not-null guard (raises 42501). `v_suppliers_for_m9` has REVOKEd default anon/PUBLIC view grants (Iron Rule 13). `pending_lens_advancement_queue` has a UNIQUE on `stock_movement_id` + K3 trigger uses `ON CONFLICT (stock_movement_id) DO NOTHING` for idempotency under transaction retries. `supabase/config.toml` has an explicit `[functions.lens-catalog-import] verify_jwt = true` block.
+
 ---
 
 *End of GLOBAL_MAP.md. Detailed function-level contracts live in per-module

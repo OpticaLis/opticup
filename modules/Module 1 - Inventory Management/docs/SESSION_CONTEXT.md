@@ -1,7 +1,52 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1A_DEBT_SWEEP — 2026-05-15
+M1A_OPERATIONS_RPCS_FIX — 2026-05-15
+
+## 2026-05-15 — M1A_OPERATIONS_RPCS_FIX (🟢 closing — Full Auto Pipeline single chat, 6/6 smoke PASS)
+
+**Goal:** Close 8 post-Phase-1A operations-layer bugs surfaced by Strategic + Code reviews (B-01 lot double-add, B-02 ON CONFLICT inference, A-01 view anon grants, C-1/C-2/C-3 SECDEF EXECUTE creep, D-3 K3 idempotency, E-2 view ACL, F-1/F-2 lens-catalog-import config + gate) — all in one Pipeline before Phase 1B starts.
+
+**What shipped (12 commits, ~110 min wall-clock):**
+
+- **Original 8 fixes (8 commits):**
+  - `b0d44c1` (open SPEC + MIGRATION + ROLLBACK)
+  - `54ede72` (Fix #1+#2 — record_stock_movement double-add + ON CONFLICT WHERE)
+  - `279b12b` (Fix #4 — REVOKE/GRANT on 10 SECDEF fns)
+  - `0024dd3` (Fix #5 — next_lens_variant_display_id JWT guard)
+  - `18697f4` (Fix #3 — v_suppliers_for_m9 ACL)
+  - `8fe2a1a` (Fix #8 — K3 idempotency UNIQUE + ON CONFLICT DO NOTHING)
+  - `474cc6b` (Fix #7 — lens-catalog-import fail-closed gate, v1→v2)
+  - `7e52bb8` (Fix #6 — config.toml block)
+
+- **Mid-pipeline Amendments (2 commits, Foreman-authorized):**
+  - `826fc12` (Amendment #1 / Fix #9 — record_transfer 17→19 positional args after smoke Case 3 surfaced 42883)
+  - `60d4cd2` (Amendment #2 / Fix #10 — record_adjustment_found 20→19 positional args + position-11 self-ref alignment after smoke Case 5 surfaced 42883; Foreman granted broad pre-authorization for any further same-class defects — none surfaced)
+
+- **Smoke + close (2 commits):**
+  - `cc95157` test(m1): demo functional smoke — 6/6 PASS
+  - _(this commit)_ chore(spec): close — EXECUTION_REPORT + FINDINGS + GLOBAL_MAP + SESSION_CONTEXT + CHANGELOG
+
+**Pipeline stats:**
+- 7 MCP migrations applied to live Supabase (no `supabase/migrations/*.sql` per TD-2 precedent).
+- 1 EF (`lens-catalog-import`) redeployed v1→v2 via CLI fallback (MCP deploy 5xx — Pattern A5 pre-authorized).
+- 6 functional smoke cases on demo tenant (8d8cfa7e-…): record_stock_movement('receipt') + m1_create_receipt_from_box + record_transfer + next_lens_variant_display_id anon-reject (2 sub-cases) + record_adjustment_found + effective_price. All PASS.
+- 2 mid-pipeline escalations to Foreman (both critical pre-existing orchestrator defects); both resolved in-pipeline via Foreman amendments.
+- 0 Prizma data touched. 0 destructive ops. 0 main-branch modifications.
+- 25 success criteria (23 measurable PASS in executor scope + 2 deferred to Reviewer).
+- §7 Destructive Operations = `None.` per Iron Rule 32 — held throughout 12 commits.
+
+**Status:**
+- 🟢 Executor scope CLOSED. Awaiting Reviewer (re-verify §3 success criteria against live state) then Foreman post-execution review (FOREMAN_REVIEW.md + Hebrew status line to Daniel).
+- ✅ All 8 SPEC-enumerated fixes + 2 amendment fixes live.
+- ✅ Phase 1B unblocked — orchestrator chain (receipt + transfer + adjustment_found) runnable end-to-end on demo.
+- 🟡 Demo lens-catalog seed fixtures persist (F-3+F-8 — log as `M1A-DEBT-04`); Phase 1B can re-use.
+
+**Next:** Reviewer verification, then Foreman review + 1-line Hebrew status to Daniel.
+
+---
+
+## 2026-05-15 — M1A Debt Sweep (✅ CLOSED — Full Auto Pipeline single chat, 🟢 verdict)
 
 ## 2026-05-15 — M1A Debt Sweep (✅ CLOSED — Full Auto Pipeline single chat, 🟢 verdict)
 

@@ -2033,3 +2033,21 @@ CREATE INDEX IF NOT EXISTS idx_supdocs_doc_numbers ON supplier_documents USING G
 -- Phase 1A close commit: 285b5d6 (2026-05-14).
 -- Phase 1A integration commit (GLOBAL_* + docs merge): 0cf6123.
 -- ============================================================
+--
+-- 2026-05-15 M1A_OPERATIONS_RPCS_FIX (10 fixes via 7 MCP migrations on `tsxrrxzmdxaenlvocyit`):
+--   - record_stock_movement body: branch on movement_type for creation paths
+--     ('receipt','transfer_in','adjustment_found') — skip qty_remaining UPDATE.
+--     ON CONFLICT gains WHERE (is_deleted=false) predicate.
+--   - record_transfer body: 19 positional args to inner record_stock_movement (was 17 → 42883).
+--   - record_adjustment_found body: 19 positional args, v_lot_id at p_adjustment_id slot (was 20-arg misaligned → 42883).
+--   - next_lens_variant_display_id body: JWT-not-null + role!='anon' guard raising 42501.
+--   - m9_lens_received_for_sale_order_trg_fn body: appended ON CONFLICT (stock_movement_id) DO NOTHING.
+--   - new idempotency unique-index pending_lens_advancement_queue_stock_movement_unique
+--     on column stock_movement_id (FK to stock_movement.id which is already globally
+--     unique, so Iron Rule 18 tenant-scoping is satisfied transitively via the FK chain).
+--   - ACL: 10 Phase 1A SECDEF fns REVOKEd from PUBLIC/anon; 8 re-GRANTed to authenticated.
+--     next_lens_variant_display_id + m9_lens_received_for_sale_order_trg_fn fully REVOKEd.
+--   - View ACL: v_suppliers_for_m9 REVOKEd anon/PUBLIC; GRANT SELECT to authenticated + service_role.
+--   - lens-catalog-import EF v1→v2 (verify_jwt=true; fail-closed gate inverted from `if (callerAuth)` to `if (!callerAuth) return 401`).
+--   - supabase/config.toml: explicit [functions.lens-catalog-import] block.
+-- See modules/Module 1 - Inventory Management/docs/specs/M1A_OPERATIONS_RPCS_FIX/MIGRATION.md for full SQL bodies.

@@ -4,6 +4,45 @@
 
 ---
 
+## M1A_OPERATIONS_RPCS_FIX — 2026-05-15 (🟢 closing — 10 fixes, 6/6 smoke PASS)
+
+Phase 1A operations-layer bug-fix Pipeline. 8 originally-enumerated fixes (record_stock_movement double-add + ON CONFLICT, REVOKE/GRANT on 10 SECDEF fns, next_lens_variant_display_id JWT guard, v_suppliers_for_m9 anon ACL, K3 queue idempotency, lens-catalog-import config.toml + fail-closed gate) + 2 mid-pipeline Foreman amendments for pre-existing orchestrator runtime defects (record_transfer 17-arg, record_adjustment_found 20-arg-misaligned). All 6 functional smoke cases on demo PASS. Iron Rule 32 §7 = `None.` throughout.
+
+### Commits (M1A Operations RPCs Fix)
+- `b0d44c1` chore(spec): open M1A_OPERATIONS_RPCS_FIX — SPEC + MIGRATION + ROLLBACK
+- `54ede72` fix(m1,rpc): record_stock_movement — skip lot update on creation movements + ON CONFLICT WHERE predicate
+- `279b12b` fix(m1,sec): REVOKE EXECUTE on 10 Phase 1A SECDEF functions + selective re-GRANT to authenticated
+- `0024dd3` fix(m1,sec): next_lens_variant_display_id — JWT-not-null guard inside function body
+- `18697f4` fix(m1,sec): v_suppliers_for_m9 — REVOKE default anon/PUBLIC grants (Iron Rule 13)
+- `8fe2a1a` fix(m1,m9): pending_lens_advancement_queue idempotency — UNIQUE + K3 trigger ON CONFLICT DO NOTHING
+- `474cc6b` fix(ef,sec): lens-catalog-import — invert gate to fail-closed
+- `7e52bb8` chore(supabase): config.toml — add [functions.lens-catalog-import] verify_jwt=true block
+- `826fc12` fix(m1,rpc): record_transfer — pass 19 positional args (Amendment #1)
+- `60d4cd2` fix(m1,rpc): record_adjustment_found — correct 20-arg overflow + position-11 self-ref (Amendment #2)
+- `cc95157` test(m1): demo functional smoke — 6/6 PASS
+- _(this commit)_ chore(spec): close M1A_OPERATIONS_RPCS_FIX with EXECUTION_REPORT + FINDINGS + GLOBAL_MAP one-line note + SESSION_CONTEXT update
+
+### DB delta
+- 7 migrations via MCP (no `supabase/migrations/*.sql` per TD-2 + prior precedent):
+  `m1a_record_stock_movement_fix`, `m1a_revoke_execute_phase1a_secdef`,
+  `m1a_next_lens_variant_display_id_jwt_guard`, `m1a_v_suppliers_for_m9_revoke_anon`,
+  `m1a_k3_queue_idempotency`, `m1a_record_transfer_arg_mismatch_fix`,
+  `m1a_record_adjustment_found_arg_mismatch_fix`.
+- 1 new UNIQUE INDEX: `pending_lens_advancement_queue_stock_movement_unique`.
+- 4 functions with body changes (CREATE OR REPLACE): `record_stock_movement`, `next_lens_variant_display_id`, `m9_lens_received_for_sale_order_trg_fn`, `record_transfer`, `record_adjustment_found`.
+- 10 SECDEF functions REVOKEd EXECUTE FROM PUBLIC/anon, 8 re-GRANTed to authenticated.
+- 1 view (`v_suppliers_for_m9`) REVOKEd anon/PUBLIC ACL, GRANT SELECT to authenticated.
+- 1 EF (`lens-catalog-import`) redeployed v1→v2 with fail-closed gate.
+- 1 config block in `supabase/config.toml`.
+
+### Findings disposed
+- F-1, F-2 (CRITICAL) — RESOLVED IN-PIPELINE via Amendments.
+- F-3, F-8 — Log to TECH_DEBT.md as `M1A-DEBT-04 — Demo lens-catalog seed fixtures`.
+- F-4, F-6, F-7 — Dismissed.
+- F-5 — Executor-skill improvement proposal (EXECUTION_REPORT §9).
+
+---
+
 ## M1A_CURRENCIES_GLOBAL_HOTFIX — 2026-05-14 (✅ M1A-DEBT-01 closed)
 
 Phase 1A corrective hotfix — `public.currencies` converted from per-tenant to GLOBAL ISO-4217 reference table per Iron Rule 14 documented exception. New RLS pattern: read-anywhere + writes gated on `is_platform_super_admin()`. Seeded ILS / USD / EUR. Unblocks tenant-2 onboarding.
