@@ -1,6 +1,64 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
+M1_LENS_PHASE_2_COMPLETION — 2026-05-15→16 night (🟡 CLOSED WITH FOLLOW-UPS — Night Pipeline 8 commits, Parts B/C/D ✅, Part A Tier-3 deferred per design)
+
+## 2026-05-15→16 night — M1_LENS_PHASE_2_COMPLETION (🟡 CLOSED WITH FOLLOW-UPS — Night Pipeline, 4-agent chain + Sentinel + Foreman)
+
+**Goal:** Close M1 Lens department to production-complete in one autonomous night Pipeline with self-recovery rights. 4 Parts: (A) Module 1.5 generic goods-receipt refactor closing D-M1-09, (B) `record_adjustment_found` ↔ `record_adjustment_lost` RPC harmonization, (C) 31 partial FK indexes (Phase 1A H-1 closure + new FKs from M1B0/Phase-1B/GAP_CLOSURE), (D) wire 7 lens screens into ERP main menu.
+
+**What shipped (8 commits, ~1h 06m wall-clock):**
+
+- `a1c74a3` Stage 1 — opticup-strategic sealed SPEC + MIGRATION scaffold with §0.C Part A decision gate (`A2-full / A2-narrow / A2-defer` thresholds) + §0.A 10-probe empirical pre-flight + §0.D Part C M1-Lens FK inventory (31 cols pre-counted from live advisor)
+- `e8b3b23` Stage 2 Part A — A2-defer (Tier 3) per SPEC §0.C decision rule. Empirical analysis of 8 lens-receipt files (632 lines) + 5 frames-receipt files (~1,400 lines) found **0 truly shareable lines**. Two flows share verbal descriptions but data models, UX paradigms, server-side architectures are completely different. FINDINGS F-1 (HIGH) queued NEW_SPEC `M1_LENS_GR_D_M1_09_REFRAMING` for Architect.
+- `93c1b91` Stage 3 Part B — `record_adjustment_found` redefined as twin of `_lost`: new 10-arg signature, JWT Block A canonical, reason_id FK with direction=+1, INSERT into stock_adjustment audit (was missing), returns adjustment_id (was movement_id), REVOKE anon GRANT authenticated. Breaking-FREE (0 JS callers). Demo smoke PASS; Prizma untouched (0/4/0/0).
+- `dd4415c` Stage 4 Part C — 31 partial FK indexes via single migration (`idx_<table>_<col>` lowercase + `WHERE col IS NOT NULL`). Post-state probe = 0 unindexed in M1 Lens scope. 14 tables covered.
+- `e92fe64` Stage 5 Part D — new `shared/js/lens-nav-strip.js` widget (122 lines, single LENS_PAGES source of truth, permission-gated render, auto-init) + 1 "מחלקת עדשות" card in `index.html` (gated by `lens.inventory.view`) + 7 lens HTML edits (6 staff pages had inline `<nav id="mainNav">` placeholders replaced with widget container; lens-catalog-admin got container + script tag). **0 new permission keys needed** — all 8 lens.* keys already seeded since Phase 1B FOUNDATION.
+- `e2ef281` Stage 6 — opticup-reviewer REVIEW.md 🟢 PASS. 7/7 Foreman-priority spot-checks verified live; 2 LOW findings logged; 0 CRITICAL/HIGH.
+- `538157e` Stage 7 — opticup-localhost-tester TEST_REPORT.md 🟢 GREEN. npm smoke 7/7 PASS; all 7 lens pages HTTP 200 + render with 0 JS console errors via Chrome MCP; 8 screenshots saved to `_archive/night-pipeline-2026-05-15/screenshots/`. Widget container + home link verified rendering on each page.
+- `62addff` Stage 8 — opticup-sentinel SENTINEL_AUDIT.md 🟢 ALL CLEAR. Missions 1+8+10: 0 NEW alerts of any severity. Pipeline strictly within M1 + Module 1.5 + root HTML allowlist; main untouched (`966eb5bc...` unchanged).
+- _(this commit)_ Stage 9 — opticup-strategic FOREMAN_REVIEW.md 🟡 CLOSED WITH FOLLOW-UPS + morning summary at `_archive/night-pipeline-2026-05-15/MORNING_SUMMARY_FOR_DANIEL.md`.
+
+**Pipeline stats:**
+
+- 8 commits, all single-concern, all on develop.
+- 0 escalations to Daniel or Foreman mid-Pipeline. Every in-flight decision (D-FOREMAN-1 CREATE-OR-REPLACE mechanism, B-3 fixture correction for global-catalog lens_variant, catalog-admin auth asymmetry handling) diagnosed and worked around in real-time per Bounded Autonomy + Expanded Recovery.
+- Iron Rule 31 + 32 gates: exit 0 on every Pipeline commit.
+- 5/5 smoke baseline runs PASS (pre-pipeline + post-each-of-A/B/C/D + Stage 7 re-run).
+- 0 NEW Sentinel alerts.
+- 32 success criteria: G1-G10 ✅ × 10, A1-A8 (3 deferred per Tier 3 + 5 met or N/A), B1-B8 ✅ × 8, C1-C5 ✅ × 5, D1-D6 ✅ × 6 = 27/32 met + 5 deferred.
+- **First Pipeline to exercise Tier 3 deferral cleanly** — empirical evidence comprehensive, no escalation, Parts B/C/D shipped on clean base. Bounded Autonomy + Expanded Recovery model validated at highest-uncertainty Part scope.
+- **Decision-gate pattern (Part A §0.C) proven across 3 Pipelines** (M1B0 RPC-shape, SECURITY_HOTFIX_2 view-flip, this) — formalization queued as P-AUTHOR-2 NEW for next skill harvest.
+- 4 new skill-improvement proposals: 2 author (CREATE OR REPLACE FUNCTION semantics + decision-gate pattern formalization) + 2 executor (global catalog table check + parenthetical-intent autonomy). All at counter 1/3.
+
+**Schema/code delta:**
+
+- 1 RPC redefined: `record_adjustment_found` (old 9-arg DROPPED + new 10-arg CREATEd via MCP `apply_migration`).
+- 31 new partial FK indexes on 14 M1 Lens tables.
+- 1 new file: `shared/js/lens-nav-strip.js` (122 lines).
+- 8 HTML edits: 1 `index.html` (MODULES +1) + 6 staff lens pages (nav replacement + script tag) + 1 catalog-admin (nav container + script tag).
+- 0 new tables / 0 new permissions / 0 new T-constants / 0 new FIELD_MAP entries / 0 new Edge Function deploys / 0 supabase/migrations/*.sql files (per TD-2 precedent — MCP only).
+
+**Findings disposition (5 total — FOREMAN_REVIEW §5):**
+
+- F-1 HIGH — NEW_SPEC `M1_LENS_GR_D_M1_09_REFRAMING` queued for opticup-architect (Cowork). Daniel decision needed in morning: close D-M1-09 as RESOLVED-reframed OR re-author as UX-consistency mandate.
+- F-2 LOW + L-REV-1 LOW → 2 TECH_DEBT entries for Architect to register.
+- L-REV-2 LOW → next Architect Pending Entries Sweep.
+- F-3 / F-4 / I-REV-1 INFO → all dismissed in-review with documentation.
+
+**Status:**
+
+- 🟡 **CLOSED WITH FOLLOW-UPS.** All 4 Pipeline stages closed (executor + reviewer + localhost-tester + sentinel + foreman). Tag `post-night-pipeline-2026-05-16` placed at FOREMAN_REVIEW commit.
+- ✅ M1 Lens department PRODUCTION-COMPLETE for staff use: 7 screens accessible from main menu with permission gating; harmonized RPC audit trail; 31 supporting indexes for query performance.
+- 🟡 Part A deferred per design (Tier 3 mechanism worked exactly as Brief authored); D-M1-09 reframing recommendation comprehensive in FINDINGS F-1.
+- 🟡 Smoke artifacts persist on demo (M1A-DEBT-04 lineage extended): 2 stock_adjustment + 2 stock_lot + 2 stock_movement rows. Expected per Brief's B-3 smoke design.
+- ⏳ Awaiting Daniel's morning review of MORNING_SUMMARY_FOR_DANIEL.md + D-M1-09 reframing decision (15 min Cowork chat).
+
+**Next:** Daniel reads morning summary → opticup-architect (Cowork) processes D-M1-09 reframing decision → next M1 maintenance Pipeline can bundle F-2 + L-REV-1 cleanups. M7 (Orders) and M9 (Lab/KDS) builds remain unblocked (Phase 1B + Phase 2 production-complete).
+
+---
+
+## Previous Last Updated
 M1_LENS_PHASE_1B_GAP_CLOSURE — 2026-05-15 evening (🟢 executor scope, 9 commits, 14/14 SCs PASS — awaiting Reviewer + Localhost-Tester + Foreman)
 
 ## 2026-05-15 evening — M1_LENS_PHASE_1B_GAP_CLOSURE (🟢 executor scope — Full Auto Pipeline single chat)
