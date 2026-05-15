@@ -16,6 +16,8 @@
     receiptLines: [],    // user-confirmed receive amounts; mirrors expectedLines plus manual additions
     manualLines: [],     // user-added lines not on any PO; { _key, source:'stock', variant_id|null, sph, cyl, add_value, qty_received, unit_cost, currency_code, _is_manual:true }
     deepLinkVariantId: null,  // populated by pre-fill from ?variant_id
+    locations: [],            // tenant_location rows for current tenant
+    defaultLocationId: null,  // first tenant_location id; required by m1_create_receipt_from_box
   };
 
   async function gateOrRedirect() {
@@ -84,16 +86,30 @@
     if (cancelBtn) cancelBtn.addEventListener('click', function () { window.location.href = 'index.html'; });
   }
 
+  async function loadDefaultLocation() {
+    const tid = getTenantId();
+    if (!tid) return;
+    // tenant_location is required by m1_create_receipt_from_box (stock_lot.location_id NOT NULL).
+    // Day-1: pick the first row as default; Phase 2 adds per-line location selection.
+    const rows = await fetchAll('tenant_location', { filter: { tenant_id: tid }, order: { column: 'id', ascending: true } });
+    window.LensGR.locations = rows || [];
+    if (rows && rows.length > 0) window.LensGR.defaultLocationId = rows[0].id;
+    if (!window.LensGR.defaultLocationId && window.Toast) {
+      Toast.error('אין מיקום מלאי מוגדר לטננט - לא ניתן לסגור קבלה. צור tenant_location לפני המשך.');
+    }
+  }
+
   async function bootstrap() {
     const ok = await gateOrRedirect();
     if (!ok) return;
     try {
       bindHeaderInputs();
+      await loadDefaultLocation();
       await window.LensGRSupplier.loadSuppliers();
       window.LensGRPreFill.applyDeepLinkIfPresent();
       window.LensGRShippingBox.bind();
       recomputeSummary();
-      console.log('[lens-goods-receipt] bootstrap complete');
+      console.log('[lens-goods-receipt] bootstrap complete (default_location_id=' + window.LensGR.defaultLocationId + ')');
     } catch (err) {
       console.error('[lens-goods-receipt] bootstrap failed', err);
       if (window.Toast) Toast.error('שגיאה בטעינת המסך: ' + (err.message || err));

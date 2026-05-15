@@ -24,22 +24,39 @@
     // Build JSONB shape expected by m1_create_receipt_from_box (p_lines).
     // Each line includes: po_line_id (null for manual), variant_id, sph/cyl/add_value,
     // qty_received, unit_cost, currency, sale_order_id, is_manual_addition, manual_description.
-    const linesJson = allLines.map(function (l) {
-      return {
-        po_line_id: l.po_line_id || null,
-        variant_id: l.variant_id || null,
-        sale_order_id: l.sale_order_id || null,
-        sph: l.sph,
-        cyl: l.cyl,
-        add_value: l.add_value,
-        qty_received: parseInt(l.qty_received, 10) || 0,
-        ordered_qty: parseInt(l.qty_expected, 10) || null,
-        unit_cost: parseFloat(l.unit_cost) || 0,
-        unit_cost_currency: l.currency_code || 'ILS',
-        is_manual_addition: !!l._is_manual,
-        manual_description: l.manual_description || null,
-      };
-    });
+    const defaultLoc = window.LensGR.defaultLocationId;
+    if (!defaultLoc) {
+      if (window.Toast) Toast.error('אין מיקום מלאי מוגדר - לא ניתן לסגור קבלה');
+      return;
+    }
+    // K2 RPC m1_create_receipt_from_box reads location_id PER LINE and INSERTs into stock_lot
+    // (NOT NULL). Day-1: every line uses defaultLocationId; Phase 2 adds per-line picker.
+    // Also note: variant-less manual lines (variant_id=NULL, is_manual_addition=true) are
+    // REJECTED by K2 because stock_lot.variant_id is NOT NULL. Until K2 is enhanced (FINDINGS
+    // F-2 HIGH), every line MUST have a variant_id. Filter them out client-side as a guard.
+    const linesJson = allLines
+      .filter(function (l) { if (l._is_manual && !l.variant_id) { console.warn('[lens-gr-close] dropping variant-less manual line (K2 limitation; see FINDINGS F-2)'); return false; } return true; })
+      .map(function (l) {
+        return {
+          po_line_id: l.po_line_id || null,
+          variant_id: l.variant_id || null,
+          location_id: defaultLoc,
+          sale_order_id: l.sale_order_id || null,
+          sph: l.sph,
+          cyl: l.cyl,
+          add_value: l.add_value,
+          qty_received: parseInt(l.qty_received, 10) || 0,
+          ordered_qty: parseInt(l.qty_expected, 10) || null,
+          unit_cost: parseFloat(l.unit_cost) || 0,
+          unit_cost_currency: l.currency_code || 'ILS',
+          is_manual_addition: !!l._is_manual,
+          manual_description: l.manual_description || null,
+        };
+      });
+    if (linesJson.length === 0) {
+      if (window.Toast) Toast.error('כל השורות נדחו (אין שורה תקפה לסגירה)');
+      return;
+    }
 
     const me = getCurrentEmployee();
     const buttons = document.querySelectorAll('#btn-close-receipt, #btn-close-receipt-2');
@@ -57,9 +74,9 @@
         p_confirmed_by: me ? me.id : null,
       });
       if (error) throw error;
-      const receipt = Array.isArray(data) ? data[0] : data;
-      const receiptId = receipt && (receipt.purchase_receipt_id || receipt.id);
-      if (window.Toast) Toast.success('קבלה נוצרה בהצלחה (' + (receiptId ? receiptId.slice(0, 8) : 'OK') + '). מלאי + חוב עודכנו.');
+      // K2 returns a UUID directly (RETURNS uuid, not a row).
+      const receiptId = typeof data === 'string' ? data : (data && (data.purchase_receipt_id || data.id));
+      if (window.Toast) Toast.success('קבלה נוצרה בהצלחה (' + (receiptId ? String(receiptId).slice(0, 8) : 'OK') + '). מלאי + חוב עודכנו.');
       const badge = document.getElementById('gr-status-badge');
       if (badge) badge.textContent = 'נסגר ✓';
       if (typeof writeLog === 'function') writeLog('lens.gr.created', null, { receipt_id: receiptId, line_count: allLines.length, manual_count: manualLines.length, supplier_id: supplierId });

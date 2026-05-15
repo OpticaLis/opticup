@@ -41,11 +41,17 @@
         p_created_by: me ? me.id : null,
       });
       if (error) throw error;
-      // RPC returns the new PO row (id, po_number, status). Shape may be {id, po_number, status} or array.
-      const po = Array.isArray(data) ? data[0] : data;
-      window.LensPO.poId = po && (po.id || po.po_id);
-      window.LensPO.poNumber = po && (po.po_number || null);
-      window.LensPO.poStatus = po && (po.status || 'draft');
+      // place_purchase_order RETURNS uuid directly (not a row). Fetch the new PO header to
+      // populate po_number + status for the UI badge.
+      window.LensPO.poId = typeof data === 'string' ? data : (data && (data.id || data.po_id));
+      window.LensPO.poStatus = 'draft';
+      window.LensPO.poNumber = null;
+      if (window.LensPO.poId) {
+        try {
+          const { data: row } = await sb.from('purchase_order').select('po_number, status').eq('tenant_id', tid).eq('id', window.LensPO.poId).maybeSingle();
+          if (row) { window.LensPO.poNumber = row.po_number; window.LensPO.poStatus = row.status; }
+        } catch (e) { console.warn('[lens-po-create] header lookup failed', e); }
+      }
       const badge = document.getElementById('po-status-badge');
       if (badge) badge.textContent = (window.LensPO.poStatus || 'draft') + ' · ' + (window.LensPO.poNumber || '');
       const sentBtn = document.getElementById('btn-mark-sent');

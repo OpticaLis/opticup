@@ -133,10 +133,22 @@
       const err = overlay.querySelector('#adjust-error');
       if (qty <= 0 || qty > max) { err.textContent = 'כמות חייבת להיות בין 1 ל-' + max; err.style.display = 'block'; return; }
       if (!reason) { err.textContent = 'סיבת ההתאמה היא שדה חובה'; err.style.display = 'block'; return; }
+      // FINDINGS F-3 HIGH (M1B0/M1A gap): record_stock_movement has check constraint
+      // stock_movement_exactly_one_source which requires adjustment_id NOT NULL for
+      // movement_type='adjustment_lost'. There is NO record_adjustment_lost RPC and NO
+      // stock_adjustment table to insert into first. Surfacing as a Phase 2 gate so the
+      // user gets a clear message instead of a cryptic 23514 from the DB.
+      err.textContent = 'התאמת מלאי שלילית טרם מומשה במלואה (תלוי ב-record_adjustment_lost RPC + stock_adjustment table - Phase 2). Iron Rule 1 + Iron Rule 21 - לא לעקוף ע"י INSERT ישיר. ראה FINDINGS F-3 ב-M1_LENS_PHASE_1B_PROCUREMENT/FINDINGS.md.';
+      err.style.display = 'block';
+      // Block the call. Audit-log the attempt for visibility.
+      if (typeof writeLog === 'function') {
+        writeLog('lens.inventory.adjust_blocked_phase2', null, { variant_id: variantId, lot_id: lot.id, qty: qty, reason: reason, blocker: 'F-3' });
+      }
+      return;
+      // The original RPC call is preserved below as commented-out reference for the Phase 2
+      // SPEC that builds record_adjustment_lost. DO NOT uncomment without that RPC shipping.
       try {
         const tid = getTenantId();
-        // Iron Rule 1: atomic record_stock_movement RPC with negative qty_delta.
-        // Iron Rule 22: tenant_id passed explicitly.
         const { error } = await sb.rpc('record_stock_movement', {
           p_tenant_id: tid,
           p_source_lot_id: lot.id,
