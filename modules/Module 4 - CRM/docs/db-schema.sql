@@ -398,3 +398,59 @@ CREATE INDEX IF NOT EXISTS idx_crm_message_log_ack
 --   modules/crm/crm-failed-messages-modal.js — bulk modal
 --   modules/crm/crm-leads-tab.js — per-lead × on the ⚠️ badge
 --   modules/crm/crm-leads-detail-messages.js — "מטופל" tag in history view
+
+-- =============================================================================
+-- M4_FB_CAPI_HYBRID_DEDUPLICATION (Phase 2 P2.1, 2026-05-15)
+-- =============================================================================
+-- ERP-side substrate for hybrid Facebook Pixel + Conversions API (CAPI)
+-- Lead-event deduplication. Storefront handoff (UUID gen + thank-you-page
+-- pixel eventID) deferred to opticup-storefront follow-up SPEC
+-- M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF. Token storage: per D-AUTH-1,
+-- token lives at storefront_config.analytics->>'fb_capi_token' JSONB key
+-- (NOT tenants.fb_capi_token column — column does not exist in live DB).
+-- See modules/Module 4 - CRM/docs/specs/M4_FB_CAPI_HYBRID_DEDUPLICATION/.
+
+-- 2 new nullable columns on crm_leads:
+ALTER TABLE public.crm_leads
+  ADD COLUMN IF NOT EXISTS fb_event_id       uuid        NULL,
+  ADD COLUMN IF NOT EXISTS fb_pixel_fired_at timestamptz NULL;
+-- fb_event_id: shared Facebook event_id for browser-CAPI deduplication.
+--   NULL until storefront SPEC ships UUID generation + hidden form field.
+--   lead-intake EF accepts this as optional body field from 2026-05-15 (v26).
+-- fb_pixel_fired_at: when the storefront thank-you-page pixel fires.
+--   Populated by storefront SPEC (M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF).
+--   NULL until then — used by P2.2 pixel-validation-gap dashboard.
+
+-- New table crm_capi_dispatch_queue (applied via Supabase MCP apply_migration):
+-- Columns: id uuid PK, tenant_id uuid NOT NULL FK(tenants), lead_id uuid NOT NULL FK(crm_leads),
+--   event_id uuid NULL (shared FB event_id; NULL until storefront SPEC ships),
+--   event_name text NOT NULL DEFAULT 'Lead', event_payload jsonb NULL,
+--   status text NOT NULL DEFAULT 'queued' (CHECK: queued|sent|failed|skipped_no_token|no_match|permanent_error),
+--   retries int NOT NULL DEFAULT 0, error_message text NULL, meta_response jsonb NULL,
+--   created_at/scheduled_at timestamptz NOT NULL DEFAULT now(), processed_at timestamptz NULL.
+-- Iron Rule 18: tenant-scoped uniqueness constraint on (lead_id, tenant_id) — prevents double-dispatch.
+-- Iron Rule 15: two RLS policies applied — service_bypass (service_role, USING true) +
+--   tenant_isolation (public, USING tenant_id = JWT-claim uuid) — verified byte-identical to
+--   crm_message_queue template via pg_policies post-migration probe.
+-- 2 partial indices: idx_capi_queue_queued_sched (tenant_id, scheduled_at WHERE status='queued');
+--   idx_capi_queue_failed_retry (tenant_id, retries WHERE status='failed' AND retries < 3).
+
+-- pg_cron consumer:
+--   jobname: fb_capi_dispatch_consumer
+--   schedule: '* * * * *' (every minute)
+--   active: true
+--   Pattern: net.http_post to fb-capi-dispatch EF with dispatch_mode='cron'.
+--   Claims up to 20 rows WHERE status IN ('queued','failed') AND retries < 3
+--   via FOR UPDATE SKIP LOCKED LIMIT 20 (D-AUTH-6 idempotency).
+
+-- Edge Function fb-capi-dispatch:
+--   slug: fb-capi-dispatch
+--   verify_jwt: false (Origin-allowlisted in EF source)
+--   Advanced matching: em = sha256(lowercase(trim(email))) hex,
+--                      ph = sha256(E.164(phone)) hex (prefix +972 for 0xx).
+--   Token gate: reads storefront_config.analytics->>'fb_capi_token'.
+--   No token → status='skipped_no_token' (D-AUTH-3 demo no-op behavior).
+--   No email AND no phone → status='no_match'.
+--   Successful dispatch → status='sent' + meta_response logged.
+--   Retry: failed rows with retries < 3 re-claimed on next cron tick.
+--   permanent_error: non-retryable HTTP errors from Meta API.

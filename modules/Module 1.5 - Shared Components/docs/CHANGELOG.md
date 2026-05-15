@@ -1,5 +1,37 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-15 evening — PENDING_ENTRIES_AUTO_RESOLUTION — 3-layer pending-entries infrastructure
+
+SPEC: `PENDING_ENTRIES_AUTO_RESOLUTION` ([folder](specs/PENDING_ENTRIES_AUTO_RESOLUTION/))
+
+**Process-infrastructure SPEC.** Turns the Cowork → Claude Code pending-entries hand-off (`_archive/architect-pending-entries/*.md`) from a culture rule into mechanical infrastructure per Daniel directive #11 (2026-05-09): "I want infrastructure, not culture. Culture decays." Mirrors the STRUCTURE_PROTECTIONS pattern — 3 layers, each catching what the previous one missed.
+
+**6 commits in chain:**
+
+- `1a22974` — `spec(infra): author PENDING_ENTRIES_AUTO_RESOLUTION SPEC.md (Foreman)` — Foreman authors SPEC.md (458 lines) with 17 measurable success criteria + Iron Rule 32 destructive-op declaration + §10 6-commit plan. Pre-tag `pre-pending-entries-resolution-start` placed BEFORE.
+- `e51cef8` — `feat(infra): add architect-pending-applied advisory check (Layer 2)` — new `scripts/checks/architect-pending-applied.mjs` (56 lines), advisory-only (exit 2 yellow warning when folder non-empty AND no other violations). Auto-loaded by `verify.mjs`; no `verify.mjs` edit needed.
+- `e4a679e` — `docs(skill): add Pending Entries Sweep to opticup-executor SKILL.md (Layer 1)` — new "Step 4.5 — Pending Entries Sweep" section between SPEC Execution Protocol Steps 4 and 5. opticup-executor SKILL.md 1196 → 1234 lines (+38).
+- `2fe2070` — `docs(skill): add Cowork File-Write Capability Map to opticup-architect SKILL.md (D5)` — new sub-section in "Cowork vs Claude Code" with capability matrix (5 surfaces × 4 path namespaces) + 4 rules-of-thumb for Cowork Architect sessions. opticup-architect SKILL.md 1066 → 1089 lines (+23).
+- `28c3c08` — `docs(sentinel): extend Mission 10 with pending-entries audit Check 10.6 (Layer 3)` — new Check 10.6 with portable Bash probe (GNU `stat -c %Y` + BSD `stat -f %m` fallback) + GUARDIAN_REPORT.md output templates for MEDIUM + HIGH findings. Mission 10 file 162 → 213 lines (+52).
+- `a25de76` — `chore(decisions): apply pending entry #32 + delete pending file (Brief §3.1)` — DECISIONS_LOG.md row #32 inserted above row #28 (verbatim per pending file's placement instructions); pending file `2026-05-15_STOREFRONT_PUBLIC_DATA_LAYER.md` removed from disk (was untracked — no `git rm`); `.gitkeep` added so folder + Sentinel 10.6 have a stable path. **Iron Rule 32 destructive op #1 of 1** declared in SPEC §7.
+
+**Verification:**
+- 17/17 SPEC §3 success criteria GREEN (smoke 7/7 + integrity gate confirmed by Localhost-Tester chain).
+- Iron Rule 31 exit 0 at every commit boundary (152 files scanned in 5–6 ms each).
+- Iron Rule 32 hook passed every commit (no `--no-verify`).
+- Layer 2 contract validated end-to-end: verify.mjs exit 2 with warning at C1–C4 (folder still had 1 pending file), exit 0 at C5 (folder empty).
+- Working tree scope-clean at close.
+
+**4 in-flight decisions (Bounded Autonomy):** D1 copy pending file's "merged to main" wording VERBATIM per placement instructions (logged as F-1, Foreman post-decides); D2 use `rm` not `git rm` for untracked file; D3 no SPEC.md re-stage needed (untracked file = no staged-delete = auth-parser not invoked; logged as F-2 tooling-gap); D4 leave pre-existing untracked files alone (Full-Auto Pipeline pattern, 6+ consecutive SPECs).
+
+**4 STOREFRONT_PUBLIC_DATA_LAYER queued skill improvements NOT applied:** P-AUTHOR-1 view-fan-out probe, P-AUTHOR-2 §1.5 Pre-flight findings standard section, P-EXEC-1 trigger E2E SQL convention, P-EXEC-2 base-table RLS probe gate. All 4 target SQL/Pattern-A/view-cascade work — orthogonal to this SPEC's process-infrastructure scope. Queue intact for next SQL-heavy SPEC.
+
+**2 findings (both LOW), 2 executor proposals queued:** F-1 content-fidelity ("merged to main" aspirational wording in pending file's row #32); F-2 Iron Rule 32 auth-parser STAGED-only gap (will fire for future Full-Auto SPECs with tracked deletes). Executor Proposal 1 — tracked-vs-untracked guidance in Sweep protocol; Executor Proposal 2 — auth-parser HEAD-scan note in SKILL.md or follow-up SPEC `M1_5_DESTRUCTIVE_OPS_AUTH_PARSER_HEAD_SCAN`.
+
+**Strategic state:** Pending-entries hand-off is now infrastructure. Next Cowork Architect session that needs to write to `.claude/skills/...` writes a pending file → next Claude Code session's Sweep protocol consumes it → Layer 2 + Layer 3 catch any miss. The 2026-05-15 failure mode (pending file sitting unconsumed across multiple Cowork sessions) is structurally resolved.
+
+---
+
 ## 2026-05-15 evening — STOREFRONT_PUBLIC_DATA_LAYER — Pattern A mirror architecture (replaces SECURITY_HOTFIX_4)
 
 SPEC: `STOREFRONT_PUBLIC_DATA_LAYER_2026_05_15` ([folder](specs/STOREFRONT_PUBLIC_DATA_LAYER_2026_05_15/))

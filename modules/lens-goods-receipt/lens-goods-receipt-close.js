@@ -31,11 +31,10 @@
     }
     // K2 RPC m1_create_receipt_from_box reads location_id PER LINE and INSERTs into stock_lot
     // (NOT NULL). Day-1: every line uses defaultLocationId; Phase 2 adds per-line picker.
-    // Also note: variant-less manual lines (variant_id=NULL, is_manual_addition=true) are
-    // REJECTED by K2 because stock_lot.variant_id is NOT NULL. Until K2 is enhanced (FINDINGS
-    // F-2 HIGH), every line MUST have a variant_id. Filter them out client-side as a guard.
+    // Variant-less manual lines (is_manual_addition=true AND variant_id=NULL) are now
+    // accepted by K2 (M1_LENS_PHASE_1B_GAP_CLOSURE F-2): K2 inserts receipt_line only,
+    // skipping stock_lot/movement/TLS; cost still flows into supplier_debt.
     const linesJson = allLines
-      .filter(function (l) { if (l._is_manual && !l.variant_id) { console.warn('[lens-gr-close] dropping variant-less manual line (K2 limitation; see FINDINGS F-2)'); return false; } return true; })
       .map(function (l) {
         return {
           po_line_id: l.po_line_id || null,

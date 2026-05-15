@@ -158,9 +158,9 @@ On 2026-05-14, three wrong diagnoses in a row about event #24's funnel drop reve
 
 | # | SPEC | Layer | Estimated | Status |
 |---|---|---|---|---|
-| P2.1 | M4_FB_CAPI_HYBRID_DEDUPLICATION | 9 | 6-8 hrs | PLANNED (HIGH PRIORITY) |
-| P2.2 | M3_PIXEL_VALIDATION_GAP_REPORTING | 9 | 2-3 hrs | PLANNED |
-| P2.3 | M4_TEMPLATE_VALIDATION_UNIFIED | 6 | 2-3 hrs | PLANNED |
+| P2.1 | M4_FB_CAPI_HYBRID_DEDUPLICATION | 9 | 6-8 hrs | ✅ CLOSED 2026-05-15 — commit range `51bc874..` — ERP-side CAPI substrate shipped. `fb-capi-dispatch` EF + `crm_capi_dispatch_queue` table + pg_cron consumer + `lead-intake` v26. Advanced matching (em+ph). Storefront dedup handoff deferred to `M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF`. Make scenario 8542928 retired. Demo runs `skipped_no_token` (D-AUTH-3). See `docs/FB_CAPI.md`. |
+| P2.2 | M3_PIXEL_VALIDATION_GAP_REPORTING | 9 | 2-3 hrs | PLANNED — substrate ready (crm_leads.fb_pixel_fired_at + crm_capi_dispatch_queue.status); dashboard query ships after storefront SPEC populates fb_pixel_fired_at |
+| P2.3 | M4_TEMPLATE_VALIDATION_UNIFIED | 6 | 2-3 hrs | ✅ CLOSED 2026-05-14 |
 
 ---
 

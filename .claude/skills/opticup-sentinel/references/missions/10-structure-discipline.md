@@ -118,6 +118,58 @@ Read `.claude/skills/opticup-architect/references/DECISIONS_LOG.md`. Find:
 
 For every sealed-Brief module that has NO recorded close ceremony, log a finding (severity LOW — reminder, not violation). The bootstrap auto-check (Step 4.5 in `opticup-architect` SKILL) also catches this; this mission provides redundancy.
 
+### Check 10.6 — Architect pending-entries backlog
+
+Added 2026-05-15 by `PENDING_ENTRIES_AUTO_RESOLUTION` SPEC (Brief §6 D3). Layer 3 of the 3-layer enforcement (executor protocol Step 4.5 + pre-commit advisory check `scripts/checks/architect-pending-applied.mjs` + this Sentinel check).
+
+**What it audits.** Count of unconsumed `.md` files in `_archive/architect-pending-entries/` and the age of the oldest one. Each unconsumed file represents a Cowork Architect session's intended write to `.claude/skills/` that no Claude Code session has yet applied. A healthy state is **0 files** (or 1 file recently written, expected to be consumed by the next Claude Code session). Drift = files older than 48 h, or multiple files of any age.
+
+**Probe.**
+
+```bash
+folder=_archive/architect-pending-entries
+count=$(ls "$folder"/*.md 2>/dev/null | grep -v '\.gitkeep$' | wc -l)
+oldest_age_h=0
+if [ "$count" -gt 0 ]; then
+  oldest=$(ls -t "$folder"/*.md 2>/dev/null | grep -v '\.gitkeep$' | tail -1)
+  oldest_mtime=$(stat -c %Y "$oldest" 2>/dev/null || stat -f %m "$oldest")
+  now=$(date +%s)
+  oldest_age_h=$(( (now - oldest_mtime) / 3600 ))
+fi
+echo "pending_count=$count oldest_age_h=$oldest_age_h"
+```
+
+**Thresholds (Brief D3 — locked).**
+
+- `count = 0` → **PASS**, no finding.
+- `count = 1 AND oldest_age_h ≤ 48` → **PASS**, normal Cowork → Claude Code hand-off window.
+- `count = 1 AND oldest_age_h > 48` → finding severity **MEDIUM**: a pending entry has been sitting > 48 h. A Claude Code session ended without running Step 4.5 sweep. Soft failure — the next opticup-strategic or opticup-executor session will sweep, but worth flagging.
+- `count ≥ 2` → finding severity **HIGH**: the sweep itself is broken or being ignored across multiple sessions. Hard failure — needs investigation.
+
+**Why these thresholds.** Single recent file = expected within the Cowork-to-Claude-Code hand-off model. Single stale file = a session ended without sweep; recoverable but worth a reminder. Multiple files = a systemic gap (executor SKILL.md Step 4.5 not being followed, or the lock-vs-write contract is broken). Three layers (prevention via Layer 1 protocol + detection via Layer 2 pre-commit + reminder via this check) mirror the STRUCTURE_PROTECTIONS pattern (CLAUDE.md §0.5 enforcement).
+
+**Output to `GUARDIAN_REPORT.md`.** Under "Mission 10: Structure Discipline":
+
+```markdown
+### Finding: [10-F-MEDIUM] Pending architect entry stale (>48 h)
+- **Severity:** MEDIUM
+- **Rule:** Pending-Entries Auto-Resolution (PENDING_ENTRIES_AUTO_RESOLUTION SPEC, 2026-05-15)
+- **Location:** _archive/architect-pending-entries/<filename>.md
+- **What's wrong:** Pending entry sitting <N> hours old without being applied. The Layer 1 sweep (opticup-executor SKILL.md Step 4.5) was skipped at the last SPEC closure.
+- **Suggested action:** Next opticup-strategic or opticup-executor session: run the sweep, apply the entry, delete the pending file.
+
+### Finding: [10-F-HIGH] Multiple pending architect entries
+- **Severity:** HIGH
+- **Rule:** Pending-Entries Auto-Resolution (Brief §6 D3)
+- **Location:** _archive/architect-pending-entries/
+- **What's wrong:** <N> unconsumed pending files. The Layer 1 sweep is being skipped systematically.
+- **Suggested action:** Surface to Daniel immediately. Audit recent SPEC closures for sweep compliance.
+```
+
+If a Mission 10.6 finding fires → also append to `GUARDIAN_ALERTS.md` under the matching severity section.
+
+**Cross-reference.** Source SPEC: `modules/Module 1.5 - Shared Components/docs/specs/PENDING_ENTRIES_AUTO_RESOLUTION/`. Source Brief: `modules/Module 1.5 - Shared Components/architecture-brief/PENDING_ENTRIES_AUTO_RESOLUTION_BRIEF.md` D3. Layer 1 = opticup-executor SKILL.md Step 4.5. Layer 2 = `scripts/checks/architect-pending-applied.mjs`.
+
 ---
 
 ## Output format

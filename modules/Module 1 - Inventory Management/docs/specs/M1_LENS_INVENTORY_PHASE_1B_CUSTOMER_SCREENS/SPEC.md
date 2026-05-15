@@ -1,5 +1,7 @@
 # SPEC — M1_LENS_INVENTORY_PHASE_1B_CUSTOMER_SCREENS
 
+> **STATUS: SUPERSEDED by `M1_LENS_PHASE_1B_GAP_CLOSURE` (2026-05-15).** This SPEC stub was an unfinished placeholder for the Phase 1B customer-screens work that ultimately split into `M1_LENS_PHASE_1B_FOUNDATION` + `M1_LENS_PHASE_1B_PROCUREMENT` + `M1_LENS_PHASE_1B_GAP_CLOSURE`. Retained on disk for historical reference per P30. See the GAP_CLOSURE SPEC folder for the closing artifacts.
+
 > **Location:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_INVENTORY_PHASE_1B_CUSTOMER_SCREENS/SPEC.md`
 > **Authored by:** opticup-strategic (Module Strategist / Foreman) — **STUB ONLY** (full SPEC will be authored after Phase 1A closes)
 > **Authored on:** 2026-05-14

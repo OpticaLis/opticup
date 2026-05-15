@@ -156,6 +156,13 @@ Deno.serve(async (req: Request) => {
   const landing_url = trimOrNull(body.landing_url);
   const termsApproved = boolOrFalse(body.terms_approved);
   const marketingConsent = boolOrFalse(body.marketing_consent);
+  // M4_FB_CAPI_HYBRID_DEDUPLICATION (P2.1) — optional shared FB event_id for
+  // browser-CAPI dedup. NULL until storefront SPEC M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF.
+  // Non-UUID values silently nulled (null-tolerant, backward-compat).
+  const rawFbEventId = trimOrNull(body.fb_event_id);
+  const fbEventId: string | null = rawFbEventId &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawFbEventId)
+    ? rawFbEventId : null;
 
   const clientNotes: string | null = notes ? notes : null;
 
@@ -244,6 +251,8 @@ Deno.serve(async (req: Request) => {
     terms_approved: termsApproved,
     terms_approved_at: termsApproved ? nowIso : null,
     marketing_consent: marketingConsent,
+    // M4_FB_CAPI_HYBRID_DEDUPLICATION — persist shared FB event_id (nullable)
+    fb_event_id: fbEventId,
   };
 
   const { data: inserted, error: insErr } = await db
@@ -314,6 +323,23 @@ Deno.serve(async (req: Request) => {
   EdgeRuntime.waitUntil(
     dispatchFreshLead(db, tenantId, inserted.id, name, phone, email)
       .catch((err) => console.error("[lead-intake] background dispatch failed", err)),
+  );
+
+  // M4_FB_CAPI_HYBRID_DEDUPLICATION — enqueue CAPI dispatch row (non-blocking, ~60s cron).
+  EdgeRuntime.waitUntil(
+    db.from("crm_capi_dispatch_queue").insert({
+      tenant_id: tenantId,
+      lead_id: inserted.id,
+      event_id: fbEventId,
+      event_name: "Lead",
+      status: "queued",
+    }).then((res: { error: { message: string } | null }) => {
+      if (res.error) {
+        console.warn("[lead-intake] capi_dispatch_queue insert failed:", res.error.message);
+      }
+    }).catch((err: Error) => {
+      console.warn("[lead-intake] capi_dispatch_queue insert exception:", err.message);
+    }),
   );
 
   return jsonResponse({
