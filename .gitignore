@@ -69,6 +69,11 @@ outputs/
 /test-*.txt
 /test-*.json
 
+# Access ERP migration source DBs — large binaries, kept locally only
+# (Daniel rotates these between machines; never tracked in git)
+tests/*.accdb
+tests/*.accdr
+
 # Editor / OS scratch files
 *.tmp
 *.bak
