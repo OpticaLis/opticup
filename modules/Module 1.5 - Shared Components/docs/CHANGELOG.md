@@ -1,5 +1,25 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-15 — SECURITY_HOTFIX_2 — Bundle 2 F-CRIT-1/2/3 closure (PARTIAL F-CRIT-2)
+
+SPEC: `SECURITY_HOTFIX_2_2026_05_15` ([folder](specs/SECURITY_HOTFIX_2_2026_05_15/))
+
+**Production security hotfix.** Sequel to `SECURITY_HOTFIX_2026_05_13` (Module 2, now on main). Closes 3 CRITICAL findings re-confirmed by morning pre-merge validation. Three escalations resolved by Daniel in-session.
+
+**Migrations applied (5 sequential):**
+- `2026_05_15_security_hotfix_2_01_sync_lead_status_search_path.sql` — F-CRIT-1 closed. `ALTER FUNCTION sync_lead_status_from_attendee SET search_path='public'` restored. `pg_proc.proconfig = {search_path=public}` verified.
+- `2026_05_15_security_hotfix_2_02_views_security_invoker.sql` — F-CRIT-2 **partial**. Only `v_storefront_reviews` + `v_storefront_components` got `security_invoker=on` — these are the only 2 of 17 views whose base tables have anon-friendly RLS policies (`storefront_reviews_anon_read` + `storefront_components_anon_read`). v1 of this migration attempted 10 views and was immediately rolled back when post-anon-probe showed 9 of 10 returned 0 rows (storefront outage risk — STT-1 fired). 15 views deferred to `SECURITY_HOTFIX_3` which must also include base-table RLS expansions on `blog_posts`/`storefront_pages`/`ai_content`/`tenants`/etc.
+- `2026_05_15_security_hotfix_2_03_rpcs_jwt_validation_and_revokes.sql` — F-CRIT-3 closed for all 24 in-scope RPCs (those accepting `p_tenant_id`). 23 RPCs got the 3-role-aware Block A (service_role bypass + strict JWT-tenant-claim check for everyone else); `verify_campaign_page_password` got Block A-alt (slug-based via `v_public_tenant` lookup, anon-callable retained per Option A). 16 Option B candidates had anon + PUBLIC EXECUTE revoked + GRANT TO authenticated. 7 already-non-anon-callable RPCs got Block A only. Sql-language `get_po_aggregates` converted to plpgsql. 7 RPCs collaterally hardened with `SET search_path='public'` while being recreated.
+
+**Escalations (all RESOLVED + filed under `escalations/`):**
+- `RESOLVED_2026-05-15T0830Z_anon_callable_rpc_count_inverted_in_brief.md` — Brief said 7 anon-callable; actually 17. Daniel chose Option B (expand scope).
+- `RESOLVED_2026-05-15T1010Z_block_a_jwt_header_breaks_service_role_callers_and_has_null_loophole.md` — SPEC §3a Block A had NULL-comparison loophole + would break service_role Edge Function callers. Daniel chose 3-role-aware bypass pattern.
+- `RESOLVED_2026-05-15T1110Z_security_invoker_on_would_break_7_of_17_views_storefront_outage_risk.md` — pre-flight didn't probe base-table RLS; storefront would go dark on 7-15 views. Daniel chose Option A (only truly safe views — turned out to be 2).
+
+**Verdict 🟡 CLOSED WITH FOLLOW-UPS:** F-CRIT-1 + F-CRIT-3 closed; F-CRIT-2 partially closed (2 of 17 views). 7 findings logged in FINDINGS.md including the F-1 SECURITY_HOTFIX_3 stub.
+
+Pre-merge advisor: 0 NEW finding TYPES introduced. 25 of 42 prior `anon_security_definer_function_executable` advisor findings closed by this hotfix.
+
 ## 2026-05-12 — Migration #4: Storefront Studio + 3 sub-pages → Hybrid+Navy (FINAL of 4 production migrations)
 
 SPEC: `MIGRATION_4_STOREFRONT_STUDIO` ([folder](specs/MIGRATION_4_STOREFRONT_STUDIO/))
