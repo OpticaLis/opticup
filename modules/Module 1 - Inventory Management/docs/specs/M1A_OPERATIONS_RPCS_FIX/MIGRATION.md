@@ -371,4 +371,18 @@ Then redeploy via `mcp__claude_ai_Supabase__deploy_edge_function` with `verify_j
 
 ---
 
+## Applied Log
+
+Recorded by the Executor as each block is applied live via MCP `apply_migration`. One row per block.
+
+| Block | Migration name | Applied (UTC) | Verify result |
+|---|---|---|---|
+| #1 | `m1a_record_stock_movement_fix` | 2026-05-15 | `has_branch_var=true`, `has_onconflict_where=true`, `has_conditional_update=true` (live `pg_get_functiondef`) |
+| #2 | _pending_ | — | — |
+| #3 | _pending_ | — | — |
+| #4 | _pending_ | — | — |
+| #5 | _pending_ | — | — |
+
+---
+
 *End of MIGRATION.md.*
