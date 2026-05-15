@@ -1,0 +1,149 @@
+<!--
+  Optic Up — Active POs List (manager view)
+  Module 1 / Phase 1B-procurement Screen #5 (Mockup #6)
+  Per SPEC: M1_LENS_PHASE_1B_PROCUREMENT
+  Display-only list with status pipeline + cancel-from-row.
+-->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optic Up — הזמנות פעילות</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<link rel="stylesheet" href="shared/css/variables.css">
+<link rel="stylesheet" href="shared/css/components.css">
+<link rel="stylesheet" href="shared/css/layout.css">
+<link rel="stylesheet" href="shared/css/forms.css">
+<link rel="stylesheet" href="shared/css/modal.css">
+<link rel="stylesheet" href="shared/css/toast.css">
+<link rel="stylesheet" href="shared/css/table.css">
+<link rel="stylesheet" href="css/header.css">
+
+<style>
+  body { font-family: 'Heebo', 'Segoe UI', Arial, sans-serif; background: #f1f5f9; color: #1e293b; padding: 16px; margin: 0; }
+  .page-header { background: #fff; padding: 14px 20px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .page-title { font-size: 20px; font-weight: 600; color: #1e293b; }
+  .page-title .badge { font-size: 11px; background: #dbeafe; color: #1e3a8a; padding: 3px 8px; border-radius: 10px; margin-right: 8px; font-weight: normal; }
+  .btn { padding: 8px 14px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { background: #f1f5f9; }
+  .btn-primary { background: #1e3a8a; color: #fff; border-color: #1e3a8a; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 12px; }
+  .stat-card { background: #fff; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-right: 4px solid #cbd5e1; cursor: pointer; transition: all .15s; }
+  .stat-card:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+  .stat-card.active { border-right-color: #1e3a8a; background: #eff6ff; }
+  .stat-card.draft { border-right-color: #64748b; }
+  .stat-card.sent { border-right-color: #3b82f6; }
+  .stat-card.partial { border-right-color: #d97706; }
+  .stat-card.received { border-right-color: #059669; }
+  .stat-card.cancelled { border-right-color: #94a3b8; }
+  .stat-card .stat-label { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 4px; }
+  .stat-card .stat-value { font-size: 24px; font-weight: 700; color: #1e293b; }
+  .stat-card .stat-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+  .filters-bar { background: #fff; padding: 12px 18px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .filters-bar .filter-label { font-size: 11px; color: #64748b; font-weight: 700; }
+  .filters-bar select, .filters-bar input { padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 12px; font-family: inherit; }
+  .filters-bar input[type="text"] { width: 240px; }
+
+  .panel { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+  .panel-header { padding: 13px 18px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+  .panel-header h3 { font-size: 14px; color: #1e293b; font-weight: 600; }
+  .panel-header .results-count { font-size: 12px; color: #64748b; }
+
+  .po-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+  .po-table thead th { text-align: right; padding: 11px 14px; background: #f8fafc; color: #475569; font-weight: 600; font-size: 11px; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+  .po-table tbody td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  .po-table tbody tr { cursor: pointer; transition: background .1s; }
+  .po-table tbody tr:hover { background: #f8fafc; }
+
+  .po-id { font-weight: 700; color: #1e3a8a; font-size: 13px; }
+  .po-id .po-sub { font-size: 10px; color: #94a3b8; font-weight: normal; margin-top: 2px; display: block; }
+  .supplier-name { font-weight: 600; color: #1e293b; }
+  .chip { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .chip-draft { background: #f1f5f9; color: #475569; }
+  .chip-sent { background: #dbeafe; color: #1e3a8a; }
+  .chip-partial { background: #fef3c7; color: #92400e; }
+  .chip-received { background: #d1fae5; color: #065f46; }
+  .chip-cancelled { background: #f1f5f9; color: #94a3b8; }
+  .row-actions { display: flex; gap: 4px; }
+  .row-action { padding: 5px 10px; border: 1px solid #e2e8f0; background: #fff; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; color: #475569; }
+  .row-action:hover { background: #f1f5f9; border-color: #1e3a8a; color: #1e3a8a; }
+  .row-action.primary { background: #1e3a8a; color: #fff; border-color: #1e3a8a; }
+  .row-action.danger { color: #dc2626; border-color: #fecaca; }
+  .empty-state { padding: 40px; text-align: center; color: #94a3b8; font-size: 13px; }
+  #access-gate { padding: 40px; text-align: center; color: #c0392b; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<nav id="mainNav" style="background:#fff; padding:8px 16px; margin-bottom:12px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+  <a href="index.html" style="margin-left:16px; color:#1e3a8a; text-decoration:none;">← דף הבית</a>
+  <a href="lens-inventory.html" style="margin-left:16px; color:#1e3a8a; text-decoration:none;">מלאי</a>
+  <a href="lens-purchase-order.html" style="margin-left:16px; color:#1e3a8a; text-decoration:none;">הזמנה חדשה</a>
+  <a href="lens-goods-receipt.html" style="margin-left:16px; color:#1e3a8a; text-decoration:none;">קבלת סחורה</a>
+</nav>
+
+<div id="access-gate" style="display:none">
+  <div>אין הרשאה למסך זה (lens.po.view).</div>
+  <a href="index.html">חזרה לדף הבית</a>
+</div>
+
+<div id="app" style="display:none">
+  <div class="page-header">
+    <div class="page-title">📋 הזמנות פעילות — עדשות <span class="badge" id="pos-count-badge">טוען...</span></div>
+    <div style="display:flex; gap:8px;">
+      <a class="btn btn-primary" href="lens-purchase-order.html">➕ הזמנה חדשה</a>
+    </div>
+  </div>
+
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card active" data-stat-filter="all"><div class="stat-label">הכל</div><div class="stat-value" id="stat-all">0</div><div class="stat-sub">סה"כ הזמנות</div></div>
+    <div class="stat-card draft" data-stat-filter="draft"><div class="stat-label">טיוטות</div><div class="stat-value" id="stat-draft">0</div><div class="stat-sub">טרם נשלחו</div></div>
+    <div class="stat-card sent" data-stat-filter="sent"><div class="stat-label">נשלחו</div><div class="stat-value" id="stat-sent">0</div><div class="stat-sub">בהמתנה לסחורה</div></div>
+    <div class="stat-card partial" data-stat-filter="partial"><div class="stat-label">חלקיות</div><div class="stat-value" id="stat-partial">0</div><div class="stat-sub">חלק התקבל</div></div>
+    <div class="stat-card received" data-stat-filter="fully_received"><div class="stat-label">הושלמו</div><div class="stat-value" id="stat-received">0</div><div class="stat-sub">קבלה מלאה</div></div>
+  </div>
+
+  <div class="filters-bar">
+    <span class="filter-label">סינון:</span>
+    <select id="filter-supplier"><option value="">🏢 ספק: הכל</option></select>
+    <select id="filter-include-cancelled">
+      <option value="exclude">📦 ביטולים: הסתר</option>
+      <option value="include">📦 ביטולים: הצג</option>
+      <option value="only">📦 ביטולים בלבד</option>
+    </select>
+    <input type="text" id="filter-search" placeholder="🔍 חיפוש: PO# / ספק" />
+    <button class="btn" id="btn-clear-filters" style="font-size:11px; padding:5px 10px;" type="button">⟲ נקה סינון</button>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h3>הזמנות</h3>
+      <span class="results-count" id="results-count">—</span>
+    </div>
+    <div id="table-container">
+      <div class="empty-state">טוען הזמנות...</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="js/shared.js"></script>
+<script src="js/supabase-ops.js"></script>
+<script src="js/auth-service.js"></script>
+<script src="js/shared-ui.js"></script>
+<script src="shared/js/modal-builder.js"></script>
+<script src="shared/js/toast.js"></script>
+
+<script src="modules/lens-pos-list/lens-pos-list-main.js"></script>
+<script src="modules/lens-pos-list/lens-pos-list-table.js"></script>
+<script src="modules/lens-pos-list/lens-pos-list-filters.js"></script>
+<script src="modules/lens-pos-list/lens-pos-list-actions.js"></script>
+
+</body>
+</html>
