@@ -105,6 +105,18 @@ and M9 (Lab/KDS) future builds. Phase 1B (6 customer-facing screens) deferred
 to a sibling SPEC after Phase 1A FOREMAN_REVIEW closes. SPEC + EXECUTION_REPORT
 in `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_INVENTORY_PHASE_1A_SCHEMA_PLATFORM_ADMIN/`.
 
+**✅ M1B0_PURCHASE_ORDER_SCHEMA CLOSED — 2026-05-15 (Full Auto Pipeline single chat).**
+Phase 1B's schema prerequisite. Shipped the 3 schema objects Phase 1A skipped
+(`purchase_order`, `purchase_order_line`, `supplier_debt`) + 5 RPCs (incl.
+`next_purchase_order_number` distinct from legacy `next_po_number(uuid,text)` via
+Iron Rule 21 divergence) + 2 FK back-pointers (FK clauses on Phase 1A phantom
+columns `stock_lot.purchase_order_id` + `purchase_receipt.purchase_order_id`) + K2
+extension wiring debt creation at receipt close (D-M1-11). 8 commits
+(`0c23a15..af3a2fa`) + Reviewer commit (`5d2c421`). 10 MCP migrations applied.
+All 6 functional smoke cases PASS on demo (8 sub-cases). Iron Rule 32 §7=`None.`
+held across all 8 commits. Reviewer 🟢 PASS at `5d2c421`. **Phase 1B fully
+unblocked — customer-facing screen SPECs can build on verified schema + RPCs.**
+
 **✅ M1A-DEBT-01 RESOLVED — 2026-05-14 (Full Auto Pipeline single chat).** Phase 1A
 hotfix `M1A_CURRENCIES_GLOBAL_HOTFIX` converted `public.currencies` from per-tenant
 to GLOBAL ISO-4217 reference table per Iron Rule 14 documented exception (same
@@ -329,6 +341,10 @@ Items are tracked — not fixed — in this document.
 | RULE18-COMMENT-FALSE-POSITIVE | rule-18-unique-tenant.mjs UNIQUE_RE matches `(NNN)` patterns inside `--` line comments and `/* */` block comments — 2 occurrences now (line 767 of M1 db-schema.sql + line 2045 added 2026-05-15 by M1A_OPERATIONS_RPCS_FIX close commit, both worked around by comment-edit) | M1A_DEBT_SWEEP FINDINGS-03 (2026-05-15) + M1A_OPERATIONS_RPCS_FIX EXECUTION_REPORT (2026-05-15) | OPEN. Proposed fix: strip line + block comments from `content` before applying `UNIQUE_RE` in the hook. Effort ~15 min + self-test. Bundle into a future verify-hooks maintenance Pipeline; recommended before Phase 1B starts touching shared SQL docs. |
 | M1A-DEBT-04 | **Demo lens-catalog seed fixtures persist from M1A_OPERATIONS_RPCS_FIX smoke** — 2 demo `tenant_location` rows (Smoke Loc A / Smoke Loc B, short_codes STA/STB) + 1 global lens_brand+design+variant (`LV-TST001`) + 1 demo `supplier_catalog_offering` (100 ILS) + ~4 demo stock_movement + stock_lot + purchase_receipt rows tagged `M1A smoke`. Useful as Phase 1B's first-smoke seed; alternative is a proper `modules/Module 1/scripts/seed-demo-lens-fixtures.sql`. | M1A_OPERATIONS_RPCS_FIX FINDINGS F-3 + F-8 + FOREMAN_REVIEW (2026-05-15) | OPEN — low priority. Phase 1B SPEC §0 must explicitly cite "reuse persistent fixtures" OR "replace with seed script". Either path acceptable; no urgency to clean up demo. |
 | M1A_OPERATIONS_RPCS_FIX | ~~**8 SPEC-original operations-layer bugs + 2 pre-existing orchestrator runtime defects discovered by mandatory smoke**~~ | Phase 1A FOREMAN_REVIEW + Strategic-Review + Code-Review reports (2026-05-15) | ✅ **RESOLVED 2026-05-15** via `M1A_OPERATIONS_RPCS_FIX` SPEC, 13 commits `b0d44c1..5deb8fa`. 10 fixes shipped: record_stock_movement double-add + ON CONFLICT inference, REVOKE/GRANT on 10 SECDEF fns, next_lens_variant_display_id JWT guard, v_suppliers_for_m9 anon ACL, K3 queue idempotency UNIQUE + ON CONFLICT DO NOTHING, lens-catalog-import config.toml + fail-closed gate, record_transfer 19-arg fix (Amendment #1), record_adjustment_found 19-arg fix (Amendment #2). All 6 functional smoke cases PASS on demo. Phase 1B unblocked. |
+| M1B0_PURCHASE_ORDER_SCHEMA | ~~**3 schema objects + 5 supporting RPCs + 2 FK back-pointers + K2-debt wiring missing — blocked Phase 1B's PO + Active POs List + Goods Receipt screens (D-M1-07/10/11)**~~ | Phase 1A Strategic Review A-02 + C-01 (2026-05-15) | ✅ **RESOLVED 2026-05-15** via `M1B0_PURCHASE_ORDER_SCHEMA` SPEC, 8 commits `0c23a15..af3a2fa` (+ REVIEW commit `5d2c421`). 10 MCP migrations shipped: purchase_order + purchase_order_line + supplier_debt tables (canonical 2-policy RLS), FK clauses on Phase 1A phantom columns stock_lot.purchase_order_id + purchase_receipt.purchase_order_id, 5 RPCs (next_purchase_order_number distinct from legacy next_po_number via Iron Rule 21 divergence, place_purchase_order, mark_po_sent, cancel_purchase_order, m1_create_supplier_debt_from_receipt), K2 extended with subtotal accumulator + IL VAT lookup + debt RPC call (D-M1-11 wiring). All 6 functional smoke cases PASS on demo (8 sub-cases counting Case 4 + Case 5). Reviewer 🟢 PASS; 30/30 success criteria verified live. Phase 1B fully unblocked. |
+| M1B0-DEBT-01 | **`js/shared.js` (322 lines) + `js/shared-field-map.js` (313 lines) crossed 300-line soft target after M1B0** — both within hard 350 limit | M1B0 FINDINGS F-4 + REVIEW §4.1 (2026-05-15) | OPEN — low priority. Future cleanup SPEC could extract per-domain FIELD_MAP sub-files. Not blocking Phase 1B. |
+| M1B0-DEBT-02 | **Naming asymmetry `purchase_receipt_line.unit_cost_currency` vs `purchase_order_line.currency_code`** — same conceptual field, different column names on adjacent tables | M1B0 REVIEW §4.2 Reviewer observation (2026-05-15) | OPEN — cosmetic. Future cleanup SPEC could normalize. Not blocking Phase 1B. |
+| M1A-DEBT-04 (extended) | M1B0 smoke artifacts persist on demo (2 PO rows + 1 receipt + 1 supplier_debt at total_amount=234.82) — extends existing M1A-DEBT-04 entry. | M1B0 FINDINGS F-6 (2026-05-15) | OPEN — useful as Phase 1B seed; no urgency to clean. |
 
 ---
 
