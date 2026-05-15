@@ -10,7 +10,8 @@
 
 | # | Timestamp (UTC) | Migration name | Object delta | Result |
 |---|---|---|---|---|
-| _(populated by Executor as blocks apply)_ | | | | |
+| 1a | 2026-05-15T~19:00Z | `m1_gap_closure_block1_stock_adjustment_tables` | failed — FK target `locations` does not exist (table is `tenant_location` singular) | ❌ rejected by Postgres |
+| 1b | 2026-05-15T~19:01Z | `m1_gap_closure_block1_stock_adjustment_tables_v2` | 2 tables (`stock_adjustment_reason`, `stock_adjustment`) + 4 RLS policies + 3 indexes + 8 seed rows (4 demo + 4 prizma reasons) + 3 COMMENT entries | ✅ applied |
 
 ---
 
