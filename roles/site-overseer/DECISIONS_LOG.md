@@ -24,6 +24,32 @@
 
 ## Entries
 
+### 2026-05-14 evening — funnel strategic review + ROADMAP authoring (10-Q with Daniel)
+
+- **Context:** After three wrong diagnoses in one day (broadcasts-not-sent / 7.8% conversion / UTM-based event-24 attribution), Daniel directed Site Overseer to STOP inferring and BUILD a comprehensive architecture map. Knowledge-build SPEC at `roles/site-overseer/knowledge-build/` ran read-only; produced `KNOWLEDGE_MAP.md` (commit `e8ef9d3`) covering 10 layers + 10 questions for Daniel.
+- **Questions asked + Daniel's answers (recorded verbatim with reasoning in `FUNNEL_ROADMAP.md` §Decision Log):**
+  - **Q1 — UTM update semantics:** First-touch only, frozen forever per lead. Daniel: "leads register to the event-system once — UTM tells you how they originally entered, that's the long-term value."
+  - **Q2 — `crm_events.status` `draft`/`live`:** Status column is intentionally a combination of lifecycle + automation-phase trigger (like Monday). Phase 3 reform planned, HIGH RISK.
+  - **Q3 — `register_lead_to_event` RPC mapping:** Approved separate diagnostic SPEC (Phase 1 P1.4).
+  - **Q4 — Broadcast bookkeeping fix:** Approved Option A (full propagation: `broadcast_id` everywhere + counter update). Phase 1 P1.2.
+  - **Q5 — `required_variables` empty:** No action — validation already exists in `send-message` EF + manual-send UI. Daniel verified via screenshot of `unsubstituted_placeholder: registration_url` failed message.
+  - **Q6 — `prizmaoptic.short.gy` migration:** Approved migration to internal `/r/<code>`. Phase 1 P1.3.
+  - **Q7 — Pixel firing point:** Keep "thank-you page = real lead" model for Meta accuracy; add measurement-gap reporting. Hybrid with CAPI.
+  - **Q8 — CAPI:** Deferred to Phase 2 — HIGH PRIORITY. Daniel: "right after we finish what we must do now we'll do this too. Sending purchases is important!"
+  - **Q9 — 21 legacy Make scenarios cleanup:** Defer to Q4 2026.
+  - **Q10 — `event_invite_new` bypassing `crm_automation_rules`:** Keep as intentional fast-path; document the pattern in SITE_OVERSEER_SKILL.md.
+- **Operational action:**
+  - Authored `roles/site-overseer/FUNNEL_ROADMAP.md` — PRIMARY artifact for Architect handoff. 4 Phase-1 SPECs + 3 Phase-2 + 2 Phase-3 + 2 diagnostic tasks; cross-phase dependencies; out-of-scope list.
+  - Updated `SITE_OVERSEER_SKILL.md` to v0.6 — pointer at top of file directing future sessions to FUNNEL_ROADMAP before any CRM/funnel/pixel/attribution work.
+  - Updated HANDOFF with strategic-handoff section directing Architect to FUNNEL_ROADMAP.
+  - **No code changes. No SPECs authored yet.** Pause until Architect reviews ROADMAP.
+- **Self-improvement validation:** Three wrong diagnoses in one session all traced to missing architectural knowledge. The knowledge-build SPEC + ROADMAP are the structural fix. Future Site Overseer sessions should NOT re-infer the 10 architectural facts now documented.
+- **Daniel's north star (captured verbatim):** "I want marketing funnels at the level of companies that spend millions on advertising. I want them to always improve, to know how to improve, and what to improve — eventually autonomously via agents." Phase 4 (AI agents auto-optimizing) is the destination; Phases 1-3 are infrastructure.
+- **Next step:** Daniel opens a new session and says "אתה הארכיטקט" — Architect reads FUNNEL_ROADMAP.md, validates Phase 1 priorities against MASTER_ROADMAP.md, and either approves SPEC authoring or reorders.
+- **Cross-refs:** `roles/site-overseer/FUNNEL_ROADMAP.md` (primary), `roles/site-overseer/knowledge-build/KNOWLEDGE_MAP.md` (commit `e8ef9d3`), `roles/site-overseer/SITE_OVERSEER_SKILL.md` v0.6, `roles/site-overseer/SITE_OVERSEER_HANDOFF.md` §"NEXT-SESSION HANDOFF — For Architect".
+
+---
+
 ### 2026-05-14 — REC-SITE-024 closed (lead-intake async dispatch via EdgeRuntime.waitUntil)
 
 Daniel observed 2026-05-13 a 10-15s delay between clicking "שריינו לי מקום" on `/supersale/` and arriving at `/successfulsupersale/`. Site Overseer pre-flight pinpointed the synchronous `await dispatchFreshLead(...)` call at `supabase/functions/lead-intake/index.ts:300` (SPEC said line 301; reality was line 300 — off-by-one, single grep match, semantically identical change). Three options surfaced in conversation 2026-05-14: (א) loading spinner only (cosmetic, doesn't fix the wait), (ב) fire-and-forget at the Make level (loses `crm_message_log` state transitions, breaks audit trail), (ג) background dispatch at lead-intake level via `EdgeRuntime.waitUntil()` (preserves audit trail; user gets 1-2s response; `send-message` EF still awaits Make internally so per-row state transitions correctly). Daniel chose (ג) with one-word "כן".

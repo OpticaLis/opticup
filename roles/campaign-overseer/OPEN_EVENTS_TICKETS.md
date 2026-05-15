@@ -24,7 +24,23 @@ Last updated: 2026-05-12 evening
 
 ---
 
-## EV-001 — Status-change triggers framework (🟡 HANDED-OFF 2026-05-12 evening)
+## EV-001 — Status-change triggers framework ✅ CLOSED 2026-05-13
+
+**Shipped via Full-Auto Pipeline** in ONE Claude Code chat. SPEC: `STATUS_CHANGE_TRIGGERS_FRAMEWORK`. 9 commits `b2fb0c0..1d71698`. Verdict: 🟡 CLOSED WITH FOLLOW-UPS.
+
+**What landed:** generic framework operational — DB triggers write to `crm_status_change_events` queue, automation-engine consumes via `consumeStatusChangeEvents` loop on pg_cron. Registry table maps entity types to allowed condition operators. Attendee wired as first consumer; 2 silently-broken production check-in rules (demo + Prizma) migrated and will now fire correctly on the next live attendee transition to `attended`. Multi-channel parallel SMS+Email dispatch: 38ms delta vs ~1000ms pre-fix (26× improvement). Rule editor `fires_on` sub-picker live on attendees board.
+
+**Future entities (sale/payment/inventory)** plug in via 1 INSERT into `crm_trigger_type_registry` + one-line DB trigger on their `status` column. Zero engine code change required.
+
+**Open follow-ups (no blockers):** F1 (HIGH) Daniel redeploys `dispatch-queue --no-verify-jwt`; R1 (MEDIUM) atomic-claim hardening in future `M4_STATUS_EVENTS_ATOMIC_CLAIM` SPEC; Integration Ceremony appends at next M4 strategic session.
+
+**Full detail:** `modules/Module 4 - CRM/docs/specs/STATUS_CHANGE_TRIGGERS_FRAMEWORK/FOREMAN_REVIEW.md`.
+
+---
+
+## (Original ticket body preserved for reference)
+
+## EV-001 — Status-change triggers framework (originally OPEN — HIGH PRIORITY)
 
 **Status:** Architect-Daniel decision complete. Brief authored at
 `modules/Module 4 - CRM/architecture-brief/STATUS_CHANGE_TRIGGERS_FRAMEWORK_BRIEF.md`.

@@ -2,8 +2,8 @@
 
 > **Note:** Sentinel re-generates the section above the LIGHTHOUSE-CRON marker each scan. The Lighthouse cron appends below the marker. Do not delete the marker line.
 
-**Last refresh:** **2026-05-14 18:37 UTC (FULL 10-mission sweep — OVERNIGHT_BUNDLE_2026_05_14 Tier C.1)**. **Post-scan amendment 18:55 UTC: 2 of 4 new MEDIUM findings RESOLVED in flight by concurrent Architect commits.**
-**Production status (this scan):** 🟢 healthy. **Delta vs prior 2026-05-14 06:08 UTC scan:** 0 NEW CRITICAL, 0 NEW HIGH, **2 NEW MEDIUM after post-scan amendment** (M-NEW-33-3 Hebrew-locale class extended, watch-flag only; M-NEW-33-4 CLAUDE.md §0.5 prose drift extended by `lens-catalog-admin.html` + `employees.html` stub asymmetry), **plus 1 PARTIALLY-OPEN MEDIUM** (M-NEW-33-2 — `docs/GLOBAL_SCHEMA.sql` + `docs/DB_TABLES_REFERENCE.md` propagated mid-scan by `0cf6123`; only the M1-owned `db-schema.sql` delta remains), 2 NEW LOW (L-NEW-33-1 3 distinct Postgres column-not-found errors single-fired in last hour; L-NEW-33-2 `snapshots/` dir not on root-allowlist). **CONFIRMED RESOLVED this scan:** M-NEW-25-2 + M-NEW-26-1 + M-NEW-27-1 + H-NEW-25-2 (entire NUL-padding suite — Windows-desktop FS is 100% clean; sweep SPEC no longer needs to run from this machine), M-NEW-28-1 (event_max_attendees unsubstituted_placeholder — 0 failed messages in 24h, 2nd silent cycle = CLOSE), Rule 5 / FIELD_MAP propagation gap for M1 Phase 1A (resolved by commit `48b150c chore(m1,shared): add 17 T-constants` mid-scan), **M-NEW-33-1** (resolved by concurrent commit `b448c1e docs(m1): module-level docs reflect Phase 1A close` — M1 SC now current). Scan window: 57 commits / ~10 hours covering M1 Phase 1A end-to-end + M4 Funnel Phase 1 P1.1/P1.2/P1.3/P1.4 closures (FUNNEL_ROADMAP Phase 1 COMPLETE 🎉). Quality: every new SQL migration follows canonical RLS + tenant-isolation (or platform-catalog 3-policy pattern where appropriate); every new EF carries env-only secrets + explicit auth-gate (lens-catalog-import: platform-super-admin RPC); every new `.insert(...)` stamps `tenant_id` or `owner_tenant_id`. Integrity gate exit 0. **No CRITICAL/HIGH delta.**
+**Last refresh:** **2026-05-15 06:07 UTC — scheduled hourly run, Missions 1 + 2 refreshed.** Prior refreshes: 2026-05-15 07:50 UTC (Missions 3 + 4 + 5 + 8 four-hour), 2026-05-15 03:25 UTC (Missions 6 + 7 + 9 daily). Initial 10-mission sweep was 2026-05-14 18:37 UTC; Mission 10 section preserved from prior run (per Sentinel "incremental scan" protocol).
+**Production status (this refresh):** 🟢 healthy. **Delta vs 2026-05-15 07:50 UTC refresh:** 0 NEW CRITICAL, 0 NEW HIGH, 0 NEW MEDIUM, **1 NEW LOW (L-NEW-34-2 — Cowork-VM-mount truncation artifact on `scripts/checks/*` + `verify.mjs`; git content is correct, only the VM filesystem view is truncated; zero production / Windows-desktop / Claude Code execution impact)**. **CONFIRMED RESOLVED this refresh:** Rule 18 UNIQUE constraints on 4 M1 tables (M1A-DEBT-02 — `document_links`, `payment_allocations`, `conversation_participants`, `message_reactions` all now lead with `tenant_id`); FIELD_MAP currencies gap (M1A-DEBT-03 — T.CURRENCIES + 6 currency rows landed in `js/shared.js` + `js/shared-field-map.js`); verify-hook regex fixes (rule-15 quoted policy names + rule-21 top-level anchor per commit `913fa47` — git content correct, 38 prior false-positives eliminated). **Window scope:** 10 commits since prior 1+2 scan, all within M1A_DEBT_SWEEP closure cycle. **Zero new tables / RPCs / migrations / Edge Functions / production JS / production HTML.** **Persisting:** M-NEW-34-1 (FUNNEL_ROADMAP P2.3 still PLANNED), M-NEW-33-3 (Hebrew-locale class), M-NEW-33-4 (CLAUDE.md §0.5 prose stale), L-NEW-33-1 (column-not-found errors silent — cycle 1/4 toward close), L-NEW-33-2 (`snapshots/` not on root-allowlist), L-NEW-29-1 (GLOBAL_MAP automation-engine v7 stale), M-NEW-29-2 (M4 MODULE_MAP backlog). **No CRITICAL/HIGH delta.**
 
 ---
 
@@ -31,16 +31,22 @@ None.
 
 ## Active MEDIUM alerts
 
+### M-NEW-34-1 — NEW: FUNNEL_ROADMAP P2.3 row stale (says PLANNED, SPEC closed today)
+
+- **Status:** NEW this refresh. `roles/site-overseer/FUNNEL_ROADMAP.md` line 163 still reads `| P2.3 | M4_TEMPLATE_VALIDATION_UNIFIED | 6 | 2-3 hrs | PLANNED |` but per M4 SESSION_CONTEXT 2026-05-14, this SPEC `🟢 CLOSED via Full-Auto Pipeline (Overnight Bundle Tier A.1)` — "first Phase 2 SPEC to close." Doc-drift class: ROADMAP marker behind reality.
+- **Impact:** A Site Overseer session reading FUNNEL_ROADMAP would believe P2.3 is still open and could attempt to re-author it. The SPEC is fully closed in code (send-message v25→v26, automation-engine v15→v16, new `_shared/template-validation.ts`, new `crm_automation_rules.last_error` column). M4 SC and the SPEC folder accurately reflect closure.
+- **Action:** in the next Site Overseer / opticup-architect session, flip P2.3 row from `PLANNED` to `✅ CLOSED 2026-05-14 — modules/Module 4 - CRM/docs/specs/M4_TEMPLATE_VALIDATION_UNIFIED/`. Consider also adjusting the Phase 2 header banner (Phase 2 has now started — first row closed). ~3 min prose fix. Bundle with M-NEW-33-4 in the same architect session.
+
 ### ~~M-NEW-33-1~~ — RESOLVED post-scan — M1 SESSION_CONTEXT.md refreshed
 
-- **Status:** **RESOLVED.** Mid-scan window concurrent commit `b448c1e docs(m1): module-level docs reflect Phase 1A close` (2026-05-14 ~18:38 UTC) updated M1 SESSION_CONTEXT.md to read "M1_LENS_INVENTORY_PHASE_1A_SCHEMA_PLATFORM_ADMIN — 2026-05-14" and added a multi-paragraph Phase 1A entry. The Architect bootstrap caught the gap within minutes of the Sentinel flagging it. Discipline working as designed.
+- **Status:** **RESOLVED.** Mid-scan window concurrent commit `b448c1e docs(m1): module-level docs reflect Phase 1A close` (2026-05-14 ~18:38 UTC) updated M1 SESSION_CONTEXT.md. Further verified this refresh: M1 SC now also carries M1A_CURRENCIES_GLOBAL_HOTFIX entry from later same day. Two-tier verification.
 - **Closing action:** none required.
 
-### M-NEW-33-2 — PARTIALLY RESOLVED post-scan — M1 Phase 1A propagated to GLOBAL_SCHEMA + DB_TABLES_REFERENCE; M1 db-schema.sql still pending
+### ~~M-NEW-33-2~~ — FULLY RESOLVED 2026-05-15 07:50 UTC — M1 Phase 1A db-schema.sql delta merged
 
-- **Status:** PARTIALLY RESOLVED. Mid-scan concurrent commit `0cf6123 docs(global): merge M1 Lens Phase 1A schema + functions + screen + EF into GLOBAL_*` (2026-05-14 ~18:38 UTC) propagated the 19 new M1 Phase 1A tables to `docs/GLOBAL_SCHEMA.sql` (5+ hits) and `docs/DB_TABLES_REFERENCE.md` (8+ hits). **Still pending:** `modules/Module 1 - Inventory Management/docs/db-schema.sql` (M1-owned schema file) shows 0 hits for the new tables — Phase 1A schema delta has not been merged into the M1 module-owned schema file yet.
-- **Carry items still bundled:** the M4 MODULE_MAP backlog (M-NEW-29-2 + M-NEW-31-2 + 3 from this scan: `crm-confirm-send-v2.js`, `crm-confirm-send-v2-render.js`, `crm-short-links-stats.js`) is unaffected by these concurrent commits — remains open.
-- **Action:** open small SPEC `M1_DB_SCHEMA_PHASE_1A_DELTA` to write the 19 tables + 9 RPCs + 1 view + 1 trigger into `modules/Module 1 - Inventory Management/docs/db-schema.sql`. ~15 min. Plus the M4 MODULE_MAP backlog (~10 min). ~25 min total — significantly smaller scope now.
+- **Status:** **FULLY RESOLVED.** The M1-owned `modules/Module 1 - Inventory Management/docs/db-schema.sql` Phase 1A delta merged via commit `fdf3e2c` — 17 tables + 9 RPCs + 1 trigger + 1 K5 view + Phase 1A summary section (lines 1969-2034) documented. Prior partial-resolution (GLOBAL_SCHEMA + DB_TABLES_REFERENCE via commit `0cf6123`) is now fully complete.
+- **Carry items still tracked elsewhere:** the M4 MODULE_MAP backlog (M-NEW-29-2 + M-NEW-31-2 + 3 CRM v2 files: `crm-confirm-send-v2.js`, `crm-confirm-send-v2-render.js`, `crm-short-links-stats.js`) is its own separate finding — see M-NEW-29-2 below. The M-NEW-33-2 bundle references in older items below are historical; their target is now M-NEW-29-2 / the M4 Integration Ceremony.
+- **Closing action:** none required for the M1 schema doc. M4 MODULE_MAP work remains open under M-NEW-29-2.
 
 ### M-NEW-33-3 — NEW: Hebrew-locale hardcoding suite extends (carry-class)
 
@@ -75,9 +81,9 @@ None.
 
 - The `employees.html` half is now bundled with the new `lens-catalog-admin.html` half under M-NEW-33-4. Same fix clears both.
 
-### ~~M-NEW-28-1~~ — RESOLVED this scan — `event_max_attendees` unsubstituted_placeholder
+### ~~M-NEW-28-1~~ — PERMANENTLY CLOSED — `event_max_attendees` unsubstituted_placeholder
 
-- **Status:** **RESOLVED this scan.** 0 rows in `crm_message_log WHERE status='failed' AND created_at > now() - interval '24 hours'`. 2nd consecutive silent cycle → CLOSE per project policy.
+- **Status:** **PERMANENTLY CLOSED.** 3rd consecutive silent cycle (2026-05-15 03:25 UTC refresh: 0 failed messages in 24h, 0 failed in last 1h, 21 total messages sent). Upstream architectural fix shipped today via `M4_TEMPLATE_VALIDATION_UNIFIED` (Phase 2 P2.3): pre-enqueue validation now catches unsubstituted placeholders BEFORE they reach the send path; bad templates write `crm_message_log status='rejected'` + populate `crm_automation_rules.last_error` for operator visibility, rather than failing at send-time. Defense-in-depth: validation runs at plan-time (automation-engine) AND at send-time (send-message). No further monitoring required.
 
 ### M-NEW-28-2 — 4 net-new advisor lint types (security delta) — partially resolved
 
@@ -131,14 +137,18 @@ Stable; no change. See full `GUARDIAN_REPORT.md` for details.
 
 ## Active LOW alerts
 
-### L-NEW-33-1 — NEW: 3 distinct Postgres column-not-found errors single-fired in last hour
+### L-NEW-34-2 — NEW: Cowork-VM-mount truncation on `scripts/checks/*` + `verify.mjs`
 
-- **Status:** NEW this scan. Postgres logs show 3 distinct ERROR events in the last hour, each fired once:
-  - `column b.event_id does not exist` (2026-05-14 18:23 UTC) — qualifier suggests outdated alias in consumer query.
-  - `column "locale" does not exist` (2026-05-14 18:25 UTC) — `tenants.locale` exists; the unqualified reference suggests an outdated query.
-  - `column l.to_address does not exist` (2026-05-14 18:27 UTC) — `to_address` does NOT exist on `crm_message_log`. Same single-fire pattern as H-NEW-25-1's `v_storefront_products.updated_at` carry.
-- **Impact:** zero customer impact. The consumer code that fires these queries gets an error and presumably handles it; nothing observable in product.
-- **Action:** watch-flag, 4 silent cycles → close. If re-fires consistently in next 24h → open hotfix SPEC. Likely the same outdated-client-query class as H-NEW-25-1.
+- **Status:** NEW this refresh. Detection class: file truncation on the Cowork-VM filesystem mount — a different symptom of the same FS class as the historical NUL-padding artifact (M-NEW-25-2 / M-NEW-26-1 / M-NEW-27-1, all RESOLVED on Windows-desktop FS).
+- **Affected (6 files, disk vs git byte-count):** `scripts/checks/rule-14-tenant-id.mjs` (git=2569, disk=1164 — truncated 55%), `scripts/checks/destructive-ops-declared.mjs` (git=14113, disk=12136 — truncated 14%), `scripts/checks/rule-15-rls.mjs` (git=1284, disk=1319 — trailing garbage past truncation), `scripts/checks/rule-21-orphans.mjs` (git=1758, disk=1812), `scripts/checks/null-bytes.mjs` (git=1658, disk=1710), `scripts/verify.mjs` (git=5371, disk=5512). Evidence: `node -c scripts/checks/rule-15-rls.mjs` fails with `SyntaxError: Unexpected end of input` because the on-disk file ends mid-token (`return { violations, warn`). `git show HEAD:` returns the correct full content for every file.
+- **Impact:** ZERO on production / on Windows-desktop / on Claude Code execution paths. A pre-commit hook executed FROM INSIDE the Cowork VM mount would crash with SyntaxError on import; everywhere else (Windows-desktop, Mac, CI) sees the correct git content.
+- **Action:** none on the repo. Implement L-NEW-27-1 (extend `scripts/checks/null-bytes.mjs` to also detect the truncation class + cover `.json` / `.sql` extensions) — that work would catch this artifact at the gate level. Currently a known-and-tolerated cross-FS artifact.
+
+### L-NEW-33-1 — 3 distinct Postgres column-not-found errors — silent 1/4 cycles
+
+- **Status:** carry, ON TRACK TO CLOSE. Refresh 2026-05-15 03:25 UTC: zero ERROR-severity events in the last 60 minutes — none of the 3 (`b.event_id`, `"locale"`, `l.to_address`) recurred over 9 hours. **Silent cycle 1 of 4.** If silent through next 3 daily refreshes → CLOSE.
+- **Impact:** zero customer impact; consumer code surfaces an error and handles it; nothing observable in product.
+- **Action:** continue watch-flag. If re-fires → open hotfix SPEC. Likely the same outdated-client-query class as H-NEW-25-1.
 
 ### L-NEW-33-2 — NEW: `snapshots/` directory at repo root not on `root-allowlist.json`
 
