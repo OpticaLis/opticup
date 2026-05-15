@@ -87,12 +87,8 @@
 </head>
 <body>
 
-<nav id="mainNav" style="background:#fff; padding:8px 16px; margin-bottom:12px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
-  <a href="index.html" style="margin-left:16px; color:#3949ab; text-decoration:none;">← דף הבית</a>
-  <a href="lens-inventory.html" style="margin-left:16px; color:#3949ab; text-decoration:none;">מלאי</a>
-  <a href="lens-pos-list.html" style="margin-left:16px; color:#3949ab; text-decoration:none;">הזמנות פעילות</a>
-  <a href="lens-goods-receipt.html" style="margin-left:16px; color:#3949ab; text-decoration:none;">קבלת סחורה</a>
-</nav>
+<!-- Lens department nav strip (rendered by shared/js/lens-nav-strip.js with permission gating) -->
+<nav id="lens-nav-container"></nav>
 
 <div id="access-gate" style="display:none">
   <div>אין הרשאה למסך זה (lens.po.create).</div>
@@ -170,6 +166,7 @@
 <script src="shared/js/toast.js"></script>
 
 <script src="modules/lens-purchase-order/lens-purchase-order-main.js"></script>
+<script src="shared/js/lens-nav-strip.js"></script>
 <script src="modules/lens-purchase-order/lens-purchase-order-supplier.js"></script>
 <script src="modules/lens-purchase-order/lens-purchase-order-shortages.js"></script>
 <script src="modules/lens-purchase-order/lens-purchase-order-manual.js"></script>

@@ -288,8 +288,9 @@ Executor fills this in as Block B / C / D apply:
 | C-1 pre-state probe | execute_sql | 2026-05-16T~00:05Z | ✅ PASS | Exactly 31 unindexed FKs in M1 Lens scope; matches Foreman snapshot precisely; in expected ±5 band |
 | C-2 index sweep (31 indexes, single migration) | apply_migration | 2026-05-16T~00:05Z | ✅ PASS | `m1_lens_phase_2_part_c_fk_index_sweep` — single call, no 23505 collision, P-AUTHOR-2 fallback NOT exercised. Longest index name = 60 chars (under 63-char identifier limit). |
 | C-5 post-state probe | execute_sql | 2026-05-16T~00:06Z | ✅ PASS | M1 Lens scope unindexed FK count = 0; 32 partial `idx_*` indexes (31 new + 1 pre-existing) |
-| D INSERT permissions (if any) | execute_sql | (Stage 5) | _pending_ | _key list_ |
-| D INSERT role_permissions (if any) | execute_sql | (Stage 5) | _pending_ | _row count_ |
+| D INSERT permissions (if any) | n/a | 2026-05-16T~00:15Z | ✅ SKIPPED | 0 new keys needed — all 6 staff lens pages covered by existing 8 lens.* keys × 2 tenants seeded since Phase 1B FOUNDATION. Brief §4 item 6 1-2-key budget unused. |
+| D INSERT role_permissions (if any) | n/a | 2026-05-16T~00:15Z | ✅ SKIPPED | n/a (no new perm keys → no new role_permission rows) |
+| D HTML/JS edits (code-only) | filesystem | 2026-05-16T~00:15Z | ✅ PASS | 1 new file (shared/js/lens-nav-strip.js, 122 lines) + 8 HTML edits (7 lens pages + index.html); HTTP 200 verified on all |
 
 ---
 
