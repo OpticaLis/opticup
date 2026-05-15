@@ -199,3 +199,99 @@ Total Prizma delta = 0 across all 4 touched-table-classes. SC B8 + G6 met.
 
 ---
 
+## Part C — FK index sweep (M1 Lens scope, 31 partial indexes)
+
+### C1 — Step 1.5 DB Pre-Flight Check
+
+| Sub-step | Result |
+|---|---|
+| GLOBAL_SCHEMA.sql + module db-schema.sql | Read by Foreman in Stage 1; CREATE INDEX is additive — no schema collision risk |
+| Name-collision grep | Pattern `idx_<table>_<col>` checked via post-state probe (32 idx_ matches → no name conflict — would have errored with 42P07 otherwise) |
+| Field-reuse check | N/A — no fields added |
+| FIELD_MAP / T-constant plan | N/A — indexes have no client-side surface |
+| View security_invoker probe | N/A — no view changes |
+| Tooling Pre-Flight | N/A — single MCP migration call |
+
+### C2 — Pre-state probe (C1)
+
+Re-ran the §0.D probe from SPEC. Result: **exactly 31 unindexed FK columns in M1 Lens scope** — matches Foreman snapshot exactly; no drift from concurrent sessions. Within SPEC §3 C1 expected band (25-35).
+
+| Table | Columns indexed | Examples |
+|---|---|---|
+| stock_adjustment | 5 | location_id, performed_by, reason_id, stock_lot_id, variant_id |
+| stock_lot | 4 | original_lot_id, purchase_order_id, purchase_receipt_id, supplier_offering_id |
+| stock_movement | 2 | location_id, transfer_id |
+| stock_transfer | 3 | from_location_id, to_location_id, variant_id |
+| purchase_order | 2 | created_by, supplier_id |
+| purchase_order_line | 3 | purchase_order_id, variant_id, vat_rate_id |
+| purchase_receipt | 1 | purchase_order_id |
+| purchase_receipt_line | 1 | location_id |
+| supplier_debt | 2 | purchase_receipt_id, supplier_id |
+| supplier_catalog_offering | 3 | supplier_brand_distribution_id, supplier_id, vat_rate_id |
+| lens_variant | 1 | superseded_by_id |
+| pricing_overlay | 2 | offering_id, proposed_by |
+| tenant_active_offerings | 1 | location_id |
+| pending_lens_advancement_queue | 1 | purchase_receipt_id |
+| **Total** | **31** | |
+
+### C3 — Migration applied (Block C-2)
+
+Single MCP `apply_migration` call named `m1_lens_phase_2_part_c_fk_index_sweep` succeeded on first try (no 23505 collision; P-AUTHOR-2 fallback not exercised). Each statement: `CREATE INDEX IF NOT EXISTS idx_<table>_<col> ON public.<table> (<col>) WHERE <col> IS NOT NULL;`
+
+All 31 indexes use the partial WHERE pattern to:
+- Save disk space (NULL-heavy columns like `transfer_id` on `stock_movement` only index rows where the FK is set).
+- Match the canonical query shape (most lookup queries on FK columns specifically WHERE col = ? which implies NOT NULL anyway).
+
+Longest index name = `idx_supplier_catalog_offering_supplier_brand_distribution_id` (60 chars) — within PostgreSQL's 63-char identifier limit. Verified pre-apply.
+
+### C4 — Post-state probe (C5)
+
+| Metric | Value |
+|---|---|
+| M1 Lens scope unindexed FK count | **0** ✅ (SC C5 met) |
+| M1 Lens scope partial `idx_*` indexes | 32 (31 new + 1 pre-existing from Phase 1A) |
+
+### C5 — Prizma invariant (post-Part-C)
+
+| Table | Pre-Part-C (= Post-Part-B) | Post-Part-C | Delta |
+|---|---|---|---|
+| stock_adjustment (prizma) | 0 | 0 | 0 ✅ |
+| stock_adjustment_reason (prizma) | 4 | 4 | 0 ✅ |
+| stock_lot (prizma) | 0 | 0 | 0 ✅ |
+| stock_movement (prizma) | 0 | 0 | 0 ✅ |
+
+CREATE INDEX is non-data; row counts unchanged. SC G6 + B8 (extended) held.
+
+### C6 — npm baseline smoke
+
+7/7 PASS post-Part-C. SC G5 met.
+
+### C7 — Success criteria recap (Part C)
+
+| SC | Status | Evidence |
+|---|---|---|
+| C1 (live probe re-run) | ✅ | Exactly 31 — matches Foreman snapshot; in band |
+| C2 (single migration) | ✅ | One `apply_migration` call with 31 CREATE INDEX statements |
+| C3 (partial WHERE) | ✅ | Each statement `WHERE <col> IS NOT NULL`; verified via post-state probe `indexdef LIKE '%WHERE%IS NOT NULL%'` returned 32 |
+| C4 (idx_ naming) | ✅ | All names lowercase `idx_<table>_<col>` format |
+| C5 (post-Part-C 0 unindexed in M1 Lens scope) | ✅ | Re-run probe → 0 rows |
+
+### C8 — In-flight decisions taken (Part C)
+
+None. Probe matched Foreman snapshot exactly; migration applied on first try; no smoke deviation.
+
+### C9 — Commits this Part
+
+| # | Hash | Subject |
+|---|---|---|
+| C-close | (this commit) | `perf(m1,db): Part C — 31 partial FK indexes for M1 Lens scope` |
+
+### C10 — Self-assessment (Part C only)
+
+- Adherence to SPEC: **10/10** — followed §3 C1-C5 exactly; single migration; partial-index pattern; naming convention adhered.
+- Adherence to Iron Rules: **10/10** — no rule touched (CREATE INDEX is additive, no tenant_id/RLS implications).
+- Commit hygiene: **(deferred to SPEC close)**
+- Documentation currency: **10/10** — MIGRATION.md Applied Log + EXECUTION_REPORT Part C both updated atomically with the migration commit.
+
+---
+

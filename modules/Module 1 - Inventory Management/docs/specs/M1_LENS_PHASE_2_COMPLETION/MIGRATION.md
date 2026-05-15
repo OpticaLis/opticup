@@ -285,9 +285,9 @@ Executor fills this in as Block B / C / D apply:
 | B-3 smoke (demo round-trip) | execute_sql DO | 2026-05-15T~23:57Z | ✅ PASS (2nd attempt) | 1st attempt failed on lens_variant.tenant_id fixture assumption (lens_variant is global catalog, no tenant_id). 2nd attempt: adjustment_id=<demo>, lot_id=<demo>, movement_id=<demo>, qty_delta=+3. |
 | B-7 anon-reject | execute_sql DO (set_config '') | 2026-05-15T~23:57Z | ✅ PASS | DO block completed without re-raising (anon call correctly rejected with SQLSTATE in {42501, 22P02}). |
 | Post-B verification | execute_sql | 2026-05-15T~23:58Z | ✅ PASS | demo got 2 stock_adjustment / 2 stock_lot / 2 stock_movement (1 pre-existing from GAP_CLOSURE smoke + 1 from this Part B smoke). Prizma unchanged. |
-| C pre-state probe | execute_sql | (Stage 4) | _pending_ | _capture exact row count_ |
-| C-2 index sweep | apply_migration | (Stage 4) | _pending_ | _N indexes created_ |
-| C-5 post-state probe | execute_sql | (Stage 4) | _pending_ | _expect 0 in M1 Lens scope_ |
+| C-1 pre-state probe | execute_sql | 2026-05-16T~00:05Z | ✅ PASS | Exactly 31 unindexed FKs in M1 Lens scope; matches Foreman snapshot precisely; in expected ±5 band |
+| C-2 index sweep (31 indexes, single migration) | apply_migration | 2026-05-16T~00:05Z | ✅ PASS | `m1_lens_phase_2_part_c_fk_index_sweep` — single call, no 23505 collision, P-AUTHOR-2 fallback NOT exercised. Longest index name = 60 chars (under 63-char identifier limit). |
+| C-5 post-state probe | execute_sql | 2026-05-16T~00:06Z | ✅ PASS | M1 Lens scope unindexed FK count = 0; 32 partial `idx_*` indexes (31 new + 1 pre-existing) |
 | D INSERT permissions (if any) | execute_sql | (Stage 5) | _pending_ | _key list_ |
 | D INSERT role_permissions (if any) | execute_sql | (Stage 5) | _pending_ | _row count_ |
 
