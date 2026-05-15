@@ -1,7 +1,7 @@
 {
   "_doc": "Root Discipline Rule allowlist — derived from CLAUDE.md §0.5. Maintained per Module Close Ceremony.",
   "_version": "1.0.0",
-  "_last_updated": "2026-05-12",
+  "_last_updated": "2026-05-15",
   "_managed_by": "STRUCTURE_PROTECTIONS SPEC + manual updates per CLAUDE.md §0.5 changes",
 
   "files": {
@@ -42,7 +42,10 @@
       "lens-catalog-admin.html",
       "lens-inventory.html",
       "lens-active-designs.html",
-      "lens-pricing.html"
+      "lens-pricing.html",
+      "lens-purchase-order.html",
+      "lens-pos-list.html",
+      "lens-goods-receipt.html"
     ],
     "category_legacy_acknowledged": [
       "serve.js",
