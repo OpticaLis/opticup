@@ -1,4 +1,18 @@
-# SECURITY_HOTFIX_4 — Architecture Brief (stub)
+# SECURITY_HOTFIX_4 — Architecture Brief (stub) — **RETIRED 2026-05-15**
+
+> ⚠️ **THIS STUB IS RETIRED.** Daniel + Architect decided 2026-05-15 to replace the "extend RLS + GRANT anon on private base tables" approach (this stub's plan) with a **dedicated public-data-layer architecture** that is structurally separate from private base tables. The replacement Brief is:
+>
+> **`STOREFRONT_PUBLIC_DATA_LAYER_BRIEF.md`** (same folder).
+>
+> Reason: Daniel directive — "אני רוצה שזה יהיה בנוי בצורה המקצועית ביותר בלי פלסטרים ויהיה אפשר לשפר את התוכנה תמיד בלי צורך לחזור אחורה ולתקן דברים." The HOTFIX_4 approach worked but depended on procedural discipline (every future column on `inventory` needed manual GRANT review). The public-data-layer approach is mechanical separation — no future discipline required, no risk of accidental column leakage, and the same foundation serves the future Standard-tier shared storefront, Supplier Portal (M11), and any future public-facing consumer.
+>
+> Do not execute this stub. Execute `STOREFRONT_PUBLIC_DATA_LAYER_BRIEF.md` instead.
+
+---
+
+**Original stub content preserved below for historical context.**
+
+---
 
 **Type:** Production security hotfix. Sequel to SECURITY_HOTFIX_3 (closed 2026-05-15 🟡 with Option B partial closure). Closes the residual F-CRIT-2 gap: the 8 deferred storefront views + their 5 additional base-table RLS expansions that SECURITY_HOTFIX_3 scoped out per Daniel's Option B decision.
 
@@ -119,3 +133,7 @@ Pipeline runs end-to-end in ONE Claude Code chat. STOP triggers (same as HOTFIX_
 - Advisor returns NEW findings beyond F-CRIT-2 closures → STOP.
 
 End of stub. Architect to author full Brief next session.
+
+---
+
+✅ **SUPERSEDED 2026-05-15 by `STOREFRONT_PUBLIC_DATA_LAYER_2026_05_15`.** See `modules/Module 1.5 - Shared Components/docs/specs/STOREFRONT_PUBLIC_DATA_LAYER_2026_05_15/` for the closed SPEC + retrospective.
