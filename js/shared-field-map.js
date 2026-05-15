@@ -170,6 +170,10 @@ const FIELD_MAP = {
     'תוקף מ-':'effective_from','תוקף עד':'effective_until',
     'מחליף את':'supersedes_id','הערות':'notes'
   },
+  currencies: {
+    'קוד מטבע':'code','שם':'name','סמל':'symbol',
+    'ספרות עשרוניות':'decimal_digits','פעיל':'is_active','נוצר':'created_at'
+  },
   tenant_location: {
     'שם':'name','קוד קצר':'short_code','כתובת':'address',
     'ברירת מחדל':'is_default','פעיל':'is_active','הערות':'notes'

@@ -52,6 +52,8 @@ const T = {
   SUPPLIER_CATALOG: 'supplier_catalog_offering',
   PRICING_OVERLAY: 'pricing_overlay',
   VAT_RATES: 'vat_rates',
+  // Global reference (universal, read-anywhere + write-platform-only):
+  CURRENCIES: 'currencies',
   // Retailer (tenant-scoped):
   TENANT_ACTIVE_OFFERINGS: 'tenant_active_offerings',
   TENANT_LENS_STOCK: 'tenant_lens_stock',
