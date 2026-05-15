@@ -1,4 +1,20 @@
-# Site Overseer — SKILL knowledge map (v0.5)
+# Site Overseer — SKILL knowledge map (v0.6)
+
+## 🚨 READ FIRST — Funnel & Marketing Roadmap
+
+For **any task touching CRM, leads, broadcasts, pixel, attribution, automation rules, or funnel measurement** — read `roles/site-overseer/FUNNEL_ROADMAP.md` first. It records the 10-question architectural review from 2026-05-14 + every decision Daniel approved. Do NOT re-ask questions that are already answered there. Specifically:
+
+- UTM model = **first-touch only, frozen forever per lead** (Q1)
+- `crm_events.status` = lifecycle + automation-trigger mixed in one column (intentional today, Phase 3 reform planned) (Q2)
+- Broadcast bookkeeping is **broken since 2026-05-12** — `total_sent` always 0; fix is Phase 1 P1.2 (Q4)
+- `event_invite_new` **intentionally bypasses** `crm_automation_rules` for UX speed — keep as documented fast-path (Q10)
+- CAPI is **deferred to Phase 2** but high priority — exists infra (token field, scenario 8542928) but inactive (Q8)
+
+Knowledge map of the 10 architecture layers lives in `roles/site-overseer/knowledge-build/KNOWLEDGE_MAP.md`.
+
+---
+
+
 
 > **Purpose:** Drop-in knowledge so future Site Overseer Mode B sessions can answer
 > common questions about the Optic Up storefront without re-discovering structure
@@ -38,6 +54,26 @@
 - **Deploy chain:** `develop` branch (active dev) → PR → `main` → Vercel auto-deploy. Local `npm run build` mirrors prod.
 - **Environment variables:** Vercel project settings; never committed to git.
 - **DNS authority:** Vercel manages `prizma-optic.co.il` and `www.prizma-optic.co.il`; DreamVPS still authoritative for `ru.` and `en.` subdomains until the Phase C decommission SPEC.
+
+### 🚨 Daniel's terminology — DO NOT confuse these pages (locked 2026-05-13)
+
+When Daniel says any of the following, the page he means is **`/supersale/`** (the CMS-driven main marketing page, served from `storefront_pages` table):
+
+- "עמוד הסופרסייל" / "עמוד הסופר סייל"
+- "טופס הסופרסייל" / "הטופס של הסופרסייל"
+- "העמוד הראשי" (in the context of supersale)
+- "supersale page" / "the supersale form"
+
+The page he does **NOT** mean is `/quick-register/` — that is a separate page for QR-code walk-in registration with an event-number parameter. `/quick-register/` and `/supersale/` happen to embed **similar-looking inline forms** (phone + name + email + eye-exam dropdown + notes + two checkboxes + "שריינו לי מקום" button), but they are different routes with separate code paths:
+
+- `/supersale/` — CMS-driven, lives in `storefront_pages` (slug=`/supersale/`, prizma tenant, lang=he), form HTML inlined into the page body.
+- `/quick-register/` — Astro file at `src/pages/quick-register/index.astro`, form rendered dynamically by JavaScript when the URL has `?event=N`.
+
+**Rule:** if a user request references "supersale" without explicit URL, default to `/supersale/`. If unclear, ask one clarifying question BEFORE writing any SPEC or making any edit. Never assume `/quick-register/` is "the supersale form" — they are not the same thing.
+
+**Background:** 2026-05-13 SPECs M3_QUICK_REGISTER_MARKETING_PRETICK_REMOVAL + M3_QUICK_REGISTER_MARKETING_TEXT_EXPANSION were authored against `/quick-register/` when Daniel meant `/supersale/`. First was merged to main; second was on `develop` only. Both were reverted (see DECISIONS_LOG 2026-05-13).
+
+---
 
 ### Astro routing (verified empirically 2026-05-08, M3_WP_BLOG_POST_MAPPING)
 

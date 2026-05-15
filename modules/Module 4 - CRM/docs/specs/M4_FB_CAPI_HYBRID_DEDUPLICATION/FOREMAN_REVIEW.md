@@ -190,4 +190,18 @@ Per skill mandate: every FOREMAN_REVIEW must carry 2+2 concrete proposals. ✅ D
 
 ---
 
+## Downstream SPEC Closure Note (addendum, 2026-05-15 evening)
+
+**`M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF` 🟢 CLOSED** — the storefront-side completion of P2.1 referenced in this M4 SPEC's §1 Verdict and §10 Follow-ups Opened shipped same day. 2 commits on `opticalis/opticup-storefront@develop` (`63fb86c` + `4bd9c4f`) wire the storefront half: UUID generation at form submit + hidden `fb_event_id` on POST body + `?fbe=<uuid>` URL param to thank-you-page + `{eventID: fbEventId}` 4th arg to `fbq('track', 'Lead', ...)`. End-to-end verified twice independently on demo — both terminal states matched the D-AUTH-3 prediction this M4 SPEC made (lead's UUID flows through `crm_leads.fb_event_id` → `crm_capi_dispatch_queue.event_id` → cron tick → consumer EF → `status='skipped_no_token'` because demo's `tenants.fb_capi_token` is intentionally NULL).
+
+**This M4 SPEC retains 🟡 verdict** because it correctly captured the partial-closure state AT THE TIME OF ITS OWN SEAL. The downstream SPEC's closure does NOT change that historical fact. Readers tracking the "what closes P2.1 fully?" question should follow this thread:
+
+- ERP substrate (THIS SPEC) → `modules/Module 4 - CRM/docs/specs/M4_FB_CAPI_HYBRID_DEDUPLICATION/FOREMAN_REVIEW.md`
+- Storefront handoff (downstream) → `modules/Module 3 - Storefront/docs/specs/M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF/FOREMAN_REVIEW.md`
+- LIVE activation step (Daniel-only, not a SPEC) → populate `tenants.fb_capi_token` for Prizma via Meta Business Manager
+
+Cross-references in this M4 review (esp. §10 "NEW SPEC stub queued" line about `M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF`) should now read as "shipped 2026-05-15 evening 🟢" rather than "queued". The OPEN_TASKS row 6a was flipped to closed in the same closure commit.
+
+---
+
 *End of FOREMAN_REVIEW.md — M4_FB_CAPI_HYBRID_DEDUPLICATION.*

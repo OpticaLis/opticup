@@ -1,8 +1,38 @@
 # Site Overseer — HANDOFF
 
-**Last updated:** 2026-05-14 (**REC-SITE-024 CLOSED 2026-05-14** via M4_LEAD_INTAKE_ASYNC_DISPATCH — `lead-intake` Edge Function fresh-lead path now wraps `dispatchFreshLead()` in `EdgeRuntime.waitUntil(...)` so the user receives a 1-2s response instead of waiting 10-15s for Make SMS+email webhooks. Lead is still INSERT'd to `crm_leads` synchronously BEFORE response returns; only Make-webhook dispatch runs in the background. `crm_message_log` per-row state preserves the audit trail. Deployed to live Supabase project (lead-intake EF version 24). REC-SITE-023 (M3_SUPERSALE_CHECKBOX_COMMA_FIX) remains closed-partial. REC-SITE-022 (M3_SUPERSALE_MARKETING_CHECKBOX) remains closed. REC-SITE-020 + REC-SITE-021(B) remain REVERTED on `/quick-register/`. REC-SITE-021(C) Lead-pixel wiring still DEFERRED.)
-**Mode:** **Mode B** (post-discovery — SITE_MAP.md + SITE_OVERSEER_SKILL.md v0.2 baseline exists)
-**Site Overseer state:** Ready to receive targeted Mode-B audits; knowledge map now loaded so structure questions resolve in <2 min via lookup vs ~20 min re-discovery
+**Last updated:** 2026-05-14 evening (after 10-Q strategic architecture review with Daniel + FUNNEL_ROADMAP.md authored). Marathon-session arc summary: (1) Pixel 304574492100180 verified live with Lead event firing correctly on /successfulsupersale/; (2) `/quick-register/` work REVERTED (wrong page — REC-SITE-020 + 021(B) reverted via M3_QUICK_REGISTER_ROLLBACK); (3) `/supersale/` (the actual intended page) got marketing-consent label rewrite + cookie-consent wiring + comma-bug fix (REC-SITE-022 + 023 closed); (4) `lead-intake` EF response time reduced from 10-15s → 1-2s via async dispatch (REC-SITE-024 closed); (5) event-24 funnel diagnostic completed read-only — surfaced 5 measurement gaps; (6) full architectural knowledge build (10 layers) committed to `roles/site-overseer/knowledge-build/KNOWLEDGE_MAP.md`; (7) 10-question architectural review with Daniel — all answered, all decisions in `FUNNEL_ROADMAP.md`. **Phase 1 has 4 SPECs awaiting authoring + Architect approval before any execution.**
+**Mode:** **Mode B** (post-discovery — SITE_MAP.md + SITE_OVERSEER_SKILL.md v0.6 includes FUNNEL_ROADMAP pointer)
+**Site Overseer state:** Strategic phase complete. Ready for Architect (`opticup-architect`) review of FUNNEL_ROADMAP.md before authoring Phase-1 SPECs (P1.1 UTM Triple-Layer, P1.2 Broadcast ID Propagation, P1.3 short.gy → internal redirect, P1.4 RPC map).
+
+---
+
+## 🚨 NEXT-SESSION HANDOFF — For Architect (opticup-architect) (2026-05-14 evening)
+
+**For the Architect taking over:** the Site Overseer ran a full-day session 2026-05-14 that produced both tactical fixes AND a strategic review. The strategic review needs your evaluation before any further work runs.
+
+**Required reading order:**
+1. `roles/site-overseer/FUNNEL_ROADMAP.md` — **this is the primary artifact.** 10 questions Daniel answered, every decision recorded, 4 Phase-1 SPECs planned but not yet authored, 3 Phase-2 SPECs deferred (CAPI HIGH PRIORITY), 2 Phase-3 SPECs as Tech Debt.
+2. `roles/site-overseer/knowledge-build/KNOWLEDGE_MAP.md` — 10-layer architecture map produced by Claude Code (commit `e8ef9d3`). Backs every claim in FUNNEL_ROADMAP.
+3. The "Marathon Session 2026-05-14" section in this HANDOFF (below) — tactical fixes that already shipped today.
+4. `roles/site-overseer/DECISIONS_LOG.md` — last 5 entries.
+
+**What you're being asked to do:**
+- Validate Phase 1 priorities against the broader project roadmap (`MASTER_ROADMAP.md`)
+- Confirm or reorder the 4 Phase-1 SPECs (UTM persistence, broadcast ID propagation, short.gy migration, RPC mapping)
+- Decide whether to author all 4 Phase-1 SPECs now (Site Overseer's plan) or stage them differently
+- Optionally remain in supervisory mode while Site Overseer authors SPECs, OR take over SPEC authoring directly
+
+**Three measurement gaps Daniel cares deeply about** (in priority order he expressed):
+1. UTMs leak ~35% of leads (Phase 1 P1.1 fixes this)
+2. Broadcast bookkeeping broken since 2026-05-12 (Phase 1 P1.2 fixes this)
+3. CAPI off entirely — losing 30-50% of conversion credit to AdBlocker/closed-tab (Phase 2 P2.1 — Daniel said "defer but right after Phase 1 — sending purchases is important")
+
+**Daniel's directive:** "I want marketing funnels at the level of companies that spend millions on advertising. I want them to always improve, to know how to improve, and what to improve — eventually autonomously via agents." This is the north star. Phase 4 (AI agents auto-optimizing campaigns) is the destination; Phase 1+2+3 are infrastructure to enable it.
+
+**Session-end status as of 2026-05-14 evening:**
+- 4 Phase-1 SPECs PLANNED (not yet authored)
+- Daniel running parallel session — do NOT trigger Claude Code executions while he's in another session
+- No open PRs blocking; develop branches are clean
 
 ---
 
