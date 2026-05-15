@@ -1,7 +1,46 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1A_CURRENCIES_GLOBAL_HOTFIX — 2026-05-14
+M1A_DEBT_SWEEP — 2026-05-15
+
+## 2026-05-15 — M1A Debt Sweep (✅ CLOSED — Full Auto Pipeline single chat, 🟢 verdict)
+
+**Goal:** Close 3 tracked debts from Phase 1A + currencies-hotfix FOREMAN_REVIEWs, plus apply 4 accumulated skill self-improvement proposals — all in one consolidated maintenance Pipeline, before Phase 1B starts.
+
+**What shipped (12 commits, ~50 min wall-clock):**
+
+- **Commit Group A — 4 skill self-improvements applied BEFORE SPEC authoring (Locked Decision #2):**
+  - `4aa7ecd` — opticup-strategic: new reference `RLS_PATTERN_GLOBAL_REFERENCE.md` (5-policy pattern for universal-data tables) + Architectural Principle #10.
+  - `eed7ad4` — opticup-strategic: SPEC Authoring Step 5.3 "DDL boundary scan" (Path A MCP-only-apply vs Path B Daniel-bypass pre-decision).
+  - `27cddac` — opticup-executor: proactive `node scripts/verify.mjs --staged` before EVERY git commit (paid off on this Pipeline's very first run — surfaced the rule-15 dependency).
+  - `b3b58f9` — opticup-executor: Level-3a destructive-pattern execution playbook (MIGRATION.md in SPEC folder pattern).
+
+- **Commit Group B — 3 debt commits (REORDERED to B3 → B1 → B2 per Executor real-time decision after proactive verify surfaced a rule-15 dependency that B3 had to fix first):**
+  - `913fa47` (B3) — `fix(verify): close M1_5_VERIFY_HOOKS_REGEX_FIXES`. rule-15 policyRE accepts both `\w+` and `"[^"]+"` (quoted policy names). rule-21 PATTERNS anchor at `^` with `/gm` (top-level only). 38 false positives eliminated.
+  - `fdf3e2c` (B1) — `fix(m1,schema): close M1A-DEBT-02`. 4 UNIQUE constraints get tenant_id (document_links, payment_allocations, conversation_participants, message_reactions). Phase 1A 17-table + 9-RPC + K3 + K5 summary appended. 2 doc-sync adaptations: line-767 comment + expense_folders RLS lines.
+  - `52088ed` (B2) — `feat(shared): close M1A-DEBT-03`. T.CURRENCIES + 6-column FIELD_MAP entry.
+
+- **Commit Group C — close (this commit):**
+  - FOREMAN_REVIEW.md + MASTER_ROADMAP §5 (3 RESOLVED rows) + TECH_DEBT.md (RULE18-COMMENT-FALSE-POSITIVE entry) + this SESSION_CONTEXT sweep section.
+
+**Pipeline stats:**
+- Auth + RLS + CRM + Storefront baseline smoke: 7/7 PASS on demo tenant (`e36283f` TEST_REPORT).
+- Reviewer verdict: 🟢 PASS at `74435ed`. 5 spot-checks all PASS.
+- Foreman verdict: 🟢 CLOSED. 3 additional spot-checks all PASS (8/8 total).
+- 4 findings logged, all disposed: 3 dismissed in-pipeline + 1 promoted to TECH_DEBT (RULE18-COMMENT-FALSE-POSITIVE).
+- 0 escalations to Daniel. 0 destructive ops. 0 main-branch modifications.
+- §4 Destructive Operations declared `None.`; Iron Rule 32 implicit-forbid satisfied.
+
+**Status:**
+- ✅ 3 debts closed (M1A-DEBT-02, M1A-DEBT-03, M1_5_VERIFY_HOOKS_REGEX_FIXES) — MASTER_ROADMAP §5 reflects.
+- ✅ 4 skill improvements applied — proposals from 2 prior FOREMAN_REVIEWs now in SKILL.md / references.
+- ✅ Verify hooks now accept quoted policy names + reject only top-level orphans (false-positive rate ~0).
+- ✅ Phase 1B unblocked — customer-facing screen SPECs can start without pre-existing M1 doc-schema blockers.
+- 🟡 RULE18-COMMENT-FALSE-POSITIVE open as low-priority TECH_DEBT (1 known occurrence, surgically worked around).
+
+**Next:** Phase 1B SPEC authoring (`modules/Module 1 - Inventory Management/docs/specs/M1_LENS_INVENTORY_PHASE_1B_CUSTOMER_SCREENS/`).
+
+---
 
 ## 2026-05-14 — M1A Currencies Global Hotfix (✅ SHIPPED — Full Auto Pipeline single chat)
 
