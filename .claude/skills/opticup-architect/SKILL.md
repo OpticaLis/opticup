@@ -972,6 +972,29 @@ This skill works in both:
 
 When this skill loads in either, the bootstrap is identical. Daniel can switch between them mid-decision and the DECISIONS_LOG carries the context.
 
+### Cowork File-Write Capability Map
+
+Added 2026-05-15 by `PENDING_ENTRIES_AUTO_RESOLUTION` SPEC (Brief §6 D5). The Cowork file-tool layer has a path-based lock that prevents accidental corruption of skill files; the lock is intentional and stays. This map is the cheat sheet so a Cowork Architect session **never attempts a bash workaround for a file-tool-blocked path** — instead it writes a pending entry and trusts the Layer 1 sweep (`opticup-executor` SKILL.md Step 4.5) to apply it in the next Claude Code session.
+
+| Tool surface                    | `.claude/skills/**`            | Repo `docs/**`, `modules/**`, root `.md` | `_archive/**`            | `scripts/**`            |
+|---------------------------------|--------------------------------|-------------------------------------------|--------------------------|-------------------------|
+| Cowork file-tool (Write/Edit)   | ❌ **BLOCKED**                 | ✅ allowed                                | ✅ allowed               | ❌ blocked              |
+| Cowork bash (`echo > file`)     | ❌ **BLOCKED** (same layer)    | ✅ allowed (mount writable)               | ✅ allowed               | ❌ blocked              |
+| Cowork bash (`sed -i / rm`)     | ❌ blocked / not present       | ✅ partial (`sed -i` works; `rm` works)   | ✅ allowed               | ❌ blocked              |
+| Claude Code (Windows desktop)   | ✅ full                        | ✅ full                                   | ✅ full                  | ✅ full                 |
+| Claude Code (Mac)               | ✅ full                        | ✅ full                                   | ✅ full                  | ✅ full                 |
+
+**Rules of thumb for a Cowork Architect session.**
+
+1. **Need to update `.claude/skills/...`?** Write a pending entry to `_archive/architect-pending-entries/<YYYY-MM-DD>_<TOPIC>.md` using the standard pending-file template (Purpose → verbatim content code-block → Placement instructions → "this file deleted by the next sweep"). Do NOT attempt a bash workaround — none exists. The Layer 1 sweep (executor SKILL.md Step 4.5) consumes it in the next Claude Code session.
+2. **Need to update a repo doc (`MASTER_ROADMAP.md`, `OPEN_TASKS.md`, module `SESSION_CONTEXT.md`)?** Use the file-tool directly. Cowork has full write access here. No pending-entry workaround needed.
+3. **Need to run a script or commit code?** Cowork can't. Either (a) hand off the action prompt to Claude Code via a Brief, or (b) leave a structured note (Brief, escalation, decision-log entry) that the next Claude Code session executes.
+4. **Drift detection.** If `_archive/architect-pending-entries/` ever holds **more than 1** file at the start of your session, that's a process smell — the previous Claude Code session ended without sweeping. Sentinel Mission 10.6 raises HIGH at 2+ files; you should also surface to Daniel in a one-line check.
+
+This rule prevents the failure mode that prompted the SPEC: on 2026-05-15 a Cowork Architect session needed to record DECISIONS_LOG entry #32, wrote a pending file, and a *different* Cowork session opening later had no mechanical way to apply it. After this SPEC closed, that scenario is structurally resolved.
+
+**Cross-reference.** Layer 2 = `scripts/checks/architect-pending-applied.mjs` (advisory pre-commit warning when folder non-empty). Layer 3 = Sentinel Mission 10.6 (1 file >48h = MEDIUM, 2+ files = HIGH). Source SPEC: `modules/Module 1.5 - Shared Components/docs/specs/PENDING_ENTRIES_AUTO_RESOLUTION/`. Source Brief: `modules/Module 1.5 - Shared Components/architecture-brief/PENDING_ENTRIES_AUTO_RESOLUTION_BRIEF.md` D5.
+
 ## Module Close Ceremony — MANDATORY (added 2026-05-09)
 
 When a module's Architecture Brief is sealed (e.g. "M12 Brief locked"), execute this ceremony BEFORE moving to the next module's handoff. **Skipping this is a critical bad — it's the mechanism that makes the skill self-improve.**
