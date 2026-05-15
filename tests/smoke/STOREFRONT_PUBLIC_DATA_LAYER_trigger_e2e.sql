@@ -129,6 +129,148 @@ BEGIN
 END;
 $$;
 
--- Blocks 4-6 (brands_public, inventory_images_public, inventory_public) added in Commit 3.
+-- =====================================================================
+-- Block 4 — brands_public (source: brands)
+-- 5 cases: INSERT, UPDATE, UPDATE-to-invisible (active=false), re-active, DELETE.
+-- =====================================================================
 
-SELECT 'STOREFRONT_PUBLIC_DATA_LAYER trigger E2E suite — blocks 1-3 complete.' AS status;
+DO $$
+DECLARE
+  v_demo uuid := '8d8cfa7e-ef58-49af-9702-a862d459cccb';
+  v_marker_id uuid;
+BEGIN
+  INSERT INTO public.brands (tenant_id, name, slug)
+  VALUES (v_demo, '__E2E_Marker_Brand__', '__e2e_brand__')
+  RETURNING id INTO v_marker_id;
+  IF (SELECT count(*) FROM public.brands_public WHERE id=v_marker_id) <> 1
+    THEN DELETE FROM public.brands WHERE id=v_marker_id;
+         RAISE EXCEPTION 'E2E brands-1 FAIL'; END IF;
+
+  UPDATE public.brands SET name='__E2E_Marker_Brand_Updated__' WHERE id=v_marker_id;
+  IF (SELECT name FROM public.brands_public WHERE id=v_marker_id) <> '__E2E_Marker_Brand_Updated__'
+    THEN DELETE FROM public.brands WHERE id=v_marker_id;
+         RAISE EXCEPTION 'E2E brands-2 FAIL'; END IF;
+
+  UPDATE public.brands SET active=false WHERE id=v_marker_id;
+  IF (SELECT count(*) FROM public.brands_public WHERE id=v_marker_id) <> 0
+    THEN DELETE FROM public.brands WHERE id=v_marker_id;
+         RAISE EXCEPTION 'E2E brands-3 FAIL — active=false did not remove mirror row'; END IF;
+
+  UPDATE public.brands SET active=true WHERE id=v_marker_id;
+  IF (SELECT count(*) FROM public.brands_public WHERE id=v_marker_id) <> 1
+    THEN DELETE FROM public.brands WHERE id=v_marker_id;
+         RAISE EXCEPTION 'E2E brands-4 FAIL'; END IF;
+
+  DELETE FROM public.brands WHERE id=v_marker_id;
+  IF (SELECT count(*) FROM public.brands_public WHERE id=v_marker_id) <> 0
+    THEN RAISE EXCEPTION 'E2E brands-5 FAIL'; END IF;
+  RAISE NOTICE 'brands_public E2E 5/5 PASS.';
+END;
+$$;
+
+-- =====================================================================
+-- Block 5 — inventory_images_public (source: inventory_images)
+-- 3 cases: INSERT, UPDATE, DELETE. Uses an existing demo inventory row for FK.
+-- =====================================================================
+
+DO $$
+DECLARE
+  v_demo uuid := '8d8cfa7e-ef58-49af-9702-a862d459cccb';
+  v_inv_id uuid;
+  v_marker_id uuid;
+BEGIN
+  SELECT id INTO v_inv_id FROM public.inventory WHERE tenant_id=v_demo LIMIT 1;
+  IF v_inv_id IS NULL THEN RAISE EXCEPTION 'E2E inv_images setup FAIL — no demo inventory row'; END IF;
+
+  INSERT INTO public.inventory_images (tenant_id, inventory_id, storage_path, url, sort_order)
+  VALUES (v_demo, v_inv_id, 'e2e-test/__marker__.webp', 'https://example.com/__marker__.webp', 99)
+  RETURNING id INTO v_marker_id;
+  IF (SELECT count(*) FROM public.inventory_images_public WHERE id=v_marker_id) <> 1
+    THEN DELETE FROM public.inventory_images WHERE id=v_marker_id;
+         RAISE EXCEPTION 'E2E inv_images-1 FAIL'; END IF;
+
+  UPDATE public.inventory_images SET sort_order=88 WHERE id=v_marker_id;
+  IF (SELECT sort_order FROM public.inventory_images_public WHERE id=v_marker_id) <> 88
+    THEN DELETE FROM public.inventory_images WHERE id=v_marker_id;
+         RAISE EXCEPTION 'E2E inv_images-2 FAIL'; END IF;
+
+  DELETE FROM public.inventory_images WHERE id=v_marker_id;
+  IF (SELECT count(*) FROM public.inventory_images_public WHERE id=v_marker_id) <> 0
+    THEN RAISE EXCEPTION 'E2E inv_images-3 FAIL'; END IF;
+  RAISE NOTICE 'inventory_images_public E2E 3/3 PASS.';
+END;
+$$;
+
+-- =====================================================================
+-- Block 6 — inventory_public + 2 satellite triggers (ai_content + inventory_images)
+-- 6 cases: visibility-by-image, image-add satellite, UPDATE,
+--          ai_content satellite INSERT, ai_content satellite UPDATE,
+--          last-image-DELETE removes mirror.
+-- product_type must be 'eyeglasses' or 'sunglasses' (CHECK constraint).
+-- =====================================================================
+
+DO $$
+DECLARE
+  v_demo uuid := '8d8cfa7e-ef58-49af-9702-a862d459cccb';
+  v_brand_id uuid;
+  v_inv_id uuid;
+  v_img_id uuid;
+  v_ai_id uuid;
+BEGIN
+  SELECT id INTO v_brand_id FROM public.brands
+   WHERE tenant_id=v_demo AND active=true AND COALESCE(exclude_website,false)=false
+     AND (brand_page_visibility IS NULL OR brand_page_visibility <> 'hidden')
+   LIMIT 1;
+  IF v_brand_id IS NULL THEN RAISE EXCEPTION 'E2E inv setup FAIL — no eligible demo brand'; END IF;
+
+  INSERT INTO public.inventory (tenant_id, brand_id, barcode, model, color, size, quantity, product_type, website_sync)
+  VALUES (v_demo, v_brand_id, 'E2E99999', 'E2E Marker Model', 'Black', 'M', 5, 'eyeglasses', 'full')
+  RETURNING id INTO v_inv_id;
+  IF (SELECT count(*) FROM public.inventory_public WHERE id=v_inv_id) <> 0
+    THEN DELETE FROM public.inventory WHERE id=v_inv_id;
+         RAISE EXCEPTION 'E2E inv-1 FAIL — visible without image'; END IF;
+
+  INSERT INTO public.inventory_images (tenant_id, inventory_id, storage_path, url, sort_order)
+  VALUES (v_demo, v_inv_id, 'e2e-test/__inv_marker__.webp', 'https://example.com/__inv_marker__.webp', 1)
+  RETURNING id INTO v_img_id;
+  IF (SELECT count(*) FROM public.inventory_public WHERE id=v_inv_id) <> 1
+     OR (SELECT array_length(image_paths,1) FROM public.inventory_public WHERE id=v_inv_id) <> 1
+    THEN DELETE FROM public.inventory_images WHERE id=v_img_id;
+         DELETE FROM public.inventory WHERE id=v_inv_id;
+         RAISE EXCEPTION 'E2E inv-2 FAIL — image satellite did not bring to visibility'; END IF;
+
+  UPDATE public.inventory SET model='E2E Marker Model (Updated)' WHERE id=v_inv_id;
+  IF (SELECT model FROM public.inventory_public WHERE id=v_inv_id) <> 'E2E Marker Model (Updated)'
+    THEN DELETE FROM public.inventory_images WHERE id=v_img_id;
+         DELETE FROM public.inventory WHERE id=v_inv_id;
+         RAISE EXCEPTION 'E2E inv-3 FAIL'; END IF;
+
+  INSERT INTO public.ai_content (tenant_id, entity_type, entity_id, content_type, content, language, status)
+  VALUES (v_demo, 'product', v_inv_id, 'description', 'E2E AI description', 'he', 'auto')
+  RETURNING id INTO v_ai_id;
+  IF (SELECT ai_description FROM public.inventory_public WHERE id=v_inv_id) <> 'E2E AI description'
+    THEN DELETE FROM public.ai_content WHERE id=v_ai_id;
+         DELETE FROM public.inventory_images WHERE id=v_img_id;
+         DELETE FROM public.inventory WHERE id=v_inv_id;
+         RAISE EXCEPTION 'E2E inv-4 FAIL — ai_content satellite INSERT did not propagate'; END IF;
+
+  UPDATE public.ai_content SET content='E2E AI description (Updated)' WHERE id=v_ai_id;
+  IF (SELECT ai_description FROM public.inventory_public WHERE id=v_inv_id) <> 'E2E AI description (Updated)'
+    THEN DELETE FROM public.ai_content WHERE id=v_ai_id;
+         DELETE FROM public.inventory_images WHERE id=v_img_id;
+         DELETE FROM public.inventory WHERE id=v_inv_id;
+         RAISE EXCEPTION 'E2E inv-5 FAIL — ai_content satellite UPDATE did not propagate'; END IF;
+
+  DELETE FROM public.inventory_images WHERE id=v_img_id;
+  IF (SELECT count(*) FROM public.inventory_public WHERE id=v_inv_id) <> 0
+    THEN DELETE FROM public.ai_content WHERE id=v_ai_id;
+         DELETE FROM public.inventory WHERE id=v_inv_id;
+         RAISE EXCEPTION 'E2E inv-6 FAIL — last image DELETE did not remove mirror row'; END IF;
+
+  DELETE FROM public.ai_content WHERE id=v_ai_id;
+  DELETE FROM public.inventory WHERE id=v_inv_id;
+  RAISE NOTICE 'inventory_public + satellites E2E 6/6 PASS.';
+END;
+$$;
+
+SELECT 'STOREFRONT_PUBLIC_DATA_LAYER trigger E2E suite — all 6 blocks complete. Total cases: 4+3+5+5+3+6 = 26.' AS status;
