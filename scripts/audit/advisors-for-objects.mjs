@@ -94,6 +94,14 @@ function extractLints(parsed) {
     if (Array.isArray(parsed.lints)) return parsed.lints;
     if (Array.isArray(parsed.data)) return parsed.data;
     if (Array.isArray(parsed.findings)) return parsed.findings;
+    // MCP `get_advisors` wraps its payload as {"result":{"lints":[...]}}.
+    // Unwrap the canonical MCP envelope so executors can pipe raw tool
+    // output to disk and feed it directly to this script.
+    if (parsed.result && typeof parsed.result === 'object') {
+      if (Array.isArray(parsed.result.lints)) return parsed.result.lints;
+      if (Array.isArray(parsed.result.data)) return parsed.result.data;
+      if (Array.isArray(parsed.result.findings)) return parsed.result.findings;
+    }
   }
   return null;
 }
