@@ -16,6 +16,8 @@
 | 6 | `m1b0_create_place_purchase_order` | Block 6 | 2026-05-15T~11Z | Same discipline. Inner call to `next_purchase_order_number(1 arg)` matches callee `pronargs=1`. ✓ |
 | 7 | `m1b0_create_mark_po_sent` | Block 7 | 2026-05-15T~11Z | Same discipline. `GET DIAGNOSTICS ROW_COUNT` + `22023` raise on not-found. ✓ |
 | 8 | `m1b0_create_cancel_purchase_order` | Block 8 | 2026-05-15T~11Z | Same discipline. `FOR UPDATE` + status-check gate. ✓ |
+| 9 | `m1b0_create_m1_create_supplier_debt_from_receipt` | Block 9 | 2026-05-15T~11Z | Same discipline. Idempotent via `ON CONFLICT (tenant_id, purchase_receipt_id) WHERE (is_deleted=false) DO NOTHING` (PG17 supports inferred partial-unique with WHERE). ✓ |
+| 10 | `m1b0_extend_k2_with_supplier_debt_wiring` | Block 10 | 2026-05-15T~11Z | K2 body CREATE OR REPLACE — appended `v_subtotal` accumulator inside LOOP + VAT lookup (`effective_until IS NULL` filter) + `m1_create_supplier_debt_from_receipt(5 args)` call after LOOP. Inner-call arity audit: callee `pronargs=5`, caller args=5 ✓. REVOKE/GRANT re-asserted per Phase 1A Code Review pattern. ✓ |
 
 (Updated incrementally — rows added at each commit's MCP-apply step.)
 
