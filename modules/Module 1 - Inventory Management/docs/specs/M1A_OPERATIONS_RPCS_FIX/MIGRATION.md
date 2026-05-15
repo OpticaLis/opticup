@@ -321,6 +321,104 @@ verify_jwt = true
 
 Append after the last existing `[functions.…]` block. Do NOT modify any pre-existing block.
 
+### Fix #10 — `record_adjustment_found` body — correct 20-arg overflow + position-11 self-ref (Amendment #2, 2026-05-15)
+
+**Migration name:** `m1a_record_adjustment_found_arg_mismatch_fix`
+
+**Authored by:** Foreman after executor escalation #2 at 2026-05-15 07:45 UTC. Escalation file: `modules/Module 1 - Inventory Management/escalations/2026-05-15T07-45-00Z_record_adjustment_found_arg_mismatch.md`.
+
+**Pre-authorization granted under Amendment #2 (broad):** for any remaining orchestrator-runtime-defect of the same class surfaced by SPEC §14 smoke, the executor may CREATE OR REPLACE the offending function in-place under the same discipline (Iron Rule 32 None, post-CREATE-OR-REPLACE re-REVOKE, document in MIGRATION.md as a Block, no signature changes). No further escalation required for same-class defects.
+
+**Bug discovered during functional smoke Case 5:** pre-existing `record_adjustment_found` body passes **20 positional args** to `record_stock_movement` (function accepts 19). Misaligned NULL at position 11 (intended slot for `v_lot_id` as `p_adjustment_id` self-ref per body comment) shifts every subsequent position by one. Type mismatches at positions 12 (uuid→numeric expected), 16 (uuid→text expected), 17 (text→numeric expected). PG raises 42883.
+
+The function's own comment says "INSERT the adjustment movement (uses adjustment_id slot — we use the lot_id as a self-ref since no adjustments table yet)" — confirming `v_lot_id` was intended at position 11 (`p_adjustment_id`), not at position 12. The original body's 6th NULL is the typo.
+
+**Fix:** CREATE OR REPLACE with the inner call corrected to 19 positional args; `v_lot_id` moved to position 11 (the design intent), remaining positions realigned, p_sph/p_cyl/p_add_value at 17/18/19.
+
+```sql
+CREATE OR REPLACE FUNCTION public.record_adjustment_found(
+  p_tenant_id uuid,
+  p_variant_id uuid,
+  p_location_id uuid,
+  p_qty_found integer,
+  p_reason text DEFAULT NULL::text,
+  p_performed_by uuid DEFAULT NULL::uuid,
+  p_sph numeric DEFAULT NULL::numeric,
+  p_cyl numeric DEFAULT NULL::numeric,
+  p_add_value numeric DEFAULT NULL::numeric
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_lot_id UUID;
+  v_movement_id UUID;
+  v_unit_cost NUMERIC(12,4) := 0;
+  v_jwt_tenant uuid := nullif(((current_setting('request.jwt.claims', true))::json ->> 'tenant_id'), '')::uuid;
+BEGIN
+  IF v_jwt_tenant IS NULL OR v_jwt_tenant <> p_tenant_id THEN
+    RAISE EXCEPTION 'Unauthorized: tenant_id mismatch' USING ERRCODE = '42501';
+  END IF;
+  IF p_qty_found <= 0 THEN
+    RAISE EXCEPTION 'qty_found must be positive' USING ERRCODE = 'P0001';
+  END IF;
+
+  SELECT price_amount INTO v_unit_cost
+    FROM supplier_catalog_offering
+    WHERE tenant_id = p_tenant_id AND variant_id = p_variant_id
+      AND status = 'active' AND is_deleted = false
+    ORDER BY effective_from DESC
+    LIMIT 1;
+  IF v_unit_cost IS NULL THEN v_unit_cost := 0; END IF;
+
+  INSERT INTO stock_lot(
+    tenant_id, variant_id, location_id, origin_type,
+    qty_received, qty_remaining, unit_cost, lot_number,
+    received_at, notes
+  ) VALUES (
+    p_tenant_id, p_variant_id, p_location_id, 'adjustment_found',
+    p_qty_found, p_qty_found, v_unit_cost, next_lot_number(p_tenant_id),
+    now(), 'adjustment_found: ' || COALESCE(p_reason, '')
+  ) RETURNING id INTO v_lot_id;
+
+  -- Fix #10 (Amendment #2, 2026-05-15): 19 positional args (was 20 with misaligned slots).
+  -- v_lot_id at position 11 (p_adjustment_id) per the design intent — self-ref because
+  -- there is no `adjustments` table yet (M1 Phase 1A scope).
+  v_movement_id := record_stock_movement(
+    p_tenant_id, v_lot_id, p_variant_id, p_location_id,         -- 1-4
+    'adjustment_found', p_qty_found,                              -- 5-6
+    NULL, NULL, NULL, NULL, v_lot_id,                             -- 7-11 (4 NULLs + adj_id = v_lot_id)
+    v_unit_cost, NULL, NULL,                                      -- 12-14 (cost_basis, vat, fx)
+    p_performed_by, p_reason,                                     -- 15-16 (performed_by, notes)
+    p_sph, p_cyl, p_add_value                                     -- 17-19
+  );
+
+  RETURN v_movement_id;
+END;
+$function$;
+
+-- CREATE OR REPLACE re-grants EXECUTE TO PUBLIC by default. Restore the post-Block-#2 ACL.
+REVOKE EXECUTE ON FUNCTION public.record_adjustment_found(
+  p_tenant_id uuid, p_variant_id uuid, p_location_id uuid, p_qty_found integer,
+  p_reason text, p_performed_by uuid, p_sph numeric, p_cyl numeric, p_add_value numeric
+) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.record_adjustment_found(
+  p_tenant_id uuid, p_variant_id uuid, p_location_id uuid, p_qty_found integer,
+  p_reason text, p_performed_by uuid, p_sph numeric, p_cyl numeric, p_add_value numeric
+) TO authenticated;
+
+COMMENT ON FUNCTION public.record_adjustment_found(
+  uuid, uuid, uuid, integer, text, uuid, numeric, numeric, numeric
+) IS 'M1A_OPERATIONS_RPCS_FIX Amendment #2 (2026-05-15): Fix #10 — inner record_stock_movement call now passes 19 positional args (was 20 misaligned). v_lot_id moved to position 11 (p_adjustment_id) per design intent (self-ref; no adjustments table yet). Pre-existing form raised 42883 at runtime.';
+```
+
+**Apply notes:**
+- Post-apply verify: `pg_get_functiondef('record_adjustment_found'::regproc)` body contains `'adjustment_found', p_qty_found,` followed by `NULL, NULL, NULL, NULL, v_lot_id,` (4 NULLs + v_lot_id = position 11) AND `v_unit_cost, NULL, NULL,` (12-14) AND `p_performed_by, p_reason,` (15-16) AND `p_sph, p_cyl, p_add_value` (17-19). ACL: zero anon/PUBLIC EXECUTE; 1 authenticated EXECUTE row.
+
+---
+
 ### Fix #9 — `record_transfer` body — pass 19 positional args (Amendment #1, 2026-05-15)
 
 **Migration name:** `m1a_record_transfer_arg_mismatch_fix`
@@ -495,6 +593,7 @@ Recorded by the Executor as each block is applied live via MCP `apply_migration`
 | #4 | `m1a_v_suppliers_for_m9_revoke_anon` | 2026-05-15 | `anon/PUBLIC rows=0`, `authenticated SELECT=1`, `authenticated other=0`, `service_role SELECT=1` |
 | #5 | `m1a_k3_queue_idempotency` | 2026-05-15 | `unique_idx_count=1`, `index_is_unique=1`, `has_onconflict_donothing=true`, `anon/auth/PUBLIC EXECUTE=0` (post-CREATE-OR-REPLACE re-REVOKE applied) |
 | #6 (Amendment #1) | `m1a_record_transfer_arg_mismatch_fix` | 2026-05-15 | `has_xfer_out_19args=true`, `has_xfer_in_19args=true`, `anon/PUBLIC EXECUTE=0`, `authenticated EXECUTE=1` |
+| #7 (Amendment #2) | `m1a_record_adjustment_found_arg_mismatch_fix` | 2026-05-15 | `has_19_arg_call=true`, `anon/PUBLIC EXECUTE=0`, `authenticated EXECUTE=1` |
 
 ---
 

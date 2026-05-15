@@ -463,3 +463,45 @@ After Commit 8.5 lands, executor resumes from Case 3 (smoke). Cases 1, 2 already
 **Foreman signature:** opticup-strategic, single-chat Full-Auto Pipeline, 2026-05-15 07:30 UTC. No Daniel input received (Daniel offline; Foreman's judgment-call within Brief-stated purpose).
 
 *End of Amendment #1.*
+
+---
+
+## Amendment #2 — Fix #10 added + broad pre-authorization for same-class defects (2026-05-15, mid-Pipeline)
+
+**Authored by:** opticup-strategic (Foreman) at ~07:50 UTC, after the executor's second escalation file `modules/Module 1 - Inventory Management/escalations/2026-05-15T07-45-00Z_record_adjustment_found_arg_mismatch.md`.
+
+**Context:** Smoke Case 5 surfaced a third pre-existing orchestrator runtime defect — `record_adjustment_found` passes 20 positional args (function takes 19) with `v_lot_id` misaligned to position 12 (`p_cost_basis numeric`) instead of position 11 (`p_adjustment_id uuid`). Original body's own comment confirms the design intent: "uses adjustment_id slot — we use the lot_id as a self-ref since no adjustments table yet". The 6th NULL is the typo. PG raises 42883. Phase 1A smoke never invoked `record_adjustment_found` (single lens_brand INSERT only) so this DOA bug went undetected — same root cause as Fix #1 and Fix #9.
+
+**Foreman decision:** (a) authorize Fix #10 in-pipeline; (b) grant broad pre-authorization for any remaining same-class orchestrator-runtime-defect surfaced by §14 smoke. Rationale:
+- 3rd same-class defect in this Pipeline. The class is bounded ("the 3 orchestrators Phase 1A never smoked" — record_stock_movement, record_transfer, record_adjustment_found).
+- Same fix discipline as Amendment #1 (CREATE OR REPLACE in-place, Iron Rule 32 None preserved, post-CREATE-OR-REPLACE re-REVOKE).
+- O(n) Foreman roundtrips for an obviously bounded scope is bad process.
+
+**Scope additions (deltas vs Amendment #1):**
+
+### §3 — new success criterion 25
+
+| 25 | `record_adjustment_found` no longer raises 42883 mid-body | Smoke Case 5 completes; demo `record_adjustment_found(qty=4)` returns movement_id UUID; created stock_lot has `qty_received=qty_remaining=4 origin_type='adjustment_found'`; stock_movement row has `movement_type='adjustment_found' qty_delta=+4 adjustment_id` = the lot id | §14 Case 5 (db) |
+
+### §4 — Autonomy Envelope: broad pre-authorization for same-class defects
+
+The executor is pre-authorized (under Amendment #2, broad) to CREATE OR REPLACE FUNCTION for any orchestrator-runtime-defect surfaced by §14 smoke, provided each fix is:
+1. **CREATE OR REPLACE FUNCTION in-place** (no signature change).
+2. **Iron Rule 32 None preserved** (no DROPs, no destructive ops).
+3. **Documented as a Block in MIGRATION.md** with migration name + apply log row.
+4. **Post-CREATE-OR-REPLACE re-REVOKE applied** to restore the post-Block-#2 ACL.
+5. **Verified live** before continuing.
+
+No further escalation required for same-class defects within this Pipeline run.
+
+### §10 — Commit Plan insert Commit 8.6
+
+Commit 8.6 (new, between 8.5 and 9): `fix(m1,rpc): record_adjustment_found — correct 20-arg overflow + position-11 self-ref (Amendment #2)`. Apply MIGRATION.md Block #7 via `apply_migration name=m1a_record_adjustment_found_arg_mismatch_fix`.
+
+### §6 — Rollback
+
+ROLLBACK.md Block #7 DOWN may be added by the executor for git-symmetry (rolling back re-introduces the runtime bug; DOWN is documentary only).
+
+**Foreman signature:** opticup-strategic, single-chat Full-Auto Pipeline, 2026-05-15 07:50 UTC. No Daniel input received (Daniel offline; Foreman judgment within Brief-stated purpose + same class as Amendment #1).
+
+*End of Amendment #2.*
