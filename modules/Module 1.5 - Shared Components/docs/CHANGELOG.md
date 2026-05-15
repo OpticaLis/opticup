@@ -1,5 +1,30 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-15 afternoon — SECURITY_HOTFIX_3 — residual F-CRIT-2 + 15 F-CRIT-3 carry RPCs (Daniel Option B)
+
+SPEC: `SECURITY_HOTFIX_3_2026_05_15` ([folder](specs/SECURITY_HOTFIX_3_2026_05_15/))
+
+**Production security hotfix.** Sequel to `SECURITY_HOTFIX_2_2026_05_15` (closed earlier today 🟡). Pre-flight surfaced Brief §1.1 3-table scope insufficient for §1.2 15-view closure — Daniel Option B approved (scope-out unsafe views, ship smaller hotfix). 1 escalation RESOLVED pre-SPEC-seal.
+
+**Migrations applied (5 sequential, smallest blast radius first):**
+- `20260515093000_hotfix3_s1_3_admin_view_lockdowns.sql` — §1.3 lock 5 admin views (REVOKE anon SELECT + `security_invoker=on` on `v_ai_content`, `v_content_translations`, `v_tenant_i18n_overrides`, `v_translation_dashboard`, `v_crm_event_stats`). SHA `635281b`.
+- `20260515093500_hotfix3_s1_4_save_translation_memory_batch_2nd_overload.sql` — §1.4 harden 2nd overload (`p_entries jsonb`) with 3-role-aware Block A adapted for entry-level tenant_id derivation + SET search_path + REVOKE anon EXECUTE. SHA `a20343a`.
+- `20260515094000_hotfix3_s1_5_carry_rpcs_block_a_and_revokes.sql` — §1.5 14 Option B + 1 Option C. 5 RPCs got NEW 3-role-aware Block A: `increment_paid_amount`/`increment_prepaid_used`/`mark_translations_stale` via JOIN-derived tenant; `register_lead_to_event` + `resolve_touchpoints_to_lead` upgraded from weaker variants. 3 RPCs got new search_path (`is_platform_super_admin`, `promote_to_platform`, `promote_lead_on_message_sent`). 14 REVOKE EXECUTE FROM anon + explicit GRANT TO authenticated, service_role. `validate_slug` retained anon (Option C — pure validation, no side effects). SHA `e64f9c9`.
+- `20260515094500_hotfix3_s1_1_base_table_rls_expansion.sql` — §1.1 new RLS policies `blog_posts_public_read_published` + `ai_content_public_read_published` (anon SELECT USING `status='published'`). `storefront_pages_anon_read` pre-existing policy kept verbatim (Rule 21). GRANT SELECT TO anon on all 3 base tables. SHA `6fa5083`.
+- `20260515095000_hotfix3_s1_2_flip_v_storefront_blog_posts.sql` — §1.2a flip `v_storefront_blog_posts` to `security_invoker=on` with rollback tag `pre-hotfix3-view-v_storefront_blog_posts`. Anon probe: 174 rows visible (matches pre-migration). SHA `d4e6fa3`.
+- `20260515095500_hotfix3_s1_2_flip_v_storefront_pages.sql` — §1.2b flip `v_storefront_pages` to `security_invoker=on` with rollback tag `pre-hotfix3-view-v_storefront_pages`. Anon probe: 81 rows visible. SHA `2625c34`.
+
+**Escalation (RESOLVED pre-SPEC-seal + filed under `escalations/`):**
+- `2026-05-15T0917Z_hotfix3_brief_scope_insufficient_for_15_view_closure.md` — Pre-flight surfaced Brief §1.1 3-table scope cannot enable §1.2 15-view goal (11 base tables actually needed). Daniel chose Option B (scope-out unsafe views).
+
+**Verdict 🟡 CLOSED WITH FOLLOW-UPS:** F-CRIT-2 advisor 15→8 (7 closed: 5 admin + 2 storefront); F-CRIT-3 17→2 (15 closed: 14 Option B + 1 §1.4); total advisors 119→93. Demo wrong-tenant tests T1-T5 PASS (5 Block-A-bearing RPCs raise 42501); service_role bypass T6 PASS. Smoke 7/7 PASS post-migration. Zero data row writes on any tenant. 8 findings logged in FINDINGS.md (5 closed in SPEC as collateral pre-existing bugs; 3 carry forward to HOTFIX_4 / audit-SPEC / Iron Rule 32 hook fix).
+
+**Skill improvements applied:** P-AUTHOR-1 (status-column semantics probe in Step 1.5.3) + P-AUTHOR-2 (gitignore-aware backup criterion in SPEC_TEMPLATE) + P-EXEC-1 (NEW reference file `BLOCK_A_DEMO_TESTS.sql`) + P-EXEC-2 (SQL-comment word-avoidance bullet in opticup-executor SKILL.md).
+
+**Audit reports updated:** `OVERNIGHT_BUNDLE_2_2026_05_14_REPORT.md` findings #2 + #3 marked RESOLVED-IN-PART / RESOLVED. `SENTINEL_DEEP_DIVE_2026_05_14_REPORT.md` RPC #9 + #10 + #11 + #12 all marked RESOLVED. `SECURITY_HOTFIX_2_2026_05_15/FOREMAN_REVIEW.md` §10 SECURITY_HOTFIX_3 declaration marked RESOLVED.
+
+---
+
 ## 2026-05-15 — SECURITY_HOTFIX_2 — Bundle 2 F-CRIT-1/2/3 closure (PARTIAL F-CRIT-2)
 
 SPEC: `SECURITY_HOTFIX_2_2026_05_15` ([folder](specs/SECURITY_HOTFIX_2_2026_05_15/))

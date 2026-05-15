@@ -145,6 +145,8 @@ possible. If a criterion is not measurable, the SPEC is not ready.
 whose execution ends with a null-byte ERROR in HEAD is not closed — it is open
 until the corruption is cleared. Reference: `scripts/verify-tree-integrity.mjs`.
 
+**Backup folder criteria are gitignore-aware (added 2026-05-15 from SECURITY_HOTFIX_3 P-AUTHOR-2).** When a SPEC has a "Backup folder populated (≥N files)" success criterion, the criterion MUST note: "Backup files live in `**/backups/` which is gitignored per CLAUDE.md §9 #9. Verify the folder exists with N files on disk; do NOT include them in the commit. The Reviewer verifies via `ls` exit 0, not via `git log`." Without this clarification, the Executor may waste time attempting to include the backup folder in a commit before noticing the .gitignore entry. Source: `SECURITY_HOTFIX_3_2026_05_15/FOREMAN_REVIEW.md` Proposal P-AUTHOR-2.
+
 **CRLF-aware diff recipe (Windows-executed SPECs).** Any §3 criterion that uses `diff` against git content MUST include `--strip-trailing-cr`. Without the flag, CRLF normalization on Windows produces alarming false-positives (e.g. 990-deletion ghosts). Standard form:
 
 ```

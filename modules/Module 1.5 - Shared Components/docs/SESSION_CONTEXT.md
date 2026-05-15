@@ -1,11 +1,17 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
 ## Current Status
-- **Phase:** **SECURITY_HOTFIX_2 CLOSED WITH FOLLOW-UPS 🟡** (2026-05-15). F-CRIT-1 + F-CRIT-3 fully closed; F-CRIT-2 partially closed (2 of 17 views — 15 deferred to `SECURITY_HOTFIX_3` per RESOLVED escalation 2026-05-15T1110Z). 3 escalations resolved by Daniel in-session. All 24 in-scope SECURITY DEFINER RPCs now carry 3-role-aware Block A (service_role bypass + strict non-service-role JWT-tenant-claim check); 16 admin RPCs lost anon EXECUTE; `verify_campaign_page_password` retained anon (Option A — Block A-alt slug validation). See `docs/specs/SECURITY_HOTFIX_2_2026_05_15/` for SPEC + EXECUTION_REPORT + FINDINGS.
+- **Phase:** **SECURITY_HOTFIX_3 CLOSED WITH FOLLOW-UPS 🟡** (2026-05-15 afternoon). F-CRIT-2 advisor 15→8 (−7: 5 admin lockdowns + 2 storefront flips per Daniel Option B); F-CRIT-3 advisor 17→2 (−15: 14 §1.5 Option B + 1 §1.4 second overload). Total Supabase advisors 119→93. Pre-flight surfaced Brief §1.1 3-table scope insufficient for §1.2 15-view closure (8 additional base tables needed) — Daniel approved Option B (scope-out unsafe views, ship smaller hotfix, queue HOTFIX_4 for the rest). 5 collateral pre-existing bugs CLOSED as Block A additions (`increment_paid_amount`/`increment_prepaid_used`/`mark_translations_stale` got NEW Block A with JOIN-derived tenant; `register_lead_to_event` + `resolve_touchpoints_to_lead` upgraded from weaker variants). Zero data writes on any tenant; smoke 7/7 PASS post-migration. 8 remaining storefront views + 5 base tables → `SECURITY_HOTFIX_4` (stub at `architecture-brief/SECURITY_HOTFIX_4_BRIEF.md`). 4 skill improvements applied (P-AUTHOR-1 status-column semantics probe + P-AUTHOR-2 gitignore-aware backup criterion + P-EXEC-1 BLOCK_A_DEMO_TESTS.sql reference file + P-EXEC-2 SQL-comment word-avoidance note). See `docs/specs/SECURITY_HOTFIX_3_2026_05_15/` for SPEC + EXECUTION_REPORT + FINDINGS + REVIEW + TEST_REPORT + FOREMAN_REVIEW.
 - **Branch:** develop
-- **Last updated:** 2026-05-15 (SECURITY_HOTFIX_2 closed).
+- **Last updated:** 2026-05-15 afternoon (SECURITY_HOTFIX_3 closed).
 
-## 2026-05-15 — SECURITY_HOTFIX_2 (Bundle 2 F-CRIT-1/2/3 — partial F-CRIT-2)
+## 2026-05-15 afternoon — SECURITY_HOTFIX_3 (closes deferred F-CRIT-2 + 15 F-CRIT-3 carry RPCs per Option B)
+
+See `docs/specs/SECURITY_HOTFIX_3_2026_05_15/FOREMAN_REVIEW.md` + CHANGELOG.md entry below. 1 pre-SPEC escalation RESOLVED (`escalations/2026-05-15T0917Z_hotfix3_brief_scope_insufficient_for_15_view_closure.md`) — Daniel Option B: 7 of 15 views closed in this hotfix, 8 deferred. Per-view rollback tags in place for the 2 storefront flips. 8 commits in chain: `dc63e54..2dab09f`.
+
+Follow-up SPECs queued (3): `SECURITY_HOTFIX_4` (8 deferred views + 5 base tables), `SECURITY_AUDIT_PRE_2026_03_RPCS` (sweep pre-2026-03 SECURITY DEFINER RPCs for missing/weak Block A), `IRON_RULE_32_HOOK_COMMENT_AWARENESS` (fix hook to skip SQL/shell/JS comment lines).
+
+## Historical — 2026-05-15 morning — SECURITY_HOTFIX_2 (Bundle 2 F-CRIT-1/2/3 — partial F-CRIT-2)
 
 See `docs/specs/SECURITY_HOTFIX_2_2026_05_15/EXECUTION_REPORT.md` + CHANGELOG.md entry above. Three escalations RESOLVED + filed under `escalations/`:
 - Anon-callable count inverted in Brief (7 → 17 actual).
