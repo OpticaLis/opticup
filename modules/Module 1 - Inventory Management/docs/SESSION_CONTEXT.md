@@ -1,7 +1,47 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1A_OPERATIONS_RPCS_FIX — 2026-05-15
+M1B0_PURCHASE_ORDER_SCHEMA — 2026-05-15
+
+## 2026-05-15 — M1B0_PURCHASE_ORDER_SCHEMA (🟢 closing — Full Auto Pipeline single chat, 6/6 smoke PASS)
+
+**Goal:** Phase 1B prerequisite — ship the 3 schema objects Phase 1A skipped (`purchase_order`, `purchase_order_line`, `supplier_debt`) + 5 supporting RPCs + 2 FK back-pointers + K2 extension wiring debt creation at receipt close (D-M1-11). Schema-only — no UI. Mandatory functional smoke before SPEC close.
+
+**What shipped (8 commits, ~80 min wall-clock):**
+
+- `0c23a15` chore(spec): open SPEC + ROLLBACK skeleton
+- `df338c4` 3 tables (purchase_order + purchase_order_line + supplier_debt) — canonical 2-policy RLS + tenant-scoped UNIQUE partial indexes + Iron Rule 19 enum CHECK constraints + table-level multi-column CHECKs for line `source` rules
+- `621b807` Block 4 — FK back-pointers on stock_lot + purchase_receipt (clauses on pre-existing Phase 1A columns) + supporting indexes
+- `441c1f7` Blocks 5-8 — 4 PO RPCs: next_purchase_order_number (distinct from legacy next_po_number(uuid,text) via Iron Rule 21 divergence), place_purchase_order, mark_po_sent, cancel_purchase_order. All SECDEF + search_path=public + JWT-claim guard + REVOKE/GRANT discipline
+- `362a330` Blocks 9+10 — m1_create_supplier_debt_from_receipt (idempotent via ON CONFLICT with WHERE on partial UNIQUE) + K2 extension (CREATE OR REPLACE — added subtotal accumulator inside LOOP + active-IL-VAT lookup with `effective_until IS NULL` filter + 18% computation + 5-arg call to debt RPC)
+- `46ff2d2` T.PURCHASE_ORDER + T.PURCHASE_ORDER_LINE + T.SUPPLIER_DEBT in shared.js + 3 Hebrew-keyed FIELD_MAP entries
+- `bb39599` test(m1): demo functional smoke — 6/6 PASS
+  - Case 1: place_purchase_order(3 lines) → PO-000001 draft 3 lines sources match ✓
+  - Case 2: mark_po_sent → status=sent + sent_at set ✓
+  - Case 3: K2 (m1_create_receipt_from_box) → 2 receipt_line/2 lot/2 movement/1 debt row at total_amount=234.82 vat_amount=35.82 + idempotency PASS (2nd debt RPC returns same id) ✓
+  - Case 4a-c: cancel-flow → success on draft + 42501 on cancelled + 42501 on partial ✓
+  - Case 5a-e: anon-reject on all 5 new RPCs → 42501 ✓
+  - Case 6: cross-tenant Prizma JWT → 42501 + 0 Prizma rows + 20 legacy purchase_orders rows on demo unchanged ✓
+- _(this commit)_ chore(spec): close — EXECUTION_REPORT + FINDINGS + GLOBAL_MAP + SESSION_CONTEXT + CHANGELOG
+
+**Pipeline stats:**
+
+- 10 MCP migrations applied to live Supabase (no `supabase/migrations/*.sql` per TD-2 precedent).
+- 6 functional smoke cases (incl. 3+5 sub-cases in cases 4-5) on demo tenant. All PASS.
+- 0 escalations. 0 Foreman amendments. SPEC was author-clean — every probe in §0 surfaced reality before DDL, including 3 Brief-vs-reality divergences (D1 `next_po_number` name conflict → renamed to `next_purchase_order_number`, D2 `vat_rates.active` column absent → use `effective_until IS NULL`, D3 `purchase_receipt.purchase_order_id` already exists → just add FK clause).
+- 2 author-proposals from M1A FOREMAN_REVIEW applied in §0: orchestrator call-arity audit (3 audits clean) + smoke-touched schema audit (11 tables audited).
+- Zero Prizma data written. Zero destructive ops (Iron Rule 32 §7=None held across all 8 commits). Zero main-branch modifications.
+- 30 success criteria all measurable; 28 PASS at executor scope + 2 deferred to Reviewer (advisor lint detail review + final cross-tenant probe with smoke artifact age).
+
+**Status:**
+
+- 🟢 Executor scope CLOSED. Awaiting Reviewer + Foreman.
+- ✅ Phase 1B unblocked — customer-facing screen SPECs can build on verified schema + RPCs.
+- 🟡 Smoke artifacts persist on demo (M1A-DEBT-04 lineage extended): 2 surviving PO rows, 1 receipt row, 1 debt row at `ab9cdc83-006a-4ced-8a51-e15ec2c08260`. Phase 1B's §0 reuses or re-seeds.
+
+**Next:** Reviewer re-runs §3 criteria against live state; Foreman writes FOREMAN_REVIEW.md + Hebrew status line to Daniel.
+
+---
 
 ## 2026-05-15 — M1A_OPERATIONS_RPCS_FIX (🟢 closing — Full Auto Pipeline single chat, 6/6 smoke PASS)
 

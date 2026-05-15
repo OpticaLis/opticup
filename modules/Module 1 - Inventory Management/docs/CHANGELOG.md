@@ -4,6 +4,22 @@
 
 ---
 
+## M1B0_PURCHASE_ORDER_SCHEMA — 2026-05-15 (🟢 closing — 3 tables + 5 RPCs + K2 wiring, 6/6 smoke PASS)
+
+Phase 1B prerequisite — schema-only micro-SPEC. Ships the 3 missing schema objects from Phase 1A (`purchase_order`, `purchase_order_line`, `supplier_debt`) + 5 supporting RPCs + 2 FK back-pointer additions + K2 extension wiring debt creation at receipt close (D-M1-11). All 6 functional smoke cases on demo PASS (place_purchase_order, mark_po_sent, K2 + debt + idempotency, cancel-flow 3 sub-cases, anon-reject 5 RPCs, cross-tenant guard). Iron Rule 32 §7 = `None.` throughout 8 commits. Zero Prizma data written. Legacy `purchase_orders` plural untouched.
+
+### Commits (M1B0 Purchase Order Schema)
+- `0c23a15` chore(spec): open M1B0_PURCHASE_ORDER_SCHEMA — SPEC + ROLLBACK skeleton
+- `df338c4` feat(m1,schema): create purchase_order + purchase_order_line + supplier_debt tables
+- `621b807` feat(m1,schema): add FK back-pointers stock_lot + purchase_receipt → purchase_order
+- `441c1f7` feat(m1,rpc): create 4 PO RPCs (next_purchase_order_number, place, mark_sent, cancel)
+- `362a330` feat(m1,rpc): create m1_create_supplier_debt_from_receipt + wire K2 (D-M1-11)
+- `46ff2d2` feat(shared): T-constants + FIELD_MAP for 3 new M1B0 tables
+- `bb39599` test(m1): demo functional smoke — 6/6 PASS (M1B0 schema + RPCs + K2 debt wiring)
+- (this commit) chore(spec): close M1B0_PURCHASE_ORDER_SCHEMA — EXECUTION_REPORT + FINDINGS + GLOBAL_MAP + SESSION_CONTEXT + CHANGELOG
+
+---
+
 ## M1A_OPERATIONS_RPCS_FIX — 2026-05-15 (🟢 closing — 10 fixes, 6/6 smoke PASS)
 
 Phase 1A operations-layer bug-fix Pipeline. 8 originally-enumerated fixes (record_stock_movement double-add + ON CONFLICT, REVOKE/GRANT on 10 SECDEF fns, next_lens_variant_display_id JWT guard, v_suppliers_for_m9 anon ACL, K3 queue idempotency, lens-catalog-import config.toml + fail-closed gate) + 2 mid-pipeline Foreman amendments for pre-existing orchestrator runtime defects (record_transfer 17-arg, record_adjustment_found 20-arg-misaligned). All 6 functional smoke cases on demo PASS. Iron Rule 32 §7 = `None.` throughout.
