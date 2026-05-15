@@ -1,7 +1,105 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-RECEIPT_FORM_FIXES_FROM_MANAGER — 2026-05-06
+M1A_DEBT_SWEEP — 2026-05-15
+
+## 2026-05-15 — M1A Debt Sweep (✅ CLOSED — Full Auto Pipeline single chat, 🟢 verdict)
+
+**Goal:** Close 3 tracked debts from Phase 1A + currencies-hotfix FOREMAN_REVIEWs, plus apply 4 accumulated skill self-improvement proposals — all in one consolidated maintenance Pipeline, before Phase 1B starts.
+
+**What shipped (12 commits, ~50 min wall-clock):**
+
+- **Commit Group A — 4 skill self-improvements applied BEFORE SPEC authoring (Locked Decision #2):**
+  - `4aa7ecd` — opticup-strategic: new reference `RLS_PATTERN_GLOBAL_REFERENCE.md` (5-policy pattern for universal-data tables) + Architectural Principle #10.
+  - `eed7ad4` — opticup-strategic: SPEC Authoring Step 5.3 "DDL boundary scan" (Path A MCP-only-apply vs Path B Daniel-bypass pre-decision).
+  - `27cddac` — opticup-executor: proactive `node scripts/verify.mjs --staged` before EVERY git commit (paid off on this Pipeline's very first run — surfaced the rule-15 dependency).
+  - `b3b58f9` — opticup-executor: Level-3a destructive-pattern execution playbook (MIGRATION.md in SPEC folder pattern).
+
+- **Commit Group B — 3 debt commits (REORDERED to B3 → B1 → B2 per Executor real-time decision after proactive verify surfaced a rule-15 dependency that B3 had to fix first):**
+  - `913fa47` (B3) — `fix(verify): close M1_5_VERIFY_HOOKS_REGEX_FIXES`. rule-15 policyRE accepts both `\w+` and `"[^"]+"` (quoted policy names). rule-21 PATTERNS anchor at `^` with `/gm` (top-level only). 38 false positives eliminated.
+  - `fdf3e2c` (B1) — `fix(m1,schema): close M1A-DEBT-02`. 4 UNIQUE constraints get tenant_id (document_links, payment_allocations, conversation_participants, message_reactions). Phase 1A 17-table + 9-RPC + K3 + K5 summary appended. 2 doc-sync adaptations: line-767 comment + expense_folders RLS lines.
+  - `52088ed` (B2) — `feat(shared): close M1A-DEBT-03`. T.CURRENCIES + 6-column FIELD_MAP entry.
+
+- **Commit Group C — close (this commit):**
+  - FOREMAN_REVIEW.md + MASTER_ROADMAP §5 (3 RESOLVED rows) + TECH_DEBT.md (RULE18-COMMENT-FALSE-POSITIVE entry) + this SESSION_CONTEXT sweep section.
+
+**Pipeline stats:**
+- Auth + RLS + CRM + Storefront baseline smoke: 7/7 PASS on demo tenant (`e36283f` TEST_REPORT).
+- Reviewer verdict: 🟢 PASS at `74435ed`. 5 spot-checks all PASS.
+- Foreman verdict: 🟢 CLOSED. 3 additional spot-checks all PASS (8/8 total).
+- 4 findings logged, all disposed: 3 dismissed in-pipeline + 1 promoted to TECH_DEBT (RULE18-COMMENT-FALSE-POSITIVE).
+- 0 escalations to Daniel. 0 destructive ops. 0 main-branch modifications.
+- §4 Destructive Operations declared `None.`; Iron Rule 32 implicit-forbid satisfied.
+
+**Status:**
+- ✅ 3 debts closed (M1A-DEBT-02, M1A-DEBT-03, M1_5_VERIFY_HOOKS_REGEX_FIXES) — MASTER_ROADMAP §5 reflects.
+- ✅ 4 skill improvements applied — proposals from 2 prior FOREMAN_REVIEWs now in SKILL.md / references.
+- ✅ Verify hooks now accept quoted policy names + reject only top-level orphans (false-positive rate ~0).
+- ✅ Phase 1B unblocked — customer-facing screen SPECs can start without pre-existing M1 doc-schema blockers.
+- 🟡 RULE18-COMMENT-FALSE-POSITIVE open as low-priority TECH_DEBT (1 known occurrence, surgically worked around).
+
+**Next:** Phase 1B SPEC authoring (`modules/Module 1 - Inventory Management/docs/specs/M1_LENS_INVENTORY_PHASE_1B_CUSTOMER_SCREENS/`).
+
+---
+
+## 2026-05-14 — M1A Currencies Global Hotfix (✅ SHIPPED — Full Auto Pipeline single chat)
+
+**Goal:** Close M1A-DEBT-01 from Phase 1A FOREMAN review — convert `public.currencies` from per-tenant to GLOBAL ISO-4217 reference table so tenant-2 onboarding is no longer blocked.
+
+**What shipped:**
+- Migration applied via Supabase MCP (`m1a_currencies_global_hotfix`): DROP tenant_id + id + is_default + old constraints + old RLS policies; ADD decimal_digits INT NOT NULL DEFAULT 2; PK on `code`; 5 new RLS policies (read_anywhere + write/update/delete gated on `is_platform_super_admin()` + service_bypass); seed ILS/USD/EUR with Hebrew names.
+- 25 success criteria verified: 10 DB-state criteria PASS, 11 file/commit criteria PASS, smoke 2/2 PASS (anon SELECT = 3 rows; anon INSERT denied — handled by Localhost-Tester).
+- Rule 14 `GLOBAL_SINGLETON_EXEMPT` extended to include `currencies` (second category: universal reference table; first was `lens_variant_display_seq` singleton).
+- D-M1-16 logged in `decisions/M1.md`.
+
+**Decisions logged:**
+- New RLS pattern (read_anywhere + write_platform_only via `is_platform_super_admin()`) — first instance project-wide; Iron Rule 15 canonical-pattern doc update deferred to a dedicated constitution-edit chat.
+- Migration applied via MCP only (no `supabase/migrations/*.sql`) — Iron Rule 32 boundary; consistent with pre-existing TD-2 (git drift).
+- Module's `docs/db-schema.sql` update deferred per Phase 1A precedent (5 pre-existing rule-18 violations) — finding linked to M1A-DEBT-02.
+- T.CURRENCIES constant + FIELD_MAP entry deferred (no current consumer reads via `DB.fetchAll`) — finding for future cleanup.
+
+**Status:**
+- ✅ Migration live on Supabase (project tsxrrxzmdxaenlvocyit).
+- ✅ `MASTER_ROADMAP.md` §3 + §5 marked resolved.
+- ✅ Canonical docs aligned (`GLOBAL_SCHEMA.sql`, `DB_TABLES_REFERENCE.md`).
+- ✅ Tenant-2 onboarding unblocked.
+- 🟡 Awaiting Reviewer + Localhost-Tester + FOREMAN_REVIEW.
+
+---
+
+## 2026-05-14 — M1 Lens Inventory Phase 1A — Schema + Platform Catalog Admin (✅ SHIPPED)
+
+**Goal:** Ship the schema half of M1's lens expansion so M7 (Orders) and M9
+(Lab/KDS) can be built. Architect's recommended 2-sub-phase split:
+- **Phase 1A** (this session): 17 new tables + 9 RPCs + K3 trigger + K5 view +
+  Platform Catalog Admin screen + lens-catalog-import EF + 17 T-constants +
+  FIELD_MAP entries + global docs merge.
+- **Phase 1B** (sibling SPEC, deferred): 6 customer-facing screens. Will be
+  authored after Phase 1A FOREMAN_REVIEW.
+
+**Architecture (3 layers + governance + M9 contracts):**
+GLOBAL CATALOG (platform-owned) → COMMERCIAL (tenant) → RETAILER (tenant) →
+OPERATIONS (FIFO + receipts) + GOVERNANCE + M9 contracts (K2/K3/K5).
+
+**Open question resolutions** (Brief §7):
+- **Q1:** option (c) divergence — new `purchase_receipt` for lenses; legacy
+  `goods_receipts` untouched. Code reuse via product_category dispatcher in 1B.
+- **Q2:** UUID PK + `display_id TEXT UNIQUE` LV-NNNNNN via atomic RPC.
+- **Q3:** 2 sub-phases per Architect rec.
+- **Q4:** Structured xlsx Phase 1A; LLM agent Phase 2+.
+
+**SPEC adaptations** (logged in FINDINGS.md): M1A-SPEC-01..05 + M1A-INFRA-01..03.
+
+**Status:**
+- ✅ All 17 new tables in live DB; RLS + canonical patterns verified
+- ✅ 9 RPCs + K3 trigger + K5 view + EF + Platform Catalog Admin shipped
+- ✅ 17 T-constants + FIELD_MAP entries; global docs merged
+- ✅ ROADMAP updated (Lens-1A → ✅, Lens-1B → ⬜)
+- 🟡 Awaiting FOREMAN_REVIEW
+
+**Smoke test (demo tenant):** RLS isolation verified — cross-tenant read denied.
+
+---
 
 ## 2026-05-06 — Goods Receipt Form: 3-fix bundle from branch manager
 

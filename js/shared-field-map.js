@@ -128,6 +128,117 @@ const FIELD_MAP = {
     'סטטוס תשלום':'payment_status','תאריך תשלום':'paid_at',
     'נשלח קופון':'coupon_sent','שעה מתוזמנת':'scheduled_time',
     'דרושה בדיקת ראייה':'eye_exam_needed','הערות לקוח':'client_notes'
+  },
+  // ─── M1 Lens Inventory Phase 1A (2026-05-14) ─────────────────
+  lens_brand: {
+    'שם':'name','מפורסם':'is_published','סטטוס מחזור חיים':'lifecycle_status'
+  },
+  lens_design: {
+    'מותג':'brand_id','שם':'name','סוג עדשה':'lens_type','חומר':'material',
+    'מפורסם':'is_published','סטטוס מחזור חיים':'lifecycle_status'
+  },
+  lens_variant: {
+    'דגם':'design_id','מק"ט':'display_id','אינדקס שבירה':'refractive_index',
+    'קוטר (מ"מ)':'diameter_mm','ציפוי':'coating','גוון':'tint',
+    'SPH מינ׳':'sph_min','SPH מקס׳':'sph_max','צעד SPH':'sph_step',
+    'CYL מינ׳':'cyl_min','CYL מקס׳':'cyl_max','צעד CYL':'cyl_step',
+    'ADD מינ׳':'add_min','ADD מקס׳':'add_max','צעד ADD':'add_step',
+    'מפורסם':'is_published','גרסה':'version'
+  },
+  supplier_brand_distribution: {
+    'מותג':'brand_id','ספק':'supplier_id','סטטוס':'status',
+    'תוקף מ-':'effective_from','תוקף עד':'effective_until','הערות':'notes'
+  },
+  supplier_catalog_offering: {
+    'ספק':'supplier_id','וריאציה':'variant_id','סוג ייצור':'production_type',
+    'מחיר':'price_amount','מטבע':'currency_code','כולל מע"מ':'is_vat_inclusive',
+    'שיעור מע"מ':'vat_rate_id','קוד SKU של הספק':'supplier_sku_code',
+    'רכיבי מחיר':'price_components','סטטוס':'status',
+    'תוקף מ-':'effective_from','תוקף עד':'effective_until','הערות':'notes'
+  },
+  pricing_overlay: {
+    'הצעת מסחר':'offering_id','וריאציה':'scope_variant_id',
+    'דגם (ברירת מחדל)':'scope_design_id','ספק (ברירת מחדל)':'scope_supplier_id',
+    'סוג שכבה':'overlay_type','אחוז הנחה':'discount_pct','סכום קבוע':'fixed_amount',
+    'מטבע סכום קבוע':'fixed_amount_currency','כלל ערימה':'stacking_rule',
+    'סדר החלה':'application_order','סטטוס':'status',
+    'תוקף מ-':'effective_from','תוקף עד':'effective_until',
+    'הוצע ע"י':'proposed_by','אושר ע"י':'approved_by','אושר בתאריך':'approved_at','הערות':'notes'
+  },
+  vat_rates: {
+    'קוד מדינה':'country_code','שיעור (%)':'rate_pct',
+    'תוקף מ-':'effective_from','תוקף עד':'effective_until',
+    'מחליף את':'supersedes_id','הערות':'notes'
+  },
+  currencies: {
+    'קוד מטבע':'code','שם':'name','סמל':'symbol',
+    'ספרות עשרוניות':'decimal_digits','פעיל':'is_active','נוצר':'created_at'
+  },
+  tenant_location: {
+    'שם':'name','קוד קצר':'short_code','כתובת':'address',
+    'ברירת מחדל':'is_default','פעיל':'is_active','הערות':'notes'
+  },
+  tenant_active_offerings: {
+    'הצעת מסחר':'offering_id','מיקום':'location_id','פעיל':'is_active',
+    'הופעל ע"י':'activated_by','הופעל בתאריך':'activated_at','הערות':'notes'
+  },
+  tenant_lens_stock: {
+    'וריאציה':'variant_id','מיקום':'location_id',
+    'SPH':'sph','CYL':'cyl','ADD':'add_value',
+    'יתרה במלאי':'qty_on_hand','סף הזמנה':'reorder_threshold','כמות הזמנה':'reorder_qty','הערות':'notes'
+  },
+  stock_lot: {
+    'וריאציה':'variant_id','מיקום':'location_id','סוג מקור':'origin_type',
+    'הצעת מסחר':'supplier_offering_id','הזמנת רכש':'purchase_order_id',
+    'קבלת סחורה':'purchase_receipt_id','אצווה מקורית':'original_lot_id',
+    'כמות התקבלה':'qty_received','כמות נותרה':'qty_remaining',
+    'מחיר עלות':'unit_cost','מטבע עלות':'unit_cost_currency',
+    'שער מט"ח':'fx_rate_snapshot','תאריך שער':'fx_rate_date',
+    'מספר אצווה':'lot_number','התקבל בתאריך':'received_at',
+    'תאריך תפוגה':'expiry_at','הערות':'notes'
+  },
+  stock_movement: {
+    'אצווה מקור':'source_lot_id','וריאציה':'variant_id','מיקום':'location_id',
+    'סוג תנועה':'movement_type','שינוי כמות':'qty_delta',
+    'בסיס עלות בתנועה':'cost_basis_at_movement','מע"מ בתנועה':'vat_amount_at_movement',
+    'שער מט"ח':'fx_rate_snapshot','הזמנת מכירה':'sale_order_id',
+    'החזרת לקוח':'customer_return_id','קבלת סחורה':'purchase_receipt_id',
+    'העברה':'transfer_id','התאמה':'adjustment_id','בוצע ע"י':'performed_by','הערות':'notes'
+  },
+  stock_transfer: {
+    'מיקום מקור':'from_location_id','מיקום יעד':'to_location_id',
+    'מספר העברה':'transfer_number','סטטוס':'status',
+    'וריאציה':'variant_id','כמות שנשלחה':'qty_sent','כמות שהתקבלה בפועל':'actual_received_qty',
+    'יזם':'initiated_by','קלט':'received_by',
+    'יוזם בתאריך':'initiated_at','התקבל בתאריך':'received_at','הערות':'notes'
+  },
+  purchase_receipt: {
+    'ספק':'supplier_id','מספר קבלה':'receipt_number','הזמנת רכש':'purchase_order_id',
+    'מספר תעודת משלוח':'delivery_note_number',
+    'תעודת משלוח התקבלה בתאריך':'delivery_note_received_at',
+    'סחורה התקבלה בתאריך':'goods_received_at','קישור מסמך סרוק':'scanned_doc_url',
+    'קופסת משלוח (M9)':'shipping_box_id','ברקוד ספק על הקופסה':'shipping_box_supplier_barcode',
+    'סטטוס':'status','אישר ע"י':'confirmed_by','אושר בתאריך':'confirmed_at','הערות':'notes'
+  },
+  purchase_receipt_line: {
+    'קבלה':'receipt_id','וריאציה':'variant_id','מיקום':'location_id',
+    'SPH':'sph','CYL':'cyl','ADD':'add_value',
+    'כמות התקבלה':'qty_received','מחיר עלות':'unit_cost','מטבע עלות':'unit_cost_currency',
+    'כמות הוזמנה':'ordered_qty','פער כמות':'discrepancy_qty',
+    'סיבת פער':'discrepancy_reason','סטטוס פער':'discrepancy_status',
+    'הזמנת מכירה':'sale_order_id','אצווה שנוצרה':'stock_lot_id',
+    'תוספת ידנית':'is_manual_addition','הערות':'notes'
+  },
+  supplier_permissions: {
+    'ספק':'supplier_id','פעולה':'action','רמת הרשאה':'permission_level',
+    'תוקף מ-':'effective_from','תוקף עד':'effective_until',
+    'הוקצה ע"י':'granted_by','הערות':'notes'
+  },
+  change_approval_log: {
+    'סוג ישות':'entity_type','מזהה ישות':'entity_id','סוג שינוי':'change_type',
+    'מצב לפני':'before_state','מצב אחרי':'after_state',
+    'הוצע ע"י':'proposed_by','אושר ע"י':'approved_by','אושר בתאריך':'approved_at',
+    'סיבת דחייה':'rejection_reason','הערות':'notes'
   }
 };
 

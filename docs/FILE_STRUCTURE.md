@@ -27,6 +27,7 @@ opticup/
 ├── inventory.html              — inventory management module (full app)
 ├── suppliers-debt.html         — supplier debt tracking module
 ├── employees.html              — standalone employee management page
+├── lens-catalog-admin.html     — Platform Catalog Admin (Optic Up team only — M1 Lens Phase 1A)
 ├── shipments.html              — shipments & box management module
 ├── settings.html               — tenant settings (business info, financial config, display prefs)
 ├── error.html                  — generic error page
@@ -201,11 +202,20 @@ modules/
 ├── purchasing/                 — 6 files
 │   (purchase-orders, po-form, po-items, po-actions, po-import, po-view)
 │
-├── goods-receipts/             — 13 files
+├── goods-receipts/             — 20 files (frames-era; lens flow uses purchase_receipt per Q1 option c)
 │   (goods-receipt, receipt-form, receipt-form-items, receipt-form-validate,
 │    receipt-actions, receipt-confirm, receipt-confirm-items, receipt-debt,
-│    receipt-excel, receipt-ocr, receipt-ocr-review, receipt-po-compare,
-│    receipt-guide)
+│    receipt-excel, receipt-ocr, receipt-ocr-flow, receipt-ocr-learn,
+│    receipt-ocr-po, receipt-ocr-review, receipt-ocr-supplier,
+│    receipt-ocr-confirm-learn, receipt-doc-numbers, receipt-list,
+│    receipt-po-compare, receipt-guide)
+│
+├── lens-catalog-admin/         — 7 files (M1 Lens Phase 1A — Optic Up team only)
+│   (lens-catalog-admin (entry+state+callbacks), catalog-auth (gate via
+│    is_platform_super_admin RPC), catalog-brands-col, catalog-designs-col,
+│    catalog-variants-col (calls next_lens_variant_display_id RPC),
+│    catalog-detail-pane (variant + per-tenant offerings + publish),
+│    catalog-import (xlsx → JSON → lens-catalog-import EF))
 │
 ├── audit/                      — 4 files
 │   (audit-log, item-history, entry-history, qty-modal)
@@ -280,7 +290,11 @@ supabase/functions/
 ├── translate-content/index.ts       — Hebrew → EN/RU translation (Phase 6)
 ├── cms-ai-edit/index.ts             — AI prompt editing for CMS blocks (CMS-5)
 ├── fetch-google-reviews/index.ts    — Google Places reviews fetch (CMS-7)
-└── generate-brand-content/index.ts  — AI brand page content generation
+├── generate-brand-content/index.ts  — AI brand page content generation
+└── lens-catalog-import/             — M1 Lens Phase 1A bulk-import EF (3 files)
+    ├── index.ts                     — request handler + brand/design/variant/offering loop
+    ├── validate.ts                  — types + per-row validation
+    └── deno.json                    — npm:@supabase/supabase-js@2.45.0 import
 ```
 
 ## migrations/

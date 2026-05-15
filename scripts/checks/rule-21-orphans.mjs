@@ -3,9 +3,9 @@ import { readFile } from 'node:fs/promises';
 const EXCLUDED = ['node_modules/', '.git/', 'backups/', 'scripts/checks/'];
 
 const PATTERNS = [
-  /function\s+(\w+)\s*\(/g,
-  /(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\(/g,
-  /(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?function/g,
+  /^function\s+(\w+)\s*\(/gm,
+  /^(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\(/gm,
+  /^(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?function/gm,
 ];
 
 function isOrphanCandidate(filePath) {

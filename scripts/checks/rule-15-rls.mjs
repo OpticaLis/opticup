@@ -8,7 +8,7 @@ function hasRLS(content, tableName) {
     'i'
   );
   const policyRE = new RegExp(
-    `CREATE\\s+POLICY\\s+\\w+\\s+ON\\s+(?:public\\.)?${tableName}`,
+    `CREATE\\s+POLICY\\s+(?:\\w+|"[^"]+")\\s+ON\\s+(?:public\\.)?${tableName}`,
     'i'
   );
   return enableRE.test(content) && policyRE.test(content);

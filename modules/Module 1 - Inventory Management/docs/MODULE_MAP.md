@@ -2257,3 +2257,30 @@ await sb.from('inventory').update({ quantity: newQty }).eq('id', id);
 - Add `missing_price BOOLEAN DEFAULT false` column to `supplier_documents` — flags documents with items missing cost prices
 - Add partial UNIQUE index `idx_supplier_documents_goods_receipt_unique` on `supplier_documents(goods_receipt_id) WHERE goods_receipt_id IS NOT NULL` — prevents duplicate document creation per receipt
 - Migration: `046_phase2_db_prep.sql`
+
+
+## ✅ M1 Lens Inventory Phase 1A — 2026-05-14
+
+**17 new tables + 9 atomic RPCs + K3 trigger + K5 view + 1 EF + 1 admin screen.** Full schema lives in `supabase/migrations/20260514180*.sql` (5 migration files). T-constants + FIELD_MAP entries in `js/shared.js` + `js/shared-field-map.js`. See `docs/specs/M1_LENS_INVENTORY_PHASE_1A_SCHEMA_PLATFORM_ADMIN/SPEC.md` for full design + EXECUTION_REPORT.md + FINDINGS.md for execution details.
+
+**New files (lens-specific):**
+- `lens-catalog-admin.html` (root, 254 LOC) — Platform Catalog Admin entry
+- `modules/lens-catalog-admin/*.js` (7 files, 40-184 LOC each):
+  - `lens-catalog-admin.js` — entry, state, callbacks
+  - `catalog-auth.js` — auth gate via is_platform_super_admin RPC
+  - `catalog-brands-col.js` — brands column + add
+  - `catalog-designs-col.js` — designs column + add
+  - `catalog-variants-col.js` — variants column + add (calls next_lens_variant_display_id)
+  - `catalog-detail-pane.js` — variant detail + per-tenant offerings + publish toggle
+  - `catalog-import.js` — xlsx → JSON → lens-catalog-import EF
+- `supabase/functions/lens-catalog-import/` (3 files):
+  - `index.ts` — request handler + brand/design/variant/offering loop (299 LOC)
+  - `validate.ts` — types + per-row validation (59 LOC)
+  - `deno.json` — npm:@supabase/supabase-js@2.45.0 import
+
+**New T-constants in `js/shared.js`:** LENS_BRANDS, LENS_DESIGNS, LENS_VARIANTS, SUPPLIER_BRAND_DIST, SUPPLIER_CATALOG, PRICING_OVERLAY, VAT_RATES, TENANT_ACTIVE_OFFERINGS, TENANT_LENS_STOCK, TENANT_LOCATIONS, STOCK_LOTS, STOCK_MOVEMENTS, STOCK_TRANSFERS, PURCHASE_RECEIPT, PURCHASE_RECEIPT_LINE, SUPPLIER_PERMS, CHANGE_APPROVAL.
+
+**New RPCs (Phase 1A):** next_lens_variant_display_id, next_lot_number, next_transfer_number, next_receipt_number, record_stock_movement, record_transfer, record_adjustment_found, effective_price, m1_create_receipt_from_box.
+
+**Phase 1B (deferred):** 6 customer-facing screens. SPEC stub at `docs/specs/M1_LENS_INVENTORY_PHASE_1B_CUSTOMER_SCREENS/`.
+

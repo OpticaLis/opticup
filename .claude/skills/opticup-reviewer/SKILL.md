@@ -264,3 +264,86 @@ The Reviewer emits ONE Hebrew status line at end of its phase. ≤ 60 chars. Exa
 - `🛑 Review חוסם — {SLUG} REOPEN, escalation: {path}`
 
 This is the only chat output the Reviewer emits between phases under full-auto mode.
+
+---
+
+## Patterns from SKILL_HARDENING_AUDIT_2026_05_14 (3 applied, ROI ~25 min/review saved + closes Full-Auto trust gap)
+
+Source: T3.1 of OVERNIGHT_BUNDLE_2_2026_05_14. **Top finding of T3.1:** the Reviewer SKILL was structurally underdeveloped vs peers (executor 1062 lines, strategic 1252 lines, reviewer 266 lines). Almost no `P-RV-NN` proposals had been harvested across 20 sampled FOREMAN_REVIEWs — the Reviewer was invisible to the retrospective loop. The 3 patterns below close the operational gaps. Full report at `modules/Module 1.5 - Shared Components/architecture-brief/SKILL_HARDENING_AUDIT_2026_05_14_REPORT.md`.
+
+### P-RV-01 (CRITICAL) — Check-Tool Inventory (replace generic "Iron Rules 1-32" handwave)
+
+The Reviewer MUST know the 9 check scripts in `scripts/checks/` and their characteristics. Generic "follow Iron Rules" is hand-waving and leads to "automated PASS = manual skipped" misreads.
+
+| Script | Catches | Misses (known false-positives) | Exit codes |
+|---|---|---|---|
+| `check-root-discipline.mjs` | Non-allowlist root files | New CATEGORY-3 entrypoints not yet in `root-allowlist.json` | 0/1/2 |
+| `destructive-ops-declared.mjs` | DROP/TRUNCATE/file-deletes/--no-verify | Doc-context files allowlisted (post-T2.1 auth-parser: declared deletes pass) | 0/1 |
+| `file-size.mjs` | >300 soft / >350 hard | n/a | 0/1/2 (warning at 300, block at 350) |
+| `null-bytes.mjs` | Cowork-VM null-byte corruption | Only scans tracked + modified files (correct, not bug) | 0/1 |
+| `rule-14-tenant-id.mjs` | Tables without tenant_id | Platform-owned tables with `owner_tenant_id` — known M1A INFRA-01 | 0/1 |
+| `rule-15-rls.mjs` | Missing RLS | Platform-catalog 3-policy pattern | 0/1 |
+| `rule-18-unique-tenant.mjs` | UNIQUE without tenant_id | Doc files (false-positive per FIND-4 in M3_SHORTGY_TO_INTERNAL_REDIRECT) | 0/1 |
+| `rule-21-orphans.mjs` | Duplicate function names | IIFE-local helpers — known M4 B5 false-positives | 0/1 |
+| `rule-23-secrets.mjs` | Secrets in code/docs | Template literals containing `password` substrings | 0/1 |
+
+Plus the orchestrators `verify.mjs --staged/--full` and `schema-diff.mjs`. Run `npm run verify:integrity` separately (Iron Rule 31, exit 0/1/2).
+
+**Evidence:** SKILL.md §"Automated Checks" mentioned only `verify.mjs` + `schema-diff.mjs`. 9 specialized scripts existed unmentioned. FIND-4 in `M3_SHORTGY_TO_INTERNAL_REDIRECT/FINDINGS.md` showed false-positive Reviewer must understand to interpret pre-commit failures.
+
+**ROI:** HIGH — converts hand-wave to operational checklist.
+
+### P-RV-02 (HIGH) — Reviewer Notes append template (was ambiguous; now verbatim)
+
+When appending `## Reviewer Notes (post-execution audit)` to `EXECUTION_REPORT.md`, use this verbatim template:
+
+```markdown
+## Reviewer Notes (post-execution audit)
+
+**Self-review disclosure:** [same-session author/executor/reviewer? yes/no — if yes, see P-RV-03]
+
+**Independent claim re-verification:** [4 specific claims from §3 Acceptance Criteria, re-checked NOT by copy-paste from EXECUTION_REPORT but by re-running the commands. Quote actual output.]
+
+1. [Claim] → [re-verified output / mismatch]
+2. ...
+
+**RLS / tenant_id spot-check:** [one query against a touched table — confirms tenant_id stamping discipline]
+
+```sql
+SELECT count(*) FROM <touched_table> WHERE tenant_id IS NULL;
+-- expected: 0
+```
+Result: [actual]
+
+**File-size delta vs cap:** [touched files, line counts, delta, Rule 12 status]
+
+**Verdict:** 🟢 / 🟡 / 🔴 — [one-line reason]
+
+### Reviewer Skill Improvement Proposals
+- P-RV-N: [proposal]
+- (or "No proposal — review was rote".)
+```
+
+If the append fails (path permission, etc.), the Reviewer surfaces via Hebrew status line and STOPS — do NOT skip silently.
+
+**Evidence:** Grep across `modules/` showed only 8 EXECUTION_REPORT files contain "Reviewer Notes" — all from MIGRATION_1..4. Recent CRM SPECs (M4_BROADCAST_ID_PROPAGATION, M3_UTM_TRIPLE_LAYER_PERSISTENCE, M3_SHORTGY_TO_INTERNAL_REDIRECT) ran Reviewer phase per FOREMAN_REVIEW text but NO `## Reviewer Notes` block landed.
+
+**ROI:** HIGH — makes audit-trail enforceable.
+
+### P-RV-03 (HIGH) — Author-Reviewer Independence Discipline
+
+Full-Auto Pipeline runs in ONE chat — Foreman + Executor + Reviewer are structurally same-session. To prevent the chat from "🟢 itself without spot-checks", the Reviewer MUST:
+
+1. **Prepend "Self-Review Disclosure"** to the Reviewer Notes block. Disclose explicitly when same-session.
+2. **Re-run 4+ spot-check commands from scratch** — never copy-paste from EXECUTION_REPORT. The point is to discover transcription errors and post-write drift.
+3. **Cap verdict at 🟡** unless ≥1 claim was re-verified against live DB with a fresh query (not stdout reuse). Only a fresh probe earns 🟢.
+4. **Re-load FINDINGS.md fresh** — don't assume contents from EXECUTION_REPORT prose; the Executor may have written FINDINGS that EXECUTION_REPORT doesn't reflect.
+
+**Evidence:** `ATTENDEE_COUNTER_DISPLAY_FIX/FOREMAN_REVIEW.md` §"Strategic-Skill Improvement Proposal" explicitly raised this: "If the same Claude Code session authored the SPEC, executed it, AND is now reviewing it... the protocol has no formal handling and a future careless session might 🟢 itself without spot-checks."
+
+**ROI:** Closes the trust gap Full-Auto opens. Without this, Full-Auto QA is theatre.
+
+### Proposed but NOT applied (smaller items, in audit report)
+- P-RV-04 (MEDIUM) — Reviewer may append `FIND-N` entries to FINDINGS.md.
+- P-RV-05 (MEDIUM) — Replace stale `Known Security Debt` block with `TECH_DEBT.md` pointer.
+- P-RV-06 (LOW) — Mandate Reviewer Skill Improvement Proposals section (covered partially by P-RV-02 template).

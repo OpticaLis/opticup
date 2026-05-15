@@ -7,6 +7,33 @@
 
 ## Active Debt
 
+### #RULE18-COMMENT-FALSE-POSITIVE — 🟢 rule-18-unique-tenant.mjs matches `(NNN)` inside SQL comments
+
+**Where:** `scripts/checks/rule-18-unique-tenant.mjs` — `UNIQUE_RE = /UNIQUE\s*\(([^)]+)\)/gi`. Surfaced by `M1A_DEBT_SWEEP` (2026-05-15) FINDINGS-03.
+
+**What:** The case-insensitive regex matches `unique(NNN)` patterns inside `-- ...` line comments AND `/* ... */` block comments. Currently 1 known occurrence — `modules/Module 1 - Inventory Management/docs/db-schema.sql` originally had `-- partial unique (022)` at line 767 which tripped as `UNIQUE(022)`. M1A_DEBT_SWEEP worked around it with a 2-char comment edit (`(022)` → `, migration 022`) within the same commit that fixed 4 real rule-18 violations.
+
+**Why it's debt:** The workaround is local to one file. Future SPECs touching other module SQL doc files may hit similar narrative-comment false positives. The systemic fix is a 2-line hook patch.
+
+**Why not fixed in M1A_DEBT_SWEEP:** Brief §8 anti-pattern explicitly forbade "while-we're-here" scope expansion. Bundling a rule-18 hook fix would have expanded VERIFY_HOOKS_REGEX_FIXES (which was already scoped to rule-15 + rule-21) and triggered the Brief's stated anti-pattern.
+
+**Planned fix:** Strip line comments + block comments from `content` before applying `UNIQUE_RE`. Sketch:
+```js
+const stripped = content
+  .split('\n')
+  .map(l => l.replace(/--.*$/, ''))  // strip line comments
+  .join('\n')
+  .replace(/\/\*[\s\S]*?\*\//g, ''); // strip block comments
+let match;
+UNIQUE_RE.lastIndex = 0;
+while ((match = UNIQUE_RE.exec(stripped)) !== null) { /* ... */ }
+```
+Self-test: synthetic .sql file with `-- partial unique (022)` returns 0 violations.
+
+**Effort:** ~15 min hook patch + 5 min self-test. Recommended before Phase 1B starts (Phase 1B's customer-facing screen SPECs may touch shared SQL doc files).
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1A_DEBT_SWEEP/FINDINGS.md` Finding M1A-SWEEP-FINDINGS-03 (2026-05-15).
+
 ### #M2-DEBT-LOGO-PATH-CANONICALIZATION — 🟢 12 of 13 Prizma tenant-logos at legacy paths
 
 **Where:** Supabase Storage bucket `tenant-logos`. Audit captured during `SECURITY_HOTFIX_2026_05_13` §6.8 pre-step (2026-05-13).

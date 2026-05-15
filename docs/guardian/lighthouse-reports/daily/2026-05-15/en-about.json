@@ -1,0 +1,17 @@
+{
+  "url": "https://www.prizma-optic.co.il/en/about/",
+  "lang": "en",
+  "path": "/about/",
+  "label": "about",
+  "http": 200,
+  "scores": {
+    "performance": 87,
+    "accessibility": 95,
+    "seo": 100,
+    "best-practices": 100
+  },
+  "axeViolationCount": 2,
+  "capturedAt": "2026-05-15T04:05:45.068Z",
+  "fetchTime": "2026-05-15T04:05:36.248Z",
+  "lighthouseVersion": "12.8.2"
+}

@@ -38,7 +38,8 @@
       "storefront-products.html",
       "storefront-settings.html",
       "storefront-studio.html",
-      "suppliers-debt.html"
+      "suppliers-debt.html",
+      "lens-catalog-admin.html"
     ],
     "category_legacy_acknowledged": [
       "serve.js",

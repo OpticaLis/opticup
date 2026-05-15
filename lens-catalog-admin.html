@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optic Up — Platform Catalog Admin</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- SheetJS for browser-side xlsx parsing (lens-catalog-import EF expects JSON) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <link rel="stylesheet" href="shared/css/variables.css">
+  <link rel="stylesheet" href="shared/css/layout.css">
+  <link rel="stylesheet" href="shared/css/components.css">
+  <link rel="stylesheet" href="shared/css/forms.css">
+  <link rel="stylesheet" href="shared/css/modal.css">
+  <link rel="stylesheet" href="shared/css/toast.css">
+
+  <style>
+    /* ── Page chrome ── */
+    body { background: #0f172a; color: #e2e8f0; margin: 0; padding: 16px; font-family: 'Segoe UI', Arial, sans-serif; }
+    .platform-banner {
+      background: linear-gradient(90deg, #7c2d12 0%, #991b1b 100%);
+      padding: 8px 18px; border-radius: 6px; margin-bottom: 12px;
+      font-size: 12px; font-weight: 700; color: white; text-align: center;
+      letter-spacing: 0.5px;
+    }
+    .page-header {
+      background: #1e293b; padding: 14px 20px; border-radius: 8px;
+      margin-bottom: 12px; display: flex; justify-content: space-between;
+      align-items: center; border: 1px solid #334155;
+    }
+    .page-title { font-size: 20px; font-weight: 600; color: #f1f5f9; }
+    .page-title .badge {
+      font-size: 11px; background: #1e3a8a; color: #dbeafe;
+      padding: 3px 8px; border-radius: 10px; margin-right: 8px;
+    }
+    .header-actions { display: flex; gap: 8px; }
+    .btn {
+      padding: 8px 14px; border: 1px solid #475569; background: #334155;
+      color: #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 13px;
+      font-weight: 500; display: inline-flex; align-items: center; gap: 6px;
+      font-family: inherit;
+    }
+    .btn:hover { background: #475569; }
+    .btn-primary { background: #1e3a8a; color: white; border-color: #1e3a8a; }
+    .btn-import { background: #7c3aed; color: white; border-color: #7c3aed; }
+    .btn-success { background: #065f46; color: white; border-color: #065f46; }
+
+    /* ── Tenant selector + filter bar ── */
+    .filter-bar {
+      background: #1e293b; padding: 10px 16px; border-radius: 8px;
+      margin-bottom: 12px; display: flex; gap: 12px; align-items: center;
+      border: 1px solid #334155; font-size: 13px;
+    }
+    .filter-bar label { color: #94a3b8; font-weight: 600; }
+    .filter-bar select {
+      padding: 6px 10px; border: 1px solid #475569; background: #0f172a;
+      color: #e2e8f0; border-radius: 5px; font-size: 13px; font-family: inherit;
+    }
+
+    /* ── Main 4-column layout ── */
+    .main-content {
+      display: grid; grid-template-columns: 220px 220px 240px 1fr;
+      gap: 10px; height: calc(100vh - 220px); min-height: 560px;
+    }
+    .col {
+      background: #1e293b; border-radius: 8px; overflow: hidden;
+      border: 1px solid #334155; display: flex; flex-direction: column;
+    }
+    .col-header {
+      padding: 12px 16px; border-bottom: 1px solid #334155;
+      background: #0f172a;
+    }
+    .col-header h3 { font-size: 13px; color: #f1f5f9; font-weight: 700; margin: 0; }
+    .col-header .col-count {
+      font-size: 11px; color: #64748b; font-weight: 600;
+      background: #334155; padding: 2px 8px; border-radius: 10px;
+    }
+    .col-header-top { display: flex; justify-content: space-between; align-items: center; }
+    .col-header .col-context { font-size: 10px; color: #94a3b8; margin-top: 4px; }
+    .col-search { padding: 10px 14px; border-bottom: 1px solid #334155; }
+    .col-search input {
+      width: 100%; padding: 7px 10px; border: 1px solid #475569;
+      background: #0f172a; color: #e2e8f0; border-radius: 5px;
+      font-size: 12px; font-family: inherit; box-sizing: border-box;
+    }
+    .col-body { flex: 1; overflow-y: auto; padding: 4px; }
+    .col-footer {
+      padding: 8px 12px; border-top: 1px solid #334155;
+      background: #0f172a;
+    }
+    .col-footer .add-btn {
+      width: 100%; padding: 7px; background: transparent;
+      border: 1px dashed #475569; color: #94a3b8; border-radius: 5px;
+      cursor: pointer; font-size: 11px; font-weight: 600; font-family: inherit;
+    }
+    .col-footer .add-btn:hover { border-color: #1e3a8a; color: #93c5fd; }
+
+    /* ── List items ── */
+    .list-item {
+      padding: 8px 12px; cursor: pointer; border-radius: 4px;
+      margin-bottom: 2px; font-size: 13px; color: #cbd5e1;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .list-item:hover { background: #334155; }
+    .list-item.selected { background: #1e3a8a; color: white; font-weight: 600; }
+    .list-item .item-meta { font-size: 10px; color: #94a3b8; }
+    .list-item.selected .item-meta { color: #cbd5e1; }
+    .empty-state { padding: 20px; text-align: center; color: #64748b; font-size: 12px; }
+
+    /* ── Detail pane ── */
+    .detail-pane { padding: 20px; overflow-y: auto; }
+    .detail-pane h2 { font-size: 18px; color: #f1f5f9; margin: 0 0 16px; }
+    .detail-pane .field-group { margin-bottom: 16px; }
+    .detail-pane .field-group label { font-size: 12px; color: #94a3b8; font-weight: 600; display: block; margin-bottom: 4px; }
+    .detail-pane .field-group .field-value { color: #e2e8f0; font-size: 14px; padding: 6px 10px; background: #0f172a; border-radius: 4px; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ── Auth gate ── */
+    #auth-gate {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 60vh; gap: 16px; text-align: center;
+    }
+    #auth-gate p { color: #94a3b8; font-size: 14px; }
+    #auth-gate .gate-error { color: #fca5a5; font-size: 13px; }
+
+    /* ── Import modal ── */
+    .import-modal-content { padding: 16px; }
+    .import-result { margin-top: 12px; padding: 12px; background: #0f172a; border-radius: 6px; font-family: monospace; font-size: 12px; color: #cbd5e1; max-height: 300px; overflow-y: auto; }
+    .import-result .row-error { color: #fca5a5; }
+    .import-result .row-ok { color: #86efac; }
+
+    .toast-container { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 9999; }
+  </style>
+</head>
+<body>
+  <div class="platform-banner">⚙️ Platform Admin — Optic Up Team Only</div>
+
+  <div class="page-header">
+    <div class="page-title">
+      🔬 Lens Catalog Admin
+      <span class="badge">Platform-Owned</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-import" id="btn-import">📥 ייבוא קטלוג מותג שלם</button>
+      <button class="btn" id="btn-publish-all" title="Publish drafts to public storefront">📢 פרסם כל הטיוטות</button>
+      <a href="admin.html" class="btn">← חזרה ל-Platform Admin</a>
+    </div>
+  </div>
+
+  <!-- Auth gate (hidden once verified) -->
+  <div id="auth-gate" style="display:none">
+    <h2 id="auth-gate-title">בודק הרשאות…</h2>
+    <p>הדף זמין רק לחברי צוות Optic Up עם הרשאת Platform Super Admin.</p>
+    <p class="gate-error" id="auth-gate-error"></p>
+    <button class="btn btn-primary" onclick="window.location.href='admin.html'">התחבר דרך Platform Admin</button>
+  </div>
+
+  <!-- Main app (shown after auth) -->
+  <div id="app" style="display:none">
+    <div class="filter-bar">
+      <label>טננט (לתצוגת הצעות מסחר):</label>
+      <select id="tenant-select">
+        <option value="">— טען טננטים —</option>
+      </select>
+      <span style="color: #64748b; font-size: 11px;">מותגים/דגמים/וריאציות הם פלטפורמה-גלובל. הצעות מסחר הן פר-טננט.</span>
+    </div>
+
+    <div class="main-content">
+      <!-- Column 1: Brands -->
+      <div class="col">
+        <div class="col-header">
+          <div class="col-header-top">
+            <h3>🏷️ מותגים</h3>
+            <span class="col-count" id="brands-count">0</span>
+          </div>
+        </div>
+        <div class="col-search">
+          <input type="text" id="brands-search" placeholder="חפש מותג…">
+        </div>
+        <div class="col-body" id="brands-list">
+          <div class="empty-state">טוען…</div>
+        </div>
+        <div class="col-footer">
+          <button class="add-btn" id="btn-add-brand">+ הוסף מותג</button>
+        </div>
+      </div>
+
+      <!-- Column 2: Designs -->
+      <div class="col">
+        <div class="col-header">
+          <div class="col-header-top">
+            <h3>📐 דגמים (Series)</h3>
+            <span class="col-count" id="designs-count">0</span>
+          </div>
+          <div class="col-context" id="designs-context">בחר מותג ←</div>
+        </div>
+        <div class="col-search">
+          <input type="text" id="designs-search" placeholder="חפש דגם…" disabled>
+        </div>
+        <div class="col-body" id="designs-list">
+          <div class="empty-state">בחר מותג</div>
+        </div>
+        <div class="col-footer">
+          <button class="add-btn" id="btn-add-design" disabled>+ הוסף דגם</button>
+        </div>
+      </div>
+
+      <!-- Column 3: Variants -->
+      <div class="col">
+        <div class="col-header">
+          <div class="col-header-top">
+            <h3>🔬 וריאציות</h3>
+            <span class="col-count" id="variants-count">0</span>
+          </div>
+          <div class="col-context" id="variants-context">בחר דגם ←</div>
+        </div>
+        <div class="col-search">
+          <input type="text" id="variants-search" placeholder="חפש לפי display_id / index…" disabled>
+        </div>
+        <div class="col-body" id="variants-list">
+          <div class="empty-state">בחר דגם</div>
+        </div>
+        <div class="col-footer">
+          <button class="add-btn" id="btn-add-variant" disabled>+ הוסף וריאציה</button>
+        </div>
+      </div>
+
+      <!-- Column 4: Detail pane -->
+      <div class="col">
+        <div class="col-header">
+          <div class="col-header-top">
+            <h3>📋 פרטים</h3>
+          </div>
+          <div class="col-context" id="detail-context">בחר פריט להצגת פרטים</div>
+        </div>
+        <div class="col-body detail-pane" id="detail-pane">
+          <div class="empty-state">בחר וריאציה כדי לראות SPH/CYL ranges, coating, tint, הצעות מסחר, ועוד.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden file input for bulk import -->
+  <input type="file" id="import-file" accept=".xlsx,.xls" style="display:none">
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- App scripts -->
+  <script type="module" src="modules/lens-catalog-admin/lens-catalog-admin.js"></script>
+</body>
+</html>

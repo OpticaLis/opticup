@@ -80,7 +80,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | Flow-Review-4 | ✅ | סקירת פלואו + תיקונים + expense folders + sort + images | 18 fixes: 3 bugs (brand validation, image race, receipt-debt), PO notes, stock count columns, expense folders CRUD, general invoices, combined dropdown, receipt notes/doc numbers/edit details, image navigation, column sorting (shared utility), camera in receipts, bulk edit expansion, resizable columns |
 | Debt-Upgrades | ✅ | שדרוג מודול חובות + AI חכם | 11 commits: supplier filters (type/history/debt), month picker, amount filters, payment flow fix (pre-select docs), multi-select payment, prepaid progress display (used/total), doc count expand, full doc editing (supplier change, status, amounts), receipt header redesign (field order, doc count, PO indicator), AI supplier auto-detect + alias learning, AI PO auto-match + discrepancy highlighting, doc type auto-detect + learning |
 | AI-OCR-Fix-QA | ✅ | AI OCR Fix + למידה + QA סופי | 27 commits: 5 OCR bug fixes, 3-stage learning (learning/suggesting/auto), AI learning dashboard, confirm-and-learn button, multi-document OCR, compareItems rewrite, balance adjustments, יתרה סופית, prepaid simplification, shared table resize+persistence, brand management improvements, doc type fix, receipt-to-debt flow audit |
-| Lens-1A | ⬜ | **מלאי עדשות — שלב 1A** — סכמה + ניהול קטלוג פלטפורמה | 17 טבלאות חדשות (catalog/commercial/retailer/operations layers + governance), 9 RPCs אטומיים, טריגר K3, View v_suppliers_for_m9, מסך Platform Catalog Admin (5), Edge Function ייבוא xlsx, 17 T-constants. סוגר את חסימת M7+M9. **בלי 6 המסכים הצרכניים** — אלו ב-Lens-1B. |
+| Lens-1A | ✅ | **מלאי עדשות — שלב 1A** — סכמה + ניהול קטלוג פלטפורמה | 17 טבלאות חדשות (catalog/commercial/retailer/operations layers + governance), 9 RPCs אטומיים, טריגר K3, View v_suppliers_for_m9, מסך Platform Catalog Admin (5), Edge Function ייבוא xlsx, 17 T-constants. סוגר את חסימת M7+M9. **בלי 6 המסכים הצרכניים** — אלו ב-Lens-1B. נסגר 2026-05-14. |
 | Lens-1B | ⬜ | **מלאי עדשות — שלב 1B** — 6 מסכי לקוח | אחרי Lens-1A: ניהול מלאי SPH×CYL (1), בחירת דגמים פעילים (2), קטלוג ותמחור inline+bulk (3), הזמנת רכש per-supplier (4), רשימת POs פעילים (6), קבלת סחורה (7) — האחרון מרחיב את `modules/goods-receipts/` עם dispatcher לפי product_category. |
 | 6 | 🚫 נדחה | פורטל ספקים — ייבנה במודול עתידי | גישת ספק חיצונית, view-only מלאי לפי ספק |
 
@@ -272,7 +272,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 - **1 קובץ חדש:** modules/inventory/incoming-invoices.js (255 שורות)
 - **7 commits**
 
-### פאזה Lens-1A ⬜ — מלאי עדשות — שלב 1A (סכמה + ניהול קטלוג פלטפורמה)
+### פאזה Lens-1A ✅ — מלאי עדשות — שלב 1A (סכמה + ניהול קטלוג פלטפורמה) — 2026-05-14
 - **Brief:** `architecture-brief/M1_LENS_PHASE_1_BRIEF.md` (commit b4a3745, 2026-05-14) — חתום על-ידי הארכיטקט
 - **SPEC:** `docs/specs/M1_LENS_INVENTORY_PHASE_1A_SCHEMA_PLATFORM_ADMIN/SPEC.md`
 - **גוזרת חסימת:** M7 (Orders) ו-M9 (Lab/KDS) — שניהם מחכים לסכמת עדשות
