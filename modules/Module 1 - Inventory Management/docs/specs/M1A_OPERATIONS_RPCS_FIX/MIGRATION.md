@@ -378,7 +378,7 @@ Recorded by the Executor as each block is applied live via MCP `apply_migration`
 | Block | Migration name | Applied (UTC) | Verify result |
 |---|---|---|---|
 | #1 | `m1a_record_stock_movement_fix` | 2026-05-15 | `has_branch_var=true`, `has_onconflict_where=true`, `has_conditional_update=true` (live `pg_get_functiondef`) |
-| #2 | _pending_ | — | — |
+| #2 | `m1a_revoke_execute_phase1a_secdef` | 2026-05-15 | `expect_0_anon_public=0`, `expect_8_authn_user_rpcs=8`, `expect_0_authn_internal=0`, `service_role_rows=10` |
 | #3 | _pending_ | — | — |
 | #4 | _pending_ | — | — |
 | #5 | _pending_ | — | — |
