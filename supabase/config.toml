@@ -529,3 +529,18 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/submit-lead/deno.json"
 entrypoint = "./functions/submit-lead/index.ts"
+
+# M1A_OPERATIONS_RPCS_FIX Fix #6 (2026-05-15, Reviewer F-1) — lens-catalog-import
+# is a platform-admin-only catalog mutator. Bulk-INSERTs lens_brand / lens_design /
+# lens_variant / supplier_catalog_offering under SUPABASE_SERVICE_ROLE_KEY.
+# Gate is is_platform_super_admin() RPC inside the function body. verify_jwt = true
+# is BELT — Supabase gateway rejects unauthenticated requests before reaching the
+# function. SUSPENDERS is the in-body is_platform_super_admin check at index.ts,
+# inverted to fail-closed in this same SPEC (Fix #7). Explicit block prevents a
+# future CLI redeploy from silently flipping verify_jwt (lesson from
+# M4_QUICK_HYGIENE_FIXES Rec 7, 2026-05-14).
+[functions.lens-catalog-import]
+enabled = true
+verify_jwt = true
+import_map = "./functions/lens-catalog-import/deno.json"
+entrypoint = "./functions/lens-catalog-import/index.ts"
