@@ -245,7 +245,7 @@ Executor appends one row per `apply_migration` call, in the same commit semantic
 | # | Migration name | Block (SPEC §10) | Applied (UTC) | Verify result |
 |---|----------------|------------------|---------------|---------------|
 | 1 | `m1_lens_1b_foundation_block1_seed_permissions` | Commit 2 | 2026-05-15 | 6 rows (3 keys × 2 tenants demo+prizma) ✓ |
-| 2 | `m1_lens_1b_foundation_block2_toggle_active_offering` | Commit 3 | TBD | TBD |
+| 2 | `m1_lens_1b_foundation_block2_toggle_active_offering` | Commit 3 | 2026-05-15 | RPC created; SECDEF + search_path=public; grants: authenticated+service_role only (no anon/PUBLIC) ✓ |
 | 3 | `m1_lens_1b_foundation_block3_upsert_pricing_overlay` | Commit 4 | TBD | TBD |
 | 4 | `m1_lens_1b_foundation_block4_bulk_apply_pricing_overlay` | Commit 5 | TBD | TBD |
 
