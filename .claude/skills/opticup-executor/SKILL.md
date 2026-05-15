@@ -965,6 +965,44 @@ Required sections:
   file+section+change. Derived from actual pain points in this SPEC, not
   generic advice.
 
+### Step 4.5 — Pending Entries Sweep (mandatory at every SPEC closure)
+
+Added 2026-05-15 by `PENDING_ENTRIES_AUTO_RESOLUTION` SPEC (Module 1.5). Layer 1 of a 3-layer enforcement (executor protocol + pre-commit advisory check `scripts/checks/architect-pending-applied.mjs` + Sentinel Mission 10.6).
+
+**Context.** Cowork Architect sessions cannot write to `.claude/skills/` (file-tool lock). The agreed workaround: Cowork writes intended content to `_archive/architect-pending-entries/<TS>_<TOPIC>.md` and the next Claude Code session applies it. Without infrastructure, this depended on a human remembering. As of 2026-05-15 this is **enforced infrastructure**: the sweep is part of every SPEC closure.
+
+**When to run.** Immediately BEFORE you write the final closure commit (Step 5), and BEFORE the Localhost-Tester / Reviewer chain converges back to the Foreman. Run it once per SPEC, at the end. (For a SPEC that ALREADY consumes a pending file as part of its declared scope — like `PENDING_ENTRIES_AUTO_RESOLUTION` itself — the sweep is the in-SPEC commit, not an additional one.)
+
+**Protocol.**
+
+1. **Inventory.** List the folder contents:
+   ```
+   ls _archive/architect-pending-entries/ 2>/dev/null | grep -v '^\.' | grep -v '\.gitkeep$'
+   ```
+   - **Empty** → sweep complete, proceed to Step 5.
+   - **Non-empty** → continue to step 2.
+
+2. **Per-file processing.** For each pending `.md` file:
+   a. Read the file in full.
+   b. Locate its "Placement instructions" section (or equivalent — pending files written by the Architect Brief author follow a stable header pattern: a "Purpose" paragraph + a code-block holding the verbatim content + a "Placement instructions" section naming the exact target path).
+   c. Apply the prescribed change to the named target file. Targets are usually inside `.claude/skills/opticup-architect/references/DECISIONS_LOG.md`, `.claude/skills/opticup-architect/SKILL.md`, or another protected-path file Cowork couldn't reach.
+   d. Verify the change landed via grep on a unique marker the pending file specifies (e.g., for a DECISIONS_LOG row, `grep -c "^| <id> |" <target>` returns ≥1; for a SKILL.md sub-section, `grep -c "<unique-heading-text>" <target>` returns ≥1).
+   e. `git rm` the consumed pending file (or `Remove-Item` + `git add -u` if on PowerShell).
+
+3. **Commit.** Stage the target-file edit + the file-deletion in the same commit. Use the existing SPEC's `## Destructive Operations` declaration to authorize the delete — the Iron Rule 32 hook reads STAGED SPEC.md files only, so the SPEC.md may need to be re-staged in this commit (a one-line execution-log footer is the cleanest tactic; see Appendix in the originating SPEC). Commit message: `chore(decisions): apply pending entry <slug> + delete pending file (Sweep)`.
+
+4. **STOP triggers.** Stop and escalate (write `modules/Module N/escalations/{ISO_TS}_pending_entries_<slug>.md` per the 5-heading template) on:
+   - **Malformed file** — no "Placement instructions" section, or the named target path doesn't exist.
+   - **Undeclared destructive op** — the SPEC's `## Destructive Operations` doesn't authorize deleting this file (the sweep is mandatory but the deletion is still a destructive op subject to Iron Rule 32).
+   - **Multiple pending files when the SPEC declared only one** — the sweep is not a license to consume undeclared files. One file per SPEC closure unless the SPEC explicitly authorizes a batch.
+   - **Target file write fails** — Cowork-VM-mount truncation (architect SKILL §"Cowork VM File-Write Failures"). Verify line counts, re-write via heredoc, re-verify.
+
+5. **Self-test.** After the commit lands, re-run the inventory in step 1. The folder MUST be empty (or contain only `.gitkeep`). `node scripts/verify.mjs --staged` post-commit will exit 0 instead of 2 — confirms the Layer 2 advisory check now agrees.
+
+**Rationale.** Without the sweep, pending entries accumulate as drift. On 2026-05-15 Daniel raised the failure mode explicitly: "I want infrastructure, not culture. Culture decays." (DECISIONS_LOG entry #11). The sweep makes the workaround mechanically reliable.
+
+**Cross-reference.** Layer 2 = `scripts/checks/architect-pending-applied.mjs` (advisory pre-commit warning when folder non-empty). Layer 3 = Sentinel Mission 10.6 (daily audit; 1 file >48h = MEDIUM, 2+ files = HIGH). Three layers, same shape as STRUCTURE_PROTECTIONS (CLAUDE.md §0.5 enforcement). Source SPEC: `modules/Module 1.5 - Shared Components/docs/specs/PENDING_ENTRIES_AUTO_RESOLUTION/`.
+
 ### Step 5 — Commit the 3 (or 2) files + signal Foreman
 Commit `EXECUTION_REPORT.md` and `FINDINGS.md` (if any) to the SPEC folder in a
 single `chore(spec): close {SPEC_SLUG} with retrospective` commit. Then report
