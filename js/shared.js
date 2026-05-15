@@ -62,6 +62,8 @@ const T = {
   STOCK_LOTS: 'stock_lot',
   STOCK_MOVEMENTS: 'stock_movement',
   STOCK_TRANSFERS: 'stock_transfer',
+  STOCK_ADJUSTMENT: 'stock_adjustment',
+  STOCK_ADJUSTMENT_REASON: 'stock_adjustment_reason',
   PURCHASE_RECEIPT: 'purchase_receipt',
   PURCHASE_RECEIPT_LINE: 'purchase_receipt_line',
   PURCHASE_ORDER: 'purchase_order',
