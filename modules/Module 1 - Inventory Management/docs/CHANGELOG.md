@@ -4,6 +4,25 @@
 
 ---
 
+## M1_LENS_PHASE_1B_FOUNDATION — 2026-05-15 (🟢 closing — 3 read screens + 3 RPCs + 9/9 smoke PASS)
+
+Foundation half of Phase 1B — 3 read-heavy lens screens (`lens-inventory.html` + 5 JS files, `lens-active-designs.html` + 3 JS files, `lens-pricing.html` + 5 JS files = 13 JS files all ≤163 lines per Iron Rule 12) + 3 metadata RPCs (`toggle_active_offering` UPSERT on `tenant_active_offerings`, `upsert_pricing_overlay` SELECT-then-UPDATE-or-INSERT, `bulk_apply_pricing_overlay` atomic `INSERT...SELECT FROM unnest`) + 3 permission keys × 2 tenants seeded. All 9 functional smoke cases on demo PASS. One mid-pipeline pivot (Block 2 v1 ON CONFLICT ON CONSTRAINT failed because the partial unique index isn't a constraint — v2 CREATE OR REPLACE with `ON CONFLICT (cols) WHERE pred` index-inference, SPEC §0 D11 pre-authorized fallback). Iron Rule 32 §7 = `None.` throughout 10 commits. Zero Prizma data written. Live-browser smoke (Smoke #9) deferred to Daniel manual QA per Brief plan.
+
+### Commits (M1 Lens Phase 1B Foundation)
+- `dfa5e81` chore(spec): open M1_LENS_PHASE_1B_FOUNDATION — SPEC + MIGRATION skeleton + ROLLBACK
+- `112435f` feat(m1): seed 3 lens.* permission keys × 2 tenants — Block 1
+- `4a939c7` feat(m1): create toggle_active_offering RPC — Block 2 (v1)
+- _(v2 fix applied)_ Block 2 v2 — CREATE OR REPLACE with index-inference ON CONFLICT
+- `0d6a032` feat(m1): create upsert_pricing_overlay RPC — Block 3
+- `af92916` feat(m1): create bulk_apply_pricing_overlay RPC — Block 4
+- _(commit)_ feat(lens-inventory): screen + JS folder + root-allowlist entry
+- _(commit)_ feat(lens-active-designs): screen + JS folder
+- _(commit)_ feat(lens-pricing): screen + JS folder
+- _(commit)_ test(m1): functional smoke 9/9 PASS on demo + Block 2 v2 fix
+- (this commit) chore(spec): close M1_LENS_PHASE_1B_FOUNDATION — EXECUTION_REPORT + FINDINGS + GLOBAL_MAP + FILE_STRUCTURE + SESSION_CONTEXT + CHANGELOG
+
+---
+
 ## M1B0_PURCHASE_ORDER_SCHEMA — 2026-05-15 (🟢 closing — 3 tables + 5 RPCs + K2 wiring, 6/6 smoke PASS)
 
 Phase 1B prerequisite — schema-only micro-SPEC. Ships the 3 missing schema objects from Phase 1A (`purchase_order`, `purchase_order_line`, `supplier_debt`) + 5 supporting RPCs + 2 FK back-pointer additions + K2 extension wiring debt creation at receipt close (D-M1-11). All 6 functional smoke cases on demo PASS (place_purchase_order, mark_po_sent, K2 + debt + idempotency, cancel-flow 3 sub-cases, anon-reject 5 RPCs, cross-tenant guard). Iron Rule 32 §7 = `None.` throughout 8 commits. Zero Prizma data written. Legacy `purchase_orders` plural untouched.
