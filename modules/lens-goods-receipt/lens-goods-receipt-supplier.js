@@ -15,11 +15,9 @@
   async function loadSuppliers() {
     const tid = getTenantId();
     if (!tid) throw new Error('tenant_id missing');
-    const rows = await fetchAll(T.SUPPLIERS, {
-      select: 'id, name, supplier_number, default_currency, contact, phone, email',
-      filter: { tenant_id: tid, active: true },
-      order: { column: 'name', ascending: true },
-    });
+    // Iron Rule 7: fetchAll(tableName, filters) — filters is array of [col, op, val] tuples.
+    const rows = await fetchAll(T.SUPPLIERS, [['active', 'eq', true]]);
+    (rows || []).sort(function (a, b) { return (a.name || '').localeCompare(b.name || '', 'he'); });
     window.LensGR.suppliers = rows || [];
     renderOptions();
     bindChange();

@@ -91,7 +91,8 @@
     if (!tid) return;
     // tenant_location is required by m1_create_receipt_from_box (stock_lot.location_id NOT NULL).
     // Day-1: pick the first row as default; Phase 2 adds per-line location selection.
-    const rows = await fetchAll('tenant_location', { filter: { tenant_id: tid }, order: { column: 'id', ascending: true } });
+    // Iron Rule 7: fetchAll auto-adds tenant_id; pass empty filter array since we want all locations.
+    const rows = await fetchAll('tenant_location', []);
     window.LensGR.locations = rows || [];
     if (rows && rows.length > 0) window.LensGR.defaultLocationId = rows[0].id;
     if (!window.LensGR.defaultLocationId && window.Toast) {

@@ -8,12 +8,10 @@
   async function loadSuppliers() {
     const tid = getTenantId();
     if (!tid) throw new Error('tenant_id missing');
-    // Iron Rule 7: prefer fetchAll wrapper. fetchAll is provided by js/supabase-ops.js.
-    const rows = await fetchAll(T.SUPPLIERS, {
-      select: 'id, name, supplier_number, default_currency, default_document_type, payment_terms_days, contact, phone',
-      filter: { tenant_id: tid, active: true },
-      order: { column: 'name', ascending: true },
-    });
+    // Iron Rule 7: fetchAll(tableName, filters) where filters is an array of [col, op, val] tuples
+    // (per js/supabase-ops.js:78). tenant_id is auto-added by the wrapper.
+    const rows = await fetchAll(T.SUPPLIERS, [['active', 'eq', true]]);
+    (rows || []).sort(function (a, b) { return (a.name || '').localeCompare(b.name || '', 'he'); });
     window.LensPO.suppliers = rows || [];
     renderSupplierOptions();
     bindSupplierChange();
