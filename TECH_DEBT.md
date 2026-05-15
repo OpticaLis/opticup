@@ -7,6 +7,22 @@
 
 ## Active Debt
 
+### #M1A-DEBT-04 — 🟢 Demo lens-catalog seed fixtures persist from M1A_OPERATIONS_RPCS_FIX
+
+**Where:** demo tenant `8d8cfa7e-ef58-49af-9702-a862d459cccb` — 2 `tenant_location` rows (short_codes `STA`/`STB`) + 1 global `lens_brand` `SmokeBrand_M1A` + 1 `lens_design` `SmokeDesign_M1A` + 1 `lens_variant` `LV-TST001` + 1 `supplier_catalog_offering` (100 ILS) + ~4 `stock_movement` rows + ~3 `stock_lot` rows + 1 `purchase_receipt` row, all tagged `notes ILIKE '%M1A%smoke%'` (where the `notes` column exists).
+
+**What:** Functional smoke for `M1A_OPERATIONS_RPCS_FIX` discovered that demo had ZERO `tenant_location` rows, ZERO published `lens_variant` rows, and ZERO `supplier_catalog_offering` rows on the lens substrate. Phase 1A's smoke (a single `INSERT lens_brand` + cross-tenant SELECT + DELETE) had never seeded a runnable demo substrate. Without fixtures, the §14 smoke could not execute end-to-end. Executor seeded minimal fixtures inline (under "smoke on demo" envelope) and persisted them for Phase 1B re-use.
+
+**Why it's debt:** The fixtures persist on demo. Two acceptable resolutions for Phase 1B opening: (a) reuse the persistent fixtures as Phase 1B's first-smoke seed (zero extra work), OR (b) replace with a proper `modules/Module 1 - Inventory Management/scripts/seed-demo-lens-fixtures.sql` so the seed is reproducible from clean state. Status quo (persistent fixtures) is fine for Phase 1B's local smoke needs; only matters when Phase 1B's own SPEC §0 chooses an approach.
+
+**Why not fixed in M1A_OPERATIONS_RPCS_FIX:** Brief §11 "scope change requested (anti-pattern)" — a seed-script SPEC is its own scope.
+
+**Planned fix:** Phase 1B SPEC §0 explicitly cites one of (a) or (b). If (b), author the seed script as part of that SPEC's commit plan.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1A_OPERATIONS_RPCS_FIX/FINDINGS.md` items F-3 + F-8 (2026-05-15) + `FOREMAN_REVIEW.md` findings processing.
+
+---
+
 ### #RULE18-COMMENT-FALSE-POSITIVE — 🟢 rule-18-unique-tenant.mjs matches `(NNN)` inside SQL comments
 
 **Where:** `scripts/checks/rule-18-unique-tenant.mjs` — `UNIQUE_RE = /UNIQUE\s*\(([^)]+)\)/gi`. Surfaced by `M1A_DEBT_SWEEP` (2026-05-15) FINDINGS-03.

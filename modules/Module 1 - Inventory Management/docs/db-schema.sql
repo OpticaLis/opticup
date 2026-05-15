@@ -2033,3 +2033,49 @@ CREATE INDEX IF NOT EXISTS idx_supdocs_doc_numbers ON supplier_documents USING G
 -- Phase 1A close commit: 285b5d6 (2026-05-14).
 -- Phase 1A integration commit (GLOBAL_* + docs merge): 0cf6123.
 -- ============================================================
+--
+-- 2026-05-15 M1A_OPERATIONS_RPCS_FIX (10 fixes via 7 MCP migrations on `tsxrrxzmdxaenlvocyit`):
+--   - record_stock_movement body: branch on movement_type for creation paths
+--     ('receipt','transfer_in','adjustment_found') — skip qty_remaining UPDATE.
+--     ON CONFLICT gains WHERE (is_deleted=false) predicate.
+--   - record_transfer body: 19 positional args to inner record_stock_movement (was 17 → 42883).
+--   - record_adjustment_found body: 19 positional args, v_lot_id at p_adjustment_id slot (was 20-arg misaligned → 42883).
+--   - next_lens_variant_display_id body: JWT-not-null + role!='anon' guard raising 42501.
+--   - m9_lens_received_for_sale_order_trg_fn body: appended ON CONFLICT (stock_movement_id) DO NOTHING.
+--   - new idempotency unique-index pending_lens_advancement_queue_stock_movement_unique
+--     on column stock_movement_id (FK to stock_movement.id which is already globally
+--     unique, so Iron Rule 18 tenant-scoping is satisfied transitively via the FK chain).
+--   - ACL: 10 Phase 1A SECDEF fns REVOKEd from PUBLIC/anon; 8 re-GRANTed to authenticated.
+--     next_lens_variant_display_id + m9_lens_received_for_sale_order_trg_fn fully REVOKEd.
+--   - View ACL: v_suppliers_for_m9 REVOKEd anon/PUBLIC; GRANT SELECT to authenticated + service_role.
+--   - lens-catalog-import EF v1→v2 (verify_jwt=true; fail-closed gate inverted from `if (callerAuth)` to `if (!callerAuth) return 401`).
+--   - supabase/config.toml: explicit [functions.lens-catalog-import] block.
+-- See modules/Module 1 - Inventory Management/docs/specs/M1A_OPERATIONS_RPCS_FIX/MIGRATION.md for full SQL bodies.
+--
+-- 2026-05-15 M1B0_PURCHASE_ORDER_SCHEMA (Phase 1B prerequisite — schema-only micro-SPEC):
+--   - 3 new tables: purchase_order, purchase_order_line, supplier_debt
+--     (all canonical 2-policy RLS: service_bypass + tenant_isolation JWT-claim).
+--   - Tenant-scoped UNIQUE partial indexes (Iron Rule 18):
+--       purchase_order_number_unique (tenant_id, po_number) WHERE NOT is_deleted
+--       purchase_order_line_unique (tenant_id, purchase_order_id, line_number) WHERE NOT is_deleted
+--       supplier_debt_receipt_unique (tenant_id, purchase_receipt_id) WHERE NOT is_deleted
+--   - Status enums (Iron Rule 19, accounting-semantic, NOT tenant-configurable):
+--       purchase_order.status ∈ (draft, sent, partial, fully_received, cancelled)
+--       supplier_debt.status ∈ (open, partially_paid, paid, written_off)
+--   - PO line source split (D-M1-07): stock / custom_per_customer / manual.
+--   - FK back-pointers added (clauses on pre-existing Phase 1A columns):
+--       stock_lot.purchase_order_id → purchase_order(id) ON DELETE SET NULL
+--       purchase_receipt.purchase_order_id → purchase_order(id) ON DELETE SET NULL
+--   - 5 new RPCs (SECDEF, search_path=public, JWT-claim guard, REVOKE/GRANT discipline):
+--       next_purchase_order_number(p_tenant_id) — PO-NNNNNN tenant-scoped (distinct from
+--         legacy next_po_number(uuid, text) which serves the legacy frames-era purchase_orders table)
+--       place_purchase_order(p_tenant_id, p_supplier_id, p_lines JSONB, p_expected, p_notes, p_created_by)
+--       mark_po_sent(p_tenant_id, p_po_id)
+--       cancel_purchase_order(p_tenant_id, p_po_id, p_reason)
+--       m1_create_supplier_debt_from_receipt(p_tenant_id, p_receipt_id, p_total, p_vat, p_currency)
+--         — idempotent via UNIQUE (tenant_id, purchase_receipt_id).
+--   - K2 (m1_create_receipt_from_box) extended (CREATE OR REPLACE): after the line LOOP,
+--     accumulates subtotal, fetches active IL vat_rate (effective_until IS NULL filter),
+--     computes vat_amount + total_amount, calls m1_create_supplier_debt_from_receipt.
+--     D-M1-11 wired: debt is created at receipt time, not PO time.
+-- See modules/Module 1 - Inventory Management/docs/specs/M1B0_PURCHASE_ORDER_SCHEMA/SPEC.md for full SQL bodies + smoke output.

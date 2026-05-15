@@ -70,18 +70,24 @@ Deno.serve(async (req: Request) => {
 
   // Verify caller is platform super admin (gate the seeding capability).
   // Note: is_platform_super_admin reads JWT claims; pass through caller's auth.
+  // Fail-closed: empty/missing Authorization header is treated as anonymous and rejected.
+  // M1A_OPERATIONS_RPCS_FIX (2026-05-15) Fix #7 — inverted from the pre-existing
+  // fail-open `if (callerAuth) { ... }` pattern.
   const callerAuth = req.headers.get('authorization') ?? '';
-  if (callerAuth) {
-    const sbAsCaller = createClient(SUPABASE_URL, SERVICE_KEY, {
-      global: { headers: { Authorization: callerAuth } },
-      auth: { persistSession: false }
+  if (!callerAuth) {
+    return new Response(JSON.stringify({ error: 'unauthorized_missing_auth' }), {
+      status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
-    const { data: isAdmin, error: adminCheckErr } = await sbAsCaller.rpc('is_platform_super_admin');
-    if (adminCheckErr || isAdmin !== true) {
-      return new Response(JSON.stringify({ error: 'forbidden_not_platform_admin', detail: adminCheckErr?.message }), {
-        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+  }
+  const sbAsCaller = createClient(SUPABASE_URL, SERVICE_KEY, {
+    global: { headers: { Authorization: callerAuth } },
+    auth: { persistSession: false }
+  });
+  const { data: isAdmin, error: adminCheckErr } = await sbAsCaller.rpc('is_platform_super_admin');
+  if (adminCheckErr || isAdmin !== true) {
+    return new Response(JSON.stringify({ error: 'forbidden_not_platform_admin', detail: adminCheckErr?.message }), {
+      status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 
   const result: ImportResult = {

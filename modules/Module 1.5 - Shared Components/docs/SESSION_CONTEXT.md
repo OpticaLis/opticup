@@ -1,6 +1,21 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
 ## Current Status
+- **Phase:** **SECURITY_HOTFIX_2 CLOSED WITH FOLLOW-UPS 🟡** (2026-05-15). F-CRIT-1 + F-CRIT-3 fully closed; F-CRIT-2 partially closed (2 of 17 views — 15 deferred to `SECURITY_HOTFIX_3` per RESOLVED escalation 2026-05-15T1110Z). 3 escalations resolved by Daniel in-session. All 24 in-scope SECURITY DEFINER RPCs now carry 3-role-aware Block A (service_role bypass + strict non-service-role JWT-tenant-claim check); 16 admin RPCs lost anon EXECUTE; `verify_campaign_page_password` retained anon (Option A — Block A-alt slug validation). See `docs/specs/SECURITY_HOTFIX_2_2026_05_15/` for SPEC + EXECUTION_REPORT + FINDINGS.
+- **Branch:** develop
+- **Last updated:** 2026-05-15 (SECURITY_HOTFIX_2 closed).
+
+## 2026-05-15 — SECURITY_HOTFIX_2 (Bundle 2 F-CRIT-1/2/3 — partial F-CRIT-2)
+
+See `docs/specs/SECURITY_HOTFIX_2_2026_05_15/EXECUTION_REPORT.md` + CHANGELOG.md entry above. Three escalations RESOLVED + filed under `escalations/`:
+- Anon-callable count inverted in Brief (7 → 17 actual).
+- SPEC §3a Block A NULL-loophole + service_role break → adopted 3-role-aware pattern.
+- Pre-flight didn't probe base-table RLS → §1.2 scope reduced from 17 to 2 views.
+
+15 views + their base-table RLS expansions → `SECURITY_HOTFIX_3` (next SPEC, see FINDINGS F-1).
+
+## Historical (pre-2026-05-15)
+
 - **Phase:** Sketch Revision **Batch 3 CLOSED** (`M1_5_SKETCH_RESKIN_BATCH_3`, 2026-05-11). 17 architecture-brief mockup files across M5/M6/M8/M11/M12/M14/M15 re-skinned in place to Hybrid+Navy. 13 files received the heavy transformation (full `:root` swap + dark-bg `--purple-deep` → `--accent` sweep + inline legacy hex swap); 4 M12 files received the light transformation (neutral-only swap; WhatsApp/SMS/Email channel semantics preserved per Brief §2.4). 17 `pre-reskin-M{N}-{stem}` git tags enable independent revert. M7 was already on Hybrid+Navy (V7 Variant A locked separately). Remaining: M9 (no sketches exist — separate Batch with Daniel involvement) + M13 (gold-gradient → SaaS-clean — separate full-revision Batch).
 - **Branch:** develop
 - **Last updated:** 2026-05-11 (Sketch Revision Batch 3 closed — 17 mockups aligned with Hybrid+Navy design system).

@@ -177,7 +177,8 @@ renames, and checkbox→boolean coercion.
 | Plan / feature gates | check_plan_limit, is_feature_enabled, is_platform_super_admin | 3 |
 | Inventory atomics | increment/decrement/set_inventory_qty, apply_stock_count_delta, get_low_stock_brands | 5 |
 | Sequential numbers (Iron Rule #13) | next_po_number, next_return_number, next_box_number, next_internal_doc_number, next_crm_event_number, **next_lens_variant_display_id, next_lot_number, next_transfer_number, next_receipt_number** (M1 Lens Phase 1A) | 9 |
-| **M1 Lens atomics (Iron Rule #1)** (Phase 1A 2026-05-14) | record_stock_movement (FOR UPDATE on lot), record_transfer (parent+2 children+dest lot), record_adjustment_found (lot+movement), effective_price (overlay+VAT resolver), m1_create_receipt_from_box (K2 contract orchestrator), m9_lens_received_for_sale_order_trg_fn (K3 trigger fn) | 6 |
+| **M1 Lens atomics (Iron Rule #1)** (Phase 1A 2026-05-14) | record_stock_movement (FOR UPDATE on lot), record_transfer (parent+2 children+dest lot), record_adjustment_found (lot+movement), effective_price (overlay+VAT resolver), m1_create_receipt_from_box (K2 contract orchestrator — extended 2026-05-15 by M1B0 to call m1_create_supplier_debt_from_receipt after the line LOOP), m9_lens_received_for_sale_order_trg_fn (K3 trigger fn) | 6 |
+| **M1B0 Purchase-order schema** (2026-05-15) | next_purchase_order_number (per-tenant PO-NNNNNN sequence, distinct from legacy next_po_number(uuid,text) which serves frames-era purchase_orders plural), place_purchase_order (atomic PO + line array insert), mark_po_sent (draft→sent), cancel_purchase_order (draft/sent → cancelled with status-check gate), m1_create_supplier_debt_from_receipt (idempotent debt insert at receipt-close time — D-M1-11 wiring). New tables: purchase_order, purchase_order_line, supplier_debt. | 5 |
 | Shipments / debt / payments | increment_shipment_counters, increment_paid_amount, increment_prepaid_used, get_po_aggregates | 4 |
 | Auth | reset_employee_pin | 1 |
 | Alerts | generate_daily_alerts | 1 |
@@ -297,6 +298,10 @@ pointer only.
 
 All three are tracked for remediation in `MASTER_ROADMAP.md` (Module 3 Phase B
 preamble checklist, pending Step 9 rewrite).
+
+### Discipline notes
+
+- **M1A operations RPCs (2026-05-15, `M1A_OPERATIONS_RPCS_FIX`):** the 10 M1 Phase 1A SECURITY DEFINER functions REVOKE EXECUTE from PUBLIC/anon; only `authenticated` retains EXECUTE for the 8 user-callable RPCs (`effective_price`, `m1_create_receipt_from_box`, `next_lot_number`, `next_receipt_number`, `next_transfer_number`, `record_adjustment_found`, `record_stock_movement`, `record_transfer`). `next_lens_variant_display_id` and `m9_lens_received_for_sale_order_trg_fn` are platform-admin/internal-trigger only (no `authenticated` GRANT). `next_lens_variant_display_id` has an in-body JWT-not-null guard (raises 42501). `v_suppliers_for_m9` has REVOKEd default anon/PUBLIC view grants (Iron Rule 13). `pending_lens_advancement_queue` has a UNIQUE on `stock_movement_id` + K3 trigger uses `ON CONFLICT (stock_movement_id) DO NOTHING` for idempotency under transaction retries. `supabase/config.toml` has an explicit `[functions.lens-catalog-import] verify_jwt = true` block.
 
 ---
 

@@ -64,6 +64,9 @@ const T = {
   STOCK_TRANSFERS: 'stock_transfer',
   PURCHASE_RECEIPT: 'purchase_receipt',
   PURCHASE_RECEIPT_LINE: 'purchase_receipt_line',
+  PURCHASE_ORDER: 'purchase_order',
+  PURCHASE_ORDER_LINE: 'purchase_order_line',
+  SUPPLIER_DEBT: 'supplier_debt',
   // Governance (tenant-scoped):
   SUPPLIER_PERMS: 'supplier_permissions',
   CHANGE_APPROVAL: 'change_approval_log',

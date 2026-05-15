@@ -229,6 +229,28 @@ const FIELD_MAP = {
     'הזמנת מכירה':'sale_order_id','אצווה שנוצרה':'stock_lot_id',
     'תוספת ידנית':'is_manual_addition','הערות':'notes'
   },
+  // M1B0 — lens-era purchase_order (singular). Coexists with legacy purchase_orders (plural, frames-era).
+  purchase_order: {
+    'מספר הזמנה':'po_number','ספק':'supplier_id','סטטוס':'status',
+    'תאריך הזמנה':'ordered_at','נשלח לספק בתאריך':'sent_to_supplier_at',
+    'תאריך אספקה צפוי':'expected_delivery_at',
+    'בוטל בתאריך':'cancelled_at','סיבת ביטול':'cancelled_reason',
+    'נוצר ע"י':'created_by','הערות':'notes'
+  },
+  purchase_order_line: {
+    'הזמנת רכש':'purchase_order_id','מספר שורה':'line_number','מקור':'source',
+    'וריאציה':'variant_id','הזמנת מכירה':'sale_order_id',
+    'SPH':'sph','CYL':'cyl','ADD':'add_value','תיאור ידני':'manual_description',
+    'כמות הוזמנה':'qty_ordered','כמות התקבלה':'qty_received',
+    'מחיר עלות':'unit_cost','מטבע':'currency_code','שיעור מע"מ':'vat_rate_id'
+  },
+  supplier_debt: {
+    'ספק':'supplier_id','קבלה':'purchase_receipt_id',
+    'מספר תעודת משלוח':'delivery_note_number',
+    'סכום כולל':'total_amount','סכום מע"מ':'vat_amount','מטבע':'currency_code',
+    'סכום ששולם':'paid_amount','סטטוס':'status',
+    'נסגר בתאריך':'closed_at','הערות':'notes'
+  },
   supplier_permissions: {
     'ספק':'supplier_id','פעולה':'action','רמת הרשאה':'permission_level',
     'תוקף מ-':'effective_from','תוקף עד':'effective_until',
