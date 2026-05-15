@@ -422,6 +422,7 @@ awkward and error-prone; PowerShell slice was the right tool.
 - SELECT queries only via `optic_readonly` role
 - Red-list check: DROP, TRUNCATE, ALTER, CREATE, INSERT, UPDATE, DELETE, GRANT, REVOKE
 - If red-list keyword detected → STOP, do not execute
+- For post-DDL advisor verification (when a SPEC closes a Level-3 schema change), use `scripts/audit/advisors-for-objects.mjs` — see §"Verification After Changes" for the full recipe. Read-only because the script only reads a pre-dumped advisor JSON file; no DB writes.
 
 ### Level 2 — Non-destructive writes (requires Strategic approval):
 - INSERT/UPDATE on data tables only
@@ -524,6 +525,7 @@ After every file modification:
 - Run `node scripts/verify.mjs --staged` if available
 - Check that no files outside the stated scope were touched
 - `git status --short` to confirm only expected files changed
+- **DDL Pipelines (Level 3 SPECs that added/altered DB objects):** after the apply commit, dump MCP advisors (`get_advisors` security + performance) to a temp JSON, then run `node scripts/audit/advisors-for-objects.mjs --advisors-json <path> <obj1> <obj2> ...` with the SPEC's new-object name list. Exit 0 → §3 advisor-cleanliness criterion satisfied programmatically. Exit 1 → HIGH advisor finding on a named object — STOP and resolve before closing. This replaces ad-hoc subagent grep over 100KB+ advisor dumps with a single exit-code-bearing command. (Promoted from M1B0_PURCHASE_ORDER_SCHEMA §7 Proposal 2 via M1_SKILL_IMPROVEMENT_HARVEST SPEC, 2026-05-15.)
 
 ## Documentation Updates (in same commit as code):
 
@@ -923,6 +925,8 @@ execution quality.
 
 ### Step 2 — Execute under Bounded Autonomy
 Follow the Execution Loop (above). Match → continue. Mismatch → STOP.
+
+**Applied Log convention (MCP-only SPECs).** When the SPEC uses MCP `apply_migration` and produces no `supabase/migrations/*.sql` files on disk: create `<SPEC_FOLDER>/MIGRATION.md` with an Applied Log table. Columns: `# | Migration name | Block (SPEC §6) | Applied (UTC) | Verify result`. Append one row per `apply_migration` call, in the commit that semantically represents that block. This satisfies the SPEC §10 commit-row granularity rule by giving every MCP-only commit a real file delta — otherwise a "Block N applied" commit has nothing in the working tree to commit, breaking the per-block one-commit pattern. (Promoted from M1A + M1B0 FOREMAN_REVIEW Executor Proposals 2026-05-15, 2-of-3 consecutive-reviews threshold; M1B0 voluntarily adopted this and confirmed it works in practice.)
 
 ### Step 3 — Log findings as you go
 If during execution you discover something NOT in the SPEC that is a real

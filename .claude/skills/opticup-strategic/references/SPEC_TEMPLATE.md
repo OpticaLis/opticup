@@ -57,7 +57,40 @@ actual repo state, not in Brief assumptions that may have drifted.
 
 - **Baselines from LIVE measurement, never from author memory** — every numeric baseline in the §0 Baselines sub-table (row count, file count, line count, hash, tag count, ad-spend total, etc.) MUST be derived by running the corresponding query/command at SPEC authoring time. The query/command appears as a runnable string in the table's "Metric" or adjacent "How measured" column so the Executor can re-run it in pre-flight if needed. Author estimates from memory are FORBIDDEN. Pattern: every `BASE_<scope>_<unit>` symbol cites a runnable command (`wc -l`, `SELECT count(*) FROM ...`, `md5sum`, etc.). SPECs that author baselines from memory have produced drift in 2 of the last 4 SPECs (`STATUS_CHANGE_TRIGGERS_FRAMEWORK` `BASE_PRIZMA_NONTARGET_RULE_COUNT` estimated 10 vs actual 16; `PRIZMA_CRM_BUGFIX_BACKPORT` count-vs-hash semantics). (Harvested from `STATUS_CHANGE_TRIGGERS_FRAMEWORK/FOREMAN_REVIEW.md` Author Proposal #1, 2026-05-13.)
 
-(Harvested from `MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md` Author Proposal #2, 2026-05-11. Originally piloted in `M1_5_SKETCH_RESKIN_BATCH_3` as the Palette Pre-Audit. Untracked-files item added 2026-05-12 from `SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md` Author Proposal #2. Color-form completeness added 2026-05-12 from `MIGRATION_4_STOREFRONT_STUDIO/FOREMAN_REVIEW.md` Author Proposal #1. Live-baselines rule added 2026-05-13 from `STATUS_CHANGE_TRIGGERS_FRAMEWORK/FOREMAN_REVIEW.md` Author Proposal #1.)
+> **The two audits below are MANDATORY for SPECs in their applicable categories. A SPEC missing the applicable audit is NOT ready for dispatch.** (Promoted from M1A + M1B0 FOREMAN_REVIEW Author Proposals, 2026-05-15 — these audits were proposed in M1A, applied in M1B0 where they demonstrably caught all 3 Brief-vs-reality divergences (D1: `next_po_number` name collision, D2: `vat_rates.active` absent, D3: `purchase_receipt.purchase_order_id` already exists), and are now skill-baked on the 2-of-3-consecutive threshold.)
+
+### Inner-call arity audit (mandatory for SPECs that create or extend any SECDEF function)
+
+When a SPEC creates or extends a SECURITY DEFINER function whose body invokes other RPCs (orchestrator pattern), the author MUST audit the call-site arity of every inner call against the live signature of the callee BEFORE sealing the SPEC. Author from-memory or from-Brief assumptions about inner-call argument counts and ordering are FORBIDDEN.
+
+Recipe:
+1. For each inner call in the new/extended function body, list: `callee_name`, expected `argc`, expected arg types & order.
+2. For each callee, query the live `pg_proc` (or read its current `db-schema.sql` definition) to confirm the signature: `SELECT proname, pronargs, proargtypes::regtype[], proargnames FROM pg_proc WHERE proname = '<callee>';`
+3. Compare each call-site against the live signature. Mismatch (argc, type order, NULL-handling) → resolve in the SPEC body (rewrite the call, change the SPEC, or scope the callee fix out).
+4. Records: **`0 mismatches | N mismatches`** (cite the N with a fix-each line). A non-zero unresolved mismatch = SPEC is NOT ready for dispatch.
+
+Why mandatory: orchestrator-pattern SECDEF functions are where mid-pipeline pivots cluster — the SPEC reads clean until execution time when the inner call's arity-mismatch ECONNREFUSEs the whole block. M1A_OPERATIONS_RPCS_FIX had 2 such pivots (F-1/F-2); M1B0_PURCHASE_ORDER_SCHEMA applied this audit at §0 and had ZERO mid-pipeline pivots.
+
+### Smoke-touched schema audit (mandatory for SPECs that author a §14 smoke section)
+
+When a SPEC's §14 Smoke Test Cases reference DB rows / fixtures / lookup values that the smoke creates or reads against, the author MUST audit the live schema state of every smoke-touched table/column BEFORE sealing the SPEC.
+
+Recipe:
+1. List every table and column the smoke cases will read or write (e.g. `vat_rates`, `currencies`, `suppliers`, `purchase_order_line.currency_code`).
+2. For each, run a baselines query: `SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_name = '<t>' ORDER BY ordinal_position;`
+3. For each fixture row the smoke expects to find (e.g. `currencies.code='ILS'`, `vat_rates.value=18.0`), confirm presence: `SELECT * FROM <t> WHERE <fixture_predicate>;`
+4. Per-table baselines table (in §0):
+
+   | Table | Columns smoke uses | Fixtures expected | Live state |
+   |---|---|---|---|
+   | currencies | code, symbol, name_he | ILS, USD, EUR | present (3 rows) |
+   | vat_rates | id, value | id=`<uuid>`, value=18.0 | present |
+
+5. Closing line: **`all fixtures present | N fixtures missing`** (cite the N with a per-fixture create-or-scope-out line). A non-zero unresolved missing-count = SPEC is NOT ready for dispatch.
+
+Why mandatory: smoke cases that assume an absent fixture fail at execution time with cryptic SQL errors that look like RPC bugs but are actually missing seed data. M1B0_PURCHASE_ORDER_SCHEMA caught D2 (`vat_rates.active` column absent) at this audit step rather than mid-pipeline.
+
+(Harvested from `MIGRATION_1_SUPPLIERS_DEBT/FOREMAN_REVIEW.md` Author Proposal #2, 2026-05-11. Originally piloted in `M1_5_SKETCH_RESKIN_BATCH_3` as the Palette Pre-Audit. Untracked-files item added 2026-05-12 from `SETTINGS_PERMISSIONS_CONSOLIDATION/FOREMAN_REVIEW.md` Author Proposal #2. Color-form completeness added 2026-05-12 from `MIGRATION_4_STOREFRONT_STUDIO/FOREMAN_REVIEW.md` Author Proposal #1. Live-baselines rule added 2026-05-13 from `STATUS_CHANGE_TRIGGERS_FRAMEWORK/FOREMAN_REVIEW.md` Author Proposal #1. Inner-call arity audit + Smoke-touched schema audit promoted to MANDATORY 2026-05-15 from `M1B0_PURCHASE_ORDER_SCHEMA/FOREMAN_REVIEW.md` §6 Proposal 1 — 2-of-3 consecutive-reviews threshold of Self-Improvement Mandate, harvested via `M1_SKILL_IMPROVEMENT_HARVEST` SPEC.)
 
 ---
 
@@ -352,6 +385,16 @@ closing, not just accumulating.
 
 - FROM `PHASE_B/FOREMAN_REVIEW.md` → "always pin package versions" → APPLIED in §8.
 - FROM `PRE_LAUNCH_HARDENING/FOREMAN_REVIEW.md` → "run image regression check before view changes" → NOT APPLICABLE (no view changes here).
+
+### Concurrent-Pipeline awareness (orthogonality envelope)
+
+If another Pipeline may run in parallel on `develop` (e.g., `SECURITY_HOTFIX_*`, `M1.5_*` maintenance, `M4_*` fixes, storefront-repo cuts), the SPEC author MUST declare an **orthogonality envelope** here, using this bullet template:
+
+> "This SPEC touches **`<files / objects / DB-tables / RPCs>`**. It WILL NOT conflict with files / objects in **`<other modules / scope / repos>`**. If a concurrent Pipeline's commits interleave between this SPEC's commits, that is acceptable as long as both Pipelines stay within their declared scope. The Executor will not abort on interleaved commits from declared-orthogonal scopes; the Executor WILL abort if an interleaved commit touches a path inside this SPEC's declared scope."
+
+The envelope converts post-hoc "we got lucky, the scopes didn't collide" observations into pre-validated design decisions. SPECs that do NOT declare an envelope default to *no-concurrent-pipeline-tolerance* — the Executor will stop on any non-self commit appearing in the range.
+
+Harvested from `M1B0_PURCHASE_ORDER_SCHEMA/FOREMAN_REVIEW.md` §6 Proposal 2, 2026-05-15, via `M1_SKILL_IMPROVEMENT_HARVEST` SPEC. M1B0 had 3 SECURITY_HOTFIX_2 commits interleave between its Commit 6 and Commit 7; the orthogonality was confirmed post-hoc by Reviewer §3 spot-check 4. This bullet exists so future SPECs declare the envelope at author-time and the Executor knows what to ignore vs what to STOP on. Particularly important as the project moves toward multi-Pipeline / multi-agent concurrency (Cowork-style auto-sync, scheduled overnight Sentinel work, multiple Full-Auto Pipelines per night).
 
 ---
 

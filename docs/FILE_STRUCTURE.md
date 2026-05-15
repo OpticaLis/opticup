@@ -28,6 +28,9 @@ opticup/
 ├── suppliers-debt.html         — supplier debt tracking module
 ├── employees.html              — standalone employee management page
 ├── lens-catalog-admin.html     — Platform Catalog Admin (Optic Up team only — M1 Lens Phase 1A)
+├── lens-inventory.html         — Lens Inventory display (M1 Lens Phase 1B-foundation, store staff)
+├── lens-active-designs.html    — Lens designs activation toggle (M1 Lens Phase 1B-foundation, store manager)
+├── lens-pricing.html           — Lens catalog & pricing 3-col + inline + bulk (M1 Lens Phase 1B-foundation, store manager)
 ├── shipments.html              — shipments & box management module
 ├── settings.html               — tenant settings (business info, financial config, display prefs)
 ├── error.html                  — generic error page
@@ -216,6 +219,24 @@ modules/
 │    catalog-variants-col (calls next_lens_variant_display_id RPC),
 │    catalog-detail-pane (variant + per-tenant offerings + publish),
 │    catalog-import (xlsx → JSON → lens-catalog-import EF))
+│
+├── lens-inventory/             — 5 files (M1 Lens Phase 1B-foundation)
+│   (lens-inventory-main (gate + bootstrap), lens-inventory-filters (Stock/Custom
+│    + brand→design→variant cascade via fetchAll/sb.from carve-out for catalog),
+│    lens-inventory-grid (SPH×CYL render), lens-inventory-lot-pane (right-side
+│    lot drill-down), lens-inventory-modals (display-only ➕➖ stub via Modal.*))
+│
+├── lens-active-designs/        — 3 files (M1 Lens Phase 1B-foundation)
+│   (lens-active-designs-main (gate + bootstrap), lens-active-designs-tree
+│    (brand selector + offering→variant→design join + tenant_active_offerings
+│    overlay), lens-active-designs-toggle (toggle_active_offering RPC handler))
+│
+├── lens-pricing/               — 5 files (M1 Lens Phase 1B-foundation, D-M1-04)
+│   (lens-pricing-main (gate + bootstrap), lens-pricing-filters (Stock/Custom +
+│    brand + effective_price RPC batch), lens-pricing-grid (3-col display +
+│    select-all + inline discount input), lens-pricing-inline-edit
+│    (upsert_pricing_overlay RPC handler), lens-pricing-bulk (bulk modal +
+│    bulk_apply_pricing_overlay RPC handler))
 │
 ├── audit/                      — 4 files
 │   (audit-log, item-history, entry-history, qty-modal)

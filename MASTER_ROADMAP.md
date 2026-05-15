@@ -117,6 +117,26 @@ All 6 functional smoke cases PASS on demo (8 sub-cases). Iron Rule 32 §7=`None.
 held across all 8 commits. Reviewer 🟢 PASS at `5d2c421`. **Phase 1B fully
 unblocked — customer-facing screen SPECs can build on verified schema + RPCs.**
 
+**✅ M1_LENS_PHASE_1B_FOUNDATION CLOSED — 2026-05-15 (Full Auto Pipeline single chat).**
+Foundation half of Phase 1B. Shipped 3 read-heavy lens screens (`lens-inventory.html`,
+`lens-active-designs.html`, `lens-pricing.html` + 13 JS files all ≤163 lines per Iron
+Rule 12) + 3 metadata RPCs (`toggle_active_offering`, `upsert_pricing_overlay`,
+`bulk_apply_pricing_overlay` — all SECDEF + search_path=public + Block A 3-role-aware
+JWT guard + REVOKE anon+PUBLIC) + 3 permission keys × 2 tenants seeded
+(`lens.inventory.view` / `lens.designs.manage` / `lens.pricing.manage` on demo + prizma).
+10 executor commits (`dfa5e81..543fe21`) + 1 Reviewer commit (`f2f430c`). 5 MCP
+migrations applied (4 blocks + 1 v2 fix). All 9 functional smoke cases PASS on demo
+(live-browser final-mile deferred to Daniel manual QA per Brief). One mid-pipeline
+pivot — Block 2 v1 ON CONFLICT ON CONSTRAINT failed because the partial unique index
+isn't a constraint — resolved purely via SPEC §0 D11 pre-authorization (CREATE OR
+REPLACE v2 with `ON CONFLICT (cols) WHERE pred` index-inference). Zero escalations,
+zero Foreman amendments, zero Prizma data writes. Iron Rule 32 §7=`None.` held across
+all 10 commits. Reviewer 🟢 PASS (30/30 criteria + 5 spot-checks). Concurrent-Pipeline
+orthogonality envelope held through 3 SECURITY_HOTFIX_3 interleaves. SPEC + lifecycle
+files in `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_PHASE_1B_FOUNDATION/`.
+**Next:** Daniel manual QA on demo → sibling SPEC `M1_LENS_PHASE_1B_PROCUREMENT`
+(3 write screens: PO form + POs List + Goods Receipt).
+
 **✅ M1A-DEBT-01 RESOLVED — 2026-05-14 (Full Auto Pipeline single chat).** Phase 1A
 hotfix `M1A_CURRENCIES_GLOBAL_HOTFIX` converted `public.currencies` from per-tenant
 to GLOBAL ISO-4217 reference table per Iron Rule 14 documented exception (same
@@ -344,7 +364,9 @@ Items are tracked — not fixed — in this document.
 | M1B0_PURCHASE_ORDER_SCHEMA | ~~**3 schema objects + 5 supporting RPCs + 2 FK back-pointers + K2-debt wiring missing — blocked Phase 1B's PO + Active POs List + Goods Receipt screens (D-M1-07/10/11)**~~ | Phase 1A Strategic Review A-02 + C-01 (2026-05-15) | ✅ **RESOLVED 2026-05-15** via `M1B0_PURCHASE_ORDER_SCHEMA` SPEC, 8 commits `0c23a15..af3a2fa` (+ REVIEW commit `5d2c421`). 10 MCP migrations shipped: purchase_order + purchase_order_line + supplier_debt tables (canonical 2-policy RLS), FK clauses on Phase 1A phantom columns stock_lot.purchase_order_id + purchase_receipt.purchase_order_id, 5 RPCs (next_purchase_order_number distinct from legacy next_po_number via Iron Rule 21 divergence, place_purchase_order, mark_po_sent, cancel_purchase_order, m1_create_supplier_debt_from_receipt), K2 extended with subtotal accumulator + IL VAT lookup + debt RPC call (D-M1-11 wiring). All 6 functional smoke cases PASS on demo (8 sub-cases counting Case 4 + Case 5). Reviewer 🟢 PASS; 30/30 success criteria verified live. Phase 1B fully unblocked. |
 | M1B0-DEBT-01 | **`js/shared.js` (322 lines) + `js/shared-field-map.js` (313 lines) crossed 300-line soft target after M1B0** — both within hard 350 limit | M1B0 FINDINGS F-4 + REVIEW §4.1 (2026-05-15) | OPEN — low priority. Future cleanup SPEC could extract per-domain FIELD_MAP sub-files. Not blocking Phase 1B. |
 | M1B0-DEBT-02 | **Naming asymmetry `purchase_receipt_line.unit_cost_currency` vs `purchase_order_line.currency_code`** — same conceptual field, different column names on adjacent tables | M1B0 REVIEW §4.2 Reviewer observation (2026-05-15) | OPEN — cosmetic. Future cleanup SPEC could normalize. Not blocking Phase 1B. |
-| M1A-DEBT-04 (extended) | M1B0 smoke artifacts persist on demo (2 PO rows + 1 receipt + 1 supplier_debt at total_amount=234.82) — extends existing M1A-DEBT-04 entry. | M1B0 FINDINGS F-6 (2026-05-15) | OPEN — useful as Phase 1B seed; no urgency to clean. |
+| M1A-DEBT-04 (extended) | M1B0 smoke artifacts persist on demo (2 PO rows + 1 receipt + 1 supplier_debt at total_amount=234.82) — extends existing M1A-DEBT-04 entry. M1_LENS_PHASE_1B_FOUNDATION further extended the lineage: 1 `tenant_active_offerings` row (`offering=afbc1b20-..., is_active=false`) + 2 `pricing_overlay` rows (10% inline + 5% bulk, both `status=active`) on demo. Useful as Phase 1B procurement-half seed; no urgency to clean. | M1B0 FINDINGS F-6 + M1_LENS_PHASE_1B_FOUNDATION FINDINGS F-4 (2026-05-15) | OPEN — useful as Phase 1B seed; no urgency to clean. |
+| M1_LENS_PHASE_1B_FOUNDATION | ~~**Foundation half of Phase 1B: 3 read screens + 3 metadata RPCs missing — blocked Inventory display + Active Designs toggle + Pricing 3-col + inline + bulk per D-M1-04**~~ | Phase 1A FOREMAN_REVIEW + Brief 2026-05-15 | ✅ **RESOLVED 2026-05-15** via `M1_LENS_PHASE_1B_FOUNDATION` SPEC, 10 commits `dfa5e81..543fe21` (+ REVIEW commit `f2f430c`). 5 MCP migrations + 3 HTML pages + 13 JS files + 6 permission rows. All 9 functional smoke cases PASS on demo. Reviewer 🟢 PASS; 30/30 success criteria verified live. Zero escalations. **Phase 1B foundation half DONE — sibling SPEC `M1_LENS_PHASE_1B_PROCUREMENT` queued after Daniel manual QA.** |
+| M1B-FOUNDATION-DEBT-01 | **`pricing_overlay` status transitions (proposed/active/rejected/superseded/expired) are not audit-logged per Iron Rule 2** — UPSERT RPCs (`upsert_pricing_overlay`, `bulk_apply_pricing_overlay`) write the row but no `writeLog()` / `ActivityLog.write` call. | M1_LENS_PHASE_1B_FOUNDATION Reviewer §4 Rule 2 observation + FOREMAN §4 (2026-05-15) | OPEN — low priority. Recommended action: future SPEC adds `pricing_overlay_audit` table OR routes status transitions through a new RPC that calls `writeLog()`. Not blocking Phase 1B procurement. |
 
 ---
 

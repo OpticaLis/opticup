@@ -1,6 +1,56 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
+M1_LENS_PHASE_1B_FOUNDATION — 2026-05-15
+
+## 2026-05-15 — M1_LENS_PHASE_1B_FOUNDATION (🟢 closing — Full Auto Pipeline single chat, 9/9 smoke PASS)
+
+**Goal:** Ship the foundation half of M1 Lens Phase 1B — 3 read-heavy screens (Inventory display, Active Designs toggle, Catalog & Pricing) + 3 metadata RPCs (toggle_active_offering, upsert_pricing_overlay, bulk_apply_pricing_overlay) + 3 permission keys × 2 tenants seeded. Mandatory functional smoke 9/9 PASS on demo before close.
+
+**What shipped (10 commits, ~90 min wall-clock):**
+
+- `dfa5e81` chore(spec): open SPEC + MIGRATION + ROLLBACK
+- `112435f` Block 1: 6 permission rows seeded (3 lens.* keys × demo + prizma)
+- `4a939c7` Block 2: toggle_active_offering RPC (v1) — atomic UPSERT on tenant_active_offerings
+- `0d6a032` Block 3: upsert_pricing_overlay RPC — SELECT-then-UPDATE-or-INSERT preserving exactly-one-scope CHECK
+- `af92916` Block 4: bulk_apply_pricing_overlay RPC — atomic INSERT...SELECT FROM unnest
+- _(commit)_ Screen #1: lens-inventory.html + 5 JS files (main, filters, grid, lot-pane, modals) + root-allowlist
+- _(commit)_ Screen #2: lens-active-designs.html + 3 JS files (main, tree, toggle)
+- _(commit)_ Screen #3: lens-pricing.html + 5 JS files (main, filters, grid, inline-edit, bulk)
+- _(commit)_ test(m1): functional smoke 9/9 PASS + Block 2 v2 fix (constraint→index inference)
+- _(this commit)_ chore(spec): close — EXECUTION_REPORT + FINDINGS + GLOBAL_MAP + FILE_STRUCTURE + SESSION_CONTEXT + CHANGELOG
+
+**Pipeline stats:**
+
+- 5 MCP migrations applied to live Supabase (4 blocks + 1 v2 fix; no `supabase/migrations/*.sql` per TD-2 precedent).
+- 9 functional smoke cases on demo tenant — all PASS at executor scope:
+  1. Inventory display fixtures (1+1+1 brand/design/variant, 3 TLS, 7 stock_lot) ✓
+  2. toggle_active_offering INSERT-then-UPDATE round-trip (1 row, is_active=false after toggle) ✓
+  3. effective_price = 100 (no overlay, no VAT-link on demo offering) ✓
+  4. upsert_pricing_overlay 10% → final 90 ✓
+  5. bulk_apply_pricing_overlay 1 row inserted + empty-array 0 ✓
+  6. Anon-reject all 3 RPCs (42501) ✓
+  7. Cross-tenant reject all 3 RPCs + Prizma untouched ✓
+  8. Permission gate present in all 3 main JS files (lens.*.* keys via hasPermission()) ✓
+  9. JS syntax all 13 files pass node --check; live-browser final-mile deferred to Daniel manual QA ✓
+- 1 mid-pipeline pivot: Block 2 v1 used `ON CONFLICT ON CONSTRAINT` but the partial unique index isn't a constraint — v2 CREATE OR REPLACE switched to `ON CONFLICT (cols) WHERE pred` index-inference. SPEC §0 D11 pre-authorized both directions; no escalation needed.
+- 5 findings logged: F-1 (resolved in-pipeline), F-2 (Iron Rule 7 carve-out — refine SPEC criterion for future), F-3 (fixture content vs smoke assertion — promote to next-harvest A2 sub-step), F-4 (sparse demo catalog — extend M1A-DEBT-04), F-5 (effective_price pre-existing 2-line JWT guard — out of scope, batch into future hardening SPEC).
+- 0 escalations to Foreman/Daniel. 0 destructive ops (Iron Rule 32 §7=`None.` held across all 9 commits). 0 main-branch modifications. 0 Prizma data writes.
+- 30 success criteria: 28 PASS at executor scope + 2 deferred to Reviewer (criterion 21 `verify --full`; criterion 30 last 2 lifecycle files written by Reviewer + Foreman).
+- 4 author-proposals + 4 executor-proposals from prior FOREMAN_REVIEWs were inherited from frozen-skill state (`M1_SKILL_IMPROVEMENT_HARVEST` ca823e3) and demonstrably reduced mid-execution pivots.
+
+**Status:**
+
+- 🟢 Executor scope CLOSED. Awaiting Reviewer + Foreman.
+- ✅ Phase 1B foundation unblocked for Daniel manual QA on demo.
+- 🟡 Smoke artifacts persist on demo (M1A-DEBT-04 lineage extended): 1 tenant_active_offerings row (is_active=false), 2 pricing_overlay rows (10% inline + 5% bulk, status=active). Sibling SPEC `M1_LENS_PHASE_1B_PROCUREMENT` reuses or extends.
+
+**Next:** Reviewer re-runs §3 criteria against live state + runs scripts/audit/advisors-for-objects.mjs against the 3 new RPCs; Foreman writes FOREMAN_REVIEW.md + Hebrew status line to Daniel.
+
+---
+
+## 2026-05-15 — M1B0_PURCHASE_ORDER_SCHEMA — Previous entry below
+## Previous Last Updated
 M1B0_PURCHASE_ORDER_SCHEMA — 2026-05-15
 
 ## 2026-05-15 — M1B0_PURCHASE_ORDER_SCHEMA (🟢 closing — Full Auto Pipeline single chat, 6/6 smoke PASS)
