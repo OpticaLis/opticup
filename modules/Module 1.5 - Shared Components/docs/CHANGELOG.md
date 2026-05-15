@@ -1,5 +1,48 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-15 evening — STOREFRONT_PUBLIC_DATA_LAYER — Pattern A mirror architecture (replaces SECURITY_HOTFIX_4)
+
+SPEC: `STOREFRONT_PUBLIC_DATA_LAYER_2026_05_15` ([folder](specs/STOREFRONT_PUBLIC_DATA_LAYER_2026_05_15/))
+
+**Foundational architectural SPEC.** Replaces `SECURITY_HOTFIX_4_BRIEF.md` (stub retired by Architect same-day per Daniel directive — *"בלי פלסטרים — תמיד אפשר לשפר בלי לחזור ולתקן"*). Instead of "extend RLS + GRANT anon on private base tables" (procedural discipline, fragile), build a **dedicated public-data layer** of structurally-separate mirror tables (mechanical separation, durable).
+
+**6 commits in chain (collapsed from SPEC's 11 — real-time decision logged in commit messages 2-4):**
+
+- `2f2a89c` — `chore(spec): seal STOREFRONT_PUBLIC_DATA_LAYER SPEC + ACTIVATION_PROMPT` — Foreman SPEC + ACTIVATION_PROMPT + retire HOTFIX_4 stub. Heading-convention fix (Iron Rule 32 hook regex requires exact `## Destructive Operations` line termination).
+- `0d76b5a` — `feat(public-data-layer): demo - branches_public + storefront_config_public + media_public` — 3 smallest mirrors + RLS + GRANT + triggers; global infrastructure, demo-cycle E2E (12/12 PASS).
+- `028fdbf` — `feat(public-data-layer): demo - brands_public + inventory_images_public + inventory_public` — 3 larger mirrors. inventory_public caches 3 ai_content columns + image_paths text[]; 2 satellite triggers on ai_content + inventory_images. E2E 14/14 PASS (incl. visibility-by-image transition + ai_content satellite path). Cumulative 26/18+ E2E cases.
+- `d10bf80` — `feat(public-data-layer): GLOBAL - rewrite 8 v_storefront_* views + flip security_invoker=on` — global view rewrites + ALTER VIEW SET (security_invoker=on) × 8 + brands_public.has_sellable_inventory cache + 3rd satellite trigger (inventory → brands_public.has_sellable). All 8 Prizma row counts match BASE exactly. F-CRIT-2 8→0.
+- `d75494f` — `feat(public-data-layer): GLOBAL - REVOKE anon from 6 private bases + v_crm_lead_first_touch` — 7 REVOKEs. Mechanical separation complete.
+- `8fc2080` — `chore(public-data-layer): post-REVOKE verification` — Prizma storefront page smoke + STT-11 both tenants + latency check (products 480→44ms) + advisor delta.
+
+**Migrations applied (via Supabase MCP apply_migration; recorded in supabase_migrations.schema_migrations):**
+- `create_branches_public_layer`
+- `create_storefront_config_public_layer`
+- `create_media_public_layer`
+- `create_brands_public_layer`
+- `create_inventory_images_public_layer`
+- `create_inventory_public_layer` (3 functions + 3 triggers — main + 2 satellites)
+- `fix_mirror_column_precision_to_match_source` (latitude/longitude numeric(9,6), google_rating numeric(2,1))
+- `rewrite_8_storefront_views_source_from_public_layer_v2` (8 CREATE OR REPLACE VIEW + 8 ALTER VIEW SET security_invoker=on + 8 GRANT defensively)
+- `add_has_sellable_inventory_to_brands_public` (1 ALTER ADD COLUMN + 1 backfill UPDATE + 1 ALTER FUNCTION (re-defined trigger) + 1 CREATE FUNCTION + 1 CREATE TRIGGER + 1 CREATE OR REPLACE VIEW for v_storefront_brands filter switch)
+- `revoke_anon_select_from_private_bases_and_crm_view` (7 REVOKE SELECT)
+
+**Verdict 🟢 CLOSED.** Smoke 7/7 PASS post-migration on demo. All 8 view Prizma counts match BASE exactly (1133/155/45/2/1/1/276/1). STT-11 cross-tenant leak probe: 0 leaks for both tenant JWTs. v_storefront_products latency 480.91ms → 44.69ms via EXPLAIN ANALYZE (10.8× speedup — Pattern A's AI cache eliminated 3×1133 subquery loops). F-CRIT-2 advisor 8→0; no new lint TYPES introduced (+10 instances of existing types from 9 new SECDEF trigger functions, FINDING-LOW). 7 REVOKEs sealed anon access to 6 private bases + v_crm_lead_first_touch.
+
+**Real-time decision** (logged in commit 2 + EXECUTION_REPORT §5): The SPEC's "demo-first then Prizma" Commits 4-9 collapsed to 4 commits because views + REVOKE are inherently global Postgres operations. Global infrastructure (CREATE TABLE/TRIGGER/POLICY) landed in Commits 2-3 with backfill matching project-wide row counts. View rewrite (Commit 4) and REVOKE (Commit 5) are global single ops. Commits 6-9 from the original plan consolidated into Commit 6 (verification report). Tenant-isolation safety is preserved by per-row RLS, not per-commit phasing.
+
+**Brief gap caught + fixed:** Original v_storefront_brands EXISTS check used looser `inventory WHERE is_deleted=false AND website_sync<>'none'` filter (155 Prizma brands). Naive rewrite using inventory_public's strict 8-condition filter yielded 47 brands — STT-2 row-count drift. Fixed in Commit 4 by caching `has_sellable_inventory` boolean on brands_public, refreshed by main brands trigger + a 3rd satellite trigger on inventory. Preserves baseline.
+
+**SPEC heading-defect caught:** SPEC's `## 3. Destructive Operations (...)` collided with `## 3. Success Criteria` AND violated Iron-Rule-32 hook regex (which requires line termination exactly at "Destructive Operations"). Renamed to bare `## Destructive Operations` + sibling parenthetical paragraph. Pre-commit hook now passes. Logged as FINDING for next Foreman pass to renumber whole SPEC monotonically.
+
+**Open follow-ups (FINDINGS):**
+1. SPEC-defect heading renumbering (already noted in SPEC.md).
+2. Brand state changes (active=false, exclude_website=true) don't auto-refresh inventory_public visibility — 4th satellite trigger on brands would close this. LOW severity, eventually consistent.
+3. 10 new SECDEF function findings (`authenticated_security_definer_function_executable` ×9, `anon_security_definer_function_executable` ×1) — REVOKE EXECUTE FROM anon, authenticated on the 9 trigger functions would close them. LOW severity; functions only fire as triggers, not callable.
+4. /brands/<slug>/ and /about/ Prizma routes 404 — PRE-EXISTING storefront-app routing, not migration regression (sitemap-dynamic.xml doesn't enumerate these URLs). FINDING-INFO.
+
+---
+
 ## 2026-05-15 afternoon — SECURITY_HOTFIX_3 — residual F-CRIT-2 + 15 F-CRIT-3 carry RPCs (Daniel Option B)
 
 SPEC: `SECURITY_HOTFIX_3_2026_05_15` ([folder](specs/SECURITY_HOTFIX_3_2026_05_15/))

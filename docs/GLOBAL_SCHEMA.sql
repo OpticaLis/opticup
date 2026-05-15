@@ -716,6 +716,90 @@ CREATE OR REPLACE VIEW v_storefront_brands AS
 -- If a future migration ever adds a CREATE SEQUENCE to public, update
 -- this section and file a follow-up to reassess the RPC-only pattern.
 
+-- ============================================================
+-- PUBLIC DATA LAYER (added 2026-05-15 by STOREFRONT_PUBLIC_DATA_LAYER_2026_05_15)
+-- ============================================================
+-- A structurally-separate set of mirror tables sitting between the private
+-- source-of-truth tables and every public consumer (storefront, future
+-- Standard-tier shared site, M11 Supplier Portal, customer portal, API).
+-- After this SPEC closed, anon SELECT is MECHANICALLY impossible against
+-- the 6 private base tables (inventory, brands, media_library,
+-- tenant_branches, storefront_config, inventory_images) and against
+-- v_crm_lead_first_touch.
+--
+-- Canonical reference: docs/PUBLIC_DATA_LAYER.md.
+-- Retrospective + DDL provenance:
+--   modules/Module 1.5 - Shared Components/docs/specs/STOREFRONT_PUBLIC_DATA_LAYER_2026_05_15/
+--     SPEC.md + EXECUTION_REPORT.md + FINDINGS.md + REVIEW.md +
+--     TEST_REPORT.md + FOREMAN_REVIEW.md + VIEW_REWRITE_SUMMARY.md +
+--     REVOKE_SUMMARY.md + VERIFICATION_REPORT.md.
+-- Live DDL: Supabase's supabase_migrations.schema_migrations table (records
+-- 6 create_*_public_layer + fix_mirror_column_precision +
+-- add_has_sellable_inventory_to_brands_public +
+-- rewrite_8_storefront_views_source_from_public_layer_v2 +
+-- revoke_anon_select_from_private_bases_and_crm_view).
+--
+-- 6 mirror tables (all tenant_id NOT NULL REFERENCES tenants(id) + RLS):
+--   branches_public            — mirrors tenant_branches (status='published' AND is_deleted=false)
+--   storefront_config_public   — mirrors storefront_config (enabled=true)
+--   media_public               — mirrors media_library (is_deleted=false)
+--   brands_public              — mirrors brands (is_deleted=false AND active=true AND exclude_website IS NOT TRUE)
+--                                + cached column has_sellable_inventory (refreshed by satellite trigger)
+--   inventory_images_public    — mirrors inventory_images (no filter)
+--   inventory_public           — mirrors inventory (8-condition filter)
+--                                + cached AI columns (ai_description, ai_seo_title, ai_seo_description from ai_content)
+--                                + cached image_paths text[] from inventory_images
+--
+-- 18 RLS policies (3 per mirror, all Pattern 1 JWT-claim per CONVENTIONS):
+--   per mirror: service_bypass + tenant_isolation + <table>_anon_public_read
+--
+-- 6 GRANTs: GRANT SELECT ON <mirror>_public TO anon (and authenticated).
+--
+-- 9 trigger functions (SECURITY DEFINER + SET search_path = public, pg_temp):
+--   sync_branches_public_trg, sync_storefront_config_public_trg,
+--   sync_media_public_trg, sync_brands_public_trg,
+--   sync_inventory_images_public_trg, sync_inventory_public_trg,
+--   sync_ai_content_to_inventory_public_trg (satellite),
+--   sync_inventory_images_to_inventory_public_trg (satellite),
+--   sync_inventory_to_brands_has_sellable_trg (satellite, refreshes
+--     brands_public.has_sellable_inventory when inventory changes).
+--
+-- 9 triggers on private bases (AFTER INSERT OR UPDATE OR DELETE):
+--   tr_sync_branches_public, tr_sync_storefront_config_public,
+--   tr_sync_media_public, tr_sync_brands_public,
+--   tr_sync_inventory_images_public, tr_sync_inventory_public,
+--   tr_sync_ai_content_to_inventory_public (on ai_content),
+--   tr_sync_inventory_images_to_inventory_public (2nd trigger on
+--     inventory_images alongside tr_sync_inventory_images_public),
+--   tr_sync_inventory_to_brands_has_sellable (2nd trigger on inventory
+--     alongside tr_sync_inventory_public).
+--
+-- 8 v_storefront_* views REWRITTEN to read from this layer + flipped
+--   security_invoker=on (closed 8 F-CRIT-2 advisor findings):
+--   v_storefront_branches    → branches_public
+--   v_storefront_config      → storefront_config_public
+--   v_storefront_media       → media_public
+--   v_public_tenant          → tenants JOIN storefront_config_public
+--   v_storefront_products    → inventory_public JOIN brands_public
+--   v_storefront_brands      → brands_public (chained inventory_public,
+--                               media_public; filters has_sellable_inventory)
+--   v_storefront_brand_page  → brands_public (chained v_storefront_products,
+--                               media_public)
+--   v_storefront_categories  → chained on v_storefront_products
+--
+-- 7 REVOKEs anon SELECT (mechanical separation):
+--   inventory, brands, media_library, tenant_branches, storefront_config,
+--   inventory_images, v_crm_lead_first_touch.
+--
+-- NOT in this layer (intentional):
+--   tenants — kept anon-readable via anon_read_tenants USING(true). Storefront
+--     needs slug resolution. If tightening is needed in the future, build a
+--     tenants_public follow-up SPEC.
+--   ai_content — kept anon-readable via ai_content_public_read_published
+--     USING(status='published'). Currently 0 rows match. Rewritten
+--     v_storefront_products reads AI from cached columns in inventory_public,
+--     NOT directly from ai_content.
+
 -- ═══════════════════════════════════════════════════════════════
 -- End of GLOBAL_SCHEMA.sql
 -- ═══════════════════════════════════════════════════════════════
