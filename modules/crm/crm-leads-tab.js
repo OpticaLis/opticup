@@ -32,10 +32,8 @@
   var _svrOffset = 0, _svrHasMore = true;
   // _atRisk = days_left for tier2 amber row (M4_ATTENDEE_PAYMENT_UI). _openCredits = no-horizon companion for violet badge (Q4 2026-05-02).
   var _atRisk = {}, _openCredits = {};
-  // P31: map of lead_id → count of crm_message_log.status='failed' (last 90 days).
+  // M4_FAILED_MESSAGE_BADGE_CLEANUP: map of lead_id → count of UNACKNOWLEDGED crm_message_log.status='failed' (last 90 days).
   var _failedCounts = {};
-  // P31: when true, restrict the rendered table to leads with failures only.
-  var _failuresOnly = false;
   async function loadCreditMaps() {
     var tid = getTenantId(); _atRisk = {}; _openCredits = {};
     if (!tid) return;
@@ -53,7 +51,7 @@
     var tid = getTenantId();
     if (!tid) { _failedCounts = {}; return; }
     var since = new Date(Date.now() - 90 * 86400000).toISOString();
-    var res = await DB.select('crm_message_log', { status: 'failed' }, { columns: 'lead_id', rawFilters: function (q) { return q.not('lead_id', 'is', null).gte('created_at', since); }, silent: true });
+    var res = await DB.select('crm_message_log', { status: 'failed' }, { columns: 'lead_id', rawFilters: function (q) { return q.not('lead_id', 'is', null).is('acknowledged_at', null).gte('created_at', since); }, silent: true });
     var m = {}; (res.data || []).forEach(function (r) { if (r.lead_id) m[r.lead_id] = (m[r.lead_id] || 0) + 1; });
     _failedCounts = m;
   }
@@ -142,7 +140,6 @@
 
     var s = search.trim().toLowerCase(), sNorm = (window.CrmHelpers && CrmHelpers.normalizePhone) ? CrmHelpers.normalizePhone(s) : '', sPartial972 = (s && /^0\d+$/.test(s) && s.length >= 2 && s.length <= 10) ? ('+972' + s.slice(1)) : '';
     _filtered = afterAdv.filter(function (r) {
-      if (_failuresOnly && !(_failedCounts[r.id] > 0)) return false;
       if (!s) return true;
       var name = (r.full_name || '').toLowerCase();
       var phone = (r.phone || '').toLowerCase();
@@ -185,17 +182,16 @@
         _currentPage = 1; applyFiltersAndRender();
       }
     });
-    // P31: append failures-only toggle pill (always shown when M > 0).
+    // M4_FAILED_MESSAGE_BADGE_CLEANUP: chip click opens the bulk-ack modal.
     var leadsWithFailures = Object.keys(_failedCounts).length;
     if (leadsWithFailures > 0) {
       if (host.classList.length === 0) host.className = 'flex items-center gap-2 flex-wrap mb-3';
       var pill = document.createElement('button');
       pill.type = 'button';
-      pill.className = 'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium ' +
-        (_failuresOnly ? 'bg-rose-600 text-white shadow-sm' : 'bg-rose-100 text-rose-800 hover:bg-rose-200');
+      pill.className = 'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-rose-100 text-rose-800 hover:bg-rose-200';
       pill.textContent = '📩 הודעות כושלות (' + leadsWithFailures + ')';
       pill.addEventListener('click', function () {
-        _failuresOnly = !_failuresOnly; _currentPage = 1; applyFiltersAndRender();
+        if (window.CrmFailedMessagesModal && typeof CrmFailedMessagesModal.open === 'function') CrmFailedMessagesModal.open();
       });
       host.appendChild(pill);
     }
@@ -274,7 +270,7 @@
       var rowCls = (atRiskDays !== undefined) ? 'hover:bg-amber-100 cursor-pointer border-b border-slate-100 transition-colors bg-amber-50' : (idx % 2 === 0 ? CLS_ROW_ODD : CLS_ROW_EVEN);
       var nameSubtitle = (atRiskDays !== undefined) ? '<div class="text-xs text-amber-700 font-semibold mt-0.5">💳 קרדיט פג בעוד ' + atRiskDays + ' ימים</div>' : '';
       var failedN = _failedCounts[r.id] || 0;
-      var failedBadge = failedN > 0 ? ' <span class="inline-flex items-center gap-0.5 ms-1 px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700" title="הודעות כושלות">⚠️ ' + failedN + '</span>' : '';
+      var failedBadge = failedN > 0 ? ' <span class="inline-flex items-center gap-0.5 ms-1 px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700" title="הודעות כושלות">⚠️ ' + failedN + '<button type="button" class="ms-1 text-rose-600 hover:text-rose-900 font-bold leading-none" data-ack-lead="' + escapeHtml(r.id) + '" data-ack-count="' + failedN + '" title="סמן כמטופלות">×</button></span>' : '';
       var creditBadge = (_openCredits[r.id] !== undefined && atRiskDays === undefined) ? ' <span class="inline-flex items-center gap-1 ms-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-violet-100 text-violet-700" title="קרדיט פתוח לאירוע הבא">💳 קרדיט פתוח</span>' : '';
       html += '<tr class="' + rowCls + '" data-lead-id="' + escapeHtml(r.id) + '">' +
         '<td class="' + CLS_TD + '"><input type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" data-check-lead="' + escapeHtml(r.id) + '"' + (checked ? ' checked' : '') + '></td>' +
@@ -316,6 +312,8 @@
       });
     });
     wrap.addEventListener('click', async function (e) {
+      var ack = e.target.closest('[data-ack-lead]');
+      if (ack && window.CrmFailedMessagesModal) { e.stopPropagation(); e.preventDefault(); CrmFailedMessagesModal.ackLead(ack.getAttribute('data-ack-lead'), parseInt(ack.getAttribute('data-ack-count') || '0', 10)); return; }
       var b = e.target.closest('[data-move-lead]'); if (!b || !window.CrmAttendeeMove) return; e.stopPropagation();
       // NOT migrated to DB.* in M4_RAW_SB_WRAPPER_PHASE_1: uses .maybeSingle(), wrapper has no equivalent. Phase 2 follow-up.
       var r = await sb.from('crm_event_attendees').select('id').eq('tenant_id', getTenantId()).eq('lead_id', b.getAttribute('data-move-lead')).in('status', ['waiting_list','invited','registered']).eq('is_deleted', false).order('created_at', { ascending: false }).limit(1).maybeSingle();

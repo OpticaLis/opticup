@@ -26,13 +26,22 @@
 
   async function fetchMessages(leadId, tenantId) {
     if (!leadId) return [];
+    // M4_FAILED_MESSAGE_BADGE_CLEANUP: SELECT extended with acknowledged_* triple + employee name join.
     var q = sb.from('crm_message_log')
-      .select('id, channel, content, status, error_message, created_at, crm_message_templates(name, slug)')
+      .select('id, channel, content, status, error_message, created_at, acknowledged_at, acknowledged_reason, acknowledged_employee:employees!acknowledged_by(name), crm_message_templates(name, slug)')
       .eq('lead_id', leadId).order('created_at', { ascending: false }).limit(50);
     if (tenantId) q = q.eq('tenant_id', tenantId);
     var r = await q;
     if (r.error) throw new Error('messages: ' + r.error.message);
     return r.data || [];
+  }
+
+  function ackTagHtml(m) {
+    if (!m.acknowledged_at) return '';
+    var who = (m.acknowledged_employee && m.acknowledged_employee.name) ? m.acknowledged_employee.name : 'מערכת';
+    var when = (window.CrmHelpers && CrmHelpers.formatDateTime) ? CrmHelpers.formatDateTime(m.acknowledged_at) : m.acknowledged_at;
+    var reasonTip = m.acknowledged_reason ? ' title="' + escapeHtml(m.acknowledged_reason) + '"' : '';
+    return ' <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 ms-2"' + reasonTip + '><span aria-hidden="true">✓</span>מטופל · ' + escapeHtml(when) + ' · ' + escapeHtml(who) + '</span>';
   }
 
   // Mirrors crm-messaging-log.js chip styling.
@@ -50,6 +59,7 @@
           '<span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium">' + escapeHtml(CHANNEL_LABELS[m.channel] || m.channel) + '</span>' +
           '<span class="text-xs px-2 py-0.5 rounded-full font-medium ' + chipCls + '">' + escapeHtml(STATUS_LABELS[m.status] || m.status) + '</span>' +
           (tpl.name ? '<span class="text-xs text-slate-500">· ' + escapeHtml(tpl.name) + '</span>' : '') +
+          ackTagHtml(m) +
         '</div>' +
         '<div class="text-sm text-slate-800 truncate">' + escapeHtml(preview) + '</div>' +
         err +
@@ -72,7 +82,10 @@
   }
 
   function getFailedMessages(messages) {
-    return (messages || []).filter(function (m) { return m.status === 'failed'; });
+    // M4_FAILED_MESSAGE_BADGE_CLEANUP: filter out acknowledged failures (history-view's failed section
+    // mirrors the badge query — only unacknowledged failures surface). Acked rows still appear in the
+    // full message history list (above) with a "מטופל" tag.
+    return (messages || []).filter(function (m) { return m.status === 'failed' && !m.acknowledged_at; });
   }
 
   function renderFailedSection(failed) {
