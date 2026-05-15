@@ -1,0 +1,180 @@
+<!--
+  Optic Up — Lens Purchase Order (per supplier)
+  Module 1 / Phase 1B-procurement Screen #4 (D-M1-07)
+  Per SPEC: M1_LENS_PHASE_1B_PROCUREMENT
+  Wires M1B0 RPCs: place_purchase_order, mark_po_sent.
+  Browser-side PDF export via window.print() + print stylesheet.
+-->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optic Up — הזמנה לספק עדשות</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<link rel="stylesheet" href="shared/css/variables.css">
+<link rel="stylesheet" href="shared/css/components.css">
+<link rel="stylesheet" href="shared/css/layout.css">
+<link rel="stylesheet" href="shared/css/forms.css">
+<link rel="stylesheet" href="shared/css/modal.css">
+<link rel="stylesheet" href="shared/css/toast.css">
+<link rel="stylesheet" href="shared/css/table.css">
+<link rel="stylesheet" href="css/header.css">
+
+<style>
+  body { font-family: 'Heebo', 'Segoe UI', Arial, sans-serif; background: #f5f6fa; color: #333; padding: 16px; margin: 0; }
+  .page-header { background: #fff; padding: 14px 20px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .page-title { font-size: 20px; font-weight: 600; color: #2c3e50; }
+  .page-title .badge { font-size: 11px; background: #e8eaf6; color: #3949ab; padding: 3px 8px; border-radius: 10px; margin-right: 8px; font-weight: normal; }
+  .btn { padding: 8px 14px; border: 1px solid #d0d4d9; background: #fff; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { background: #f0f2f5; }
+  .btn-primary { background: #c9a555; color: #fff; border-color: #c9a555; }
+  .btn-success { background: #27ae60; color: #fff; border-color: #27ae60; }
+  .btn-ghost { background: transparent; border-color: transparent; color: #5d6d7e; }
+
+  .meta-bar { background: #fff; padding: 14px 20px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 12px; align-items: end; }
+  .field-group { display: flex; flex-direction: column; gap: 4px; }
+  .field-group label { font-size: 11px; color: #5d6d7e; font-weight: 600; }
+  .field-group .label-required::after { content: " *"; color: #dc2626; }
+  .field-group select, .field-group input, .field-group textarea { padding: 8px 10px; border: 1px solid #d0d4d9; border-radius: 5px; font-size: 13px; font-family: inherit; background: #fff; }
+  .field-supplier select { font-size: 14px; font-weight: 700; color: #c9a555; border: 2px solid #c9a555; padding: 10px 12px; }
+  .field-supplier label { color: #c9a555; font-weight: 700; }
+
+  .main-content { display: grid; grid-template-columns: 1fr 360px; gap: 12px; }
+  .items-panel { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+  .items-header { padding: 14px 20px; border-bottom: 1px solid #ecf0f1; display: flex; justify-content: space-between; align-items: center; }
+  .items-header h3 { font-size: 14px; color: #2c3e50; }
+  .items-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+  .items-table thead th { text-align: right; padding: 10px 12px; background: #f8f9fb; color: #5d6d7e; font-weight: 600; font-size: 11px; border-bottom: 2px solid #ecf0f1; }
+  .items-table td { padding: 10px 12px; border-bottom: 1px solid #f5f6fa; vertical-align: middle; }
+  .design-cell { font-weight: 600; color: #2c3e50; font-size: 12px; }
+  .design-cell .sub { font-size: 10px; color: #95a5a6; margin-top: 2px; font-weight: normal; }
+  .qty-input { width: 60px; padding: 5px 8px; border: 1px solid #d0d4d9; border-radius: 4px; font-size: 12px; text-align: center; font-weight: 600; }
+  .row-action { padding: 4px 8px; border: 1px solid #ecf0f1; background: #fff; border-radius: 4px; cursor: pointer; font-size: 11px; }
+  .row-action.remove { color: #e74c3c; border-color: #fbe5e2; }
+  .auto-flag { display: inline-block; padding: 2px 8px; background: #d1f5ef; color: #0e7a6a; border-radius: 10px; font-size: 10px; font-weight: 600; margin-right: 4px; }
+  .manual-flag { display: inline-block; padding: 2px 8px; background: #fef3c7; color: #92400e; border-radius: 10px; font-size: 10px; font-weight: 600; margin-right: 4px; }
+  .src-group-header { background: #eff6ff; padding: 10px 16px; font-size: 12px; color: #1e3a8a; font-weight: 700; border-top: 2px solid #bfdbfe; }
+  .src-group-header.custom { background: #faf5ff; color: #6d28d9; border-top-color: #d8b4fe; }
+  .src-group-header.manual { background: #fffbeb; color: #92400e; border-top-color: #fde68a; }
+  .threshold-cell { display: flex; align-items: center; gap: 4px; justify-content: center; font-size: 11px; }
+  .threshold-input { width: 44px; padding: 3px 6px; border: 1px solid #d0d4d9; border-radius: 3px; font-size: 11px; text-align: center; }
+
+  .side-panel { display: flex; flex-direction: column; gap: 12px; }
+  .panel-card { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+  .panel-card-header { padding: 12px 18px; color: #fff; font-size: 14px; font-weight: 600; background: linear-gradient(135deg, #c9a555 0%, #b8954a 100%); }
+  .panel-card-body { padding: 16px 18px; }
+  .summary-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; }
+  .summary-row.total { font-size: 16px; font-weight: 700; padding: 12px 0; border-top: 2px solid #ecf0f1; margin-top: 6px; color: #c9a555; }
+  .summary-row .key { color: #5d6d7e; }
+  .summary-row .val { font-weight: 600; color: #2c3e50; }
+  .empty-state { padding: 30px 20px; text-align: center; color: #95a5a6; font-size: 13px; }
+  #access-gate { padding: 40px; text-align: center; color: #c0392b; font-size: 16px; }
+
+  /* Print stylesheet — used by lens-purchase-order-pdf.js exportPDF() */
+  @media print {
+    body { background: #fff; padding: 0; }
+    .page-header .btn, .meta-bar select, .meta-bar input, .meta-bar textarea, .items-header > div, .row-action, .side-panel .btn, nav, #toast-container { display: none !important; }
+    .main-content { grid-template-columns: 1fr; }
+    .side-panel { page-break-before: avoid; }
+    .items-table { page-break-inside: auto; }
+    .items-table tr { page-break-inside: avoid; }
+    .panel-card-header { background: #555 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="mainNav" style="background:#fff; padding:8px 16px; margin-bottom:12px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+  <a href="index.html" style="margin-left:16px; color:#3949ab; text-decoration:none;">← דף הבית</a>
+  <a href="lens-inventory.html" style="margin-left:16px; color:#3949ab; text-decoration:none;">מלאי</a>
+  <a href="lens-pos-list.html" style="margin-left:16px; color:#3949ab; text-decoration:none;">הזמנות פעילות</a>
+  <a href="lens-goods-receipt.html" style="margin-left:16px; color:#3949ab; text-decoration:none;">קבלת סחורה</a>
+</nav>
+
+<div id="access-gate" style="display:none">
+  <div>אין הרשאה למסך זה (lens.po.create).</div>
+  <a href="index.html">חזרה לדף הבית</a>
+</div>
+
+<div id="app" style="display:none">
+  <div class="page-header">
+    <div class="page-title">📝 הזמנה לספק עדשות <span class="badge" id="po-status-badge">טיוטה חדשה</span></div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn" id="btn-export-pdf" type="button">📄 ייצא PDF</button>
+      <button class="btn btn-primary" id="btn-create-po" type="button" disabled>📝 צור הזמנה</button>
+      <button class="btn btn-ghost" id="btn-mark-sent" type="button" style="display:none">📨 סמן כנשלח לספק</button>
+    </div>
+  </div>
+
+  <div class="meta-bar">
+    <div class="field-group field-supplier">
+      <label class="label-required" for="po-supplier-select">ספק</label>
+      <select id="po-supplier-select"><option value="">— בחר ספק —</option></select>
+    </div>
+    <div class="field-group">
+      <label for="po-expected-delivery">תאריך אספקה מבוקש</label>
+      <input type="date" id="po-expected-delivery" />
+    </div>
+    <div class="field-group">
+      <label for="po-notes">הערות לספק (אופציונלי)</label>
+      <textarea id="po-notes" rows="1" placeholder="הערות פנימיות / הוראות לספק"></textarea>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="items-panel">
+      <div class="items-header">
+        <h3>פריטים בהזמנה (<span id="line-count-display">0</span> שורות)</h3>
+        <div style="display:flex; gap:8px;">
+          <button class="btn" id="btn-refresh-shortages" type="button" style="font-size:12px;">🔄 רענן חוסרים</button>
+          <button class="btn" id="btn-add-manual" type="button" style="font-size:12px;">➕ הוסף פריט ידנית</button>
+        </div>
+      </div>
+
+      <div style="max-height:560px; overflow-y:auto;" id="lines-container">
+        <div class="empty-state">בחר ספק כדי לטעון חוסרים.</div>
+      </div>
+    </div>
+
+    <div class="side-panel">
+      <div class="panel-card">
+        <div class="panel-card-header">סיכום ההזמנה</div>
+        <div class="panel-card-body" id="summary-body">
+          <div class="summary-row"><span class="key">שורות</span><span class="val" id="sum-lines">0</span></div>
+          <div class="summary-row"><span class="key">יחידות</span><span class="val" id="sum-units">0</span></div>
+          <div class="summary-row"><span class="key">מתוכן חוסרי מדף (אוטו)</span><span class="val" id="sum-stock">0 / 0</span></div>
+          <div class="summary-row"><span class="key">מתוכן ידני</span><span class="val" id="sum-manual">0 / 0</span></div>
+          <div class="summary-row" style="padding-top:10px; border-top:1px dashed #ecf0f1;"><span class="key">סכום נטו</span><span class="val" id="sum-net">₪0</span></div>
+          <div class="summary-row"><span class="key">מע"מ (משוער)</span><span class="val" id="sum-vat">₪0</span></div>
+          <div class="summary-row total"><span>סה"כ לתשלום (משוער)</span><span id="sum-total">₪0</span></div>
+        </div>
+      </div>
+
+      <div style="background:#f0f9ff; border-right:4px solid #1e3a8a; padding:10px 14px; border-radius:4px; font-size:12px; color:#475569;">
+        💡 PDF נוצר דרך הדפדפן. ההזמנה נשלחת ידנית במייל / וואטסאפ. סימון "נשלח" מעדכן את הסטטוס במערכת.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="js/shared.js"></script>
+<script src="js/supabase-ops.js"></script>
+<script src="js/auth-service.js"></script>
+<script src="js/shared-ui.js"></script>
+<script src="shared/js/modal-builder.js"></script>
+<script src="shared/js/toast.js"></script>
+
+<script src="modules/lens-purchase-order/lens-purchase-order-main.js"></script>
+<script src="modules/lens-purchase-order/lens-purchase-order-supplier.js"></script>
+<script src="modules/lens-purchase-order/lens-purchase-order-shortages.js"></script>
+<script src="modules/lens-purchase-order/lens-purchase-order-manual.js"></script>
+<script src="modules/lens-purchase-order/lens-purchase-order-create.js"></script>
+<script src="modules/lens-purchase-order/lens-purchase-order-pdf.js"></script>
+
+</body>
+</html>
