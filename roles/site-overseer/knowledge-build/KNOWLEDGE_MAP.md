@@ -554,8 +554,18 @@ A lead created in March from FB and registered for event #24 in May has `utm_sou
 **Impact:** direct cause of SPEC §2 wrong-conclusion #3. Reading UTMs on a registered attendee tells you about the LEAD'S history, not about the REGISTRATION'S cause.
 
 ### Gap #5 — Browser pixel `Lead` is bound to thank-you page load, no server-side CAPI (HIGH for FB ad attribution)
+
+> **STATUS: ✅ CLOSED via P2.1 — `M4_FB_CAPI_HYBRID_DEDUPLICATION` (2026-05-15)**
+> See `modules/Module 4 - CRM/docs/specs/M4_FB_CAPI_HYBRID_DEDUPLICATION/` and `docs/FB_CAPI.md`.
+> **Note on Q7 (thank-you-page only model):** Daniel's directive preserved — CAPI fires at lead INSERT
+> (server-side coverage), browser pixel still fires on thank-you page. Meta counts each source; the
+> shared `event_id` dedup round-trip (storefront SPEC `M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF`) ensures
+> both are deduplicated once that ships. Until then: CAPI provides additional coverage; no double-counting
+> risk (different trigger point — INSERT vs page-load). Q7 model is SUPPORTED by this architecture.
+
 `pixel_events` fires `Lead` only when the URL matches `/successfulsupersale/` etc. If the post-submit redirect fails, the lead is in our DB but Facebook never gets a `Lead` event → ROAS under-counts. There is no server-side CAPI today (scenario 8542928 INACTIVE, `fb_capi_token` not configured on prizma, no graph.facebook.com calls in code). Match-quality is cookie-only (`_fbp`, `_fbc`); no `em` / `ph` advanced matching.
 **Impact:** FB Ads attribution systematically under-counts and has weak match quality. Defending or growing ad spend on this data is unreliable.
+**CLOSED:** ERP-side CAPI substrate shipped. `fb-capi-dispatch` EF dispatches `Lead` events server-side on every `crm_leads` INSERT via `crm_capi_dispatch_queue` + `fb_capi_dispatch_consumer` pg_cron job (every minute). Advanced matching: `em` + `ph` SHA-256 hashed server-side (no cookie dependency). Token: `storefront_config.analytics.fb_capi_token`. Demo runs `skipped_no_token` (no sandbox token). Make scenario 8542928 retired. Storefront handoff deferred to `M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF` (shared `event_id` UUID for dedup).
 
 ---
 
