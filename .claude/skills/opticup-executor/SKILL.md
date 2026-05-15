@@ -904,6 +904,18 @@ view, new RPC, new migration, or even new field in an existing table), you MUST:
     runtime "cancel mid-sweep" subcase. A SPEC-mandated 3-transition test
     catches this class of regression pre-commit.
 
+16. **View `security_invoker` base-table RLS probe (MANDATORY when SPEC modifies any view's flag; added 2026-05-15 from SECURITY_HOTFIX_2 Proposal P-EXEC-1):** before applying any `ALTER VIEW ... SET (security_invoker=on)`, for EACH target view probe:
+    - `has_table_privilege('anon', '<base_table>', 'SELECT')` for every base table the view's FROM clause references.
+    - `pg_policies` rows on each base table — at least one policy's USING clause must be anon-friendly (e.g. `is_active=true` filter), NOT solely the JWT-claim `tenant_id` pattern.
+    - **Scalar subqueries in the view body** that read additional base tables (these get the same anon role under `security_invoker=on`; they MUST be probed too).
+    - If ANY probe shows anon would lose access → STOP and escalate; do not silently flip the flag. The SPEC's pre-flight may have classified the view as "safe" based on view-level privileges alone — that's not sufficient under `security_invoker=on`. Document probe results in `EXECUTION_REPORT.md` §3 What Was Done.
+
+    Rationale: `SECURITY_HOTFIX_2_2026_05_15` v1 §1.2 applied `security_invoker=on` to 10 views classified safe by view-level pre-flight, then had to roll back ALL 10 when post-migration anon probes showed 8 returned 0 rows (their base tables had JWT-only RLS). Pre-migration base-table + policy probes would have caught the same 8 at SPEC-pre-flight time with zero rollback churn. Closes the gap EXECUTION_REPORT §7 row #1 + FINDINGS §F-1 identified.
+
+17. **Tooling Pre-Flight (added 2026-05-15 from SECURITY_HOTFIX_2 Proposal P-EXEC-2):** if this SPEC will run any Node script during execution, BEFORE writing the first script verify required npm packages are listed in `package.json`. Missing deps → STOP and escalate; do NOT silently `npm install` (Iron Rule 21 — no orphan deps absorbed silently). For migration-builder workloads (fetch `pg_get_functiondef`/`pg_get_viewdef`, apply a transformation, emit migration `.sql`), copy `.claude/skills/opticup-executor/references/tmp-migration-builder.mjs` as the starting skeleton — it's the vetted pattern with credentials-loading + self-delete reminder baked in. Self-delete the tmp copy before commit (Iron Rule 31).
+
+    Rationale: `SECURITY_HOTFIX_2_2026_05_15` EXECUTION_REPORT D-7 documents 3 ad-hoc Node scripts written from scratch + cleaned up; FINDINGS §F-6 raises the dep-availability concern (`pg` happened to already be in package.json — a lucky guess). A vetted template + a Tooling Pre-Flight check turn "lucky guess" into "verified before execution."
+
 Log the result of the Pre-Flight Check in `EXECUTION_REPORT.md` §6 Iron-Rule
 Self-Audit (Rule 21 row) with evidence of the greps you ran. An empty Rule 21
 row with "N/A" when the SPEC added DB objects is itself a finding against
