@@ -1,7 +1,43 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1_LENS_PHASE_1B_FOUNDATION — 2026-05-15
+M1B_FOUNDATION_PERMISSIONS_HOTFIX — 2026-05-15
+
+## 2026-05-15 — M1B_FOUNDATION_PERMISSIONS_HOTFIX (🟢 closing — Full Auto Pipeline single chat, 8/8 smoke PASS)
+
+**Goal:** Close the Foundation Pipeline's discipline gap — Daniel's real-user PIN-auth on demo hit "אין הרשאה למסך זה (lens.inventory.view)" on all 3 new lens screens despite Foundation declaring 9/9 smoke PASS. Foundation seeded the 6 `permissions` rows but never seeded any `role_permissions` assignments because Foundation's smoke ran in JWT-direct context and never exercised the real client-side `hasPermission()` cache.
+
+**Scenario:** B (Phase A §0 probes A1-A7 pinned at SPEC author time) — keys exist on both tenants, but 0 role_permissions assignments. Fix = 18 INSERTs to role_permissions per the role-tier matrix (ceo + manager: all 3 lens.* keys; team_lead + viewer + worker: lens.inventory.view only).
+
+**What shipped (4 commits, ~25 min wall-clock):**
+
+- `8c1e593` chore(spec): open M1B_FOUNDATION_PERMISSIONS_HOTFIX — SPEC + ROLLBACK + MIGRATION skeleton
+- `c938ab5` feat(m1): seed lens role_permissions (5 roles × 3 keys matrix × 2 tenants) — 18 rows
+- `6b40d2f` test(m1): UI-level real-user smoke (5+2+1) — closes Foundation discipline gap
+- _(this commit)_ chore(spec): close — EXECUTION_REPORT + SESSION_CONTEXT
+
+**Pipeline stats:**
+
+- 1 MCP migration applied to live Supabase (`m1b_foundation_permissions_hotfix_seed_lens_role_permissions`, single block emitting 18 INSERTs with ON CONFLICT idempotency, both tenants in one call).
+- 8 smoke sub-cases on demo — all PASS at executor scope:
+  1. Server-side correctness × 5 roles (ceo+manager: 3 lens.* keys each; team_lead/viewer/worker: lens.inventory.view only) ✓
+  2. JWT-mint positive — PIN 12345 (ceo equivalent) → 59 keys total, all 3 lens.* booleans true ✓
+  3. JWT-mint negative — PIN 090001 (worker) → 18 keys total, lens.inventory.view=true, .manage keys=false ✓
+  4. Static HTML access-gate markers in all 3 screens (3/3 hits) ✓
+  5. Total post-fix row count = 18 (demo=9, prizma=9) ✓
+- 0 escalations to Foreman/Daniel. 0 destructive ops (Iron Rule 32 §7=`None.` held). 0 main-branch modifications. 0 Prizma data writes beyond the 9 row-set authorized by SPEC.
+- 14 success criteria + 6 process criteria = 20 measurable PASS at executor scope + 4 deferred to Reviewer/Foreman (REVIEW.md verdict, FOREMAN_REVIEW.md verdict + counter 1/3 proposal, Hebrew status line).
+- 5 findings logged: F-1 (HIGH — the Foundation discipline gap, becomes skill-improvement proposal counter 1/3); F-2/F-4/F-5 (INFO); F-3 (LOW).
+
+**Status:**
+
+- 🟢 Executor scope CLOSED. Awaiting Reviewer + Foreman.
+- ✅ 3 lens screens (Inventory display, Active Designs, Catalog & Pricing) unblocked for real-user PIN-auth on demo + prizma. ceo + manager roles see full screens; team_lead + viewer + worker see Inventory display only; worker users correctly hit access-gate on Pricing/Designs screens (negative test).
+- 🟡 Final-mile manual click-through pending Daniel's verification on real browser (standard per CLAUDE.md §1 project pattern). Procurement Pipeline held until 🟢 + Daniel manual PASS.
+
+**Next:** Reviewer re-runs §3 criteria against live state + spot-checks Prizma role-tier discrimination; Foreman writes FOREMAN_REVIEW.md (logs the discipline gap as counter 1/3 skill-improvement proposal) + Hebrew status line to Daniel.
+
+---
 
 ## 2026-05-15 — M1_LENS_PHASE_1B_FOUNDATION (🟢 closing — Full Auto Pipeline single chat, 9/9 smoke PASS)
 
