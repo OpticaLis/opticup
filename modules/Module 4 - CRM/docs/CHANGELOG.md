@@ -2,6 +2,27 @@
 
 ---
 
+## M4_FAILED_MESSAGE_BADGE_CLEANUP — reusable acknowledge mechanism + 758 historical Prizma rows cleared 🟢
+
+| Hash | Message |
+|------|---------|
+| (this run) | `chore(spec,m4): seal M4_FAILED_MESSAGE_BADGE_CLEANUP SPEC + Brief + backups` |
+| (this run) | `feat(m4,db): add ack columns + RPC + permission key for crm_message_log` |
+| (this run) | `feat(m4,ui): per-lead × + bulk chip-modal for failed-message ack` |
+| (this run) | `docs(m4): integration ceremony — module docs + escalation update + retrospective` |
+
+**Outcome:** Closes Bundle 2 T1.1 escalation `2026-05-14T22-35Z_brands_event_24_resend_decision.md` via Daniel's chosen **Option E** (not in original A/B/C/D matrix). Builds reusable staff-facing "acknowledge" mechanism for failed-message badges + applies as one-time cleanup to 758 specific Prizma `crm_message_log` rows from the 2026-05-13 06:13–06:32 placeholder-failure burst.
+
+**Method:** Phase 0 diagnostic identified **D1 live-aggregate** badge path at `crm-leads-tab.js:52-59` (filter `status='failed'`, 90-day window). 3 NULL-able columns + 1 composite index added to `crm_message_log` via Supabase MCP `apply_migration` (additive only). New SECURITY DEFINER RPC `acknowledge_failed_messages(uuid[], text DEFAULT NULL)` with canonical JWT-claim tenant isolation + `SET search_path='public'`. New permission key `crm.message_log.acknowledge` per-tenant + granted to all 5 default roles in both tenants. 2 UI surfaces (per-lead × + bulk chip-modal) both call ONE RPC. History view ("הודעות" tab in lead detail) gains a "מטופל · {timestamp} · {employee}" tag on acknowledged rows; failed-section filters out acked rows. Prizma 758 cleanup return: `{updated_count: 758, skipped_count: 0, errors: []}`. Chip 760 → 2 unique leads (4 leftover rows = 4 unrelated failures, out of scope).
+
+**Safety:** Backup folder `modules/Module 4 - CRM/backups/2026-05-15_M4_FAILED_MESSAGE_BADGE_CLEANUP/` (8 pre-edit copies + pre-migration tabledef). ROLLBACK.md provided per `M4_TEMPLATE_VALIDATION_UNIFIED` AP#1. Cross-tenant rejection test PASS. Idempotency proven. Demo end-to-end DB-side chain PASS. Event #24 status unchanged.
+
+**Findings:** 6 findings logged in `modules/Module 4 - CRM/docs/specs/M4_FAILED_MESSAGE_BADGE_CLEANUP/FINDINGS.md`. None block closure.
+
+**19/19 success criteria PASS at executor close. 4 commits on develop. 0 merges to main.** Iron Rule 31 gate exit 0; Iron Rule 32 declared (1 targeted UPDATE × 758 Prizma rows + 1 DELETE on demo test seeds, both pre-authorized). Smoke pre-baseline delegated to most-recent green prior TEST_REPORT per `M4_BROADCAST_ID_PROPAGATION` AP#2; smoke post by LH-Tester.
+
+---
+
 ## M4_STALE_INVITED_LEADS_SWEEP — retroactive sweep of 1,042 stale invited Prizma leads via existing sync RPC 🟢
 
 | Hash | Message |

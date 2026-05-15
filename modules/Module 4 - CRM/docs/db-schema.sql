@@ -367,3 +367,34 @@ CREATE INDEX idx_crm_lead_touchpoints_tenant_broadcast_occurred ON crm_lead_touc
 --   crm_message_queue.body status='sent': 1,170 rows (historical render, immutable)
 --   storefront_pages.blocks: 0 rows (pre-existing clean)
 --   ERP source / storefront source: 0 rows (pre-existing clean)
+
+-- =============================================================================
+-- crm_message_log — acknowledge mechanism (added 2026-05-15, M4_FAILED_MESSAGE_BADGE_CLEANUP)
+-- =============================================================================
+-- 3 new NULL-able columns + 1 composite index + 1 new RPC + 1 new permission key.
+-- All additive — no DROP, no rename, no destructive ops.
+
+ALTER TABLE crm_message_log
+  ADD COLUMN IF NOT EXISTS acknowledged_at  timestamptz NULL,
+  ADD COLUMN IF NOT EXISTS acknowledged_by  uuid        NULL REFERENCES employees(id),
+  ADD COLUMN IF NOT EXISTS acknowledged_reason text     NULL;
+
+CREATE INDEX IF NOT EXISTS idx_crm_message_log_ack
+  ON crm_message_log (tenant_id, acknowledged_at);
+
+-- RPC: acknowledge_failed_messages
+--   Canonical JWT-claim tenant isolation (Iron Rule 15).
+--   SET search_path='public' (SECURITY_HOTFIX_2026_05_13 hardening).
+--   Idempotent — UPDATE only rows where acknowledged_at IS NULL.
+--   Cross-tenant log_ids rejected with code='cross_tenant' in errors array.
+--   Returns jsonb { updated_count int, skipped_count int, errors jsonb[] }.
+-- Full body: see modules/Module 4 - CRM/docs/specs/M4_FAILED_MESSAGE_BADGE_CLEANUP/migrations/01_failed_message_ack.sql
+
+-- Permission key (per-tenant; new key, granted to all 5 default roles per tenant on insert):
+--   id='crm.message_log.acknowledge', module='crm', action='acknowledge'
+--   name_he='סימון הודעות כושלות כמטופלות'
+--
+-- Wired to UI:
+--   modules/crm/crm-failed-messages-modal.js — bulk modal
+--   modules/crm/crm-leads-tab.js — per-lead × on the ⚠️ badge
+--   modules/crm/crm-leads-detail-messages.js — "מטופל" tag in history view

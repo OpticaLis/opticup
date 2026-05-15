@@ -53,3 +53,29 @@ Diagnostic complete (root cause = H1, confirmed). The Brief's mechanical-repair 
 - Bundle 2 continues with T2+T3+T4+T5+T6 per Brief.
 
 End of escalation.
+
+---
+
+## Resolution — Option E (Acknowledge mechanism + 758 cleared) 🟢
+
+**Closed:** 2026-05-15T06:13 UTC (Prizma cleanup completed)
+**By:** Daniel (decision) + SPEC `M4_FAILED_MESSAGE_BADGE_CLEANUP` (mechanism + execution)
+**Resolution path:** `modules/Module 4 - CRM/docs/specs/M4_FAILED_MESSAGE_BADGE_CLEANUP/`
+
+Daniel reviewed this escalation on 2026-05-15 morning and added a fifth option not in the original A/B/C/D matrix:
+
+- **Option E — "Acknowledge cleanup mechanism + historical 758 cleared":**
+  - Event #24 stays `closed` (deliberate deferral, per Daniel — does NOT reverse).
+  - 758 customers already received a follow-up SMS that succeeded (out-of-band, before this morning's review).
+  - The 758 `crm_message_log` failures are historical noise — keep them as audit record, but build a reusable "acknowledge" mechanism so staff can clear the visible badge state (and reuse it for any future failed-message noise).
+  - Apply the new mechanism as its own first run: acknowledge the 758 specific Prizma row_ids so the ⚠️ badge + chip count clears for the operationally-resolved cohort.
+
+**Outcomes:**
+- Mechanism shipped: 3 new columns on `crm_message_log` (`acknowledged_at`, `acknowledged_by`, `acknowledged_reason`) + composite index + new RPC `acknowledge_failed_messages` (SECURITY DEFINER, canonical JWT-claim tenant isolation) + new permission key `crm.message_log.acknowledge` granted to all 5 default roles in both tenants + 2 UI surfaces (per-lead × on the ⚠️ badge + bulk modal via the "📩 הודעות כושלות (N)" chip).
+- 758 Prizma rows acknowledged via the new RPC. Return: `{updated_count: 758, skipped_count: 0, errors: []}`. `acknowledged_reason = '2026_05_13_unsubstituted_placeholder_followup_delivered'`; `acknowledged_by = NULL` (system-initiated historical batch).
+- Prizma chip count: 760 → 2 (4 leftover rows / 2 unique leads — these are the unrelated failures, NOT touched by this cleanup, NOT in the 758 backup).
+- Event #24 status: `closed` (verified at executor session start AND close — unchanged).
+- Activity log row written: 1 (action='crm.message_log.acknowledge', details includes count=758 + source attribution).
+
+**Event #24 unchanged. Daniel's deliberate closure preserved. T1.1 fully resolved.**
+
