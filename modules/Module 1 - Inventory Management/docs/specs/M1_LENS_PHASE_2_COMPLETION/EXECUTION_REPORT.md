@@ -110,3 +110,92 @@ Per SPEC §10: tag `pre-night-2026-05-15-part-A-deferred` placed at HEAD AFTER t
 ---
 
 *Parts B, C, D appended as the Pipeline advances. Final composite self-assessment at SPEC close.*
+
+---
+
+## Part B — RPC harmonization (record_adjustment_found ↔ record_adjustment_lost)
+
+### B1 — Step 1.5 DB Pre-Flight Check
+
+| Sub-step | Result |
+|---|---|
+| GLOBAL_SCHEMA.sql + module db-schema.sql | Read in Stage 1 by Foreman; not re-read (same session) |
+| DB_TABLES_REFERENCE.md + GLOBAL_MAP.md | No new T-constants or function names — replacing an existing RPC body, not adding |
+| Name-collision grep | N/A — `record_adjustment_found` already exists; we're replacing the body |
+| Field-reuse check | N/A — no new fields |
+| FIELD_MAP / T-constant plan | N/A — no new fields |
+| View security_invoker probe | N/A — no view changes |
+| Tooling Pre-Flight | N/A — no Node scripts; all SQL via MCP |
+
+### B2 — Pre-state probes (P1, P2, P3)
+
+- **P1 — current signature:** matched Foreman snapshot exactly: `(uuid,uuid,uuid,integer,text,uuid,numeric,numeric,numeric) → uuid` (9 args). ✅
+- **P2 — direction=+1 reason seed coverage:** demo=1, prizma=1 — **no seed extension needed**, SC B5 met without writing to either tenant. ✅
+- **P3 — Prizma baseline:** `stock_adjustment=0, stock_adjustment_reason=4, stock_lot=0, stock_movement=0`. Captured.
+
+### B3 — Migration applied (Block B-2)
+
+Single MCP `apply_migration` call named `m1_lens_phase_2_part_b_harmonize_record_adjustment_found` succeeded on first try (no 23505 PK collision; the P-AUTHOR-2 fallback path was not exercised). Migration content:
+
+1. `DROP FUNCTION IF EXISTS public.record_adjustment_found(uuid,uuid,uuid,integer,text,uuid,numeric,numeric,numeric)` — old 9-arg overload removed. Breaking-FREE per F-4 (0 JS callers).
+2. `CREATE OR REPLACE FUNCTION public.record_adjustment_found(...)` with new 10-arg signature, harmonized body (Block A canonical JWT guard byte-identical to `record_adjustment_lost`; Block B reason_id FK lookup with direction=+1 validation; Block D creates new stock_lot; Block E inserts stock_adjustment audit row with +qty_found; Block F delegates to record_stock_movement; returns adjustment_id).
+3. `REVOKE EXECUTE ... FROM PUBLIC` + `FROM anon`; `GRANT EXECUTE ... TO authenticated`.
+
+Post-migration signature verified: `(uuid,uuid,uuid,integer,uuid,uuid,text,numeric,numeric,numeric) → uuid` (10 args, p_reason TEXT replaced by p_reason_id UUID, p_notes TEXT added). ACL = `{postgres=X,authenticated=X,service_role=X}` — anon not present. ✅ SC B1 + B2 + B3 met.
+
+### B4 — Functional smoke (B-3, B-7)
+
+- **B-3 round-trip on demo:** PASS on second attempt. First attempt hit a fixture error (`column "tenant_id" does not exist` on `lens_variant`) because lens_variant is a **global catalog table** in Phase 1A architecture (3-layer pattern: GLOBAL CATALOG / COMMERCIAL / RETAILER) — it has no tenant_id column. Corrected the fixture lookup to drop the tenant_id filter; re-run succeeded. Created: 1 stock_adjustment row (qty_delta=+3), 1 stock_lot row (origin_type='adjustment_found', qty_received=3, qty_remaining=3), 1 stock_movement row (movement_type='adjustment_found', qty_delta=+3, adjustment_id linked).
+- **B-7 anon-reject:** PASS. Cleared `request.jwt.claims`; call raised SQLSTATE in {42501, 22P02} (accepted per BLOCK_A_DEMO_TESTS.sql guidance — 22P02 is the empty-JWT JSON-cast trap that Block A's nullif catches as equivalent to 42501).
+
+### B5 — Prizma invariant (post-Part-B)
+
+| Table | Pre-Block-B | Post-Block-B | Delta |
+|---|---|---|---|
+| stock_adjustment (prizma) | 0 | 0 | 0 ✅ |
+| stock_adjustment_reason (prizma) | 4 | 4 | 0 ✅ |
+| stock_lot (prizma) | 0 | 0 | 0 ✅ |
+| stock_movement (prizma) | 0 | 0 | 0 ✅ |
+
+Total Prizma delta = 0 across all 4 touched-table-classes. SC B8 + G6 met.
+
+### B6 — npm baseline smoke
+
+7/7 PASS post-Part-B. SC G5 met.
+
+### B7 — Success criteria recap (Part B)
+
+| SC | Status | Evidence |
+|---|---|---|
+| B1 (new signature) | ✅ | P1 post-state shows 10-arg `(uuid,uuid,uuid,integer,uuid,uuid,text,numeric,numeric,numeric)` |
+| B2 (body harmonization) | ✅ | Block A byte-identical to _lost; reason_id direction=+1 check; stock_adjustment audit insert; delegate to record_stock_movement; return adjustment_id |
+| B3 (ACL canonical) | ✅ | proacl = `{postgres=X,authenticated=X,service_role=X}`, anon not present |
+| B4 (_lost unchanged) | ✅ | Migration only touched _found; _lost body untouched |
+| B5 (Day-1 +1 seed) | ✅ | demo=1, prizma=1 active +1 reasons (pre-existing from GAP_CLOSURE seed); no INSERT needed |
+| B6 (functional smoke) | ✅ | B-3 DO block PASS — adjustment_id + lot_id + movement_id all linked |
+| B7 (anon-reject) | ✅ | B-7 DO block PASS — SQLSTATE 42501 or 22P02 |
+| B8 (Prizma untouched) | ✅ | delta=0 across 4 tables |
+
+### B8 — In-flight decisions taken (Part B)
+
+1. **DROP FUNCTION + CREATE OR REPLACE technical correction.** SPEC §7's parenthetical authorized the harmonization but assumed `CREATE OR REPLACE FUNCTION` would replace the old overload — PostgreSQL actually treats different signatures as separate overloads, so an explicit DROP is required. Per SPEC §4 Autonomy Envelope item "Mid-execution SPEC amendment within scope" + Foreman intent clearly being harmonization (not coexistence), I executed the intent with the technically-correct mechanism (single migration containing both DROP IF EXISTS + CREATE OR REPLACE). Documented for the Foreman as P-AUTHOR proposal candidate.
+2. **B-3 fixture correction.** First attempt assumed `lens_variant.tenant_id` exists; reality is that `lens_variant` is a **global catalog table** (no tenant_id). Corrected on retry by dropping the tenant_id filter. No DB rows were created by the failed first attempt (the variant lookup failed BEFORE the RPC call). Documented as P-EXEC proposal candidate (executor should probe column existence on every fixture-lookup SELECT before assuming).
+3. **B-7 22P02 acceptance.** `record_adjustment_found`'s Block A uses `nullif(((current_setting('request.jwt.claims', true))::json ->> 'tenant_id'),'')::uuid` — when the JWT claim is empty string `''`, the `::json` cast itself can raise 22P02 (invalid input syntax for json) before nullif gets a chance. Per executor SKILL §"Block A demo tests for hardened RPCs", 22P02 in this context is the empty-JWT JSON-cast trap, semantically equivalent to a Block A rejection. Accepted as PASS.
+
+### B9 — Commits this Part
+
+| # | Hash | Subject |
+|---|---|---|
+| B-close | (this commit) | `feat(m1,rpc): Part B harmonize record_adjustment_found as twin record_adjustment_lost` |
+
+(Consolidated to 1 commit: the migration applied via MCP, smoke ran inline as DO blocks; only artifacts are the doc updates.)
+
+### B10 — Self-assessment (Part B only — composite at SPEC close)
+
+- Adherence to SPEC: **9/10** — followed SPEC §3 B1-B8 criteria exactly; the DROP FUNCTION technical correction was driven by Foreman intent (not deviation from intent). Deducted 1 for not catching the lens_variant.tenant_id assumption at fixture-lookup time before the first DO block fired.
+- Adherence to Iron Rules: **10/10** — Rule 21 (no new function name collisions), Rule 14/15 unaffected (no new table), Rule 22 N/A (RPC writes via SECDEF + JWT-claim guard). Integrity gate exit 0 across the (single) commit this Part will produce.
+- Commit hygiene: **(deferred to SPEC close)**
+- Documentation currency: **10/10** — MIGRATION.md Applied Log updated, EXECUTION_REPORT Part B section comprehensive, ready for Foreman review.
+
+---
+

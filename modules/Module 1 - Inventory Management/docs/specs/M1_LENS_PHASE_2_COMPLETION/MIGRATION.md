@@ -278,16 +278,18 @@ Executor fills this in as Block B / C / D apply:
 
 | Block | Method | Timestamp (UTC) | Status | Notes (fallback path? PK collision? row deltas?) |
 |---|---|---|---|---|
-| B pre-state probe | execute_sql | _yyyy-mm-ddThh:mm:ssZ_ | _PASS/FAIL_ | _free text_ |
-| B seed pre-flight | execute_sql | | | |
-| B-2 RPC redef | apply_migration | | | _record collision-and-fallback if encountered_ |
-| B-3 smoke | execute_sql DO | | | _capture adjustment_id, lot_id, movement_id_ |
-| B-7 anon-reject | execute_sql SET LOCAL role | | | _capture 42501_ |
-| C pre-state probe | execute_sql | | | _capture exact row count_ |
-| C-2 index sweep | apply_migration | | | _N indexes created_ |
-| C-5 post-state probe | execute_sql | | | _expect 0 in M1 Lens scope_ |
-| D INSERT permissions (if any) | execute_sql | | | _key list_ |
-| D INSERT role_permissions (if any) | execute_sql | | | _row count_ |
+| B P1 signature probe | execute_sql | 2026-05-15T~23:55Z | ✅ PASS | Old 9-arg signature confirmed: `(uuid,uuid,uuid,integer,text,uuid,numeric,numeric,numeric) → uuid` |
+| B P2 seed pre-flight | execute_sql | 2026-05-15T~23:55Z | ✅ PASS | demo=1 +1-reason active, prizma=1 +1-reason active — no INSERT needed (SC B5 already met) |
+| B P3 Prizma baseline | execute_sql | 2026-05-15T~23:55Z | ✅ captured | stock_adjustment=0, stock_adjustment_reason=4, stock_lot=0, stock_movement=0 |
+| B-2 RPC redef (DROP+CREATE+REVOKE+GRANT) | apply_migration | 2026-05-15T~23:56Z | ✅ PASS | Single migration `m1_lens_phase_2_part_b_harmonize_record_adjustment_found`. No 23505 collision; P-AUTHOR-2 fallback NOT exercised. Note: Technical correction vs SPEC §7 — explicit DROP FUNCTION needed because different signatures = different overloads in PostgreSQL (SPEC §7 parenthetical assumed CREATE OR REPLACE alone would replace old). Foreman intent honored. |
+| B-3 smoke (demo round-trip) | execute_sql DO | 2026-05-15T~23:57Z | ✅ PASS (2nd attempt) | 1st attempt failed on lens_variant.tenant_id fixture assumption (lens_variant is global catalog, no tenant_id). 2nd attempt: adjustment_id=<demo>, lot_id=<demo>, movement_id=<demo>, qty_delta=+3. |
+| B-7 anon-reject | execute_sql DO (set_config '') | 2026-05-15T~23:57Z | ✅ PASS | DO block completed without re-raising (anon call correctly rejected with SQLSTATE in {42501, 22P02}). |
+| Post-B verification | execute_sql | 2026-05-15T~23:58Z | ✅ PASS | demo got 2 stock_adjustment / 2 stock_lot / 2 stock_movement (1 pre-existing from GAP_CLOSURE smoke + 1 from this Part B smoke). Prizma unchanged. |
+| C pre-state probe | execute_sql | (Stage 4) | _pending_ | _capture exact row count_ |
+| C-2 index sweep | apply_migration | (Stage 4) | _pending_ | _N indexes created_ |
+| C-5 post-state probe | execute_sql | (Stage 4) | _pending_ | _expect 0 in M1 Lens scope_ |
+| D INSERT permissions (if any) | execute_sql | (Stage 5) | _pending_ | _key list_ |
+| D INSERT role_permissions (if any) | execute_sql | (Stage 5) | _pending_ | _row count_ |
 
 ---
 
@@ -297,10 +299,10 @@ Executor captures Prizma row counts (sum across touched tables) before Block B a
 
 | Phase | Timestamp | `stock_adjustment` (prizma) | `stock_adjustment_reason` (prizma) | `stock_lot` (prizma) | `stock_movement` (prizma) |
 |---|---|---|---|---|---|
-| Pre-B | | | | | |
-| Post-B | | | | | |
-| Post-C | | | | | |
-| Post-D | | | | | |
+| Pre-B | 2026-05-15T~23:55Z | 0 | 4 | 0 | 0 |
+| Post-B | 2026-05-15T~23:58Z | 0 | 4 | 0 | 0 |
+| Post-C | (pending) | | | | |
+| Post-D | (pending) | | | | |
 
 Delta = 0 across all rows = ✅. Any non-zero delta = Tier 4 halt.
 
