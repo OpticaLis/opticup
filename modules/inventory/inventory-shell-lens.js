@@ -118,11 +118,37 @@
       partialUrl: 'modules/lens-catalog-admin/lens-catalog-admin-partial.html',
       moduleScript: 'modules/lens-catalog-admin/lens-catalog-admin.js',
       bootstrapGlobal: 'LensCatalogAdmin.bootstrap'
+    },
+    'private-catalog': {
+      perm: 'lens.catalog.private.manage|lens.catalog.global.view',
+      label: 'הקטלוג שלי',
+      icon: '📚',
+      partialUrl: null,  // component renders its own DOM into the section shell
+      scripts: ['shared/js/catalog-private-admin.js'],
+      bootstrapGlobal: 'LensPrivateCatalog.bootstrap',
+      explicitBootstrap: true  // shared component IIFE doesn't auto-bootstrap; shell must dispatch
+    }
+  };
+
+  // Bootstrap wrapper for the shared CatalogPrivateAdmin component (lens / glasses).
+  // Sealed by M1_FINAL_NIGHT_PHASE_1_PRIVATE_CATALOG_UNIFIED.
+  window.LensPrivateCatalog = {
+    bootstrap: function () {
+      var mount = document.querySelector('section.lens-tab-section[data-tab="private-catalog"]');
+      if (!mount || !window.CatalogPrivateAdmin) return;
+      mount.innerHTML = '';
+      window.CatalogPrivateAdmin.init({
+        mountEl: mount,
+        productType: 'glasses',
+        sb: window.sb,
+        getTenantId: function () { return typeof getTenantId === 'function' ? getTenantId() : null; },
+        hasPermission: function (k) { return typeof hasPermission === 'function' ? hasPermission(k) : false; }
+      });
     }
   };
 
   var LENS_TAB_ORDER = ['inventory', 'active-designs', 'pricing', 'purchase-order',
-                       'pos-list', 'goods-receipt', 'catalog-admin'];
+                       'pos-list', 'goods-receipt', 'catalog-admin', 'private-catalog'];
 
   function $$(sel) { return document.querySelectorAll(sel); }
 
@@ -188,11 +214,15 @@
     );
     if (!section) return Promise.reject(new Error('Missing section shell for: ' + tabName));
 
-    return fetchPartial(spec.partialUrl).then(function (text) {
+    // partialUrl: null = component renders its own DOM (e.g. private-catalog).
+    var partialP = spec.partialUrl ? fetchPartial(spec.partialUrl) : Promise.resolve(null);
+    return partialP.then(function (text) {
       clearOtherSections(tabName);
-      // Always (re-)inject the partial so re-activation gets a fresh DOM.
-      section.innerHTML = text;
-      section.dataset.populated = '1';
+      if (text != null) {
+        // Always (re-)inject the partial so re-activation gets a fresh DOM.
+        section.innerHTML = text;
+        section.dataset.populated = '1';
+      }
 
       if (!lensTabBooted[tabName]) {
         // First activation: load scripts. main.js IIFE auto-bootstraps via its
@@ -205,8 +235,10 @@
         return p.then(function () {
           lensTabBooted[tabName] = true;
           // ES-module entry points need explicit dispatch (DOMContentLoaded
-          // already fired by the time the module evaluates).
-          if (spec.moduleScript && spec.bootstrapGlobal) {
+          // already fired by the time the module evaluates). Same for shared
+          // components flagged with explicitBootstrap (their IIFE doesn't
+          // auto-init, just registers window.* APIs).
+          if ((spec.moduleScript || spec.explicitBootstrap) && spec.bootstrapGlobal) {
             var fn = resolveGlobal(spec.bootstrapGlobal);
             if (fn) {
               try { fn(); }

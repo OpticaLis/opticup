@@ -56,11 +56,36 @@
       partialUrl: 'modules/accessory-catalog-admin/accessory-catalog-admin-partial.html',
       bootstrapGlobal: 'AccessoryCatalogAdmin.bootstrap',
       scripts: ['modules/accessory-catalog-admin/accessory-catalog-admin.js']
+    },
+    'private-catalog': {
+      perm: 'accessory.catalog.private.manage|accessory.catalog.global.view',
+      label: 'הקטלוג שלי',
+      icon: '📚',
+      partialUrl: null,
+      scripts: ['shared/js/catalog-private-admin.js'],
+      bootstrapGlobal: 'AccessoryPrivateCatalog.bootstrap'
+    }
+  };
+
+  // Bootstrap wrapper for the shared CatalogPrivateAdmin component (accessory).
+  // Sealed by M1_FINAL_NIGHT_PHASE_1_PRIVATE_CATALOG_UNIFIED.
+  window.AccessoryPrivateCatalog = {
+    bootstrap: function () {
+      var mount = document.querySelector('section.accessory-tab-section[data-tab="private-catalog"]');
+      if (!mount || !window.CatalogPrivateAdmin) return;
+      mount.innerHTML = '';
+      window.CatalogPrivateAdmin.init({
+        mountEl: mount,
+        productType: 'accessory',
+        sb: window.sb,
+        getTenantId: function () { return typeof getTenantId === 'function' ? getTenantId() : null; },
+        hasPermission: function (k) { return typeof hasPermission === 'function' ? hasPermission(k) : false; }
+      });
     }
   };
 
   var TAB_ORDER = ['inventory', 'active-designs', 'pricing', 'purchase-order',
-                   'goods-receipt', 'catalog-admin'];
+                   'goods-receipt', 'catalog-admin', 'private-catalog'];
 
   function $$(sel) { return document.querySelectorAll(sel); }
 
@@ -123,10 +148,14 @@
     );
     if (!section) return Promise.reject(new Error('Missing section shell for: ' + tabName));
 
-    return fetchPartial(spec.partialUrl).then(function (text) {
+    // partialUrl: null = component renders its own DOM (e.g. private-catalog).
+    var partialP = spec.partialUrl ? fetchPartial(spec.partialUrl) : Promise.resolve(null);
+    return partialP.then(function (text) {
       clearOtherSections(tabName);
-      section.innerHTML = text;
-      section.dataset.populated = '1';
+      if (text != null) {
+        section.innerHTML = text;
+        section.dataset.populated = '1';
+      }
 
       if (!tabBooted[tabName]) {
         var p = (spec.scripts && spec.scripts.length)
