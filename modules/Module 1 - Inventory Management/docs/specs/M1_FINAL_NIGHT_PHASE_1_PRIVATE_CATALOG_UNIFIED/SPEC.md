@@ -373,3 +373,5 @@ Per opticup-executor SKILL.md §"Folder-per-SPEC retrospective protocol":
 ## 12. Execution Markers (audit trail)
 
 - **C-1 ✅** — 2026-05-17 night — Migration `m1_phase1_cloned_from_id_columns` applied via Supabase MCP. Verified: 3 `cloned_from_id UUID NULL` columns + 3 partial indexes (`idx_lens_brand_cloned_from`, `idx_lens_design_cloned_from`, `idx_lens_variant_cloned_from`). Prizma row-count delta = 0 across 3 tables (baseline preserved).
+
+- **C-2 ✅** — 2026-05-17 night — Migration `m1_phase1_clone_to_private_rpc` + corrective `m1_phase1_clone_to_private_rpc_revoke_public` applied via Supabase MCP. Created `clone_catalog_entry_to_private(text, uuid, uuid) RETURNS uuid` (SECURITY DEFINER, JWT-tenant defense-in-depth check, draft+unpublished destination). Tier-1 in-flight fix: initial REVOKE-only-from-anon was insufficient because Postgres auto-grants EXECUTE to PUBLIC on CREATE FUNCTION; corrective REVOKE FROM PUBLIC applied. Final ACL: authenticated + postgres + service_role only. Prizma row-count delta still = 0 (no data written by the RPC; only function definition + grants).
