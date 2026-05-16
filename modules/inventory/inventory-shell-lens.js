@@ -22,12 +22,16 @@
   // Lens tab registry. scripts[]: load order matters — helpers first,
   // main LAST. Main's IIFE calls bootstrap synchronously when readyState
   // !== 'loading', which is the case after dynamic injection.
+  // Each entry needs a `bootstrapGlobal` so we can re-dispatch bootstrap when
+  // a tab is re-activated after its scripts already loaded. (First activation
+  // auto-bootstraps via the module's IIFE else-branch.)
   var LENS_TABS = {
     inventory: {
       perm: 'lens.inventory.view',
       label: 'מלאי',
       icon: '👓',
       partialUrl: 'modules/lens-inventory/lens-inventory-partial.html',
+      bootstrapGlobal: 'LensInv.bootstrap',
       scripts: [
         'modules/lens-inventory/lens-inventory-filters.js',
         'modules/lens-inventory/lens-inventory-grid.js',
@@ -41,6 +45,7 @@
       label: 'דגמים פעילים',
       icon: '✨',
       partialUrl: 'modules/lens-active-designs/lens-active-designs-partial.html',
+      bootstrapGlobal: 'LensAD.bootstrap',
       scripts: [
         'modules/lens-active-designs/lens-active-designs-tree.js',
         'modules/lens-active-designs/lens-active-designs-toggle.js',
@@ -52,6 +57,7 @@
       label: 'מחירים',
       icon: '💲',
       partialUrl: 'modules/lens-pricing/lens-pricing-partial.html',
+      bootstrapGlobal: 'LensPricing.bootstrap',
       scripts: [
         'modules/lens-pricing/lens-pricing-filters.js',
         'modules/lens-pricing/lens-pricing-grid.js',
@@ -65,6 +71,7 @@
       label: 'הזמנת רכש',
       icon: '📝',
       partialUrl: 'modules/lens-purchase-order/lens-purchase-order-partial.html',
+      bootstrapGlobal: 'LensPO.bootstrap',
       scripts: [
         'modules/lens-purchase-order/lens-purchase-order-supplier.js',
         'modules/lens-purchase-order/lens-purchase-order-shortages.js',
@@ -79,6 +86,7 @@
       label: 'הזמנות פעילות',
       icon: '📋',
       partialUrl: 'modules/lens-pos-list/lens-pos-list-partial.html',
+      bootstrapGlobal: 'LensPOsList.bootstrap',
       scripts: [
         'modules/lens-pos-list/lens-pos-list-table.js',
         'modules/lens-pos-list/lens-pos-list-filters.js',
@@ -91,6 +99,7 @@
       label: 'קבלת סחורה',
       icon: '📦',
       partialUrl: 'modules/lens-goods-receipt/lens-goods-receipt-partial.html',
+      bootstrapGlobal: 'LensGR.bootstrap',
       scripts: [
         'modules/lens-goods-receipt/lens-goods-receipt-supplier.js',
         'modules/lens-goods-receipt/lens-goods-receipt-delivery-note.js',
@@ -159,6 +168,17 @@
     });
   }
 
+  // Ensure only one lens partial is rendered into DOM at a time so multiple
+  // partials don't collide on shared IDs (#filter-brand, #app, etc.).
+  function clearOtherSections(activeTab) {
+    $$('section.lens-tab-section').forEach(function (s) {
+      if (s.dataset.tab !== activeTab) {
+        s.innerHTML = '';
+        delete s.dataset.populated;
+      }
+    });
+  }
+
   var lensTabBooted = {};
   function ensureLoaded(tabName) {
     var spec = LENS_TABS[tabName];
@@ -169,25 +189,42 @@
     if (!section) return Promise.reject(new Error('Missing section shell for: ' + tabName));
 
     return fetchPartial(spec.partialUrl).then(function (text) {
-      if (!section.dataset.populated) {
-        section.innerHTML = text;
-        section.dataset.populated = '1';
-      }
-      if (lensTabBooted[tabName]) return null;
-      var p;
-      if (spec.scripts && spec.scripts.length) p = loadScriptsSequential(spec.scripts);
-      else if (spec.moduleScript) p = loadScript(spec.moduleScript, true);
-      else p = Promise.resolve();
-      return p.then(function () {
-        lensTabBooted[tabName] = true;
-        if (spec.bootstrapGlobal) {
-          var fn = resolveGlobal(spec.bootstrapGlobal);
-          if (fn) {
-            try { fn(); }
-            catch (e) { console.error('[invShell] bootstrap dispatch failed: ' + tabName, e); }
+      clearOtherSections(tabName);
+      // Always (re-)inject the partial so re-activation gets a fresh DOM.
+      section.innerHTML = text;
+      section.dataset.populated = '1';
+
+      if (!lensTabBooted[tabName]) {
+        // First activation: load scripts. main.js IIFE auto-bootstraps via its
+        // else-branch (document.readyState is not 'loading' by now), so we
+        // don't dispatch bootstrap explicitly on the first load.
+        var p;
+        if (spec.scripts && spec.scripts.length) p = loadScriptsSequential(spec.scripts);
+        else if (spec.moduleScript) p = loadScript(spec.moduleScript, true);
+        else p = Promise.resolve();
+        return p.then(function () {
+          lensTabBooted[tabName] = true;
+          // ES-module entry points need explicit dispatch (DOMContentLoaded
+          // already fired by the time the module evaluates).
+          if (spec.moduleScript && spec.bootstrapGlobal) {
+            var fn = resolveGlobal(spec.bootstrapGlobal);
+            if (fn) {
+              try { fn(); }
+              catch (e) { console.error('[invShell] bootstrap dispatch failed: ' + tabName, e); }
+            }
           }
+        });
+      }
+      // Re-activation: scripts already loaded but the partial DOM is fresh.
+      // Re-dispatch bootstrap so the module re-binds to the new elements.
+      if (spec.bootstrapGlobal) {
+        var fn = resolveGlobal(spec.bootstrapGlobal);
+        if (fn) {
+          try { fn(); }
+          catch (e) { console.error('[invShell] bootstrap re-dispatch failed: ' + tabName, e); }
         }
-      });
+      }
+      return null;
     });
   }
 
