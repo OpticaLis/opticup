@@ -1,105 +1,16 @@
-/* inventory-shell.css — sidebar shell for the inventory module.
-   Sealed by M1_INVENTORY_REDESIGN SPEC §2.1, 2026-05-16.
-   Right-side (RTL) sidebar with 4 product categories + 4 cross-category items.
-   Page content (mainNav + main) gets margin-inline-end:240px so it doesn't underlap. */
+/* inventory-shell.css — module-specific styles for inventory.html.
+   Originally sealed by M1_INVENTORY_REDESIGN SPEC §2.1 (2026-05-16).
+   Re-scoped by M1_5_CAT_SIDEBAR_COMPONENT SPEC §2 Part C (2026-05-17):
+   sidebar visual rules + the brittle per-element overlap selector list were
+   EXTRACTED to shared/css/cat-sidebar.css (which uses a CSS-grid wrapper
+   for structural overlap protection — covers all current + future nav strips
+   without selector enumeration). This file now contains only inventory-
+   specific cross-cutting styles: supplier badges + unified-log filter bar
+   + lens-tab-section base.
 
-/* ===== Sidebar shell ===== */
-#inv-sidebar {
-  position: fixed;
-  top: 60px; /* sits below the sticky tenant header */
-  inset-inline-start: 0;
-  width: 240px;
-  height: calc(100vh - 60px);
-  background: #f8fafc;
-  border-inline-end: 1px solid #e2e8f0;
-  padding: 20px 0;
-  overflow-y: auto;
-  z-index: 50;
-  font-family: 'Heebo', sans-serif;
-  box-sizing: border-box;
-}
-
-body.has-inv-sidebar > main,
-body.has-inv-sidebar > #mainNav,
-body.has-inv-sidebar > #lensNav,
-body.has-inv-sidebar > #low-stock-banner {
-  margin-inline-start: 240px;
-}
-
-/* Base banner spacing — moved here from the element's inline style so the
-   sidebar-aware margin-inline-start above can take effect. Inline styles
-   beat stylesheet specificity, so any margin-* in the inline style would
-   override the sidebar offset. Fixed by M1_INVENTORY_UNIFIED_SCREEN_HOTFIX. */
-#low-stock-banner {
-  margin-block: 8px;
-  margin-inline-end: 16px;
-}
-
-.inv-sidebar-title {
-  font-size: 11px;
-  text-transform: uppercase;
-  color: #94a3b8;
-  padding: 0 20px 12px;
-  letter-spacing: 0.8px;
-  font-weight: 600;
-}
-
-.inv-sidebar-title.spaced {
-  margin-top: 24px;
-}
-
-.inv-cat-item {
-  padding: 12px 20px;
-  cursor: pointer;
-  border-inline-end: 3px solid transparent;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 14px;
-  color: #334155;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
-  user-select: none;
-}
-
-.inv-cat-item:hover {
-  background: #f1f5f9;
-}
-
-.inv-cat-item.active {
-  background: #eff6ff;
-  border-inline-end-color: #1e3a8a;
-  color: #1e3a8a;
-  font-weight: 600;
-}
-
-.inv-cat-item.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.inv-cat-item .inv-cat-icon {
-  font-size: 18px;
-  width: 22px;
-  text-align: center;
-}
-
-.inv-cat-item .inv-cat-label {
-  flex: 1;
-}
-
-.inv-cat-item .inv-cat-badge {
-  background: #e2e8f0;
-  color: #475569;
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-weight: 500;
-}
-
-.inv-cat-item.active .inv-cat-badge {
-  background: #1e3a8a;
-  color: white;
-}
+   Sidebar appearance (position, dimensions, visual states) — see
+   shared/css/cat-sidebar.css.
+*/
 
 /* ===== Suppliers category badges (Part C — used in C4) ===== */
 .supplier-cat-badge {
@@ -226,23 +137,4 @@ section.lens-tab-section.active {
   display: block;
 }
 
-/* ===== Mobile fallback — sidebar collapses to a top strip below 800px ===== */
-@media (max-width: 800px) {
-  #inv-sidebar {
-    position: static;
-    width: 100%;
-    height: auto;
-    border-inline-end: none;
-    border-bottom: 1px solid #e2e8f0;
-    padding: 12px 0;
-  }
-  body.has-inv-sidebar > main,
-  body.has-inv-sidebar > #mainNav,
-  body.has-inv-sidebar > #lensNav,
-  body.has-inv-sidebar > #low-stock-banner {
-    margin-inline-start: 0;
-  }
-  .inv-cat-item {
-    padding: 8px 14px;
-  }
-}
+/* Mobile fallback for sidebar appearance lives in shared/css/cat-sidebar.css. */
