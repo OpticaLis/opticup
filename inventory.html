@@ -617,6 +617,45 @@
 <section id="tab-incoming-invoices" class="tab">
 </section>
 
+<!-- ========== TAB: UNIFIED LOG (M1_INVENTORY_REDESIGN SPEC §2.4, 2026-05-16) ========== -->
+<section id="tab-unified-log" class="tab">
+  <div class="card">
+    <h3>&#128202; לוג מערכת מאוחד</h3>
+    <div class="ul-filter-bar">
+      <select id="ul-cat">
+        <option value="">קטגוריה — הכל</option>
+        <option value="frames">מסגרות</option>
+        <option value="lenses">עדשות</option>
+        <option value="cross">חוצה-קטגוריות</option>
+      </select>
+      <select id="ul-action">
+        <option value="">פעולה — הכל</option>
+      </select>
+      <select id="ul-user">
+        <option value="">משתמש — הכל</option>
+      </select>
+      <input type="date" id="ul-from" title="מתאריך">
+      <input type="date" id="ul-to" title="עד תאריך">
+      <input type="search" id="ul-q" placeholder="חיפוש חופשי — ברקוד / שם פריט...">
+      <button class="btn btn-p" onclick="loadUnifiedLog()">&#128260; רענן</button>
+    </div>
+    <div class="table-wrap">
+      <table id="ul-table">
+        <thead><tr>
+          <th>תאריך</th><th>מקור</th><th>קטגוריה</th><th>פעולה</th>
+          <th>משתמש</th><th>פריט</th><th>שינוי כמות</th><th>סכום</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="ul-pagination">
+      <button id="ul-prev" onclick="ulPage(-1)">&#8592; הקודם</button>
+      <span id="ul-page-label">1</span>
+      <button id="ul-next" onclick="ulPage(1)">הבא &#8594;</button>
+    </div>
+  </div>
+</section>
+
 </main>
 
 <!-- Login Modal -->
@@ -1007,6 +1046,7 @@
 <script src="modules/access-sync/pending-panel.js"></script>
 <script src="modules/access-sync/pending-resolve.js"></script>
 <script src="modules/inventory/inventory-shell.js"></script>
+<script src="modules/inventory/unified-log.js"></script>
 <script src="modules/admin/admin.js"></script>
 <script src="js/header.js"></script>
 <script src="js/alerts-badge.js"></script>
