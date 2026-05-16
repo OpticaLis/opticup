@@ -2134,3 +2134,27 @@ CREATE INDEX IF NOT EXISTS idx_supdocs_doc_numbers ON supplier_documents USING G
 --     via DEFAULT (verified post-ALTER).
 --   - Prizma row counts ALL UNCHANGED post-ALTER:
 --       inventory=8894, brands=232, goods_receipt_items=275, change_approval_log=0.
+--
+-- 2026-05-16 M1_CONTACT_LENSES_ACCESSORIES Stage 3 Part B (accessory schema):
+--   - 3 new tables:
+--       accessory_variant (14 cols) — global catalog, mirror of contact_lens_variant
+--         minus optical-property columns. UNIQUE on (coalesce(owner_tenant_id,
+--         '00000000-0000-0000-0000-000000000000'::uuid), sku) for per-tenant SKU bucket.
+--       tenant_accessory_stock (6 cols) — per-tenant on-hand, simple shape per Brief sec.2.2
+--         (no prescription cols). UNIQUE on (tenant_id, variant_id, coalesce(location_id, ...))
+--       accessory_variant_display_seq (3 cols) — global singleton, scope=global,
+--         mirrors lens_variant_display_seq + contact_lens_variant_display_seq.
+--   - 1 new RPC: next_accessory_variant_display_id() — byte-mirror of
+--     next_contact_variant_display_id with AC- prefix. SECURITY DEFINER, JWT-claim guard,
+--     REVOKE anon + GRANT authenticated.
+--   - 4 new indexes:
+--       idx_accessory_variant_design_id (full)
+--       idx_accessory_variant_owner_tenant_id (partial WHERE owner_tenant_id IS NOT NULL)
+--       idx_tenant_accessory_stock_variant_id (full)
+--       idx_tenant_accessory_stock_location_id (partial WHERE location_id IS NOT NULL)
+--   - 6 RLS policies (3 + 2 + 1 same pattern as contact_lens tables).
+--   - Total new indexes Part A + Part B = 8 (matches SPEC sec.3 S14 exactly).
+--   - Prizma row counts unchanged post-create: inventory=8894, lens_design=1.
+--   - Stage 2 schema work (Parts A + B) COMPLETE.
+-- See modules/Module 1 - Inventory Management/docs/specs/M1_CONTACT_LENSES_ACCESSORIES/SPEC.md
+-- sec.2 Part B + sec.12 Execution Marker C-B1 for full SQL bodies + verify output.
