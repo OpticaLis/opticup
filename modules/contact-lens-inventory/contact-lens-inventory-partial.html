@@ -1,0 +1,29 @@
+<!-- contact-lens-inventory-partial.html — body fragment for contact-tab-section[data-tab=inventory].
+     Fetched lazily by InvShellContact. Per DG-5.A, all IDs prefixed `cl-` to
+     avoid collision with lens partial's #app / #access-gate / etc. -->
+
+<div id="cl-access-gate" style="display:none">
+  <div class="empty-state">אין הרשאה למסך זה (contact_lens.inventory.view).</div>
+</div>
+
+<div id="cl-app" style="display:none">
+  <div class="lens-page-title">&#128083; מלאי עדשות מגע <span class="badge">תצוגה</span></div>
+
+  <div class="lens-filter-bar">
+    <label>מותג:</label>
+    <select id="cl-filter-brand"><option value="">— הכל —</option></select>
+    <label>לוח לבישה:</label>
+    <select id="cl-filter-wearing">
+      <option value="">— הכל —</option>
+      <option value="daily">יומי</option>
+      <option value="weekly">שבועי</option>
+      <option value="monthly">חודשי</option>
+      <option value="yearly">שנתי</option>
+    </select>
+  </div>
+
+  <div class="lens-panel">
+    <div class="lens-panel-header"><h3>וריאציות + מלאי על המדף</h3></div>
+    <div id="cl-inv-container" style="padding:16px"><div class="empty-state">טוען...</div></div>
+  </div>
+</div>

@@ -1,5 +1,94 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-17 afternoon — M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2 — VFV-verified Option A layout fix (margin-inline-start)
+
+SPEC: `M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2` ([folder](specs/M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2/))
+
+**Remediation Pipeline.** Full-Auto, single chat, ~50 min wall-clock. Daniel observed post-merge that the just-closed `M1_5_CAT_SIDEBAR_COMPONENT` Pipeline shipped 🟢 yet the overlap bug Daniel originally reported was **STILL PRESENT** on contact-lenses + accessories surfaces. Dispatched a Remediation Pipeline with explicit non-bypassable Tier C VFV mandate ("Do NOT pass 🟢 until Daniel-equivalent eyes confirm the bug is gone on all 4 product category tabs").
+
+**6 Pipeline commits + 1 Foreman close (`0cf78ef..65c671b` + this commit):**
+
+- `0cf78ef` — `chore(spec): seal M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2 — SPEC.md (Foreman Stage 1)` — ~250 lines, 30 success criteria, root cause hypothesis: grid config-order swap
+- `04094ff` — `fix(m1.5): swap grid-template-columns order for RTL sidebar alignment (cat-sidebar HOTFIX_2)` (C1) — `shared/css/cat-sidebar.css` 162 → 185 lines (+23: 1-line rule edit + 22-line RTL comment block) + SPEC.md §12 Execution Marker C1
+- `d7fa89c` — `chore(spec): close M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2 executor scope — retrospective (C2)` — EXECUTION_REPORT.md ~112 lines; 0 FINDINGS.md (0 findings); 2 executor improvement proposals
+- `ab79cd0` — `test(spec): M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2 TEST_REPORT 🔴 RED + escalation` — VFV across all 8 surfaces shows mainContent collapsed to 240px under sidebar; escalation file with refined root-cause + 3 proposed correct fixes; 11 screenshots (8 pre-fix + 3 post-C1)
+- `b774e2c` — `fix(m1.5): drop grid; reserve sidebar space via margin-inline-start (cat-sidebar HOTFIX_2 C2, Option A)` — Daniel-approved Option A: `shared/css/cat-sidebar.css` 185 → 161 lines (-24 net); dropped `display: grid` + `grid-template-columns`; added `margin-inline-start: var(--cat-sidebar-width, 240px)` on `.main-content`; mobile @media block updated; SPEC.md §12 Execution Marker C2
+- `65c671b` — `test(spec): M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2 TEST_REPORT 🟢 GREEN (Option A C2)` — VFV across all 8 surfaces PASS; DOM probe `mainContent.right == sidebar.left` on every surface; 8 C2 screenshots
+- _(this commit)_ — `chore(spec): close M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2 — FOREMAN_REVIEW + master-docs + Hebrew summary + 2 skill harvests`
+
+**Pipeline stats:**
+
+- 6 Pipeline commits + 1 close = 7 total; 0 merges; 0 amends; 0 force-pushes
+- 2 execution attempts (C1 hypothesis FAILED VFV; C2 PASSED) — first end-to-end validation of the Tier C VFV protocol
+- 0 escalations to Daniel beyond the deliberate Option A decision
+- 0 DB ops; 0 main-branch touches
+- Iron Rule 31 + 32 gates exit 0 every commit; SPEC.md staged in every destructive commit per §12 Execution Marker
+- Smoke 7/7 PASS pre + post on both C1 and C2 runs
+- 0 findings (no FINDINGS.md written)
+- 2 skill harvests applied directly to SKILL files in this close: P-AUTHOR-1 (CSS hypothesis DOM-state mental rehearsal) → opticup-strategic SKILL.md §5.4; P-EXEC-1 (canonical recipe: fixed-sidebar + main-content via margin-inline-start) → opticup-executor SKILL.md Visual re-skin patterns
+
+**Schema/code delta:**
+
+- 1 file modified: `shared/js/cat-sidebar.js` unchanged; `shared/css/cat-sidebar.css` 162 → 161 lines (-1 net across both C1 + C2; C2 reverted C1's grid swap entirely and substituted Option A's margin-inline-start primitive)
+- 0 new files; 0 deletes
+- 11 + 8 = 19 screenshots in `_archive/cat-sidebar-overlap-hotfix-2-2026-05-17/screenshots/`
+- 1 escalation file in `modules/Module 1.5 - Shared Components/escalations/2026-05-17T1945Z_C1_HYPOTHESIS_FAILED.md` (preserved as Pipeline learning record)
+
+**Root cause (definitive):** CSS Grid cannot constrain main content against a `position: fixed` sidebar — a fixed element exits document flow. Both the original grid-based attempt (`M1_5_CAT_SIDEBAR_COMPONENT`) and the C1 swap attempted to use the wrong tool. Grid auto-placement uses DOM child order, not config order; swapping `grid-template-columns` doesn't move `.main-content` into a different cell. The correct primitive is `margin-inline-start: var(--cat-sidebar-width, 240px)` on `.main-content` (RTL flips automatically) — one rule, one selector, no DOM-order trap.
+
+**Status:**
+- 🟢 Pipeline CLOSED — bug RESOLVED on all 8 sidebar surfaces (VFV 8/8 PASS, smoke 7/7 PASS, visual confirmation on the 4 product category surfaces)
+- ✅ 2 skill harvests applied
+- ⏸️ Tier C VFV pending entry remains queued for separate Layer 1 Pending Entries Sweep
+- ⏸️ Ready for develop → main PR
+
+---
+
+## 2026-05-17 morning — M1_5_CAT_SIDEBAR_COMPONENT — reusable sidebar ES Module + structural overlap fix
+
+SPEC: `M1_5_CAT_SIDEBAR_COMPONENT` ([folder](specs/M1_5_CAT_SIDEBAR_COMPONENT/))
+
+**Component-extraction + visual-bug-fix Pipeline.** Full Auto Pipeline, ~1.5h wall-clock. Two goals merged into one Pipeline because they share the same code path: (1) extract sidebar from inventory.html into reusable Module 1.5 ES Module; (2) replace selector-specific overlap hotfix (which missed contactNav + accessoryNav — Daniel's reported bug) with grid-based structural rule.
+
+**8 commits on develop (pre-tag `pre-cat-sidebar-extraction-2026-05-17` @ `dafdf6e`):**
+
+- `9a783c2` — `docs(m1.5): seed M1_5_CAT_SIDEBAR_COMPONENT Brief (Cowork architect)`
+- `e9c2b5a` — `chore(spec): seal M1_5_CAT_SIDEBAR_COMPONENT — SPEC.md (Foreman Stage 1)` — 30 measurable success criteria, 5 decision gates pre-resolved, 6 Brief-vs-reality findings absorbed
+- `c911bca` — `feat(m1.5): cat-sidebar.js + cat-sidebar.css — reusable ES Module component (C1)` — 192-line ES Module + 162-line CSS (grid host + sidebar visual + responsive @media)
+- `7c74e9c` — `refactor(m1): inventory.html consumes cat-sidebar component (C2)` — 5 corollary edits per DG-5 (CSS link, body class dropped, wrappers added, inline aside removed, script type=module import added)
+- `fb54e21` — `fix(m1): grid-based sidebar/main-content boundary protection (C3)` — `css/inventory-shell.css` pruned 248 → 140 lines; the brittle selector list (the bug source) GONE; cross-cutting non-sidebar rules KEPT (supplier-cat-badge, ul-filter-bar, lens-tab-section)
+- `041f3f7` — `chore(docs): GLOBAL_MAP.md adds initCatSidebar entry (C4)` — §5.4 Key JS globals ERP gets `initCatSidebar` row with ES Module divergence flag + companion cat-sidebar.css reference
+- `11b3d5c` — `chore(spec): close M1_5_CAT_SIDEBAR_COMPONENT executor scope — retrospective (C5)` — EXECUTION_REPORT.md ~210 lines; 0 FINDINGS.md (executor found 0 findings); 2 executor-improvement proposals
+- `16bb07b` — `chore(spec): Reviewer REVIEW.md — M1_5_CAT_SIDEBAR_COMPONENT 🟡 PASS WITH NOTE` — 7 fresh-angle spot-checks PASS + 1 R-FINDING-1 (icon glyph drift)
+- `5af2b4c` — `chore(spec): Localhost-Tester TEST_REPORT — M1_5_CAT_SIDEBAR_COMPONENT 🟡 YELLOW` — Smoke 7/7 + Tier A HTTP 10/10 + 1 screenshot (UI walk blocked by login-modal limitation)
+- _(this commit)_ — `chore(spec): close M1_5_CAT_SIDEBAR_COMPONENT — FOREMAN_REVIEW + master-docs + Hebrew summary`
+
+**Pipeline stats:**
+
+- 8 Pipeline commits + 1 close = 9 total; 0 merges; 0 amends; 0 force-pushes (FA-1 verified)
+- 0 escalations to Daniel; 3 in-flight Executor decisions all justified (D-1 line-count, IF-1 script placement, IF-2 wrapper scope)
+- 0 DB ops; 0 main-branch touches
+- Iron Rule 31 + 32 gates exit 0 every commit; SPEC.md staged in every destructive commit per §12 Execution Marker
+- Smoke 7/7 PASS pre + post (verified twice by Tester)
+- 1 cosmetic R-FINDING-1 (3 sidebar icon codepoints drifted: frames 👓→🕶; secondary title 🔃→🔄; access-sync 🔄→🔂) — flagged for Daniel decision via Hebrew summary
+
+**Schema/code delta:**
+
+- 2 new files: `shared/js/cat-sidebar.js` (192 lines, ES Module) + `shared/css/cat-sidebar.css` (162 lines)
+- inventory.html: net +0 lines (37 removed inline aside + ~15 added wrappers + ~28 added script type=module config + 1 added CSS link); 1200 lines pre + 1200 post
+- css/inventory-shell.css: 248 → 140 lines (-108: sidebar visual extracted to cat-sidebar.css + brittle overlap selector list removed; supplier badges + ul-filter-bar + lens-tab-section KEPT)
+- docs/GLOBAL_MAP.md: +1 row (initCatSidebar in §5.4)
+
+**Status:**
+- 🟢 Pipeline CLOSED — all 30 SPEC §3 criteria met structurally
+- ✅ Reusable Module 1.5 sidebar component shipped — future modules (M5/M7/M9/...) consume via `import { initCatSidebar } from '/shared/js/cat-sidebar.js'`
+- ✅ Daniel's contactNav + accessoryNav overlap bug RESOLVED STRUCTURALLY (grid replaces selector enumeration)
+- ⏳ Awaiting Daniel decision on R-FINDING-1 (3 icon glyph drifts) — accept OR trivial 1-min revert
+- ⏳ Awaiting Daniel ~5-min manual UI walk (test environment login-modal limitation)
+- ⏳ Architect Integration Ceremony (next opticup-architect session): merge cat-sidebar.js + cat-sidebar.css into FILE_STRUCTURE.md + apply 4 auto-trigger SKILL.md edits queued via pending architect entries
+
+---
+
 ## 2026-05-15 evening — PENDING_ENTRIES_AUTO_RESOLUTION — 3-layer pending-entries infrastructure
 
 SPEC: `PENDING_ENTRIES_AUTO_RESOLUTION` ([folder](specs/PENDING_ENTRIES_AUTO_RESOLUTION/))

@@ -2079,3 +2079,110 @@ CREATE INDEX IF NOT EXISTS idx_supdocs_doc_numbers ON supplier_documents USING G
 --     computes vat_amount + total_amount, calls m1_create_supplier_debt_from_receipt.
 --     D-M1-11 wired: debt is created at receipt time, not PO time.
 -- See modules/Module 1 - Inventory Management/docs/specs/M1B0_PURCHASE_ORDER_SCHEMA/SPEC.md for full SQL bodies + smoke output.
+--
+-- 2026-05-16 M1_CONTACT_LENSES_ACCESSORIES Stage 2 Part A (contact-lens schema):
+--   - 1 new ENUM type: contact_lens_wearing_schedule ('daily','weekly','monthly','yearly')
+--     (per SPEC sec.0.B DG-4.A — state-machine semantics + Iron Rule 19 escape clause)
+--   - 3 new tables:
+--       contact_lens_variant (18 cols) — global catalog mirroring lens_variant pattern
+--         (owner_tenant_id NULL = platform-owned; is_published, lifecycle_status, is_deleted
+--          for publish/governance lifecycle; 3-policy RLS: owner_view + public_view + service_bypass)
+--       tenant_contact_stock (10 cols) — per-tenant on-hand (tenant_id NOT NULL,
+--          UNIQUE on (tenant_id, variant_id, location_id, sph, cyl, axis, expiry_date)
+--          via coalesce-based composite index; canonical 2-policy RLS)
+--       contact_lens_variant_display_seq (3 cols) — global singleton, scope=global row,
+--          mirrors lens_variant_display_seq pattern; service_bypass policy only.
+--   - 1 new RPC: next_contact_variant_display_id() — byte-mirror of next_lens_variant_display_id;
+--     SECURITY DEFINER, search_path=public, JWT-claim guard (rejects anon with 42501),
+--     atomic increment via UPDATE...RETURNING, returns CL-NNNNNN.
+--     REVOKE EXECUTE FROM PUBLIC + anon; GRANT authenticated.
+--   - 4 new indexes:
+--       idx_contact_lens_variant_design_id (full)
+--       idx_contact_lens_variant_owner_tenant_id (partial WHERE owner_tenant_id IS NOT NULL)
+--       idx_tenant_contact_stock_variant_id (full)
+--       idx_tenant_contact_stock_location_id (partial WHERE location_id IS NOT NULL)
+--   - In-flight decision D-1: aligned with existing lens_variant pattern (owner_tenant_id +
+--     is_published + lifecycle_status + is_deleted) rather than literal SPEC sec.2 description.
+--     SPEC sec.2 said "tenant_id NULL allowed"; reality is owner_tenant_id per project convention.
+--     INTENT-vs-LITERAL within Brief sec.9 + SPEC sec.9 #10 autonomy clause.
+-- See modules/Module 1 - Inventory Management/docs/specs/M1_CONTACT_LENSES_ACCESSORIES/SPEC.md
+-- sec.2 Part A + sec.0.A pre-flight + sec.12 Execution Marker C-A1 for full SQL bodies + verify output.
+--
+-- 2026-05-16 M1_CONTACT_LENSES_ACCESSORIES Stage 2 Part A C-A2 (cross-cutting ALTERs):
+--   - lens_design ADD product_type text NOT NULL DEFAULT 'glasses'
+--       CHECK (product_type IN ('glasses','contact_lens','accessory'))
+--   - supplier_catalog_offering DROP CONSTRAINT supplier_catalog_offering_variant_id_fkey
+--     (per SPEC sec.0.C F-DB-3: polymorphic routing replaces FK on variant_id; integrity
+--      enforced at app level via product_type discriminator. Existing supplier_catalog_offering
+--      rows still reference lens_variant.id values; new contact_lens_variant + accessory_variant
+--      IDs valid post-DROP.)
+--   - supplier_catalog_offering ADD product_type text NOT NULL DEFAULT 'glasses' CHECK (...)
+--   - pricing_overlay ADD product_type text NULL CHECK (product_type IS NULL OR product_type IN (...))
+--     (NULL allowed for backward compat with existing rows; new INSERTs should specify)
+--   - purchase_order_line ADD product_type text NOT NULL DEFAULT 'glasses' CHECK (...)
+--                         ADD axis integer NULL CHECK (axis IS NULL OR axis BETWEEN 0 AND 180)
+--   - purchase_receipt_line ADD product_type text NOT NULL DEFAULT 'glasses' CHECK (...)
+--                           ADD axis integer NULL CHECK (axis IS NULL OR axis BETWEEN 0 AND 180)
+--   - change_approval_log entity_type CHECK expanded from 6 to 8 values:
+--       DROP CONSTRAINT change_approval_log_entity_type_check;
+--       ADD CONSTRAINT change_approval_log_entity_type_check CHECK (entity_type IN (
+--         'lens_brand','lens_design','lens_variant','supplier_catalog_offering',
+--         'pricing_overlay','supplier_permissions',
+--         'contact_lens_variant','accessory_variant'  -- new
+--       ));
+--   - Existing rows preserved: lens_design's 1 prizma row backfilled to product_type='glasses'
+--     via DEFAULT (verified post-ALTER).
+--   - Prizma row counts ALL UNCHANGED post-ALTER:
+--       inventory=8894, brands=232, goods_receipt_items=275, change_approval_log=0.
+--
+-- 2026-05-16 M1_CONTACT_LENSES_ACCESSORIES Stage 3 Part B (accessory schema):
+--   - 3 new tables:
+--       accessory_variant (14 cols) — global catalog, mirror of contact_lens_variant
+--         minus optical-property columns. UNIQUE on (coalesce(owner_tenant_id,
+--         '00000000-0000-0000-0000-000000000000'::uuid), sku) for per-tenant SKU bucket.
+--       tenant_accessory_stock (6 cols) — per-tenant on-hand, simple shape per Brief sec.2.2
+--         (no prescription cols). UNIQUE on (tenant_id, variant_id, coalesce(location_id, ...))
+--       accessory_variant_display_seq (3 cols) — global singleton, scope=global,
+--         mirrors lens_variant_display_seq + contact_lens_variant_display_seq.
+--   - 1 new RPC: next_accessory_variant_display_id() — byte-mirror of
+--     next_contact_variant_display_id with AC- prefix. SECURITY DEFINER, JWT-claim guard,
+--     REVOKE anon + GRANT authenticated.
+--   - 4 new indexes:
+--       idx_accessory_variant_design_id (full)
+--       idx_accessory_variant_owner_tenant_id (partial WHERE owner_tenant_id IS NOT NULL)
+--       idx_tenant_accessory_stock_variant_id (full)
+--       idx_tenant_accessory_stock_location_id (partial WHERE location_id IS NOT NULL)
+--   - 6 RLS policies (3 + 2 + 1 same pattern as contact_lens tables).
+--   - Total new indexes Part A + Part B = 8 (matches SPEC sec.3 S14 exactly).
+--   - Prizma row counts unchanged post-create: inventory=8894, lens_design=1.
+--   - Stage 2 schema work (Parts A + B) COMPLETE.
+-- See modules/Module 1 - Inventory Management/docs/specs/M1_CONTACT_LENSES_ACCESSORIES/SPEC.md
+-- sec.2 Part B + sec.12 Execution Marker C-B1 for full SQL bodies + verify output.
+--
+-- 2026-05-16 M1_CONTACT_LENSES_ACCESSORIES Stage 5 Part D (DEMO seed) + C-D-CORRECTIVE:
+--   - C-D-CORRECTIVE (before C-D2): DROP CONSTRAINT purchase_order_line_variant_id_fkey
+--     + DROP CONSTRAINT purchase_receipt_line_variant_id_fkey. Both REFERENCES lens_variant(id).
+--     SPEC sec.0.C F-DB-5 INCORRECTLY claimed these FKs didn't exist; empirical FK probe at
+--     SPEC seal time missed them. Corollary to SPEC sec.4 #3 (supplier_catalog_offering FK drop)
+--     — required for polymorphic variant_id routing per product_type. Per SPEC sec.9 #10
+--     INTENT-vs-LITERAL autonomy. In-flight decision D-4.
+--   - C-D1: 5 lens brands (Hoya/Essilor/Zeiss/Nikon/Rodenstock) + 10 designs + 30 variants
+--     (LV-000003..LV-000032) + 20 NEW tenant_lens_stock rows + 2 POs (PO-100001 sent +
+--     PO-100002 fully_received) with 5 PO lines.
+--   - C-D2: 5 CL brands (Acuvue/Bausch+Lomb/CooperVision/Alcon/Ciba) + 10 designs
+--     (lens_type='single_vision' as stand-in per FINDING F-2 — CHECK doesn't include
+--     soft_contact; D-3 in-flight) + 40 CL variants (CL-000001..CL-000040, 4 SPH per design,
+--     alternating daily/monthly wearing_schedule) + 20 tenant_contact_stock rows
+--     (10 variants × 2 locations; near-expiry dates on alternating rows for Brief sec.2.4
+--     expiry-warning exercise) + 2 POs (PO-200001 sent + PO-200002 fully_received).
+--   - C-D3: 5 accessory brands (Zeiss-Accessories suffixed + Rayban/Warby/Crizal/Persol)
+--     + 25 designs (5 brands × 5 categories Cases/Cloths/Cleaning/Repair/Cords) +
+--     25 accessory_variant (AC-000001..AC-000025) + 30 tenant_accessory_stock rows
+--     (15 variants × 2 locations) + 2 POs (PO-300001 partial WITH manual variant-less
+--     line for F-2 exercise + PO-300002 fully_received).
+--   - All variant_display_seq tables bumped: LV last_value=32, CL=40, AC=25.
+--   - Demo totals: 30 lens + 40 CL + 25 accessory = 95 variants. 12 demo POs total
+--     (6 prior + 6 new across categories).
+--   - **PRIZMA ROW COUNTS UNCHANGED** across all 27 SPEC sec.0.E baseline tables.
+--     Verified post-Stage-5. SPEC sec.3 S32 PASS at mid-Pipeline.
+-- See SPEC sec.12.1 Execution Markers C-D1, C-D-CORRECTIVE, C-D2, C-D3 for full SQL bodies.

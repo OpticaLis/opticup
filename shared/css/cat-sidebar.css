@@ -1,0 +1,163 @@
+/* cat-sidebar.css — Module 1.5 reusable category sidebar styles.
+   Sealed by M1_5_CAT_SIDEBAR_COMPONENT SPEC §2 Part A + Part C (2026-05-17).
+   Layout reworked in HOTFIX_2 C2 (2026-05-17) — see §1 below.
+
+   Three concerns in one file:
+   1. .cat-sidebar-host + .main-content — host is a plain block; main content
+      reserves inline-start space (via margin-inline-start) for the fixed
+      sidebar. Replaces both the brittle per-element overlap hotfix from
+      css/inventory-shell.css (which only enumerated 4 elements and missed
+      contactNav + accessoryNav) AND the failed grid-based attempts in the
+      original SPEC + HOTFIX_2 C1.
+   2. #inv-sidebar — sidebar visual rules (extracted from inventory-shell.css
+      so the component file owns its own appearance).
+   3. .inv-cat-item — category entry rules + responsive @media collapse.
+
+   Cascade contract: this file is loaded AFTER shared/css/* + BEFORE module
+   CSS (per inventory.html head order). Module-scoped CSS (lens-tabs.css etc.)
+   can override theme via CSS custom properties on .cat-sidebar-host.
+*/
+
+/* ============================================================
+   1. HOST + MAIN-CONTENT OFFSET — Option A (HOTFIX_2 C2, 2026-05-17)
+   ============================================================
+   The sidebar is `position: fixed` (see #inv-sidebar below), so it exits
+   document flow. CSS Grid cannot constrain main content against a fixed
+   element — grid auto-placement uses DOM child order, which led the prior
+   grid-based attempts to either (pre-C1) leave main content underlapping
+   the sidebar, or (C1) squeeze main content into the 240px slot under the
+   sidebar.
+
+   Option A (chosen): drop the grid entirely; push .main-content away from
+   the inline-start side using a logical-property margin. RTL flips
+   automatically: in RTL, `margin-inline-start` resolves to margin-right,
+   which reserves 240px on the RIGHT edge — exactly where the fixed sidebar
+   sits (inset-inline-start: 0). Result: main content fills viewport width
+   minus 240px on the sidebar side. No grid, no DOM-order trap, no RTL
+   gymnastics.
+*/
+.cat-sidebar-host {
+  display: block;
+}
+
+.cat-sidebar-host > .main-content {
+  /* RTL: margin-inline-start = margin-right → reserves 240px on the right
+     for the fixed sidebar. LTR symmetry preserved automatically. */
+  margin-inline-start: var(--cat-sidebar-width, 240px);
+  min-width: 0;
+  overflow-x: auto;
+}
+
+/* ============================================================
+   2. SIDEBAR VISUAL — extracted from inventory-shell.css
+   ============================================================
+   Same visual as before (right-side fixed-position sidebar below sticky header).
+   Lives here so the component file owns its appearance entirely.
+*/
+#inv-sidebar {
+  position: fixed;
+  top: 60px; /* sits below the sticky tenant header */
+  inset-inline-start: 0;
+  width: var(--cat-sidebar-width, 240px);
+  height: calc(100vh - 60px);
+  background: var(--cat-sidebar-bg, #f8fafc);
+  border-inline-end: 1px solid var(--cat-sidebar-border, #e2e8f0);
+  padding: 20px 0;
+  overflow-y: auto;
+  z-index: 50;
+  font-family: 'Heebo', sans-serif;
+  box-sizing: border-box;
+}
+
+.inv-sidebar-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  padding: 0 20px 12px;
+  letter-spacing: 0.8px;
+  font-weight: 600;
+}
+
+.inv-sidebar-title.spaced {
+  margin-top: 24px;
+}
+
+/* ============================================================
+   3. CATEGORY ITEMS
+   ============================================================ */
+.inv-cat-item {
+  padding: 12px 20px;
+  cursor: pointer;
+  border-inline-end: 3px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #334155;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  user-select: none;
+}
+
+.inv-cat-item:hover {
+  background: #f1f5f9;
+}
+
+.inv-cat-item.active {
+  background: var(--cat-sidebar-active-bg, #eff6ff);
+  border-inline-end-color: var(--cat-sidebar-active-accent, #1e3a8a);
+  color: var(--cat-sidebar-active-accent, #1e3a8a);
+  font-weight: 600;
+}
+
+.inv-cat-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inv-cat-item .inv-cat-icon {
+  font-size: 18px;
+  width: 22px;
+  text-align: center;
+}
+
+.inv-cat-item .inv-cat-label {
+  flex: 1;
+}
+
+.inv-cat-item .inv-cat-badge {
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.inv-cat-item.active .inv-cat-badge {
+  background: var(--cat-sidebar-active-accent, #1e3a8a);
+  color: white;
+}
+
+/* ============================================================
+   4. RESPONSIVE FALLBACK — sidebar collapses below 800px
+   ============================================================
+   Mobile/narrow: sidebar becomes a static-position strip stacking in normal
+   flow; main content takes full width (drop the inline-start margin reserved
+   for the desktop fixed sidebar).
+*/
+@media (max-width: 800px) {
+  .cat-sidebar-host > .main-content {
+    margin-inline-start: 0;
+  }
+  #inv-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    border-inline-end: none;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 12px 0;
+  }
+  .inv-cat-item {
+    padding: 8px 14px;
+  }
+}
