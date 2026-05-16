@@ -459,6 +459,7 @@ Per executor's P-EXEC-2 (1/3) from M1_INVENTORY_UNIFIED_SCREEN: the `destructive
 Each destructive commit appends one line. Each line satisfies the gate's same-commit-staging requirement (SPEC.md is modified, therefore staged, therefore parser sees §4 authorization).
 
 - _(C1..C5 etc. — appended by Executor as commits land)_
+- **C1** (2026-05-17T~08:50Z): created `shared/js/cat-sidebar.js` (192 lines, ES Module exporting `initCatSidebar`) + `shared/css/cat-sidebar.css` (162 lines: grid host + sidebar visual + responsive @media). Both under Rule 12 350 cap. 0 NUL bytes. Renders existing `<aside id="inv-sidebar">` DOM shape per DG-4.A so inventory-shell.js queries continue working unchanged. F-3 refinement applied (URL read on init, no pushState on click). F-6 refinement applied (sidebar position:fixed kept; grid wrapper provides structural protection).
 
 ---
 
