@@ -2079,3 +2079,31 @@ CREATE INDEX IF NOT EXISTS idx_supdocs_doc_numbers ON supplier_documents USING G
 --     computes vat_amount + total_amount, calls m1_create_supplier_debt_from_receipt.
 --     D-M1-11 wired: debt is created at receipt time, not PO time.
 -- See modules/Module 1 - Inventory Management/docs/specs/M1B0_PURCHASE_ORDER_SCHEMA/SPEC.md for full SQL bodies + smoke output.
+--
+-- 2026-05-16 M1_CONTACT_LENSES_ACCESSORIES Stage 2 Part A (contact-lens schema):
+--   - 1 new ENUM type: contact_lens_wearing_schedule ('daily','weekly','monthly','yearly')
+--     (per SPEC sec.0.B DG-4.A — state-machine semantics + Iron Rule 19 escape clause)
+--   - 3 new tables:
+--       contact_lens_variant (18 cols) — global catalog mirroring lens_variant pattern
+--         (owner_tenant_id NULL = platform-owned; is_published, lifecycle_status, is_deleted
+--          for publish/governance lifecycle; 3-policy RLS: owner_view + public_view + service_bypass)
+--       tenant_contact_stock (10 cols) — per-tenant on-hand (tenant_id NOT NULL,
+--          UNIQUE on (tenant_id, variant_id, location_id, sph, cyl, axis, expiry_date)
+--          via coalesce-based composite index; canonical 2-policy RLS)
+--       contact_lens_variant_display_seq (3 cols) — global singleton, scope=global row,
+--          mirrors lens_variant_display_seq pattern; service_bypass policy only.
+--   - 1 new RPC: next_contact_variant_display_id() — byte-mirror of next_lens_variant_display_id;
+--     SECURITY DEFINER, search_path=public, JWT-claim guard (rejects anon with 42501),
+--     atomic increment via UPDATE...RETURNING, returns CL-NNNNNN.
+--     REVOKE EXECUTE FROM PUBLIC + anon; GRANT authenticated.
+--   - 4 new indexes:
+--       idx_contact_lens_variant_design_id (full)
+--       idx_contact_lens_variant_owner_tenant_id (partial WHERE owner_tenant_id IS NOT NULL)
+--       idx_tenant_contact_stock_variant_id (full)
+--       idx_tenant_contact_stock_location_id (partial WHERE location_id IS NOT NULL)
+--   - In-flight decision D-1: aligned with existing lens_variant pattern (owner_tenant_id +
+--     is_published + lifecycle_status + is_deleted) rather than literal SPEC sec.2 description.
+--     SPEC sec.2 said "tenant_id NULL allowed"; reality is owner_tenant_id per project convention.
+--     INTENT-vs-LITERAL within Brief sec.9 + SPEC sec.9 #10 autonomy clause.
+-- See modules/Module 1 - Inventory Management/docs/specs/M1_CONTACT_LENSES_ACCESSORIES/SPEC.md
+-- sec.2 Part A + sec.0.A pre-flight + sec.12 Execution Marker C-A1 for full SQL bodies + verify output.

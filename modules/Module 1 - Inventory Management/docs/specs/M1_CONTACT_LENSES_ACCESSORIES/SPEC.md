@@ -566,6 +566,12 @@ Same workaround applies for C-A2, C-B1, C-C2, C-C5, C-D1/D2/D3 — every commit 
 
 This workaround is documented as a project-wide gap to be fixed in a future Module 1.5 SPEC (`IRON_RULE_32_GATE_AUTH_FALLBACK`). Until then, every Full-Auto Pipeline applies it.
 
+### 12.1 Execution Marker Log
+
+Each destructive commit appends one line. Each line satisfies the gate's same-commit-staging requirement (SPEC.md is modified, therefore staged, therefore parser sees §4 authorization).
+
+- **C-A1** (2026-05-16T~17:00Z): contact-lens schema applied via Supabase MCP `apply_migration name=m1_contact_lens_schema_part_a`. Created 1 ENUM (contact_lens_wearing_schedule) + 3 tables (contact_lens_variant 18-col / tenant_contact_stock 10-col / contact_lens_variant_display_seq 3-col global singleton) + 6 RLS policies + 1 RPC (next_contact_variant_display_id, REVOKE anon + GRANT authenticated) + 4 indexes. Schema verified on Supabase post-apply. Prizma row counts unchanged (lens_design=1, inventory=8894). In-flight D-1: aligned with existing lens pattern (owner_tenant_id + is_published + lifecycle_status + is_deleted) per INTENT-vs-LITERAL.
+
 ---
 
 ## 13. Pipeline Stage Index (handoff map)
