@@ -2158,3 +2158,31 @@ CREATE INDEX IF NOT EXISTS idx_supdocs_doc_numbers ON supplier_documents USING G
 --   - Stage 2 schema work (Parts A + B) COMPLETE.
 -- See modules/Module 1 - Inventory Management/docs/specs/M1_CONTACT_LENSES_ACCESSORIES/SPEC.md
 -- sec.2 Part B + sec.12 Execution Marker C-B1 for full SQL bodies + verify output.
+--
+-- 2026-05-16 M1_CONTACT_LENSES_ACCESSORIES Stage 5 Part D (DEMO seed) + C-D-CORRECTIVE:
+--   - C-D-CORRECTIVE (before C-D2): DROP CONSTRAINT purchase_order_line_variant_id_fkey
+--     + DROP CONSTRAINT purchase_receipt_line_variant_id_fkey. Both REFERENCES lens_variant(id).
+--     SPEC sec.0.C F-DB-5 INCORRECTLY claimed these FKs didn't exist; empirical FK probe at
+--     SPEC seal time missed them. Corollary to SPEC sec.4 #3 (supplier_catalog_offering FK drop)
+--     — required for polymorphic variant_id routing per product_type. Per SPEC sec.9 #10
+--     INTENT-vs-LITERAL autonomy. In-flight decision D-4.
+--   - C-D1: 5 lens brands (Hoya/Essilor/Zeiss/Nikon/Rodenstock) + 10 designs + 30 variants
+--     (LV-000003..LV-000032) + 20 NEW tenant_lens_stock rows + 2 POs (PO-100001 sent +
+--     PO-100002 fully_received) with 5 PO lines.
+--   - C-D2: 5 CL brands (Acuvue/Bausch+Lomb/CooperVision/Alcon/Ciba) + 10 designs
+--     (lens_type='single_vision' as stand-in per FINDING F-2 — CHECK doesn't include
+--     soft_contact; D-3 in-flight) + 40 CL variants (CL-000001..CL-000040, 4 SPH per design,
+--     alternating daily/monthly wearing_schedule) + 20 tenant_contact_stock rows
+--     (10 variants × 2 locations; near-expiry dates on alternating rows for Brief sec.2.4
+--     expiry-warning exercise) + 2 POs (PO-200001 sent + PO-200002 fully_received).
+--   - C-D3: 5 accessory brands (Zeiss-Accessories suffixed + Rayban/Warby/Crizal/Persol)
+--     + 25 designs (5 brands × 5 categories Cases/Cloths/Cleaning/Repair/Cords) +
+--     25 accessory_variant (AC-000001..AC-000025) + 30 tenant_accessory_stock rows
+--     (15 variants × 2 locations) + 2 POs (PO-300001 partial WITH manual variant-less
+--     line for F-2 exercise + PO-300002 fully_received).
+--   - All variant_display_seq tables bumped: LV last_value=32, CL=40, AC=25.
+--   - Demo totals: 30 lens + 40 CL + 25 accessory = 95 variants. 12 demo POs total
+--     (6 prior + 6 new across categories).
+--   - **PRIZMA ROW COUNTS UNCHANGED** across all 27 SPEC sec.0.E baseline tables.
+--     Verified post-Stage-5. SPEC sec.3 S32 PASS at mid-Pipeline.
+-- See SPEC sec.12.1 Execution Markers C-D1, C-D-CORRECTIVE, C-D2, C-D3 for full SQL bodies.
