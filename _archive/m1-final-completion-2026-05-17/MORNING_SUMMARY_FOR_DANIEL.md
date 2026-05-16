@@ -1,75 +1,104 @@
 🌅 בוקר טוב, דניאל.
 
-ריצת לילה הסתיימה 🟡 — **עצירה מסודרת בשלב Pre-flight (Phase 0)**. משך עד עצירה: ~10 דקות.
+ריצת לילה הסתיימה 🟡 — **שלב 1 הוטמע במלואו (6 קומיטים), שלבים 2-5 לא בוצעו**. משך הצידוד: ~3 שעות פיתוח אחרי 2 escalation cycles ארכיטקטוניים.
 
-## למה עצרתי
+## סטטוס שלבים
 
-ה־Brief מניח שיש 9 טבלאות קטלוג (Brand → Design → Variant × 3 קטגוריות). במציאות יש רק **5 טבלאות**:
+- **שלב 1 (קטלוג פרטי) — 🟢 קוד מוטמע, 🟡 VFV חלקי**
+- **שלב 2 (ליטוש) — ⚪ לא בוצע, ממתין**
+- **שלב 3 (אינדקסי FK) — ⚪ לא בוצע, ממתין**
+- **שלב 4 (עדכוני סקילים) — ⚪ לא בוצע, ממתין**
+- **שלב 5 (QA מקיף + נתוני דמו) — ⚪ לא בוצע, ממתין**
 
-| הנחת Brief | מציאות |
+---
+
+## מה כן קרה הלילה — שלב 1 מסלול מלא
+
+### 2 cycles של escalation עם הארכיטקט (Cowork)
+
+1. **Escalation #1 (Pre-flight P-Q1):** ה־Brief הניח 9 טבלאות קטלוג. בפועל 5 בלבד. עצרתי לפי Brief §12. הארכיטקט החליט: Option 1 — לפצל לעצי brand+design נפרדים לכל קטגוריה.
+2. **Escalation #2 (Pre-flight P-Q2 deep-probe):** גיליתי ש־`lens_design.product_type` כבר קיים כ־CHECK-constrained discriminator עם 46 שורות מחולקות נקי (11 glasses + 10 contact_lens + 25 accessory). הסכמה הנוכחית היא מאוחדת *בכוונה* — לא חסרה. פיצול היה יוצר Iron Rule 21 violation. הארכיטקט תיקן: Option A — להישאר מאוחד + לסנן ב־UI לפי product_type.
+
+הארכיטקט אמר: *"You correctly caught my error."* שמרתי את הלקח לזיכרון: לפני לדווח "טבלה X חסרה", לבדוק CHECK constraints + חלוקת data על הטבלאות הקיימות.
+
+### 6 קומיטים של שלב 1 (`120bdda` → `b117900`, כולם על develop, pushed)
+
+1. **C-0 chore-seal:** SPEC + Brief + escalation + morning summary
+2. **C-1 schema:** `cloned_from_id UUID NULL` × 3 על lens_brand/_design/_variant + 3 partial indexes
+3. **C-2 RPC:** `clone_catalog_entry_to_private(text, uuid, uuid)` SECURITY DEFINER + JWT-tenant defense-in-depth + תיקון בטיחות (REVOKE FROM PUBLIC — תפסתי שגרירת ברירת המחדל של Postgres)
+4. **C-3 permissions:** 6 מפתחות × 2 tenants = 12 שורות permissions, + 42 הרשאות role_permissions (ceo+manager על 6 perms × 2 tenants + 3 שאר התפקידים על 3 view-perms × 2 tenants)
+5. **C-4 רכיב משותף:** `shared/js/catalog-private-admin.js` (339 שורות, IIFE). רכיב יחיד לכל 3 הקטגוריות (Iron Rule 21 honored), נשלט על־ידי `productType` prop
+6. **C-5 wiring:** נוסף tab "📚 הקטלוג שלי" ב־`inventory.html` (3 כפתורי nav + 3 section shells) + 3 inventory-shell-*.js (registry + bootstrap wrapper)
+7. **C-6 in-flight fix:** smoke-test תפס באג — רשימת המותגים לא הייתה מסוננת לפי product_type. תיקנתי בקומיט C-6 (sub-select דרך lens_design.product_type). אומת ב־Chrome MCP על שלושת הקטגוריות.
+
+### Chrome MCP smoke-test (חלקי, 3 מתוך 8 משטחי VFV)
+
+| משטח | תוצאה |
 |---|---|
-| `lens_brand` / `lens_design` / `lens_variant` | ✅ קיימות (16 / 46 / 31 שורות גלובליות) |
-| `contact_lens_brand` | ❌ לא קיימת |
-| `contact_lens_design` | ❌ לא קיימת |
-| `contact_lens_variant` | ✅ קיימת (40 שורות) — אבל `design_id` שלה מצביע על `lens_design` |
-| `accessory_brand` | ❌ לא קיימת |
-| `accessory_design` | ❌ לא קיימת |
-| `accessory_variant` | ✅ קיימת (25 שורות) — אבל `design_id` שלה מצביע על `lens_design` |
+| כפתור "הקטלוג שלי" קיים ב־DOM × 3 קטגוריות | 🟢 |
+| Component IIFE נטען + 2 sub-tabs + 4 columns | 🟢 |
+| Glasses tab → 6 מותגי משקפיים (Essilor/Hoya/Nikon/Rodenstock/SmokeBrand_M1A/Zeiss) | 🟢 |
+| Contact-lens tab → 5 מותגי עדשות מגע (Acuvue/Alcon/Bausch+Lomb/Ciba/CooperVision) | 🟢 |
+| Accessory tab → 5 מותגי אביזרים (Crizal/Persol/Rayban/Warby/Zeiss-Accessories) | 🟢 |
+| Console errors | 🟢 רק GoTrueClient warning קיים מקודם |
 
-הסכמה האמיתית: עץ אחד מאוחד של brand→design ש־3 סוגי הוריאנטים חולקים. זה תיכון תקין, אבל **לא** מה שה־Brief בנה עליו.
+צילומי מסך נשמרו ב־`_archive/m1-final-completion-2026-05-17/`:
+- `phase1_smoke_lens_private_catalog_global.png` (לפני C-6 — 16 מותגים, באג)
+- `phase1_smoke_lens_global_filtered_6_brands.png` (אחרי C-6 — 6 מותגים נכון)
 
-לפי Brief §12 סעיף אחרון: *"If any pre-flight reveals a divergence → STOP, write finding, propose amendment. Do NOT proceed silently."*
+**לא נבדק (נדחה ל־Localhost-Tester בבוקר):** Private CRUD flow, Clone-to-Private, RLS isolation cross-tenant, Active Designs פרטי badge (לא נבנה).
 
-לכן עצרתי לפני שום שינוי. אפס commit-ים. אפס שינויי סכמה. אפס נגיעה בדמו או בפריזמה.
+---
 
-## סטטוס השלבים
+## מצב פריזמה
 
-- שלב 1 (קטלוג פרטי): 🔴 חסום עד החלטה ארכיטקטונית
-- שלב 2 (ליטוש): 🟡 ככל הנראה אפשרי, צריך לקרוא FOREMAN_REVIEW של M1_CONTACT_LENSES_ACCESSORIES כדי לוודא
-- שלב 3 (אינדקסי FK): 🟢 בטוח לרוץ — תוספת ביצועים בלבד
-- שלב 4 (עדכוני סקילים): 🟢 בטוח לרוץ — עריכת קבצי skill בלבד, אפס תלות ב־DB
-- שלב 5 (QA מקיף): 🟡 חלקי — 8/12 flows אפשריים, 4 תלויים בשלב 1
+🟢 **Delta = 0** על 12 טבלאות מלאי, אומת **3 פעמים** (אחרי C-1, C-2, C-3). שלב 1 לא כתב נתוני מלאי לפריזמה. הזריעת ההרשאות כן הרצה על פריזמה (זה לגיטימי לפי Brief §3.C — תשתית per-tenant, לא נתוני מלאי).
 
-## נתוני דמו
+Brief §11 דורש "6 פעמים" — שאר ה־3 verifications נדחו ל־Localhost-Tester בבוקר.
 
-**אף שורה חדשה לא נכתבה.** השארתי את הדמו בדיוק כפי שהיה לפני התחלת הריצה.
+---
 
-מצב פריזמה: ללא נגיעה. לא נכתב דבר. delta = 0 על 12 טבלאות שדגמתי (baseline שמרני).
+## מה שנותר ועל איך להמשיך
 
-## אופציות שאתה יכול לבחור הבוקר
+### בתוך שלב 1 (לא הסתיים)
+1. **Active Designs "פרטי" badge** — תכננתי כ־C-6 אבל repurposed לתיקון brand-filter. נשאר ~30min SPEC לבוקר.
+2. **VFV Tier C מלא** — 8 משטחים דרך Chrome MCP, דורש Localhost-Tester session.
 
-### Option A — צמצום שלב 1 לעדשות בלבד (המומלץ)
-- שלב 1: 2 sub-tabs רק על `lens-catalog-admin` (מבוסס על העץ הקיים: brand→design→variant)
-- שלבים 2-4: כתוכניתם
-- שלב 5: 8/12 flows רצים; 4 flows של contact-lens + accessory נדחים
-- זמן משוער: 8-10 שעות אם תאשר זאת לפני שאתה ישן בלילה הבא
+### Pipeline-level (Phases 2-5)
+המלצה לסדר הבוקר:
+1. **שלב 4 (עדכוני סקילים, ~30 דקות)** — שלוש דקויות מ־`_archive/architect-pending-entries/` הן אורתוגונליות לחלוטין (אפס תלות ב־DB/UI). הכי בטוח להתחיל איתו.
+2. **שלב 3 (FK indexes, ~1-2 שעות)** — תוספת ביצועים בלבד, additive.
+3. **שלב 2 (Polish, ~1-1.5 שעות)** — 5 פריטים מ־M1_CONTACT_LENSES_ACCESSORIES FOREMAN_REVIEW, בונה על מה ששלב 1 הביא.
+4. **שלב 5 (QA מקיף, 2-3 שעות)** — Hoya + Zeiss seed + private brand seed + 12 Chrome MCP flows + DEMO_DATA_MAP.md. צריך Localhost-Tester ייעודי.
 
-### Option B — Pivot ל־UI עץ מאוחד עם product_type filter
-- בונה עץ אחד עם פילטר סוג מוצר למעלה
-- שינוי ארכיטקטוני גדול יותר ממה ש־Brief תכנן
-- צריך התייעצות עם ה־Architect קודם
-
-### Option C — מיגרציית סכמה: לבנות `contact_lens_brand/_design` + `accessory_brand/_design`
-- 4 טבלאות חדשות + backfill של 65 שורות (40+25) ל־design tables חדשות
-- זה SPEC שלם בפני עצמו, לא תיקון לילה
-- ~שבוע עבודה
-
-### Option D — לרוץ רק שלב 4 (עדכוני סקילים) בלילה ולאשר שלב 1 בבוקר
-- אם תאשר עכשיו, אריץ רק את שלב 4 (~30 דקות, 5 קבצים) בלי תלות אדריכלית
-
-המלצתי: **Option A**, עם אישור Option D כצעד ביניים אם רוצים תוצרת לילה מינימלית.
-
-## מסמכים שנכתבו הלילה
-
-- `modules/Module 1 - Inventory Management/escalations/2026-05-17T_M1_FINAL_COMPLETION_PIPELINE_PREFLIGHT_HALT.md` — אסקלציה מלאה עם כל הממצאים + טיעון Bounded Autonomy
+### מסמכים שנכתבו הלילה
+- `modules/Module 1 - Inventory Management/docs/specs/M1_FINAL_NIGHT_PHASE_1_PRIVATE_CATALOG_UNIFIED/SPEC.md` — SPEC מלא + §12 Execution Markers (C-1..C-6)
+- `.../EXECUTION_REPORT.md` — דוח מלא של מה הוטמע, decisions, self-score 7.5/10
+- `.../FINDINGS.md` — 9 ממצאים (2 MEDIUM + 4 LOW + 3 INFO), אף אחד לא חוסם
+- `modules/Module 1 - Inventory Management/escalations/2026-05-17T_M1_FINAL_COMPLETION_PIPELINE_PREFLIGHT_HALT.md` — אסקלציה #1 + #2
 - `_archive/m1-final-completion-2026-05-17/MORNING_SUMMARY_FOR_DANIEL.md` — המסמך הזה
-- (אין DEMO_DATA_MAP.md עדיין — תיווצר ברגע ש־Phase 5 ירוץ)
+- 2 screenshots תחת `_archive/m1-final-completion-2026-05-17/`
 
-## פעולה דרושה ממך
+### לזיכרון של Claude Code
+- `feedback_probe_constraints_not_just_tables.md` — שמור. הלקח: pre-flight חייב לבדוק CHECK constraints + data partitioning, לא רק קיום טבלה.
 
-בחר אחת מ־A/B/C/D ותעדכן את ה־Architect או תכתוב לי כאן.
-אם לא — אני ממתין לאמירה מפורשת ולא ארוץ קדימה.
+---
 
-מצב Repo: נקי. מצב git: על develop, סנכרון עם origin/develop. ללא שינויים לא commited שלי.
+## פעולה דרושה ממך הבוקר
 
-(Sentinel לא ירד הלילה לפי לוח הזמנים שלו — אם הוא משנה את GUARDIAN_ALERTS.md בעוד שעות זה לגיטימי לפי §13 ולא קשור לי.)
+1. בדוק את הצילומים — לראות איך התפתח ה־UI החדש (קטלוג מערכת + הקטלוג שלי).
+2. החלט אם רוצה להריץ שלבים 2-5 בלילה הבא או בריצות נפרדות. אם כן, הריץ אותם בסדר 4 → 3 → 2 → 5 (המומלץ).
+3. **לפני שמרגי ל־main:** Localhost-Tester session על שלב 1's 8 משטחי VFV.
+4. בצע Module Close Ceremony של שלב 1 אחרי VFV ירוק (אדכן GLOBAL_MAP/SCHEMA, M1 SESSION_CONTEXT/CHANGELOG/ROADMAP).
+5. (אופציונלי) קרא את FINDINGS.md ובחר אילו ממצאים worth follow-up SPECs.
+
+## מצב Repo
+
+- Branch: `develop`, in sync עם origin/develop
+- HEAD: `b117900` (C-6)
+- Tag: `pre-m1-final-completion-2026-05-17` ב־`120bdda` parent (rollback point)
+- אפס שינויים לא commited שלי. כן יש את הקבצים הפעיל־רגיל של Sentinel + 5 architect-pending-entries (קלט לשלב 4) — אלה לגיטימיים לפי Brief §13.
+
+ללא פעולה דחופה. שלב 1 בטוח על develop. שלבים 2-5 ימתינו לזמן שלך.
+
+🌙 Layla tov in reverse — Boker tov 💪
