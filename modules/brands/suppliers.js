@@ -3,7 +3,93 @@
 // =========================================================
 let supplierEditMode = false;
 
-function loadSuppliersTab() {
+// M1_INVENTORY_REDESIGN SPEC §2.3 (2026-05-16) — supplier category state.
+// supplies_frames is derived from supplier_brand_distribution (junction table).
+// supplies_lenses is derived from supplier_catalog_offering (junction table).
+// `brands.supplier_id` does NOT exist — Brief §2.3 was wrong (SPEC §0.C F-DB-1).
+let supplyFramesSet = new Set();
+let supplyLensesSet = new Set();
+let supplierFilter  = 'all'; // 'all' | 'frames' | 'lenses' | 'none'
+
+async function _loadSupplierCategoryData() {
+  // Defense-in-depth (Iron Rule 22): tenant_id filter even though RLS handles it.
+  const tid = getTenantId();
+  try {
+    const [sbdRes, scoRes] = await Promise.all([
+      sb.from('supplier_brand_distribution')
+        .select('supplier_id')
+        .eq('tenant_id', tid)
+        .eq('status', 'active')
+        .eq('is_deleted', false),
+      sb.from('supplier_catalog_offering')
+        .select('supplier_id')
+        .eq('tenant_id', tid)
+        .eq('status', 'active')
+        .eq('is_deleted', false)
+    ]);
+    supplyFramesSet = new Set((sbdRes.data || []).map(r => r.supplier_id));
+    supplyLensesSet = new Set((scoRes.data || []).map(r => r.supplier_id));
+  } catch (e) {
+    // Non-fatal — badges just won't render. Log and continue.
+    console.warn('[suppliers] category data fetch failed:', e && e.message);
+    supplyFramesSet = new Set();
+    supplyLensesSet = new Set();
+  }
+}
+
+function _supplierBadgesHtml(sid) {
+  const f = supplyFramesSet.has(sid);
+  const l = supplyLensesSet.has(sid);
+  if (!f && !l) return '<span style="color:#94a3b8;font-size:11px">—</span>';
+  let html = '';
+  if (f) html += '<span class="supplier-cat-badge frames">&#128083; מסגרות</span>';
+  if (l) html += '<span class="supplier-cat-badge lenses">&#128300; עדשות</span>';
+  return html;
+}
+
+function _supplierMatchesFilter(sid) {
+  if (supplierFilter === 'all') return true;
+  const f = supplyFramesSet.has(sid);
+  const l = supplyLensesSet.has(sid);
+  if (supplierFilter === 'frames') return f;
+  if (supplierFilter === 'lenses') return l;
+  if (supplierFilter === 'none')   return !f && !l;
+  return true;
+}
+
+function _renderSupplierFilterBar() {
+  const bar = $('supplier-filter-bar');
+  if (!bar) return;
+  // Counts based on the currently-loaded suppliers (id resolution via supplierCache).
+  let cAll = 0, cFrames = 0, cLenses = 0, cNone = 0;
+  for (const name of suppliers) {
+    const sid = supplierCache[name];
+    if (!sid) continue;
+    cAll++;
+    const f = supplyFramesSet.has(sid);
+    const l = supplyLensesSet.has(sid);
+    if (f) cFrames++;
+    if (l) cLenses++;
+    if (!f && !l) cNone++;
+  }
+  const pill = (val, label, count) => {
+    const active = supplierFilter === val ? ' active' : '';
+    return `<button class="supplier-filter-pill${active}" onclick="_setSupplierFilter('${val}')">${label} <span class="count">(${count})</span></button>`;
+  };
+  bar.innerHTML =
+    '<span class="filter-label">קטגוריה:</span>' +
+    pill('all',    'הכל',             cAll) +
+    pill('frames', '\u{1F453} מסגרות', cFrames) +
+    pill('lenses', '\u{1F52C} עדשות',  cLenses) +
+    pill('none',   'ללא קטגוריה',     cNone);
+}
+
+function _setSupplierFilter(val) {
+  supplierFilter = val;
+  loadSuppliersTab();
+}
+
+async function loadSuppliersTab() {
   const tb = $('suppliers-body');
   const editBtn = $('supplier-edit-btn');
   const saveBar = $('supplier-save-bar');
@@ -12,19 +98,29 @@ function loadSuppliersTab() {
   if (editBtn) editBtn.style.display = supplierEditMode ? 'none' : '';
   if (saveBar) saveBar.style.display = supplierEditMode ? 'flex' : 'none';
 
-  tb.innerHTML = suppliers.map((s, i) => {
+  // Refresh category-membership data (cheap — 2 small filtered SELECTs).
+  await _loadSupplierCategoryData();
+  _renderSupplierFilterBar();
+
+  tb.innerHTML = suppliers.filter(s => {
+    const sid = supplierCache[s];
+    return _supplierMatchesFilter(sid);
+  }).map((s, i) => {
     const sid = supplierCache[s];
     const num = supplierNumCache[sid] || '';
+    const badges = _supplierBadgesHtml(sid);
     if (supplierEditMode) {
       return `<tr>
         <td><input type="number" min="10" value="${num}" class="sup-num-input" data-sid="${sid}" style="width:70px;text-align:center"></td>
         <td><strong>${escapeHtml(s)}</strong></td>
+        <td>${badges}</td>
         <td></td>
       </tr>`;
     }
     return `<tr>
       <td>${num || '—'}</td>
       <td><strong>${escapeHtml(s)}</strong></td>
+      <td>${badges}</td>
       <td><button class="btn btn-d btn-sm" onclick="toast('לא ניתן למחוק ספק מהממשק','w')">&#10006;</button></td>
     </tr>`;
   }).join('');

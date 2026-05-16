@@ -364,9 +364,12 @@
       <button class="btn btn-d" onclick="cancelSupplierNumberEdit()">&#10006; בטל</button>
       <span style="font-size:13px;color:#888">שינוי מספר חסום אם לספק יש הזמנות רכש</span>
     </div>
+    <!-- Category filter pills (M1_INVENTORY_REDESIGN SPEC §2.3, 2026-05-16).
+         Populated client-side by _renderSupplierFilterBar() in suppliers.js. -->
+    <div id="supplier-filter-bar" class="supplier-filter-bar"></div>
     <div class="table-wrap">
       <table id="suppliers-table">
-        <thead><tr><th>מספר ספק</th><th>שם ספק</th><th>פעולות</th></tr></thead>
+        <thead><tr><th>מספר ספק</th><th>שם ספק</th><th>קטגוריות</th><th>פעולות</th></tr></thead>
         <tbody id="suppliers-body"></tbody>
       </table>
     </div>
