@@ -322,3 +322,47 @@
   color: #fff;
   font-weight: 600;
 }
+
+/* === Contact-lens + accessory nav strip aliases ===
+ * Per M1_CONTACT_LENSES_ACCESSORIES SPEC §2 Part C + DG-5.A (2026-05-16).
+ * Inherit lens-tab-strip visual primitives. The selectors below match all
+ * three category nav strips so adding a future product category requires
+ * adding only the #catNav id + section.cat-tab-section markup. */
+
+#contactNav,
+#accessoryNav {
+  /* same flex-row layout as #lensNav (declared above) */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 16px;
+}
+
+#contactNav button,
+#accessoryNav button {
+  padding: 8px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  color: #475569;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background .15s, color .15s, border-color .15s;
+}
+
+#contactNav button:hover,
+#accessoryNav button:hover {
+  background: #f1f5f9;
+  color: #1e3a8a;
+}
+
+#contactNav button.active,
+#accessoryNav button.active {
+  background: #1e3a8a;
+  color: #fff;
+  font-weight: 600;
+  border-color: #1e3a8a;
+}

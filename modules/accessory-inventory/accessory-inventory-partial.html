@@ -1,0 +1,20 @@
+<!-- accessory-inventory-partial.html — body fragment for accessory-tab-section[data-tab=inventory].
+     Fetched lazily by InvShellAccessory. Per DG-5.A, all IDs prefixed `ac-`. -->
+
+<div id="ac-access-gate" style="display:none">
+  <div class="empty-state">אין הרשאה למסך זה (accessory.inventory.view).</div>
+</div>
+
+<div id="ac-app" style="display:none">
+  <div class="lens-page-title">&#128230; מלאי אביזרים <span class="badge">תצוגה</span></div>
+
+  <div class="lens-filter-bar">
+    <label>מותג:</label>
+    <select id="ac-filter-brand"><option value="">— הכל —</option></select>
+  </div>
+
+  <div class="lens-panel">
+    <div class="lens-panel-header"><h3>וריאציות + מלאי על המדף</h3></div>
+    <div id="ac-inv-container" style="padding:16px"><div class="empty-state">טוען...</div></div>
+  </div>
+</div>
