@@ -1012,7 +1012,7 @@
   initCatSidebar({
     container: '#cat-sidebar-mount',
     categories: [
-      { id: 'frames',         icon: '\u{1F576}', label: 'מסגרות',                            active: true, permission: 'inventory.view' },
+      { id: 'frames',         icon: '\u{1F453}', label: 'מסגרות',                            active: true, permission: 'inventory.view' },
       { id: 'lenses',         icon: '\u{1F52C}', label: 'עדשות',                                  permission: 'lens.inventory.view', feature: 'lenses' },
       { id: 'contact-lenses', icon: '\u{1F441}', label: 'עדשות מגע',               permission: 'contact_lens.inventory.view' },
       { id: 'accessories',    icon: '\u{1F392}', label: 'אביזרים',                       permission: 'accessory.inventory.view' }
@@ -1021,12 +1021,12 @@
       { id: 'suppliers',         icon: '\u{1F69A}', label: 'ספקים',                                                permission: 'suppliers.view' },
       { id: 'incoming-invoices', icon: '\u{1F4C4}', label: 'חשבוניות נכנסות' },
       { id: 'unified-log',       icon: '\u{1F4CA}', label: 'לוג מערכת מאוחד',  permission: 'settings.view' },
-      { id: 'access-sync',       icon: '\u{1F501}', label: 'סנכרון Access',                                    permission: 'sync.view', feature: 'access_sync' }
+      { id: 'access-sync',       icon: '\u{1F504}', label: 'סנכרון Access',                                    permission: 'sync.view', feature: 'access_sync' }
     ],
     onSelect: (cat) => { if (window.InvShell && typeof window.InvShell.setActiveCategory === 'function') window.InvShell.setActiveCategory(cat); },
     defaultCategory: 'frames',
     urlParamName: 'cat',
-    sidebarTitleText: { primary: '\u{1F4E6} קטגוריות מלאי', secondary: '\u{1F504} חוצה-קטגוריות' }
+    sidebarTitleText: { primary: '\u{1F4E6} קטגוריות מלאי', secondary: '\u{1F503} חוצה-קטגוריות' }
   });
 </script>
 <script src="shared/js/theme-loader.js"></script>
