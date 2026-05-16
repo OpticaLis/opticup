@@ -1,24 +1,9 @@
 /* catalog-private-admin.js — Store-CEO private catalog admin component
-   Renders a 2-sub-tab Brand→Design→Variant UI on the unified `lens_brand`/
-   `lens_design`/`lens_variant` hierarchy, filtered by product_type.
-
-   Public API (window.CatalogPrivateAdmin.init):
-     opts = {
-       mountEl: HTMLElement,           // container to render into
-       productType: 'glasses'|'contact_lens'|'accessory',
-       sb: SupabaseClient,             // window.sb
-       getTenantId: () => string,      // tenant uuid
-       hasPermission: (k) => bool      // perm-key check
-     }
-
-   Behavior:
-     - Sub-tab 'global': owner_tenant_id IS NULL AND product_type=opts.productType
-       Read-only (no Add/Edit/Delete). Optional "Clone to Private" button on
-       rows when hasPermission(<module>.catalog.private.manage).
-     - Sub-tab 'private': owner_tenant_id = getTenantId() AND product_type=...
-       Full CRUD gated by data-permission attr (permission-ui.js auto-hides).
-   Sealed by M1_FINAL_NIGHT_PHASE_1_PRIVATE_CATALOG_UNIFIED SPEC.
-   Iron Rule 12: target ≤ 300 lines. */
+   2-sub-tab Brand→Design→Variant UI on unified lens_brand/_design/_variant
+   filtered by product_type. window.CatalogPrivateAdmin.init({mountEl,
+   productType: 'glasses'|'contact_lens'|'accessory', sb, getTenantId,
+   hasPermission}). Global = read-only; Private = CRUD gated by data-permission.
+   Sealed by M1_FINAL_NIGHT_PHASE_1_PRIVATE_CATALOG_UNIFIED SPEC. */
 
 (function () {
   'use strict';
@@ -127,14 +112,27 @@
 
   // ----- Queries -------------------------------------------------------
   async function loadBrands(opts, state) {
+    // Filter brand list by product_type via the design table. Global tab: only show
+    // brands that have at least one design of this product_type (otherwise clicking
+    // them would show 0 designs — confusing UX). Private tab: show ALL tenant private
+    // brands regardless of designs (so "create brand first, then add designs" works).
+    let brandIds = null;
+    if (state.subtab === 'global') {
+      const dq = opts.sb.from('lens_design')
+        .select('brand_id')
+        .eq('product_type', opts.productType)
+        .eq('is_deleted', false)
+        .is('owner_tenant_id', null);
+      const r = await dq;
+      if (r.error) return toast('שגיאה בטעינת מותגים: ' + r.error.message, 'error');
+      brandIds = Array.from(new Set((r.data || []).map(d => d.brand_id)));
+      if (!brandIds.length) { state.brands = []; renderList(opts, state, 'brands', []); return; }
+    }
     let q = opts.sb.from('lens_brand')
       .select('id, name, is_published, owner_tenant_id, cloned_from_id, lifecycle_status')
       .eq('is_deleted', false);
-    // Always filter: rows whose designs include opts.productType. Because brand→design
-    // is 1:N, we use a sub-select to bound the brand set per product_type.
-    // Simpler MVP: just filter by owner predicate; product_type filter applies at designs col.
     if (state.subtab === 'private') q = q.eq('owner_tenant_id', opts.getTenantId());
-    else q = q.is('owner_tenant_id', null);
+    else q = q.is('owner_tenant_id', null).in('id', brandIds);
     const { data, error } = await q.order('name');
     if (error) return toast('שגיאה בטעינת מותגים: ' + error.message, 'error');
     state.brands = data || [];
