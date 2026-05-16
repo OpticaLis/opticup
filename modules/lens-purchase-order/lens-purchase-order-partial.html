@@ -1,0 +1,75 @@
+<!-- lens-purchase-order-partial.html — body fragment for inventory.html lens-tab.
+     M1_INVENTORY_UNIFIED_SCREEN SPEC §1.5 — frames-aligned tokens via lens-tabs.css.
+     PDF export still uses window.print() — print stylesheet applies to the whole
+     inventory.html page; partial markup unchanged in print mode. -->
+
+<div id="access-gate" style="display:none">
+  <div class="empty-state">אין הרשאה למסך זה (lens.po.create).</div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="lens-page-title">
+    &#128221; הזמנה לספק עדשות
+    <span class="badge" id="po-status-badge">טיוטה חדשה</span>
+    <span style="flex:1"></span>
+    <button class="btn btn-g" id="btn-export-pdf" type="button">&#128196; ייצא PDF</button>
+    <button class="btn btn-p btn-primary" id="btn-create-po" type="button" disabled>&#128221; צור הזמנה</button>
+    <button class="btn btn-g" id="btn-mark-sent" type="button" style="display:none">&#128231; סמן כנשלח לספק</button>
+  </div>
+
+  <div class="lens-filter-bar" style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:12px;align-items:end">
+    <div class="form-group">
+      <label class="label-required" for="po-supplier-select">ספק *</label>
+      <select id="po-supplier-select"><option value="">— בחר ספק —</option></select>
+    </div>
+    <div class="form-group">
+      <label for="po-expected-delivery">תאריך אספקה מבוקש</label>
+      <input type="date" id="po-expected-delivery" />
+    </div>
+    <div class="form-group">
+      <label for="po-notes">הערות לספק (אופציונלי)</label>
+      <textarea id="po-notes" rows="1" placeholder="הערות פנימיות / הוראות לספק"></textarea>
+    </div>
+  </div>
+
+  <div class="lens-grid-layout">
+    <div class="lens-panel">
+      <div class="lens-panel-header">
+        <h3>פריטים בהזמנה (<span id="line-count-display">0</span> שורות)</h3>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-g btn-sm" id="btn-refresh-shortages" type="button">&#128260; רענן חוסרים</button>
+          <button class="btn btn-g btn-sm" id="btn-add-manual" type="button">&#10133; הוסף פריט ידנית</button>
+        </div>
+      </div>
+      <div style="max-height:560px;overflow-y:auto" id="lines-container">
+        <div class="empty-state">בחר ספק כדי לטעון חוסרים.</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="lens-panel">
+        <div class="lens-panel-header"><h3>סיכום ההזמנה</h3></div>
+        <div id="summary-body" style="padding:14px">
+          <div class="summary-row" style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px">
+            <span style="color:#64748b">שורות</span><span id="sum-lines" style="font-weight:600;color:#1e293b">0</span></div>
+          <div class="summary-row" style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px">
+            <span style="color:#64748b">יחידות</span><span id="sum-units" style="font-weight:600;color:#1e293b">0</span></div>
+          <div class="summary-row" style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px">
+            <span style="color:#64748b">חוסרי מדף (אוטו)</span><span id="sum-stock" style="font-weight:600;color:#1e293b">0 / 0</span></div>
+          <div class="summary-row" style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px">
+            <span style="color:#64748b">תוספות ידניות</span><span id="sum-manual" style="font-weight:600;color:#1e293b">0 / 0</span></div>
+          <div class="summary-row" style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px dashed #e2e8f0;margin-top:6px;font-size:13px">
+            <span style="color:#64748b">סכום נטו</span><span id="sum-net" style="font-weight:600">&#8362;0</span></div>
+          <div class="summary-row" style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px">
+            <span style="color:#64748b">מע&quot;מ (משוער)</span><span id="sum-vat" style="font-weight:600">&#8362;0</span></div>
+          <div class="summary-row total" style="display:flex;justify-content:space-between;padding:12px 0;font-size:16px;font-weight:700;border-top:2px solid #e2e8f0;color:#1e3a8a">
+            <span>סה&quot;כ לתשלום (משוער)</span><span id="sum-total">&#8362;0</span></div>
+        </div>
+      </div>
+
+      <div style="background:#f0f9ff;border-inline-end:4px solid #1e3a8a;padding:10px 14px;border-radius:4px;font-size:12px;color:#475569;margin-top:12px">
+        &#128161; PDF נוצר דרך הדפדפן. ההזמנה נשלחת ידנית במייל / וואטסאפ. סימון "נשלח" מעדכן את הסטטוס במערכת.
+      </div>
+    </div>
+  </div>
+</div>

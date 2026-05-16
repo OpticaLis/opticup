@@ -22,7 +22,7 @@ const state = {
   tenants: [],
 };
 
-window.addEventListener('DOMContentLoaded', async () => {
+async function bootstrap() {
   // 1. Gate on platform super admin (RPC server-side check)
   const okay = await gateAuthOrRedirect();
   if (!okay) return;
@@ -49,7 +49,13 @@ window.addEventListener('DOMContentLoaded', async () => {
       import('./catalog-detail-pane.js').then(m => m.renderDetailPane(state));
     }
   });
-});
+}
+
+// Expose bootstrap on window so inventory-shell-lens.js can dispatch on
+// first activation (DOMContentLoaded already fired by the time the module
+// loads dynamically) — per M1_INVENTORY_UNIFIED_SCREEN SPEC §0.B DG-2.
+window.LensCatalogAdmin = { bootstrap };
+window.addEventListener('DOMContentLoaded', bootstrap);  // legacy direct-page path
 
 // Selection callbacks — clear downstream + load next column
 async function onBrandSelected(brand) {

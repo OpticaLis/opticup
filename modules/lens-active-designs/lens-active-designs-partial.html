@@ -1,0 +1,22 @@
+<!-- lens-active-designs-partial.html — body fragment for inventory.html lens-tab.
+     M1_INVENTORY_UNIFIED_SCREEN SPEC §1.5 — frames-aligned tokens via lens-tabs.css. -->
+
+<div id="access-gate" style="display:none">
+  <div class="empty-state">אין הרשאה למסך זה (lens.designs.manage).</div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="lens-page-title">&#128208; דגמי עדשות פעילים</div>
+
+  <div class="lens-filter-bar">
+    <label>סוג ייצור:</label>
+    <button class="chip active" data-production-filter="stock" id="filter-stock">&#128230; מלאי קבוע</button>
+    <button class="chip" data-production-filter="custom" id="filter-custom">&#127919; מיוחד הזמנה</button>
+    <label>מותג:</label>
+    <select id="filter-brand"><option value="">— הכל —</option></select>
+  </div>
+
+  <div class="lens-panel">
+    <div id="designs-container"><div class="empty-state">טוען…</div></div>
+  </div>
+</div>

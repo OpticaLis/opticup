@@ -1,0 +1,40 @@
+<!-- lens-inventory-partial.html — body fragment for inventory.html lens-tab.
+     Fetched lazily by InvShellLens; injected into the section.lens-tab-section
+     with data-tab="inventory". Semantic markup only — visual tokens applied
+     by css/lens-tabs.css (M1_INVENTORY_UNIFIED_SCREEN SPEC §1.5).
+     Internal #access-gate + #app retained so the existing
+     modules/lens-inventory/* JS module bootstrap can run without modification. -->
+
+<div id="access-gate" style="display:none">
+  <div class="empty-state">אין הרשאה למסך זה (lens.inventory.view).</div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="lens-page-title">&#128300; ניהול מלאי עדשות <span class="badge">תצוגה</span></div>
+
+  <div class="lens-filter-bar">
+    <label>סוג ייצור:</label>
+    <button class="chip active" data-production-filter="stock" id="filter-stock">&#128230; מלאי קבוע</button>
+    <button class="chip" data-production-filter="custom" id="filter-custom">&#127919; מיוחד הזמנה</button>
+  </div>
+
+  <div class="lens-filter-bar">
+    <label>מותג:</label>
+    <select id="filter-brand"><option value="">— הכל —</option></select>
+    <label>דגם:</label>
+    <select id="filter-design"><option value="">— בחר דגם —</option></select>
+    <label>וריאציה:</label>
+    <select id="filter-variant"><option value="">— בחר וריאציה —</option></select>
+  </div>
+
+  <div class="lens-grid-layout">
+    <div class="lens-panel">
+      <div class="lens-panel-header"><h3>טבלת SPH &times; CYL</h3></div>
+      <div id="grid-container" style="padding:16px"><div class="empty-state">בחר וריאציה לתצוגה</div></div>
+    </div>
+    <div class="lens-panel">
+      <div class="lens-panel-header"><h3>חבילות מלאי (Lots)</h3></div>
+      <div id="lot-container" style="padding:16px"><div class="empty-state">בחר תא בטבלה לצפייה בחבילות</div></div>
+    </div>
+  </div>
+</div>

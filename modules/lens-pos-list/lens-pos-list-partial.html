@@ -1,0 +1,55 @@
+<!-- lens-pos-list-partial.html — body fragment for inventory.html lens-tab.
+     M1_INVENTORY_UNIFIED_SCREEN SPEC §1.5 — frames-aligned tokens via lens-tabs.css. -->
+
+<div id="access-gate" style="display:none">
+  <div class="empty-state">אין הרשאה למסך זה (lens.po.view).</div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="lens-page-title">
+    &#128203; הזמנות פעילות — עדשות
+    <span class="badge" id="pos-count-badge">טוען...</span>
+    <span style="flex:1"></span>
+    <button class="btn btn-p btn-primary" type="button" onclick="InvShellLens.setActive('purchase-order')">&#10133; הזמנה חדשה</button>
+  </div>
+
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card active" data-stat-filter="all">
+      <div class="stat-label">הכל</div><div class="stat-value" id="stat-all">0</div>
+      <div class="stat-sub">סה&quot;כ הזמנות</div></div>
+    <div class="stat-card draft" data-stat-filter="draft">
+      <div class="stat-label">טיוטות</div><div class="stat-value" id="stat-draft">0</div>
+      <div class="stat-sub">טרם נשלחו</div></div>
+    <div class="stat-card sent" data-stat-filter="sent">
+      <div class="stat-label">נשלחו</div><div class="stat-value" id="stat-sent">0</div>
+      <div class="stat-sub">בהמתנה לסחורה</div></div>
+    <div class="stat-card partial" data-stat-filter="partial">
+      <div class="stat-label">חלקיות</div><div class="stat-value" id="stat-partial">0</div>
+      <div class="stat-sub">חלק התקבל</div></div>
+    <div class="stat-card received" data-stat-filter="fully_received">
+      <div class="stat-label">הושלמו</div><div class="stat-value" id="stat-received">0</div>
+      <div class="stat-sub">קבלה מלאה</div></div>
+  </div>
+
+  <div class="lens-filter-bar">
+    <label>סינון:</label>
+    <select id="filter-supplier"><option value="">&#127970; ספק: הכל</option></select>
+    <select id="filter-include-cancelled">
+      <option value="exclude">&#128230; ביטולים: הסתר</option>
+      <option value="include">&#128230; ביטולים: הצג</option>
+      <option value="only">&#128230; ביטולים בלבד</option>
+    </select>
+    <input type="text" id="filter-search" placeholder="&#128269; חיפוש: PO# / ספק" style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;font-family:inherit;width:240px" />
+    <button class="btn btn-g btn-sm" id="btn-clear-filters" type="button">&#10227; נקה סינון</button>
+  </div>
+
+  <div class="lens-panel">
+    <div class="lens-panel-header">
+      <h3>הזמנות</h3>
+      <span class="results-count" id="results-count" style="font-size:12px;color:#64748b">—</span>
+    </div>
+    <div id="table-container">
+      <div class="empty-state">טוען הזמנות...</div>
+    </div>
+  </div>
+</div>
