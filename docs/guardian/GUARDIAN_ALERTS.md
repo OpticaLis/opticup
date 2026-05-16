@@ -2,8 +2,8 @@
 
 > **Note:** Sentinel re-generates the section above the LIGHTHOUSE-CRON marker each scan. The Lighthouse cron appends below the marker. Do not delete the marker line.
 
-**Last refresh:** **2026-05-16 00:10 UTC+3 — targeted Pipeline audit on `M1_LENS_PHASE_2_COMPLETION` (Night Pipeline Stage 8). Missions 1+8+10 ran clean: 0 NEW CRITICAL / 0 NEW HIGH / 0 NEW MEDIUM / 0 NEW LOW. 23 files changed across 7 Pipeline commits (`pre-night-pipeline-2026-05-15..538157e`), all in-scope (M1 + shared/js + root HTML on allowlist + _archive). Zero out-of-scope drift; no main-branch ops; Prizma row-count delta = 0 across 4 stock tables; smoke 7/7 PASS throughout. Full audit report: `_archive/night-pipeline-2026-05-15/SENTINEL_AUDIT.md`. The carry-state pending-entry hook warning persists (Foreman to decide sweep timing at Stage 9). All other prior carry items unchanged.** Prior refreshes: 2026-05-15 06:07 UTC — scheduled hourly run, Missions 1 + 2 refreshed. Prior refreshes: 2026-05-15 07:50 UTC (Missions 3 + 4 + 5 + 8 four-hour), 2026-05-15 03:25 UTC (Missions 6 + 7 + 9 daily). Initial 10-mission sweep was 2026-05-14 18:37 UTC; Mission 10 section preserved from prior run (per Sentinel "incremental scan" protocol).
-**Production status (this refresh):** 🟢 healthy. **Delta vs 2026-05-15 07:50 UTC refresh:** 0 NEW CRITICAL, 0 NEW HIGH, 0 NEW MEDIUM, **1 NEW LOW (L-NEW-34-2 — Cowork-VM-mount truncation artifact on `scripts/checks/*` + `verify.mjs`; git content is correct, only the VM filesystem view is truncated; zero production / Windows-desktop / Claude Code execution impact)**. **CONFIRMED RESOLVED this refresh:** Rule 18 UNIQUE constraints on 4 M1 tables (M1A-DEBT-02 — `document_links`, `payment_allocations`, `conversation_participants`, `message_reactions` all now lead with `tenant_id`); FIELD_MAP currencies gap (M1A-DEBT-03 — T.CURRENCIES + 6 currency rows landed in `js/shared.js` + `js/shared-field-map.js`); verify-hook regex fixes (rule-15 quoted policy names + rule-21 top-level anchor per commit `913fa47` — git content correct, 38 prior false-positives eliminated). **Window scope:** 10 commits since prior 1+2 scan, all within M1A_DEBT_SWEEP closure cycle. **Zero new tables / RPCs / migrations / Edge Functions / production JS / production HTML.** **Persisting:** M-NEW-34-1 (FUNNEL_ROADMAP P2.3 still PLANNED), M-NEW-33-3 (Hebrew-locale class), M-NEW-33-4 (CLAUDE.md §0.5 prose stale), L-NEW-33-1 (column-not-found errors silent — cycle 1/4 toward close), L-NEW-33-2 (`snapshots/` not on root-allowlist), L-NEW-29-1 (GLOBAL_MAP automation-engine v7 stale), M-NEW-29-2 (M4 MODULE_MAP backlog). **No CRITICAL/HIGH delta.**
+**Last refresh:** **2026-05-16 03:30 UTC — scheduled daily run; Missions 6 + 7 + 9 refreshed. Delta vs 2026-05-15 07:50 UTC + 2026-05-16 00:10 UTC Pipeline audit: 0 NEW CRITICAL, 2 NEW HIGH (DB-side view permission/schema errors recurring in Postgres logs — anon-role consumers hitting endpoints the live schema does not satisfy), 2 NEW MEDIUM (doc-drift on M3 SC + M1 ROADMAP Lens-1B marker), 2 NEW LOW (storefront_config_public seq-scan ratio + single SMS failed row 21h old).** Prior refreshes: 2026-05-16 00:10 UTC Pipeline audit (Missions 1+8+10 ALL CLEAR — see `_archive/night-pipeline-2026-05-15/SENTINEL_AUDIT.md`), 2026-05-15 07:50 UTC (Missions 3+4+5+8 four-hour), 2026-05-15 06:07 UTC (Missions 1+2 hourly). Initial 10-mission sweep was 2026-05-14 18:37 UTC.
+**Production status (this refresh):** 🟡 **WATCH** — production user flows are healthy (sent messages green, EFs all 200 OK, smoke 7/7 PASS), but two recurring DB-side view errors fire multiple times per minute on the anon read path. Zero customer reports; the affected consumers appear to handle the error gracefully (no user-visible failure surfaced). However the error volume is high enough that it is **noise that hides real problems** — both warrant Architect triage at the next session. **CONFIRMED RESOLVED this refresh:** **M-NEW-34-1** (FUNNEL_ROADMAP P2.3 PLANNED → ✅ CLOSED 2026-05-14) — flipped via the same day's harvest commits. Phase 2 P2.1 also flipped to ✅ CLOSED 2026-05-15 (today's M4_FB_CAPI_HYBRID_DEDUPLICATION). **NEW THIS REFRESH:** **H-NEW-34-1** (`v_ai_content` anon-SELECT denied, 6 fires/hour); **H-NEW-25-1 RE-OPENED** (was 5+ silent cycles, recommended for downgrade — now firing again on `v_storefront_products.updated_at`); **M-NEW-34-2** (M3 SC 5 days stale, missed FB CAPI handoff + outage diagnosis); **M-NEW-34-3** (M1 ROADMAP Lens-1B still ⬜ despite 5 SPECs closed). **Persisting carries:** M-NEW-33-3, M-NEW-33-4, L-NEW-29-1, L-NEW-33-2, L-NEW-32-1, M-NEW-30-1, M-NEW-29-2.
 
 ---
 
@@ -15,12 +15,19 @@ None.
 
 ## Active HIGH alerts
 
-### H-NEW-25-1 — `v_storefront_products.updated_at does not exist` (consumer error in Postgres logs)
+### H-NEW-34-1 — NEW: `permission denied for view v_ai_content` recurring (6 fires/hour, anon-role consumer)
 
-- **Status:** carry, **NOT re-observed in last 24h** (5th consecutive silent cycle — RECOMMEND downgrade to LOW at next refresh).
-- **Impact:** consumer code (likely a storefront ISR refresh job) attempts to read a column that doesn't exist on the view. When it fires, the underlying refresh task fails silently.
-- **Action:** **Downgrade to LOW or close at next daily refresh if silent for a 5th+ cycle.** Three+ silent cycles is the agreed threshold for "the consumer is no longer firing this query." If re-fires → open SPEC `M3_STOREFRONT_PRODUCTS_VIEW_FIX`.
-- **Owner:** opticup-architect to triage at next session.
+- **Status:** NEW this refresh. Postgres logs show 6 `permission denied for view v_ai_content` ERROR events in the last 60 minutes, several per minute at peak. Live `information_schema.role_table_grants` audit confirms: `anon` has `INSERT, UPDATE, DELETE, REFERENCES, TRIGGER, TRUNCATE` on the view but **no `SELECT`**. `authenticated`, `service_role`, `optic_readonly`, `postgres` all have SELECT. The asymmetric grant (write-but-not-read for anon) is unusual and is the root cause.
+- **Impact:** A consumer routed as anon is attempting to SELECT from `v_ai_content` and the request fails server-side. The product still appears to operate (no customer reports, no 5xx on EFs), so the consumer is likely handling the error in JS — but the call is failing intermittently and any data it was supposed to render is missing. Risk: AI-generated storefront copy (description, SEO title, SEO description per the view definition) not loading on anon-side reads.
+- **Action:** Architect triage at next session. Two options: (a) `GRANT SELECT ON public.v_ai_content TO anon` after verifying the view body filters/exposes `tenant_id` correctly and that there is no cross-tenant leak (this is a multi-tenant view of `ai_content`); (b) find the consumer and re-route it via service_role or off this view entirely. **Do NOT GRANT blindly** — verify tenant isolation first. Likely 15-30 min SPEC.
+- **Owner:** opticup-architect (Tier 2). Bundle with H-NEW-25-1 below — both are anon-side view/schema mismatches.
+
+### H-NEW-25-1 — RE-OPENED: `v_storefront_products.updated_at does not exist` (recurring after 5+ silent cycles)
+
+- **Status:** **RE-OPENED this refresh.** Previously recommended for downgrade after 5 silent cycles — now firing again at 2026-05-15 23:20 UTC (~25 min before scan). Schema audit confirms: `v_storefront_products` has 22 columns and **no `updated_at` column** despite parent table `inventory.updated_at` existing. A consumer (likely a storefront ISR refresh job or external sync) is querying it and getting an error.
+- **Impact:** Same as before — the consumer's refresh task fails silently. When it fires, whatever the consumer was supposed to do (cache invalidate, ISR re-render, sync detection) does not happen. No customer-visible failure today, but the data pipeline path is broken.
+- **Action:** Architect triage at next session. Two options: (a) modify the view to expose `inventory.updated_at` (must follow Iron Rule 29 View Modification Protocol — declare via SPEC, test, GRANT preservation); (b) find the consumer and stop querying `updated_at`. Recommend (a) unless consumer-side reason discovered. ~15-30 min SPEC.
+- **Owner:** opticup-architect (Tier 2). Bundle with H-NEW-34-1 — both can ship in one Module 3 / Module 4 architect SPEC pass.
 
 ### ~~H-NEW-25-2~~ — RESOLVED this scan — M3 SESSION_CONTEXT.md NUL-padded (Cowork-VM artifact)
 
@@ -31,11 +38,25 @@ None.
 
 ## Active MEDIUM alerts
 
-### M-NEW-34-1 — NEW: FUNNEL_ROADMAP P2.3 row stale (says PLANNED, SPEC closed today)
+### M-NEW-34-3 — NEW: M1 ROADMAP Lens-1B marker still ⬜ despite 5 Phase 1B SPECs closed
 
-- **Status:** NEW this refresh. `roles/site-overseer/FUNNEL_ROADMAP.md` line 163 still reads `| P2.3 | M4_TEMPLATE_VALIDATION_UNIFIED | 6 | 2-3 hrs | PLANNED |` but per M4 SESSION_CONTEXT 2026-05-14, this SPEC `🟢 CLOSED via Full-Auto Pipeline (Overnight Bundle Tier A.1)` — "first Phase 2 SPEC to close." Doc-drift class: ROADMAP marker behind reality.
-- **Impact:** A Site Overseer session reading FUNNEL_ROADMAP would believe P2.3 is still open and could attempt to re-author it. The SPEC is fully closed in code (send-message v25→v26, automation-engine v15→v16, new `_shared/template-validation.ts`, new `crm_automation_rules.last_error` column). M4 SC and the SPEC folder accurately reflect closure.
-- **Action:** in the next Site Overseer / opticup-architect session, flip P2.3 row from `PLANNED` to `✅ CLOSED 2026-05-14 — modules/Module 4 - CRM/docs/specs/M4_TEMPLATE_VALIDATION_UNIFIED/`. Consider also adjusting the Phase 2 header banner (Phase 2 has now started — first row closed). ~3 min prose fix. Bundle with M-NEW-33-4 in the same architect session.
+- **Status:** NEW this refresh. `modules/Module 1 - Inventory Management/ROADMAP.md:84` reads `| Lens-1B | ⬜ | **מלאי עדשות — שלב 1B** — 6 מסכי לקוח | ...` but M1 SESSION_CONTEXT records FIVE Lens-1B-aligned SPECs closed in last 48h: `M1_LENS_PHASE_1B_FOUNDATION` 🟢, `M1B_FOUNDATION_PERMISSIONS_HOTFIX` 🟢, `M1_LENS_PHASE_1B_PROCUREMENT` 🟡, `M1_LENS_PHASE_1B_GAP_CLOSURE` 🟢, `M1_LENS_PHASE_2_COMPLETION` 🟡. 7 lens screens wired to ERP main menu (Part D of PHASE_2_COMPLETION). Phase 1B work is materially done; ROADMAP marker is behind reality.
+- **Impact:** Future M1 sessions reading the ROADMAP would believe Phase 1B hasn't started. Architect (Foreman) is best positioned to decide ✅ vs 🟡 (the latter reflects PHASE_2_COMPLETION's deferred Part A Tier-3 work).
+- **Action:** at next M1 Module Close Ceremony, flip line 84 marker (✅ or 🟡) and add a Lens-1B closure block analogous to Lens-1A pointing at the 5 SPEC folders. ~10 min. Bundle with M-NEW-34-2.
+
+### M-NEW-34-2 — NEW: M3 SESSION_CONTEXT 5 days stale, missed FB CAPI handoff + outage diagnosis
+
+- **Status:** NEW this refresh. `modules/Module 3 - Storefront/docs/SESSION_CONTEXT.md` reads `## Last updated: 2026-05-11`. Since then:
+  - 2026-05-15 — `M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF` 🟢 CLOSED (the storefront-side handoff that completes the FB CAPI dedup loop M4 shipped on the ERP side; directly impacts ad-budget attribution).
+  - 2026-05-15 evening — `docs(m3): storefront outage diagnosis 2026-05-15 evening` (`e479ce7`).
+  - 9 SPEC folder artifacts harvested into Module 3 docs/specs (`ee2dd03`).
+- **Impact:** Per CLAUDE.md §7 Authority Matrix, this file is the **authoritative source of M3 phase status**. Next M3 session would start from a wrong baseline. Medium not high because SPEC folders themselves are correct; the storefront repo is the second authoritative source.
+- **Action:** in next M3 architect session, append 3 short blocks to M3 SESSION_CONTEXT: (1) FB CAPI handoff closure, (2) outage diagnosis summary + resolution, (3) Brief harvest. ~10 min. Bundle with M-NEW-34-3.
+
+### ~~M-NEW-34-1~~ — RESOLVED this refresh — FUNNEL_ROADMAP P2.3 flipped to ✅
+
+- **Status:** **RESOLVED.** `roles/site-overseer/FUNNEL_ROADMAP.md` line 163 now reads `| P2.3 | M4_TEMPLATE_VALIDATION_UNIFIED | 6 | 2-3 hrs | ✅ CLOSED 2026-05-14 |`. P2.1 also flipped today to `✅ CLOSED 2026-05-15 — ERP-side CAPI substrate shipped` (per M4_FB_CAPI_HYBRID_DEDUPLICATION close).
+- **Closing action:** none required. Phase 2 is now formally in progress with 2 of 3 rows closed (P2.1 + P2.3).
 
 ### ~~M-NEW-33-1~~ — RESOLVED post-scan — M1 SESSION_CONTEXT.md refreshed
 
@@ -144,11 +165,22 @@ Stable; no change. See full `GUARDIAN_REPORT.md` for details.
 - **Impact:** ZERO on production / on Windows-desktop / on Claude Code execution paths. A pre-commit hook executed FROM INSIDE the Cowork VM mount would crash with SyntaxError on import; everywhere else (Windows-desktop, Mac, CI) sees the correct git content.
 - **Action:** none on the repo. Implement L-NEW-27-1 (extend `scripts/checks/null-bytes.mjs` to also detect the truncation class + cover `.json` / `.sql` extensions) — that work would catch this artifact at the gate level. Currently a known-and-tolerated cross-FS artifact.
 
-### L-NEW-33-1 — 3 distinct Postgres column-not-found errors — silent 1/4 cycles
+### L-NEW-34-3 — NEW: `storefront_config_public` 100% seq-scan ratio (NEW Public Data Layer mirror table)
 
-- **Status:** carry, ON TRACK TO CLOSE. Refresh 2026-05-15 03:25 UTC: zero ERROR-severity events in the last 60 minutes — none of the 3 (`b.event_id`, `"locale"`, `l.to_address`) recurred over 9 hours. **Silent cycle 1 of 4.** If silent through next 3 daily refreshes → CLOSE.
-- **Impact:** zero customer impact; consumer code surfaces an error and handles it; nothing observable in product.
-- **Action:** continue watch-flag. If re-fires → open hotfix SPEC. Likely the same outdated-client-query class as H-NEW-25-1.
+- **Status:** NEW this refresh. `storefront_config_public` had 38,289 sequential scans / only 9 index scans lifetime (100% miss rate) under anon read load. The table is one of the 6 new Public Data Layer mirror tables (`*_public` per memory `project_public_data_layer`). Likely missing an index on the lookup key (probably `tenant_id` or `slug`).
+- **Impact:** Cost is negligible today — table is tiny — but at multi-tenant scale (or at higher anon traffic) this becomes a CPU hotspot.
+- **Action:** Add explicit index in the next Public Data Layer follow-up SPEC (queued: `BRAND_VISIBILITY_CASCADE` or `FUNCTION_REVOKES` per project memory). ~5 min when paired with the related SPEC. `storefront_reviews` (100% seq-scan / 1 lifetime idx_scan) has the same pattern — fix both in one pass.
+
+### L-NEW-34-4 — NEW: single SMS `crm_message_log status='failed'` row at 06:47 UTC 2026-05-15
+
+- **Status:** NEW this refresh. 1 row in 24h with `status='failed'`, `error_message=NULL`, `channel='sms'`, `template_id=NULL`, `broadcast_id=NULL`, created 2026-05-15 06:47 UTC. Single fire, ~21 hours old, did not recur. The 3 `rejected` rows in the same window are healthy gate behavior (Template Validation Unified is working).
+- **Impact:** Low — single fire, silent since. The upstream Template Validation gate would have caught a bad-template root cause; this is likely an SMS provider transient or a manual-send failure unrelated to the validation pipeline.
+- **Action:** Architect triage at next M4 session. Pull the row by id (`847e1a9d-f76b-49bb-98a8-8e7921a01af8`) and inspect — `content` field may carry context absent from the queryable columns. ~10 min triage.
+
+### ~~L-NEW-33-1~~ — RESOLVED partially this refresh — column-not-found errors update
+
+- **Status:** **PARTIALLY RESOLVED.** Of the 3 distinct errors tracked under L-NEW-33-1 (`b.event_id`, `"locale"`, `l.to_address`), none of the 3 specific signatures recurred in the last 24h. However, **`v_storefront_products.updated_at` re-fired today** — see H-NEW-25-1 RE-OPENED. The `"locale"` error was likely a sibling of the same outdated-consumer-query class as H-NEW-25-1; if H-NEW-25-1 fix lands, expect `"locale"` to be addressed in the same SPEC.
+- **Closing action:** Close the L-NEW-33-1 wrapper as superseded by H-NEW-25-1 (re-opened). The H-NEW-25-1 root-cause SPEC should sweep the consumer codebase for ALL `updated_at|locale|to_address` SELECT on Views.
 
 ### L-NEW-33-2 — NEW: `snapshots/` directory at repo root not on `root-allowlist.json`
 
