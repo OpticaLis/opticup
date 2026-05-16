@@ -1087,3 +1087,25 @@ Any Brief touching message dispatch, allowlists, templates, or recipient logic M
 ### Proposed but NOT applied (in audit report only)
 - P-AR-04 (MEDIUM) — Brief deliverables enumerate verify-hook compatibility envelope.
 - P-AR-06 (LOW) — Module Close Ceremony harvest Architect-targeted patterns separately.
+
+
+### P42 — Self-validate file integrity BEFORE delivering to Daniel (30-second pre-delivery check).
+
+**Promoted to skill 2026-05-15** (validated 3/3 per documented past truncation incidents: 2026-04-21 crm.html 286 NULs, 2026-04-24 CLAUDE.md + M3 SESSION_CONTEXT NULs, 2026-05-13 multiple SKILL.md write failures, 2026-05-15 MONOREPO_MIGRATION_BRIEF.md mid-section truncation during Edit-based 10-edit batch). Reference: Validation Report Track D #X4.
+
+After every Write or Edit that touches a file >100 lines OR >5KB, **and before delivering anything to Daniel that references that file**, run this 30-second check:
+
+1. **Line count sanity:** `wc -l <path>` returns approximately the expected total (within ±5%).
+2. **EOF marker present:** `tail -3 <path>` shows the actual end of intended content, not mid-sentence / mid-table-row / mid-code-block.
+3. **Marker grep:** for the 3-5 most distinctive phrases I just wrote, `grep -c "<marker>"` returns ≥1 for each.
+4. **Internal links resolve:** for any `computer://` or sibling-file path I just added, `ls <path>` succeeds.
+
+**If ANY check fails:** the Write/Edit silently truncated. **Do not deliver yet.** Recovery path per existing "Cowork VM File-Write Failures" rule (lines 195+): switch to shell heredoc write via `mcp__workspace__bash`, verify again, deliver.
+
+**Why this exists:** the Edit tool returns "success" even when it has truncated the file. The harness tracks file state but the tracking is approximate; for large multi-section files with multiple sequential edits, mid-file content can drop silently. Daniel sees "10 edits applied 🟢" → reads the file → finds §9-12 missing. This 30-second check catches it before delivery, every time.
+
+**Anti-pattern:** trusting the Edit tool's "success" return without verification on files >100 lines.
+
+**Cumulative cost of skipping:** in the 2026-05-15 incident, I lost 60 lines of §9-12 in MONOREPO_MIGRATION_BRIEF.md and had to restore from `git show 473cdc8:...` then re-append the missing content via shell heredoc. ~15 minutes of recovery work for a 30-second check that would have caught it pre-delivery.
+
+**This rule applies to every Write/Edit, not just batched edits.** Single-edit truncations have also been observed (less frequent but documented).
