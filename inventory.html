@@ -26,13 +26,56 @@
 <!-- Module CSS -->
 <link rel="stylesheet" href="css/header.css">
 <link rel="stylesheet" href="css/inventory.css">
+<link rel="stylesheet" href="css/inventory-shell.css">
 </head>
-<body>
+<body class="has-inv-sidebar">
 
 <div id="low-stock-banner" style="display:none; background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:10px 16px; margin:8px 16px; cursor:pointer; align-items:center; gap:10px" onclick="openLowStockModal()">
   <span style="font-size:18px">&#9888;&#65039;</span>
   <span id="low-stock-banner-text" style="font-weight:600; color:#856404"></span>
 </div>
+
+<!-- Inventory shell sidebar — M1_INVENTORY_REDESIGN SPEC §2.1 (2026-05-16).
+     Right-side (RTL) navigation hub for 4 product categories + 4 cross-category items. -->
+<aside id="inv-sidebar">
+  <div class="inv-sidebar-title">&#128230; קטגוריות מלאי</div>
+  <div class="inv-cat-item active" data-category="frames" data-permission="inventory.view">
+    <span class="inv-cat-icon">&#128083;</span>
+    <span class="inv-cat-label">מסגרות</span>
+  </div>
+  <div class="inv-cat-item" data-category="lenses" data-permission="lens.inventory.view" data-feature="lenses">
+    <span class="inv-cat-icon">&#128300;</span>
+    <span class="inv-cat-label">עדשות</span>
+  </div>
+  <div class="inv-cat-item disabled" data-category="contact-lenses" title="בקרוב">
+    <span class="inv-cat-icon">&#128065;</span>
+    <span class="inv-cat-label">עדשות מגע</span>
+    <span class="inv-cat-badge">בקרוב</span>
+  </div>
+  <div class="inv-cat-item disabled" data-category="accessories" title="בקרוב">
+    <span class="inv-cat-icon">&#127890;</span>
+    <span class="inv-cat-label">אביזרים</span>
+    <span class="inv-cat-badge">בקרוב</span>
+  </div>
+
+  <div class="inv-sidebar-title spaced">&#128259; חוצה-קטגוריות</div>
+  <div class="inv-cat-item" data-category="suppliers" data-permission="suppliers.view">
+    <span class="inv-cat-icon">&#128666;</span>
+    <span class="inv-cat-label">ספקים</span>
+  </div>
+  <div class="inv-cat-item" data-category="incoming-invoices">
+    <span class="inv-cat-icon">&#128196;</span>
+    <span class="inv-cat-label">חשבוניות נכנסות</span>
+  </div>
+  <div class="inv-cat-item" data-category="unified-log" data-permission="settings.view">
+    <span class="inv-cat-icon">&#128202;</span>
+    <span class="inv-cat-label">לוג מערכת מאוחד</span>
+  </div>
+  <div class="inv-cat-item" data-category="access-sync" data-permission="sync.view" data-feature="access_sync">
+    <span class="inv-cat-icon">&#128260;</span>
+    <span class="inv-cat-label">סנכרון Access</span>
+  </div>
+</aside>
 
 <nav id="mainNav">
   <button data-tab="entry" data-tab-permission="inventory.edit" class="active" onclick="showTab('entry')">&#128230; הכנסת מלאי</button>
@@ -40,13 +83,8 @@
   <button data-tab="purchase-orders" data-tab-permission="purchasing.view" onclick="showTab('purchase-orders')">&#128203; הזמנות רכש</button>
   <button data-tab="inventory" data-tab-permission="inventory.view" onclick="showTab('inventory')">&#128451; מלאי ראשי</button>
   <button data-tab="brands" data-tab-permission="brands.view" onclick="showTab('brands')">&#127991; ניהול מותגים</button>
-  <button data-tab="suppliers" data-tab-permission="suppliers.view" onclick="showTab('suppliers')">&#128101; ניהול ספקים</button>
-  <button data-tab="systemlog" data-tab-permission="settings.view" class="admin-tab" onclick="showTab('systemlog')">&#128203; לוג מערכת</button>
-  <button data-tab="access-sync" data-tab-permission="sync.view" data-feature="access_sync" onclick="showTab('access-sync')">&#128260; סנכרון Access</button>
   <button data-tab="stock-count" data-tab-permission="stock_count.create" data-feature="stock_count" onclick="showTab('stock-count')">&#128202; ספירת מלאי</button>
   <button data-tab="returns" onclick="showTab('returns')">&#128260; זיכויים</button>
-  <button data-tab="incoming-invoices" onclick="showTab('incoming-invoices')">&#128232; חשבוניות נכנסות</button>
-
 </nav>
 
 <main>
@@ -326,9 +364,12 @@
       <button class="btn btn-d" onclick="cancelSupplierNumberEdit()">&#10006; בטל</button>
       <span style="font-size:13px;color:#888">שינוי מספר חסום אם לספק יש הזמנות רכש</span>
     </div>
+    <!-- Category filter pills (M1_INVENTORY_REDESIGN SPEC §2.3, 2026-05-16).
+         Populated client-side by _renderSupplierFilterBar() in suppliers.js. -->
+    <div id="supplier-filter-bar" class="supplier-filter-bar"></div>
     <div class="table-wrap">
       <table id="suppliers-table">
-        <thead><tr><th>מספר ספק</th><th>שם ספק</th><th>פעולות</th></tr></thead>
+        <thead><tr><th>מספר ספק</th><th>שם ספק</th><th>קטגוריות</th><th>פעולות</th></tr></thead>
         <tbody id="suppliers-body"></tbody>
       </table>
     </div>
@@ -574,6 +615,45 @@
 
 <!-- ========== TAB: INCOMING INVOICES ========== -->
 <section id="tab-incoming-invoices" class="tab">
+</section>
+
+<!-- ========== TAB: UNIFIED LOG (M1_INVENTORY_REDESIGN SPEC §2.4, 2026-05-16) ========== -->
+<section id="tab-unified-log" class="tab">
+  <div class="card">
+    <h3>&#128202; לוג מערכת מאוחד</h3>
+    <div class="ul-filter-bar">
+      <select id="ul-cat">
+        <option value="">קטגוריה — הכל</option>
+        <option value="frames">מסגרות</option>
+        <option value="lenses">עדשות</option>
+        <option value="cross">חוצה-קטגוריות</option>
+      </select>
+      <select id="ul-action">
+        <option value="">פעולה — הכל</option>
+      </select>
+      <select id="ul-user">
+        <option value="">משתמש — הכל</option>
+      </select>
+      <input type="date" id="ul-from" title="מתאריך">
+      <input type="date" id="ul-to" title="עד תאריך">
+      <input type="search" id="ul-q" placeholder="חיפוש חופשי — ברקוד / שם פריט...">
+      <button class="btn btn-p" onclick="loadUnifiedLog()">&#128260; רענן</button>
+    </div>
+    <div class="table-wrap">
+      <table id="ul-table">
+        <thead><tr>
+          <th>תאריך</th><th>מקור</th><th>קטגוריה</th><th>פעולה</th>
+          <th>משתמש</th><th>פריט</th><th>שינוי כמות</th><th>סכום</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="ul-pagination">
+      <button id="ul-prev" onclick="ulPage(-1)">&#8592; הקודם</button>
+      <span id="ul-page-label">1</span>
+      <button id="ul-next" onclick="ulPage(1)">הבא &#8594;</button>
+    </div>
+  </div>
 </section>
 
 </main>
@@ -965,6 +1045,8 @@
 <script src="modules/access-sync/sync-details.js"></script>
 <script src="modules/access-sync/pending-panel.js"></script>
 <script src="modules/access-sync/pending-resolve.js"></script>
+<script src="modules/inventory/inventory-shell.js"></script>
+<script src="modules/inventory/unified-log.js"></script>
 <script src="modules/admin/admin.js"></script>
 <script src="js/header.js"></script>
 <script src="js/alerts-badge.js"></script>

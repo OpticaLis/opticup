@@ -1,0 +1,224 @@
+/* inventory-shell.css — sidebar shell for the inventory module.
+   Sealed by M1_INVENTORY_REDESIGN SPEC §2.1, 2026-05-16.
+   Right-side (RTL) sidebar with 4 product categories + 4 cross-category items.
+   Page content (mainNav + main) gets margin-inline-end:240px so it doesn't underlap. */
+
+/* ===== Sidebar shell ===== */
+#inv-sidebar {
+  position: fixed;
+  top: 60px; /* sits below the sticky tenant header */
+  inset-inline-end: 0;
+  width: 240px;
+  height: calc(100vh - 60px);
+  background: #f8fafc;
+  border-inline-start: 1px solid #e2e8f0;
+  padding: 20px 0;
+  overflow-y: auto;
+  z-index: 50;
+  font-family: 'Heebo', sans-serif;
+  box-sizing: border-box;
+}
+
+body.has-inv-sidebar > main,
+body.has-inv-sidebar > #mainNav,
+body.has-inv-sidebar > #low-stock-banner {
+  margin-inline-end: 240px;
+}
+
+.inv-sidebar-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  padding: 0 20px 12px;
+  letter-spacing: 0.8px;
+  font-weight: 600;
+}
+
+.inv-sidebar-title.spaced {
+  margin-top: 24px;
+}
+
+.inv-cat-item {
+  padding: 12px 20px;
+  cursor: pointer;
+  border-inline-start: 3px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #334155;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  user-select: none;
+}
+
+.inv-cat-item:hover {
+  background: #f1f5f9;
+}
+
+.inv-cat-item.active {
+  background: #eff6ff;
+  border-inline-start-color: #1e3a8a;
+  color: #1e3a8a;
+  font-weight: 600;
+}
+
+.inv-cat-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inv-cat-item .inv-cat-icon {
+  font-size: 18px;
+  width: 22px;
+  text-align: center;
+}
+
+.inv-cat-item .inv-cat-label {
+  flex: 1;
+}
+
+.inv-cat-item .inv-cat-badge {
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.inv-cat-item.active .inv-cat-badge {
+  background: #1e3a8a;
+  color: white;
+}
+
+/* ===== Suppliers category badges (Part C — used in C4) ===== */
+.supplier-cat-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-inline-start: 6px;
+  white-space: nowrap;
+}
+
+.supplier-cat-badge.frames {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.supplier-cat-badge.lenses {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* Supplier filter pills */
+.supplier-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 0;
+}
+
+.supplier-filter-bar .filter-label {
+  font-size: 13px;
+  color: #64748b;
+  margin-inline-end: 8px;
+}
+
+.supplier-filter-pill {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: white;
+  cursor: pointer;
+  font-size: 13px;
+  color: #334155;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.supplier-filter-pill:hover { border-color: #1e3a8a; }
+
+.supplier-filter-pill.active {
+  background: #1e3a8a;
+  color: white;
+  border-color: #1e3a8a;
+}
+
+.supplier-filter-pill .count {
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+/* ===== Unified log filter bar (Part D — used in C6) ===== */
+.ul-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 12px;
+}
+
+.ul-filter-bar select,
+.ul-filter-bar input[type="date"],
+.ul-filter-bar input[type="search"] {
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: white;
+}
+
+.ul-filter-bar input[type="search"] {
+  min-width: 220px;
+}
+
+.ul-pagination {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 0;
+  font-size: 13px;
+}
+
+.ul-pagination button {
+  padding: 6px 14px;
+  border: 1px solid #cbd5e1;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.ul-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== Mobile fallback — sidebar collapses to a top strip below 800px ===== */
+@media (max-width: 800px) {
+  #inv-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    border-inline-start: none;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 12px 0;
+  }
+  body.has-inv-sidebar > main,
+  body.has-inv-sidebar > #mainNav,
+  body.has-inv-sidebar > #low-stock-banner {
+    margin-inline-end: 0;
+  }
+  .inv-cat-item {
+    padding: 8px 14px;
+  }
+}

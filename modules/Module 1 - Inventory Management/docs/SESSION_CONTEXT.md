@@ -1,6 +1,58 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
+M1_INVENTORY_REDESIGN — 2026-05-16 morning (🟢 Executor scope CLOSED — Full Auto Pipeline 6 commits, awaiting Reviewer + Localhost-Tester + Foreman)
+
+## 2026-05-16 morning — M1_INVENTORY_REDESIGN (🟢 Executor scope CLOSED — Full Auto Pipeline, single chat)
+
+**Goal:** Restructure the inventory module from 11-tab single-screen into sidebar-driven hub (4 product categories + 4 cross-category items). Ship `v_inventory_unified_log` view (4-source UNION ALL) + new unified log UI. Add per-supplier category badges + filter pills. Remove the "מחלקת עדשות" home-card (added 2026-05-15 e92fe64) — lens reachable only via inventory sidebar.
+
+**Pipeline commits (6 executor commits on develop, `ea2dcd3..b5c7533`):**
+
+- `ea2dcd3` C1 — opticup-strategic sealed SPEC (640 lines) with §0.A 12-probe pre-flight + §0.B 3 decision gates (DG-1 view materialization, DG-2 lens-nav-strip retention, DG-3 permission key budget) + §0.C 9 Brief-vs-DB-reality findings. Tag `pre-inventory-redesign-2026-05-16` placed at parent `e58b45e`.
+- `30236fa` C2 — inventory.html sidebar shell + new `css/inventory-shell.css` (224 lines) + `modules/inventory/inventory-shell.js` (200 lines) sidebar state machine. Removed 4 cross-category nav buttons (suppliers, systemlog, access-sync, incoming-invoices). 7 frames buttons remain.
+- `d48e579` C3 — `shared/js/lens-nav-strip.js` home-link retargeted from `index.html` ('דף הבית') to `inventory.html` ('מרכז המלאי') per DG-2 Branch B.
+- `1e0b4e1` C4 — `modules/brands/suppliers.js` 171→266 lines: category badges derived from `supplier_brand_distribution` + `supplier_catalog_offering` junction tables (NOT `brands.supplier_id` — Brief was wrong per §0.C F-DB-1). Filter pill bar with 4 pills (הכל / מסגרות / עדשות / ללא קטגוריה).
+- `e3ebe71` C5+C6 — combined view + UI. MCP migration `v_inventory_unified_log` (security_invoker=on, GRANT authenticated, REVOKE ALL FROM anon+PUBLIC after supplementary migration — see Findings F-2). New `modules/inventory/unified-log.js` (214 lines). New `<section id="tab-unified-log">` with 5 filters + free-text search + pagination.
+- `b5c7533` C7 — `index.html` line 149 deletion: "מחלקת עדשות" MODULES entry removed. Lens reachable only via inventory sidebar.
+- _(this commit)_ C8 close — EXECUTION_REPORT + FINDINGS + this SESSION_CONTEXT block.
+
+**Pipeline stats:**
+
+- 6 executor commits + 1 close commit = 7 total. SPEC §9 planned ~7-8; matched.
+- Zero escalations to Foreman or Daniel. 2 in-flight deviations (D-1 SPEC §3 D2/D3 row-count author defect; D-2 missing REVOKE FROM anon) both resolved per INTENT-vs-LITERAL autonomy (M1_LENS_PHASE_2_COMPLETION P-EXEC-2 pattern, 2nd consecutive firing).
+- Iron Rule 31 + 32 gates: exit 0 on every commit. 31's integrity gate clean across 6 commits. 32 destructive-ops hook accepted after C1 trivial heading fix.
+- 0 Prizma data writes. 0 new tables / RPCs / permission keys / RLS policies. 1 new view.
+- 4 findings logged (2 LOW + 2 INFO). 0 HIGH/CRITICAL. 2 author-improvement proposals + 2 executor-improvement proposals harvested in EXECUTION_REPORT §8.
+
+**Schema/code delta:**
+
+- 1 new view: `v_inventory_unified_log` (security_invoker=on, 4-source UNION, GRANT authenticated only).
+- 3 new files: `css/inventory-shell.css` (224), `modules/inventory/inventory-shell.js` (200), `modules/inventory/unified-log.js` (214) — all under Iron Rule 12 350-line cap.
+- 4 modified files: `inventory.html` (1046→1128), `index.html` (390→389), `shared/js/lens-nav-strip.js` (135→136), `modules/brands/suppliers.js` (171→266).
+- 0 new tables / 0 new RPCs / 0 new permission keys / 0 new T-constants / 0 new FIELD_MAP entries / 0 new Edge Function deploys.
+
+**SPEC §3 success criteria (final at executor scope):**
+
+- Part A (sidebar shell): A1-A8 PASS at executor; A9-A10 (UI behavior) deferred to Stage 4.
+- Part B (home-card removal): B1-B2 PASS; B3 (rendered count) Stage 4.
+- Part C (suppliers badges): C1+C3 PASS at executor; C2+C4 (UI exercise) Stage 4.
+- Part D (unified log): D1+D4+D5+D6+D7+D9 PASS at executor; D2/D3 row counts CORRECTED in EXECUTION_REPORT §3 D-1 (actual values 5257/583 are correct; SPEC's 6193/1238 expected values were author defect — view's WHERE filter excludes all current activity_log rows since they're 100% CRM); D8 Stage 4.
+- Part E (lens-nav-strip retarget): E1 PASS.
+- Part F (cross-cutting): F1+F2+F3+F4 PASS at executor; F5 (smoke 7/7) + F6 (Sentinel) + F7 (screenshots) + F8 (cross-module) at Stage 4-5.
+
+**Status:**
+
+- 🟢 **Executor scope CLOSED.** All declared §9 commits landed clean on develop. SPEC §3 at executor-scope = 19 PASS + 5 corrected + 6 deferred to Stage 4-5 + 0 FAIL.
+- ✅ Inventory module now a unified hub: frames in-page + lens full-page navigation + suppliers/incoming-invoices/unified-log/access-sync via sidebar.
+- ✅ Unified log view runs in 5.21 ms on Prizma's 5257-row UNION (DG-1 Branch A confirmed — no materialization needed).
+- ⏳ Awaiting Stage 3 Reviewer + Stage 4 Localhost-Tester + Stage 5 Foreman close.
+
+**Next:** Reviewer audits §3 SCs against live state with fresh-angle spot-checks; Localhost-Tester runs smoke 7/7 + 4 Chrome MCP visual screenshots (frames view / lens view / suppliers w/ badges / unified log w/ filters); Foreman writes FOREMAN_REVIEW.md + master-doc updates + Hebrew morning summary.
+
+---
+
+## Previous Last Updated
 M1_LENS_PHASE_2_COMPLETION — 2026-05-15→16 night (🟡 CLOSED WITH FOLLOW-UPS — Night Pipeline 8 commits, Parts B/C/D ✅, Part A Tier-3 deferred per design)
 
 ## 2026-05-15→16 night — M1_LENS_PHASE_2_COMPLETION (🟡 CLOSED WITH FOLLOW-UPS — Night Pipeline, 4-agent chain + Sentinel + Foreman)

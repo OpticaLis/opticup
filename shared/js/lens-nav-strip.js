@@ -84,11 +84,12 @@
     ensureStyles();
     container.classList.add('lens-nav-strip');
 
-    // "← דף הבית" link first (matches existing inline pattern)
+    // "← מרכז המלאי" link first — points back to inventory.html sidebar hub
+    // (M1_INVENTORY_REDESIGN SPEC §2.5, 2026-05-16). Was 'index.html' pre-Pipeline.
     var homeAnchor = document.createElement('a');
     homeAnchor.className = 'home-link';
-    homeAnchor.href = urlWithTenant('index.html');
-    homeAnchor.textContent = '← דף הבית';
+    homeAnchor.href = urlWithTenant('inventory.html');
+    homeAnchor.textContent = '← מרכז המלאי';
     container.innerHTML = '';
     container.appendChild(homeAnchor);
 
