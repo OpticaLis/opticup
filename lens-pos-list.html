@@ -80,12 +80,8 @@
 </head>
 <body>
 
-<nav id="mainNav" style="background:#fff; padding:8px 16px; margin-bottom:12px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
-  <a href="index.html" style="margin-left:16px; color:#1e3a8a; text-decoration:none;">← דף הבית</a>
-  <a href="lens-inventory.html" style="margin-left:16px; color:#1e3a8a; text-decoration:none;">מלאי</a>
-  <a href="lens-purchase-order.html" style="margin-left:16px; color:#1e3a8a; text-decoration:none;">הזמנה חדשה</a>
-  <a href="lens-goods-receipt.html" style="margin-left:16px; color:#1e3a8a; text-decoration:none;">קבלת סחורה</a>
-</nav>
+<!-- Lens department nav strip (rendered by shared/js/lens-nav-strip.js with permission gating) -->
+<nav id="lens-nav-container"></nav>
 
 <div id="access-gate" style="display:none">
   <div>אין הרשאה למסך זה (lens.po.view).</div>
@@ -140,6 +136,7 @@
 <script src="shared/js/modal-builder.js"></script>
 <script src="shared/js/toast.js"></script>
 
+<script src="shared/js/lens-nav-strip.js"></script>
 <script src="modules/lens-pos-list/lens-pos-list-main.js"></script>
 <script src="modules/lens-pos-list/lens-pos-list-table.js"></script>
 <script src="modules/lens-pos-list/lens-pos-list-filters.js"></script>

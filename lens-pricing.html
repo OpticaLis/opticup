@@ -50,11 +50,8 @@
 </head>
 <body>
 
-<nav id="mainNav" style="background:#fff; padding:8px 16px; margin-bottom:12px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
-  <a href="index.html" style="margin-left:16px; color:#3949ab; text-decoration:none;">← דף הבית</a>
-  <a href="lens-inventory.html" style="margin-left:16px; color:#3949ab; text-decoration:none;">מלאי עדשות</a>
-  <a href="lens-active-designs.html" style="margin-left:16px; color:#3949ab; text-decoration:none;">דגמים פעילים</a>
-</nav>
+<!-- Lens department nav strip (rendered by shared/js/lens-nav-strip.js with permission gating) -->
+<nav id="lens-nav-container"></nav>
 
 <div id="access-gate" style="display:none">
   <div>אין הרשאה למסך זה (lens.pricing.manage).</div>
@@ -93,6 +90,7 @@
 <script src="js/shared-ui.js"></script>
 <script src="shared/js/modal-builder.js"></script>
 
+<script src="shared/js/lens-nav-strip.js"></script>
 <script src="modules/lens-pricing/lens-pricing-main.js"></script>
 <script src="modules/lens-pricing/lens-pricing-filters.js"></script>
 <script src="modules/lens-pricing/lens-pricing-grid.js"></script>

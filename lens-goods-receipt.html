@@ -104,12 +104,8 @@
 </head>
 <body>
 
-<nav id="mainNav" style="background:#fff; padding:8px 16px; margin-bottom:12px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
-  <a href="index.html" style="margin-left:16px; color:#1e3a8a; text-decoration:none;">← דף הבית</a>
-  <a href="lens-inventory.html" style="margin-left:16px; color:#1e3a8a; text-decoration:none;">מלאי</a>
-  <a href="lens-purchase-order.html" style="margin-left:16px; color:#1e3a8a; text-decoration:none;">הזמנה חדשה</a>
-  <a href="lens-pos-list.html" style="margin-left:16px; color:#1e3a8a; text-decoration:none;">הזמנות פעילות</a>
-</nav>
+<!-- Lens department nav strip (rendered by shared/js/lens-nav-strip.js with permission gating) -->
+<nav id="lens-nav-container"></nav>
 
 <div id="access-gate" style="display:none">
   <div>אין הרשאה למסך זה (lens.gr.create).</div>
@@ -207,6 +203,7 @@
 <script src="modules/lens-goods-receipt/lens-goods-receipt-main.js"></script>
 <script src="modules/lens-goods-receipt/lens-goods-receipt-supplier.js"></script>
 <script src="modules/lens-goods-receipt/lens-goods-receipt-delivery-note.js"></script>
+<script src="shared/js/lens-nav-strip.js"></script>
 <script src="modules/lens-goods-receipt/lens-goods-receipt-lines.js"></script>
 <script src="modules/lens-goods-receipt/lens-goods-receipt-manual.js"></script>
 <script src="modules/lens-goods-receipt/lens-goods-receipt-shipping-box.js"></script>

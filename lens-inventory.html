@@ -54,12 +54,8 @@
 </head>
 <body>
 
-<!-- Top nav (minimal — Phase 1B foundation; full nav added by integration SPEC) -->
-<nav id="mainNav" style="background:#fff; padding:8px 16px; margin-bottom:12px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
-  <a href="index.html" style="margin-left:16px; color:#3949ab; text-decoration:none;">← דף הבית</a>
-  <a href="lens-active-designs.html" style="margin-left:16px; color:#3949ab; text-decoration:none;">דגמים פעילים</a>
-  <a href="lens-pricing.html" style="margin-left:16px; color:#3949ab; text-decoration:none;">קטלוג ומחירים</a>
-</nav>
+<!-- Lens department nav strip (rendered by shared/js/lens-nav-strip.js with permission gating) -->
+<nav id="lens-nav-container"></nav>
 
 <!-- Access gate (shown if permission missing) -->
 <div id="access-gate" style="display:none">
@@ -112,6 +108,7 @@
 <script src="shared/js/modal-builder.js"></script>
 
 <!-- Screen JS (load order matters for globals) -->
+<script src="shared/js/lens-nav-strip.js"></script>
 <script src="modules/lens-inventory/lens-inventory-main.js"></script>
 <script src="modules/lens-inventory/lens-inventory-filters.js"></script>
 <script src="modules/lens-inventory/lens-inventory-grid.js"></script>
