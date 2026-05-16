@@ -1,0 +1,324 @@
+/* lens-tabs.css — visual unification primitives for lens tab partials.
+   Sealed by M1_INVENTORY_UNIFIED_SCREEN SPEC §1.5 R-1..R-13 (2026-05-16).
+
+   Goal: map lens-specific UI primitives (production-type chip toggle,
+   SPH×CYL grid, designs table, PO stat cards, status chips) to frames
+   tokens so lens tabs look identical to frames tabs.
+
+   The lens partials carry semantic markup only — no inline <style>. This
+   sheet is loaded once by inventory.html. */
+
+/* ===== Lens tab-section base ===== */
+.lens-tab-section {
+  /* lens partials reuse .card, .form-row, .btn etc. from shared/css.
+     This rule scopes lens-only adjustments to the section root. */
+  padding: 0;
+}
+
+.lens-tab-section .lens-page-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lens-tab-section .lens-page-title .badge {
+  font-size: 11px;
+  background: #dbeafe;
+  color: #1e3a8a;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: normal;
+  margin-inline-start: 6px;
+}
+
+/* ===== R-3: production-type chip toggle — Navy (was Gold) ===== */
+.lens-tab-section .chip {
+  padding: 6px 14px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #475569;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lens-tab-section .chip:hover {
+  border-color: #1e3a8a;
+}
+
+.lens-tab-section .chip.active {
+  background: #1e3a8a;
+  color: #fff;
+  border-color: #1e3a8a;
+}
+
+/* ===== R-4: lens table headers — light slate (was dark slate) ===== */
+.lens-tab-section table.lens-grid,
+.lens-tab-section table.designs,
+.lens-tab-section table.pricing {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.lens-tab-section table.lens-grid th,
+.lens-tab-section table.designs th,
+.lens-tab-section table.pricing th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  padding: 11px 14px;
+  text-align: right;
+  border-bottom: 2px solid #e2e8f0;
+  font-size: 11px;
+}
+
+.lens-tab-section table.lens-grid td,
+.lens-tab-section table.designs td,
+.lens-tab-section table.pricing td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: right;
+}
+
+.lens-tab-section table.lens-grid td.cell-stock {
+  background: #d1fae5;
+  color: #065f46;
+  font-weight: 600;
+  text-align: center;
+}
+
+.lens-tab-section table.lens-grid td.cell-empty {
+  background: #f1f5f9;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.lens-tab-section table.designs tr.is-active {
+  background: #d1fae5;
+}
+
+/* ===== R-8: action buttons — reuse frames .btn-* classes (no inline overrides).
+   Provide a no-op fallback so legacy .btn-primary / .btn-success markup still
+   renders pleasantly if a partial body slipped through with an old class. ===== */
+.lens-tab-section .btn-primary,
+.lens-tab-section .toggle-btn.activate {
+  background: #1e3a8a;
+  color: #fff;
+  border-color: #1e3a8a;
+}
+
+.lens-tab-section .btn-primary:hover { background: #1e40af; }
+
+.lens-tab-section .btn-success {
+  background: #059669;
+  color: #fff;
+  border-color: #059669;
+}
+
+.lens-tab-section .toggle-btn {
+  padding: 6px 14px;
+  border-radius: 5px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+}
+
+.lens-tab-section .toggle-btn.deactivate {
+  background: #e2e8f0;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+/* ===== Filter bar — frames-aligned panel ===== */
+.lens-tab-section .lens-filter-bar {
+  background: #fff;
+  padding: 14px 18px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.lens-tab-section .lens-filter-bar label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.lens-tab-section .lens-filter-bar select {
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  background: #fff;
+}
+
+/* ===== Panel cards used in PO / GR / pos-list ===== */
+.lens-tab-section .lens-panel {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.lens-tab-section .lens-panel-header {
+  padding: 12px 18px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lens-tab-section .lens-panel-header h3 {
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ===== Stat cards (used in lens pos-list) — Navy accent ===== */
+.lens-tab-section .stats-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.lens-tab-section .stat-card {
+  background: #fff;
+  padding: 14px 16px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  border-inline-end: 4px solid #cbd5e1;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+}
+
+.lens-tab-section .stat-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+}
+
+.lens-tab-section .stat-card.active {
+  border-inline-end-color: #1e3a8a;
+  background: #eff6ff;
+}
+
+.lens-tab-section .stat-card.draft     { border-inline-end-color: #64748b; }
+.lens-tab-section .stat-card.sent      { border-inline-end-color: #3b82f6; }
+.lens-tab-section .stat-card.partial   { border-inline-end-color: #d97706; }
+.lens-tab-section .stat-card.received  { border-inline-end-color: #059669; }
+.lens-tab-section .stat-card.cancelled { border-inline-end-color: #94a3b8; }
+
+.lens-tab-section .stat-card .stat-label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  margin-bottom: 4px;
+}
+
+.lens-tab-section .stat-card .stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.lens-tab-section .stat-card .stat-sub {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* ===== Status chips (frames-aligned palette) ===== */
+.lens-tab-section .chip-draft     { background: #f1f5f9; color: #475569; }
+.lens-tab-section .chip-sent      { background: #dbeafe; color: #1e3a8a; }
+.lens-tab-section .chip-partial   { background: #fef3c7; color: #92400e; }
+.lens-tab-section .chip-received  { background: #d1fae5; color: #065f46; }
+.lens-tab-section .chip-cancelled { background: #f1f5f9; color: #94a3b8; }
+
+/* ===== Empty state ===== */
+.lens-tab-section .empty-state {
+  padding: 28px 20px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+/* ===== Lot pane (lens-inventory) ===== */
+.lens-tab-section .lens-grid-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 12px;
+}
+
+.lens-tab-section .lot-row {
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 12px;
+}
+
+.lens-tab-section .lot-row:last-child { border-bottom: none; }
+
+.lens-tab-section .lot-row .lot-meta {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+/* ===== Lens nav strip (top of lens category) — same chrome as #mainNav ===== */
+#lensNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  background: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin: 8px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+#lensNav button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  text-decoration: none;
+  color: #475569;
+  font-size: 13px;
+  white-space: nowrap;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+#lensNav button:hover {
+  background: #f1f5f9;
+  color: #1e3a8a;
+}
+
+#lensNav button.active {
+  background: #1e3a8a;
+  color: #fff;
+  font-weight: 600;
+}

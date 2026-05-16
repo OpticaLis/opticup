@@ -203,6 +203,19 @@ body.has-inv-sidebar > #low-stock-banner {
   cursor: not-allowed;
 }
 
+/* ===== Lens tab-section base (M1_INVENTORY_UNIFIED_SCREEN, 2026-05-16) =====
+   Each lens tab is one <section class="tab lens-tab-section" data-cat="lenses"
+   data-tab="X">. Hidden by default; .active toggled by InvShellLens. Partial
+   markup loaded on first activation via fetch. */
+section.lens-tab-section {
+  display: none;
+  padding: 12px 16px;
+}
+
+section.lens-tab-section.active {
+  display: block;
+}
+
 /* ===== Mobile fallback — sidebar collapses to a top strip below 800px ===== */
 @media (max-width: 800px) {
   #inv-sidebar {
