@@ -4,6 +4,45 @@
 
 ---
 
+## M1_INVENTORY_REDESIGN — 2026-05-16 (🟢 CLOSED — Full Auto Pipeline, 9 commits, ~3.5h wall-clock)
+
+UI/UX restructure of the inventory module from 11-tab single-screen to sidebar-driven hub. New unified-log view + UI. Supplier badges from junction tables. Home-card "מחלקת עדשות" removed (lens reachable only via inventory sidebar now). M1 Lens department unchanged.
+
+**6 executor commits + 1 close + Reviewer + Tester (9 commits, `ea2dcd3..20d9225`):**
+
+- `ea2dcd3` chore(spec): seal SPEC.md — 640 lines, §0.A 12-probe pre-flight + §0.B 3 decision gates + §0.C 9 Brief-vs-DB findings + §3 30 measurable success criteria
+- `30236fa` feat(m1): inventory sidebar shell — 240px RTL right-rail with 4 product categories + 4 cross-category items. New `css/inventory-shell.css` (224 lines) + `modules/inventory/inventory-shell.js` (200 lines). 4 nav-buttons removed (suppliers, systemlog, access-sync, incoming-invoices); 7 frames buttons remain.
+- `d48e579` feat(m1): retarget lens-nav-strip home link `index.html` → `inventory.html` — DG-2 Branch B
+- `1e0b4e1` feat(m1): suppliers — category badges + 4 filter pills. `modules/brands/suppliers.js` 171→266 lines. Junction tables `supplier_brand_distribution` + `supplier_catalog_offering` (NOT `brands.supplier_id` — Brief was wrong per SPEC §0.C F-DB-1).
+- `e3ebe71` feat(db,m1): unified log — view + UI (combined C5+C6 per TD-2 precedent). View `v_inventory_unified_log` (security_invoker=on, GRANT authenticated, REVOKE anon+PUBLIC after supplementary migration). New `modules/inventory/unified-log.js` (214 lines) + new section in `inventory.html`. 5 filters + free-text search + paginated table.
+- `b5c7533` feat(m1): remove lens home-card — `index.html` 390→389 lines. Lens screens reachable only via inventory sidebar.
+- `0ac0bba` chore(spec): close executor scope — EXECUTION_REPORT.md + FINDINGS.md + SESSION_CONTEXT.md update
+- `63e0bbd` chore(spec): Reviewer REVIEW.md 🟢 PASS — 7/7 fresh-angle spot-checks + 1 new LOW finding R-FINDING-1
+- `20d9225` chore(spec): Localhost-Tester TEST_REPORT — GREEN. Smoke 7/7 PASS + Chrome MCP 4/4 visual screenshots
+- _(this commit)_ chore(spec): Foreman FOREMAN_REVIEW.md + master-doc updates + Hebrew morning summary
+
+**Pipeline stats:**
+
+- 9 commits, all single-concern, all on develop. Tag `pre-inventory-redesign-2026-05-16` at parent `e58b45e`.
+- 0 escalations. 2 in-flight executor deviations (D-1 row counts + D-2 missing REVOKE) handled per INTENT-vs-LITERAL autonomy.
+- Iron Rule 31 + 32 gates: exit 0 every commit.
+- Smoke 7/7 PASS pre + post. Chrome MCP visual 4/4 saved to `_archive/m1-redesign-2026-05-16/screenshots/`.
+- 0 row delta on Prizma across 5 touched tables (inventory_logs, stock_movement, activity_log, sync_log, suppliers).
+- 30 SPEC §3 criteria: 27 PASS at Stage 4 + 3 author-defects documented (D2/D3 row counts + B3 card count — all SPEC value-errors with correct underlying behavior).
+
+**Schema/code delta:**
+
+- 1 new view: `v_inventory_unified_log` (security_invoker=on, 4-source UNION, GRANT authenticated only).
+- 3 new files: `css/inventory-shell.css` (224), `modules/inventory/inventory-shell.js` (200), `modules/inventory/unified-log.js` (214).
+- 4 modified files: `inventory.html` (1046→1128), `index.html` (390→389), `shared/js/lens-nav-strip.js` (135→136), `modules/brands/suppliers.js` (171→266).
+- 0 new tables / 0 new RPCs / 0 new permission keys / 0 new T-constants / 0 new FIELD_MAP entries.
+
+**Findings (5 total):** F-1 LOW absorbed via P-AUTHOR-1 (filter-aware arithmetic); F-2 LOW absorbed via P-EXEC-1 (auto-REVOKE — 2nd consecutive firing, counter 2/3); F-3 INFO deferred to next Architect session; F-4 INFO → TECH_DEBT #M1_INV_REDESIGN_ORPHAN_SYSTEMLOG; R-FINDING-1 LOW → TECH_DEBT #M1_INV_REDESIGN_VIEW_REVOKE_BROADENING.
+
+**4 skill improvement proposals queued:** 2 author (P-AUTHOR-1 filter-aware arithmetic + P-AUTHOR-2 deferral hygiene) + 2 executor (P-EXEC-1 auto-REVOKE 2/3 + P-EXEC-2 cross-source UNION view template). Previously-existing P-AUTHOR-1 (UI smoke matrix from M1B_FOUNDATION_PERMISSIONS_HOTFIX) reaches 3/3 → auto-apply triggers next opticup-strategic session.
+
+---
+
 ## M1_LENS_PHASE_1B_PROCUREMENT — 2026-05-15 (🟡 CLOSED WITH FOLLOW-UPS — 3 procurement screens + ➕➖ wiring + 11 commits)
 
 Procurement half of Phase 1B — closes Phase 1B alongside the foundation half.

@@ -7,6 +7,34 @@
 
 ## Active Debt
 
+### #M1_INV_REDESIGN_VIEW_REVOKE_BROADENING — 🟢 v_inventory_unified_log authenticated has ALL privileges, not just SELECT
+
+**Where:** Live DB — `pg_class.relacl` for `public.v_inventory_unified_log` shows `{authenticated=arwdDxtm/postgres}`. Surfaced by `M1_INVENTORY_REDESIGN/REVIEW.md` R-FINDING-1 (2026-05-16).
+
+**What:** SPEC §2.4 view body said "GRANT SELECT ON … TO authenticated". Postgres's default-inherit on new public-schema views grants ALL (INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER/MAINTAIN) to authenticated. The C5+C6 migration added `REVOKE ALL FROM anon, PUBLIC` (per executor's INTENT-vs-LITERAL recovery, EXECUTION_REPORT §3 D-2) but didn't broaden to REVOKE write-class from authenticated too.
+
+**Why it's debt (and only 🟢):** UNION ALL views are non-updatable at the Postgres engine level — INSERT/UPDATE/DELETE/TRUNCATE attempts against the view fail with `cannot insert into view` regardless of GRANT. So the effective access is "SELECT works, everything else fails at engine." Real exploit path: zero. Defense-in-depth tidiness only.
+
+**Planned fix:** Next M1 maintenance SPEC. 1-line migration: `REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON public.v_inventory_unified_log FROM authenticated;`. Bundle with #M1_INV_REDESIGN_ORPHAN_SYSTEMLOG below. ~5 min total.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_INVENTORY_REDESIGN/REVIEW.md` R-FINDING-1 + `FOREMAN_REVIEW.md` §5, 2026-05-16.
+
+---
+
+### #M1_INV_REDESIGN_ORPHAN_SYSTEMLOG — 🟢 Orphan tab-systemlog section + system-log.js after sidebar redesign
+
+**Where:** `inventory.html` lines ~377-435 (`<section id="tab-systemlog">` block) + `modules/admin/system-log.js` (217 lines) + the `<script src="modules/admin/system-log.js">` tag in `inventory.html` script section. Surfaced by `M1_INVENTORY_REDESIGN/FINDINGS.md` F-4 (2026-05-16).
+
+**What:** C2 of M1_INVENTORY_REDESIGN removed the `<button data-tab="systemlog">` from `<nav id="mainNav">`. C5+C6 added the new `<section id="tab-unified-log">` driven by the new sidebar entry. The legacy `<section id="tab-systemlog">` block + its JS file are now unreachable but still on disk per SPEC §6 #10-#11 explicit deferral (one concern per task — out of scope to clean inline).
+
+**Why it's debt (and only 🟢):** Pure orphan — not reachable from UI, not loaded by any other module. Will surface in next Sentinel refresh as a docs-drift candidate but has zero customer impact.
+
+**Planned fix:** Next M1 maintenance SPEC. Delete the `<section id="tab-systemlog">` block (~58 lines), the `<script src="modules/admin/system-log.js">` line, and `modules/admin/system-log.js` itself (217 lines). Bundle with #M1_INV_REDESIGN_VIEW_REVOKE_BROADENING above. ~15 min total.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_INVENTORY_REDESIGN/FINDINGS.md` F-4 + `FOREMAN_REVIEW.md` §5, 2026-05-16.
+
+---
+
 ### #M1A-DEBT-04 — 🟢 Demo lens-catalog seed fixtures persist from M1A_OPERATIONS_RPCS_FIX
 
 **Where:** demo tenant `8d8cfa7e-ef58-49af-9702-a862d459cccb` — 2 `tenant_location` rows (short_codes `STA`/`STB`) + 1 global `lens_brand` `SmokeBrand_M1A` + 1 `lens_design` `SmokeDesign_M1A` + 1 `lens_variant` `LV-TST001` + 1 `supplier_catalog_offering` (100 ILS) + ~4 `stock_movement` rows + ~3 `stock_lot` rows + 1 `purchase_receipt` row, all tagged `notes ILIKE '%M1A%smoke%'` (where the `notes` column exists).
