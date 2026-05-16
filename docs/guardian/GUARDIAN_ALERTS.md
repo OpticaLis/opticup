@@ -229,3 +229,16 @@ Stable; no change.
 | https://www.prizma-optic.co.il/ru/ | performance | 87 | 67 | < floor 80 | [json](docs/guardian/lighthouse-reports/daily/2026-05-15/ru-home.json) |
 
 → Full report: `docs/guardian/lighthouse-reports/daily/2026-05-15/SUMMARY.md`
+
+## Daily run — 2026-05-16 <!-- run:daily:2026-05-16 -->
+
+**REGRESSION** — 4 regression(s) detected vs. 2026-05-15:
+
+| URL | metric | prior | current | delta/floor | report |
+|-----|--------|-------|---------|-------------|--------|
+| https://www.prizma-optic.co.il/category/eyeglasses | performance | 81 | 78 | < floor 80 | [json](docs/guardian/lighthouse-reports/daily/2026-05-16/he-category-eyeglasses.json) |
+| https://www.prizma-optic.co.il/ | performance | 57 | 52 | < floor 80 | [json](docs/guardian/lighthouse-reports/daily/2026-05-16/he-home.json) |
+| https://www.prizma-optic.co.il/supersale/ | performance | 86 | 79 | < floor 80 | [json](docs/guardian/lighthouse-reports/daily/2026-05-16/he-supersale.json) |
+| https://www.prizma-optic.co.il/ru/category/eyeglasses | performance | 91 | 83 | -8 pts | [json](docs/guardian/lighthouse-reports/daily/2026-05-16/ru-category-eyeglasses.json) |
+
+→ Full report: `docs/guardian/lighthouse-reports/daily/2026-05-16/SUMMARY.md`
