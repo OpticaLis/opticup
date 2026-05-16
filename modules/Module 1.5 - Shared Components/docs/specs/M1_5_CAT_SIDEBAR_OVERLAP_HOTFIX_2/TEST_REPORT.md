@@ -1,161 +1,130 @@
 # TEST_REPORT — M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2
 
-**Date:** 2026-05-17 19:50 local
+**Date:** 2026-05-17 20:15 local (final, supersedes 20:05 RED report on C1)
 **Tester:** opticup-localhost-tester (skill)
-**Repo:** opticalis/opticup, branch develop, HEAD 04094ff (Executor C1)
-**Status:** 🔴 **RED — Pipeline must NOT close 🟢. Hypothesis FAILED.**
+**Repo:** opticalis/opticup, branch develop, HEAD b774e2c (Executor C2 — Option A)
+**Status:** 🟢 **GREEN — all 8 surfaces PASS Tier C VFV. Pipeline cleared for Foreman close.**
 
 ---
 
-## Servers
+## Pipeline history (this SPEC, two execution attempts)
 
-- ERP        http://localhost:3000  → 200 in ~12ms (pre-existing session)
-- Storefront http://localhost:4321  → 200 in ~28ms (pre-existing session)
+| Stage | Commit | Fix attempted | VFV verdict | Notes |
+|---|---|---|---|---|
+| C1 (1st attempt) | `04094ff` | Swap `grid-template-columns` config order | 🔴 **RED — all 8 surfaces** | Hypothesis FAILED. Grid auto-placement uses DOM child order, not config order — main-content collapsed to 240px under sidebar (bug INVERTED). Escalated to Foreman → Daniel approved Option A. See escalation file. |
+| C2 (2nd attempt) | `b774e2c` | **Option A**: drop grid; `margin-inline-start: var(--cat-sidebar-width, 240px)` on `.main-content` | 🟢 **GREEN — all 8 surfaces** | This report. |
 
-Both up before testing — no `start-local.ps1` invocation needed.
-
----
-
-## Baseline (`tests/smoke/baseline.test.mjs`)
-
-| Run | Result | Duration |
-|---|---|---|
-| Pre-Tester (post-C1) | 7/7 PASS | ~6s |
-| Post-Tester (final)  | 7/7 PASS | ~6s |
-
-Both green. Smoke is unaffected by the layout regression — the bug is purely CSS-class visual.
+The C1 RED verdict is preserved in the Pipeline commit log (`ab79cd0`) for the learning record. This document supersedes it with the C2 final state.
 
 ---
 
-## SPEC-Specific Tests
+## Servers (post-C2 reload)
 
-n/a — no SPEC-specific smoke file (`tests/smoke/m1_5_cat_sidebar_overlap_hotfix_2.test.mjs` was not authored; this is a CSS-layout-only hotfix where VFV is the binding correctness layer).
+- ERP        http://localhost:3000  → 200 (Chrome session preserved across both fix attempts)
+- Storefront http://localhost:4321  → 200
 
 ---
 
-## Tier C — Visual Functional Verification (VFV)
+## Smoke baseline (`tests/smoke/baseline.test.mjs`)
 
-Per `_archive/architect-pending-entries/2026-05-17_localhost_tester_visual_functional_verification.md` (Tier C MANDATORY) and SPEC §3 S-VFV-1..S-VFV-8.
+| Run | Result |
+|---|---|
+| Pre-Tester (post-C2 push) | 7/7 PASS |
+| Post-Tester (final, post-VFV) | 7/7 PASS |
 
-**Method.** Chrome MCP @ 1920×1080. Demo PIN session active (preserved from Step 1 pre-fix probe). Per surface: hard-reload (`location.reload(true)`) → wait for sidebar render → DOM-probe `getBoundingClientRect()` on `#inv-sidebar`, `.cat-sidebar-host > .main-content`, and the active nav strip → screenshot to `_archive/cat-sidebar-overlap-hotfix-2-2026-05-17/screenshots/post-fix-NN-cat.png`.
+CSS-only fix; smoke unaffected (as expected).
 
-**Bug-regression query** (per SPEC §1 Purpose + S-VFV-*): "Does the active nav strip / section extend underneath the fixed sidebar (overlap), is hidden under the sidebar, or otherwise visually conflict with the sidebar?"
+---
 
-### VFV results (DOM-probe table, viewport 1920px wide)
+## Tier C — Visual Functional Verification (final, C2)
 
-| # | Surface | URL frag | sidebar rect | `.main-content` rect | Width | Verdict |
-|---|---------|----------|--------------|----------------------|-------|---------|
-| 1 | frames                | `inventory.html?cat=frames`              | left=1680 right=1920 | left=1680 right=1920 | **240px** | 🔴 FAIL |
-| 2 | lenses                | `inventory.html?cat=lenses`              | left=1665 right=1905 | left=1665 right=1905 | **240px** | 🔴 FAIL |
-| 3 | contact-lenses        | `inventory.html?cat=contact-lenses`      | left=1665 right=1905 | left=1665 right=1905 | **240px** | 🔴 FAIL |
-| 4 | accessories           | `inventory.html?cat=accessories`         | left=1665 right=1905 | left=1665 right=1905 | **240px** | 🔴 FAIL |
-| 5 | suppliers             | `inventory.html?cat=suppliers`           | left=1665 right=1905 | left=1665 right=1905 | **240px** | 🔴 FAIL |
-| 6 | incoming-invoices     | `inventory.html?cat=incoming-invoices`   | left=1680 right=1920 | left=1680 right=1920 | **240px** | 🔴 FAIL |
-| 7 | unified-log           | `inventory.html?cat=unified-log`         | left=1665 right=1905 | left=1665 right=1905 | **240px** | 🔴 FAIL |
-| 8 | access-sync           | `inventory.html?cat=access-sync`         | left=1680 right=1920 | left=1680 right=1920 | **240px** | 🔴 FAIL |
+**Method.** Chrome MCP @ 1920×1080. Hard-reload (`ignoreCache: true`) on each surface to pick up the new CSS. DOM probe via `getBoundingClientRect()` on `#inv-sidebar`, `.cat-sidebar-host > .main-content`, and the active nav strip / section. Screenshot saved to `_archive/cat-sidebar-overlap-hotfix-2-2026-05-17/screenshots/c2-NN-cat.png`.
 
-**Universal failure.** ALL 8 surfaces show `.main-content` collapsed to a 240px column **at the same x-coordinates as the fixed sidebar** (right edge of viewport). The fix did not move main-content to the LEFT — it narrowed main-content to fit inside the sidebar's slot ON THE RIGHT.
+**Bug-regression query** (SPEC §1 Purpose + S-VFV-1..8): "Does the active nav strip / section extend underneath the fixed sidebar?" Pre-fix: YES on all 8 (RED). Post-C1: YES, inverted, on all 8 (RED, worse). Post-C2: see table below.
 
-### VFV per-surface (representative — surface #3 contact-lenses, full template)
+### VFV results (DOM-probe table, viewport 1920×1080, RTL)
+
+Reading: sidebar `right=1920` means it sits on the RIGHT edge in RTL. `mainContent.right = sidebar.left` means main-content ends EXACTLY where sidebar starts (no overlap, no gap).
+
+| # | Surface | sidebar rect | `.main-content` rect | Active strip rect | Overlap test | Verdict |
+|---|---------|--------------|----------------------|-------------------|--------------|---------|
+| 1 | frames                | x=1680 right=1920 w=240 | x=0 right=1680 w=**1680** | mainNav x=0 right=1680 w=1680 | mainContent.right (1680) == sidebar.left (1680) → no overlap, no gap | 🟢 PASS |
+| 2 | lenses                | x=1680 right=1920 w=240 | x=0 right=1680 w=**1680** | lensNav x=16 right=1664 w=1648 | clearance 16px (lensNav padded inside main) | 🟢 PASS |
+| 3 | contact-lenses        | x=1665 right=1905 w=240 | x=0 right=1665 w=**1665** | contactNav x=0 right=1665 w=1665 | mainContent.right (1665) == sidebar.left (1665) → exact tile | 🟢 PASS |
+| 4 | accessories           | x=1665 right=1905 w=240 | x=0 right=1665 w=**1665** | accessoryNav x=0 right=1665 w=1665 | exact tile | 🟢 PASS |
+| 5 | suppliers             | x=1680 right=1920 w=240 | x=0 right=1680 w=**1680** | section fits inside main-content | no overlap | 🟢 PASS |
+| 6 | incoming-invoices     | x=1680 right=1920 w=240 | x=0 right=1680 w=**1680** | section fits inside main-content | no overlap | 🟢 PASS |
+| 7 | unified-log           | x=1665 right=1905 w=240 | x=0 right=1665 w=**1665** | section fits inside main-content | no overlap | 🟢 PASS |
+| 8 | access-sync           | x=1680 right=1920 w=240 | x=0 right=1680 w=**1680** | section fits inside main-content | no overlap | 🟢 PASS |
+
+(The 1665 vs 1680 `mainContent.width` variance across surfaces reflects the presence/absence of a vertical scrollbar — surfaces with longer-than-viewport content reserve ~15px for the scrollbar, narrowing the body. Both values are correct: `viewport - scrollbar - sidebar = mainContent.width` in both cases.)
+
+### Sample full-template VFV (Surface 3: contact-lenses, the bug Daniel reported)
 
 ```
 ### VFV — Surface 3: contact-lenses
-URL:                inventory.html?cat=contact-lenses
-Viewport:           1920×1080
-Screenshot:         _archive/cat-sidebar-overlap-hotfix-2-2026-05-17/screenshots/post-fix-03-contact-lenses.png
-Layout integrity:   FAIL — main content area collapsed to 240px column on the right, behind/under the fixed sidebar
-Overlap check:      FAIL — `.main-content` (left=1665, right=1905) is ENTIRELY inside `#inv-sidebar` slot (left=1665, right=1905). contactNav at same rect = invisible.
-Clipping check:     FAIL — all content (tabs strip, table area, action buttons) is clipped horizontally by the 240px column
-Data visible:       FAIL — sample contact lens rows not visible (clipped or rendered off-screen)
-Error state:        PASS — no console errors, no auth modals, no red text
-Navigation state:   PASS — clicking contact-lenses in sidebar correctly marks it active; sidebar chrome itself is fully visible and clickable
+URL:                http://localhost:3000/inventory.html?t=demo&cat=contact-lenses
+Viewport:           1920×1080 (RTL)
+Screenshot:         _archive/cat-sidebar-overlap-hotfix-2-2026-05-17/screenshots/c2-03-contact-lenses.png
+Layout integrity:   PASS — header + top nav strip + sidebar (right) + main table area all visible
+Overlap check:      PASS — contactNav (right=1665) ends EXACTLY where sidebar (left=1665) begins. No pixel of main content sits under the sidebar.
+Clipping check:     PASS — all 6 contact-lens nav tabs visible inside their strip; table columns visible
+Data visible:       PASS — sample seeded contact-lens variants render in the table (Acuvue Daily, Acuvue Monthly, etc.)
+Error state:        PASS — no console errors, no red text, no auth banners
+Navigation state:   PASS — "עדשות מגע" entry in the sidebar marked active; sidebar chrome fully visible + clickable
 Bug regression check:
   - SPEC §1 Purpose: "fix overlap that hides nav strips on contact-lenses + accessories under sidebar"
-  - Observed state: STILL PRESENT (in fact INVERTED — now ALL main content is hidden under the sidebar, not just the nav strips)
-Overall surface verdict: 🔴 FAIL
+  - Observed state: RESOLVED. contactNav is fully visible, ends precisely at the sidebar's leading edge in RTL.
+Overall surface verdict: 🟢 PASS
 ```
 
-The same template applies to surfaces 1, 2, 4, 5, 6, 7, 8 with surface-specific names substituted. All 8 surfaces have identical structural failure.
+Same template applies to surfaces 1, 2, 4, 5, 6, 7, 8 with surface-specific names substituted. All 8 are 🟢.
 
-### Screenshots captured
+### Visual confirmation (the 4 product category surfaces Daniel explicitly called out)
+
+Frames + lenses + contact-lenses + accessories all show the same correct layout: sidebar visible as a vertical strip on the RIGHT (RTL), top tabs strip fully visible across the LEFT side, main content / table area fully visible inside the remaining viewport. The exact bug Daniel reported on 2026-05-17 — top tabs hidden under the sidebar on contact-lenses + accessories — is RESOLVED on both surfaces.
+
+### Screenshots captured (this C2 run)
 
 | File | Surface | Status |
 |---|---|---|
-| `post-fix-01-frames.png`             | frames                | ✅ captured (shows mainNav jammed into 240px column on right) |
-| `post-fix-02-lenses.png`             | lenses                | ⏸️ not captured (DOM probe sufficient — bug pattern is universal across all 8) |
-| `post-fix-03-contact-lenses.png`     | contact-lenses        | ✅ captured (shows contactNav fully under sidebar) |
-| `post-fix-04-accessories.png`        | accessories           | ✅ captured (shows accessoryNav fully under sidebar) |
-| `post-fix-05-suppliers.png`          | suppliers             | ⏸️ not captured (same as above) |
-| `post-fix-06-incoming-invoices.png`  | incoming-invoices     | ⏸️ not captured |
-| `post-fix-07-unified-log.png`        | unified-log           | ⏸️ not captured |
-| `post-fix-08-access-sync.png`        | access-sync           | ⏸️ not captured |
+| `c2-01-frames.png`             | frames                | ✅ captured + verified |
+| `c2-02-lenses.png`             | lenses                | ✅ captured + verified |
+| `c2-03-contact-lenses.png`     | contact-lenses        | ✅ captured + verified |
+| `c2-04-accessories.png`        | accessories           | ✅ captured + verified |
+| `c2-05-suppliers.png`          | suppliers             | ✅ captured |
+| `c2-06-incoming-invoices.png`  | incoming-invoices     | ✅ captured |
+| `c2-07-unified-log.png`        | unified-log           | ✅ captured |
+| `c2-08-access-sync.png`        | access-sync           | ✅ captured |
 
-3 screenshots are sufficient evidence — the DOM-probe table above shows the failure is universal (identical 240px-wide `.main-content` rect on all 8 surfaces). Capturing 5 more screenshots of the same pattern would be redundant noise. If the Foreman or Daniel disputes the universality claim, additional screenshots can be captured on re-run — but the SPEC §5 stop-trigger #2 fires on ≥1 🔴 surface regardless of count.
-
----
-
-## Pre-fix vs Post-fix comparison
-
-Pre-fix (commit `dafdf6e`, baseline) DOM-probe from Step 1:
-
-| Surface | `.main-content` rect | Width | Verdict |
-|---|---|---|---|
-| frames (representative) | left=240 right=1920 | **1680px** | 🟢 (banner+frames-nav fit) |
-| contact-lenses          | left=240 right=1920 | **1680px** | 🔴 contactNav extended into x=0-240 (under sidebar) |
-
-Post-fix (commit `04094ff`, this Pipeline) DOM-probe (above table):
-
-| All 8 surfaces | left=1665-1680 right=1905-1920 | **240px** | 🔴 universal |
-
-**Net regression:** the fix INVERTED the bug. Pre-fix, only ~14% of viewport width (the rightmost 240px) was contested; main-content was visible across 87.5% of viewport width. Post-fix, main-content is squeezed into the 14% slot on the right that is itself the sidebar's slot, so 100% of main-content is contested. The bug went from "some surfaces show ~240px overlap" to "all surfaces show all main-content jammed entirely under sidebar."
+8 of 8 screenshots present. The Tester read the 4 product-category screenshots (Daniel's explicit focus) and confirmed visually + via DOM probe that the bug is resolved.
 
 ---
 
-## Failure analysis
+## Why Option A worked where C1 didn't
 
-**Hypothesis (SPEC §1):** swapping `grid-template-columns` from `1fr var(--cat-sidebar-width, 240px)` to `var(--cat-sidebar-width, 240px) 1fr` will make the grid sidebar slot match the fixed sidebar's side in RTL (both on the RIGHT), so main-content (1fr) sits on the LEFT and is no longer overlapped.
+C1 swapped the `grid-template-columns` config order. But grid auto-placement uses **DOM child order** — `.main-content` is the 1st DOM child of `.cat-sidebar-host`, so it always gets grid column 1 regardless of which column is 240px wide. Post-C1, column 1 = 240px → in RTL = RIGHT edge = exactly the sidebar's slot → main-content collapsed to 240px under the sidebar.
 
-**Observed:** the swap made main-content sit on the RIGHT in a 240px slot. The hypothesis is wrong.
+Option A drops the grid entirely. `.cat-sidebar-host` is a plain block container. `.main-content` declares `margin-inline-start: var(--cat-sidebar-width, 240px)`. In RTL, `margin-inline-start` resolves to `margin-right` → reserves 240px on the RIGHT edge of main-content. The fixed sidebar (`inset-inline-start: 0` → also `right: 0` in RTL) fills exactly that reserved space. Main content occupies `viewport - 240px` on the LEFT. Zero ambiguity; no DOM-order trap; no RTL gymnastics. Logical-property margin is the right primitive for this problem.
 
-**Why the hypothesis failed.** Grid columns are populated by DOM order, not config order, when no explicit `grid-column` is set. The HTML structure is:
-
-```html
-<div class="cat-sidebar-host">
-  <div class="main-content">...</div>   <!-- 1st DOM child → grid column 1 -->
-  <div id="cat-sidebar-mount"></div>    <!-- 2nd DOM child → grid column 2 -->
-</div>
-```
-
-- Pre-fix: column 1 = `1fr`, column 2 = `240px`. `.main-content` (DOM child 1) → column 1 (`1fr`, wide). In RTL, column 1 = inline-start = RIGHT edge. `.main-content` was wide (1680px) but anchored on the RIGHT, extending leftward — pushing into x=0-240 where the fixed sidebar sits.
-- Post-fix: column 1 = `240px`, column 2 = `1fr`. `.main-content` (DOM child 1) → column 1 (`240px`, narrow). In RTL, column 1 = RIGHT edge. `.main-content` is now narrow (240px) and STILL on the RIGHT — squeezed entirely into the sidebar's slot. The wide column (`1fr`) is on the LEFT but contains nothing (the sidebar is `position: fixed` and doesn't actually use its grid cell).
-
-**Root cause (revised, real).** The grid approach is fundamentally wrong for a `position: fixed` sidebar. A fixed-positioned element exits the document flow — the grid can never constrain main content against it. The grid-template-columns trick can never reliably solve the overlap; only an explicit offset on main-content (margin or padding on the inline-start direction) can.
-
-See escalation file for proposed correct fixes (Option A: `margin-inline-start: var(--cat-sidebar-width, 240px)` on `.main-content`; Option B: reorder HTML children; Option C: explicit `grid-column` placement).
+Mobile @media block (≤800px) overrides `margin-inline-start: 0` so narrow viewports use full width, and the sidebar falls back to `position: static` to stack as a normal block.
 
 ---
 
-## Failures (Pipeline-failure summary)
+## Failures
 
-1. **C1 fix INVERTED the bug** — all 8 sidebar surfaces now show `.main-content` collapsed to a 240px column entirely under the fixed sidebar. Pre-fix, only some surfaces had overlap on a 240px sub-strip; post-fix, all surfaces have 100% of main-content jammed into the sidebar slot.
-2. **Hypothesis refuted** — the SPEC's root-cause analysis (RTL grid-template-columns mismatch) was correct in spirit but the proposed fix mechanism (swap config order) ignores that grid auto-placement uses DOM child order, not config order. The 22-line RTL comment block now in `cat-sidebar.css:26-48` documents the wrong mental model and should be replaced when the correct fix lands.
-3. **SPEC §5 Stop Trigger #2 fires** ("The fix is applied but VFV STILL shows overlap on ≥1 surface → escalate to Foreman"). 8 of 8 surfaces are 🔴 — far above the ≥1 threshold.
-
-**Escalation target:** opticup-strategic (Foreman) for hypothesis-refinement loop-back to Executor.
-
-**Escalation file:** `modules/Module 1.5 - Shared Components/escalations/2026-05-17T1945Z_C1_HYPOTHESIS_FAILED.md` (commit-mate of this TEST_REPORT).
+**None.** Pipeline cleared.
 
 ---
 
 ## Hand-off
 
-🔴 **RED — escalating to Foreman.** Pipeline does NOT close 🟢.
+🟢 **GREEN — handing back to Foreman for FOREMAN_REVIEW.md and close.**
 
-Per:
-- Pending entry `_archive/architect-pending-entries/2026-05-17_localhost_tester_visual_functional_verification.md` (Tier C VFV mandatory, no 🟢 with 🔴 surfaces)
-- SPEC §5 Stop Trigger #2 (≥1 🔴 surface → loop back)
-- Dispatch constraint: "Do NOT pass 🟢 until Daniel-equivalent eyes ... confirm the bug is gone on all 4 product category tabs"
+All reports written:
+- `EXECUTION_REPORT.md` (from C1, will be amended by Foreman or appended-to for C2)
+- No `FINDINGS.md` (0 findings on C2; C1 produced none either)
+- `TEST_REPORT.md` (this file, supersedes the C1 RED report)
+- Escalation file `2026-05-17T1945Z_C1_HYPOTHESIS_FAILED.md` (preserved as Pipeline learning record)
 
-Foreman to: (a) read this TEST_REPORT + escalation, (b) decide between Option A / B / C from the escalation, (c) dispatch Executor for a revised fix, (d) re-dispatch Tester for another VFV cycle.
-
-SPEC remains OPEN. Pipeline mode still full-auto.
+Foreman to: (a) write `FOREMAN_REVIEW.md`, (b) update SESSION_CONTEXT + CHANGELOG + MASTER_ROADMAP per Integration Ceremony rules, (c) emit Hebrew morning summary, (d) close SPEC.
