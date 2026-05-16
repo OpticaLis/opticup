@@ -28,53 +28,25 @@
 <link rel="stylesheet" href="css/inventory.css">
 <link rel="stylesheet" href="css/inventory-shell.css">
 <link rel="stylesheet" href="css/lens-tabs.css">
+<link rel="stylesheet" href="shared/css/cat-sidebar.css">
 </head>
-<body class="has-inv-sidebar">
+<body>
+<!-- M1_5_CAT_SIDEBAR_COMPONENT SPEC sec.2 Part B + DG-2.A (2026-05-17):
+     CSS-grid host wraps banner + nav strips + main into .main-content
+     (column 1) with #cat-sidebar-mount (column 2) for structural overlap
+     protection. The cat-sidebar.js component renders into #cat-sidebar-mount
+     near the end of body via <script type="module">. -->
+<div class="cat-sidebar-host">
+<div class="main-content">
 
 <div id="low-stock-banner" style="display:none; background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:10px 16px; cursor:pointer; align-items:center; gap:10px" onclick="openLowStockModal()">
   <span style="font-size:18px">&#9888;&#65039;</span>
   <span id="low-stock-banner-text" style="font-weight:600; color:#856404"></span>
 </div>
 
-<!-- Inventory shell sidebar — M1_INVENTORY_REDESIGN SPEC §2.1 (2026-05-16).
-     Right-side (RTL) navigation hub for 4 product categories + 4 cross-category items. -->
-<aside id="inv-sidebar">
-  <div class="inv-sidebar-title">&#128230; קטגוריות מלאי</div>
-  <div class="inv-cat-item active" data-category="frames" data-permission="inventory.view">
-    <span class="inv-cat-icon">&#128083;</span>
-    <span class="inv-cat-label">מסגרות</span>
-  </div>
-  <div class="inv-cat-item" data-category="lenses" data-permission="lens.inventory.view" data-feature="lenses">
-    <span class="inv-cat-icon">&#128300;</span>
-    <span class="inv-cat-label">עדשות</span>
-  </div>
-  <div class="inv-cat-item" data-category="contact-lenses" data-permission="contact_lens.inventory.view">
-    <span class="inv-cat-icon">&#128065;</span>
-    <span class="inv-cat-label">עדשות מגע</span>
-  </div>
-  <div class="inv-cat-item" data-category="accessories" data-permission="accessory.inventory.view">
-    <span class="inv-cat-icon">&#127890;</span>
-    <span class="inv-cat-label">אביזרים</span>
-  </div>
-
-  <div class="inv-sidebar-title spaced">&#128259; חוצה-קטגוריות</div>
-  <div class="inv-cat-item" data-category="suppliers" data-permission="suppliers.view">
-    <span class="inv-cat-icon">&#128666;</span>
-    <span class="inv-cat-label">ספקים</span>
-  </div>
-  <div class="inv-cat-item" data-category="incoming-invoices">
-    <span class="inv-cat-icon">&#128196;</span>
-    <span class="inv-cat-label">חשבוניות נכנסות</span>
-  </div>
-  <div class="inv-cat-item" data-category="unified-log" data-permission="settings.view">
-    <span class="inv-cat-icon">&#128202;</span>
-    <span class="inv-cat-label">לוג מערכת מאוחד</span>
-  </div>
-  <div class="inv-cat-item" data-category="access-sync" data-permission="sync.view" data-feature="access_sync">
-    <span class="inv-cat-icon">&#128260;</span>
-    <span class="inv-cat-label">סנכרון Access</span>
-  </div>
-</aside>
+<!-- Sidebar rendered by shared/js/cat-sidebar.js into #cat-sidebar-mount near
+     end of body. Inline HTML extracted to component per M1_5_CAT_SIDEBAR_COMPONENT
+     SPEC sec.2 Part B (2026-05-17). Same DOM shape, same behavior. -->
 
 <nav id="mainNav">
   <button data-tab="entry" data-tab-permission="inventory.edit" class="active" onclick="showTab('entry')">&#128230; הכנסת מלאי</button>
@@ -725,6 +697,10 @@
 
 </main>
 
+</div><!-- /.main-content -->
+<div id="cat-sidebar-mount"></div>
+</div><!-- /.cat-sidebar-host -->
+
 <!-- Login Modal -->
 <style>
   #login-modal { display:flex; position:fixed; inset:0; z-index:9999; background:rgba(26,39,68,0.92); align-items:center; justify-content:center; }
@@ -1027,6 +1003,32 @@
 </div>
 
 <!-- Shared JS -->
+<!-- M1_5_CAT_SIDEBAR_COMPONENT (2026-05-17): mount the reusable sidebar.
+     ES Module — defers automatically; runs after DOM parse + before other
+     scripts via window.InvShell?.setActiveCategory delegation (host owns
+     state transitions; component just reports clicks). -->
+<script type="module">
+  import { initCatSidebar } from './shared/js/cat-sidebar.js';
+  initCatSidebar({
+    container: '#cat-sidebar-mount',
+    categories: [
+      { id: 'frames',         icon: '\u{1F576}', label: 'מסגרות',                            active: true, permission: 'inventory.view' },
+      { id: 'lenses',         icon: '\u{1F52C}', label: 'עדשות',                                  permission: 'lens.inventory.view', feature: 'lenses' },
+      { id: 'contact-lenses', icon: '\u{1F441}', label: 'עדשות מגע',               permission: 'contact_lens.inventory.view' },
+      { id: 'accessories',    icon: '\u{1F392}', label: 'אביזרים',                       permission: 'accessory.inventory.view' }
+    ],
+    crossCategories: [
+      { id: 'suppliers',         icon: '\u{1F69A}', label: 'ספקים',                                                permission: 'suppliers.view' },
+      { id: 'incoming-invoices', icon: '\u{1F4C4}', label: 'חשבוניות נכנסות' },
+      { id: 'unified-log',       icon: '\u{1F4CA}', label: 'לוג מערכת מאוחד',  permission: 'settings.view' },
+      { id: 'access-sync',       icon: '\u{1F501}', label: 'סנכרון Access',                                    permission: 'sync.view', feature: 'access_sync' }
+    ],
+    onSelect: (cat) => { if (window.InvShell && typeof window.InvShell.setActiveCategory === 'function') window.InvShell.setActiveCategory(cat); },
+    defaultCategory: 'frames',
+    urlParamName: 'cat',
+    sidebarTitleText: { primary: '\u{1F4E6} קטגוריות מלאי', secondary: '\u{1F504} חוצה-קטגוריות' }
+  });
+</script>
 <script src="shared/js/theme-loader.js"></script>
 <script src="shared/js/modal-builder.js"></script>
 <script src="shared/js/modal-wizard.js"></script>
