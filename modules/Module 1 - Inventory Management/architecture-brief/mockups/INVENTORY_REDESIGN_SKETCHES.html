@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>Inventory Redesign — 3 Sketches</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Rubik', sans-serif; background: #f8fafc; color: #0f172a; }
+
+  /* Top recommendation banner */
+  .rec-banner {
+    background: #1e3a8a;
+    color: white;
+    padding: 18px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .rec-banner .label { font-size: 14px; opacity: 0.7; }
+  .rec-banner .value { font-size: 18px; font-weight: 600; margin-top: 4px; }
+  .rec-banner .reason { font-size: 14px; opacity: 0.85; max-width: 60%; text-align: left; }
+
+  /* Sticky tab nav */
+  .tab-nav {
+    position: sticky;
+    top: 0;
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    padding: 0 32px;
+    z-index: 100;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .tab-btn {
+    padding: 18px 24px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 15px;
+    color: #64748b;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab-btn:hover { color: #1e3a8a; }
+  .tab-btn.active { color: #1e3a8a; font-weight: 600; border-bottom-color: #1e3a8a; }
+  .tab-btn .badge {
+    display: inline-block;
+    background: #c9a555;
+    color: white;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-right: 8px;
+    font-weight: 600;
+  }
+
+  .sketch-section { display: none; padding: 32px; }
+  .sketch-section.active { display: block; }
+
+  .sketch-header { margin-bottom: 24px; }
+  .sketch-header h2 { font-size: 24px; font-weight: 600; color: #0f172a; }
+  .sketch-header .subtitle { font-size: 14px; color: #64748b; margin-top: 6px; }
+
+  .rationale {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 18px 24px;
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .rationale h4 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin-bottom: 8px; }
+  .rationale .pro h4 { color: #047857; }
+  .rationale .con h4 { color: #b91c1c; }
+  .rationale ul { list-style: none; }
+  .rationale li {
+    font-size: 14px;
+    padding: 4px 0;
+    padding-right: 18px;
+    position: relative;
+    color: #334155;
+  }
+  .rationale .pro li::before {
+    content: '✓';
+    position: absolute;
+    right: 0;
+    color: #047857;
+    font-weight: 700;
+  }
+  .rationale .con li::before {
+    content: '×';
+    position: absolute;
+    right: 0;
+    color: #b91c1c;
+    font-weight: 700;
+  }
+
+  /* The mockup canvas */
+  .mockup {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(15,23,42,0.06);
+  }
+
+  .mockup-header {
+    background: #6366f1;
+    color: white;
+    padding: 14px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .mockup-header .brand { font-weight: 600; font-size: 16px; }
+  .mockup-header .right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+
+  .mockup-alert {
+    background: #fef3c7;
+    border-bottom: 1px solid #fde68a;
+    padding: 10px 24px;
+    font-size: 13px;
+    color: #78350f;
+  }
+
+  /* ============= APPROACH A — Sidebar categories ============= */
+  .approach-a { display: flex; min-height: 580px; }
+
+  .approach-a .sidebar {
+    width: 240px;
+    background: #f8fafc;
+    border-left: 1px solid #e2e8f0;
+    padding: 20px 0;
+  }
+  .approach-a .sidebar-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #94a3b8;
+    padding: 0 20px 12px;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+  }
+  .approach-a .cat-item {
+    padding: 12px 20px;
+    cursor: pointer;
+    border-right: 3px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: #334155;
+    transition: all 0.15s;
+  }
+  .approach-a .cat-item:hover { background: #f1f5f9; }
+  .approach-a .cat-item.active {
+    background: #eff6ff;
+    border-right-color: #1e3a8a;
+    color: #1e3a8a;
+    font-weight: 600;
+  }
+  .approach-a .cat-item .icon { font-size: 18px; }
+  .approach-a .cat-item .count {
+    margin-right: auto;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 500;
+  }
+  .approach-a .cat-item.active .count { background: #1e3a8a; color: white; }
+
+  .approach-a .main { flex: 1; }
+  .approach-a .h-tabs {
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0 24px;
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+  }
+  .approach-a .h-tab {
+    padding: 14px 18px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #64748b;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+  }
+  .approach-a .h-tab.active { color: #1e3a8a; font-weight: 600; border-bottom-color: #1e3a8a; }
+
+  .approach-a .content {
+    padding: 28px;
+    background: #f8fafc;
+    min-height: 380px;
+  }
+  .approach-a .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .approach-a .action-card {
+    background: white;
+    border-radius: 10px;
+    padding: 24px 16px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .approach-a .action-card:hover {
+    border-color: #1e3a8a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(30,58,138,0.08);
+  }
+  .approach-a .action-card .ic { font-size: 32px; margin-bottom: 12px; display: block; }
+  .approach-a .action-card .label { font-size: 14px; font-weight: 500; color: #334155; }
+
+  /* ============= APPROACH B — Action-first, category-filter ============= */
+  .approach-b .h-tabs {
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0 32px;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+  }
+  .approach-b .h-tab {
+    padding: 16px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #64748b;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+  }
+  .approach-b .h-tab.active { color: #1e3a8a; font-weight: 600; border-bottom-color: #1e3a8a; }
+
+  .approach-b .filter-row {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .approach-b .filter-label {
+    font-size: 13px;
+    color: #64748b;
+    margin-left: 8px;
+  }
+  .approach-b .cat-pill {
+    padding: 7px 16px;
+    border-radius: 999px;
+    border: 1px solid #cbd5e1;
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+    color: #334155;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .approach-b .cat-pill:hover { border-color: #1e3a8a; }
+  .approach-b .cat-pill.active {
+    background: #1e3a8a;
+    color: white;
+    border-color: #1e3a8a;
+  }
+  .approach-b .cat-pill .count {
+    font-size: 11px;
+    opacity: 0.7;
+  }
+
+  .approach-b .content {
+    padding: 28px 32px;
+    background: #f8fafc;
+    min-height: 380px;
+  }
+  .approach-b .table-mock {
+    background: white;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+  }
+  .approach-b .table-mock .row {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: grid;
+    grid-template-columns: 60px 1fr 130px 100px 100px 80px;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+  }
+  .approach-b .table-mock .row.head {
+    background: #f8fafc;
+    font-weight: 600;
+    color: #64748b;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .approach-b .table-mock .row:last-child { border-bottom: none; }
+  .approach-b .cat-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .approach-b .cat-frames { background: #ede9fe; color: #5b21b6; }
+  .approach-b .cat-lenses { background: #dbeafe; color: #1e40af; }
+
+  /* ============= APPROACH C — Category dashboard ============= */
+  .approach-c .content {
+    padding: 32px;
+    background: #f8fafc;
+    min-height: 580px;
+  }
+  .approach-c .top-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .approach-c .stat-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .approach-c .stat-label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .approach-c .stat-val { font-size: 26px; font-weight: 600; color: #0f172a; }
+  .approach-c .stat-trend { font-size: 12px; margin-top: 4px; }
+  .approach-c .stat-trend.up { color: #047857; }
+  .approach-c .stat-trend.down { color: #b91c1c; }
+
+  .approach-c .cat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  .approach-c .cat-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .approach-c .cat-card:hover {
+    border-color: #1e3a8a;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(30,58,138,0.1);
+  }
+  .approach-c .cat-card.disabled { opacity: 0.5; cursor: not-allowed; }
+  .approach-c .cat-card.disabled:hover { transform: none; box-shadow: none; border-color: #e2e8f0; }
+
+  .approach-c .cat-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 18px;
+  }
+  .approach-c .cat-card-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .approach-c .cat-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: #eff6ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+  .approach-c .cat-card h3 { font-size: 18px; font-weight: 600; color: #0f172a; }
+  .approach-c .cat-card .subtitle { font-size: 12px; color: #64748b; margin-top: 2px; }
+  .approach-c .cat-card .alert-pill {
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-weight: 500;
+  }
+  .approach-c .cat-card .mini-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 14px 0;
+    border-top: 1px solid #f1f5f9;
+    margin-bottom: 16px;
+  }
+  .approach-c .cat-card .mini-stat-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; }
+  .approach-c .cat-card .mini-stat-val { font-size: 18px; font-weight: 600; color: #1e3a8a; margin-top: 2px; }
+  .approach-c .cat-card .actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .approach-c .cat-card .action-btn {
+    padding: 8px 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #334155;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .approach-c .cat-card .action-btn:hover { background: #eff6ff; border-color: #1e3a8a; color: #1e3a8a; }
+  .approach-c .cat-card .action-btn.primary {
+    background: #1e3a8a;
+    color: white;
+    border-color: #1e3a8a;
+  }
+
+  .legend {
+    margin-top: 24px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 13px;
+    color: #78350f;
+  }
+  .legend strong { font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="rec-banner">
+  <div>
+    <div class="label">המלצת הארכיטקט</div>
+    <div class="value">גישה C — דשבורד קטגוריות</div>
+  </div>
+  <div class="reason">
+    כי עדשות, מסגרות, עדשות-מגע ואביזרים הם 4 עולמות תפעוליים נפרדים, והצוות נכנס לעבודה במונחי "באיזה מוצר אני עוסק עכשיו".
+    מתאים לסקייל ל-4-6 קטגוריות בעתיד בלי שינוי-מבנה.
+  </div>
+</div>
+
+<nav class="tab-nav">
+  <button class="tab-btn" onclick="show('a')">גישה A — סייד-בר קטגוריות</button>
+  <button class="tab-btn active" onclick="show('c')"><span class="badge">מומלץ</span>גישה C — דשבורד קטגוריות</button>
+  <button class="tab-btn" onclick="show('b')">גישה B — פעולה ראשית</button>
+</nav>
+
+<!-- ============================================================ -->
+<!-- APPROACH A -->
+<!-- ============================================================ -->
+<section class="sketch-section" id="sketch-a">
+  <div class="sketch-header">
+    <h2>גישה A — סייד-בר קטגוריות</h2>
+    <p class="subtitle">תפריט שמאלי לבחירת קטגוריה (מסגרות / עדשות / וכו'). בכל קטגוריה — הטאבים האופקיים הקיימים.</p>
+  </div>
+
+  <div class="rationale">
+    <div class="pro">
+      <h4>יתרון</h4>
+      <ul>
+        <li>שינוי מינימלי מהמסך הקיים — הצוות יכיר מיד</li>
+        <li>קל להוסיף קטגוריות (עדשות-מגע, אביזרים)</li>
+        <li>קטגוריה תמיד גלויה — אין בלבול באיזה עולם אתה</li>
+      </ul>
+    </div>
+    <div class="con">
+      <h4>חיסרון</h4>
+      <ul>
+        <li>10 טאבים אופקיים נשארים — עדיין צפוף</li>
+        <li>סייד-בר גוזל 240px מהרוחב</li>
+        <li>פעולות חוצות-קטגוריה (חשבונית משולבת) דורשות מעבר טאבים</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">
+      <div class="brand">Optic Up · אופטיקה פריזמה</div>
+      <div class="right">
+        <span>🔔</span>
+        <span>מנהל ראשי ceo</span>
+      </div>
+    </div>
+    <div class="mockup-alert">⚠ מלאי נמוך: 5 מותגים מתחת לסף · 3 הזמנות רכש מחכות לאישור</div>
+    <div class="approach-a">
+      <aside class="sidebar">
+        <div class="sidebar-title">קטגוריות מלאי</div>
+        <div class="cat-item active">
+          <span class="icon">👓</span>
+          <span>מסגרות</span>
+          <span class="count">434</span>
+        </div>
+        <div class="cat-item">
+          <span class="icon">🔬</span>
+          <span>עדשות</span>
+          <span class="count">חדש</span>
+        </div>
+        <div class="cat-item" style="opacity:0.5;cursor:not-allowed;">
+          <span class="icon">👁</span>
+          <span>עדשות מגע</span>
+          <span class="count">בקרוב</span>
+        </div>
+        <div class="cat-item" style="opacity:0.5;cursor:not-allowed;">
+          <span class="icon">🎒</span>
+          <span>אביזרים</span>
+          <span class="count">בקרוב</span>
+        </div>
+
+        <div class="sidebar-title" style="margin-top:24px;">חוצה-קטגוריות</div>
+        <div class="cat-item">
+          <span class="icon">🚚</span>
+          <span>ספקים</span>
+        </div>
+        <div class="cat-item">
+          <span class="icon">📄</span>
+          <span>חשבוניות נכנסות</span>
+        </div>
+      </aside>
+      <div class="main">
+        <div class="h-tabs">
+          <div class="h-tab active">הכנסת מלאי</div>
+          <div class="h-tab">הזמנות רכש</div>
+          <div class="h-tab">מלאי ראשי</div>
+          <div class="h-tab">ניהול מותגים</div>
+          <div class="h-tab">לוג מערכת</div>
+          <div class="h-tab">סנכרון Access</div>
+          <div class="h-tab">ספירת מלאי</div>
+          <div class="h-tab">זיכויים</div>
+        </div>
+        <div class="content">
+          <div class="cards-grid">
+            <div class="action-card"><span class="ic">📥</span><div class="label">הכנסה ידנית</div></div>
+            <div class="action-card"><span class="ic">📂</span><div class="label">הכנסה מאקסל</div></div>
+            <div class="action-card"><span class="ic">📦</span><div class="label">קבלת סחורה</div></div>
+            <div class="action-card"><span class="ic">📅</span><div class="label">היסטוריית הכנסות</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- APPROACH B -->
+<!-- ============================================================ -->
+<section class="sketch-section" id="sketch-b">
+  <div class="sketch-header">
+    <h2>גישה B — פעולה ראשית, קטגוריה כפילטר</h2>
+    <p class="subtitle">טאבים אופקיים = פעולות (מלאי, רכש, ספקים...). בתוך כל מסך — סינון לפי קטגוריית מוצר.</p>
+  </div>
+
+  <div class="rationale">
+    <div class="pro">
+      <h4>יתרון</h4>
+      <ul>
+        <li>חשבונית משולבת (מסגרות + עדשות) נראית בטבעיות באותו טבלה</li>
+        <li>ספקים שמספקים כמה קטגוריות נראים פעם אחת</li>
+        <li>פעולה אחת = מסך אחד, גם ל-4-6 קטגוריות בעתיד</li>
+      </ul>
+    </div>
+    <div class="con">
+      <h4>חיסרון</h4>
+      <ul>
+        <li>שינוי גדול מהדפוס הקיים — הצוות צריך ללמוד-מחדש</li>
+        <li>קטגוריה שלא נבחרה ב-filter מוסתרת — קל לפספס</li>
+        <li>פילטר מצב מתמיד יכול להישכח</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">
+      <div class="brand">Optic Up · אופטיקה פריזמה</div>
+      <div class="right">
+        <span>🔔</span>
+        <span>מנהל ראשי ceo</span>
+      </div>
+    </div>
+    <div class="mockup-alert">⚠ מלאי נמוך: 5 מותגים מתחת לסף</div>
+    <div class="approach-b">
+      <div class="h-tabs">
+        <div class="h-tab active">מלאי ראשי</div>
+        <div class="h-tab">הזמנות רכש</div>
+        <div class="h-tab">קבלת סחורה</div>
+        <div class="h-tab">תמחור</div>
+        <div class="h-tab">ניהול ספקים</div>
+        <div class="h-tab">ניהול מותגים</div>
+        <div class="h-tab">חשבוניות</div>
+        <div class="h-tab">ספירת מלאי</div>
+        <div class="h-tab">זיכויים</div>
+      </div>
+      <div class="filter-row">
+        <span class="filter-label">קטגוריה:</span>
+        <button class="cat-pill active">הכל <span class="count">(692)</span></button>
+        <button class="cat-pill">👓 מסגרות <span class="count">434</span></button>
+        <button class="cat-pill">🔬 עדשות <span class="count">258</span></button>
+        <button class="cat-pill" style="opacity:0.5;">👁 עדשות מגע <span class="count">0</span></button>
+        <button class="cat-pill" style="opacity:0.5;">🎒 אביזרים <span class="count">0</span></button>
+      </div>
+      <div class="content">
+        <div class="table-mock">
+          <div class="row head">
+            <div>ברקוד</div>
+            <div>מותג ודגם</div>
+            <div>קטגוריה</div>
+            <div>כמות</div>
+            <div>מחיר</div>
+            <div></div>
+          </div>
+          <div class="row">
+            <div>01234</div>
+            <div>Ray-Ban RB2140</div>
+            <div><span class="cat-tag cat-frames">מסגרת</span></div>
+            <div>12</div>
+            <div>₪650</div>
+            <div>›</div>
+          </div>
+          <div class="row">
+            <div>02011</div>
+            <div>Essilor Varilux X 1.67</div>
+            <div><span class="cat-tag cat-lenses">עדשה</span></div>
+            <div>8 זוגות</div>
+            <div>₪890</div>
+            <div>›</div>
+          </div>
+          <div class="row">
+            <div>01287</div>
+            <div>Oakley OO9013</div>
+            <div><span class="cat-tag cat-frames">מסגרת</span></div>
+            <div>4</div>
+            <div>₪720</div>
+            <div>›</div>
+          </div>
+          <div class="row">
+            <div>02034</div>
+            <div>Zeiss Progressive 1.6</div>
+            <div><span class="cat-tag cat-lenses">עדשה</span></div>
+            <div>5 זוגות</div>
+            <div>₪750</div>
+            <div>›</div>
+          </div>
+          <div class="row">
+            <div>01403</div>
+            <div>Tom Ford TF5634</div>
+            <div><span class="cat-tag cat-frames">מסגרת</span></div>
+            <div>2</div>
+            <div>₪1,150</div>
+            <div>›</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- APPROACH C — RECOMMENDED -->
+<!-- ============================================================ -->
+<section class="sketch-section active" id="sketch-c">
+  <div class="sketch-header">
+    <h2>גישה C — דשבורד קטגוריות</h2>
+    <p class="subtitle">עמוד-נחיתה עם 4 כרטיסי קטגוריות. כל כרטיס מציג מצב + פעולות מהירות. לחיצה נכנסת לעולם של אותה קטגוריה.</p>
+  </div>
+
+  <div class="rationale">
+    <div class="pro">
+      <h4>יתרון</h4>
+      <ul>
+        <li>מצב כל הקטגוריות נראה במבט אחד — הצוות יודע איפה צריך לטפל</li>
+        <li>מתאים לסקייל של 4-6 קטגוריות בלי שינוי מבנה</li>
+        <li>לחיצה על כרטיס = העולם המלא של הקטגוריה (כל המסכים שלה)</li>
+        <li>פעולות מהירות במקום (קבלת סחורה, הוספה) — בלי לחפש בתפריט</li>
+        <li>חוצה-קטגוריות (ספקים, חשבוניות) נמצאות בשורה למטה</li>
+      </ul>
+    </div>
+    <div class="con">
+      <h4>חיסרון</h4>
+      <ul>
+        <li>שכבת ניווט נוספת — קליק אחד יותר מהמסך הנוכחי</li>
+        <li>דורש בניית עמוד-נחיתה חדש (יותר עבודה מ-A)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">
+      <div class="brand">Optic Up · אופטיקה פריזמה</div>
+      <div class="right">
+        <span>🔔</span>
+        <span>מנהל ראשי ceo</span>
+      </div>
+    </div>
+    <div class="approach-c">
+      <div class="content">
+        <div class="top-stats">
+          <div class="stat-card">
+            <div class="stat-label">ערך מלאי כולל</div>
+            <div class="stat-val">₪487,250</div>
+            <div class="stat-trend up">▲ 3.2% מהשבוע שעבר</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">פריטים סה״כ</div>
+            <div class="stat-val">692</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">התראות מלאי</div>
+            <div class="stat-val" style="color:#b91c1c;">5</div>
+            <div class="stat-trend down">דורש הזמנה</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">הזמנות פתוחות</div>
+            <div class="stat-val">3</div>
+            <div class="stat-trend">מחכות לקבלה</div>
+          </div>
+        </div>
+
+        <div class="cat-grid">
+          <!-- Frames -->
+          <div class="cat-card">
+            <div class="cat-card-head">
+              <div class="cat-card-title">
+                <div class="cat-card-icon">👓</div>
+                <div>
+                  <h3>מסגרות</h3>
+                  <div class="subtitle">434 פריטים · 52 מותגים</div>
+                </div>
+              </div>
+              <span class="alert-pill">3 התראות</span>
+            </div>
+            <div class="mini-stats">
+              <div>
+                <div class="mini-stat-label">ערך מלאי</div>
+                <div class="mini-stat-val">₪312,400</div>
+              </div>
+              <div>
+                <div class="mini-stat-label">הזמנות פתוחות</div>
+                <div class="mini-stat-val">2</div>
+              </div>
+              <div>
+                <div class="mini-stat-label">מתחת לסף</div>
+                <div class="mini-stat-val" style="color:#b91c1c;">3</div>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="action-btn primary">פתח עולם מסגרות ←</button>
+              <button class="action-btn">📦 קבל סחורה</button>
+              <button class="action-btn">📥 הוסף ידני</button>
+            </div>
+          </div>
+
+          <!-- Lenses -->
+          <div class="cat-card">
+            <div class="cat-card-head">
+              <div class="cat-card-title">
+                <div class="cat-card-icon" style="background:#dbeafe;">🔬</div>
+                <div>
+                  <h3>עדשות</h3>
+                  <div class="subtitle">258 וריאנטים · 8 מותגים</div>
+                </div>
+              </div>
+              <span class="alert-pill">2 התראות</span>
+            </div>
+            <div class="mini-stats">
+              <div>
+                <div class="mini-stat-label">ערך מלאי</div>
+                <div class="mini-stat-val">₪174,850</div>
+              </div>
+              <div>
+                <div class="mini-stat-label">הזמנות פתוחות</div>
+                <div class="mini-stat-val">1</div>
+              </div>
+              <div>
+                <div class="mini-stat-label">מתחת לסף</div>
+                <div class="mini-stat-val" style="color:#b91c1c;">2</div>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="action-btn primary">פתח עולם עדשות ←</button>
+              <button class="action-btn">📦 קבל סחורה</button>
+              <button class="action-btn">💰 תמחור</button>
+            </div>
+          </div>
+
+          <!-- Contact lenses (disabled) -->
+          <div class="cat-card disabled">
+            <div class="cat-card-head">
+              <div class="cat-card-title">
+                <div class="cat-card-icon" style="background:#fef3c7;">👁</div>
+                <div>
+                  <h3>עדשות מגע</h3>
+                  <div class="subtitle">בקרוב</div>
+                </div>
+              </div>
+            </div>
+            <div class="mini-stats">
+              <div>
+                <div class="mini-stat-label">ערך מלאי</div>
+                <div class="mini-stat-val" style="color:#94a3b8;">—</div>
+              </div>
+              <div>
+                <div class="mini-stat-label">הזמנות</div>
+                <div class="mini-stat-val" style="color:#94a3b8;">—</div>
+              </div>
+              <div>
+                <div class="mini-stat-label">מתחת לסף</div>
+                <div class="mini-stat-val" style="color:#94a3b8;">—</div>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="action-btn" disabled>בקרוב</button>
+            </div>
+          </div>
+
+          <!-- Accessories (disabled) -->
+          <div class="cat-card disabled">
+            <div class="cat-card-head">
+              <div class="cat-card-title">
+                <div class="cat-card-icon" style="background:#fce7f3;">🎒</div>
+                <div>
+                  <h3>אביזרים</h3>
+                  <div class="subtitle">בקרוב</div>
+                </div>
+              </div>
+            </div>
+            <div class="mini-stats">
+              <div>
+                <div class="mini-stat-label">ערך מלאי</div>
+                <div class="mini-stat-val" style="color:#94a3b8;">—</div>
+              </div>
+              <div>
+                <div class="mini-stat-label">הזמנות</div>
+                <div class="mini-stat-val" style="color:#94a3b8;">—</div>
+              </div>
+              <div>
+                <div class="mini-stat-label">מתחת לסף</div>
+                <div class="mini-stat-val" style="color:#94a3b8;">—</div>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="action-btn" disabled>בקרוב</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="legend">
+          <strong>חוצה-קטגוריות (שורה למטה במסך האמיתי):</strong> ספקים · חשבוניות נכנסות · ספירת מלאי כללית · לוג מערכת · סנכרון Access · זיכויים.
+          הספקים והחשבוניות מציגים את כל הספקים ללא הבדלת קטגוריה — בדיוק מה שצריך לחשבונית משולבת.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  function show(key) {
+    document.querySelectorAll('.sketch-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('sketch-' + key).classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    event.target.closest('.tab-btn').classList.add('active');
+    window.scrollTo(0, 0);
+  }
+</script>
+
+</body>
+</html>
