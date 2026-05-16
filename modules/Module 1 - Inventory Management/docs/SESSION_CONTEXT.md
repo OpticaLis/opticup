@@ -1,6 +1,60 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
+M1_CONTACT_LENSES_ACCESSORIES — 2026-05-16 evening → 2026-05-17 morning (🟢 CLOSED — Full Auto Night Pipeline 11 commits + Stage 8b fix loop, all 50 §3 success criteria PASS)
+
+## 2026-05-16 evening — M1_CONTACT_LENSES_ACCESSORIES (🟢 CLOSED — Full Auto Night Pipeline)
+
+**Goal:** Activate the 2 "בקרוב" sidebar categories (contact lenses + accessories) by building schemas + UI + sample catalogs + functional tests. End state: M1 inventory module has 4 functional product categories (frames + lenses + contact lenses + accessories), all visually unified, all on demo tenant, ZERO Prizma writes.
+
+**Pipeline commits (11 executor + 1 close, `c3b1832..71eb0d3`):**
+
+- `c3b1832` Stage 1 — Foreman sealed SPEC (590 lines): 50 measurable success criteria, 5 decision gates (DG-1..DG-5), 9 Brief-vs-DB findings, 11 destructive ops declared. Tag `pre-contact-accessories-night-2026-05-16` at parent `0a21b4f`.
+- `84fa733` C-A1 — contact-lens schema applied via MCP migration `m1_contact_lens_schema_part_a`. 1 ENUM (contact_lens_wearing_schedule) + 3 tables (contact_lens_variant 18-col / tenant_contact_stock 10-col / contact_lens_variant_display_seq 3-col global singleton) + 6 RLS policies + 1 RPC (next_contact_variant_display_id) + 4 indexes.
+- `a90eb98` C-A2 — 8 cross-cutting ALTERs applied via MCP migration: lens_design + supplier_catalog_offering + pricing_overlay + purchase_order_line + purchase_receipt_line all get product_type discriminator; purchase_*_line additionally get axis; supplier_catalog_offering DROP variant_id FK; change_approval_log entity_type CHECK expanded from 6 to 8 values.
+- `a82afcc` C-B1 — accessory schema applied via MCP migration `m1_accessory_schema_part_b`. 3 tables (accessory_variant 14-col / tenant_accessory_stock 6-col / accessory_variant_display_seq 3-col) + 6 RLS policies + 1 RPC (next_accessory_variant_display_id) + 4 indexes. Total new indexes Part A + Part B = 8 (matches SPEC §3 S14 exactly).
+- `8c70a92` C-C1+C-C2 — sidebar handlers + nav strips + section shells. `inventory-shell.js` extended (215→324 lines) to activate the 2 previously-disabled categories. `inventory.html` extended (1156→1200 lines): 2 nav strips (`#contactNav`, `#accessoryNav`) + 12 section shells + 2 new script tags. DG-5.A parallel-prefix isolation (cl-* / ac-* IDs, zero collision with lens).
+- `4b2c7c3` C-C3+C-C4+C-C5 — 26 new files + CSS aliases + permission seed. 2 shell loaders (inventory-shell-contact.js 208 lines + inventory-shell-accessory.js 200 lines, mirror lens loader pattern). 12 partials (inventory tabs have real grid+filter UI; other 10 are MV placeholders). 12 module JS files (contact-lens-inventory.js + accessory-inventory.js have real DB queries; others MV). `css/lens-tabs.css` +43 lines with 2 alias selectors. Supabase MCP migration `m1_contact_lens_accessory_permission_seed`: 24 perms + 60 role_permissions grants (ceo+manager all 12 per tenant + team_lead+viewer+worker only .inventory.view per tenant).
+- `b09f5b2` C-D1+CORRECTIVE+C-D2+C-D3 — demo sample catalog seeded (5 migrations: lens v1 fail→v2 success + corrective FK drop + CL v1 fail→v3 success + accessory single-attempt). Demo: 5 lens brands + 10 designs + 30 variants (LV-000003..32); 5 CL brands + 10 designs + 40 variants (CL-000001..40); 5 accessory brands + 25 designs + 25 variants (AC-000001..25). 80 stock rows + 6 sample POs (mix of sent + partial + fully_received) + 1 manual variant-less line for F-2 exercise.
+- `0ce95bc` C-R1 Stage 6 — opticup-executor close. EXECUTION_REPORT.md (~450 lines) + FINDINGS.md (6 findings: 1 MEDIUM, 4 LOW, 1 INFO). 4 in-flight decisions documented (D-1 lens-pattern alignment, D-2 Prizma perms boundary, D-3 lens_type CHECK stand-in, D-4 PO line FK corrective). Executor self-score 9.0/10.
+- `f0642d9` Stage 7 — opticup-reviewer REVIEW.md 🟢 PASS. 7 fresh-angle spot-checks (anon access, publish flag coverage, RPC GRANTs, display_id uniqueness, permission grants, polymorphism integrity post-FK-drop, canonical JWT-claim USING clauses) all PASS. 4 in-flight decisions audit-pass. 3 INFO-level fresh findings. Iron Rule compliance 12/12.
+- `decec03` Stage 8 — opticup-localhost-tester TEST_REPORT.md 🟡 YELLOW. Tier A 35/35 HTTP probes PASS + Tier B 5/6 DOM inspection PASS. T-FAIL-1 caught: sidebar HTML retained `class="inv-cat-item disabled"` blocking click handler — same corollary-edit defect class as M1_INVENTORY_UNIFIED_SCREEN P-AUTHOR-1 (2nd firing of the pattern).
+- `71eb0d3` C-FIX-1 Stage 8b — autonomous executor fix loop. 4-line semantic patch in inventory.html: removed `disabled` class + `title="בקרוב"` + `<span class="inv-cat-badge">בקרוב</span>` from both sidebar entries; added `data-permission` attrs matching seeded keys. Smoke 7/7 PASS post-fix. SPEC §3 S15 now PASS.
+- _(this commit)_ Foreman FOREMAN_REVIEW.md + master-doc updates + Hebrew morning summary.
+
+**Pipeline stats:**
+
+- **11 Pipeline commits + 1 close = 12 total**, all single-concern, all on develop, no merges, no amends, no force-pushes (Foreman FA-1 spot-check verified).
+- 0 escalations to Foreman or Daniel during Stages 2-5. 4 in-flight Executor decisions all documented + justified by §9 autonomy clauses.
+- 0 Prizma writes — verified **3 times** across all 17 §0.E baseline tables (Stage 5 post-seed + Stage 7 Reviewer + Stage 9 Foreman). All match=true.
+- Iron Rule 31 + 32 gates exit 0 every commit. SPEC.md staged in every destructive commit per §12 Execution Marker workaround.
+- 4-agent chain (Foreman → Executor → Reviewer → Localhost-Tester) + Stage 8b fix loop + Foreman close — no inter-agent confusion. Fix-loop pattern PROVEN end-to-end.
+- 7.5h wall-clock total (Foreman seal ~14:50 → Foreman close ~19:30 = ~4h 40m core + buffer).
+
+**Schema/code delta:**
+
+- 6 new tables (4 entity + 2 sequence singleton) + 1 new ENUM type + 2 new SECURITY DEFINER RPCs + 8 new partial FK indexes + 9 ALTERs on existing tables (8 product_type/axis + 1 CHECK expansion) + 2 corrective FK drops.
+- 26 new files: 2 shell loaders + 12 partials + 12 module JS files. All under Rule 12 350-cap.
+- 1 CSS file extended with 43 lines (`css/lens-tabs.css`).
+- 12 new permission keys × 2 tenants = 24 permissions + 60 role grants.
+- Demo: 95 sample variants (30 lens + 40 CL + 25 accessory) + 80 stock rows + 6 sample POs.
+
+**Status:**
+
+- 🟢 **Pipeline CLOSED — all 50 SPEC §3 criteria PASS.**
+- ✅ M1 inventory module now ships 4 functional product categories.
+- ✅ Sidebar entries `עדשות מגע` + `אביזרים` clickable (no longer disabled).
+- ✅ Loader pipeline (sidebar click → InvShellContact/Accessory.setActive → partial fetch → script load → bootstrap dispatch) verified end-to-end via T-B.PROGRAMMATIC.
+- ✅ Demo seeded with 95 sample variants across 3 categories — ready for Daniel's manual UI walk.
+- ✅ Prizma untouched (delta = 0).
+- ⏳ Next: Daniel can verify the 4 sidebar categories manually on demo, then merge to main.
+- ⏳ Architect Integration Ceremony: merge 26 new files + 2 RPCs + 6 tables into GLOBAL_MAP + GLOBAL_SCHEMA + DB_TABLES_REFERENCE + FILE_STRUCTURE + MODULE_MAP at next Architect session.
+- ⏳ Apply auto-trigger SKILL.md edits at next opticup-strategic session (P-AUTHOR-2 decision-gate pattern 3/3 + P-AUTHOR-4 Brief-vs-DB-reality audit 3/3 + P-AUTHOR-3 corollary-edit checklist 2/3 immediate-apply per FOREMAN_REVIEW §10).
+- ⏳ TECH_DEBT bundle: `M1_CL_ACCESSORY_POLISH` (~1-1.5h, covers F-2 lens_type CHECK expansion + F-4 FIELD_MAP backfill + F-5 GLOBAL_SINGLETON_EXEMPT update + F-6 stock location_id consistency + R-FINDING-1/2 module-JS micro-fixes).
+
+---
+
+## Previous Last Updated
 M1_INVENTORY_UNIFIED_SCREEN — 2026-05-16 afternoon (🟢 CLOSED — Full Auto Pipeline 9 commits, all 14 §3 success criteria PASS)
 
 ## 2026-05-16 afternoon — M1_INVENTORY_UNIFIED_SCREEN (🟢 CLOSED — Full Auto Pipeline)

@@ -7,6 +7,26 @@
 
 ## Active Debt
 
+### #M1_CL_ACCESSORY_POLISH — 🟢 Bundled M1 maintenance for 5 follow-up items from M1_CONTACT_LENSES_ACCESSORIES
+
+**Where:** modules/contact-lens-*, modules/accessory-*, scripts/checks/rule-14-tenant-id.mjs, lens_design CHECK constraint, js/shared.js FIELD_MAP, tenant_*_stock schema.
+
+**What:** Single ~1-1.5h SPEC bundling 5 follow-up items from M1_CONTACT_LENSES_ACCESSORIES (2026-05-16):
+1. **lens_type CHECK expansion** (F-2 LOW) — ALTER `lens_design_lens_type_check` to add `soft_contact`, `hard_contact`, `accessory_general`; bulk-UPDATE the 35 stand-in `single_vision` rows seeded for CL+accessory designs to correct values.
+2. **FIELD_MAP backfill** (F-4 LOW) — Add 18+10+14+6 = 48 column entries to `js/shared.js` FIELD_MAP for `contact_lens_variant`+`tenant_contact_stock`+`accessory_variant`+`tenant_accessory_stock`. Required when full CRUD UI ships for CL/accessory tabs.
+3. **GLOBAL_SINGLETON_EXEMPT update** (F-5 LOW) — Add `contact_lens_variant_display_seq`+`accessory_variant_display_seq` to `scripts/checks/rule-14-tenant-id.mjs:21-23` exempt list. ~2-min edit.
+4. **Stock location_id consistency** (F-6 INFO) — Decide: tighten `tenant_contact_stock.location_id`+`tenant_accessory_stock.location_id` to NOT NULL (consistent with `tenant_lens_stock`) OR loosen lens to nullable. Architect decision then 1-migration ALTER.
+5. **Module JS micro-fixes** (R-FINDING-1+R-FINDING-2 INFO) — `contact-lens-inventory.js` + `accessory-inventory.js` Promise.all parallelization of loadVariants+loadStock (~50% faster render) + console.warn on silent loadStock catches (debuggability).
+
+**Why it's debt (and only 🟢):** Pipeline shipped working at MV level. None of the 5 items affect user-visible functionality or correctness today. Bundling them into one SPEC is cheaper than scattering across follow-ups.
+
+**Planned fix:** Single `M1_CL_ACCESSORY_POLISH` SPEC, ~1-1.5h. Author at next M1 maintenance touch.
+
+**Source:** `M1_CONTACT_LENSES_ACCESSORIES/FOREMAN_REVIEW.md` §5 Findings Disposition, 2026-05-16.
+
+---
+
+
 ### #M1_UNIFIED_BOOTSTRAP_PROMISE_REJECTION — 🟢 Unhandled promise rejection in lens bootstrap dispatch
 
 **Where:** `modules/inventory/inventory-shell-lens.js:212` and `:222` (the `try { fn(); }` wrappers).

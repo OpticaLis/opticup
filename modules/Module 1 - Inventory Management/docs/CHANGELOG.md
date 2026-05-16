@@ -1,6 +1,37 @@
-# Changelog — מלאי מסגרות + עדשות-ראייה
+# Changelog — מלאי מסגרות + עדשות-ראייה + עדשות-מגע + אביזרים
 
-> כל השינויים במודול ניהול מלאי (מסגרות + עדשות-ראייה מ-2026-05-14)
+> כל השינויים במודול ניהול מלאי. 4 קטגוריות מוצר מיום 2026-05-16.
+
+---
+
+## M1_CONTACT_LENSES_ACCESSORIES — 2026-05-16 evening (🟢 CLOSED — Full Auto Night Pipeline, 11 commits + 1 close + 1 fix loop, ~4.5h wall-clock)
+
+Activated the 2 "בקרוב" sidebar categories (contact lenses + accessories). End state: 4 functional product categories (frames + lens + contact lens + accessory), unified visual design, demo seeded with 95 sample variants. ZERO Prizma writes (verified 3 times).
+
+**11 commits on develop + this close (`c3b1832..71eb0d3` + Foreman close):**
+
+- `c3b1832` chore(spec): seal SPEC.md — 590 lines, 50 measurable §3 criteria, 5 decision gates DG-1..DG-5, 9 Brief-vs-DB findings F-DB-1..F-DB-9, 11 destructive ops declared
+- `84fa733` feat(m1): contact-lens schema applied (C-A1) — MCP migration: 1 ENUM + 3 tables + 6 RLS policies + 1 RPC + 4 indexes
+- `a90eb98` feat(m1): cross-cutting ALTERs for product_type + axis + CHECK expansion (C-A2) — 8 ALTERs on lens_design/supplier_catalog_offering/pricing_overlay/purchase_*_line/change_approval_log
+- `a82afcc` feat(m1): accessory schema applied (C-B1) — 3 tables + 6 RLS policies + 1 RPC + 4 indexes (total Part A+B = 8 indexes, matches S14)
+- `8c70a92` feat(m1): activate sidebar entries + nav strips + section shells (C-C1+C-C2 bundled) — inventory-shell.js extended; inventory.html +44 lines (2 nav strips + 12 section shells + 2 script tags)
+- `4b2c7c3` feat(m1): contact-lens + accessory UI module layer + permission seed (C-C3+C-C4+C-C5 bundled) — 26 new files (2 loaders + 12 partials + 12 module JS) + CSS aliases + 24 perms + 60 role grants
+- `b09f5b2` feat(m1): demo sample catalog seeded — 95 variants + 80 stock + 6 POs + FK drop corrective (C-D1+CORRECTIVE+C-D2+C-D3 bundled)
+- `0ce95bc` chore(spec): close executor scope — EXECUTION_REPORT.md (~450 lines) + FINDINGS.md (6 findings)
+- `f0642d9` chore(spec): Reviewer REVIEW.md 🟢 PASS — 7 fresh-angle spot-checks + 3 INFO findings
+- `decec03` chore(spec): Localhost-Tester TEST_REPORT 🟡 YELLOW — Tier A 35/35 PASS + Tier B caught T-FAIL-1
+- `71eb0d3` fix(m1): activate sidebar entries (C-FIX-1, Stage 8b fix loop) — 4-line semantic patch resolves T-FAIL-1; smoke 7/7 PASS post-fix
+- _(this commit)_ chore(spec): Foreman FOREMAN_REVIEW + master-doc updates + Hebrew morning summary
+
+**Pipeline stats:**
+
+- 11 Pipeline commits + 1 close = 12 total; 0 merges; 0 amends; 0 force-pushes (Foreman FA-1 verified)
+- 0 escalations to Daniel; 4 in-flight executor decisions D-1..D-4 all justified
+- 0 Prizma writes (verified 3× across 17 §0.E baseline tables, all match=true)
+- 11 SPEC §12.1 Execution Marker lines (one per destructive commit) per Iron Rule 32 gate workaround
+- 6 new tables + 1 ENUM + 2 SECDEF RPCs + 8 new indexes + 9 cross-cutting ALTERs + 2 corrective FK drops
+- 26 new files (all ≤350 cap); 1 CSS extension; 12 new permission keys × 2 tenants = 24 perms + 60 role grants
+- Demo: 95 sample variants (30 lens + 40 CL + 25 accessory) + 80 stock + 6 POs
 
 ---
 
