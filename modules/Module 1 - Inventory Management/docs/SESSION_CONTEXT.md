@@ -1,6 +1,26 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
+M1_5_CAT_SIDEBAR_COMPONENT (consumer-side refactor of inventory.html + css/inventory-shell.css) — 2026-05-17 morning (🟢 CLOSED — Full Auto Pipeline, cross-module SPEC owned by Module 1.5)
+
+## 2026-05-17 morning — M1_5_CAT_SIDEBAR_COMPONENT — consumer-side cross-reference
+
+**Note:** This SPEC is OWNED by Module 1.5 (component creation lives in `shared/`). M1 is the consumer: `inventory.html` was refactored to import the new component, and `css/inventory-shell.css` was pruned to remove the brittle selector-specific overlap hotfix (extracted to `shared/css/cat-sidebar.css`).
+
+**M1 impact:**
+- `inventory.html` (1200 → 1200 lines net): inline `<aside id="inv-sidebar">` block (37 lines) REMOVED → replaced by `<div id="cat-sidebar-mount"></div>` + `<script type="module">import { initCatSidebar } from './shared/js/cat-sidebar.js'; initCatSidebar({...});</script>`. Body content wrapped in `<div class="cat-sidebar-host"><div class="main-content">...</div><div id="cat-sidebar-mount"></div></div>` per DG-2.A grid layout. `class="has-inv-sidebar"` dropped from body (DG-3.A — legacy class no longer needed; structural grid replaces the per-element overlap selectors). New `<link rel="stylesheet" href="shared/css/cat-sidebar.css">` in head.
+- `css/inventory-shell.css` (248 → 140 lines): sidebar visual rules + brittle 4-element overlap selector list (the source of Daniel's contactNav + accessoryNav overlap bug) REMOVED. Kept: `.supplier-cat-badge` rules, `.ul-filter-bar` rules, `lens-tab-section` base — cross-cutting non-sidebar inventory styles.
+- **Daniel's reported bug (contactNav + accessoryNav strip overlap with sidebar) RESOLVED STRUCTURALLY:** the grid rule `.cat-sidebar-host { display: grid; grid-template-columns: 1fr 240px; }` in cat-sidebar.css now protects ALL current + future nav strips uniformly (mathematically impossible to recur).
+- **Inventory shell JS untouched.** Component renders the EXACT same `<aside id="inv-sidebar">` DOM shape so `inventory-shell.js` event delegation queries continue working unchanged. Zero JS edits needed in M1.
+
+**Full retrospective:** see `modules/Module 1.5 - Shared Components/docs/specs/M1_5_CAT_SIDEBAR_COMPONENT/` (SPEC + EXECUTION_REPORT + REVIEW + TEST_REPORT + FOREMAN_REVIEW).
+
+**Status:**
+- 🟢 M1 inventory module continues to work end-to-end on demo. 4 product categories + 4 cross-category entries still functional. Sidebar visual + behavior preserved (modulo R-FINDING-1 icon glyph drift on 3 entries — Daniel decision pending).
+
+---
+
+## Previous Last Updated
 M1_CONTACT_LENSES_ACCESSORIES — 2026-05-16 evening → 2026-05-17 morning (🟢 CLOSED — Full Auto Night Pipeline 11 commits + Stage 8b fix loop, all 50 §3 success criteria PASS)
 
 ## 2026-05-16 evening — M1_CONTACT_LENSES_ACCESSORIES (🟢 CLOSED — Full Auto Night Pipeline)

@@ -4,6 +4,18 @@
 
 ---
 
+## M1_5_CAT_SIDEBAR_COMPONENT (consumer-side) — 2026-05-17 morning (🟢 CLOSED — Full Auto Pipeline, ~1.5h)
+
+**Cross-module SPEC owned by Module 1.5.** Module 1 is the consumer-side refactor (inventory.html + css/inventory-shell.css). See `modules/Module 1.5 - Shared Components/docs/specs/M1_5_CAT_SIDEBAR_COMPONENT/` for full SPEC + retrospective.
+
+**M1 impact (2 files modified, 0 added, 0 deleted):**
+- `inventory.html` (1200 → 1200 lines net): inline `<aside id="inv-sidebar">` REMOVED (37 lines); replaced by `<div id="cat-sidebar-mount">` + `<script type="module">import { initCatSidebar }...</script>`. Body content wrapped in `.cat-sidebar-host > (.main-content, #cat-sidebar-mount)` grid container. `body class="has-inv-sidebar"` dropped (DG-3.A). `<link href="shared/css/cat-sidebar.css">` added in head.
+- `css/inventory-shell.css` (248 → 140 lines, -108): sidebar visual rules + brittle overlap selector list EXTRACTED to `shared/css/cat-sidebar.css`. Kept cross-cutting non-sidebar rules (.supplier-cat-badge, .ul-filter-bar, lens-tab-section).
+
+**Daniel's reported overlap bug (contactNav + accessoryNav underlapping sidebar) RESOLVED STRUCTURALLY** by the grid rule in cat-sidebar.css — applies to all current + future nav strips uniformly.
+
+---
+
 ## M1_CONTACT_LENSES_ACCESSORIES — 2026-05-16 evening (🟢 CLOSED — Full Auto Night Pipeline, 11 commits + 1 close + 1 fix loop, ~4.5h wall-clock)
 
 Activated the 2 "בקרוב" sidebar categories (contact lenses + accessories). End state: 4 functional product categories (frames + lens + contact lens + accessory), unified visual design, demo seeded with 95 sample variants. ZERO Prizma writes (verified 3 times).
