@@ -251,11 +251,60 @@
     return sessionStorage.getItem(SS_LENS_TAB_KEY) || DEFAULT_LENS_TAB;
   }
 
+  // Platform-admin runtime gate for the catalog-admin tab.
+  // The catalog-admin partial uses a separate Supabase Auth (Google OAuth)
+  // session — distinct from the PIN-based tenant auth this page uses. For
+  // non-platform-admin users (everyone except the Optic Up team), the tab
+  // should be hidden, matching the pre-migration lens-nav-strip.js behavior
+  // (carry-over of `gate: '__platform_admin__'` from the deleted widget).
+  // Restored by M1_INVENTORY_UNIFIED_SCREEN_FUNCTIONAL_HOTFIX (2026-05-16).
+  function gatePlatformAdminTabs() {
+    if (typeof sb === 'undefined' || !sb || typeof sb.rpc !== 'function') return;
+    sb.rpc('is_platform_super_admin').then(function (r) {
+      var isAdmin = !!(r && r.data === true);
+      if (isAdmin) return;
+      // Hide the catalog-admin button + section for non-platform-admin users.
+      var btn = document.querySelector('#lensNav button[data-lens-tab="catalog-admin"]');
+      if (btn) btn.style.display = 'none';
+      var section = document.querySelector('section.lens-tab-section[data-tab="catalog-admin"]');
+      if (section) section.dataset.platformAdminGated = '1';
+      // If catalog-admin was the active tab and user is not platform admin,
+      // fall back to the inventory default.
+      if (getActive() === 'catalog-admin') {
+        sessionStorage.setItem(SS_LENS_TAB_KEY, DEFAULT_LENS_TAB);
+        if (window.InvShell && window.InvShell.getCategory() === 'lenses') {
+          setActive(DEFAULT_LENS_TAB);
+        }
+      }
+    }).catch(function () { /* anon/RPC failure → keep tab hidden by leaving the gate set */ });
+  }
+
+  // Run the gate once the global sb client is ready. shared.js wires it in
+  // the standard inventory.html load chain.
+  function tryGateInit() {
+    var tries = 0;
+    var t = setInterval(function () {
+      tries++;
+      if (typeof sb !== 'undefined' && sb && typeof sb.rpc === 'function') {
+        clearInterval(t);
+        gatePlatformAdminTabs();
+      } else if (tries > 50) {
+        clearInterval(t);
+      }
+    }, 100);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', tryGateInit);
+  } else {
+    tryGateInit();
+  }
+
   window.InvShellLens = {
     tabs: LENS_TAB_ORDER,
     meta: LENS_TABS,
     setActive: setActive,
     getActive: getActive,
-    DEFAULT_TAB: DEFAULT_LENS_TAB
+    DEFAULT_TAB: DEFAULT_LENS_TAB,
+    gatePlatformAdminTabs: gatePlatformAdminTabs
   };
 })();
