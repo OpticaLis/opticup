@@ -2107,3 +2107,30 @@ CREATE INDEX IF NOT EXISTS idx_supdocs_doc_numbers ON supplier_documents USING G
 --     INTENT-vs-LITERAL within Brief sec.9 + SPEC sec.9 #10 autonomy clause.
 -- See modules/Module 1 - Inventory Management/docs/specs/M1_CONTACT_LENSES_ACCESSORIES/SPEC.md
 -- sec.2 Part A + sec.0.A pre-flight + sec.12 Execution Marker C-A1 for full SQL bodies + verify output.
+--
+-- 2026-05-16 M1_CONTACT_LENSES_ACCESSORIES Stage 2 Part A C-A2 (cross-cutting ALTERs):
+--   - lens_design ADD product_type text NOT NULL DEFAULT 'glasses'
+--       CHECK (product_type IN ('glasses','contact_lens','accessory'))
+--   - supplier_catalog_offering DROP CONSTRAINT supplier_catalog_offering_variant_id_fkey
+--     (per SPEC sec.0.C F-DB-3: polymorphic routing replaces FK on variant_id; integrity
+--      enforced at app level via product_type discriminator. Existing supplier_catalog_offering
+--      rows still reference lens_variant.id values; new contact_lens_variant + accessory_variant
+--      IDs valid post-DROP.)
+--   - supplier_catalog_offering ADD product_type text NOT NULL DEFAULT 'glasses' CHECK (...)
+--   - pricing_overlay ADD product_type text NULL CHECK (product_type IS NULL OR product_type IN (...))
+--     (NULL allowed for backward compat with existing rows; new INSERTs should specify)
+--   - purchase_order_line ADD product_type text NOT NULL DEFAULT 'glasses' CHECK (...)
+--                         ADD axis integer NULL CHECK (axis IS NULL OR axis BETWEEN 0 AND 180)
+--   - purchase_receipt_line ADD product_type text NOT NULL DEFAULT 'glasses' CHECK (...)
+--                           ADD axis integer NULL CHECK (axis IS NULL OR axis BETWEEN 0 AND 180)
+--   - change_approval_log entity_type CHECK expanded from 6 to 8 values:
+--       DROP CONSTRAINT change_approval_log_entity_type_check;
+--       ADD CONSTRAINT change_approval_log_entity_type_check CHECK (entity_type IN (
+--         'lens_brand','lens_design','lens_variant','supplier_catalog_offering',
+--         'pricing_overlay','supplier_permissions',
+--         'contact_lens_variant','accessory_variant'  -- new
+--       ));
+--   - Existing rows preserved: lens_design's 1 prizma row backfilled to product_type='glasses'
+--     via DEFAULT (verified post-ALTER).
+--   - Prizma row counts ALL UNCHANGED post-ALTER:
+--       inventory=8894, brands=232, goods_receipt_items=275, change_approval_log=0.
