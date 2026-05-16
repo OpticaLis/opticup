@@ -54,7 +54,7 @@ After Phase 1:
 - 3 ALTER TABLE × ADD COLUMN `cloned_from_id UUID NULLABLE` self-FK (lens_brand / lens_design / lens_variant)
 - 3 partial FK indexes for the new `cloned_from_id` columns
 - 6 new permission keys (3 `.catalog.private.manage` + 3 `.catalog.global.view`) × 2 tenants = 12 permission rows
-- Role-permission grants: ceo + branch_manager get `.private.manage`; ALL roles get `.global.view`
+- Role-permission grants: ceo + manager get `.private.manage` + `.global.view`; team_lead + viewer + worker get `.global.view` only (matches predecessor SPEC pattern, role `branch_manager` does not exist — `manager` is the canonical role name in the live schema)
 - 1 new shared component: `shared/js/catalog-private-admin.js` — renders the 2-sub-tab Brand→Design→Variant UI driven by `product_type` filter (Iron Rule 21 — single component reused across 3 categories)
 - 3 new shell wirings: a "Catalog Admin" sub-tab inside each of the 3 inventory category sections (lens / contact-lens / accessory)
 - "Clone to Private" button + RPC `clone_catalog_entry_to_private(product_type, entry_type, source_id)` (returns the new private row's id; transactional)
@@ -163,12 +163,12 @@ INSERT INTO permissions (id, module, action, name_he, description, tenant_id) VA
 ON CONFLICT (id, tenant_id) DO NOTHING;
 
 -- Grant role_permissions:
---   ceo + branch_manager: all 6 keys (manage + view)
+--   ceo + manager: all 6 keys (manage + view)
 --   team_lead + viewer + worker: only the 3 .global.view keys
 -- (per-tenant grants, mirrors predecessor SPEC pattern)
 INSERT INTO role_permissions (role_id, permission_id, granted, tenant_id)
 SELECT r.id, p.id, true, t.id
-FROM (VALUES ('ceo'),('branch_manager')) roles(role_id)
+FROM (VALUES ('ceo'),('manager')) roles(role_id)
 CROSS JOIN (VALUES
   ('lens.catalog.private.manage'),('lens.catalog.global.view'),
   ('contact_lens.catalog.private.manage'),('contact_lens.catalog.global.view'),
@@ -375,3 +375,5 @@ Per opticup-executor SKILL.md §"Folder-per-SPEC retrospective protocol":
 - **C-1 ✅** — 2026-05-17 night — Migration `m1_phase1_cloned_from_id_columns` applied via Supabase MCP. Verified: 3 `cloned_from_id UUID NULL` columns + 3 partial indexes (`idx_lens_brand_cloned_from`, `idx_lens_design_cloned_from`, `idx_lens_variant_cloned_from`). Prizma row-count delta = 0 across 3 tables (baseline preserved).
 
 - **C-2 ✅** — 2026-05-17 night — Migration `m1_phase1_clone_to_private_rpc` + corrective `m1_phase1_clone_to_private_rpc_revoke_public` applied via Supabase MCP. Created `clone_catalog_entry_to_private(text, uuid, uuid) RETURNS uuid` (SECURITY DEFINER, JWT-tenant defense-in-depth check, draft+unpublished destination). Tier-1 in-flight fix: initial REVOKE-only-from-anon was insufficient because Postgres auto-grants EXECUTE to PUBLIC on CREATE FUNCTION; corrective REVOKE FROM PUBLIC applied. Final ACL: authenticated + postgres + service_role only. Prizma row-count delta still = 0 (no data written by the RPC; only function definition + grants).
+
+- **C-3 ✅** — 2026-05-17 night — Migration `m1_phase1_permission_keys_seed` applied via Supabase MCP. 6 permission keys × 2 tenants = 12 permissions rows; role_permissions: ceo+manager × 6 perms × 2 tenants = 24 grants; team_lead+viewer+worker × 3 view-only perms × 2 tenants = 18 grants. Pre-flight catch: SPEC originally said `branch_manager` but live schema only has roles {ceo, manager, team_lead, viewer, worker} — SPEC updated to `manager`. Verified: 0 private.manage leakage to lower roles. Prizma inventory data delta = 0 across lens_brand/_design/_variant/tenant_active_offerings/pricing_overlay (perms are tenant infrastructure, not inventory data).
