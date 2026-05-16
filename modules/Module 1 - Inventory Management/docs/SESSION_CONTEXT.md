@@ -1,7 +1,53 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1_INVENTORY_REDESIGN — 2026-05-16 morning (🟢 Executor scope CLOSED — Full Auto Pipeline 6 commits, awaiting Reviewer + Localhost-Tester + Foreman)
+M1_INVENTORY_UNIFIED_SCREEN — 2026-05-16 afternoon (🟢 CLOSED — Full Auto Pipeline 9 commits, all 14 §3 success criteria PASS)
+
+## 2026-05-16 afternoon — M1_INVENTORY_UNIFIED_SCREEN (🟢 CLOSED — Full Auto Pipeline)
+
+**Goal:** Consolidate the 8 inventory-related HTMLs (inventory + 7 lens-*) into ONE page (inventory.html). Move sidebar from physical LEFT to physical RIGHT (RTL-correct). Migrate 7 lens screens to lazy-loaded body partials with frames-pattern visual unification. Delete the 7 lens HTMLs + lens-nav-strip.js. Same DB, same RPCs, same business logic, same permissions.
+
+**Pipeline commits (5 executor + 1 retro + Reviewer + Tester + Foreman close, `be5fafc..HEAD`):**
+
+- `be5fafc` C0 — Foreman sealed SPEC (332 lines): §0.A 12-probe pre-flight + §0.B 5 decision gates + §0.C 9 Brief-vs-DB findings + §3 14 measurable success criteria. Tag `pre-inventory-unified-screen-2026-05-16` placed at parent `8017fc9`.
+- `46d541b` C1 — sidebar RTL fix: `css/inventory-shell.css` logical-property swap (inset-inline-end → inset-inline-start). Sidebar moved from visual LEFT to visual RIGHT.
+- `ddb926e` C2 — lens tab shell + URL routing. New `modules/inventory/inventory-shell-lens.js` (224 lines lens loader registry). New `css/lens-tabs.css` (324 lines frames-aligned visual primitives). `inventory.html` +28 lines (lensNav strip + 7 empty lens section shells + 1 new script).
+- `a5367ff` C2.5 — lens loader hardening: clear-and-reinject + bootstrap re-dispatch on tab re-activation. Prevents cross-lens DOM-ID collisions.
+- `9fce6de` C3 — 7 lens partials migrated to semantic markup at `modules/lens-<screen>/lens-<screen>-partial.html`. §1.5 Visual Reconciliation Audit 13/14 applied + R-10 INTENT-vs-LITERAL. Tiny bootstrap export added to `modules/lens-catalog-admin/lens-catalog-admin.js`.
+- `64a69e7` C4 — `git rm` 7 lens HTMLs + `shared/js/lens-nav-strip.js`. 2 deep-link URL updates (lens-inventory-modals.js + lens-goods-receipt-close.js). SPEC.md §13 Execution Marker appended for Iron Rule 32 gate.
+- `f249c87` C5 — EXECUTION_REPORT.md + FINDINGS.md (8 findings: 1 MEDIUM gate gap, 2 LOW cosmetic/UX, 5 INFO deferred).
+- `116f146` Reviewer REVIEW.md 🟢 PASS — 7 fresh-angle spot-checks + 3 new findings (R-FINDING-1/2/3).
+- `ee6594d` Localhost-Tester TEST_REPORT 🟢 GREEN — Smoke 7/7 PASS + Chrome MCP 4 screenshots + per-tab probe across all 7 lens tabs + S6 catalog-admin gate verification.
+- _(this commit)_ Foreman FOREMAN_REVIEW + master-doc updates + Hebrew summary.
+
+**Pipeline stats:**
+
+- 9 commits total (5 executor + Foreman + Reviewer + Tester + close). All single-concern, all on develop, no merges, no amends, no force-pushes.
+- 0 escalations to me or Daniel. 6 in-flight executor decisions documented (5 INTENT-vs-LITERAL within §9 Autonomy; 1 commit-slicing under §9 #4).
+- Iron Rule 31 + 32 gates: exit 0 every commit. §13 Execution Marker workaround for the gate's same-commit-staging requirement.
+- 4 master-doc updates + 4 new TECH_DEBT entries.
+- Smoke 7/7 PASS pre-Pipeline AND post-C4. Chrome MCP 4/4 visual.
+- 0 row delta on Prizma — zero DB writes anywhere in the Pipeline.
+- **14/14 SPEC §3 success criteria PASS** — first Full-Auto Pipeline of the day at 100% S-criteria green.
+
+**Schema/code delta:**
+
+- 0 new tables / 0 new RPCs / 0 new views / 0 new permission keys / 0 new T-constants / 0 new FIELD_MAP entries / 0 new Edge Function deploys.
+- 9 new files: `inventory-shell-lens.js` (224), `css/lens-tabs.css` (324), 7 partials (415 total).
+- 7 modified files: `inventory.html` (1128→1156), `css/inventory-shell.css` (224→237), `inventory-shell.js` (200→228), `lens-catalog-admin.js` (185→195), `lens-inventory-modals.js` (+3), `lens-goods-receipt-close.js` (+5), 1 SPEC.md addition.
+- 8 deleted files: 7 lens HTMLs (1104 lines) + `shared/js/lens-nav-strip.js` (136 lines).
+- Root HTML count: 24 → 17 (-7, -29%).
+
+**Status:**
+
+- 🟢 **Pipeline CLOSED — all 14 SPEC §3 criteria PASS.**
+- ✅ Inventory module is now a true single-page unified screen with sidebar on physical right.
+- ✅ M1 Lens department fully preserved (same DB, same RPCs, same business logic).
+- ✅ M1 Lens production-complete remains unaffected.
+
+---
+
+## 2026-05-16 morning — M1_INVENTORY_REDESIGN (🟢 CLOSED — Full Auto Pipeline 9 commits, ~3.5h wall-clock)
 
 ## 2026-05-16 morning — M1_INVENTORY_REDESIGN (🟢 Executor scope CLOSED — Full Auto Pipeline, single chat)
 
