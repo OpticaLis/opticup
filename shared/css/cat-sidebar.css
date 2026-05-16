@@ -1,11 +1,14 @@
 /* cat-sidebar.css — Module 1.5 reusable category sidebar styles.
    Sealed by M1_5_CAT_SIDEBAR_COMPONENT SPEC §2 Part A + Part C (2026-05-17).
+   Layout reworked in HOTFIX_2 C2 (2026-05-17) — see §1 below.
 
    Three concerns in one file:
-   1. .cat-sidebar-host — CSS grid wrapper that structurally protects main
-      content from underlapping the sidebar. Replaces the brittle selector-
-      specific overlap hotfix that lived in css/inventory-shell.css (which
-      only enumerated 4 elements and missed contactNav + accessoryNav).
+   1. .cat-sidebar-host + .main-content — host is a plain block; main content
+      reserves inline-start space (via margin-inline-start) for the fixed
+      sidebar. Replaces both the brittle per-element overlap hotfix from
+      css/inventory-shell.css (which only enumerated 4 elements and missed
+      contactNav + accessoryNav) AND the failed grid-based attempts in the
+      original SPEC + HOTFIX_2 C1.
    2. #inv-sidebar — sidebar visual rules (extracted from inventory-shell.css
       so the component file owns its own appearance).
    3. .inv-cat-item — category entry rules + responsive @media collapse.
@@ -16,55 +19,33 @@
 */
 
 /* ============================================================
-   1. GRID HOST — structural protection
+   1. HOST + MAIN-CONTENT OFFSET — Option A (HOTFIX_2 C2, 2026-05-17)
    ============================================================
-   Per Brief §2.3 + SPEC DG-2.A: the host wraps body content into a 2-column
-   grid. Column 1 = main content (banner + all nav strips + main). Column 2 =
-   sidebar mount point. RTL flips automatically (column 2 = right edge in RTL).
-   Custom properties allow future modules to theme without forking.
+   The sidebar is `position: fixed` (see #inv-sidebar below), so it exits
+   document flow. CSS Grid cannot constrain main content against a fixed
+   element — grid auto-placement uses DOM child order, which led the prior
+   grid-based attempts to either (pre-C1) leave main content underlapping
+   the sidebar, or (C1) squeeze main content into the 240px slot under the
+   sidebar.
+
+   Option A (chosen): drop the grid entirely; push .main-content away from
+   the inline-start side using a logical-property margin. RTL flips
+   automatically: in RTL, `margin-inline-start` resolves to margin-right,
+   which reserves 240px on the RIGHT edge — exactly where the fixed sidebar
+   sits (inset-inline-start: 0). Result: main content fills viewport width
+   minus 240px on the sidebar side. No grid, no DOM-order trap, no RTL
+   gymnastics.
 */
-/* RTL column-order note (M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2, 2026-05-17):
-   The sidebar slot is INTENTIONALLY column 1 (the 240px column appears FIRST).
-   This looks counter-intuitive — natural reading order would be "main content
-   first, sidebar second" → 1fr 240px. DO NOT swap back.
-
-   Why: CSS Grid columns are laid out in INLINE-DIRECTION order. In RTL
-   (this project's default <html dir="rtl">), grid column 1 resolves to the
-   inline-start side = RIGHT edge of viewport. Grid column 2 = LEFT edge.
-
-   The #inv-sidebar element below uses `position: fixed; inset-inline-start: 0`
-   which in RTL also resolves to the RIGHT edge. So the grid sidebar SLOT and
-   the actual fixed sidebar must be on the SAME side (RIGHT in RTL).
-
-   `1fr var(--cat-sidebar-width, 240px)` (slot last) puts the sidebar slot on
-   the LEFT in RTL — mismatched with the fixed sidebar on the right. Main
-   content (1fr) then occupies the RIGHT side where the sidebar overlays it.
-   Every nav strip / section inside .main-content extends under the sidebar.
-   This was the M1_5_CAT_SIDEBAR_COMPONENT overlap bug Daniel reported.
-
-   `var(--cat-sidebar-width, 240px) 1fr` (slot first) puts the sidebar slot on
-   the RIGHT in RTL — matched with the fixed sidebar. Main content (1fr) is
-   on the LEFT side, fully visible. THIS IS THE CORRECT ORDER for RTL +
-   inset-inline-start-anchored fixed sidebar. */
 .cat-sidebar-host {
-  display: grid;
-  grid-template-columns: var(--cat-sidebar-width, 240px) 1fr;
-  /* No gap — sidebar already has internal padding; the boundary should be tight */
+  display: block;
 }
 
 .cat-sidebar-host > .main-content {
-  /* min-width: 0 prevents flex/grid blowout when child content (tables, wide
-     nav strips) wants to push past column width. Pair with overflow-x: auto
-     so the strips scroll inside their own column instead of underlapping. */
+  /* RTL: margin-inline-start = margin-right → reserves 240px on the right
+     for the fixed sidebar. LTR symmetry preserved automatically. */
+  margin-inline-start: var(--cat-sidebar-width, 240px);
   min-width: 0;
   overflow-x: auto;
-}
-
-.cat-sidebar-host > #cat-sidebar-mount {
-  /* The mount cell is just a slot — the actual sidebar element below uses
-     position:fixed per F-6 refinement (preserves existing visual behavior).
-     The mount cell reserves the layout width regardless. */
-  width: var(--cat-sidebar-width, 240px);
 }
 
 /* ============================================================
@@ -160,16 +141,13 @@
 /* ============================================================
    4. RESPONSIVE FALLBACK — sidebar collapses below 800px
    ============================================================
-   Mobile/narrow: grid becomes 1 column; sidebar becomes a top strip (static
-   position) below the (now stacked) main content. The structural grid +
-   stacking guarantee no horizontal overlap regardless of viewport.
+   Mobile/narrow: sidebar becomes a static-position strip stacking in normal
+   flow; main content takes full width (drop the inline-start margin reserved
+   for the desktop fixed sidebar).
 */
 @media (max-width: 800px) {
-  .cat-sidebar-host {
-    grid-template-columns: 1fr;
-  }
-  .cat-sidebar-host > #cat-sidebar-mount {
-    width: 100%;
+  .cat-sidebar-host > .main-content {
+    margin-inline-start: 0;
   }
   #inv-sidebar {
     position: static;
