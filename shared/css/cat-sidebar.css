@@ -23,9 +23,32 @@
    sidebar mount point. RTL flips automatically (column 2 = right edge in RTL).
    Custom properties allow future modules to theme without forking.
 */
+/* RTL column-order note (M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2, 2026-05-17):
+   The sidebar slot is INTENTIONALLY column 1 (the 240px column appears FIRST).
+   This looks counter-intuitive — natural reading order would be "main content
+   first, sidebar second" → 1fr 240px. DO NOT swap back.
+
+   Why: CSS Grid columns are laid out in INLINE-DIRECTION order. In RTL
+   (this project's default <html dir="rtl">), grid column 1 resolves to the
+   inline-start side = RIGHT edge of viewport. Grid column 2 = LEFT edge.
+
+   The #inv-sidebar element below uses `position: fixed; inset-inline-start: 0`
+   which in RTL also resolves to the RIGHT edge. So the grid sidebar SLOT and
+   the actual fixed sidebar must be on the SAME side (RIGHT in RTL).
+
+   `1fr var(--cat-sidebar-width, 240px)` (slot last) puts the sidebar slot on
+   the LEFT in RTL — mismatched with the fixed sidebar on the right. Main
+   content (1fr) then occupies the RIGHT side where the sidebar overlays it.
+   Every nav strip / section inside .main-content extends under the sidebar.
+   This was the M1_5_CAT_SIDEBAR_COMPONENT overlap bug Daniel reported.
+
+   `var(--cat-sidebar-width, 240px) 1fr` (slot first) puts the sidebar slot on
+   the RIGHT in RTL — matched with the fixed sidebar. Main content (1fr) is
+   on the LEFT side, fully visible. THIS IS THE CORRECT ORDER for RTL +
+   inset-inline-start-anchored fixed sidebar. */
 .cat-sidebar-host {
   display: grid;
-  grid-template-columns: 1fr var(--cat-sidebar-width, 240px);
+  grid-template-columns: var(--cat-sidebar-width, 240px) 1fr;
   /* No gap — sidebar already has internal padding; the boundary should be tight */
 }
 

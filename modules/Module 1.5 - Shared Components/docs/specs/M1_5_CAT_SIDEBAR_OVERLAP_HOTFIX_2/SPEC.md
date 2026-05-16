@@ -234,6 +234,7 @@ Per executor's P-EXEC-2 pattern (now 3/3 firings, auto-applied): the `destructiv
 ### 12.1 Execution Marker Log
 
 - _(C1..C4 appended by Executor + Tester + Foreman as commits land)_
+- **C1** (2026-05-17T~19:25Z): swapped `grid-template-columns` column order in `shared/css/cat-sidebar.css` from buggy `1fr var(--cat-sidebar-width, 240px)` (RTL-mismatched) to correct `var(--cat-sidebar-width, 240px) 1fr` (sidebar slot first = inline-start = RIGHT in RTL = matches fixed sidebar). Added ~22-line explanatory comment block above the rule warning future maintainers not to swap back. File size 162 → 185 lines (+23: 1-line rule edit + 22 comment lines). 0 NUL bytes. Verifications: S1 (correct order present) = 1; S2 (buggy order absent) = 0; S3 (RTL comment present) = 8. Mobile @media (max-width: 800px) block untouched per §4 explicit restriction. Single file modified per §9 autonomy envelope.
 
 ---
 
