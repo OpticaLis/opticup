@@ -21,8 +21,18 @@
 
 body.has-inv-sidebar > main,
 body.has-inv-sidebar > #mainNav,
+body.has-inv-sidebar > #lensNav,
 body.has-inv-sidebar > #low-stock-banner {
   margin-inline-start: 240px;
+}
+
+/* Base banner spacing — moved here from the element's inline style so the
+   sidebar-aware margin-inline-start above can take effect. Inline styles
+   beat stylesheet specificity, so any margin-* in the inline style would
+   override the sidebar offset. Fixed by M1_INVENTORY_UNIFIED_SCREEN_HOTFIX. */
+#low-stock-banner {
+  margin-block: 8px;
+  margin-inline-end: 16px;
 }
 
 .inv-sidebar-title {
@@ -228,6 +238,7 @@ section.lens-tab-section.active {
   }
   body.has-inv-sidebar > main,
   body.has-inv-sidebar > #mainNav,
+  body.has-inv-sidebar > #lensNav,
   body.has-inv-sidebar > #low-stock-banner {
     margin-inline-start: 0;
   }
