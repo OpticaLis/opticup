@@ -20,14 +20,17 @@ Storefront (opticup-storefront)              ERP / Supabase (this repo)
 User fills /supersale/ form
    │
    ├─ Generate UUID v4 (fb_event_id)  ──────► POST /functions/v1/lead-intake
-   │   [DEFERRED: M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF]    └─ INSERT crm_leads (fb_event_id = UUID)
-   │                                                          └─ INSERT crm_capi_dispatch_queue (queued)
+   │                                            └─ INSERT crm_leads (fb_event_id = UUID)
+   │                                            └─ INSERT crm_capi_dispatch_queue (queued)
    │
-   └─ Redirect → /successfulsupersale/
+   └─ Redirect → /successfulsupersale/?fbe=<uuid>
         │
-        └─ Browser pixel fires Lead event  ─► Facebook (browser-side, cookie match)
-            with eventID = UUID             [fb_pixel_fired_at populated on crm_leads
-            [DEFERRED: storefront SPEC]      by storefront SPEC — not yet implemented]
+        ├─ Browser pixel fires Lead event  ─► Facebook (browser-side, cookie match)
+        │   with eventID = UUID
+        │
+        └─ POST /functions/v1/pixel-fired  ─────► UPDATE crm_leads
+            {event_id, tenant_id}                 SET fb_pixel_fired_at = NOW()
+            keepalive: true, fire-and-forget      (idempotent — D4)
 
                                          pg_cron tick (every 60s)
                                             └─ fb-capi-dispatch EF
@@ -36,9 +39,9 @@ User fills /supersale/ form
                                                       with event_id = UUID  ← CAPI-side Lead
 ```
 
-**Deduplication:** when the storefront SPEC ships, both the browser pixel and the CAPI call carry the same `fb_event_id` UUID. Meta deduplicates via the shared `event_id` field — Lead is counted once, not twice.
+**Deduplication:** both the browser pixel and the CAPI call carry the same `fb_event_id` UUID. Meta deduplicates via the shared `event_id` field — Lead is counted once, not twice.
 
-**Until the storefront SPEC ships:** `fb_event_id` is NULL on all rows. CAPI fires without `event_id`; Meta counts browser Lead and CAPI Lead as independent events. No double-counting risk because browser pixel fires on a different URL pattern than the CAPI dispatch time (browser = thank-you page load; CAPI = row insert). The substrate is architecturally complete — the storefront PR is additive.
+**Pixel-fire detection (back-wire):** after `fbq` fires on the thank-you page, the storefront also POSTs `{event_id, tenant_id}` to the `pixel-fired` Edge Function which stamps `crm_leads.fb_pixel_fired_at = NOW()`. This closes the measurement loop — the ERP can now distinguish "CAPI dispatched" (`crm_capi_dispatch_queue.status='sent'`) from "browser Pixel actually fired" (`fb_pixel_fired_at IS NOT NULL`). Without this, ad-blocker / redirect-failure / tab-close events would be undetectable. Shipped 2026-05-16 via `M3_FUNNEL_PIXEL_BACKWIRE`.
 
 ---
 
@@ -156,7 +159,7 @@ WHERE tenant_id = '<tenant_uuid>';
 | Column | Type | Purpose |
 |---|---|---|
 | `fb_event_id` | uuid NULL | Shared FB event_id for browser-CAPI dedup. Populated by `lead-intake` EF from optional body field `fb_event_id`. NULL until storefront SPEC ships. |
-| `fb_pixel_fired_at` | timestamptz NULL | When the storefront thank-you-page pixel fired. Populated by storefront SPEC `M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF`. NULL until then. Used by P2.2 pixel-validation-gap dashboard. |
+| `fb_pixel_fired_at` | timestamptz NULL | When the storefront thank-you-page pixel fired. Populated by the `pixel-fired` Edge Function (M3_FUNNEL_PIXEL_BACKWIRE, 2026-05-16) — the storefront thank-you-page POSTs after `fbq` fires. NULL for historical rows + leads where the browser Pixel never fired (ad-blocker, redirect failure, tab-close before page load). Used by P2.2 pixel-validation-gap dashboard. |
 
 ---
 
@@ -182,17 +185,17 @@ WHERE tenant_id = '<tenant_uuid>';
 
 ---
 
-## 7. Deferred Storefront Handoff (D-AUTH-2)
+## 7. Storefront Handoff — IMPLEMENTED (D-AUTH-2)
 
-**SPEC:** `M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF` in `opticalis/opticup-storefront`.
+**SPEC:** `M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF` (closed 2026-05-15) + `M3_FUNNEL_PIXEL_BACKWIRE` (closed 2026-05-16) in `opticalis/opticup-storefront`.
 
-What it will do:
-1. On `/supersale/` page load: generate `crypto.randomUUID()` and store in `sessionStorage` as `fb_event_id`.
-2. On form submit: include `fb_event_id` in the `lead-intake` POST body.
-3. On `/successfulsupersale/` (thank-you page): fire the browser pixel `Lead` event with the same `fb_event_id` as the `eventID` parameter.
-4. Optionally: POST back to a Supabase endpoint to populate `crm_leads.fb_pixel_fired_at`.
+What ships:
+1. On supersale form submit (via `src/lib/shortcodes/lead-form-validation.ts::buildScript()`): generate `crypto.randomUUID()` and include in the `lead-intake` POST body as `fb_event_id`.
+2. Redirect to `/successfulsupersale/?fbe=<uuid>` carries the UUID forward via URL param.
+3. On thank-you-page (any locale — pixel-firing is unified in `src/lib/analytics.ts::getPixelEventsScript()`): browser pixel fires `Lead` with `{eventID: uuid}` (4th arg to `fbq`); Meta dedups against the CAPI event with matching `event_id`.
+4. **Back-wire (2026-05-16):** the same inline JS that fires `fbq` ALSO POSTs `{event_id, tenant_id}` to `/functions/v1/pixel-fired` with `keepalive: true` (fire-and-forget). The EF stamps `crm_leads.fb_pixel_fired_at = NOW()`.
 
-**Until this ships:** CAPI dispatch runs without `event_id`. Meta does not dedup browser + CAPI Lead. No double-counting risk per the architectural analysis in §1. The infrastructure is ready — the storefront PR is the only remaining work.
+**Activation for Prizma:** Daniel populates `tenants.fb_capi_token` for Prizma's row in Supabase (one-time Meta Business Manager workflow). Once populated, `fb-capi-dispatch` EF moves from `skipped_no_token` to `sent`. Demo intentionally has no token and stays at `skipped_no_token` (D-AUTH-3).
 
 ---
 
@@ -264,10 +267,11 @@ Rationale (Brief D1): Messaging Architecture v2 says Make = pipe only, zero DB a
 
 | Item | Status |
 |---|---|
-| `M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF` — storefront UUID gen + hidden field + thank-you pixel eventID | Queued in OPEN_TASKS |
+| `M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF` — storefront UUID gen + hidden field + thank-you pixel eventID | ✅ CLOSED 2026-05-15 |
+| `M3_FUNNEL_PIXEL_BACKWIRE` — pixel-fired EF + storefront POST after `fbq` fires | ✅ CLOSED 2026-05-16 |
 | `M4_FB_CAPI_PURCHASE_EVENTS` — Purchase events via CAPI after ≥200 dispatched Lead events validated | Queued in OPEN_TASKS |
-| P2.2 pixel-validation-gap dashboard — query `crm_capi_dispatch_queue.status` counts joined with `crm_leads.fb_pixel_fired_at` | PLANNED in FUNNEL_ROADMAP P2.2 |
-| Cookie forwarding (`_fbp`, `_fbc`) — requires storefront capture + body field passthrough | Follow-up after storefront SPEC |
+| `M4_PIXEL_VALIDATION_GAP_DASHBOARD` (P2.2b) — query `crm_capi_dispatch_queue.status` counts joined with `crm_leads.fb_pixel_fired_at` | UNBLOCKED — substrate live as of 2026-05-16 |
+| Cookie forwarding (`_fbp`, `_fbc`) — requires storefront capture + body field passthrough | Future SPEC |
 
 ---
 
