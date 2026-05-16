@@ -367,3 +367,9 @@ Per opticup-executor SKILL.md §"Folder-per-SPEC retrospective protocol":
 ---
 
 *End of SPEC. Iron Rule 32 §Destructive Operations declared. Authorized to proceed with C-1 through C-7. C-8 reserved for in-flight fix.*
+
+---
+
+## 12. Execution Markers (audit trail)
+
+- **C-1 ✅** — 2026-05-17 night — Migration `m1_phase1_cloned_from_id_columns` applied via Supabase MCP. Verified: 3 `cloned_from_id UUID NULL` columns + 3 partial indexes (`idx_lens_brand_cloned_from`, `idx_lens_design_cloned_from`, `idx_lens_variant_cloned_from`). Prizma row-count delta = 0 across 3 tables (baseline preserved).
