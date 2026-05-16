@@ -102,6 +102,30 @@
   <button data-lens-tab="catalog-admin">&#128295; קטלוג מערכת</button>
 </nav>
 
+<!-- Contact-lens nav strip (M1_CONTACT_LENSES_ACCESSORIES SPEC §2 Part C + DG-5.A, 2026-05-16).
+     Visible only when sidebar category=contact-lenses. Click activates the matching
+     contact-tab-section; bindings wired by inventory-shell.js. 6 tabs (no separate
+     catalog-admin; merged into active-designs per F-DB-9 compression). -->
+<nav id="contactNav" style="display:none">
+  <button data-contact-tab="inventory" data-tab-permission="contact_lens.inventory.view" class="active">&#128083; מלאי</button>
+  <button data-contact-tab="active-designs" data-tab-permission="contact_lens.designs.manage">&#10024; דגמים פעילים</button>
+  <button data-contact-tab="pricing" data-tab-permission="contact_lens.pricing.manage">&#128178; מחירים</button>
+  <button data-contact-tab="purchase-order" data-tab-permission="contact_lens.po.manage">&#128221; הזמנת רכש</button>
+  <button data-contact-tab="goods-receipt" data-tab-permission="contact_lens.receipt.manage">&#128230; קבלת סחורה</button>
+  <button data-contact-tab="catalog-admin" data-tab-permission="contact_lens.catalog.admin">&#128295; קטלוג מערכת</button>
+</nav>
+
+<!-- Accessory nav strip (M1_CONTACT_LENSES_ACCESSORIES SPEC §2 Part C + DG-5.A, 2026-05-16).
+     Visible only when sidebar category=accessories. 6 tabs, same pattern as contact-lens. -->
+<nav id="accessoryNav" style="display:none">
+  <button data-accessory-tab="inventory" data-tab-permission="accessory.inventory.view" class="active">&#128230; מלאי</button>
+  <button data-accessory-tab="active-designs" data-tab-permission="accessory.designs.manage">&#10024; דגמים פעילים</button>
+  <button data-accessory-tab="pricing" data-tab-permission="accessory.pricing.manage">&#128178; מחירים</button>
+  <button data-accessory-tab="purchase-order" data-tab-permission="accessory.po.manage">&#128221; הזמנת רכש</button>
+  <button data-accessory-tab="goods-receipt" data-tab-permission="accessory.receipt.manage">&#128230; קבלת סחורה</button>
+  <button data-accessory-tab="catalog-admin" data-tab-permission="accessory.catalog.admin">&#128295; קטלוג מערכת</button>
+</nav>
+
 <main>
 
 <!-- ========== TAB 1: ENTRY ========== -->
@@ -683,6 +707,24 @@
 <section class="tab lens-tab-section" data-cat="lenses" data-tab="goods-receipt" data-tab-permission="lens.gr.create"></section>
 <section class="tab lens-tab-section" data-cat="lenses" data-tab="catalog-admin"></section>
 
+<!-- Contact-lens tab section shells (M1_CONTACT_LENSES_ACCESSORIES SPEC §2 Part C, 2026-05-16).
+     Lazily populated by inventory-shell-contact.js. 6 tabs (no pos-list — folded into purchase-order). -->
+<section class="tab contact-tab-section" data-cat="contact-lenses" data-tab="inventory" data-tab-permission="contact_lens.inventory.view"></section>
+<section class="tab contact-tab-section" data-cat="contact-lenses" data-tab="active-designs" data-tab-permission="contact_lens.designs.manage"></section>
+<section class="tab contact-tab-section" data-cat="contact-lenses" data-tab="pricing" data-tab-permission="contact_lens.pricing.manage"></section>
+<section class="tab contact-tab-section" data-cat="contact-lenses" data-tab="purchase-order" data-tab-permission="contact_lens.po.manage"></section>
+<section class="tab contact-tab-section" data-cat="contact-lenses" data-tab="goods-receipt" data-tab-permission="contact_lens.receipt.manage"></section>
+<section class="tab contact-tab-section" data-cat="contact-lenses" data-tab="catalog-admin" data-tab-permission="contact_lens.catalog.admin"></section>
+
+<!-- Accessory tab section shells (M1_CONTACT_LENSES_ACCESSORIES SPEC §2 Part C, 2026-05-16).
+     Lazily populated by inventory-shell-accessory.js. 6 tabs mirror contact-lens. -->
+<section class="tab accessory-tab-section" data-cat="accessories" data-tab="inventory" data-tab-permission="accessory.inventory.view"></section>
+<section class="tab accessory-tab-section" data-cat="accessories" data-tab="active-designs" data-tab-permission="accessory.designs.manage"></section>
+<section class="tab accessory-tab-section" data-cat="accessories" data-tab="pricing" data-tab-permission="accessory.pricing.manage"></section>
+<section class="tab accessory-tab-section" data-cat="accessories" data-tab="purchase-order" data-tab-permission="accessory.po.manage"></section>
+<section class="tab accessory-tab-section" data-cat="accessories" data-tab="goods-receipt" data-tab-permission="accessory.receipt.manage"></section>
+<section class="tab accessory-tab-section" data-cat="accessories" data-tab="catalog-admin" data-tab-permission="accessory.catalog.admin"></section>
+
 </main>
 
 <!-- Login Modal -->
@@ -1073,6 +1115,8 @@
 <script src="modules/access-sync/pending-panel.js"></script>
 <script src="modules/access-sync/pending-resolve.js"></script>
 <script src="modules/inventory/inventory-shell-lens.js"></script>
+<script src="modules/inventory/inventory-shell-contact.js"></script>
+<script src="modules/inventory/inventory-shell-accessory.js"></script>
 <script src="modules/inventory/inventory-shell.js"></script>
 <script src="modules/inventory/unified-log.js"></script>
 <script src="modules/admin/admin.js"></script>

@@ -2,11 +2,16 @@
 // Sealed by M1_INVENTORY_REDESIGN SPEC §2.1 (2026-05-16).
 // Extended by M1_INVENTORY_UNIFIED_SCREEN SPEC §0.B (2026-05-16) for in-page
 // lens-tab handling. Lens loader lives in inventory-shell-lens.js.
+// Extended by M1_CONTACT_LENSES_ACCESSORIES SPEC §2 Part C (2026-05-16) for
+// contact-lens + accessory categories. Each has its own loader (contact /
+// accessory) mirroring the lens pattern (DG-5.A parallel-prefix isolation).
 //
 // Owns: category state (sidebar item active), which top nav strip is visible
-// (frames vs lens), URL ?cat=&tab= param routing on init, sessionStorage
-// persistence of last category + last frames tab. Lens-tab activation is
-// delegated to window.InvShellLens.setActive().
+// (frames vs lens vs contact vs accessory), URL ?cat=&tab= param routing on
+// init, sessionStorage persistence of last category + last frames tab.
+// Lens-tab activation is delegated to window.InvShellLens.setActive().
+// Contact-tab activation is delegated to window.InvShellContact.setActive().
+// Accessory-tab activation is delegated to window.InvShellAccessory.setActive().
 
 (function () {
   'use strict';
@@ -39,6 +44,22 @@
     if (nav) nav.style.display = show ? '' : 'none';
   }
 
+  function showContactNav(show) {
+    var nav = $('contactNav');
+    if (nav) nav.style.display = show ? '' : 'none';
+  }
+
+  function showAccessoryNav(show) {
+    var nav = $('accessoryNav');
+    if (nav) nav.style.display = show ? '' : 'none';
+  }
+
+  function hideAllCategoryNavs() {
+    showLensNav(false);
+    showContactNav(false);
+    showAccessoryNav(false);
+  }
+
   function showOnlySection(sectionId) {
     $$('.tab').forEach(function (s) { s.classList.remove('active'); });
     var sec = $(sectionId);
@@ -49,14 +70,24 @@
     $$('section.lens-tab-section').forEach(function (s) { s.classList.remove('active'); });
   }
 
+  function hideAllContactSections() {
+    $$('section.contact-tab-section').forEach(function (s) { s.classList.remove('active'); });
+  }
+
+  function hideAllAccessorySections() {
+    $$('section.accessory-tab-section').forEach(function (s) { s.classList.remove('active'); });
+  }
+
   // ===== Category handlers =====
   var CATEGORIES = {
     frames: {
       type: 'in-page',
       onSelect: function () {
-        showLensNav(false);
+        hideAllCategoryNavs();
         showMainNav(true);
         hideAllLensSections();
+        hideAllContactSections();
+        hideAllAccessorySections();
         var tab = sessionStorage.getItem(SS_FR_TAB_KEY) || DEFAULT_FR_TAB;
         if (typeof showTab === 'function') showTab(tab);
       }
@@ -65,7 +96,10 @@
       type: 'in-page',
       onSelect: function () {
         showMainNav(false);
+        hideAllCategoryNavs();
         showLensNav(true);
+        hideAllContactSections();
+        hideAllAccessorySections();
         // Clear non-lens active sections so only the lens-tab-section shows.
         $$('.tab').forEach(function (s) {
           if (!s.classList.contains('lens-tab-section')) s.classList.remove('active');
@@ -75,8 +109,39 @@
         }
       }
     },
-    'contact-lenses': { type: 'disabled', onSelect: function () {} },
-    accessories:      { type: 'disabled', onSelect: function () {} },
+    'contact-lenses': {
+      type: 'in-page',
+      onSelect: function () {
+        showMainNav(false);
+        hideAllCategoryNavs();
+        showContactNav(true);
+        hideAllLensSections();
+        hideAllAccessorySections();
+        // Clear non-contact active sections so only the contact-tab-section shows.
+        $$('.tab').forEach(function (s) {
+          if (!s.classList.contains('contact-tab-section')) s.classList.remove('active');
+        });
+        if (window.InvShellContact && typeof window.InvShellContact.setActive === 'function') {
+          window.InvShellContact.setActive(window.InvShellContact.getActive());
+        }
+      }
+    },
+    accessories: {
+      type: 'in-page',
+      onSelect: function () {
+        showMainNav(false);
+        hideAllCategoryNavs();
+        showAccessoryNav(true);
+        hideAllLensSections();
+        hideAllContactSections();
+        $$('.tab').forEach(function (s) {
+          if (!s.classList.contains('accessory-tab-section')) s.classList.remove('active');
+        });
+        if (window.InvShellAccessory && typeof window.InvShellAccessory.setActive === 'function') {
+          window.InvShellAccessory.setActive(window.InvShellAccessory.getActive());
+        }
+      }
+    },
     suppliers: {
       type: 'in-page', sectionId: 'tab-suppliers',
       onSelect: function () {
@@ -173,6 +238,30 @@
     });
   }
 
+  function bindContactNavClicks() {
+    var nav = $('contactNav');
+    if (!nav) return;
+    nav.addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-contact-tab]');
+      if (!btn) return;
+      if (window.InvShellContact && typeof window.InvShellContact.setActive === 'function') {
+        window.InvShellContact.setActive(btn.dataset.contactTab);
+      }
+    });
+  }
+
+  function bindAccessoryNavClicks() {
+    var nav = $('accessoryNav');
+    if (!nav) return;
+    nav.addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-accessory-tab]');
+      if (!btn) return;
+      if (window.InvShellAccessory && typeof window.InvShellAccessory.setActive === 'function') {
+        window.InvShellAccessory.setActive(btn.dataset.accessoryTab);
+      }
+    });
+  }
+
   function wrapShowTabForFramesMemory() {
     if (typeof window.showTab !== 'function' || window.__invShellShowTabWrapped) return;
     var original = window.showTab;
@@ -186,15 +275,22 @@
   function init() {
     bindSidebarClicks();
     bindLensNavClicks();
+    bindContactNavClicks();
+    bindAccessoryNavClicks();
     wrapShowTabForFramesMemory();
     // URL params override sessionStorage on first paint of the page.
     var urlState = parseUrlState();
     var cat = (urlState && urlState.cat) ||
               sessionStorage.getItem(SS_CAT_KEY) || DEFAULT_CAT;
+    if (cat === 'contact_lenses') cat = 'contact-lenses'; // accept both URL forms
     if (!CATEGORIES[cat]) cat = DEFAULT_CAT;
     if (urlState && urlState.tab) {
       if (cat === 'lenses' && window.InvShellLens && window.InvShellLens.meta[urlState.tab]) {
         sessionStorage.setItem('invShellLensTab', urlState.tab);
+      } else if (cat === 'contact-lenses' && window.InvShellContact && window.InvShellContact.meta && window.InvShellContact.meta[urlState.tab]) {
+        sessionStorage.setItem('invShellContactTab', urlState.tab);
+      } else if (cat === 'accessories' && window.InvShellAccessory && window.InvShellAccessory.meta && window.InvShellAccessory.meta[urlState.tab]) {
+        sessionStorage.setItem('invShellAccessoryTab', urlState.tab);
       } else if (cat === 'frames') {
         sessionStorage.setItem(SS_FR_TAB_KEY, urlState.tab);
       }
