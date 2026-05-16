@@ -2,7 +2,8 @@
 // Phase 1B Procurement laid the ➕ path + ➖ scaffolding (PIN + qty modal).
 // M1_LENS_PHASE_1B_GAP_CLOSURE wires ➖ to the new record_adjustment_lost RPC
 // (Block 2 of GAP_CLOSURE) with FK reason picker (stock_adjustment_reason).
-// ➕ → deep-link to lens-goods-receipt.html?variant_id=<uuid>&t=<slug>
+// ➕ → deep-link to inventory.html?cat=lenses&tab=goods-receipt&variant_id=<uuid>&t=<slug>
+// (was lens-goods-receipt.html — that page was retired by M1_INVENTORY_UNIFIED_SCREEN)
 // ➖ → PIN modal → reason + qty + notes → record_adjustment_lost RPC (Iron Rule 1).
 // Permission: lens.inventory.adjust required for ➖ flow.
 // Cell context (sph/cyl) captured via document-level capture listener on .qty-btn so the
@@ -62,7 +63,9 @@
     if (sph !== null && sph !== '') params.set('sph', sph);
     if (cyl !== null && cyl !== '') params.set('cyl', cyl);
     if (typeof writeLog === 'function') writeLog('lens.inventory.add_clicked', null, { variant_id: variantId, sph: sph, cyl: cyl });
-    window.location.href = 'lens-goods-receipt.html?' + params.toString();
+    params.set('cat', 'lenses');
+    params.set('tab', 'goods-receipt');
+    window.location.href = 'inventory.html?' + params.toString();
   }
 
   // ───────── ➖ Reduce: PIN → qty confirm → record_stock_movement ─────────

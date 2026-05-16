@@ -7,6 +7,62 @@
 
 ## Active Debt
 
+### #M1_UNIFIED_BOOTSTRAP_PROMISE_REJECTION — 🟢 Unhandled promise rejection in lens bootstrap dispatch
+
+**Where:** `modules/inventory/inventory-shell-lens.js:212` and `:222` (the `try { fn(); }` wrappers).
+
+**What:** `InvShellLens` dispatches async bootstrap functions (LensInv.bootstrap, LensAD.bootstrap, …) without catching their returned promises. If a downstream async chain rejects (RPC failure, DB timeout in loadBrands, etc.), the rejection is unhandled — console prints `Uncaught (in promise) Error: …` but user sees no Toast.
+
+**Why it's debt (and only 🟢):** Lens bootstrap rejections are rare (require RPC/DB failure on demo) and visible in DevTools console; user UX is degraded only by silent failure of the FIRST data fetch — subsequent interactions still work.
+
+**Planned fix:** Wrap dispatch in `var p = fn(); if (p && p.catch) p.catch(err => { Toast.error('שגיאה בטעינת מסך עדשות'); console.error(err); });`. ~5 lines, single edit. Bundle with the 4 other M1_UNIFIED_* entries below in next M1 maintenance SPEC.
+
+**Source:** `M1_INVENTORY_UNIFIED_SCREEN/REVIEW.md` R-FINDING-1, 2026-05-16.
+
+---
+
+### #M1_UNIFIED_TOAST_CONTAINER_CONSOLIDATION — 🟢 Catalog-admin local showToast targets #toast-container by ID
+
+**Where:** `modules/lens-catalog-admin/lens-catalog-admin.js:171` (local `showToast` function) vs. `shared/js/toast.js` (`window.Toast.*` system).
+
+**What:** Two parallel toast systems. catalog-admin's local `showToast()` targets `#toast-container` BY ID; shared `window.Toast.*` creates `.toast-container` BY CLASS. Catalog-admin partial includes a scoped `<div id="toast-container">` so the local function works.
+
+**Why it's debt (and only 🟢):** Cosmetic + code duplication. catalog-admin sub-modules (catalog-brands-col, designs-col, variants-col, import) all call local showToast — consolidating to window.Toast would clean up the surface.
+
+**Planned fix:** Replace local showToast calls with `window.Toast.error/.success`. Delete the local function + the partial's #toast-container div. Bundle into next M1 maintenance SPEC.
+
+**Source:** `M1_INVENTORY_UNIFIED_SCREEN/FINDINGS.md` F-2, 2026-05-16.
+
+---
+
+### #M1_UNIFIED_LENS_PO_PRINT_STYLESHEET — 🟢 Lens PO PDF print output includes inventory.html chrome
+
+**Where:** `modules/lens-purchase-order/lens-purchase-order-pdf.js:3` (uses `window.print()`).
+
+**What:** The `@media print` stylesheet was inline in the deleted `lens-purchase-order.html`. After deletion, PDF print output includes the inventory.html chrome (sidebar, lensNav, headers) — visually degraded but functionally still works.
+
+**Why it's debt (and only 🟢):** Print output unprofessional but not broken; user can crop in PDF viewer. Affects sales/manager prints only (PO export workflow).
+
+**Planned fix:** Add `@media print { #inv-sidebar, #mainNav, #lensNav, … { display:none } }` block to `css/lens-tabs.css`. ~25 lines, 30 min. Bundle into next M1 maintenance SPEC. Within 7 days per L-2 deferral hygiene.
+
+**Source:** `M1_INVENTORY_UNIFIED_SCREEN/FINDINGS.md` F-3, 2026-05-16.
+
+---
+
+### #M1_UNIFIED_URL_HISTORY_SYNC — 🟢 URL doesn't update on subsequent lens-tab clicks
+
+**Where:** `modules/inventory/inventory-shell.js` setActiveCategory + `inventory-shell-lens.js` setActive.
+
+**What:** URL params `?cat=&tab=` are honored on initial page load (parseUrlState) but subsequent sidebar/tab clicks DON'T update the URL via history.replaceState. So "Copy current URL" captures only the entry point, not the user's navigation.
+
+**Why it's debt (and only 🟢):** Bookmarking the deep-link works fine. Only affects mid-session URL sharing.
+
+**Planned fix:** Add `history.replaceState({}, '', new URL params)` inside both setActive* functions. ~10 lines code, 15 min. Bundle into next M1 maintenance SPEC.
+
+**Source:** `M1_INVENTORY_UNIFIED_SCREEN/FINDINGS.md` F-7, 2026-05-16.
+
+---
+
 ### #M1_INV_REDESIGN_VIEW_REVOKE_BROADENING — 🟢 v_inventory_unified_log authenticated has ALL privileges, not just SELECT
 
 **Where:** Live DB — `pg_class.relacl` for `public.v_inventory_unified_log` shows `{authenticated=arwdDxtm/postgres}`. Surfaced by `M1_INVENTORY_REDESIGN/REVIEW.md` R-FINDING-1 (2026-05-16).

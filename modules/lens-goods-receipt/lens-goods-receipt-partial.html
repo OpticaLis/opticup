@@ -1,0 +1,92 @@
+<!-- lens-goods-receipt-partial.html — body fragment for inventory.html lens-tab.
+     M1_INVENTORY_UNIFIED_SCREEN SPEC §1.5 — frames-aligned tokens via lens-tabs.css. -->
+
+<div id="access-gate" style="display:none">
+  <div class="empty-state">אין הרשאה למסך זה (lens.gr.create).</div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="lens-page-title">
+    &#128230; קבלת סחורה — עדשות
+    <span class="badge" id="gr-status-badge">קבלה חדשה</span>
+    <span style="flex:1"></span>
+    <button class="btn btn-g" id="btn-cancel-receipt" type="button">&#10060; ביטול</button>
+    <button class="btn btn-s" id="btn-close-receipt" type="button" disabled>&#9989; אשר וצור רשומות מלאי</button>
+  </div>
+
+  <div class="lens-filter-bar" style="display:grid;grid-template-columns:1.3fr 1fr 0.9fr 1.2fr;gap:12px;align-items:end">
+    <div class="form-group">
+      <label class="label-required" for="gr-supplier-select">ספק *</label>
+      <select id="gr-supplier-select"><option value="">— בחר ספק —</option></select>
+    </div>
+    <div class="form-group">
+      <label class="label-required" for="gr-delivery-note">מספר תעודת משלוח / חשבונית *</label>
+      <input type="text" id="gr-delivery-note" placeholder="DN-2026-XXXX" />
+    </div>
+    <div class="form-group">
+      <label for="gr-receipt-date">תאריך הקבלה</label>
+      <input type="date" id="gr-receipt-date" />
+    </div>
+    <div class="form-group">
+      <label for="gr-m9-box">&#128230; קופסה מ-M9 (אופציונלי)</label>
+      <select id="gr-m9-box"><option value="">— אין קישור —</option></select>
+    </div>
+  </div>
+
+  <div id="supplier-context" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 18px;margin-bottom:12px;display:none;justify-content:space-between;align-items:center">
+    <div class="ctx-left">
+      &#127970; <strong id="ctx-supplier-name" style="color:#1e3a8a">—</strong>
+      <div style="font-size:11px;color:#64748b" id="ctx-supplier-meta">—</div>
+    </div>
+    <div style="display:flex;gap:18px;font-size:12px">
+      <div>הזמנות פתוחות: <strong id="ctx-open-pos">—</strong></div>
+      <div>פריטים בהמתנה: <strong id="ctx-pending-units">—</strong></div>
+    </div>
+  </div>
+
+  <div class="lens-grid-layout">
+    <div class="lens-panel">
+      <div class="lens-panel-header"><h3>פריטים בהמתנה לקבלה</h3></div>
+      <div id="lines-container" style="max-height:560px;overflow-y:auto">
+        <div class="empty-state">בחר ספק כדי לטעון הזמנות פתוחות.</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="lens-panel">
+        <div class="lens-panel-header"><h3>&#128202; סיכום הקבלה</h3></div>
+        <div id="summary-body" style="padding:14px">
+          <div class="summary-row" style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px">
+            <span style="color:#64748b">פריטים שסומנו כהתקבלו</span><span id="sum-receipt-lines" style="font-weight:600">0</span></div>
+          <div class="summary-row" style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px">
+            <span style="color:#64748b">מלאות</span><span id="sum-complete" style="color:#059669;font-weight:600">0 שורות</span></div>
+          <div class="summary-row" style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px">
+            <span style="color:#64748b">חלקיות</span><span id="sum-partial" style="color:#d97706;font-weight:600">0 שורות</span></div>
+          <div class="summary-row" style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px dashed #e2e8f0;margin-top:6px;font-size:13px">
+            <span style="color:#64748b">תוספות ידניות</span><span id="sum-manual" style="font-weight:600">0 שורות</span></div>
+          <div class="summary-row" style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid #e2e8f0;margin-top:6px;font-size:13px">
+            <span style="color:#64748b">סה&quot;כ יחידות למלאי</span><span id="sum-total-units" style="color:#059669;font-weight:700">0 יח׳</span></div>
+        </div>
+      </div>
+
+      <div class="lens-panel" style="margin-top:12px">
+        <div class="lens-panel-header" style="background:#fef3c7"><h3 style="color:#92400e">&#128176; חוב שייווצר (משוער)</h3></div>
+        <div style="padding:14px">
+          <div class="summary-row" style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px">
+            <span style="color:#64748b">סכום נטו</span><span id="sum-debt-net" style="font-weight:600">&#8362;0</span></div>
+          <div class="summary-row" style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px">
+            <span style="color:#64748b">מע&quot;מ (משוער)</span><span id="sum-debt-vat" style="font-weight:600">&#8362;0</span></div>
+          <div class="summary-row" style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid #e2e8f0;font-size:13px;font-weight:700">
+            <span style="color:#64748b">סה&quot;כ חוב</span><span id="sum-debt-total">&#8362;0</span></div>
+          <div style="font-size:11px;color:#64748b;margin-top:8px;padding:8px 10px;background:#f8fafc;border-radius:5px">
+            &#128161; החוב ייווצר במודול חובות ספקים, מקושר לקבלה זו.
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-s" id="btn-close-receipt-2" style="margin-top:12px;justify-content:center;padding:12px;font-weight:700;width:100%" type="button" disabled>
+        &#9989; אשר וצור רשומות מלאי
+      </button>
+    </div>
+  </div>
+</div>

@@ -7,11 +7,11 @@
 #inv-sidebar {
   position: fixed;
   top: 60px; /* sits below the sticky tenant header */
-  inset-inline-end: 0;
+  inset-inline-start: 0;
   width: 240px;
   height: calc(100vh - 60px);
   background: #f8fafc;
-  border-inline-start: 1px solid #e2e8f0;
+  border-inline-end: 1px solid #e2e8f0;
   padding: 20px 0;
   overflow-y: auto;
   z-index: 50;
@@ -22,7 +22,7 @@
 body.has-inv-sidebar > main,
 body.has-inv-sidebar > #mainNav,
 body.has-inv-sidebar > #low-stock-banner {
-  margin-inline-end: 240px;
+  margin-inline-start: 240px;
 }
 
 .inv-sidebar-title {
@@ -41,7 +41,7 @@ body.has-inv-sidebar > #low-stock-banner {
 .inv-cat-item {
   padding: 12px 20px;
   cursor: pointer;
-  border-inline-start: 3px solid transparent;
+  border-inline-end: 3px solid transparent;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -57,7 +57,7 @@ body.has-inv-sidebar > #low-stock-banner {
 
 .inv-cat-item.active {
   background: #eff6ff;
-  border-inline-start-color: #1e3a8a;
+  border-inline-end-color: #1e3a8a;
   color: #1e3a8a;
   font-weight: 600;
 }
@@ -203,20 +203,33 @@ body.has-inv-sidebar > #low-stock-banner {
   cursor: not-allowed;
 }
 
+/* ===== Lens tab-section base (M1_INVENTORY_UNIFIED_SCREEN, 2026-05-16) =====
+   Each lens tab is one <section class="tab lens-tab-section" data-cat="lenses"
+   data-tab="X">. Hidden by default; .active toggled by InvShellLens. Partial
+   markup loaded on first activation via fetch. */
+section.lens-tab-section {
+  display: none;
+  padding: 12px 16px;
+}
+
+section.lens-tab-section.active {
+  display: block;
+}
+
 /* ===== Mobile fallback — sidebar collapses to a top strip below 800px ===== */
 @media (max-width: 800px) {
   #inv-sidebar {
     position: static;
     width: 100%;
     height: auto;
-    border-inline-start: none;
+    border-inline-end: none;
     border-bottom: 1px solid #e2e8f0;
     padding: 12px 0;
   }
   body.has-inv-sidebar > main,
   body.has-inv-sidebar > #mainNav,
   body.has-inv-sidebar > #low-stock-banner {
-    margin-inline-end: 0;
+    margin-inline-start: 0;
   }
   .inv-cat-item {
     padding: 8px 14px;

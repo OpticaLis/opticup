@@ -4,6 +4,46 @@
 
 ---
 
+## M1_INVENTORY_UNIFIED_SCREEN — 2026-05-16 afternoon (🟢 CLOSED — Full Auto Pipeline, 9 commits, ~3.5h wall-clock)
+
+Structural consolidation: 8 inventory-related root HTMLs → 1 (inventory.html only). Sidebar moved from visual LEFT to physical RIGHT (RTL-correct). 7 lens screens migrated to lazy-loaded body partials with frames-pattern visual unification. Same DB, same RPCs, same business logic, same permissions.
+
+**5 executor commits + retro + Reviewer + Tester + Foreman close (9 commits, `be5fafc..HEAD`):**
+
+- `be5fafc` chore(spec): seal SPEC.md — 332 lines, §0.A 12-probe pre-flight + §0.B 5 decision gates + §0.C 9 Brief-vs-DB findings + §3 14 measurable criteria
+- `46d541b` fix(m1): sidebar position right — RTL logical-property correction (`css/inventory-shell.css` inset-inline-end → inset-inline-start, mirror on margin + border + mobile fallback)
+- `ddb926e` feat(m1): lens tab shell + URL param routing in inventory.html. New `modules/inventory/inventory-shell-lens.js` (224 lines lens loader registry). New `css/lens-tabs.css` (324 lines frames-aligned tokens). `inventory.html` +28 lines (lensNav strip + 7 empty lens section shells).
+- `a5367ff` fix(m1): lens loader — clear sibling sections + bootstrap re-dispatch on re-activation. Prevents cross-lens DOM-ID collisions.
+- `9fce6de` feat(m1): migrate 7 lens screens to partials with frames pattern. 7 new partials at `modules/lens-<screen>/lens-<screen>-partial.html` with semantic markup only. §1.5 Visual Reconciliation Audit 13/14 applied + R-10 INTENT-vs-LITERAL. Tiny bootstrap export added to `modules/lens-catalog-admin/lens-catalog-admin.js`.
+- `64a69e7` chore(m1): retire 7 lens HTML shells + lens-nav-strip + update deep-links. `git rm` 7 lens-*.html + `shared/js/lens-nav-strip.js`. 2 deep-link URL updates. SPEC.md §13 Execution Marker for Iron Rule 32 gate.
+- `f249c87` chore(spec): close executor scope — EXECUTION_REPORT.md + FINDINGS.md (8 findings: 1 MEDIUM gate gap + 2 LOW + 5 INFO).
+- `116f146` chore(spec): Reviewer REVIEW.md 🟢 PASS — 7 fresh-angle spot-checks + 3 new findings.
+- `ee6594d` chore(spec): Localhost-Tester TEST_REPORT — 🟢 GREEN. Smoke 7/7 PASS + Chrome MCP 4 screenshots + per-tab probe across all 7 lens tabs.
+- _(this commit)_ chore(spec): Foreman FOREMAN_REVIEW.md + master-doc updates + Hebrew summary
+
+**Pipeline stats:**
+
+- 9 commits, all single-concern, all on develop. Tag `pre-inventory-unified-screen-2026-05-16` at parent `8017fc9`.
+- 0 escalations. 6 in-flight executor decisions documented (5 INTENT-vs-LITERAL + 1 commit-slicing).
+- Iron Rule 31 + 32 gates: exit 0 every commit.
+- Smoke 7/7 PASS pre + post. Chrome MCP visual 4/4 saved to SPEC `screenshots/`.
+- 0 row delta on Prizma — zero DB writes Pipeline-wide.
+- **14/14 SPEC §3 criteria PASS** (first Full-Auto Pipeline of the day at 100%).
+
+**Schema/code delta:**
+
+- 0 new tables / 0 new RPCs / 0 new views / 0 new permission keys / 0 new T-constants / 0 new FIELD_MAP entries.
+- 9 new files: `inventory-shell-lens.js` (224), `css/lens-tabs.css` (324), 7 partials (415 total).
+- 7 modified files: `inventory.html` (1128→1156), `css/inventory-shell.css` (224→237), `inventory-shell.js` (200→228), `lens-catalog-admin.js` (185→195), `lens-inventory-modals.js` (+3), `lens-goods-receipt-close.js` (+5), 1 SPEC.md addition.
+- 8 deleted files: 7 lens-*.html (1104 lines total) + `shared/js/lens-nav-strip.js` (136 lines).
+- Root HTML count: 24 → 17 (-7, -29%).
+
+**Findings (11 total):** F-1 MEDIUM → NEW SPEC (IRON_RULE_32_GATE_AUTH_FALLBACK in M1.5); F-2/F-3/F-7/R-FINDING-1 LOW → TECH_DEBT entries (4 new); F-4/F-5/F-6/F-8/R-FINDING-2/R-FINDING-3 INFO → deferred or docs.
+
+**Author/Executor improvement proposals:** P-AUTHOR-1 (corollary-edit anticipation), P-AUTHOR-2 (DOM-collision pre-analysis), P-EXEC-1 (NAME REGISTRY pre-flight), P-EXEC-2 (Iron Rule 32 gate workaround docs) — all 1/3, accumulating in skill files.
+
+---
+
 ## M1_INVENTORY_REDESIGN — 2026-05-16 (🟢 CLOSED — Full Auto Pipeline, 9 commits, ~3.5h wall-clock)
 
 UI/UX restructure of the inventory module from 11-tab single-screen to sidebar-driven hub. New unified-log view + UI. Supplier badges from junction tables. Home-card "מחלקת עדשות" removed (lens reachable only via inventory sidebar now). M1 Lens department unchanged.

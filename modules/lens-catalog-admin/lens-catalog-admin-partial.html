@@ -1,0 +1,109 @@
+<!-- lens-catalog-admin-partial.html — body fragment for inventory.html lens-tab.
+     Platform-admin tooling — kept functional with frames-aligned styling.
+     Per M1_INVENTORY_UNIFIED_SCREEN SPEC §1.5 R-7 (drop per-page chrome) +
+     R-8 (frames .btn-* classes) + R-13 (chip palette).
+     Internal IDs preserved (#auth-gate, #app, #tenant-select, #brands-list,
+     #designs-list, #variants-list, #detail-pane, etc.) because the lens-catalog-admin
+     ES module references them. -->
+
+<div id="auth-gate" style="display:none;padding:40px;text-align:center">
+  <h2 id="auth-gate-title">בודק הרשאות…</h2>
+  <p style="color:#64748b;font-size:14px">הדף זמין רק לחברי צוות Optic Up עם הרשאת Platform Super Admin.</p>
+  <p style="color:#dc2626;font-size:13px" id="auth-gate-error"></p>
+</div>
+
+<div id="app" style="display:none">
+  <div class="lens-page-title">
+    &#9881;&#65039; Lens Catalog Admin
+    <span class="badge" style="background:#fee2e2;color:#991b1b">Platform-Owned</span>
+    <span style="flex:1"></span>
+    <button class="btn btn-g" id="btn-import" type="button">&#128229; ייבוא קטלוג מותג שלם</button>
+    <button class="btn btn-p" id="btn-publish-all" title="Publish drafts to public storefront" type="button">&#128227; פרסם כל הטיוטות</button>
+  </div>
+
+  <div class="lens-filter-bar">
+    <label>טננט (לתצוגת הצעות מסחר):</label>
+    <select id="tenant-select"><option value="">— טען טננטים —</option></select>
+    <span style="color:#64748b;font-size:11px">מותגים/דגמים/וריאציות הם פלטפורמה-גלובל. הצעות מסחר הן פר-טננט.</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:220px 220px 240px 1fr;gap:10px;height:calc(100vh - 260px);min-height:520px">
+    <!-- Column 1: Brands -->
+    <div class="lens-panel" style="display:flex;flex-direction:column">
+      <div class="lens-panel-header" style="display:block">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3>&#127991;&#65039; מותגים</h3>
+          <span class="badge" id="brands-count">0</span>
+        </div>
+      </div>
+      <div style="padding:10px 14px;border-bottom:1px solid #e2e8f0">
+        <input type="text" id="brands-search" placeholder="חפש מותג…" style="width:100%;padding:6px 10px;border:1px solid #cbd5e1;border-radius:5px;font-size:12px;font-family:inherit;box-sizing:border-box">
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:4px" id="brands-list">
+        <div class="empty-state">טוען…</div>
+      </div>
+      <div style="padding:8px 12px;border-top:1px solid #e2e8f0">
+        <button class="btn btn-g btn-sm" id="btn-add-brand" style="width:100%">&#10133; הוסף מותג</button>
+      </div>
+    </div>
+
+    <!-- Column 2: Designs -->
+    <div class="lens-panel" style="display:flex;flex-direction:column">
+      <div class="lens-panel-header" style="display:block">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3>&#128208; דגמים (Series)</h3>
+          <span class="badge" id="designs-count">0</span>
+        </div>
+        <div style="font-size:10px;color:#94a3b8;margin-top:4px" id="designs-context">בחר מותג ←</div>
+      </div>
+      <div style="padding:10px 14px;border-bottom:1px solid #e2e8f0">
+        <input type="text" id="designs-search" placeholder="חפש דגם…" disabled style="width:100%;padding:6px 10px;border:1px solid #cbd5e1;border-radius:5px;font-size:12px;font-family:inherit;box-sizing:border-box">
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:4px" id="designs-list">
+        <div class="empty-state">בחר מותג</div>
+      </div>
+      <div style="padding:8px 12px;border-top:1px solid #e2e8f0">
+        <button class="btn btn-g btn-sm" id="btn-add-design" disabled style="width:100%">&#10133; הוסף דגם</button>
+      </div>
+    </div>
+
+    <!-- Column 3: Variants -->
+    <div class="lens-panel" style="display:flex;flex-direction:column">
+      <div class="lens-panel-header" style="display:block">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3>&#128300; וריאציות</h3>
+          <span class="badge" id="variants-count">0</span>
+        </div>
+        <div style="font-size:10px;color:#94a3b8;margin-top:4px" id="variants-context">בחר דגם ←</div>
+      </div>
+      <div style="padding:10px 14px;border-bottom:1px solid #e2e8f0">
+        <input type="text" id="variants-search" placeholder="חפש לפי display_id / index…" disabled style="width:100%;padding:6px 10px;border:1px solid #cbd5e1;border-radius:5px;font-size:12px;font-family:inherit;box-sizing:border-box">
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:4px" id="variants-list">
+        <div class="empty-state">בחר דגם</div>
+      </div>
+      <div style="padding:8px 12px;border-top:1px solid #e2e8f0">
+        <button class="btn btn-g btn-sm" id="btn-add-variant" disabled style="width:100%">&#10133; הוסף וריאציה</button>
+      </div>
+    </div>
+
+    <!-- Column 4: Detail pane -->
+    <div class="lens-panel" style="display:flex;flex-direction:column">
+      <div class="lens-panel-header" style="display:block">
+        <h3>&#128203; פרטים</h3>
+        <div style="font-size:10px;color:#94a3b8;margin-top:4px" id="detail-context">בחר פריט להצגת פרטים</div>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:20px" id="detail-pane">
+        <div class="empty-state">בחר וריאציה כדי לראות SPH/CYL ranges, coating, tint, הצעות מסחר, ועוד.</div>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="import-file" accept=".xlsx,.xls" style="display:none">
+
+  <!-- catalog-admin uses a local showToast() (in lens-catalog-admin.js) that
+       targets #toast-container by ID, distinct from the shared window.Toast
+       system which uses class .toast-container. Provide the local target here
+       so error toasts still render when this partial is active. -->
+  <div id="toast-container" style="position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9999"></div>
+</div>

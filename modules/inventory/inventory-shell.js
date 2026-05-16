@@ -1,16 +1,12 @@
 // inventory-shell.js — sidebar shell state machine for inventory.html.
-// Sealed by M1_INVENTORY_REDESIGN SPEC §2.1, 2026-05-16.
+// Sealed by M1_INVENTORY_REDESIGN SPEC §2.1 (2026-05-16).
+// Extended by M1_INVENTORY_UNIFIED_SCREEN SPEC §0.B (2026-05-16) for in-page
+// lens-tab handling. Lens loader lives in inventory-shell-lens.js.
 //
-// Owns: which category is active in the right-side sidebar.
-//   - "frames" / "lenses" / placeholders → product categories
-//   - "suppliers" / "incoming-invoices" / "unified-log" / "access-sync" → cross-category items
-//
-// "lenses" performs a full-page navigation to lens-inventory.html (per DG-2
-// Branch B in the SPEC). The other cross-category items hide the frames
-// tab strip (<nav id="mainNav">) and show only the matching <section> block.
-//
-// Persists last frames-tab + last category to sessionStorage so a page
-// reload returns the user to the same screen.
+// Owns: category state (sidebar item active), which top nav strip is visible
+// (frames vs lens), URL ?cat=&tab= param routing on init, sessionStorage
+// persistence of last category + last frames tab. Lens-tab activation is
+// delegated to window.InvShellLens.setActive().
 
 (function () {
   'use strict';
@@ -25,7 +21,6 @@
   function $(id) { return document.getElementById(id); }
   function $$(sel) { return document.querySelectorAll(sel); }
 
-  // Hash-aware tenant param (matches index.html + lens-nav-strip.js pattern).
   function urlWithTenant(u) {
     var slug = (typeof TENANT_SLUG !== 'undefined') ? TENANT_SLUG : '';
     if (!slug) return u;
@@ -36,8 +31,12 @@
 
   function showMainNav(show) {
     var nav = $('mainNav');
-    if (!nav) return;
-    nav.style.display = show ? '' : 'none';
+    if (nav) nav.style.display = show ? '' : 'none';
+  }
+
+  function showLensNav(show) {
+    var nav = $('lensNav');
+    if (nav) nav.style.display = show ? '' : 'none';
   }
 
   function showOnlySection(sectionId) {
@@ -46,69 +45,71 @@
     if (sec) sec.classList.add('active');
   }
 
+  function hideAllLensSections() {
+    $$('section.lens-tab-section').forEach(function (s) { s.classList.remove('active'); });
+  }
+
   // ===== Category handlers =====
   var CATEGORIES = {
     frames: {
       type: 'in-page',
       onSelect: function () {
+        showLensNav(false);
         showMainNav(true);
+        hideAllLensSections();
         var tab = sessionStorage.getItem(SS_FR_TAB_KEY) || DEFAULT_FR_TAB;
         if (typeof showTab === 'function') showTab(tab);
       }
     },
     lenses: {
-      type: 'navigate',
+      type: 'in-page',
       onSelect: function () {
-        window.location.href = urlWithTenant('lens-inventory.html');
+        showMainNav(false);
+        showLensNav(true);
+        // Clear non-lens active sections so only the lens-tab-section shows.
+        $$('.tab').forEach(function (s) {
+          if (!s.classList.contains('lens-tab-section')) s.classList.remove('active');
+        });
+        if (window.InvShellLens && typeof window.InvShellLens.setActive === 'function') {
+          window.InvShellLens.setActive(window.InvShellLens.getActive());
+        }
       }
     },
-    'contact-lenses': {
-      type: 'disabled',
-      onSelect: function () { /* placeholder, no-op */ }
-    },
-    accessories: {
-      type: 'disabled',
-      onSelect: function () { /* placeholder, no-op */ }
-    },
+    'contact-lenses': { type: 'disabled', onSelect: function () {} },
+    accessories:      { type: 'disabled', onSelect: function () {} },
     suppliers: {
-      type: 'in-page',
-      sectionId: 'tab-suppliers',
+      type: 'in-page', sectionId: 'tab-suppliers',
       onSelect: function () {
+        showLensNav(false);
         showMainNav(false);
         showOnlySection('tab-suppliers');
         if (typeof loadSuppliersTab === 'function') loadSuppliersTab();
       }
     },
     'incoming-invoices': {
-      type: 'in-page',
-      sectionId: 'tab-incoming-invoices',
+      type: 'in-page', sectionId: 'tab-incoming-invoices',
       onSelect: function () {
+        showLensNav(false);
         showMainNav(false);
         showOnlySection('tab-incoming-invoices');
         if (typeof loadIncomingInvoicesTab === 'function') loadIncomingInvoicesTab();
       }
     },
     'unified-log': {
-      type: 'in-page',
-      sectionId: 'tab-unified-log',
+      type: 'in-page', sectionId: 'tab-unified-log',
       onSelect: function () {
+        showLensNav(false);
         showMainNav(false);
-        // tab-unified-log is added by C6 (M1_INVENTORY_REDESIGN). Until then,
-        // fall back to the legacy tab-systemlog so this sidebar entry is
-        // not dead during the Pipeline's commit-by-commit roll-out.
         var target = $('tab-unified-log') ? 'tab-unified-log' : 'tab-systemlog';
         showOnlySection(target);
-        if (target === 'tab-unified-log' && typeof loadUnifiedLog === 'function') {
-          loadUnifiedLog();
-        } else if (target === 'tab-systemlog' && typeof loadSystemLog === 'function') {
-          loadSystemLog();
-        }
+        if (target === 'tab-unified-log' && typeof loadUnifiedLog === 'function') loadUnifiedLog();
+        else if (target === 'tab-systemlog' && typeof loadSystemLog === 'function') loadSystemLog();
       }
     },
     'access-sync': {
-      type: 'in-page',
-      sectionId: 'tab-access-sync',
+      type: 'in-page', sectionId: 'tab-access-sync',
       onSelect: function () {
+        showLensNav(false);
         showMainNav(false);
         showOnlySection('tab-access-sync');
         if (typeof renderAccessSyncTab === 'function') renderAccessSyncTab();
@@ -116,7 +117,6 @@
     }
   };
 
-  // ===== Public API =====
   function setActiveCategory(cat) {
     var spec = CATEGORIES[cat];
     if (!spec) return;
@@ -130,13 +130,23 @@
       if (target) target.classList.add('active');
     }
     spec.onSelect();
-    // Don't persist a navigate-out category — the next page is a fresh context.
-    if (spec.type !== 'navigate') sessionStorage.setItem(SS_CAT_KEY, cat);
+    sessionStorage.setItem(SS_CAT_KEY, cat);
   }
 
   function rememberFramesTab(tabName) {
     if (!tabName) return;
     sessionStorage.setItem(SS_FR_TAB_KEY, tabName);
+  }
+
+  // ===== URL param parsing =====
+  function parseUrlState() {
+    var params;
+    try { params = new URLSearchParams(window.location.search); }
+    catch (e) { return null; }
+    var cat = params.get('cat');
+    var tab = params.get('tab');
+    if (!cat && !tab) return null;
+    return { cat: cat, tab: tab };
   }
 
   // ===== Init =====
@@ -151,9 +161,19 @@
     });
   }
 
+  function bindLensNavClicks() {
+    var nav = $('lensNav');
+    if (!nav) return;
+    nav.addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-lens-tab]');
+      if (!btn) return;
+      if (window.InvShellLens && typeof window.InvShellLens.setActive === 'function') {
+        window.InvShellLens.setActive(btn.dataset.lensTab);
+      }
+    });
+  }
+
   function wrapShowTabForFramesMemory() {
-    // shared-ui.js defines window.showTab. Wrap it so we remember the last
-    // frames-category tab the user picked. Idempotent.
     if (typeof window.showTab !== 'function' || window.__invShellShowTabWrapped) return;
     var original = window.showTab;
     window.showTab = function (tab) {
@@ -165,14 +185,23 @@
 
   function init() {
     bindSidebarClicks();
+    bindLensNavClicks();
     wrapShowTabForFramesMemory();
-    var saved = sessionStorage.getItem(SS_CAT_KEY) || DEFAULT_CAT;
-    // Defensive: if the saved category isn't valid, fall back to frames.
-    if (!CATEGORIES[saved]) saved = DEFAULT_CAT;
-    setActiveCategory(saved);
+    // URL params override sessionStorage on first paint of the page.
+    var urlState = parseUrlState();
+    var cat = (urlState && urlState.cat) ||
+              sessionStorage.getItem(SS_CAT_KEY) || DEFAULT_CAT;
+    if (!CATEGORIES[cat]) cat = DEFAULT_CAT;
+    if (urlState && urlState.tab) {
+      if (cat === 'lenses' && window.InvShellLens && window.InvShellLens.meta[urlState.tab]) {
+        sessionStorage.setItem('invShellLensTab', urlState.tab);
+      } else if (cat === 'frames') {
+        sessionStorage.setItem(SS_FR_TAB_KEY, urlState.tab);
+      }
+    }
+    setActiveCategory(cat);
   }
 
-  // Wait for shared-ui (showTab) + shared.js (TENANT_SLUG) to be ready.
   function deferredInit() {
     var tries = 0;
     var t = setInterval(function () {
@@ -191,7 +220,6 @@
     deferredInit();
   }
 
-  // Expose tiny public API for debug + future feature wiring.
   window.InvShell = {
     setActiveCategory: setActiveCategory,
     getCategory: function () { return sessionStorage.getItem(SS_CAT_KEY) || DEFAULT_CAT; },

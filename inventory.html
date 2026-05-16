@@ -27,6 +27,7 @@
 <link rel="stylesheet" href="css/header.css">
 <link rel="stylesheet" href="css/inventory.css">
 <link rel="stylesheet" href="css/inventory-shell.css">
+<link rel="stylesheet" href="css/lens-tabs.css">
 </head>
 <body class="has-inv-sidebar">
 
@@ -85,6 +86,20 @@
   <button data-tab="brands" data-tab-permission="brands.view" onclick="showTab('brands')">&#127991; ניהול מותגים</button>
   <button data-tab="stock-count" data-tab-permission="stock_count.create" data-feature="stock_count" onclick="showTab('stock-count')">&#128202; ספירת מלאי</button>
   <button data-tab="returns" onclick="showTab('returns')">&#128260; זיכויים</button>
+</nav>
+
+<!-- Lens nav strip (M1_INVENTORY_UNIFIED_SCREEN SPEC §2.2, 2026-05-16).
+     Visible only when sidebar category=lenses. Click activates the matching
+     lens-tab-section; bindings wired by inventory-shell.js. Each button's
+     permission is gated by InvShellLens registry + applyUIPermissions. -->
+<nav id="lensNav" style="display:none">
+  <button data-lens-tab="inventory" data-tab-permission="lens.inventory.view" class="active">&#128300; מלאי</button>
+  <button data-lens-tab="active-designs" data-tab-permission="lens.designs.manage">&#10024; דגמים פעילים</button>
+  <button data-lens-tab="pricing" data-tab-permission="lens.pricing.manage">&#128178; מחירים</button>
+  <button data-lens-tab="purchase-order" data-tab-permission="lens.po.create">&#128221; הזמנת רכש</button>
+  <button data-lens-tab="pos-list" data-tab-permission="lens.po.view">&#128203; הזמנות פעילות</button>
+  <button data-lens-tab="goods-receipt" data-tab-permission="lens.gr.create">&#128230; קבלת סחורה</button>
+  <button data-lens-tab="catalog-admin">&#128295; קטלוג מערכת</button>
 </nav>
 
 <main>
@@ -656,6 +671,18 @@
   </div>
 </section>
 
+<!-- ========== LENS TABS (M1_INVENTORY_UNIFIED_SCREEN SPEC §2.2, 2026-05-16) ==========
+     Empty shells filled on first activation by InvShellLens.setActive(tab).
+     Partial HTML body fetched from modules/lens-<screen>/lens-<screen>-partial.html,
+     associated JS scripts injected sequentially after the partial lands. -->
+<section class="tab lens-tab-section" data-cat="lenses" data-tab="inventory" data-tab-permission="lens.inventory.view"></section>
+<section class="tab lens-tab-section" data-cat="lenses" data-tab="active-designs" data-tab-permission="lens.designs.manage"></section>
+<section class="tab lens-tab-section" data-cat="lenses" data-tab="pricing" data-tab-permission="lens.pricing.manage"></section>
+<section class="tab lens-tab-section" data-cat="lenses" data-tab="purchase-order" data-tab-permission="lens.po.create"></section>
+<section class="tab lens-tab-section" data-cat="lenses" data-tab="pos-list" data-tab-permission="lens.po.view"></section>
+<section class="tab lens-tab-section" data-cat="lenses" data-tab="goods-receipt" data-tab-permission="lens.gr.create"></section>
+<section class="tab lens-tab-section" data-cat="lenses" data-tab="catalog-admin"></section>
+
 </main>
 
 <!-- Login Modal -->
@@ -1045,6 +1072,7 @@
 <script src="modules/access-sync/sync-details.js"></script>
 <script src="modules/access-sync/pending-panel.js"></script>
 <script src="modules/access-sync/pending-resolve.js"></script>
+<script src="modules/inventory/inventory-shell-lens.js"></script>
 <script src="modules/inventory/inventory-shell.js"></script>
 <script src="modules/inventory/unified-log.js"></script>
 <script src="modules/admin/admin.js"></script>

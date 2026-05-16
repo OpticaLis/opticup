@@ -82,7 +82,13 @@
       // Lock the form after success
       document.querySelectorAll('input, select, button.row-action, #btn-add-manual').forEach(function (el) { el.disabled = true; });
       buttons.forEach(function (b) { b.disabled = true; b.textContent = '✓ נסגר'; });
-      setTimeout(function () { window.location.href = 'lens-pos-list.html'; }, 1800);
+      // Navigate to the unified-screen lens POs list tab. Was 'lens-pos-list.html'
+      // — that page was retired by M1_INVENTORY_UNIFIED_SCREEN.
+      setTimeout(function () {
+        var slug = (typeof TENANT_SLUG !== 'undefined' && TENANT_SLUG) || (sessionStorage.getItem('tenant_slug') || '');
+        var qs = 'cat=lenses&tab=pos-list' + (slug ? '&t=' + encodeURIComponent(slug) : '');
+        window.location.href = 'inventory.html?' + qs;
+      }, 1800);
     } catch (err) {
       console.error('[lens-gr-close] m1_create_receipt_from_box failed', err);
       if (window.Toast) Toast.error('סגירת קבלה נכשלה: ' + (err.message || err));
