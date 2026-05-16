@@ -84,20 +84,20 @@ opticup-monorepo/                          # new repo: opticalis/opticup-monorep
 |---|---|---|
 | 1 | `supabase/` lives at monorepo ROOT, not under `apps/edge-functions/` | Supabase CLI hardcodes `supabase/functions/` + `supabase/migrations/` relative to project root. Sub-directorying breaks every `supabase functions deploy` invocation across CI, MCP, executor skill. |
 | 2 | `packages/shared/` and `packages/contracts/` DEFERRED to Day 1+N | The ERP uses 506 `window.X = ...` globals + 0 ES-module surface. Extracting `js/shared.js` into `@opticup/shared` needs a build step the ERP doesn't have — that's a refactor SPEC, not a migration step. Iron Rule 21 (No Orphans) → no empty packages. |
-| 3 | `apps/erp/` preserves ERP's internal layout VERBATIM | All 24 root HTML pages have hardcoded `<script src="js/shared.js">` paths. Co-locating preserves every relative path. Zero HTML edits required. |
-| 4 | `git subtree add` (NOT `git rm + cp -r`) for both imports | Preserves full commit history; satisfies no-data-loss constraint. Old repos retain history independently after archive. |
+| 3 | `apps/erp/` preserves ERP's internal layout VERBATIM (with absolute-path caveat) | All 24 root HTML pages have hardcoded `<script src="js/shared.js">` paths (relative — preserved by co-location). **Caveat (validated 2026-05-15):** 4 absolute-path references exist that survive only because GitHub Pages publishes at site root: `landing.html:40 <a href="/admin.html">`, `index.html:6` + `crm.html:12 <link href="/favicon.ico">`, `error.html:28 <a href="/landing.html">`, `modules/storefront/storefront-landing-content.js:39 fetch('/api/landing-pages-list')`. The new `erp-pages-deploy.yml` workflow (decision #6) publishes `apps/erp/` artifact at site root, so absolute paths continue to resolve. SPEC §G smoke matrix MUST include items verifying favicon load + landing→admin navigation work post-migration. Zero HTML edits required. |
+| 4 | `git-filter-repo --to-subdirectory-filter` for both imports (NOT `git subtree add`, NOT `git rm + cp -r`) | Preserves full commit history AND keeps `git log --follow` functional. `git subtree add` was tested in validation PoC (2026-05-15) and produces broken per-file history: `git log --follow apps/erp/<file>` returns **0 commits** vs the file's actual **84 commits**. `git-filter-repo --to-subdirectory-filter` was tested on the same repo and preserves the full 84 commits accessible via standard tooling (GitHub UI, `git log --follow`, `git blame`). Steps A4 and B2 use filter-repo. Old repos retain history independently after archive. Reference: `git-filter-repo` Discussion #440 + Validation Report Track G. |
 | 5 | TWO-PIPELINE execution shape | Phase F (Vercel + Pages reconfig) is the only production-affecting phase. Daniel verification break before F isolates the abort point. Aligns with CLAUDE.md §9 "Stop-on-deviation" + Iron Rule "Daniel-only authorizes production touches". |
 | 6 | ERP GitHub Pages deploys via NEW workflow (`erp-pages-deploy.yml`) that publishes `apps/erp/` to `gh-pages` branch | GitHub Pages cannot natively serve from a subdirectory of `main`. Alternatives rejected: (a) keep HTML at monorepo root (violates target architecture); (b) migrate ERP to Vercel (bigger change, defer to future SPEC). The new workflow uses `actions/deploy-pages@v4` with `path: apps/erp`. |
 | 7 | Vercel storefront project preserved by ID (`prj_HGz6OkwugkH6Nlw3FiomNPDp96QH`) | Re-link to monorepo source; set `rootDirectory: apps/storefront`. Env vars + custom domain `prizma-optic.co.il` stay attached to the project — no DNS change. |
-| 8 | Env-segregation enforced at FOUR layers | (1) Turborepo `globalEnv: []` + per-task `env: [...]`. (2) `scripts/checks/env-segregation.mjs` in pre-commit + CI. (3) ESLint `eslint-plugin-boundaries` with Nx-style tags inside storefront. (4) `scripts/checks/workspace-boundary.mjs` belt-and-suspenders for non-JS files (HTML script-src, etc.). |
-| 9 | CLAUDE.md rewrite preserves ALL 32 Iron Rules verbatim | Only path references update (e.g., `modules/Module N/...` becomes `apps/erp/modules/Module N/...`). §0.5 Root Discipline rewritten for monorepo root; `root-allowlist.json` updated in the SAME commit per the rule's own self-enforcement clause. |
+| 8 | Env-segregation enforced at FIVE layers | (1) Turborepo `globalEnv: []` + per-task `env: [...]`. (2) `scripts/checks/env-segregation.mjs` in pre-commit + CI. (3) ESLint `eslint-plugin-boundaries` with Nx-style tags inside storefront. (4) `scripts/checks/workspace-boundary.mjs` belt-and-suspenders for non-JS files (HTML script-src, etc.). **(5) `scripts/checks/vercel-env-audit.mjs`** (NEW — added per Validation Report Track A claim #8 finding): calls Vercel API at `/v9/projects/<id>/env`; asserts only allow-listed env-var keys present on storefront project. Closes the runtime env-var CVE class (tj-actions, event-stream, Next.js sourcemap) that lint-time layers 1-4 cannot prevent. |
+| 9 | CLAUDE.md rewrite preserves Iron Rules per **explicit table** (not "verbatim" — see below) | The 32 rules split across two source files: **25 in ERP-source CLAUDE.md** (1-23 + 31 + 32) and **7 in storefront-source CLAUDE.md** (24-30). At least **8 rules need substantive content changes**, not just path updates. The SPEC must classify EACH rule into one of three buckets: **(a) Path-only updates** (e.g., rules 5, 7, 10 — `js/shared.js` becomes `apps/erp/js/shared.js`); **(b) Semantic content changes** (rules 6 root semantics shift, 12 file-size scope across apps, Authority Matrix paths, §0.5 entirely rewritten for monorepo root, `root-allowlist.json` entirely rewritten with new categories); **(c) Cross-repo ownership decision REQUIRED for rules 24-30** — choose: (c1) absorb into monorepo root CLAUDE.md and delete `apps/storefront/CLAUDE.md`, OR (c2) keep `apps/storefront/CLAUDE.md` as a sub-constitution. The SPEC's §0 must record the chosen path for (c). |
 | 10 | Old repos ARCHIVED, not deleted, immediately after H1 | Full history preservation; archive banner directs to monorepo. `git subtree` source remotes can be removed from local clones after H1; old repos still exist for archeology. |
 
 ### 2.3 Pipeline 1 — Phases A through E (zero production impact)
 
 Detailed step-by-step in §3 below. Summary:
-- **Phase A (10 steps, ~35 min):** create `opticalis/opticup-monorepo`, subtree-import ERP under `apps/erp/`, hoist `supabase/` to root, move governance files to root, smoke-test ERP serves from `apps/erp/`.
-- **Phase B (6 steps, ~20 min):** subtree-import storefront under `apps/storefront/`, byte-verify `vercel.json` (8,594 lines), rename to `@opticup/storefront`, wire to pnpm workspace.
+- **Phase A (11 steps, ~35 min):** create `opticalis/opticup-monorepo`, **filter-repo-import** ERP under `apps/erp/` (replaces subtree per Validation Edit 1), hoist `supabase/` to root, move governance files to root, verify `.mcp.json` gitignored, smoke-test ERP serves from `apps/erp/`.
+- **Phase B (6 steps, ~20 min):** **filter-repo-import** storefront under `apps/storefront/` (auth'd HTTPS for private repo), byte-verify `vercel.json` (8,594 lines), rename to `@opticup/storefront`, wire to pnpm workspace.
 - **Phase C (4 steps, ~25 min):** write `turbo.json` (`globalEnv: []`, per-task env), root `package.json`, rewrite husky pre-commit to dispatch via turbo, verify pnpm+turbo bootstrap.
 - **Phase D (5 steps, ~40 min):** rewrite REPO constant in 10 scripts/checks files, rewrite `root-allowlist.json`, rewrite `file-size.mjs` hardcoded paths, rewrite `destructive-ops-declared.mjs` SPEC glob, rewrite GitHub Actions workflows.
 - **Phase E (5 steps, ~35 min):** write + wire `env-segregation.mjs`, install ESLint boundaries (storefront), write `workspace-boundary.mjs`, rewrite CLAUDE.md to monorepo constitution.
@@ -125,15 +125,16 @@ The Module Strategist authors the SPEC with these 34 steps. Each step has: What 
 | A | A1 | Create empty `opticalis/opticup-monorepo` repo | LOW |
 | A | A2 | Clone empty monorepo; seed `main` + `develop` | LOW |
 | A | A3 | Add ERP source as remote; fetch | LOW |
-| A | A4 | `git subtree add --prefix=apps/erp erp-source/develop` | MED |
-| A | A5 | Verify ERP subtree count match | LOW |
+| A | A4 | Use `git-filter-repo --to-subdirectory-filter apps/erp` on ERP source clone; merge filtered branch into monorepo (REPLACES `git subtree add`) | MED |
+| A | A5 | Verify ERP filter-repo count match + `git log --follow apps/erp/index.html` returns full history (≥80 commits) | LOW |
 | A | A6 | `git mv apps/erp/supabase/ supabase/` (hoist to root) | MED |
 | A | A7 | Skeleton monorepo files (package.json, pnpm-workspace, turbo, gitignore, etc.) | LOW |
 | A | A8 | Create `apps/erp/package.json` workspace member | LOW |
 | A | A9 | Move `.github/`, `.husky/`, `.vscode/`, governance docs out of `apps/erp/` to root | MED |
 | A | A10 | Local smoke: serve `apps/erp/` via http-server; verify HTML loads | MED |
-| B | B1 | Add storefront source as remote; fetch | LOW |
-| B | B2 | `git subtree add --prefix=apps/storefront storefront-source/develop` | MED |
+| A | A11 | **(NEW per Validation Track H Edit 10)** Verify `.mcp.json` is gitignored + Iron Rule 23 secret-scan hook covers the filename | LOW |
+| B | B1 | Add storefront source as remote; fetch (auth'd HTTPS — storefront repo is private) | LOW |
+| B | B2 | Use `git-filter-repo --to-subdirectory-filter apps/storefront` on storefront source clone; merge filtered branch (REPLACES `git subtree add`) | MED |
 | B | B3 | Byte-verify `vercel.json` (8,594 lines exactly) | LOW |
 | B | B4 | Rename storefront workspace member to `@opticup/storefront` | LOW |
 | B | B5 | Delete `apps/storefront/supabase/` scratch | LOW |
@@ -151,19 +152,36 @@ The Module Strategist authors the SPEC with these 34 steps. Each step has: What 
 | E | E2 | Wire env-segregation to pnpm + turbo + pre-commit | LOW |
 | E | E3 | Install ESLint Nx-style tag boundaries in storefront | LOW |
 | E | E4 | Write `scripts/checks/workspace-boundary.mjs` | LOW |
-| E | E5 | Rewrite CLAUDE.md to monorepo constitution (all 32 Iron Rules verbatim) | **HIGH** |
-| -- | -- | **DANIEL VERIFICATION BREAK (15 min)** | -- |
+| E | E5 | Rewrite CLAUDE.md to monorepo constitution per the **3-bucket classification** in §2.2 #9 (path-only updates + semantic changes + cross-repo ownership decision for rules 24-30) | **HIGH** |
+| -- | -- | **DANIEL VERIFICATION BREAK (15 min — if extended >12h, re-sync filter-repo from source repos before Pipeline 2)** | -- |
 | F | F1 | Update Vercel storefront project root directory to `apps/storefront` | **HIGH** |
-| F | F2 | Disconnect old storefront repo from Vercel; reconnect monorepo | **HIGH** |
-| F | F3 | Create `erp-pages-deploy.yml`; deploy `apps/erp/` to `gh-pages` branch | **HIGH** |
-| F | F4 | Configure GitHub Pages source on new monorepo + verify DNS | **HIGH** |
+| F | F2 | Disconnect old storefront repo from Vercel; reconnect monorepo (schedule 03:00-05:00 IL low-traffic window per Validation R-NEW-05) | **HIGH** |
+| F | F3 | Create `erp-pages-deploy.yml` using `actions/upload-pages-artifact@v3` with `path: apps/erp` (direct upload, no gh-pages branch dance — per Validation Track C) | **HIGH** |
+| F | F4 | Configure GitHub Pages source on new monorepo + verify DNS + **`_github-pages-challenge-opticalis` TXT record check** (3 retries × 5-min sleeps before failing — per Validation R-NEW-11) | **HIGH** |
 | G | G1 | Execute 60-item smoke matrix | -- |
 | H | H1 | Archive old `opticup` + `opticup-storefront` repos | LOW |
 | H | H2 | Update MEMORY.md cross-references | LOW |
 | H | H3 | Write monorepo README.md | LOW |
 | H | H4 | Author FOREMAN_REVIEW.md | LOW |
 
-**Total: 34 steps + Daniel break + smoke wrapper.**
+**Total: 35 steps + Daniel break + smoke wrapper.** (35 = 34 original + A11 added per Validation Edit 10.)
+
+### Pipeline 1 + Pipeline 2 checkpoint discipline (resume-able sub-phases)
+
+Added per Validation Track H Edit 8. Closes R-NEW-01 (Cowork/Claude-Code chat death mid-Pipeline).
+
+Each Phase boundary (A→B, B→C, C→D, D→E for Pipeline 1; F1→F2→F3→F4 for Pipeline 2) is a **CHECKPOINT**. Executor must:
+
+1. Commit a `chore(monorepo): Pipeline N Phase X complete — resume marker` commit at the end of each Phase.
+2. Tag the marker commit: `monorepo-pipeline-{1,2}-checkpoint-{A,B,C,D,E,F1,F2,F3,F4}` and push the tag to origin.
+3. Update `RESUME_MARKER.md` at monorepo root with: last completed Phase, last completed step ID, next pending step ID, ISO timestamp.
+4. **If the chat dies mid-Phase**, a fresh Claude Code session resumes by:
+   - Reading SPEC.md (Pipeline 1 or 2 as appropriate).
+   - Reading `RESUME_MARKER.md`.
+   - Running `git fetch origin --tags && git reset --hard monorepo-pipeline-{N}-checkpoint-{X}` to restore the last-known-good state.
+   - Continuing from the next pending step.
+
+This converts the Pipeline from "all-or-nothing" to "stage-by-stage resumable" without weakening the autonomy contract.
 
 ---
 
@@ -197,9 +215,11 @@ The Module Strategist's SPEC §3 Success Criteria reproduces the 60 items from `
 | 0.6 | Supabase MCP connected (already in environment) | Verified by Pipeline at bootstrap |
 | 0.7 | M1 Phase 2 work + Funnel work COMPLETE and merged to main on both repos | **Daniel confirms.** This Brief is dispatched AFTER both lines settle. |
 | 0.8 | No in-flight Pipelines on either source repo | Daniel confirms; no other Claude Code session running |
-| 0.9 | Working directory has ≥10 GB free | The recursive `modules/Module 3 - Storefront/backups/` is 138k files |
+| 0.9 | Working directory has ≥10 GB free. **Pre-flight cleanup REQUIRED** for `modules/Module 3 - Storefront/backups/_pre-phase6/opticup-erp/...` recursive nest — filesystem probe (2026-05-15) confirmed it hits Linux `PATH_MAX (4096 bytes)` at multiple recursion depths. **Two options, choose one:** (a) `git filter-repo --invert-paths --path 'modules/Module 3 - Storefront/backups/'` on the ERP source clone BEFORE subtree import (history rewrite — declare in Iron Rule 32 destructive ops); (b) accept the bloat into monorepo and `git rm -r --cached modules/Module 3 - Storefront/backups/_pre-phase6/` immediately after A4 (working-tree cleanup, history retained). **Recommendation: (a)** for clean history. Either choice expands A4 time budget from ~5min to ~30min worst case. | Daniel + Module Strategist choose option in SPEC §0 |
 | 0.10 | Vercel dashboard access (web UI fallback for project settings) | Daniel logged in |
 | 0.11 | `.gitignore` includes `modules/*/backups/` patterns BEFORE Phase A step 4 | Verified pre-A4 |
+| 0.12 | **No hidden `.git/` directories** inside `_archive/` or backups paths in either source repo | Daniel runs `find . -name ".git" -type d -not -path "./.git"` on both source repos before Pipeline 1 — must return empty |
+| 0.13 | **OPEN_TASKS.md #0b (IRON_RULE_32_HOOK_COMMENT_AWARENESS) is CLOSED** before Pipeline 1 dispatch | Otherwise husky pre-commit may false-positive on SQL migration comments and block Executor mid-Pipeline. This is a HARD prerequisite, not concurrent work. |
 
 ---
 
@@ -229,12 +249,13 @@ Explicitly NOT in this migration:
 | Storefront prod (`prizma-optic.co.il`) downtime | ≤ 2 min |
 | ERP prod (`app.opticalis.co.il`) downtime | ≤ 10 min |
 | Supabase RLS / policy / EF / migration changes | **ZERO** |
-| Commit history loss in either repo | **ZERO** (`git subtree add` mandatory; `git rm + cp -r` forbidden) |
+| Commit history loss in either repo | **ZERO** (`git-filter-repo --to-subdirectory-filter` mandatory; `git subtree add` rejected due to broken `--follow`; `git rm + cp -r` forbidden) |
 | Manual interventions Daniel must perform mid-Pipeline | (a) approve Vercel project re-link via web UI if CLI insufficient (1 click), (b) verify smoke matrix results between Pipelines, (c) confirm archive of old repos in Phase H |
 | Production database touches | **ZERO** |
 | `git push --force` to monorepo `main` | Forbidden after F4 |
 | Iron Rule 31 (integrity gate) silent bypass | **ZERO** — husky pre-commit must keep firing |
 | Iron Rule 32 (destructive ops gate) silent bypass | **ZERO** — must keep firing on monorepo root + apps/erp/scripts/ |
+| Source-repo `develop` write activity during migration window | **FROZEN** from Pipeline 1 start to Phase H1 archive. No human commits, no scheduled crons (Lighthouse daily, Sentinel auto-write, etc.) on either `opticalis/opticup` or `opticalis/opticup-storefront`. **Pre-Pipeline 1 action:** pause `lighthouse-daily.yml` + any cron workflows on both source repos. **Post-archive action:** un-pause (or delete, since old repos are archived). |
 
 ---
 
@@ -321,6 +342,8 @@ The Pipeline must apply ALL harvested patterns from prior M1 work:
 **Pipeline 2 Activation Prompt:** `MONOREPO_MIGRATION_PIPELINE_2_ACTIVATION_PROMPT.md` (sibling file). Daniel pastes into a fresh Claude Code chat to run Phases F-H + smoke matrix (~1.75 hours). Pipeline 2 ends with all 60 smoke items + ONE Hebrew status line.
 
 After 🟢 on both: `M7` and `M9` Pipelines can be authored on the monorepo. The Module 1.5 placeholder in `OPEN_TASKS.md` #4 closes.
+
+**Execution environment (NON-NEGOTIABLE):** Pipeline 1 AND Pipeline 2 run in **Claude Code**, NOT in Cowork. Cowork's `mcp__workspace__bash` has a hard 45-second timeout that some Pipeline steps will exceed (`git-filter-repo` on ERP repo took ~6s in sandbox but full ERP repo with history may exceed; `pnpm install` cold-cache on the full workspace can exceed; `turbo run verify` first-time builds the dependency graph). Cowork sessions MAY dry-run individual steps or perform validation runs (like this Brief's validation), but MUST NOT attempt full Pipeline execution. Validated 2026-05-15: Validation PoC `pnpm install` was not even attempted because Cowork disk + timeout would fail it.
 
 ---
 
