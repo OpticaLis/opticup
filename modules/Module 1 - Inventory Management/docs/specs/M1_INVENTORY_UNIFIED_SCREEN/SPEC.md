@@ -329,3 +329,31 @@ smoke 7/7 PASS, פריזמה ללא נגיעה.
 ---
 
 *End of SPEC. 14 success criteria, 8 destructive ops declared, 7 stop-triggers, 6 commits expected. Pipeline runs as a single Full-Auto chain through Stage 5.*
+
+---
+
+## §13 Execution Marker
+
+This section is appended at execution time so the Iron Rule 32 gate
+(`scripts/checks/destructive-ops-declared.mjs`) sees this SPEC in the
+staged set for the commit that performs the §4 deletions. The gate's
+auth parser only inspects SPEC.md files staged in the SAME commit as
+the destructive op — committing the SPEC seal separately (C0) and the
+deletions separately (C4) is a known gap; re-staging the SPEC alongside
+C4 is the project-standard workaround.
+
+Execution begun: 2026-05-16 afternoon (commits C1–C4 inclusive).
+Pipeline executor: opticup-executor in Full-Auto Pipeline single-chat
+mode under SPEC §9 Autonomy Envelope.
+
+Re-confirmation of §4 authorized deletions for the C4 gate scan:
+
+- `lens-inventory.html`
+- `lens-active-designs.html`
+- `lens-pricing.html`
+- `lens-purchase-order.html`
+- `lens-pos-list.html`
+- `lens-goods-receipt.html`
+- `lens-catalog-admin.html`
+- `shared/js/lens-nav-strip.js`
+
