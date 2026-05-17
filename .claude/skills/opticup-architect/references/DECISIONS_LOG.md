@@ -225,6 +225,26 @@ Format for full entries (in `decisions/<MODULE>.md`): situation → my recommend
 
 ---
 
+## 2026-05-17 — Supervisor Skill Phase 1 sealed + Parallel Pipeline Coordination sealed
+
+**Situation:** Daniel asked for an autonomous-team layer that resolves Pipeline escalations from DECISIONS_LOG history without his intervention, with reversibility on any change. Same day, a cross-Pipeline collision incident demonstrated the urgency of branch-coordination infrastructure.
+
+**My recommendation:** Build Supervisor skill in 3 phases (Triage + Retry + Auto-Harvest). Start with Phase 1 (Triage only) in Shadow Mode for 3 days before granting Active autonomy. Build Parallel Pipeline Coordination as a separate single SPEC immediately to prevent recurrence of today's collision.
+
+**Daniel's response:** Agreed both. Added 2 requirements to Supervisor learning loop: (a) Shadow Mode = 3 days side-by-side comparison (not just Supervisor logging alone); (b) Reverse-harvest — when Daniel chooses differently, Supervisor generates a proposal to update its own Adapter. Locked decision sources as: canonical files (DECISIONS_LOG + decisions/*.md + CLAUDE.md + MASTER_ROADMAP) at max confidence; auto-memory at confidence-cap 3 (hint source, never deciding).
+
+**Reason for agreement:** Shadow Mode + Reverse-harvest converts the 3 days from "passive observation" into "active calibration data." Confidence cap on auto-memory prevents the Supervisor from acting on Daniel's casual preferences as if they were sealed decisions.
+
+**Lesson (for Architect):** Build "learning loop" into the Brief itself, never as a follow-up phase. The taxonomy (4 mistake classes: A lookup-miss / B wrong-match / C novelty / D miscalibration) was the highest-value design decision — it lets the system distinguish "the Adapter is bad" from "Supervisor is mis-calibrated" from "this is a new decision Daniel needs to make." Routing matters more than logging.
+
+**Cross-references:**
+- Brief: `modules/Module 1.5 - Shared Components/architecture-brief/SUPERVISOR_SKILL_BRIEF.md`
+- SPEC 1 retrospective: `modules/Module 1.5 - Shared Components/docs/specs/SUPERVISOR_SKILL_PHASE_1/FOREMAN_REVIEW.md`
+- Coordination Brief: `modules/Module 1.5 - Shared Components/architecture-brief/PARALLEL_PIPELINE_COORDINATION_BRIEF.md`
+- Coordination retrospective: `modules/Module 1.5 - Shared Components/docs/specs/PARALLEL_PIPELINE_COORDINATION/FOREMAN_REVIEW.md`
+
+---
+
 ## Pattern Recurrence Tracker (3-strike rule)
 
 When a pattern surfaces in 3 or more independent decisions across modules, formalize it as a `Pattern Pn` in `SKILL.md`. Patterns currently tracked:

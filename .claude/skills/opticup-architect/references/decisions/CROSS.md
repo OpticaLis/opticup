@@ -151,3 +151,68 @@ The skill MUST NOT autonomously decide:
 - Anything changing product positioning (P-003)
 - Anything contradicting a previously-locked architectural decision without explicit re-opening
 
+---
+
+## 2026-05-17 — Supervisor Skill + Parallel Pipeline Coordination
+
+### Decision A — Build Supervisor skill (opticup-supervisor)
+**Context:** Daniel wants autonomous Pipeline operation during periods he is unavailable, with full reversibility. Current escalations require Daniel as a manual lookup tool against DECISIONS_LOG.
+
+**Decision:** Build new skill `opticup-supervisor` in 3 phases. Phase 1 (Triage from decisions log) ships first, in Shadow Mode for 3 days. Phases 2 (Retry+Snapshot) and 3 (Auto-Harvest+Pending-Promotions) gated on Shadow Mode success.
+
+**Architecture:** Core/Adapter separation from day one — Core is project-agnostic (portable to future projects); Adapter is Optic Up specific (decisions-log paths, skill destinations, verification criteria). Future projects: copy Core unchanged, write new Adapter.
+
+**Constraints (non-negotiable):**
+- Never writes new strategic decisions — lookup only.
+- Never modifies DECISIONS_LOG, CLAUDE.md, or main branch.
+- Zero destructive operations.
+- Confidence ≤ 2 → mandatory escalate.
+
+### Decision B — Shadow Mode = 3 days side-by-side
+**Context:** Need calibration data before granting Supervisor autonomy.
+
+**Decision:** During 2026-05-17 → 2026-05-20: every escalation processed by both Supervisor (logs proposed resolution + confidence 1-5) and Daniel (actual resolution). Side-by-side comparison file at `_archive/supervisor-log/shadow-{ISO_DATE}.md`.
+
+**Flip criteria after day 3:** ≥80% match AND zero confidence-5 mismatches → Active Mode. Below threshold → extend Shadow + investigate misclassified entries.
+
+### Decision C — Confidence cap = 3 on auto-memory sources
+**Context:** Auto-memory MEMORY.md contains Daniel's preferences but is not canon. Risk: Supervisor treats casual preferences as sealed decisions.
+
+**Decision:** Canonical sources (DECISIONS_LOG, decisions/*.md, CLAUDE.md, MASTER_ROADMAP) allow max confidence 5. Auto-memory capped at confidence 3 — which by §12.1 hard rule means it can never be the deciding source (≤2 always escalates; 3 is borderline and policy makes it escalate from auto-memory too).
+
+**Net effect:** Auto-memory is a hint source, never a deciding source.
+
+### Decision D — Reverse-harvest on every mismatch
+**Context:** Shadow Mode produces data. The data must convert into Adapter improvements automatically.
+
+**Decision:** Every Shadow-mode mismatch + every Active-mode-Daniel-override generates an automatic proposal at `_archive/supervisor-pending-promotions/reverse-{ISO_DATE}_{TOPIC}.md` with: what Supervisor proposed + reasoning, what Daniel chose + reasoning, recommended Adapter update. Daniel approves with one click → Supervisor updates its own Adapter.
+
+**Net effect:** Supervisor improves itself without Daniel writing skill code.
+
+### Decision E — Mistake taxonomy (4 classes)
+**Context:** Not all Supervisor mistakes mean the same fix.
+
+**Decision:** Every mistake (mismatch or rejected proposal) classified as:
+- **A — Lookup miss:** the DECISIONS_LOG had the answer; Supervisor didn't find it. Fix: improve search heuristic in Adapter.
+- **B — Lookup wrong-match:** Supervisor found an entry but applied it to wrong context. Fix: tighten entry-applicability rules.
+- **C — Genuine novelty:** the question wasn't in DECISIONS_LOG. Fix: not a mistake — confirm escalation was correct, log new decision when Daniel resolves.
+- **D — Confidence miscalibration:** high-confidence but wrong. Fix: review what made it falsely confident; add anti-pattern to Adapter.
+
+### Decision F — Build Parallel Pipeline Coordination as separate SPEC, today
+**Context:** 2026-05-17 morning, M1 Pipeline opened PR develop→release and merged it while Supervisor Pipeline was mid-build. Branch switch silently dragged Supervisor's HEAD onto release branch. C6 commit landed on wrong branch. Recovery required ~20 min + 1 escalation + risk of losing work on wrong recovery choice.
+
+**Decision:** Single ~1-hour SPEC, no phasing. File-system mediated lock protocol (no daemon). Lock files at `_archive/pipeline-sessions/*.lock` (gitignored). 5 commands: `claim`, `release`, `check-collision`, `heartbeat`, `cleanup-stale`. Wired into 5 Pipeline skills as Pre-Action Collision Check. All collisions halt + escalate (no auto-resolution).
+
+**Net effect:** The incident class cannot recur silently. Pipelines opened after `23107bc` will execute `claim` at bootstrap and halt on collision.
+
+### Decision G — P-EXEC-2 first proof of learning-loop
+**Context:** Yesterday (SUPERVISOR_SKILL_PHASE_1) added the P-EXEC-2 binding rule for handling pre-existing CLAUDE.md size violations. Today (PARALLEL_PIPELINE_COORDINATION) Executor Step 0 encountered exactly that case (CLAUDE.md 505 lines pre-existing) and handled correctly via §5 +25 delta cap (+4 actual).
+
+**Lesson:** This is the first end-to-end proof that the team's learning loop works: a rule promoted yesterday caught a real bug today, without any human intervention. Validates the Reverse-harvest + auto-promotion design.
+
+**Cross-references:**
+- SPEC 1 Brief: `modules/Module 1.5 - Shared Components/architecture-brief/SUPERVISOR_SKILL_BRIEF.md`
+- SPEC 1 retrospective: `modules/Module 1.5 - Shared Components/docs/specs/SUPERVISOR_SKILL_PHASE_1/FOREMAN_REVIEW.md`
+- Coordination Brief: `modules/Module 1.5 - Shared Components/architecture-brief/PARALLEL_PIPELINE_COORDINATION_BRIEF.md`
+- Coordination retrospective: `modules/Module 1.5 - Shared Components/docs/specs/PARALLEL_PIPELINE_COORDINATION/FOREMAN_REVIEW.md`
+
