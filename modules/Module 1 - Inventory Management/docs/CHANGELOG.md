@@ -4,6 +4,43 @@
 
 ---
 
+## Lens UI Rebuild Phase 0 — Foundation (in progress 2026-05-17)
+
+### SPEC 1 — M1_LENS_PALETTE_RETIRE_UNIFIED — 2026-05-17 (🟡 CLOSED with Tier C deferred)
+
+**Scope:** Retire `M1_INVENTORY_UNIFIED_SCREEN §1.5 R-1..R-13` visual-palette rules + rewrite `css/lens-tabs.css` to mockup palette per ratification `D-M1-02..D-M1-14`.
+
+**Commits:**
+- `cbe3a8e` chore(spec): author M1_LENS_PALETTE_RETIRE_UNIFIED SPEC
+- `eddc8a1` refactor(css): retire unified-screen R-1..R-13 — rewrite lens-tabs.css to mockup palette
+- _(this commit)_ chore(spec): close M1_LENS_PALETTE_RETIRE_UNIFIED with retrospective
+
+**Files changed:**
+- `css/lens-tabs.css` (368 → 387 lines, +19)
+- `modules/Module 1 - Inventory Management/docs/specs/M1_INVENTORY_UNIFIED_SCREEN/SPEC.md` (DEPRECATED note inserted at §1.5)
+- New SPEC folder artifacts: `SPEC.md`, `EXECUTION_REPORT.md`, `FOREMAN_REVIEW.md`
+- New Brief: `architecture-brief/M1_LENS_MOCKUP_FIDELITY_FULL_REBUILD_BRIEF.md`
+
+**Palette swaps (navy `#1e3a8a` → gold `#c9a555`):**
+- `.lens-tab-section .chip:hover` + `.chip.active`
+- `.lens-tab-section .btn-primary` + `:hover` (gold-dark `#b8954a`)
+- `#lensNav button.active` + `:hover`
+- `#contactNav button.active` + `#accessoryNav button.active`
+
+**New tokens (mockup-required, previously missing):**
+- `.lens-tab-section .chip-overdue { #fee2e2 / #991b1b }` — red for overdue POs
+- `.lens-tab-section .stat-card.overdue { #dc2626 border }` — red border for overdue stat-card
+
+**Unchanged (mockup-aligned in their current form, intentional):**
+- `.chip-sent` navy text — mockup state indicator for sent POs
+- `.chip-received` green text — mockup state indicator
+- `.stat-card.active` navy border — mockup selected-card indicator
+- Data-table headers light slate — mockup data-tables use light slate
+
+**Next:** SPEC 2 (`M1_5_SHARED_COMPONENTS_PHASE_0`) — 8 shared components in Module 1.5.
+
+---
+
 ## M1_5_CAT_SIDEBAR_COMPONENT (consumer-side) — 2026-05-17 morning (🟢 CLOSED — Full Auto Pipeline, ~1.5h)
 
 **Cross-module SPEC owned by Module 1.5.** Module 1 is the consumer-side refactor (inventory.html + css/inventory-shell.css). See `modules/Module 1.5 - Shared Components/docs/specs/M1_5_CAT_SIDEBAR_COMPONENT/` for full SPEC + retrospective.

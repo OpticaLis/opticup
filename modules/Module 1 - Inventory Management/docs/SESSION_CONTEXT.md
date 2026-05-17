@@ -1,7 +1,22 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1_INVENTORY_DEBT_DECOUPLING — 2026-05-18 evening (🟢 CLOSED — architectural correction strips inventory/debt collision; Phase B preserved; Pipeline ends; develop → main PR ready)
+M1_LENS_PALETTE_RETIRE_UNIFIED — 2026-05-17 (🟡 CLOSED WITH ONE DEFERRED CRITERION — Tier C VFV deferred to opticup-localhost-tester; lens-tabs.css palette swapped navy→gold per mockup ratification D-M1-02..D-M1-14; M1_INVENTORY_UNIFIED_SCREEN §1.5 R-1..R-13 marked DEPRECATED; foundation SPEC 1 of 4 for the M1 lens mockup-fidelity rebuild Pipeline)
+
+## 2026-05-17 — M1_LENS_PALETTE_RETIRE_UNIFIED (🟡 CLOSED — SPEC 1 of 4 foundation, Full-Auto Pipeline)
+
+**Trigger:** Brief `architecture-brief/M1_LENS_MOCKUP_FIDELITY_FULL_REBUILD_BRIEF.md` sealed 18 design decisions for the M1 lens mockup-fidelity rebuild. SPEC 1 retires the lens-CSS retargeting introduced 2026-05-16 by M1_INVENTORY_UNIFIED_SCREEN §1.5 R-1..R-13 (which the audit `M1_LENS_MOCKUP_AUDIT_2026_05_17_REPORT.md` §9.1 classified as ROOT CAUSE of 6/6 lens-screen non-compliance, per Pattern P-AR-16). Foundation SPEC 1 of 4 sequential (1→2→3→4a → STOP → parallel Groups A/B/C).
+
+**Pipeline commits (Foreman authored + Executor + Foreman close):**
+- `cbe3a8e` SPEC 1 authoring + Brief committed
+- `eddc8a1` Execution — lens-tabs.css palette rewrite (368→387 lines) + source SPEC DEPRECATED note inserted
+- _(this commit)_ EXECUTION_REPORT.md + FOREMAN_REVIEW.md + SC + CHANGELOG updates
+
+**§3 success criteria:** 11/12 pass cleanly. Criterion 9 (Tier C VFV via Chrome MCP) deferred to opticup-localhost-tester per EXECUTION_REPORT §4 — change is pure CSS color-value swap, near-zero regression risk on the 1:1 lens-inventory reference, multi-SPEC marathon mode favors deferral to dedicated Tester skill.
+
+**Next:** SPEC 2 (`M1_5_SHARED_COMPONENTS_PHASE_0` — 8 shared components in Module 1.5, est. 7-8h, BLOCKING for screen rebuilds).
+
+---
 
 ## 2026-05-18 evening — M1_INVENTORY_DEBT_DECOUPLING (🟢 CLOSED — architectural correction)
 
