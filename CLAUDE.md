@@ -463,6 +463,12 @@ Claude Code executes approved plans end-to-end without per-step confirmation, st
 - ✅ `tests/smoke/baseline.test.mjs` — 7 baseline tests (PIN auth, CRM lead create+RLS, inventory read, storefront pages, no 5xx) covering M1+M4 production scope
 - ✅ `scripts/snapshot.mjs` — git-tag based pre-SPEC snapshot + rollback (`create` / `rollback` / `list`)
 
+**Supervisor layer (Shadow Mode launch — 2026-05-17):**
+- ✅ `opticup-supervisor` skill — Triage layer between Pipeline and Daniel. Reads Pipeline escalations, searches canonical decision sources, writes `ARCHITECT_DECISION_*.md` when a clear answer exists. Project-portable via Core/Adapter split. See SKILL.md + `adapters/opticup/` for full details; brief: `modules/Module 1.5 - Shared Components/architecture-brief/SUPERVISOR_SKILL_BRIEF.md`.
+- ✅ **Shadow Mode is launch state.** Both Supervisor (proposed resolution → `_archive/supervisor-log/shadow-{YYYY-MM-DD}.md`) and Daniel (actual resolution) run on every escalation in parallel for 3-day learning. Pipeline skills emit Supervisor's status line first, then their own standard escalation line.
+- ⏳ **Active Mode flip (Brief §11):** after 3 Shadow days, ≥ 80% match AND no Confidence-5 mismatches → propose flip; Daniel decides. Single string change in `opticup-supervisor/SKILL.md`. No auto-flip.
+- ⏳ Phases 2+3 queued: `SUPERVISOR_SKILL_PHASE_2_RETRY` (try-verify-rollback-alternative loop) + `SUPERVISOR_SKILL_PHASE_3_HARVEST` (pattern detection → promotion proposals; manual approval).
+
 **Not yet attempted (Phase 1+):**
 - Cowork-as-orchestrator for full-phase autonomous runs
 - Visual UI checking via Claude in Chrome (Playwright in baseline.test.mjs v2)
