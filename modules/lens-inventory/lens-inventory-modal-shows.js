@@ -210,6 +210,24 @@
     };
   }
 
+  // Phase C C-C2 DM-3 (Tier C VFV finding): purchase_receipt_line.location_id is NOT NULL.
+  // Cache the first tenant_location id for the active tenant.
+  var _defaultLocationCache = null;
+  async function _resolveDefaultLocationId() {
+    if (_defaultLocationCache) return _defaultLocationCache;
+    try {
+      var tid = getTenantId();
+      var { data, error } = await sb.from('tenant_location')
+        .select('id, is_default')
+        .eq('tenant_id', tid)
+        .order('is_default', { ascending: false, nullsFirst: false })
+        .limit(1);
+      if (error) throw error;
+      _defaultLocationCache = (data && data[0] && data[0].id) || null;
+      return _defaultLocationCache;
+    } catch (e) { console.warn('_resolveDefaultLocationId:', e.message); return null; }
+  }
+
   async function _submitAddStock(params) {
     // params: { variant_id, sph, cyl, qty_received, unit_cost,
     //           supplier_id, delivery_note_number,
@@ -223,8 +241,14 @@
       return null;
     }
     var tid = getTenantId();
+    var locId = await _resolveDefaultLocationId();
+    if (!locId) {
+      Toast.error('לא נמצא מיקום מלאי לדייר זה');
+      return null;
+    }
     var line = {
       variant_id: params.variant_id || null,
+      location_id: locId,
       sph: params.sph,
       cyl: params.cyl,
       qty_received: Number(params.qty_received) || 0,

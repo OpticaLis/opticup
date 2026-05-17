@@ -42,7 +42,7 @@
     // Lens variants are global (owner_tenant_id may be null); look up by display_id first.
     try {
       var { data, error } = await sb.from('lens_variant')
-        .select('id, display_id, design_id, refractive_index, diameter_mm, lens_design(brand_id, name_he)')
+        .select('id, display_id, design_id, refractive_index, diameter_mm, lens_design(brand_id, name)')
         .ilike('display_id', input.trim())
         .eq('is_deleted', false)
         .limit(1);
@@ -64,7 +64,7 @@
     var design = v.lens_design || {};
     box.innerHTML =
       '<div class="qs-resolved-line"><strong>' + escapeHtml(v.display_id) +
-      '</strong> · ' + escapeHtml(design.name_he || '') +
+      '</strong> · ' + escapeHtml(design.name || '') +
       ' · IDX ' + (v.refractive_index != null ? v.refractive_index : '?') +
       ' · ⌀ ' + (v.diameter_mm != null ? v.diameter_mm : '?') + 'mm</div>';
     box.dataset.variantId = v.id;
