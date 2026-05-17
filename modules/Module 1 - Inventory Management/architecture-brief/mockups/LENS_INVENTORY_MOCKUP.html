@@ -542,6 +542,24 @@
     bottom: 0;
   }
   .qrd-footer .btn { flex: 1; justify-content: center; }
+
+  /* === ENTRY HELPER STRIP (added 2026-05-17 Round 2) ===
+     Persistent helper-text reminding the user that ALL inventory entry must
+     capture a delivery-note (or has_no_invoice flag). Sits below the page-header
+     so it's visible whenever the user looks at the inventory screen. */
+  .entry-helper-strip {
+    background: #eff6ff;
+    color: #1e40af;
+    padding: 10px 16px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    margin-bottom: 12px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .entry-helper-strip .icon-info { font-size: 16px; }
 </style>
 </head>
 <body>
@@ -560,13 +578,23 @@
     <button class="btn" onclick="document.getElementById('reportsModal').classList.add('active')">📊 דוחות</button>
     <button class="btn">📥 ייצוא Excel</button>
     <button class="btn">🔍 חיפוש מתקדם</button>
+    <!-- "סריקה — הורדה" is the only out-flow path (decrement); does NOT use the drawer. -->
     <button class="btn" onclick="openScanModal('out')" style="background:#fef0ef; border-color:#e74c3c; color:#c0392b; font-weight:600;">📷 סריקה — הורדה</button>
-    <!-- "סריקה — הוספה" entry adds scanned items to the Quick Receipt drawer (Section B), NOT directly to stock. (Daniel decision #9) -->
+    <!-- Entry point: feeds Quick Receipt drawer Section B. NO direct stock writes from here. -->
     <button class="btn" onclick="openScanModal('in')" style="background:#e8f8ef; border-color:#27ae60; color:#1e8449; font-weight:600;">📷 סריקה — הוספה</button>
-    <!-- NEW entry point per Daniel decision #9: explicit "קבל סחורה" opens the Quick Receipt drawer directly. -->
+    <!-- Entry point: feeds Quick Receipt drawer Section B. NO direct stock writes from here. -->
     <button class="btn" onclick="document.getElementById('quickReceiptDrawer').classList.add('active')" style="background:#fdf6e3; border-color:#c9a555; color:#b8954a; font-weight:600;">📦 קבל סחורה</button>
+    <!-- "הוספה מרובה (Wizard)" output stages 65-variant rows into Quick Receipt drawer Section B
+         on wizard completion (Daniel decision Round 2 2026-05-17). NO direct stock writes from wizard. -->
     <button class="btn btn-primary" onclick="document.getElementById('bulkModal').classList.add('active')">➕ הוספה מרובה (Wizard)</button>
   </div>
+</div>
+
+<!-- Entry-helper strip: ALL inventory additions must capture delivery-note metadata.
+     Reinforces the Quick Receipt drawer = sole entry path rule. -->
+<div class="entry-helper-strip">
+  <span class="icon-info">ℹ️</span>
+  <span>כל הוספה למלאי דורשת מספר תעודה (או סימון "אין תעודה" לבדיקה עתידית).</span>
 </div>
 
 <!-- ============ FILTERS BAR ============ -->
@@ -766,8 +794,8 @@
     </div>
 
     <!-- Quick Add -->
-    <!-- This entry adds to the Quick Receipt drawer staging (Section B), NOT directly to stock. (Daniel decision #9)
-         The drawer opens automatically; this form's fields pre-populate the drawer's "add item" sub-form. -->
+    <!-- Entry point: feeds Quick Receipt drawer Section B. NO direct stock writes from here.
+         Form fields below pre-populate the drawer's "add item" sub-form when the button is clicked. -->
     <div class="panel-card">
       <div class="panel-card-header">הוספה ידנית</div>
       <div class="panel-card-body">
@@ -1108,10 +1136,9 @@
       </div>
 
     </div>
-    <!-- "in" mode submit: items feed the Quick Receipt drawer (Section B) for the per-session
-         delivery-note metadata batching (Daniel decision #9 + #15). "out" mode submit:
-         direct decrement (existing behavior). The submit button label + behavior is set by
-         openScanModal(mode) in the JS below. -->
+    <!-- Entry point: feeds Quick Receipt drawer Section B. NO direct stock writes from here.
+         "in" mode submit closes this modal + opens drawer with scanned items pre-loaded.
+         "out" mode submit performs direct decrement (out-flow path, drawer does not apply). -->
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeScanModal()">ביטול</button>
       <button class="btn" id="scanSubmitBtn" style="color:white;">✓ הכנס למלאי (5 פריטים)</button>
@@ -1181,9 +1208,18 @@
       </div>
 
     </div>
+    <!-- Wizard completion stages the 65-row output into Quick Receipt drawer Section B
+         (Daniel decision Round 2). User then fills delivery-note metadata in Section A
+         and "סיים קבלה" persists all 65 rows with shared delivery-note attribution. -->
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="document.getElementById('bulkModal').classList.remove('active')">ביטול</button>
-      <button class="btn btn-success">✓ צור 65 שורות מלאי</button>
+      <button class="btn btn-success"
+              onclick="
+                document.getElementById('bulkModal').classList.remove('active');
+                document.getElementById('quickReceiptDrawer').classList.add('active');
+              ">
+        ✓ העבר 65 שורות לטיוטת קבלה
+      </button>
     </div>
   </div>
 </div>
@@ -1331,19 +1367,30 @@ function switchRpt(el, type) {
 </script>
 
 <!--
-  ===== QUICK RECEIPT DRAWER — Bulk Receipt Flow (per Daniel decision #15) =====
-  - User opens drawer (via scanner match / "הוסף ידנית" / "קבל סחורה" button)
-  - User scans/adds N items (each item gets staged in Section B)
-  - User fills delivery_note_number + supplier_id ONCE in Section A
-  - On "סיים קבלה": all N items receive the same delivery_note_number + supplier_id
-    + receipt_date in their audit trail (NOT per-item — shared across the session)
-  - DB schema: each item gets its own stock_lot entry, but delivery_note_number (TEXT)
-    is shared across all entries created in this drawer session
-  - has_no_invoice (BOOLEAN) is set per delivery_note when "אין תעודה" was checked
-  - Cross-ref: see modules/Module 1 - Inventory Management/architecture-brief/INVOICES_INBOX_PLACEHOLDER.md
-    for the future Invoices Inbox screen that consumes these delivery-note records.
+  ===== QUICK RECEIPT DRAWER = SOLE INVENTORY-ENTRY PATH =====
+  (Daniel decision Round 2, 2026-05-17 — replaces the Round 1 "preferred path" framing.)
 
-  This drawer is shown OPEN (.active) in the mockup so reviewers can see the layout.
+  All inventory additions must capture delivery_note_number (or has_no_invoice=TRUE)
+  PLUS supplier_id PLUS receipt_date. There is NO bypass UI. Entry points:
+  - Scanner (in-mode): scanned item → Section B staging
+  - Manual add button: opens drawer to Section B with manual-add form
+  - Top header "קבל סחורה" button: opens drawer empty, user scans/adds
+  - Bulk add wizard ("הוספה מרובה"): 65-variant grid output stages into Section B,
+    single delivery-note metadata for all rows (NOT direct stock-write)
+
+  Per-session semantics:
+  - User stages N items into Section B
+  - User fills delivery_note_number + supplier_id + receipt_date ONCE in Section A
+  - On "סיים קבלה": all N items receive the same metadata in their audit trail
+    (NOT per-item — shared across the session). DB: each item → own stock_lot row,
+    but delivery_note_number TEXT is shared across all entries from this session.
+  - has_no_invoice BOOLEAN is set per delivery_note when "אין תעודה" was checked
+
+  Manager audit: receipts with has_no_invoice=TRUE appear in a daily exception report.
+  Cross-ref: see INVOICES_INBOX_PLACEHOLDER.md for the future bookkeeper screen that
+  consumes these delivery-note records.
+
+  Mockup display: drawer is shown OPEN (.active) so reviewers can see the layout.
   In production, JS adds/removes .active based on the user's entry-point interaction.
 -->
 <div class="quick-receipt-drawer active" id="quickReceiptDrawer">
