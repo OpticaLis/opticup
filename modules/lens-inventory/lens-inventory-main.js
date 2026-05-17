@@ -158,11 +158,10 @@
   }
 
   // Drawer onSubmit handler — persists N staged items under shared metadata.
-  // Strategy: call existing m1_create_receipt_from_box RPC (8-arg, atomic
-  // receipt + lines), then a defense-in-depth UPDATE on purchase_receipt to
-  // set has_no_invoice when "אין תעודה" was checked. The RPC pre-dates SPEC 3's
-  // has_no_invoice column; the 2-step is a stopgap until a 9-arg RPC overload
-  // ships. Documented in FINDINGS as a follow-up tech-debt item.
+  // Strategy: call m1_create_receipt_from_box RPC (9-arg, atomic receipt +
+  // lines + has_no_invoice flag). The 2-step UPDATE workaround that previously
+  // sat after the RPC was retired by M1_FOUNDATION_CLOSE_CLEANUP_2026_05_17
+  // commit 2 once the 9-arg overload landed.
   async function handleQuickReceiptSubmit(payload) {
     const meta = payload && payload.meta || {};
     const items = (payload && payload.items) || [];
@@ -207,21 +206,10 @@
       p_box_id: null,
       p_box_supplier_barcode: null,
       p_supplier_number: null,
-      p_confirmed_by: emp.id || null
+      p_confirmed_by: emp.id || null,
+      p_has_no_invoice: !!meta.has_no_invoice
     });
     if (rpcErr) { Toast.error('שמירה נכשלה: ' + (rpcErr.message || rpcErr)); throw rpcErr; }
-    // Persist has_no_invoice — column added in SPEC 3 but RPC not updated to accept it.
-    // Defense-in-depth: tenant_id filter on UPDATE (Iron Rule 22) even though RLS enforces.
-    if (meta.has_no_invoice && receiptId) {
-      const { error: upErr } = await sb.from('purchase_receipt')
-        .update({ has_no_invoice: true })
-        .eq('id', receiptId).eq('tenant_id', tid);
-      if (upErr) {
-        console.error('[quick-receipt] has_no_invoice update failed', upErr);
-        Toast.warning('הקבלה נשמרה אך סימון "אין תעודה" לא עודכן: ' + (upErr.message || upErr));
-        // Don't throw — receipt was created; the flag is best-effort.
-      }
-    }
     Toast.success('קבלה ' + items.length + ' פריטים נשמרה בהצלחה');
     if (typeof window.LensInv.reloadStock === 'function') {
       try { window.LensInv.reloadStock(); } catch (_) {}
