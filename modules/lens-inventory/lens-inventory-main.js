@@ -45,52 +45,48 @@
     return true;
   }
 
-  // ─── Header action buttons (Phase A shell — modals deferred) ───
-  function attachHeaderActionStubs() {
-    const messages = {
-      reports: 'דוחות חוסרים/עודף — מודאל ייבנה בלשונית הבאה של ה-Pipeline',
-      export: 'ייצוא Excel — ייבנה בלשונית הבאה של ה-Pipeline',
-      search: 'חיפוש מתקדם — ייבנה בלשונית הבאה של ה-Pipeline',
-      'scan-out': 'סריקה להורדה מהמלאי — מודאל ייבנה בלשונית הבאה של ה-Pipeline',
-      'scan-in': 'סריקה להוספה למלאי — מודאל ייבנה בלשונית הבאה של ה-Pipeline',
-      'bulk-add': 'Wizard הוספה מרובה — ייבנה בלשונית הבאה של ה-Pipeline',
-    };
-    document.addEventListener('click', function (e) {
-      const btn = e.target && e.target.closest && e.target.closest('[data-lens-inv-action]');
-      if (!btn) return;
-      const action = btn.dataset.lensInvAction;
-      const msg = messages[action] || ('פעולה: ' + action);
-      if (window.Toast && typeof Toast.info === 'function') Toast.info(msg);
-      else if (window.Toast && typeof Toast.success === 'function') Toast.success(msg);
-    });
-  }
-
-  // ─── Bottom-tab visual toggle (Phase A shell — tab bodies deferred) ───
+  // ─── Bottom-tab visual toggle ───
+  // Default tab body (movements) is rendered statically in the HTML partial
+  // per mockup §"BOTTOM TABS". Switching to other tabs replaces the body with
+  // a placeholder until Phase B+ wires real data. The default movements table
+  // is preserved in a hidden cache to restore when user returns to that tab.
   function attachBottomTabs() {
+    let movementsCacheHTML = null;
     document.addEventListener('click', function (e) {
       const tab = e.target && e.target.closest && e.target.closest('.bottom-tab');
       if (!tab) return;
       const root = tab.closest('.lens-inv-bottom-tabs-header');
       if (!root) return;
+      const body = document.getElementById('bottom-tabs-body');
+      if (!body) return;
+
+      // Cache movements HTML on first switch-away
+      if (movementsCacheHTML === null && body.querySelector('.movements-table')) {
+        movementsCacheHTML = body.innerHTML;
+      }
+
       root.querySelectorAll('.bottom-tab').forEach(function (t) {
         t.classList.remove('active');
         t.setAttribute('aria-selected', 'false');
       });
       tab.classList.add('active');
       tab.setAttribute('aria-selected', 'true');
-      // Body content placeholder until follow-up Pipeline phase populates tab bodies.
-      const body = document.querySelector('.lens-inv-bottom-tabs-body');
-      if (body) {
-        const labels = {
-          movements: 'תנועות מלאי לוריאציה הנוכחית',
-          pricing: 'מחירים והנחות לוריאציה הנוכחית',
-          alerts: 'התראות מלאי (חוסרים / יעדים)',
-          analytics: 'ניתוח מלאי — תנועה ב-30 יום',
-        };
-        const label = labels[tab.dataset.bottomTab] || tab.textContent;
-        body.innerHTML = '<div class="empty-state">' +
-          escapeHtml(label) + ' — תצוגה בלשונית הבאה של ה-Pipeline.</div>';
+
+      const which = tab.dataset.bottomTab;
+      if (which === 'movements') {
+        if (movementsCacheHTML !== null) {
+          body.innerHTML = movementsCacheHTML;
+        }
+        return;
       }
+      const labels = {
+        pricing: 'מחירים והנחות לוריאציה הנוכחית',
+        alerts: 'התראות מלאי (חוסרים / יעדים)',
+        analytics: 'ניתוח מלאי — תנועה ב-30 יום',
+      };
+      const label = labels[which] || tab.textContent;
+      body.innerHTML = '<div class="empty-state">' +
+        escapeHtml(label) + ' — תצוגה בלשונית הבאה של ה-Pipeline.</div>';
     });
   }
 
@@ -130,10 +126,12 @@
     try {
       await window.LensInvFilters.loadBrands();
       window.LensInvFilters.attachHandlers();
-      attachHeaderActionStubs();
+      if (window.LensInvModalShows && typeof window.LensInvModalShows.attach === 'function') {
+        window.LensInvModalShows.attach();
+      }
       attachBottomTabs();
       attachVariantRangeDisplay();
-      console.log('[lens-inventory] bootstrap complete (Phase A shell)');
+      console.log('[lens-inventory] bootstrap complete (1to1 rebuild)');
     } catch (err) {
       console.error('[lens-inventory] bootstrap failed', err);
       if (window.Toast && typeof Toast.error === 'function') {

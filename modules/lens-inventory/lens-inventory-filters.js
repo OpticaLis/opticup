@@ -1,7 +1,14 @@
-// lens-inventory-filters.js — Stock/Custom toggle + brand → design → variant cascade
-// Loads from lens_brand / lens_design / lens_variant via fetchAll (Iron Rule 7).
-// Production-type filter narrows supplier_catalog_offering to determine which
-// designs are stock-only vs custom for the optic.
+// lens-inventory-filters.js — Stock/Custom + brand cascade + 6-row chip toggles
+// M1_LENS_INVENTORY_MOCKUP_1TO1 Sub-Phase A3 (2026-05-18):
+//   • Brand → Design → Variant cascade preserved (existing select-driven flow).
+//   • Row-6 brand chips programmatically drive the hidden #filter-brand select
+//     (visual mockup match while keeping the JS cascade contract intact).
+//   • Rows 2-5 (lens-type / material / index / stock-status) + supplier chips
+//     get visual active-state toggling. Real data-filter wiring is deferred.
+//
+// Iron Rule 7: catalog reads via sb directly are the documented carve-out for
+// global-read tables (lens_brand / lens_design / lens_variant). All other writes
+// + per-tenant reads go through fetchAll.
 
 (function () {
   'use strict';
@@ -11,12 +18,6 @@
   }
 
   async function loadBrands() {
-    // lens_brand is global catalog (owner_tenant_id NULL) — but fetchAll auto-filters
-    // by tenant_id. For globally-readable tables, pass the all-tenants param OR
-    // accept that fetchAll will return rows where tenant_id IS NULL via RLS.
-    // Phase 1A pattern: lens_brand RLS allows SELECT WHERE is_deleted=false (global read).
-    // Use sb directly (one of the few allowed exceptions per Iron Rule 7 carve-out for
-    // globally-readable catalog tables — same pattern as lens-catalog-admin).
     const { data, error } = await sb.from('lens_brand')
       .select('id, name, lifecycle_status')
       .eq('is_deleted', false)
@@ -28,6 +29,7 @@
 
   function renderBrandOptions() {
     const sel = document.getElementById('filter-brand');
+    if (!sel) return;
     sel.innerHTML = '<option value="">— הכל —</option>' +
       window.LensInv.brands.map(b => _opt(b.id, b.name)).join('');
   }
@@ -59,30 +61,84 @@
   }
 
   async function loadStockForVariant(variantId) {
-    // fetchAll auto-injects tenant_id filter (Iron Rule 7 canonical path).
     const rows = await fetchAll('tenant_lens_stock', [
       ['variant_id', 'eq', variantId],
       ['is_deleted', 'eq', false],
     ]);
     window.LensInv.stockRows = rows;
+    // Attempt to load targets (table may not exist on this tenant — fail silently).
+    try {
+      const targets = await fetchAll('tenant_lens_stock_target', [
+        ['variant_id', 'eq', variantId],
+        ['is_deleted', 'eq', false],
+      ]);
+      window.LensInv.targets = targets || [];
+    } catch (e) {
+      window.LensInv.targets = [];
+    }
     window.LensInvGrid.renderGrid();
   }
 
   async function maybeFilterByProductionType() {
-    // The production_type filter narrows which DESIGNS appear — only designs whose
-    // active supplier_catalog_offering matches the chosen type.
-    // For Phase 1B-foundation, we apply this lazily: load offerings on demand when
-    // the design dropdown changes. Server-side fetch by production_type:
+    const filter = window.LensInv.productionFilter || 'stock';
+    if (filter === 'both') {
+      window.LensInv.offerings = [];
+      return;
+    }
     const rows = await fetchAll('supplier_catalog_offering', [
-      ['production_type', 'eq', window.LensInv.productionFilter],
+      ['production_type', 'eq', filter],
       ['status', 'eq', 'active'],
       ['is_deleted', 'eq', false],
     ]);
     window.LensInv.offerings = rows;
   }
 
+  // Generic single-select chip toggler: clears active siblings in the same row, sets clicked active.
+  function _toggleChipRow(selector) {
+    document.querySelectorAll(selector).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const row = btn.closest('.filter-row');
+        if (!row) return;
+        row.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+  }
+
+  // Row-6 brand-chip → drive hidden #filter-brand select.
+  function _attachBrandChips() {
+    document.querySelectorAll('[data-brand-name]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        // Visual: single-select within the brand portion of row 6.
+        document.querySelectorAll('[data-brand-name]').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        const targetName = btn.dataset.brandName;
+        const match = (window.LensInv.brands || []).find(b => b.name === targetName);
+        const sel = document.getElementById('filter-brand');
+        if (!sel) return;
+        if (match) {
+          sel.value = match.id;
+          sel.dispatchEvent(new Event('change'));
+        } else {
+          // Brand chip points to a brand not present in catalog — surface gently.
+          if (window.Toast) Toast.info('המותג "' + targetName + '" אינו זמין בקטלוג הדגמי — מציג ככל הסינונים');
+        }
+      });
+    });
+  }
+
+  // Row-6 supplier chips — cosmetic only this Phase.
+  function _attachSupplierChips() {
+    document.querySelectorAll('[data-supplier-name]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-supplier-name]').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+  }
+
   function attachHandlers() {
-    // Production-type chips
+    // Row 1: production type (3 chips: stock/custom/both)
     document.querySelectorAll('[data-production-filter]').forEach(btn => {
       btn.addEventListener('click', async () => {
         document.querySelectorAll('[data-production-filter]').forEach(b => b.classList.remove('active'));
@@ -93,49 +149,77 @@
         window.LensInv.designId = null;
         window.LensInv.variantId = null;
         window.LensInv.stockRows = [];
-        document.getElementById('filter-design').innerHTML = '<option value="">— בחר דגם —</option>';
-        document.getElementById('filter-variant').innerHTML = '<option value="">— בחר וריאציה —</option>';
-        document.getElementById('grid-container').innerHTML = '<div class="empty-state">בחר וריאציה לתצוגה</div>';
-        document.getElementById('lot-container').innerHTML = '<div class="empty-state">בחר תא בטבלה לצפייה בחבילות</div>';
+        const desSel = document.getElementById('filter-design');
+        const varSel = document.getElementById('filter-variant');
+        if (desSel) desSel.innerHTML = '<option value="">— בחר דגם —</option>';
+        if (varSel) varSel.innerHTML = '<option value="">— בחר וריאציה —</option>';
+        const grid = document.getElementById('grid-container');
+        const lot = document.getElementById('lot-container');
+        if (grid) grid.innerHTML = '<div class="empty-state">בחר וריאציה לתצוגה</div>';
+        if (lot) lot.innerHTML = '<div class="empty-state">בחר תא בטבלה לצפייה בחבילות</div>';
       });
     });
 
-    document.getElementById('filter-brand').addEventListener('change', async (e) => {
+    // Rows 2-5: cosmetic single-select within each row (real filter deferred).
+    _toggleChipRow('[data-lens-type]');
+    _toggleChipRow('[data-material]');
+    _toggleChipRow('[data-index]');
+    _toggleChipRow('[data-stock-status]');
+
+    // Row 6: brand chips → drive hidden #filter-brand; supplier chips cosmetic.
+    _attachBrandChips();
+    _attachSupplierChips();
+
+    // Existing cascade (hidden brand select + visible design + variant selects).
+    const brandSel = document.getElementById('filter-brand');
+    const desSel = document.getElementById('filter-design');
+    const varSel = document.getElementById('filter-variant');
+
+    if (brandSel) brandSel.addEventListener('change', async (e) => {
       window.LensInv.brandId = e.target.value || null;
       window.LensInv.designId = null;
       window.LensInv.variantId = null;
       if (window.LensInv.brandId) {
         await loadDesigns(window.LensInv.brandId);
-      } else {
-        document.getElementById('filter-design').innerHTML = '<option value="">— בחר דגם —</option>';
+      } else if (desSel) {
+        desSel.innerHTML = '<option value="">— בחר דגם —</option>';
       }
-      document.getElementById('filter-variant').innerHTML = '<option value="">— בחר וריאציה —</option>';
-      document.getElementById('grid-container').innerHTML = '<div class="empty-state">בחר וריאציה לתצוגה</div>';
+      if (varSel) varSel.innerHTML = '<option value="">— בחר וריאציה —</option>';
+      const grid = document.getElementById('grid-container');
+      if (grid) grid.innerHTML = '<div class="empty-state">בחר וריאציה לתצוגה</div>';
     });
 
-    document.getElementById('filter-design').addEventListener('change', async (e) => {
+    if (desSel) desSel.addEventListener('change', async (e) => {
       window.LensInv.designId = e.target.value || null;
       window.LensInv.variantId = null;
       if (window.LensInv.designId) {
         await loadVariants(window.LensInv.designId);
-      } else {
-        document.getElementById('filter-variant').innerHTML = '<option value="">— בחר וריאציה —</option>';
+      } else if (varSel) {
+        varSel.innerHTML = '<option value="">— בחר וריאציה —</option>';
       }
-      document.getElementById('grid-container').innerHTML = '<div class="empty-state">בחר וריאציה לתצוגה</div>';
+      const grid = document.getElementById('grid-container');
+      if (grid) grid.innerHTML = '<div class="empty-state">בחר וריאציה לתצוגה</div>';
     });
 
-    document.getElementById('filter-variant').addEventListener('change', async (e) => {
+    if (varSel) varSel.addEventListener('change', async (e) => {
       window.LensInv.variantId = e.target.value || null;
       if (window.LensInv.variantId) {
         await loadStockForVariant(window.LensInv.variantId);
       } else {
-        document.getElementById('grid-container').innerHTML = '<div class="empty-state">בחר וריאציה לתצוגה</div>';
+        const grid = document.getElementById('grid-container');
+        if (grid) grid.innerHTML = '<div class="empty-state">בחר וריאציה לתצוגה</div>';
       }
     });
 
-    // Initial production-type load
+    // Initial production-type fetch (best-effort)
     maybeFilterByProductionType().catch(err => console.warn('production filter init failed', err));
   }
 
-  window.LensInvFilters = { loadBrands, loadDesigns, loadVariants, loadStockForVariant, attachHandlers };
+  async function reloadStock() {
+    if (window.LensInv.variantId) await loadStockForVariant(window.LensInv.variantId);
+  }
+
+  window.LensInvFilters = {
+    loadBrands, loadDesigns, loadVariants, loadStockForVariant, attachHandlers, reloadStock
+  };
 })();
