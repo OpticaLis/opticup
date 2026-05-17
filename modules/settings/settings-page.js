@@ -18,7 +18,9 @@ const SETTINGS_FIELDS = [
   { id: 'set-currency',         col: 'default_currency',        type: 'select' },
   { id: 'set-rows-per-page',    col: 'rows_per_page',           type: 'select' },
   { id: 'set-date-format',      col: 'date_format',             type: 'select' },
-  { id: 'set-theme',            col: 'theme',                   type: 'select' }
+  { id: 'set-theme',            col: 'theme',                   type: 'select' },
+  // M1 Unified Flow Phase B — default supplier (gated by settings.inventory.manage section)
+  { id: 'set-default-supplier', col: 'default_supplier_id',     type: 'select' }
 ];
 
 // =========================================================
@@ -38,6 +40,10 @@ async function loadSettings() {
     if (error) throw error;
     if (!data) { toast('שגיאה: דייר לא נמצא', 'e'); return; }
 
+    // Gate + populate inventory section before render so the <select>'s current
+    // value can be matched against the loaded options (Phase B).
+    gateInventorySection();
+    await loadSupplierOptions();
     renderSettings(data);
     // Load AI learning config from separate table
     await loadAIConfig();
@@ -229,6 +235,42 @@ function storeTenantConfig(data) {
   const existing = JSON.parse(sessionStorage.getItem('tenant_config') || '{}');
   const merged = Object.assign(existing, data);
   sessionStorage.setItem('tenant_config', JSON.stringify(merged));
+}
+
+// =========================================================
+// Inventory Management section (M1 Unified Flow Phase B)
+// Gates visibility by settings.inventory.manage + populates the
+// default-supplier dropdown with the tenant's active suppliers.
+// =========================================================
+function gateInventorySection() {
+  var section = document.getElementById('settings-section-inventory');
+  if (!section) return;
+  section.style.display = hasPermission('settings.inventory.manage') ? '' : 'none';
+}
+
+async function loadSupplierOptions() {
+  var sel = document.getElementById('set-default-supplier');
+  if (!sel) return;
+  // Skip the fetch if the section is hidden for this role.
+  if (!hasPermission('settings.inventory.manage')) return;
+  try {
+    var tid = getTenantId();
+    var { data, error } = await sb.from('suppliers')
+      .select('id, name')
+      .eq('tenant_id', tid)
+      .eq('active', true)
+      .order('name');
+    if (error) throw error;
+    // Preserve the placeholder option then append active suppliers.
+    var html = '<option value="">&mdash; בחר ספק &mdash;</option>';
+    (data || []).forEach(function(s) {
+      html += '<option value="' + escapeHtml(s.id) + '">' + escapeHtml(s.name) + '</option>';
+    });
+    sel.innerHTML = html;
+  } catch (e) {
+    console.warn('loadSupplierOptions:', e.message);
+    // Leave the placeholder option in place; save still works if user picks nothing.
+  }
 }
 
 // =========================================================

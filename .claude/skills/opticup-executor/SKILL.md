@@ -1232,3 +1232,24 @@ Resolution: **never** `--no-verify`. The gate is non-overridable per Iron Rule 3
 ### Proposed but NOT applied (deferred)
 - P-EX-03 (HIGH) — §7 SPEC_TEMPLATE Version Footprint mandatory (current adoption 5.6% / 10 of 177). Will be addressed by SPEC_TEMPLATE v3 in T4 of this bundle.
 - P-EX-04 (MEDIUM) — "Skill bloat": refactor into 200-line index + `references/PLAYBOOK_*.md` files. ~2-hour structural SPEC (`M1_5_EXECUTOR_SKILL_REFACTOR`).
+
+---
+
+### P-EXEC-NEW — Mid-execution adaptation tactics: MIGRATION.md Applied Log + commit reordering + execute_sql fallback
+
+**Source: 4-strike pattern from M1 Lens Module Close 2026-05-15 (Pattern B).**
+
+When SPEC execution surfaces dependencies the author didn't anticipate, the executor has 3 sanctioned adaptation tactics. All three preserve Iron Rule 32 by NOT introducing new destructive operations and by documenting the adaptation in the SPEC's EXECUTION_REPORT.md.
+
+**Tactic 1 — MIGRATION.md Applied Log:** When the SPEC pre-fills migration bodies that need adjustment during execution (e.g., the author's `CREATE TABLE` statement collides with an existing object, or a referenced column is missing), maintain `MIGRATION.md` in the SPEC folder with sections per migration: "Pre-write body | Applied body | Why diverged". This becomes the audit trail.
+
+**Tactic 2 — Commit-order reordering on dependency discovery:** When Commit N depends on a column/table/RPC that the SPEC's Commit M (where M > N) creates, the executor may swap the commit order — BUT must (1) document the swap in EXECUTION_REPORT.md §"In-flight decisions"; (2) verify the new order still satisfies SPEC's success criteria; (3) NOT introduce new commits, only reorder existing ones.
+
+**Tactic 3 — execute_sql fallback for apply_migration collisions:** When `apply_migration` fails because PostgreSQL refuses the migration (PK collision, dependent view exists, etc.), the executor may run the migration via `execute_sql` after (1) verifying the failure is collision-based, not logic-based; (2) logging the fallback in EXECUTION_REPORT.md; (3) confirming the migration body is content-identical to what apply_migration would have run.
+
+**When NOT to use these tactics:**
+- When the SPEC's success criteria require apply_migration specifically (e.g., for `supabase_migrations.schema_migrations` traceability)
+- When the dependency is a SPEC bug, not a discovery (then STOP and escalate per Iron Rule 32 / Bounded Autonomy)
+- When the adaptation introduces new destructive operations (must escalate first)
+
+**ROI per SPEC:** Avoids ~30-60 min of escalation cycles for routine dependency surprises. Bounded by the SPEC's own destructive-ops envelope.

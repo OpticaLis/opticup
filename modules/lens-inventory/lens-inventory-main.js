@@ -45,6 +45,79 @@
     return true;
   }
 
+  // ─── Bottom-tab visual toggle ───
+  // Default tab body (movements) is rendered statically in the HTML partial
+  // per mockup §"BOTTOM TABS". Switching to other tabs replaces the body with
+  // a placeholder until Phase B+ wires real data. The default movements table
+  // is preserved in a hidden cache to restore when user returns to that tab.
+  function attachBottomTabs() {
+    let movementsCacheHTML = null;
+    document.addEventListener('click', function (e) {
+      const tab = e.target && e.target.closest && e.target.closest('.bottom-tab');
+      if (!tab) return;
+      const root = tab.closest('.lens-inv-bottom-tabs-header');
+      if (!root) return;
+      const body = document.getElementById('bottom-tabs-body');
+      if (!body) return;
+
+      // Cache movements HTML on first switch-away
+      if (movementsCacheHTML === null && body.querySelector('.movements-table')) {
+        movementsCacheHTML = body.innerHTML;
+      }
+
+      root.querySelectorAll('.bottom-tab').forEach(function (t) {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+      });
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
+
+      const which = tab.dataset.bottomTab;
+      if (which === 'movements') {
+        if (movementsCacheHTML !== null) {
+          body.innerHTML = movementsCacheHTML;
+        }
+        return;
+      }
+      const labels = {
+        pricing: 'מחירים והנחות לוריאציה הנוכחית',
+        alerts: 'התראות מלאי (חוסרים / יעדים)',
+        analytics: 'ניתוח מלאי — תנועה ב-30 יום',
+      };
+      const label = labels[which] || tab.textContent;
+      body.innerHTML = '<div class="empty-state">' +
+        escapeHtml(label) + ' — תצוגה בלשונית הבאה של ה-Pipeline.</div>';
+    });
+  }
+
+  // ─── Variant-range display: updates when a variant is selected ───
+  function attachVariantRangeDisplay() {
+    const display = document.getElementById('variant-range-display');
+    if (!display) return;
+    document.getElementById('filter-variant').addEventListener('change', function (e) {
+      const vid = e.target.value;
+      const v = (window.LensInv.variants || []).find(function (x) { return x.id === vid; });
+      if (!v) {
+        display.textContent = '— בחר וריאציה לתצוגה —';
+        display.classList.add('empty');
+        return;
+      }
+      const fmt = function (n) {
+        if (n == null) return '—';
+        const num = parseFloat(n);
+        return (num >= 0 ? '+' : '') + num.toFixed(2);
+      };
+      const sphRange = (v.sph_min != null && v.sph_max != null)
+        ? 'SPH: ' + fmt(v.sph_min) + ' עד ' + fmt(v.sph_max)
+        : 'SPH: —';
+      const cylRange = (v.cyl_min != null && v.cyl_max != null)
+        ? ' · CYL: ' + fmt(v.cyl_min) + ' עד ' + fmt(v.cyl_max)
+        : '';
+      display.textContent = '✓ ' + sphRange + cylRange;
+      display.classList.remove('empty');
+    });
+  }
+
   // ─── Bootstrap ───
   async function bootstrap() {
     const ok = await gateOrRedirect();
@@ -53,7 +126,12 @@
     try {
       await window.LensInvFilters.loadBrands();
       window.LensInvFilters.attachHandlers();
-      console.log('[lens-inventory] bootstrap complete');
+      if (window.LensInvModalShows && typeof window.LensInvModalShows.attach === 'function') {
+        window.LensInvModalShows.attach();
+      }
+      attachBottomTabs();
+      attachVariantRangeDisplay();
+      console.log('[lens-inventory] bootstrap complete (1to1 rebuild)');
     } catch (err) {
       console.error('[lens-inventory] bootstrap failed', err);
       if (window.Toast && typeof Toast.error === 'function') {

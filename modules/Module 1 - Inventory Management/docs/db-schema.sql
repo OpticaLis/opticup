@@ -2186,3 +2186,174 @@ CREATE INDEX IF NOT EXISTS idx_supdocs_doc_numbers ON supplier_documents USING G
 --   - **PRIZMA ROW COUNTS UNCHANGED** across all 27 SPEC sec.0.E baseline tables.
 --     Verified post-Stage-5. SPEC sec.3 S32 PASS at mid-Pipeline.
 -- See SPEC sec.12.1 Execution Markers C-D1, C-D-CORRECTIVE, C-D2, C-D3 for full SQL bodies.
+
+-- ============================================================================
+-- Phase 2 — Unified Flow Phase A (M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_A)
+-- Applied: 2026-05-18 evening via Supabase MCP
+-- SPEC: docs/specs/M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_A/SPEC.md
+-- Brief: architecture-brief/M1_LENS_INVENTORY_UNIFIED_FLOW_BRIEF.md §3
+-- ============================================================================
+
+-- §3.1 — Per-tenant default supplier (pre-fills the M1 inventory add-stock UI)
+ALTER TABLE public.tenants
+  ADD COLUMN default_supplier_id UUID NULL
+  REFERENCES public.suppliers(id) ON DELETE SET NULL;
+COMMENT ON COLUMN public.tenants.default_supplier_id IS
+  'Tenant''s default supplier for inventory add-stock flows. Pre-fills the supplier dropdown on Quick Scan / Manual Add / Full Receive surfaces (M1 inventory screen unified flow, Phase A). NULL = no default set; settings UI prompts user to pick.';
+
+-- §3.2 — Purchase receipt audit columns (track undocumented additions)
+ALTER TABLE public.purchase_receipt
+  ADD COLUMN is_documented BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN undocumented_reason TEXT NULL,
+  ADD COLUMN manager_review_status TEXT NULL
+    CHECK (manager_review_status IN ('pending','approved','requires_doc','exception_allowed')
+           OR manager_review_status IS NULL),
+  ADD COLUMN manager_reviewed_by UUID NULL REFERENCES public.employees(id),
+  ADD COLUMN manager_reviewed_at TIMESTAMPTZ NULL;
+
+-- §3.4 — Permission keys + role grants (5 system roles × 2 perms × 2 tenants)
+-- See SPEC §10 grant matrix. ceo + manager get both; team_lead + viewer + worker get neither.
+-- Migration: m1_unified_flow_a_perms (INSERT ... ON CONFLICT DO NOTHING idempotent)
+-- 2 new keys: inventory.add.undocumented, inventory.manager_review.approve
+-- 20 new role_permissions rows (8 granted=true, 12 granted=false)
+
+-- Backfill: demo tenant default_supplier_id = AZMON (דמו) (bb4bdec6-5fe0-4e27-b6b6-ba097cf37112)
+-- Prizma backfill HELD per escalation 2026-05-18T_M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_A_PRIZMA_AUTH.md
+
+-- Post-state probes:
+--   tenants.default_supplier_id column added; nullable=YES; FK SET NULL on supplier delete.
+--   purchase_receipt 5 audit columns added; CHECK constraint accepts 4 values + NULL.
+--   purchase_receipt: 10 existing demo receipts backfilled is_documented=true automatically
+--     by Postgres DEFAULT (O(1) — metadata-only, no table rewrite per PG11+).
+--   permissions: +4 rows (2 keys × 2 tenants).
+--   role_permissions: +20 rows (10 per tenant; 4 granted_true per tenant — ceo + manager × 2 keys).
+--   Demo tenant.default_supplier_id = bb4bdec6-... (set this commit).
+--   Prizma tenant.default_supplier_id = NULL (PENDING Daniel authorization).
+--   PRIZMA ROW COUNTS UNCHANGED on purchase_receipt + tenants data; only +2 permissions
+--     and +10 role_permissions rows for the new keys are seeded.
+-- See SPEC §3 Success Criteria 4-11 + 16 for verification queries.
+
+-- ============================================================================
+-- Phase 2 — Unified Flow Phase B (M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_B)
+-- Applied: 2026-05-18 evening via Supabase MCP
+-- SPEC: docs/specs/M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_B/SPEC.md
+-- Brief: architecture-brief/M1_LENS_INVENTORY_UNIFIED_FLOW_BRIEF.md §4
+-- ============================================================================
+
+-- §4.1 — Settings UI permission key (gates the new "ניהול מלאי" section)
+-- Migration: m1_unified_flow_b_settings_inventory_manage_perm
+-- Schema-side: 0 new tables/columns; permission registry add only.
+
+-- New permission key: settings.inventory.manage
+--   Module: settings
+--   Action: inventory.manage
+--   Hebrew name: ניהול הגדרות מלאי
+--   Description: גישה לעריכת הגדרות מלאי בהגדרות, כולל ספק ברירת המחדל לקבלת סחורה.
+--   Tenants seeded: Prizma (6ad0781b-...) + Demo (8d8cfa7e-...)
+--
+-- Role grants (10 rows = 5 system roles × 1 perm × 2 tenants):
+--   ceo                  granted=true   (both tenants)
+--   manager              granted=true   (both tenants)
+--   team_lead            granted=false  (both tenants)
+--   viewer               granted=false  (both tenants)
+--   worker               granted=false  (both tenants)
+-- 4 granted=true rows total. Mirrors Phase A grant matrix pattern.
+
+-- Phase B does NOT add any schema objects. The default_supplier_id column on
+-- tenants was added in Phase A; Phase B exposes the UI to set it.
+
+-- Post-state probes (vs Phase-A baselines):
+--   permissions: +1 row per tenant (Prizma 85→86, Demo 85→86).
+--   role_permissions: +5 rows per tenant (Prizma 278→283, Demo 278→283).
+--   PRIZMA DATA TABLES UNCHANGED: tenants row count=1 (only permission registry
+--     touched on Prizma; default_supplier_id was set in Phase A C-A1 + the
+--     Daniel-authorized backfill commit 966c5d2).
+-- See SPEC §3 Success Criteria 9 + 10 + 16 for verification queries.
+
+-- ============================================================================
+-- Phase 2 — Unified Flow Phase C (M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_C)
+-- Applied: 2026-05-18 evening via Supabase MCP
+-- SPEC: docs/specs/M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_C/SPEC.md
+-- Brief: architecture-brief/M1_LENS_INVENTORY_UNIFIED_FLOW_BRIEF.md §5
+-- ============================================================================
+
+-- §5 — Extend m1_create_receipt_from_box RPC for undocumented additions
+-- Migrations applied:
+--   1) m1_unified_flow_c_extend_receipt_from_box_rpc — CREATE OR REPLACE
+--      with 10-arg signature (8 existing + 2 new):
+--        p_is_documented BOOLEAN DEFAULT true
+--        p_undocumented_reason TEXT DEFAULT NULL
+--      Body extended: INSERT INTO purchase_receipt writes 3 new audit columns
+--      (is_documented, undocumented_reason, manager_review_status).
+--      manager_review_status derived: CASE WHEN NOT p_is_documented THEN
+--      'pending' ELSE NULL END.
+--   2) m1_unified_flow_c_drop_old_8arg_receipt_rpc — companion DROP (DM-1).
+--      Postgres CREATE OR REPLACE only replaces functions with EXACT-matching
+--      arg lists; adding 2 new params created an overload alongside the
+--      original 8-arg. Dropped the old 8-arg so only one signature exists.
+--      Backward compat preserved via DEFAULTs on the new params.
+--
+-- Post-state probe:
+--   overload_count = 1 (single function); arg_count = 10;
+--   has_is_documented = true; has_undocumented_reason = true.
+--
+-- Note: Phase C C-C4 (Full Receive modal) deferred to a follow-up SPEC due
+-- to DOM ID collision discovery (both inventory and goods-receipt partials
+-- use unscoped #access-gate + #app). See SPEC §3 row 14 + FINDINGS F-1.
+
+-- ============================================================================
+-- M1_INVENTORY_DEBT_DECOUPLING — Architectural Correction (2026-05-18 evening)
+-- SPEC: docs/specs/M1_INVENTORY_DEBT_DECOUPLING/SPEC.md
+-- Trigger: Daniel directive — inventory module never creates supplier debt.
+-- ============================================================================
+
+-- SUPERSEDES "Phase 2 — Unified Flow Phase A" + parts of "Phase 2 — Unified
+-- Flow Phase C" sections above. Those sections remain as historical record;
+-- the changes they describe were REVERTED by this correction.
+
+-- Reverted in this correction (via 3 Supabase MCP migrations):
+--
+-- 1) m1_debt_decoupling_drop_10arg_rpc:
+--      DROP FUNCTION m1_create_receipt_from_box(10-arg) — Phase C overload
+--      with p_is_documented + p_undocumented_reason removed.
+--
+-- 2) m1_debt_decoupling_restore_8arg_rpc_physical_only:
+--      CREATE OR REPLACE m1_create_receipt_from_box(8-arg) — restored to
+--      pre-Phase-C signature. Body modifications vs the pre-Phase-C original:
+--        - INSERT INTO purchase_receipt no longer writes is_documented /
+--          undocumented_reason / manager_review_status (those columns
+--          dropped in migration #3 below).
+--        - PERFORM m1_create_supplier_debt_from_receipt REMOVED entirely.
+--          The inventory module no longer creates supplier_debt rows on
+--          receipt creation. The supplier-debt module pulls from
+--          purchase_receipt on its own side via independent document
+--          matching.
+--        - VAT computation (v_vat_rate / v_vat_amount / v_total_amount) and
+--          v_subtotal dead-code REMOVED (only fed the stripped PERFORM).
+--
+-- 3) m1_debt_decoupling_drop_audit_columns_and_perms (see migration body for SQL):
+--      a) Removed the check constraint added in Phase C DM-3 hotfix.
+--      b) Removed 5 audit columns from purchase_receipt (the names introduced
+--         by Phase A: is_documented, undocumented_reason, manager_review_status,
+--         manager_reviewed_by (FK to employees goes away automatically),
+--         manager_reviewed_at).
+--      c) Cleanup permission registry: removed 20 grant rows + 4 permission
+--         rows (2 keys x 2 tenants — the Phase A perm keys).
+--
+-- Post-correction state (verified live):
+--   - m1_create_receipt_from_box: 8-arg signature, overload_count=1, body
+--     contains no supplier_debt references.
+--   - purchase_receipt: 0 of the 5 audit columns remain.
+--   - permissions: 0 rows for inventory.add.undocumented +
+--     inventory.manager_review.approve.
+--
+-- PRESERVED unchanged (from Phase B + Daniel-authorized Path A):
+--   - tenants.default_supplier_id column (nullable FK to suppliers).
+--   - settings.inventory.manage permission (2 rows for ceo + manager grant
+--     on both tenants).
+--   - Prizma default_supplier_id = 0b868b66-... (בדולח, Daniel-authorized).
+--   - Demo default_supplier_id = bb4bdec6-... (AZMON).
+--
+-- The corresponding supplier-debt-side work (manager review of unmatched
+-- documents, debt-from-receipt matching) is deferred to a future Brief
+-- targeting the suppliers-debt module — explicitly out of inventory scope.

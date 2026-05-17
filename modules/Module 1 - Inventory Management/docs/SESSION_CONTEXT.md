@@ -1,6 +1,183 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
+M1_INVENTORY_DEBT_DECOUPLING — 2026-05-18 evening (🟢 CLOSED — architectural correction strips inventory/debt collision; Phase B preserved; Pipeline ends; develop → main PR ready)
+
+## 2026-05-18 evening — M1_INVENTORY_DEBT_DECOUPLING (🟢 CLOSED — architectural correction)
+
+**Trigger:** Daniel HALT directive mid-Pipeline (during Phase C close): "THE INVENTORY MODULE NEVER CREATES SUPPLIER DEBT." Phase D + remaining F-4 work cancelled — they were misconceived (manager review of unmatched documents belongs to supplier-debt module). Auto-memory rule `project_inventory_debt_decoupling_rule.md` written for durable cross-session enforcement.
+
+**Pipeline commits (Executor 5 + Tester + Foreman close — `037ab17..HEAD`):**
+- `037ab17` C-D0 SPEC seed
+- `8205966` C-D1 RPC revert (10 → 8 args; supplier_debt PERFORM + VAT + audit-column writes all stripped)
+- `e6a9bd4` C-D2 DROP 5 audit columns + DELETE 2 perms + 20 grants
+- `c980250` C-D3 Strip undocumented checkbox + delivery-note inputs from Manual Add panel + Quick Scan drawer + JS helpers
+- `875a32a` C-D4 db-schema.sql Architectural Correction section + SPEC §13.A (D-1 comment-keyword hook trap resolved in same cycle)
+- `8b3ad5c` C-D5 Tier C TEST_REPORT 🟢 GREEN + 2 screenshots + EXECUTION_REPORT 10/10 + FINDINGS
+- _(this commit)_ Foreman FOREMAN_REVIEW 🟢 CLOSED + this SC update
+
+**Pipeline stats:**
+- 6 commits + Foreman close = 7 total. All single-concern, all on develop, no merges/amends/force-pushes.
+- 0 escalations to Daniel mid-execution.
+- Iron Rule 31 + 32 exit 0 every commit.
+- Smoke 7/7 PASS.
+- 0 Prizma DATA writes; schema-level DROP COLUMNs + DELETE permission rows only.
+
+**Schema/code delta (net of full Pipeline A+B+C+correction):**
+- 1 new column on `tenants`: `default_supplier_id` UUID NULL FK to suppliers, ON DELETE SET NULL. Prizma=בדולח, demo=AZMON.
+- 1 new permission key: `settings.inventory.manage` × 2 tenants + 10 role grants (ceo + manager).
+- 1 modified RPC: `m1_create_receipt_from_box` — body now physical-only (no supplier_debt cascade, no VAT computation).
+- Settings page: new "ניהול מלאי" section with searchable supplier dropdown.
+- Inventory page: Quick Scan drawer (right-side slide-in, supplier auto-fill, barcode resolution) + Manual Add panel wired (was cosmetic stub).
+- 1 new file: `modules/lens-inventory/lens-inventory-quick-scan.js` (146 lines).
+- All Phase A audit columns, undocumented permission keys, supplier_debt-from-receipt cascade — STRIPPED.
+
+**Tier C VFV results (correction SPEC):**
+- ✅ Manual Add (variant-less) submission: 1 receipt created + 0 supplier_debt cascade — primary architectural goal verified empirically on demo.
+- ✅ Phase B preservation: 4 of 4 sub-checks PASS (default_supplier_id alive, Prizma=בדולח, demo=AZMON, settings.inventory.manage permission present).
+- 🟡 Quick Scan with real variant: UI works + variant resolves; submit blocked by F-5 pre-existing trigger integer-cast bug (NOT a regression; bug pre-dates Pipeline; carries forward).
+
+**Findings (F-1 of correction SPEC = re-attribution of F-5 from Phase C):**
+- F-1 HIGH carry-forward — `M1_DIAGNOSE_RECEIPT_INTEGER_CAST` SPEC needed (pre-existing trigger bug on variant-bearing path).
+- F-2 LOW — file-size carry from Phase C, cohesion-justified.
+
+**Status:**
+- 🟢 Pipeline ENDS. Architectural correction CLOSED clean. Auto-memory rule durable for future sessions.
+- ⏳ Carry-forward SPECs: `M1_DIAGNOSE_RECEIPT_INTEGER_CAST` (F-5/F-1, HIGH), `M1_LENS_GOODS_RECEIPT_SCOPED_IDS` (Phase C F-1, MEDIUM — Full Receive modal prerequisite), supplier-debt-module manager-review surfaces (separate Brief, supplier-debt module).
+- ⏳ Pending master-doc updates: MASTER_ROADMAP.md, GLOBAL_MAP.md, GLOBAL_SCHEMA.sql, M1 MODULE_MAP.md, M1 MODULE_SPEC.md (defer to a separate Integration Ceremony SPEC after develop → main PR).
+- ⏳ 8 P-AUTHOR + P-EXEC improvement proposals accumulated across Pipeline + correction; apply at next opticup-strategic session.
+- 🚀 Recommended PR title (Daniel's): "M1 inventory: default supplier + 3 add-stock flows + debt-decoupling correction"
+
+---
+
+## Previous Last Updated
+M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_C — 2026-05-18 evening (🟡 CLOSED WITH FOLLOW-UPS — RPC + Manual Add + Quick Scan drawer shipped; F-4 + F-5 HIGH findings block Phase D start; Daniel decision required on F-4 path before continuing) — **SUPERSEDED by correction SPEC above; F-4 architecturally resolved by removing inventory's debt-creation responsibility entirely**
+
+## 2026-05-18 evening — M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_C (🟡 CLOSED WITH FOLLOW-UPS)
+
+**Pipeline state:** Phase A 🟢 + Phase B 🟢 + Phase C 🟡 closed. Pipeline PAUSED before Phase D pending F-4 resolution.
+
+**Goal:** Ship 3 add-stock flows on the inventory screen + extend `m1_create_receipt_from_box` RPC for undocumented additions. Brief §5.
+
+**Pipeline commits (Foreman + Executor + Tester + Foreman close — `b3c8a31..HEAD`, 9 commits):**
+- `b3c8a31` C-C0 SPEC seed (Foreman, 259 lines)
+- `1eb2b5e` C-C1 RPC extension (8→10 args) + DM-1 companion DROP
+- `84345bf` C-C2 Manual Add panel wiring + shared `_submitAddStock`
+- `19b026d` C-C3 Quick Scan drawer (new file + HTML + CSS) replaces scan-in modal
+- `d3aa172` C-C5 db-schema.sql Phase 2C section + C-C4 deferral
+- `0253f8d` C-C6 EXECUTION_REPORT (9.4/10) + FINDINGS (3 entries)
+- `98b3d50` Tier C VFV fixes (location_id resolver + lens_design.name column + DM-3 hotfix migration for delivery_note_number NULL-able)
+- `6b88573` Tier C TEST_REPORT 🟡 PARTIAL + 4 screenshots
+- _(this commit)_ Foreman FOREMAN_REVIEW 🟡 CLOSED WITH FOLLOW-UPS + this SC block
+
+**Schema/code delta:**
+- RPC `m1_create_receipt_from_box`: 8→10 args (backward-compat DEFAULTs; old 8-arg overload dropped per DM-1). Body extended: INSERT writes 3 new audit columns.
+- ALTER `purchase_receipt.delivery_note_number` DROP NOT NULL + CHECK (NOT is_documented OR delivery_note_number IS NOT NULL) — DM-3 hotfix.
+- 1 new file: `modules/lens-inventory/lens-inventory-quick-scan.js` (150 lines).
+- 4 modified files: `lens-inventory-partial.html` (+54), `lens-inventory-modal-shows.js` (+166), `css/lens-inventory-modals.css` (+56), `modules/inventory/inventory-shell-lens.js` (+1).
+
+**Tier C VFV results:**
+- ✅ Flow 2 Manual Add (documented + is_manual_addition path): end-to-end VERIFIED on demo with screenshots; created RCP-0-0003 + AZMON auto-fill PASS; cleanup deleted.
+- 🟡 Flow 1 Quick Scan: UI surface VERIFIED (drawer slide-in, barcode lookup LV-000003 → Essilor Progressive, supplier load); submit BLOCKED by F-5 (pre-existing RPC trigger integer-cast on PO300005-1 when real variant_id passed).
+- ⏭️ Flow 3 Full Receive modal: DEFERRED per DM-2 (DOM ID collision — F-1).
+- 🔴 Undocumented path (both Flow 1 + 2): BLOCKED by F-4 cascade (supplier_debt.delivery_note_number NOT NULL).
+
+**Findings:**
+- F-1 MEDIUM — C-C4 deferred; follow-up SPEC `M1_LENS_GOODS_RECEIPT_SCOPED_IDS` (prerequisite) + Full Receive modal (after).
+- F-2 LOW — 3 file-size warnings; defer until natural splitting boundary.
+- F-3 LOW — Phase A FIELD_MAP retroactive gap (bundle into Phase D).
+- **F-4 HIGH — Phase A audit-column NOT NULL cascade unhandled in downstream supplier_debt. BLOCKS Phase D's "ללא תעודה" filter from being meaningful.** Path B (defer supplier_debt creation until manager_review_status='approved') recommended; Daniel decision pending.
+- F-5 HIGH — Pre-existing trigger integer-cast bug surfaces on variant-based add; diagnostic SPEC `M1_DIAGNOSE_RECEIPT_INTEGER_CAST` needed in parallel with F-4.
+
+**Status:**
+- 🟡 Phase C CLOSED WITH FOLLOW-UPS. UI scaffolding production-acceptable; user-facing happy path needs F-4 + F-5 follow-ups.
+- 🛑 **Pipeline PAUSED before Phase D pending Daniel decision on F-4 path** (A mechanical vs B business-aligned defer-debt-creation).
+- ⏳ 6 improvement proposals harvested across Phases A+B+C (4 P-AUTHOR + 6 P-EXEC) → apply at Phase E.
+- ⏳ Phase D scope remains: unified log "ללא תעודה" filter + manager-review badge column + action button + `mark_receipt_reviewed` RPC.
+
+---
+
+## Previous Last Updated
+M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_B — 2026-05-18 evening (🟢 CLOSED — Settings UI for default supplier shipped; Daniel-authorized Prizma backfill applied; Pipeline continues to Phase C)
+
+## 2026-05-18 evening — M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_B (🟢 CLOSED)
+
+**Goal:** Ship Settings page section + permission key for per-tenant `default_supplier_id` configuration. Reuse existing `SETTINGS_FIELDS` + `saveSettings()` infrastructure per Rule 21.
+
+**Pipeline commits (3 executor + Tester + Foreman close, `c2b9cf8..HEAD`):**
+- `c2b9cf8` C-B0 — SPEC seed (Foreman). §0.C pre-resolved 2 Brief drifts (B-1 PIN claim, B-2 cross-phase step 4 deferral).
+- `e275b7d` C-B1 — Implementation (Executor). settings.html 292→307 + settings-page.js 296→338 + M1 db-schema.sql 2234→2271. Supabase MCP migration `m1_unified_flow_b_settings_inventory_manage_perm` (+2 permissions, +10 role_permissions).
+- `8b35120` C-B2 — Executor close (EXECUTION_REPORT 9.9/10 + FINDINGS 1 INFO file-size).
+- `7694407` Tier C VFV (Tester). 4 screenshots; 3/3 Brief §4.3 criteria + 4 bonus checks PASS; demo baseline restored.
+- _(this commit)_ FOREMAN_REVIEW 🟢 CLOSED + this SC block.
+
+**Pipeline stats:** 5 commits total. Smoke 7/7 PASS. Integrity exit 0. 0 escalations. 0 Prizma data writes (the +1 permissions / +5 role_permissions Prizma rows are the only Phase B Prizma writes per design — Phase A's Daniel-authorized backfill of `tenants.default_supplier_id` already applied in commit `966c5d2`).
+
+**Schema/code delta:**
+- +1 permission key (`settings.inventory.manage` × 2 tenants).
+- +10 role_permissions rows (4 granted=true; ceo + manager × 1 perm × 2 tenants).
+- 0 new tables / 0 new RPCs / 0 new views.
+- settings.html +15 lines (new `.settings-section` for "ניהול מלאי" with `<select id="set-default-supplier">`).
+- settings-page.js +42 lines (SETTINGS_FIELDS entry + `gateInventorySection()` + `loadSupplierOptions()` + 2 call sites from `loadSettings()`).
+
+**Tier C VFV results:**
+- ✅ Section visible to ceo role (settings.inventory.manage=true).
+- ✅ Dropdown populated with 39 options (1 placeholder + 38 active demo suppliers).
+- ✅ Save → DB updates `tenants.default_supplier_id` end-to-end (tested with Cleaz, restored to AZMON).
+- ✅ Negative gating: section hidden when permission flag flipped to false (direct gate function call).
+- ⏭️ Brief §4.3 step 4 (inventory screen auto-fill) cross-phase deferred to Phase C per SPEC §0.C drift B-2.
+
+**Status:**
+- 🟢 Phase B CLOSED. Settings UI live on demo.
+- 🔜 Phase C starts next: 3 add-stock flows on inventory screen (Quick Scan drawer / Manual Add panel refactor / Full Receive modal) + `m1_create_receipt_from_box` RPC extension. Largest phase in Pipeline.
+- ⏳ Skill harvest backlog: 8 improvement proposals accumulated across Phases A + B (4 P-AUTHOR + 4 P-EXEC). Apply at Phase E.
+
+---
+
+## Previous Last Updated
+M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_A — 2026-05-18 evening (🟢 CLOSED, executor scope; Pipeline paused awaiting Daniel decision on Prizma `default_supplier_id` backfill)
+
+## 2026-05-18 evening — M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_A (🟢 CLOSED, Pipeline pause)
+
+**Pipeline:** `M1_LENS_INVENTORY_UNIFIED_FLOW` (5 sequential phases A → B → C → D → E per Brief `architecture-brief/M1_LENS_INVENTORY_UNIFIED_FLOW_BRIEF.md`). This is Phase A.
+
+**Goal:** DB substrate for the inventory-screen unified add-stock flow — `tenants.default_supplier_id` + 5 `purchase_receipt` audit columns + 2 permission keys + role grants. No UI changes; no new RPCs (the m1_create_receipt_from_box extension is Phase C; the new mark_receipt_reviewed RPC is Phase D).
+
+**Pipeline commits (3 executor + Foreman close, `5a2ed41..746976a`):**
+
+- `5a2ed41` C-A0 — opticup-strategic sealed SPEC (265 lines): §0 Pre-Authoring Reality Check (4 column-existence probes + supplier probe + RPC signature + roles + role_permissions structure), §1.5 Cross-Reference Check (0 collisions / 9 hits resolved), §5.3 Runtime Semantics Rehearsal (CHECK NULL + FK SET NULL traced), §3 16 measurable success criteria, §4 11 destructive ops declared, §10 grant matrix. Escalation file filed for Daniel re: Prizma backfill (בדולח supplier_id = 0b868b66-...). Tag `pre-m1-inv-unified-flow-phase-a-2026-05-18` placed at parent `1b6d138`.
+- `cc16997` C-A1 — opticup-executor applied 3 Supabase MCP migrations (`m1_unified_flow_a_schema` + `m1_unified_flow_a_perms` + `m1_unified_flow_a_demo_default_supplier`). M1 db-schema.sql appended +46 lines. SPEC §13.A Execution Marker added with criterion verification table. Demo `default_supplier_id` set to AZMON (bb4bdec6-...). Prizma `default_supplier_id` HELD NULL per escalation.
+- `746976a` C-A2 — opticup-executor close. EXECUTION_REPORT.md (144 lines) self-score 9.5/10. FINDINGS.md (2 INFO entries: F-1 Rule 32 hook heading regex, F-2 architect-pending-applied warning).
+- _(this commit)_ Foreman FOREMAN_REVIEW.md 🟢 CLOSED + this SESSION_CONTEXT block.
+
+**Pipeline stats:**
+
+- 3 commits + Foreman close = 4 total. All single-concern, all on develop, no merges, no amends, no force-pushes.
+- 0 escalations to Foreman mid-Pipeline (executor caught & resolved D-1 heading-format false start in 1 cycle).
+- 1 escalation to Daniel: Prizma backfill authorization (escalation file laid out 3 options; Daniel decision unblocks Phase B).
+- Iron Rule 31 + 32 gates: exit 0 every commit.
+- Smoke 7/7 PASS post-C-A1.
+- 0 Prizma data-table row delta (purchase_receipt + tenants row count flat); +2 permissions + 10 role_permissions on Prizma per Brief §3.4 design.
+
+**Schema/code delta:**
+
+- 1 new column on `tenants` (`default_supplier_id` UUID NULL FK ON DELETE SET NULL).
+- 5 new columns on `purchase_receipt` (`is_documented` BOOL NOT NULL DEFAULT true / `undocumented_reason` TEXT NULL / `manager_review_status` TEXT CHECK ∈ 4 values OR NULL / `manager_reviewed_by` UUID FK employees / `manager_reviewed_at` TIMESTAMPTZ).
+- 2 new permission keys (`inventory.add.undocumented` + `inventory.manager_review.approve`) × 2 tenants = 4 permission rows.
+- 20 new `role_permissions` rows (5 roles × 2 perms × 2 tenants — 8 granted=true for ceo+manager, 12 granted=false).
+- 1 demo backfill UPDATE (tenants.default_supplier_id = AZMON).
+- 0 new tables, 0 new RPCs, 0 new views, 0 new files, 0 new JS/CSS code (Phase A is DB-only).
+
+**Status:**
+
+- 🟢 Phase A executor scope CLOSED — 9/9 SPEC §3 DB criteria PASS + Foreman spot-check audit PASS.
+- ⏳ Pipeline PAUSED pending Daniel decision on Prizma `default_supplier_id` backfill. Three options in escalation file (`escalations/2026-05-18T_M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_A_PRIZMA_AUTH.md`): (1) authorize backfill to בדולח; (2) skip backfill (use Phase B settings UI later); (3) name a different supplier.
+- ⏳ Pending application: 2 P-AUTHOR + 3 P-EXEC improvement proposals from this FOREMAN_REVIEW (apply at next opticup-strategic session or Pipeline continuation).
+- ⏳ Next phases: B (Settings UI for default supplier), C (3 add-stock flows on inventory screen), D (Unified log undocumented filter + manager review), E (skill harvest).
+
+---
+
+## Previous Last Updated
 M1_5_CAT_SIDEBAR_COMPONENT (consumer-side refactor of inventory.html + css/inventory-shell.css) — 2026-05-17 morning (🟢 CLOSED — Full Auto Pipeline, cross-module SPEC owned by Module 1.5)
 
 ## 2026-05-17 morning — M1_5_CAT_SIDEBAR_COMPONENT — consumer-side cross-reference

@@ -73,3 +73,81 @@ Decisions that don't belong to a single module — workflow, process, communicat
 **Lesson 1 (SPEC envelope can narrow vs Brief):** A SPEC's §6.5 Destructive Operations envelope is bounded ABOVE by the Brief but may always be NARROWER. Performing a no-effect UPDATE just to satisfy the Brief literally is wrong — it bumps `updated_at` and creates a phantom audit event. Codify in opticup-strategic SKILL §"SPEC Authoring Protocol" (Author Proposal #1 in this SPEC's FOREMAN_REVIEW).
 **Lesson 2 (ESCALATION.md is a first-class SPEC artifact):** When a Brief authorizes a planned escalation and the diagnostic phase triggers it, write a dedicated `ESCALATION.md` inside the SPEC folder (not in `escalations/`). It contains the gap + 2-3 options + Foreman recommendation. FINDINGS.md gets a one-line cross-reference. Codify in opticup-executor SKILL §"folder-per-SPEC retrospective protocol" (Executor Proposal #2 in this SPEC's FOREMAN_REVIEW).
 
+---
+
+## Pattern Index — Daniel's Decision Patterns (harvested 2026-05-16 → 2026-05-17, applied 2026-05-17 night)
+
+Foundation catalog for the future Autonomous Decision-Maker skill. Each pattern is keyed `C-NNN` (Daniel correction), `A-NNN` (Daniel agreement), `S-NNN` (communication style), or `P-NNN` (strategic philosophy). Future Briefs reference these by key when justifying decisions.
+
+### CORRECTIONS DANIEL MADE (high-signal — codify as future-automatic decisions)
+
+**C-001 — Module 1 organization: One screen, multiple categories. Not separate top-level cards.** (2026-05-16) — When a feature is conceptually part of an existing module's domain, it lives INSIDE that module's screen as a category/section, NOT as a new top-level entry. Top-level cards = distinct modules; sub-categories ≠ top-level.
+
+**C-002 — Reusable UI components belong in Module 1.5, not duplicated per-module.** (2026-05-17 morning) — Any UI primitive (sidebar, modal, toast, table, form) that future modules will reuse MUST live in `shared/` under Module 1.5 from day 1. Module-specific code only imports + configures the shared primitive. Never "we'll extract it later."
+
+**C-003 — Visual functional verification is mandatory, not optional.** (2026-05-17 noon, 3rd strike) — HTTP smoke + raw screenshot capture is INSUFFICIENT. Every UI Pipeline must perform user-style visual walkthrough where Tester opens each surface in Chrome MCP at full viewport, describes what's seen, and verifies bug-regression queries from Brief §1. Codified as opticup-localhost-tester Tier C (mandatory). 4th firing 2026-05-17 night (M1_FINAL_NIGHT_PHASE_1).
+
+**C-004 — When two pieces of work share the same code path, ship them in one Pipeline, not separate.** (2026-05-17 morning) — Bug fix + refactor that touch the same files → one Pipeline with refactor as primary and bug fix as natural consequence. Separate Pipelines risk merge conflicts + double-touch.
+
+**C-005 — Verify GitHub UI state when local git seems off, before acting.** (2026-05-17 multiple) — When local git contradicts GitHub UI, GitHub is the source of truth. Run `git fetch --force` + `git ls-remote` before acting on a delta count. Every PR hand-off begins with GitHub-state verification.
+
+**C-006 — Prizma writes require explicit Daniel authorization, even for "obviously safe" data.** (2026-05-16) — Production tenant writes are Daniel-only authorization. Even structurally-safe writes (single row, additive) — executor escalates and stops. Daniel decides the path (manual UI / Claude Code / Cowork). No "blanket safe-to-write" rules.
+
+### AGREEMENTS DANIEL CONFIRMED (validated patterns — reinforced defaults)
+
+**A-001 — Sidebar position: right side for RTL (Hebrew).** Default: every sidebar uses RTL logical properties (`margin-inline-start` etc.). Never `left:`/`right:` absolute.
+
+**A-002 — Single source of truth for catalog: Optic Up manages global; stores manage private.** Default for "shared resource with per-tenant customization": platform owns shared layer + tenant owns private layer, both visible to tenant.
+
+**A-003 — Clone-to-Private feature for customization without losing global integrity.** Default for SaaS customization: when tenant needs to modify a platform-owned entity, Clone-to-Private button rather than overwrite the platform copy.
+
+**A-004 — Permission roles: CEO + Branch Manager can manage private catalog.** Default for "ownership-class permissions": CEO + Branch Manager are the standard pair. (Note: live schema role name is `manager` not `branch_manager` — caught 2026-05-17 night by M1_FINAL_NIGHT_PHASE_1.)
+
+**A-005 — Sequential Pipeline phases with VFV gates beat one giant Pipeline.** Default for multi-deliverable night Pipelines: split into phases by deliverable, gate each with VFV.
+
+**A-006 — Comprehensive QA with real-world data simulation is part of the build, not separate.** Default: customer-facing feature QA includes seeded realistic data + walking every flow + fixing surface bugs in-flight.
+
+**A-007 — Preserve seeded demo data for Daniel's morning review.** Default: night Pipelines that seed demo data never clean up. Add `DEMO_DATA_MAP.md`.
+
+### COMMUNICATION STYLE PREFERENCES (how to talk to Daniel)
+
+**S-001 — Recommendations first, options second. Always.** Lead with "my recommendation is X because Y", then alternatives if asked.
+
+**S-002 — Plain Hebrew, no technical jargon.** Schema words belong in files, not chat. Concept names in Hebrew.
+
+**S-003 — Short messages. 4 lines or fewer for most exchanges.** Walls of text are noise.
+
+**S-004 — One question at a time, with a recommendation already attached.**
+
+**S-005 — Acknowledge mistakes briefly, then move on. No over-apology.** "צודק, סליחה" once + correction.
+
+**S-006 — Show data when claims are made.** "X is true" requires evidence — not just word.
+
+**S-007 — Don't auto-execute on Daniel's behalf when permissions are involved.** Daniel will delegate when safety bar is clear. Executor must verify safety FIRST.
+
+### STRATEGIC PATTERNS (Daniel's philosophy)
+
+**P-001 — SaaS-clean over quick-fix, always.** Quick fix breaking SaaS-litmus → rejected.
+
+**P-002 — בלי פלסטרים (no Band-Aids).** Architecturally-correct foundation, even at 4-6× initial cost, beats patch-now-refactor-later. (Cited 2026-05-17 night during M1_FINAL_NIGHT_PHASE_1 Option A vs Option B schema decision — unified design + filter beat split-into-3-trees because the discriminator was already correctly enforced.)
+
+**P-003 — Strategic decisions = Daniel's role. Technical decisions = Architect/Executor's role.** Daniel decides user-facing flows, business rules, architectural philosophy. Not table names.
+
+**P-004 — Don't escalate tactical decisions when autonomy is granted.** Distinguish "true escalation" from "polite halt that wastes Daniel's time."
+
+**P-005 — Real-world stress test the architecture during build.** Smoke 7/7 is necessary but insufficient. (See A-006.)
+
+### How the Future Autonomous Decision-Maker Skill Uses This
+
+When a SPEC reaches a point where Daniel would normally be asked, the skill consults this index:
+1. Find matching pattern (C-NNN / A-NNN / S-NNN / P-NNN).
+2. Apply the rule.
+3. Log the decision in EXECUTION_REPORT.md: "decision X taken autonomously per CROSS.md pattern A-002."
+4. Surface only true escalations (per C-006, P-003, P-004, S-007).
+5. Update this index if Daniel later corrects.
+
+The skill MUST NOT autonomously decide:
+- Anything touching Prizma data (C-006)
+- Anything changing product positioning (P-003)
+- Anything contradicting a previously-locked architectural decision without explicit re-opening
+

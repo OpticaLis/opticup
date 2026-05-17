@@ -1,0 +1,542 @@
+/* =====================================================================
+   lens-inventory-page.css
+   M1_LENS_INVENTORY_MOCKUP_1TO1 — Sub-Phase A1 (2026-05-18)
+
+   1:1 rebuild of LENS_INVENTORY_MOCKUP.html (D-M1-02, 1117 lines).
+   All rules scoped under `.lens-tab-section .lens-inv-page` so the
+   lens-inventory tab gets its full mockup-fidelity styling without
+   leaking onto other lens tabs (designs / pricing / PO / GR / pos-list /
+   catalog-admin). Modal styles live in css/lens-inventory-modals.css to
+   keep this file under Iron Rule 12 limits.
+
+   Tokens harvested from the mockup:
+     gold accent #c9a555 (active chips, gold-gradient banner)
+     gold dark  #b8954a (hover, gradient end)
+     navy header #34495e / #2c3e50 (grid headers, secondary-active chips)
+     red    #e74c3c #c0392b #fef0ef #ffe0e0 (out-needed)
+     green  #27ae60 #1e8449 #e8f8ef #e8f5e9 #1b5e20 (in-stock / on-target)
+     yellow #f4c430 #856404 #fff7e0 (low)
+     turquoise #1abc9c #0e7a6a #d1f5ef (over-target)
+     blue   #1e3a8a #bfdbfe #eff6ff (production emphasis)
+     amber  #d97706 #92400e (custom production)
+     panel grey #f8f9fb #ecf0f1 #d0d4d9 (chrome)
+   ===================================================================== */
+
+/* ───────── Page wrapper ───────── */
+.lens-tab-section .lens-inv-page {
+  display: flex; flex-direction: column; gap: 12px; padding: 0 4px;
+  font-family: 'Segoe UI', Arial, sans-serif; color: #333;
+}
+
+/* ───────── HEADER (mockup lines 402-416) ───────── */
+.lens-tab-section .lens-inv-header {
+  background: #fff; padding: 14px 20px; border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; flex-wrap: wrap;
+}
+.lens-tab-section .lens-inv-title {
+  font-size: 20px; font-weight: 600; color: #2c3e50;
+  display: flex; align-items: center; gap: 8px;
+}
+.lens-tab-section .lens-inv-title .badge {
+  font-size: 11px; background: #e8eaf6; color: #3949ab;
+  padding: 3px 8px; border-radius: 10px; font-weight: 400;
+  margin-inline-start: 6px;
+}
+.lens-tab-section .lens-inv-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.lens-tab-section .lens-inv-actions .btn {
+  padding: 8px 14px; border: 1px solid #d0d4d9; background: #fff;
+  border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;
+  color: #2c3e50; display: inline-flex; align-items: center; gap: 6px;
+  transition: background .15s, border-color .15s, color .15s;
+  font-family: inherit;
+}
+.lens-tab-section .lens-inv-actions .btn:hover { background: #f0f2f5; }
+.lens-tab-section .lens-inv-actions .btn.btn-primary {
+  background: #c9a555; color: #fff; border-color: #c9a555;
+}
+.lens-tab-section .lens-inv-actions .btn.btn-primary:hover {
+  background: #b8954a; border-color: #b8954a;
+}
+.lens-tab-section .lens-inv-actions .btn.btn-scan-out {
+  background: #fef0ef; color: #c0392b; border-color: #e74c3c; font-weight: 600;
+}
+.lens-tab-section .lens-inv-actions .btn.btn-scan-out:hover {
+  background: #fde0de; border-color: #c0392b;
+}
+.lens-tab-section .lens-inv-actions .btn.btn-scan-in {
+  background: #e8f8ef; color: #1e8449; border-color: #27ae60; font-weight: 600;
+}
+.lens-tab-section .lens-inv-actions .btn.btn-scan-in:hover {
+  background: #d4f1e0; border-color: #1e8449;
+}
+
+/* ───────── FILTERS PANEL (mockup lines 418-472) ───────── */
+.lens-tab-section .lens-inv-filters {
+  background: #fff; padding: 14px 20px; border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.lens-tab-section .lens-inv-filters .filter-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.lens-tab-section .lens-inv-filters .filter-label {
+  min-width: 70px; font-size: 13px; color: #5d6d7e; font-weight: 500;
+}
+
+/* Row 1: production type — blue emphasis */
+.lens-tab-section .lens-inv-filters .filter-row-production {
+  background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px 14px;
+}
+.lens-tab-section .lens-inv-filters .filter-row-production .filter-label {
+  color: #1e3a8a; font-weight: 700;
+}
+.lens-tab-section .lens-inv-filters .filter-row-production .chip.chip-stock {
+  border-color: #1e3a8a; color: #1e3a8a;
+}
+.lens-tab-section .lens-inv-filters .filter-row-production .chip.chip-stock.active {
+  background: #1e3a8a; color: #fff; border-color: #1e3a8a;
+}
+.lens-tab-section .lens-inv-filters .filter-row-production .chip.chip-custom {
+  border-color: #d97706; color: #92400e;
+}
+.lens-tab-section .lens-inv-filters .filter-row-production .chip.chip-custom.active {
+  background: #d97706; color: #fff; border-color: #d97706;
+}
+.lens-tab-section .lens-inv-filters .filter-hint {
+  font-size: 11px; color: #64748b; margin-inline-start: auto;
+}
+
+/* Base chip — gold accent inside .lens-inv-page (mockup default) */
+.lens-tab-section .lens-inv-page .chip {
+  padding: 6px 14px; border: 1px solid #c9a555; background: #fff;
+  border-radius: 20px; font-size: 12px; cursor: pointer; color: #5d6d7e;
+  font-family: inherit; transition: background .15s, color .15s, border-color .15s;
+  white-space: nowrap; line-height: 1.4;
+}
+.lens-tab-section .lens-inv-page .chip:hover { background: #faf3e0; }
+.lens-tab-section .lens-inv-page .chip.active {
+  background: #c9a555; color: #fff; border-color: #c9a555;
+}
+.lens-tab-section .lens-inv-page .chip.secondary {
+  border-color: #95a5a6;
+}
+.lens-tab-section .lens-inv-page .chip.secondary.active {
+  background: #34495e; color: #fff; border-color: #34495e;
+}
+
+/* Row 5 — stock-status colored-border chips */
+.lens-tab-section .lens-inv-filters .filter-row-status .chip.chip-out {
+  border-color: #e74c3c; color: #c0392b;
+}
+.lens-tab-section .lens-inv-filters .filter-row-status .chip.chip-out.active {
+  background: #e74c3c; color: #fff; border-color: #e74c3c;
+}
+.lens-tab-section .lens-inv-filters .filter-row-status .chip.chip-low {
+  border-color: #f4c430; color: #856404;
+}
+.lens-tab-section .lens-inv-filters .filter-row-status .chip.chip-low.active {
+  background: #f4c430; color: #fff; border-color: #f4c430;
+}
+.lens-tab-section .lens-inv-filters .filter-row-status .chip.chip-on-target {
+  border-color: #27ae60; color: #1e8449;
+}
+.lens-tab-section .lens-inv-filters .filter-row-status .chip.chip-on-target.active {
+  background: #27ae60; color: #fff; border-color: #27ae60;
+}
+.lens-tab-section .lens-inv-filters .filter-row-status .chip.chip-over {
+  border-color: #1abc9c; color: #0e7a6a;
+}
+.lens-tab-section .lens-inv-filters .filter-row-status .chip.chip-over.active {
+  background: #1abc9c; color: #fff; border-color: #1abc9c;
+}
+
+/* Row 6 — brand + supplier inline labels */
+.lens-tab-section .lens-inv-filters .filter-row-brand-supplier .filter-label.label-supplier {
+  margin-inline-start: 24px;
+}
+
+/* ───────── VARIANT SELECTOR (mockup lines 474-498) ───────── */
+.lens-tab-section .lens-inv-variant-selector {
+  background: #fff; padding: 14px 20px; border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;
+}
+.lens-tab-section .lens-inv-variant-selector .field-group {
+  display: flex; flex-direction: column; gap: 4px; min-width: 160px;
+}
+.lens-tab-section .lens-inv-variant-selector .field-group label {
+  font-size: 11px; color: #5d6d7e; font-weight: 600; letter-spacing: .3px;
+}
+.lens-tab-section .lens-inv-variant-selector .field-group select,
+.lens-tab-section .lens-inv-variant-selector .field-group input {
+  padding: 8px 12px; border: 1px solid #d0d4d9; border-radius: 6px;
+  font-size: 13px; background: #fff; font-family: inherit;
+}
+.lens-tab-section .lens-inv-variant-selector .field-group.field-group-range {
+  margin-inline-start: auto; min-width: 240px;
+}
+.lens-tab-section .lens-inv-variant-selector .variant-range-display {
+  font-size: 12px; color: #27ae60; font-weight: 600; padding-top: 4px;
+}
+.lens-tab-section .lens-inv-variant-selector .variant-range-display.empty {
+  color: #95a5a6; font-weight: 400;
+}
+/* Hidden brand select — driven by row-6 brand chips (preserves JS contract) */
+.lens-tab-section .lens-inv-variant-selector .field-group-hidden {
+  display: none !important;
+}
+
+/* ───────── MAIN GRID + SIDE PANEL (mockup lines 500-610) ───────── */
+.lens-tab-section .lens-inv-main {
+  display: grid; grid-template-columns: 1fr 320px; gap: 12px;
+}
+
+/* GRID PANEL */
+.lens-tab-section .lens-inv-grid-panel {
+  background: #fff; border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden;
+}
+.lens-tab-section .lens-inv-grid-panel .grid-panel-header {
+  padding: 12px 20px; border-bottom: 1px solid #ecf0f1;
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; flex-wrap: wrap;
+}
+.lens-tab-section .lens-inv-grid-panel .grid-panel-header h3 {
+  font-size: 14px; color: #2c3e50; margin: 0;
+}
+.lens-tab-section .lens-inv-grid-panel .grid-legend {
+  display: flex; gap: 14px; font-size: 11px; align-items: center;
+  flex-wrap: wrap; color: #5d6d7e;
+}
+.lens-tab-section .lens-inv-grid-panel .grid-legend > span {
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.lens-tab-section .legend-box {
+  display: inline-block; width: 14px; height: 14px;
+  border-radius: 3px; border: 1px solid #d0d4d9; vertical-align: middle;
+}
+.lens-tab-section .legend-box.legend-on-target  { background: #e8f5e9; border-color: #27ae60; }
+.lens-tab-section .legend-box.legend-low        { background: #fff7e0; border-color: #f4c430; }
+.lens-tab-section .legend-box.legend-out-needed { background: #ffe0e0; border-color: #e74c3c; }
+.lens-tab-section .legend-box.legend-over-target{ background: #d1f5ef; border-color: #1abc9c; }
+.lens-tab-section .legend-box.legend-no-target  { background: #fff;    border-color: #d0d4d9; }
+.lens-tab-section .legend-box.legend-unavailable{ background: #ecf0f1; border-color: #95a5a6; }
+
+/* SPH × CYL grid — CSS Grid layout mirroring mockup .sph-cyl-grid */
+.lens-tab-section .lens-inv-grid-panel .grid-container {
+  padding: 20px; overflow-x: auto;
+}
+.lens-tab-section .lens-inv-page .sph-cyl-grid {
+  display: grid;
+  grid-template-columns: 50px repeat(var(--cyl-cols, 12), 38px);
+  gap: 2px; font-size: 11px; min-width: max-content;
+}
+.lens-tab-section .lens-inv-page .grid-corner {
+  background: #34495e; color: #fff; padding: 6px;
+  border-radius: 4px; text-align: center;
+  font-weight: 600; font-size: 10px; line-height: 1.2;
+}
+.lens-tab-section .lens-inv-page .col-header,
+.lens-tab-section .lens-inv-page .row-header {
+  background: #34495e; color: #fff; padding: 6px 2px;
+  text-align: center; font-weight: 500;
+  border-radius: 4px; font-size: 11px;
+}
+.lens-tab-section .lens-inv-page .grid-cell {
+  background: #fff; border: 1px solid #d0d4d9;
+  border-radius: 4px; padding: 4px 2px;
+  text-align: center; cursor: pointer;
+  transition: transform .1s, box-shadow .1s;
+  min-height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 500; color: #2c3e50;
+}
+.lens-tab-section .lens-inv-page .grid-cell:hover {
+  transform: scale(1.15); z-index: 5;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.lens-tab-section .lens-inv-page .grid-cell.cell-on-target {
+  background: #e8f5e9; color: #1b5e20; font-weight: 700;
+}
+.lens-tab-section .lens-inv-page .grid-cell.cell-low {
+  background: #fff7e0; color: #856404; font-weight: 700;
+}
+.lens-tab-section .lens-inv-page .grid-cell.cell-out-needed {
+  background: #ffe0e0; color: #c0392b; font-weight: 700;
+}
+.lens-tab-section .lens-inv-page .grid-cell.cell-over-target {
+  background: #d1f5ef; color: #0e7a6a; font-weight: 700;
+}
+.lens-tab-section .lens-inv-page .grid-cell.cell-no-target {
+  background: #fff; color: #2c3e50; font-weight: 400;
+}
+.lens-tab-section .lens-inv-page .grid-cell.cell-unavailable {
+  background: #ecf0f1; color: #95a5a6;
+  cursor: not-allowed; opacity: 0.4;
+}
+.lens-tab-section .lens-inv-page .grid-cell.cell-unavailable:hover {
+  transform: none; box-shadow: none;
+}
+.lens-tab-section .lens-inv-page .grid-cell.cell-selected {
+  background: #c9a555; color: #fff;
+  box-shadow: 0 0 0 2px #b8954a;
+}
+
+/* ───────── SIDE PANEL (mockup lines 541-609) ───────── */
+.lens-tab-section .lens-inv-side-panel {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.lens-tab-section .lens-inv-side-panel .panel-card {
+  background: #fff; border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden;
+}
+.lens-tab-section .lens-inv-side-panel .panel-card-header {
+  padding: 10px 16px; border-bottom: 1px solid #ecf0f1; background: #f8f9fb;
+  font-size: 13px; font-weight: 600; color: #2c3e50;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.lens-tab-section .lens-inv-side-panel .panel-card-body { padding: 14px 16px; }
+
+/* Gold-gradient SELECTED CELL banner */
+.lens-tab-section .lens-inv-page .selected-cell-info {
+  background: linear-gradient(135deg, #c9a555 0%, #b8954a 100%);
+  color: #fff; padding: 14px 16px; border-radius: 6px; margin-bottom: 12px;
+}
+.lens-tab-section .lens-inv-page .selected-cell-info .label {
+  font-size: 11px; opacity: 0.85; margin-bottom: 3px;
+}
+.lens-tab-section .lens-inv-page .selected-cell-info .value {
+  font-size: 18px; font-weight: 600;
+}
+.lens-tab-section .lens-inv-page .selected-cell-info .meta {
+  font-size: 12px; opacity: 0.9; margin-top: 6px;
+}
+
+/* lots-table */
+.lens-tab-section .lens-inv-page .lots-table {
+  width: 100%; font-size: 11px; border-collapse: collapse;
+}
+.lens-tab-section .lens-inv-page .lots-table th {
+  text-align: right; padding: 6px 8px; background: #f8f9fb;
+  color: #5d6d7e; font-weight: 600; border-bottom: 1px solid #ecf0f1;
+}
+.lens-tab-section .lens-inv-page .lots-table td {
+  padding: 6px 8px; border-bottom: 1px solid #f5f6fa;
+}
+.lens-tab-section .lens-inv-page .lots-table tr:hover { background: #faf3e0; }
+.lens-tab-section .lens-inv-page .fifo-tag {
+  display: inline-block; background: #3949ab; color: #fff;
+  font-size: 9px; padding: 2px 6px; border-radius: 8px;
+  font-weight: 600; margin-inline-end: 4px;
+}
+
+/* Stock + Target stats row */
+.lens-tab-section .lens-inv-page .stock-target-row {
+  display: flex; justify-content: space-between; gap: 10px;
+  margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ecf0f1;
+}
+.lens-tab-section .lens-inv-page .stock-target-row .stat-col {
+  flex: 1; text-align: center;
+}
+.lens-tab-section .lens-inv-page .stock-target-row .stat-col + .stat-col {
+  border-inline-end: 1px solid #ecf0f1; padding-inline-end: 10px;
+}
+.lens-tab-section .lens-inv-page .stock-target-row .stat-label {
+  font-size: 11px; color: #5d6d7e;
+}
+.lens-tab-section .lens-inv-page .stock-target-row .stat-value-stock {
+  font-size: 20px; color: #27ae60; font-weight: 700;
+}
+.lens-tab-section .lens-inv-page .target-editor {
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.lens-tab-section .lens-inv-page .target-editor input {
+  width: 50px; padding: 3px 6px; border: 1px solid #d0d4d9; border-radius: 4px;
+  font-size: 16px; font-weight: 600; text-align: center; color: #c9a555;
+  font-family: inherit;
+}
+.lens-tab-section .lens-inv-page .target-editor button {
+  padding: 3px 6px; font-size: 11px; border: 1px solid #d0d4d9;
+  background: #fff; border-radius: 4px; cursor: pointer; color: #2c3e50;
+  font-family: inherit;
+}
+
+/* Status hint inline banner (e.g. "✓ עודף 2 מעל היעד") */
+.lens-tab-section .lens-inv-page .status-hint {
+  text-align: center; font-size: 11px; padding: 4px 8px;
+  border-radius: 4px; margin-top: 8px;
+}
+.lens-tab-section .lens-inv-page .status-hint.hint-over {
+  color: #0e7a6a; background: #d1f5ef;
+}
+.lens-tab-section .lens-inv-page .status-hint.hint-low {
+  color: #856404; background: #fff7e0;
+}
+.lens-tab-section .lens-inv-page .status-hint.hint-out {
+  color: #c0392b; background: #ffe0e0;
+}
+.lens-tab-section .lens-inv-page .status-hint.hint-on-target {
+  color: #1e8449; background: #e8f5e9;
+}
+.lens-tab-section .lens-inv-page .status-hint.hint-no-target {
+  color: #5d6d7e; background: #f8f9fb;
+}
+
+/* qty-controls — round red/green buttons */
+.lens-tab-section .lens-inv-page .qty-controls {
+  display: flex; align-items: center; gap: 8px;
+  justify-content: center; margin-top: 12px;
+}
+.lens-tab-section .lens-inv-page .qty-controls .qty-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1px solid #d0d4d9; background: #fff;
+  cursor: pointer; font-size: 16px; font-weight: 600; color: #2c3e50;
+  font-family: inherit; line-height: 1; padding: 0;
+}
+.lens-tab-section .lens-inv-page .qty-controls .qty-btn.plus {
+  background: #27ae60; color: #fff; border-color: #27ae60;
+}
+.lens-tab-section .lens-inv-page .qty-controls .qty-btn.minus {
+  background: #e74c3c; color: #fff; border-color: #e74c3c;
+}
+.lens-tab-section .lens-inv-page .qty-display {
+  font-size: 20px; font-weight: 600; min-width: 50px; text-align: center;
+}
+
+/* Manual-add card body */
+.lens-tab-section .lens-inv-page .quick-action {
+  display: flex; gap: 6px;
+}
+.lens-tab-section .lens-inv-page .quick-action input {
+  flex: 1; padding: 8px 10px; border: 1px solid #d0d4d9;
+  border-radius: 6px; font-size: 13px; font-family: inherit;
+}
+.lens-tab-section .lens-inv-page .manual-add-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;
+}
+.lens-tab-section .lens-inv-page .manual-add-grid + .manual-add-grid { margin-top: 8px; }
+.lens-tab-section .lens-inv-page .manual-add-grid .field-group label {
+  font-size: 11px; color: #5d6d7e; font-weight: 600; letter-spacing: .3px;
+}
+.lens-tab-section .lens-inv-page .manual-add-grid .field-group input {
+  padding: 8px 12px; border: 1px solid #d0d4d9; border-radius: 6px;
+  font-size: 13px; font-family: inherit;
+}
+.lens-tab-section .lens-inv-page .btn-add-stock {
+  width: 100%; margin-top: 12px; justify-content: center;
+  padding: 10px 14px; background: #27ae60; color: #fff;
+  border: 1px solid #27ae60; border-radius: 6px;
+  cursor: pointer; font-size: 13px; font-weight: 600;
+  font-family: inherit; display: inline-flex; align-items: center; gap: 6px;
+  text-align: center;
+}
+.lens-tab-section .lens-inv-page .btn-add-stock:hover {
+  background: #229954; border-color: #229954;
+}
+.lens-tab-section .lens-inv-page .btn-icon {
+  padding: 8px 10px; border: 1px solid #d0d4d9; background: #fff;
+  border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit;
+}
+
+/* ───────── BOTTOM TABS (mockup lines 612-688) ───────── */
+.lens-tab-section .lens-inv-bottom-section {
+  background: #fff; border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden;
+}
+.lens-tab-section .lens-inv-bottom-tabs-header {
+  display: flex; border-bottom: 1px solid #ecf0f1; background: #f8f9fb;
+}
+.lens-tab-section .bottom-tab {
+  padding: 12px 20px; cursor: pointer; font-size: 13px; color: #5d6d7e;
+  background: transparent; border: none; border-inline-start: 1px solid #ecf0f1;
+  transition: background .15s, color .15s; font-family: inherit; font-weight: 500;
+}
+.lens-tab-section .bottom-tab:first-child { border-inline-start: none; }
+.lens-tab-section .bottom-tab:hover { background: #f0f2f5; }
+.lens-tab-section .bottom-tab.active {
+  background: #fff; color: #c9a555; font-weight: 700;
+  border-bottom: 2px solid #c9a555; margin-bottom: -1px;
+}
+.lens-tab-section .lens-inv-bottom-tabs-body {
+  padding: 16px 20px; min-height: 200px;
+}
+
+/* movements-table */
+.lens-tab-section .lens-inv-page .movements-table {
+  width: 100%; font-size: 12px; border-collapse: collapse;
+}
+.lens-tab-section .lens-inv-page .movements-table th {
+  text-align: right; padding: 8px 10px; background: #f8f9fb;
+  color: #5d6d7e; font-weight: 600; border-bottom: 2px solid #ecf0f1;
+}
+.lens-tab-section .lens-inv-page .movements-table td {
+  padding: 8px 10px; border-bottom: 1px solid #f5f6fa;
+}
+.lens-tab-section .lens-inv-page .movement-type {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 11px; font-weight: 600;
+}
+.lens-tab-section .lens-inv-page .movement-type.purchase { background: #d4edda; color: #155724; }
+.lens-tab-section .lens-inv-page .movement-type.sale     { background: #f8d7da; color: #721c24; }
+.lens-tab-section .lens-inv-page .movement-type.return   { background: #fff3cd; color: #856404; }
+.lens-tab-section .lens-inv-page .movement-type.transfer { background: #d1ecf1; color: #0c5460; }
+.lens-tab-section .lens-inv-page .movement-type.adjustment { background: #e2e3e5; color: #383d41; }
+.lens-tab-section .lens-inv-page .movement-qty-out { color: #e74c3c; }
+.lens-tab-section .lens-inv-page .movement-qty-in  { color: #27ae60; }
+.lens-tab-section .lens-inv-page .movement-qty-tr  { color: #3498db; }
+.lens-tab-section .lens-inv-page .movement-qty-adj { color: #f39c12; }
+
+/* ───────── Legacy 2-state table support (preserve foundation grid contract) ───────── */
+/* lens-inventory-grid.js still emits `table.lens-grid` for the 2-state fallback path
+   used when no target data exists. Keep these rules so the table renders correctly
+   in the same gold theme. */
+.lens-tab-section .lens-inv-page table.lens-grid { font-size: 11px; }
+.lens-tab-section .lens-inv-page table.lens-grid th {
+  background: #34495e; color: #fff; border-bottom: none;
+  padding: 6px 4px; font-size: 10px; text-align: center;
+}
+.lens-tab-section .lens-inv-page table.lens-grid td { padding: 6px 4px; text-align: center; }
+.lens-tab-section .lens-inv-page table.lens-grid td.cell-stock {
+  background: #e8f5e9; color: #1b5e20; font-weight: 700;
+}
+.lens-tab-section .lens-inv-page table.lens-grid td.cell-empty {
+  background: #fff; color: #2c3e50;
+}
+.lens-tab-section .lens-inv-page table.lens-grid td.cell-selected {
+  background: #c9a555; color: #fff; box-shadow: inset 0 0 0 2px #b8954a;
+}
+.lens-tab-section .lens-inv-page table.lens-grid td .qty-btn {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 1px solid #cbd5e1; background: #fff; cursor: pointer;
+  font-size: 11px; line-height: 1; margin: 0 1px; color: #2c3e50; padding: 0;
+}
+.lens-tab-section .lens-inv-page table.lens-grid td .qty-btn[data-action="add"] {
+  background: #27ae60; color: #fff; border-color: #27ae60;
+}
+.lens-tab-section .lens-inv-page table.lens-grid td .qty-btn[data-action="reduce"] {
+  background: #e74c3c; color: #fff; border-color: #e74c3c;
+}
+
+/* lot-row layout used by lens-inventory-lot-pane.js when rendering lots */
+.lens-tab-section .lens-inv-page .lot-row {
+  padding: 8px 10px; border-bottom: 1px solid #f5f6fa;
+  display: grid; grid-template-columns: 1fr; gap: 2px;
+}
+.lens-tab-section .lens-inv-page .lot-row strong { color: #2c3e50; font-size: 12px; }
+.lens-tab-section .lens-inv-page .lot-row .lot-meta { font-size: 11px; color: #5d6d7e; }
+
+/* ───────── empty-state used inside grid + lot containers ───────── */
+.lens-tab-section .lens-inv-page .empty-state {
+  padding: 24px 12px; text-align: center; color: #95a5a6;
+  font-size: 13px;
+}
+
+/* ───────── Mobile breakpoint ───────── */
+@media (max-width: 900px) {
+  .lens-tab-section .lens-inv-main { grid-template-columns: 1fr; }
+  .lens-tab-section .lens-inv-variant-selector .field-group.field-group-range {
+    margin-inline-start: 0;
+  }
+}

@@ -1109,3 +1109,131 @@ After every Write or Edit that touches a file >100 lines OR >5KB, **and before d
 **Cumulative cost of skipping:** in the 2026-05-15 incident, I lost 60 lines of §9-12 in MONOREPO_MIGRATION_BRIEF.md and had to restore from `git show 473cdc8:...` then re-append the missing content via shell heredoc. ~15 minutes of recovery work for a 30-second check that would have caught it pre-delivery.
 
 **This rule applies to every Write/Edit, not just batched edits.** Single-edit truncations have also been observed (less frequent but documented).
+
+---
+
+### P-AR-15 (HIGH) — Every Brief's §7 Success Criteria must enumerate VFV surfaces + bug-regression queries the Tester must answer.
+
+**Promoted to skill 2026-05-17.** Companion to opticup-localhost-tester Tier C (Visual Functional Verification, MANDATORY).
+
+**The pattern:** when a Brief states a user-observable goal ("sidebar on the right", "no overlap on category X", "lens screens unified with frames design"), §7 Success Criteria must include an explicit Tester verification line per goal, with form:
+
+> "VFV on surface <name>: <observable state> verified via Chrome MCP at 1920×1080. Bug from Brief §1 Purpose <quote> verified RESOLVED."
+
+This makes the Brief audit-trail-able: every user-observable claim is bound to one Tester VFV result.
+
+**Why this matters:** the Tester operates against the SPEC's success criteria. If the criteria are stated as "smoke 7/7 PASS + screenshot captured," the Tester returns 🟢 even when the user-observable goal is unmet. If the criteria are stated as "VFV on surface X confirms no overlap, with screenshot evidence," the Tester is forced to actually look at the result.
+
+**Anti-pattern (caught 2026-05-16 + 2026-05-17 — fourth firing on M1_FINAL_NIGHT_PHASE_1 2026-05-17):**
+- Brief says: "fix the sidebar overlap bug"
+- §7 says: "smoke 7/7 PASS + Chrome MCP screenshots captured"
+- Tester captures screenshots showing the bug still present, but the success criterion "screenshots captured" is met, so Pipeline returns 🟢
+- Daniel sees the bug post-merge
+
+**Application:** in every Brief I author from 2026-05-17 forward, §7 includes:
+- A "VFV surfaces" subsection listing every screen/tab the Pipeline modifies
+- A "bug-regression queries" subsection listing every user-observable bug claim from §1 Purpose, with explicit "must be RESOLVED in VFV"
+
+This costs ~5 extra minutes per Brief. Saves hours of re-fix Pipelines.
+
+(Note: numbered P-AR-15 to leave room for P-AR-06..P-AR-14 future entries; the architect intentionally jumps numbers to slot related entries in numeric proximity later.)
+
+---
+
+### P-AR-13 (HIGH) — Architecture commitments must be tested against code reality before they become Brief load-bearing.
+
+**Promoted to skill 2026-05-16 (M1 Lens Night Pipeline D-M1-09 reframing).**
+
+When an Architecture Brief includes a commitment about future code structure ("X will be extracted into Y", "Z will be a shared component in Module N.M", "the generic receipt component"), the NEXT Brief that touches that area MUST validate the commitment against actual code before propagating it forward.
+
+**The trap:** Decision-time commitments about code shape are made before the code exists. They can be wrong. If left unchallenged, they cascade through 3-5 SPECs as load-bearing assumptions, until a refactor SPEC attempts to honor them and discovers they are architecturally false.
+
+**Evidence (M1 D-M1-09):** the "generic Module 1.5 component" promise was authored 2026-05-14 before lens-receipt code existed. It propagated through 4 SPECs (Phase 1B Procurement violated it; Gap Closure noted the violation; Strategic Audit elevated it to a HIGH finding; Night Pipeline Part A attempted to fix it). The Night Pipeline's empirical analysis found 0 shareable lines between frames-receipt and lens-receipt. The original commitment was wrong; reframing was the right move.
+
+**The rule:** every Architect Brief that references a prior architectural decision MUST include a §"Decision Reality Check" sub-section that does ONE of:
+1. **Validate** — confirm prior decision is still anchored in current code (grep + responsibility-mapping). Cite code locations.
+2. **Reframe** — explicitly note the prior decision needs re-examination, with recommendation for closure-as-RESOLVED OR reframing to a different axis.
+3. **Defer** — explicitly mark as "forward-promise, not yet code-bound; next code-touching SPEC will validate."
+
+**Application timing:**
+- SPECs that build NEW code → defer (3) acceptable
+- SPECs that REFACTOR per prior commitment → validate (1) mandatory
+- SPECs whose execution proves commitment infeasible → reframe (2) with empirical evidence
+
+**ROI:** prevents 4-SPEC-deep promise propagation when the original commitment was architecturally false. M1 paid that cost; future modules should not.
+
+**Anti-pattern caught:** my own Strategic Audit (2026-05-15 evening) elevated D-M1-09 to a HIGH finding without doing this check. A 30-minute reality-check would have surfaced "0 shareable lines" before the Night Pipeline was authored — and the Brief would have started with the reframing question instead of attempting the refactor first.
+
+---
+
+### P-AR-11 (MEDIUM) — Module Close Ceremony for a multi-Pipeline day batches all closures in ONE Cowork session
+
+**Promoted to skill 2026-05-15 (M1 Lens Module Close Ceremony).**
+
+When 3+ SPECs close on the same module on the same day, the Module Close Ceremony processes ALL of them in a SINGLE Cowork session, not per-SPEC. The Pattern Recurrence Tracker only fires when multiple SPECs are reviewed against each other — single-SPEC closures rarely meet the 3-strike threshold.
+
+**Evidence:** M1 Lens day 2026-05-15 closed 9 SPECs. Single batched ceremony took ~30-45 minutes and surfaced 5+4+3 = 12 strike-events across 3 distinct patterns. Per-SPEC ceremonies would have taken 9-13 hours and missed every recurring pattern.
+
+**Application:**
+- Trigger: 3+ SPECs closed on the same module in 24-48h window.
+- Action: open one Cowork session, read all FOREMAN_REVIEWs in one pass, build the Pattern Recurrence Tracker, route promoted patterns to the right skill.
+- Pre-empts: per-SPEC ceremonies that miss cross-SPEC recurring patterns.
+
+**ROI:** ~8-10 hours saved per multi-Pipeline day. Captures 100% of cross-SPEC patterns vs 0% with per-SPEC ceremonies.
+
+---
+
+### P-AR-12 (LOW) — Architect's ceremony job is to ROUTE harvested patterns to the right skill, not absorb into opticup-architect
+
+**Promoted to skill 2026-05-15 (M1 Lens Module Close Ceremony).**
+
+When a Module Close Ceremony surfaces a pattern, the Architect classifies WHICH skill owns it:
+
+- **SPEC-authoring discipline** (pre-flight probes, audit completeness, brief vs reality) → `opticup-strategic` SKILL.md
+- **Execution tactics** (mid-execution adaptation, fallback recipes, MIGRATION.md patterns) → `opticup-executor` SKILL.md
+- **Reviewer discipline** (audit depth, severity classification) → `opticup-reviewer` SKILL.md
+- **Cross-module / strategic / process** (audit drift, retired-SPEC handling, ceremony cadence) → `opticup-architect` SKILL.md (this skill)
+
+The Architect's own SKILL.md grows ONLY when the pattern is strategic-process-level. Bloating opticup-architect with SPEC-authoring tactics or execution recipes is the anti-pattern.
+
+**Evidence:** 2026-05-15 ceremony surfaced Pattern A (5 strikes) — SPEC authoring, routed to strategic. Pattern B (4 strikes) — execution tactics, routed to executor. Only P-AR-11 + P-AR-12 themselves belonged to opticup-architect.
+
+**Application:** at every ceremony, after harvesting patterns, classify destination skill BEFORE writing the SKILL_PENDING entry. Each pattern lands in exactly one skill file.
+
+### P-AR-16 (CRITICAL, non-overridable) — When user-approved mockup HTML files exist, they are MANDATORY inputs to every UI-touching Brief.
+
+**Promoted to skill 2026-05-18 morning. Severity: CRITICAL — non-overridable.**
+
+When a user-approved UI mockup file exists at `modules/Module N - Name/architecture-brief/mockups/*.html` (ratified via a documented decision log entry), EVERY subsequent Brief that touches that UI surface MUST:
+
+1. **List the mockup file in §Read List as MANDATORY input** — not optional, not "for reference," not implicit. The Executor MUST read the mockup HTML before authoring any code for the screen.
+
+2. **Bind §7 Success Criteria to mockup fidelity** — each success criterion either:
+   - References the mockup explicitly ("matches the SPH × CYL grid layout in LENS_INVENTORY_MOCKUP.html lines 142-189")
+   - Documents the deliberate divergence ("Decision X-N: deviate from mockup section Y because Z; mockup updated to v2 in same Pipeline")
+
+3. **Mandate Tester mockup-vs-live comparison** — the Localhost-Tester's Tier C VFV (per opticup-localhost-tester SKILL.md) must include a "Mockup Fidelity Check" sub-step: open the mockup in one Chrome tab + the live surface in another, capture both screenshots side-by-side, describe each visual difference, classify each as INTENTIONAL DEVIATION (with justification) or DRIFT (must fix before 🟢).
+
+4. **NO 🟢 if material drift exists** — drift on CRITICAL elements (layout structure, primary filters, source-categorization, side panels) → 🔴. Drift on MEDIUM elements (spacing, sizes, exact colors) → 🟡 with TECH_DEBT entry, but only if material to user workflow.
+
+**The trap this prevents:** A Brief author who described UI in prose without referencing the mockup creates an information loss between Daniel's approval and the Executor's build. The Executor builds to the prose; the prose omits 90% of the mockup's visual decisions; result is structural skeleton without the approved design. This recurred 5+ times during M1 lens work in the week of 2026-05-12 to 2026-05-18.
+
+**Application in Brief authoring (effective immediately):**
+
+Every UI-touching Brief I write from 2026-05-18 forward includes:
+
+§ Read List — Mandatory Inputs (REVISED for P-AR-16):
+- List every mockup HTML file the SPEC touches
+- Each mockup gets a 1-line description of what it depicts + the decision that approved it (e.g., "LENS_INVENTORY_MOCKUP.html — D-M1-02 ratified 2026-05-14")
+
+§ Success Criteria — Mockup Fidelity Section:
+- Per screen: "Side-by-side Chrome MCP screenshot of mockup vs live shows ≤ N material differences, all classified as intentional deviations"
+- If material drift > 0 and not pre-authorized → Pipeline does not return 🟢
+
+§ Pre-flight — Mockup Inventory:
+- Executor lists every mockup file relevant to the SPEC scope
+- Executor opens each mockup in Chrome MCP, captures its current state, references it during build
+
+**Cost:** Adds ~15 minutes per UI Brief. Saves the ~40-50 hours of "rebuild to match mockups" SPECs that this gap created in M1.
+
+**Anti-pattern caught:** "The Brief said filters at top; I added a filter chip — done." The mockup said "production_type chip pair + 3-tier brand→design→variant cascade selects + bulk search bar + sticky toolbar". The chip alone is necessary not sufficient. P-AR-16 forces the Executor to consult the mockup directly, not interpret prose.

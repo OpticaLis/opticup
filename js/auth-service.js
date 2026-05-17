@@ -304,14 +304,15 @@ function checkBranchAccess(branchId) {
   return emp.branch_id === branchId;
 }
 
-// --- 9. applyUIPermissions ---
+// --- 9. applyUIPermissions --- honors `|` OR syntax (M1_FINAL_NIGHT_PHASE_1-FIX 2026-05-17)
+const _orPerm = s => !!s && (s.indexOf('|') !== -1 ? s.split('|').some(p => hasPermission(p.trim())) : hasPermission(s.trim()));
 function applyUIPermissions() {
   if (typeof PermissionUI !== 'undefined') PermissionUI.apply();
   document.querySelectorAll('[data-permission]').forEach(el => {
-    el.style.display = hasPermission(el.getAttribute('data-permission')) ? '' : 'none';
+    el.style.display = _orPerm(el.getAttribute('data-permission')) ? '' : 'none';
   });
   document.querySelectorAll('[data-tab-permission]').forEach(el => {
-    el.style.display = hasPermission(el.getAttribute('data-tab-permission')) ? '' : 'none';
+    el.style.display = _orPerm(el.getAttribute('data-tab-permission')) ? '' : 'none';
   });
   // Body-class toggle for CSS rules gated on settings.edit (cost columns,
   // admin-only fields). Replaces the previous admin.js side-effect.

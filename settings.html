@@ -167,6 +167,21 @@
       </div>
     </div>
 
+    <!-- Section 5: Inventory Management (M1 Unified Flow Phase B) -->
+    <!-- Permission-gated by settings.inventory.manage; section hidden if not granted. -->
+    <div class="settings-section" id="settings-section-inventory" style="display:none">
+      <h2 class="settings-section-title">&#128230; ניהול מלאי</h2>
+      <div class="settings-grid">
+        <div class="settings-field">
+          <label for="set-default-supplier">ספק ברירת מחדל לקבלת סחורה</label>
+          <select id="set-default-supplier">
+            <option value="">&mdash; בחר ספק &mdash;</option>
+          </select>
+          <small style="color:var(--g400);font-size:.78rem">משמש למילוי אוטומטי במסכי הוספת מלאי (סריקה מהירה / הוספה ידנית / קבלת סחורה מלאה).</small>
+        </div>
+      </div>
+    </div>
+
     <div class="settings-actions">
       <button class="btn-p" id="save-settings" onclick="saveSettings()">&#128190; שמור הגדרות</button>
     </div>
