@@ -231,19 +231,12 @@
               <input type="text" id="manual-cost" placeholder="&#8362;85" />
             </div>
           </div>
-          <!-- Phase C — supplier + delivery-note + undocumented checkbox -->
+          <!-- Phase C (post-debt-decoupling) — supplier only; delivery-note + manager-review
+               UI removed per architectural rule (inventory module does not own document tracking). -->
           <div class="field-group">
             <label for="manual-supplier">ספק:</label>
             <select id="manual-supplier"><option value="">&mdash; בחר ספק &mdash;</option></select>
           </div>
-          <div class="field-group">
-            <label for="manual-dn">תעודת משלוח (אופציונלי):</label>
-            <input type="text" id="manual-dn" placeholder="DN-2026-..." />
-          </div>
-          <label class="manual-undocumented-row" for="manual-undocumented">
-            <input type="checkbox" id="manual-undocumented" />
-            <span>ללא תעודה (דורש בדיקת מנהל)</span>
-          </label>
           <button type="button" class="btn-add-stock" id="manual-add-submit" title="הוסף למלאי">&#10133; הוסף למלאי</button>
         </div>
       </div>
@@ -648,14 +641,8 @@
         <label for="drawer-qs-supplier">ספק:</label>
         <select id="drawer-qs-supplier"><option value="">&mdash; בחר ספק &mdash;</option></select>
       </div>
-      <div class="field-group">
-        <label for="drawer-qs-dn">תעודת משלוח (אופציונלי):</label>
-        <input type="text" id="drawer-qs-dn" placeholder="DN-2026-..." />
-      </div>
-      <label class="manual-undocumented-row" for="drawer-qs-undocumented">
-        <input type="checkbox" id="drawer-qs-undocumented" />
-        <span>ללא תעודה (דורש בדיקת מנהל)</span>
-      </label>
+      <!-- Phase C (post-debt-decoupling) — delivery-note + manager-review UI removed
+           per architectural rule (inventory does not own document tracking). -->
     </div>
     <div class="qs-drawer-footer">
       <button type="button" id="drawer-qs-submit" class="btn btn-success qs-drawer-submit">&#10003; הוסף למלאי</button>

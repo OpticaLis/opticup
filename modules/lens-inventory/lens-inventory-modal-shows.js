@@ -229,15 +229,12 @@
   }
 
   async function _submitAddStock(params) {
-    // params: { variant_id, sph, cyl, qty_received, unit_cost,
-    //           supplier_id, delivery_note_number,
-    //           is_documented, undocumented_reason, source }
+    // params: { variant_id, sph, cyl, qty_received, unit_cost, supplier_id, source }
+    // Post-debt-decoupling: delivery_note_number + is_documented + undocumented_reason
+    // params REMOVED. Inventory does not track documentation state; that belongs to
+    // the supplier-debt module.
     if (!params.supplier_id) {
       Toast.error('בחר ספק לפני שמירה');
-      return null;
-    }
-    if (!params.is_documented && !hasPermission('inventory.add.undocumented')) {
-      Toast.error('אין הרשאה להוסיף מלאי ללא תעודה (פנה למנהל)');
       return null;
     }
     var tid = getTenantId();
@@ -264,14 +261,12 @@
       var { data, error } = await sb.rpc('m1_create_receipt_from_box', {
         p_tenant_id: tid,
         p_supplier_id: params.supplier_id,
-        p_delivery_note_number: params.delivery_note_number || null,
+        p_delivery_note_number: null,
         p_lines: [line],
         p_box_id: null,
         p_box_supplier_barcode: null,
         p_supplier_number: null,
-        p_confirmed_by: emp.id || null,
-        p_is_documented: !!params.is_documented,
-        p_undocumented_reason: params.undocumented_reason || null
+        p_confirmed_by: emp.id || null
       });
       if (error) throw error;
       Toast.success('מלאי עודכן (' + (params.source || 'manual') + ')');
@@ -298,8 +293,6 @@
       var qty = (document.getElementById('manual-qty') || {}).value;
       var cost = (document.getElementById('manual-cost') || {}).value;
       var supplier = (document.getElementById('manual-supplier') || {}).value;
-      var dn = (document.getElementById('manual-dn') || {}).value;
-      var und = (document.getElementById('manual-undocumented') || {}).checked;
       var receiptId = await _submitAddStock({
         variant_id: ctx.variant_id,
         sph: sph || null,
@@ -307,17 +300,13 @@
         qty_received: qty,
         unit_cost: cost,
         supplier_id: supplier,
-        delivery_note_number: dn,
-        is_documented: !und,
-        undocumented_reason: und ? 'הוספה ידנית מתוך מסך מלאי' : null,
         source: 'manual'
       });
       if (receiptId) {
         // Clear inputs after success
-        ['manual-sph','manual-cyl','manual-qty','manual-cost','manual-dn'].forEach(function(id) {
+        ['manual-sph','manual-cyl','manual-qty','manual-cost'].forEach(function(id) {
           var el = document.getElementById(id); if (el) el.value = '';
         });
-        var u = document.getElementById('manual-undocumented'); if (u) u.checked = false;
       }
     });
   }

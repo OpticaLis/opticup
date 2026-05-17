@@ -80,6 +80,8 @@
   }
 
   async function _onSubmit() {
+    // Post-debt-decoupling: delivery-note + undocumented checkbox UI removed;
+    // _submitAddStock no longer accepts those params.
     var resolved = document.getElementById('drawer-qs-resolved');
     var variantId = resolved && resolved.dataset.variantId ? resolved.dataset.variantId : null;
     var qty = (document.getElementById('drawer-qs-qty') || {}).value;
@@ -87,8 +89,6 @@
     var sph = (document.getElementById('drawer-qs-sph') || {}).value;
     var cyl = (document.getElementById('drawer-qs-cyl') || {}).value;
     var supplier = (document.getElementById('drawer-qs-supplier') || {}).value;
-    var dn = (document.getElementById('drawer-qs-dn') || {}).value;
-    var und = (document.getElementById('drawer-qs-undocumented') || {}).checked;
     if (!window.LensInvModalShows || typeof window.LensInvModalShows._submitAddStock !== 'function') {
       Toast.error('שגיאת מערכת — חסר _submitAddStock');
       return;
@@ -100,16 +100,12 @@
       qty_received: qty,
       unit_cost: cost,
       supplier_id: supplier,
-      delivery_note_number: dn,
-      is_documented: !und,
-      undocumented_reason: und ? 'סריקה מהירה ללא תעודה' : null,
       source: 'quick-scan'
     });
     if (receiptId) {
       _setOpen(false);
-      ['drawer-qs-barcode','drawer-qs-sph','drawer-qs-cyl','drawer-qs-qty','drawer-qs-cost','drawer-qs-dn']
+      ['drawer-qs-barcode','drawer-qs-sph','drawer-qs-cyl','drawer-qs-qty','drawer-qs-cost']
         .forEach(function(id) { var el = document.getElementById(id); if (el) el.value = ''; });
-      var u = document.getElementById('drawer-qs-undocumented'); if (u) u.checked = false;
       _renderResolvedVariant(null);
     }
   }
