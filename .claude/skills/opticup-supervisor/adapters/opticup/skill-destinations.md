@@ -27,11 +27,31 @@ absolute — they override the Confidence ladder.
 | **destructive-supabase-op** | `DROP TABLE`, `DROP POLICY`, `TRUNCATE`, `DELETE FROM` without WHERE+tenant_id, `ALTER TABLE ... DROP`, `force-push to develop` | Per Iron Rule 32 + Supabase MCP autonomy: destructive DB operations may be SPEC-declared but still require escalation if encountered mid-run. The Supervisor never grants the bypass. |
 
 The Supervisor's Step 2 scans the escalation's `Stuck at:` + `Question for
-Architect:` fields for any of the trigger keywords. A match → write a
-`Status: NO_TRIAGE_HARD_STOP` response with `Cited source:` pointing here.
+Architect:` fields for any of the trigger keywords.
+
+**Hard-Stop fires when the escalation is asking the Supervisor to AUTHORIZE
+an action in the Hard-Stop category** (e.g., "can I push to main this once,
+the gates passed?"). In that case the response is `Status: NO_TRIAGE_HARD_STOP`
+with `Confidence: 0` (the Supervisor never authorizes Hard-Stop-category
+actions regardless of how strong an analogous-case citation would be).
+
+**Hard-Stop does NOT fire when the escalation is asking which path the rule
+mandates** (e.g., "should I push to main now or follow the standard merge
+path?"). In that case the canonical source is read normally; if it
+unambiguously PROHIBITS the action, the Supervisor cites the rule at the
+appropriate confidence and the proposed resolution is "do not perform the
+action; follow the standard path." The response is `Status: SHADOW_PROPOSAL`
+(or `ACTIVE_RESOLUTION` post-flip) with `Escalation continues: yes` in
+Shadow Mode + `no` in Active Mode when Confidence ≥ 3.
 
 The escalation may also include an explicit `Hard-Stop: <category>` tag in
-its metadata; the Supervisor trusts the tag and short-circuits identically.
+its metadata; the Supervisor trusts the tag for routing (forces escalation
+continuation) but still searches for citations to populate the response body.
+
+The distinguishing question for Step 2: **does the Supervisor citing the
+canonical source amount to AUTHORIZING the Hard-Stop-category action?**
+- If yes (authorization-shaped) → Hard-Stop. Confidence 0. Escalate.
+- If no (rule-application-shaped, including refusal) → search proceeds.
 
 ---
 
