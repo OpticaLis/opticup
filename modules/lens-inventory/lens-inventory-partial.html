@@ -268,7 +268,11 @@
       <button type="button" class="bottom-tab" data-bottom-tab="analytics" role="tab" aria-selected="false">&#128202; ניתוח מלאי</button>
     </div>
     <div class="lens-inv-bottom-tabs-body" id="bottom-tabs-body" role="tabpanel">
-      <!-- Default: movements tab content (sample data per mockup §1) -->
+      <!-- Default: movements tab content (sample data per mockup §1).
+           M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION (2026-05-17): מחיר מכירה
+           column added always-visible between כמות and מסמך; עלות יחידה renamed
+           עלות and tagged .col-permission-gated + data-permission="inventory
+           .view_cost_price" so PermissionUI hides it for users without the key. -->
       <table class="movements-table" id="movements-sample-table">
         <thead>
           <tr>
@@ -277,7 +281,8 @@
             <th>SPH &times; CYL</th>
             <th>אצווה</th>
             <th>כמות</th>
-            <th>עלות יחידה</th>
+            <th>מחיר מכירה</th>
+            <th class="col-permission-gated" data-permission="inventory.view_cost_price">עלות יחידה</th>
             <th>מסמך</th>
             <th>משתמש</th>
           </tr>
@@ -289,7 +294,8 @@
             <td>-2.50 &times; -0.75</td>
             <td>L-2401 (FIFO)</td>
             <td class="movement-qty-out">&minus;1</td>
-            <td>&#8362;82.00</td>
+            <td>&#8362;149.00</td>
+            <td class="col-permission-gated" data-permission="inventory.view_cost_price">&#8362;82.00</td>
             <td>הזמנה #4521</td>
             <td>שירה</td>
           </tr>
@@ -299,7 +305,8 @@
             <td>-3.00 &times; -1.00</td>
             <td>L-2425 (חדש)</td>
             <td class="movement-qty-in">+1</td>
-            <td>&#8362;82.00</td>
+            <td>&#8362;149.00</td>
+            <td class="col-permission-gated" data-permission="inventory.view_cost_price">&#8362;82.00</td>
             <td>החזרה #87</td>
             <td>אבי</td>
           </tr>
@@ -309,7 +316,8 @@
             <td>טווח שלם</td>
             <td>L-2418 (חדש)</td>
             <td class="movement-qty-in">+48</td>
-            <td>&#8362;85.00</td>
+            <td>&#8362;155.00</td>
+            <td class="col-permission-gated" data-permission="inventory.view_cost_price">&#8362;85.00</td>
             <td>קבלת סחורה #312</td>
             <td>דניאל</td>
           </tr>
@@ -319,7 +327,8 @@
             <td>-1.00 &times; 0.00</td>
             <td>L-2415</td>
             <td class="movement-qty-tr">&larr;2</td>
-            <td>&#8362;82.00</td>
+            <td>&#8362;149.00</td>
+            <td class="col-permission-gated" data-permission="inventory.view_cost_price">&#8362;82.00</td>
             <td>העברה #15</td>
             <td>דניאל</td>
           </tr>
@@ -329,7 +338,8 @@
             <td>-2.00 &times; -0.50</td>
             <td>L-2422 (חדש)</td>
             <td class="movement-qty-adj">+2</td>
-            <td>&#8362;85.00</td>
+            <td>&#8362;155.00</td>
+            <td class="col-permission-gated" data-permission="inventory.view_cost_price">&#8362;85.00</td>
             <td>ספירה #44</td>
             <td>שירה</td>
           </tr>

@@ -243,6 +243,14 @@
       attachVariantRangeDisplay();
       // SPEC 4a — init Quick Receipt drawer after the partial is mounted.
       await initQuickReceiptDrawer();
+      // SPEC 4a — apply permission gating to .col-permission-gated columns in
+      // lots-table + movements-table (data-permission="inventory.view_cost_price").
+      if (window.PermissionUI && typeof window.PermissionUI.apply === 'function') {
+        try {
+          const section = document.querySelector('.lens-tab-section[data-tab="inventory"]') || document;
+          window.PermissionUI.applyTo(section);
+        } catch (_) {}
+      }
       console.log('[lens-inventory] bootstrap complete (1to1 rebuild + Quick Receipt drawer)');
     } catch (err) {
       console.error('[lens-inventory] bootstrap failed', err);

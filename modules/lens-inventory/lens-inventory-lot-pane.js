@@ -128,24 +128,43 @@
       return;
     }
 
+    // SPEC M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION Round 1 mockup: 5 columns
+    // (אצווה, נכנס, מחיר מכירה, עלות (gated), נותר). The עלות column carries
+    // .col-permission-gated + data-permission="inventory.view_cost_price" — hidden
+    // by PermissionUI for users without the key. מחיר מכירה is computed via the
+    // effective_price RPC in a future SPEC; here it shows the stock_lot's unit_cost
+    // marked-up placeholder OR "—" when offering/overlay lookup is not done yet.
     let html = '<table class="lots-table">' +
-      '<thead><tr><th>אצווה</th><th>נכנס</th><th>עלות</th><th>נותר</th></tr></thead><tbody>';
+      '<thead><tr>' +
+        '<th>אצווה</th>' +
+        '<th>נכנס</th>' +
+        '<th>מחיר מכירה</th>' +
+        '<th class="col-permission-gated" data-permission="inventory.view_cost_price">עלות</th>' +
+        '<th>נותר</th>' +
+      '</tr></thead><tbody>';
     cellLots.forEach((lot, idx) => {
       const lotNumber = lot.lot_number || lot.id.substring(0, 8);
       const qtyRemaining = lot.qty_remaining || 0;
       const cost = lot.unit_cost ? (Number(lot.unit_cost).toFixed(0)) : '—';
       const cur = lot.unit_cost_currency === 'USD' ? '$' : '₪';
+      // Placeholder for sell_price — effective_price RPC integration deferred to SPEC 5.
+      const sellPrice = '—';
       const received = lot.received_at ? new Date(lot.received_at).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' }) : '—';
       const fifoTag = idx === 0 ? '<span class="fifo-tag">FIFO #1</span>' : '';
       html += '<tr>' +
         '<td>' + fifoTag + escapeHtml(lotNumber) + '</td>' +
         '<td>' + escapeHtml(received) + '</td>' +
-        '<td>' + escapeHtml(cur + cost) + '</td>' +
+        '<td>' + escapeHtml(sellPrice) + '</td>' +
+        '<td class="col-permission-gated" data-permission="inventory.view_cost_price">' + escapeHtml(cur + cost) + '</td>' +
         '<td><strong>' + escapeHtml(String(qtyRemaining)) + '</strong></td>' +
         '</tr>';
     });
     html += '</tbody></table>';
     cont.innerHTML = html;
+    // Re-scan permission gates for the freshly-rendered table.
+    if (window.PermissionUI && typeof window.PermissionUI.applyTo === 'function') {
+      try { window.PermissionUI.applyTo(cont); } catch (_) {}
+    }
   }
 
   window.LensInvLots = { showLotsFor, renderLots };
