@@ -1,5 +1,32 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-17 evening — M1_5_SHARED_COMPONENTS_PHASE_0 — 8 shared components + tokens (M1 Lens rebuild Phase 0)
+
+SPEC: `M1_5_SHARED_COMPONENTS_PHASE_0` ([folder](specs/M1_5_SHARED_COMPONENTS_PHASE_0/))
+Source Brief: `modules/Module 1 - Inventory Management/architecture-brief/M1_LENS_MOCKUP_FIDELITY_FULL_REBUILD_BRIEF.md` §SPEC 2.
+
+**Bounded-Autonomy single-session execution.** Pipeline coordination lock claimed at start, released at close; 0 collisions with parallel SPEC 3 (`M1_LENS_DB_SCHEMA_RECEIPTS_NOTES`). No escalations to Daniel; SPEC §7 Destructive Operations stayed `None.` per Rule 21 investigation (no replace+migrate verdicts).
+
+**11 commits (after `236b6b8` SPEC_START):**
+
+- `f1ab3c1` — `chore(spec): M1_5_SHARED_COMPONENTS_PHASE_0 — Rule 21 investigation` — RULE_21_INVESTIGATION.md (152 lines), mandatory first deliverable per SPEC §9. Per-component verdicts: 1 EXTEND (data-table → existing table-builder.js) + 7 NEW + 0 replace+migrate.
+- `975b777` — `feat(shared/tokens): mockup palette + source-band + progress + dark + gradient + toggle tokens` — `shared/css/tokens.css` (149 lines).
+- `facc069` — `feat(shared): chip-filter-row + chip-filter.css` — `shared/js/chip-filter-row.js` (115 lines) + `shared/css/chip-filter.css` (117 lines).
+- `3f1bf77` — `feat(shared): stat-card-row + stat-card.css` — `shared/js/stat-card-row.js` (139) + `shared/css/stat-card.css` (111).
+- `693401a` — `feat(shared): group-header-row + table.css extensions for group/permission/pagination` — `shared/js/group-header-row.js` (104) + table.css 174→260 (Iron-Rule-12 safe).
+- `6260be6` — `feat(shared): wizard-step-indicator + wizard-step-indicator.css` — `shared/js/wizard-step-indicator.js` (131) + `shared/css/wizard-step-indicator.css` (121). DISTINCT from modal-wizard.js (`.wstep-*` prefix vs `.wizard-step-*`).
+- `556dea9` — `feat(shared): side-detail-panel + side-detail.css` — `shared/js/side-detail-panel.js` (166) + `shared/css/side-detail.css` (124).
+- `017b825` — `feat(shared): data-table extension — pagination, permission-gated cols, group-header rows` — EXTEND table-builder.js 298→349 + NEW `shared/js/table-builder-extensions.js` (86) to keep Iron Rule 12 safe. NO breaking API change for existing consumers.
+- `1b39c5a` — `feat(shared): quick-receipt-drawer + quick-receipt.css` — `shared/js/quick-receipt-drawer.js` (275) + `shared/css/quick-receipt.css` (220). Enforces Daniel decision #9 (sole inventory-entry path).
+- `7b344bc` — `feat(shared): lens-details-drawer + lens-details.css` — `shared/js/lens-details-drawer.js` (278) + `shared/css/lens-details.css` (210). 2-tab variant detail drawer (logs read-only + notes edit-by-permission).
+- `<close>` — `chore(spec): close M1_5_SHARED_COMPONENTS_PHASE_0 with retrospective + Tier C smoke harness + docs` — EXECUTION_REPORT.md + FINDINGS.md + Tier C component-test HTML + GLOBAL_MAP/FILE_STRUCTURE/MODULE_MAP/CHANGELOG/SESSION_CONTEXT/ROADMAP updates.
+
+**Iron Rules clean.** Rules 12 / 14 / 15 / 18 / 21 / 23 / 31 / 32 verified at every commit by pre-commit hooks (no bypasses). Largest file post-edit: `shared/js/table-builder.js` at 349 / 350 cap — the Rule-21-investigation's planned split into `table-builder-extensions.js` came in just before the cap, validating the §5 mitigation.
+
+**Architecture impact.** All 6 subsequent lens-screen rebuild SPECs (4-9) can now consume the 8 primitives instead of re-implementing them inline. Iron Rule 21 violation prevented for 6 future Pipelines × ~5 primitives each = ~30 duplicate code paths avoided. Module 1.5's component surface grew from 11 → 16 distinct JS exports.
+
+**Tier C verification.** A component-isolation test harness at `shared/tests/M1_5_SPEC2_components-test.html` mounts each of the 8 components in isolation; runtime visual verification deferred to opticup-localhost-tester per the SPEC 1 Author Proposal A-2 precedent (multi-SPEC marathon Pattern, deferral is correct discipline). The harness validates structural rendering + basic API surface (chip-filter click, stat-card select, stepper advance, drawer open/close). Daniel and/or Tester run Chrome MCP capture against this page when convenient.
+
 ## 2026-05-17 late evening — PARALLEL_PIPELINE_COORDINATION — file-system-mediated session locks
 
 SPEC: `PARALLEL_PIPELINE_COORDINATION` ([folder](specs/PARALLEL_PIPELINE_COORDINATION/))
