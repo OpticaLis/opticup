@@ -1,7 +1,64 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1 Lens Mockup-Fidelity Rebuild — Foundation Phase Authoring Complete — 2026-05-17 (SPEC 1 closed 🟡, SPECs 2 + 3 + 4a authored with execution deferred to dedicated sessions — see "Foundation Phase Handoff" section below)
+M1 Lens Mockup-Fidelity Rebuild — SPEC 3 (DB Schema Receipts & Notes) closed 🟢 — 2026-05-17 (SPEC 1 closed 🟡, SPEC 2 closed 🟡, SPEC 3 closed 🟢, SPEC 4a unblocked and ready to execute — see "2026-05-17 — M1_LENS_DB_SCHEMA_RECEIPTS_NOTES" section below)
+
+## 2026-05-17 — M1_LENS_DB_SCHEMA_RECEIPTS_NOTES (🟢 CLOSED — SPEC 3 of 4 foundation)
+
+**Status:** ✅ Closed. 3 of 4 foundation SPECs now executed + closed. SPEC 4a unblocked.
+
+**Pipeline shape:** Halted-and-resumed across 2 sessions due to two stop-on-deviation triggers in Session A (coordination collision with parallel SPEC 2 lock; SPEC §9 permission seed template structurally wrong against live `permissions`/`role_permissions` schema). Cowork-Architect issued `ARCHITECT_DECISION_001_SPEC3_AMENDMENT.md` resolving both. Session B executed end-to-end against the amended SPEC.
+
+**Commits (Session B):**
+- `05e28bb` feat(db): m1 lens — add purchase_receipt.has_no_invoice column
+- `447f3f6` feat(db): m1 lens — create lens_variant_notes table with RLS
+- `999c433` feat(db): m1 lens — seed inventory.view_cost_price + lens_pricing.edit permission keys
+- _(this commit)_ chore(spec): close M1_LENS_DB_SCHEMA_RECEIPTS_NOTES with retrospective
+
+**Live DB deltas:**
+- `purchase_receipt.has_no_invoice BOOLEAN NOT NULL DEFAULT FALSE` (Brief decision #14)
+- `lens_variant_notes` table with canonical 2-policy RLS (Brief decision #18 — Pricing screen לוגים+הערות drawer)
+- 4 new `permissions` rows: (inventory.view_cost_price + lens_pricing.edit) × (prizma + demo)
+- 8 new `role_permissions` rows: above × (ceo + manager)
+
+**Migrations applied via Supabase MCP `apply_migration` + mirrored to repo (no TD-2 drift introduced):**
+- `20260517161202_m1_lens_purchase_receipt_has_no_invoice`
+- `20260517161421_m1_lens_variant_notes`
+- `20260517161725_m1_lens_permission_seeds_view_cost_price_and_lens_pricing_edit`
+
+**Docs updated:**
+- `docs/GLOBAL_SCHEMA.sql` — M1 Lens Phase 1A block annotated with SPEC 3 deltas
+- `docs/DB_TABLES_REFERENCE.md` — T.PURCHASE_RECEIPT row extended + new T.LENS_VARIANT_NOTES row
+- `modules/Module 1/docs/db-schema.sql` — full SPEC 3 section with applied SQL
+- `js/shared.js` — T.LENS_VARIANT_NOTES T constant added
+- `js/shared-field-map.js` — FIELD_MAP entries for `purchase_receipt` and `lens_variant_notes`
+- `TECH_DEBT.md` — #M1_LENS_PERMISSIONS_TEMPLATE_AUTO_REPLICATION entry filed (per ARCHITECT_DECISION 001 Q2 follow-up)
+
+**Escalation lifecycle:**
+- `2026-05-17T_M1_LENS_DB_SCHEMA_RECEIPTS_NOTES_PREFLIGHT_HALT.md` → renamed `RESOLVED_*` per Brief Contract E.
+- `ARCHITECT_DECISION_001_SPEC3_AMENDMENT.md` ships with the closeout (lives in SPEC folder permanently).
+
+**Verify-script + advisor state:**
+- `npm run verify:integrity` — exit 0 at every commit boundary
+- `verify.mjs --staged` — 0 violations across all 4 commits (2 file-size soft warnings, both under 350 max)
+- `mcp__supabase__get_advisors(security)` — no new HIGH/ERROR after any migration
+
+**Downstream unblocks:**
+- SPEC 4a (`M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION`) — pre-execution gate now satisfied (both SPEC 2 + SPEC 3 close commits exist on `origin/develop`)
+- SPEC 5 (Pricing rebuild) — `lens_variant_notes` consumer table + `lens_pricing.edit` permission gate are now live
+
+**Findings (logged to FINDINGS.md inside SPEC folder; not absorbed):**
+- F-1 LOW — CLAUDE.md Iron Rule 5 + GLOBAL_MAP.md point at `js/shared.js` for FIELD_MAP; actual location is `js/shared-field-map.js`
+- F-2 INFO — SPEC §5 stop-trigger #4 (CREATE TABLE false-positive) is phantom; hook does not scan CREATE
+- F-3 LOW — Rule-15 hook scans MAP-style docs identically to migration files (caused Commit 3 retry)
+- F-4 LOW — TECH_DEBT.md naming convention undocumented (slug vs numbered)
+- F-5 INFO — `purchase_receipt.delivery_note_number` doc says NOT NULL but live is nullable
+- F-6 INFO — activation-prompt v1 had wrong pipeline-coordination flag names (now superseded by v2)
+- F-7 INFO — `js/shared.js` + `js/shared-field-map.js` slightly over 300-line soft target (325 + 318, both under 350 max)
+
+---
+
+## 2026-05-17 — Foundation Phase Authoring Handoff (Foreman dispatch)
 
 ## 2026-05-17 — Foundation Phase Authoring Handoff (Foreman dispatch)
 

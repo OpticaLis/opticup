@@ -6,6 +6,47 @@
 
 ## Lens UI Rebuild Phase 0 — Foundation (in progress 2026-05-17)
 
+### SPEC 3 — M1_LENS_DB_SCHEMA_RECEIPTS_NOTES — 2026-05-17 (🟢 CLOSED)
+
+**Scope:** Foundation DB deltas for the lens mockup rebuild — 1 column ADD on `purchase_receipt`, 1 new tenant-scoped `lens_variant_notes` table with canonical 2-policy RLS, 2 new permission keys seeded for both tenants × 2 roles.
+
+**Pipeline shape:** Halted-and-resumed (2 sessions). Session A halted at pre-flight with 2 stop-on-deviation triggers (coordination collision with SPEC 2 lock + SPEC §9 template structurally wrong vs live `permissions` schema). Cowork-Architect issued `ARCHITECT_DECISION_001_SPEC3_AMENDMENT.md`; Session B executed against the amendment end-to-end.
+
+**Commits:**
+- `80cb4cb` chore(spec): author M1_LENS_DB_SCHEMA_RECEIPTS_NOTES SPEC
+- `05e28bb` feat(db): m1 lens — add purchase_receipt.has_no_invoice column
+- `447f3f6` feat(db): m1 lens — create lens_variant_notes table with RLS
+- `999c433` feat(db): m1 lens — seed inventory.view_cost_price + lens_pricing.edit permission keys
+- _(this commit)_ chore(spec): close M1_LENS_DB_SCHEMA_RECEIPTS_NOTES with retrospective
+
+**Migrations applied:**
+- `20260517161202_m1_lens_purchase_receipt_has_no_invoice` (ALTER TABLE ADD COLUMN)
+- `20260517161421_m1_lens_variant_notes` (CREATE TABLE + 2 indexes + RLS canonical pattern)
+- `20260517161725_m1_lens_permission_seeds_view_cost_price_and_lens_pricing_edit` (4 + 8 INSERT seed rows, idempotent via ON CONFLICT)
+
+**Files changed:**
+- 3 new migration files in `supabase/migrations/`
+- `docs/GLOBAL_SCHEMA.sql` — M1 Lens block annotated with SPEC 3 deltas
+- `docs/DB_TABLES_REFERENCE.md` — T.PURCHASE_RECEIPT row extended + new T.LENS_VARIANT_NOTES row
+- `modules/Module 1/docs/db-schema.sql` — full SPEC 3 section with applied DDL
+- `js/shared.js` — T.LENS_VARIANT_NOTES added (1 line)
+- `js/shared-field-map.js` — FIELD_MAP entries for purchase_receipt + lens_variant_notes (+5 entries)
+- `TECH_DEBT.md` — #M1_LENS_PERMISSIONS_TEMPLATE_AUTO_REPLICATION entry
+- New SPEC folder artifacts: `EXECUTION_REPORT.md`, `FINDINGS.md`, `MIGRATION.md`, `ARCHITECT_DECISION_001_SPEC3_AMENDMENT.md`, `ACTIVATION_PROMPT.md`, `ACTIVATION_PROMPT_v2.md`
+- Escalation file renamed `PREFLIGHT_HALT` → `RESOLVED_PREFLIGHT_HALT` per Brief Contract E
+
+**Verification:**
+- Live DB confirmed: 4 permissions rows (2 keys × 2 tenants) + 8 role_permissions rows (2 keys × 2 tenants × 2 roles)
+- `lens_variant_notes`: rls_enabled=true, 2 policies (service_bypass + tenant_isolation), 7 columns, 3 indexes
+- `purchase_receipt.has_no_invoice`: NOT NULL, DEFAULT FALSE, boolean
+- `npm run verify:integrity` exit 0 at every commit
+- `verify.mjs --staged` 0 violations across all 4 commits
+- `get_advisors(security)` — no new HIGH/ERROR after any migration
+
+**Architect amendment:** `ARCHITECT_DECISION_001_SPEC3_AMENDMENT.md` (Cowork-Architect, 2026-05-17) resolved Q1 (ceo+manager grants) / Q2 (both tenants seeded) / Q3 (accepted slug names) / Q4 (Hebrew display strings). Follow-up: TECH_DEBT `#M1_LENS_PERMISSIONS_TEMPLATE_AUTO_REPLICATION` tracks the eventual permissions_template + auto-replication trigger refactor before tenant 3 onboarding.
+
+---
+
 ### SPEC 1 — M1_LENS_PALETTE_RETIRE_UNIFIED — 2026-05-17 (🟡 CLOSED with Tier C deferred)
 
 **Scope:** Retire `M1_INVENTORY_UNIFIED_SCREEN §1.5 R-1..R-13` visual-palette rules + rewrite `css/lens-tabs.css` to mockup palette per ratification `D-M1-02..D-M1-14`.

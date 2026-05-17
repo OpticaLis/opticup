@@ -7,6 +7,23 @@
 
 ## Active Debt
 
+### #M1_LENS_PERMISSIONS_TEMPLATE_AUTO_REPLICATION — 🟡 permissions_template global table + auto-replication trigger
+
+**Where:** `permissions` + `role_permissions` tables (currently tenant-scoped with per-tenant duplicate rows), `tenants` lifecycle (no auto-replication on tenant create).
+
+**What:** Today every permission key + every role grant is stored once per tenant. Adding a new permission key requires inserting `(N_tenants × 1)` rows in `permissions` and `(N_tenants × N_roles_per_key)` rows in `role_permissions`. This is what the `M1_LENS_DB_SCHEMA_RECEIPTS_NOTES` SPEC §9 amendment had to do manually (4 + 8 rows for 2 keys × 2 tenants × 2 roles). When tenant 3+ onboards, every existing permission across every module must be replicated for the new tenant — currently a manual one-off seed script per tenant.
+
+Build a `permissions_template` global table (rows store the key + module + action + name_he + description WITHOUT tenant_id), then a BEFORE INSERT trigger on `tenants` (or a maintenance RPC) that replicates every template row into `permissions` for the new tenant. Same pattern for `role_permissions_template` if needed (or merge the two via a join model).
+
+**Why it's debt (and 🟡):** Functionally working today — SPEC 3's amendment kept the per-tenant duplication pattern intact, so demo + prizma both have the 4 new permission rows. But the second a third tenant onboards, every prior permission seed must be re-applied. The longer this debt sits, the bigger the migration footprint at tenant 3 (every permission key across every module needs the template row + replication). The cost rises linearly with key count.
+
+**Planned fix:** Single dedicated SPEC (~4–6h). Steps: (1) build `permissions_template` global table + matching unique constraint, (2) backfill from current `permissions` (deduplicate per-tenant rows into single template rows + verify identity across tenants), (3) replication trigger on `tenants` INSERT — fan out template → per-tenant rows, (4) decide migration order between this and any tenant 3 onboarding. Trigger this SPEC at: any new tenant 3+ onboarding event OR Architect-led Phase 0 SaaS hardening sweep, whichever comes first.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_DB_SCHEMA_RECEIPTS_NOTES/ARCHITECT_DECISION_001_SPEC3_AMENDMENT.md` (Q2 follow-up), 2026-05-17. Identified during pre-flight discovery that `permissions` + `role_permissions` are tenant-scoped — see escalation `modules/Module 1 - Inventory Management/escalations/2026-05-17T_M1_LENS_DB_SCHEMA_RECEIPTS_NOTES_PREFLIGHT_HALT.md` §3 for the schema-shape detail.
+
+---
+
+
 ### #M1_CL_ACCESSORY_POLISH — 🟢 Bundled M1 maintenance for 5 follow-up items from M1_CONTACT_LENSES_ACCESSORIES
 
 **Where:** modules/contact-lens-*, modules/accessory-*, scripts/checks/rule-14-tenant-id.mjs, lens_design CHECK constraint, js/shared.js FIELD_MAP, tenant_*_stock schema.
