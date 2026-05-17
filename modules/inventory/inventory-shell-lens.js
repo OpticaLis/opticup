@@ -50,6 +50,10 @@
       scripts: [
         'modules/lens-active-designs/lens-active-designs-tree.js',
         'modules/lens-active-designs/lens-active-designs-toggle.js',
+        'modules/lens-active-designs/lens-active-designs-stats.js',
+        'modules/lens-active-designs/lens-active-designs-filters.js',
+        'modules/lens-active-designs/lens-active-designs-table.js',
+        'modules/lens-active-designs/lens-active-designs-detail.js',
         'modules/lens-active-designs/lens-active-designs-main.js'
       ]
     },
