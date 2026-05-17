@@ -10,6 +10,7 @@
     "test:integrity-gate": "node scripts/test-integrity-gate.mjs",
     "test:root-discipline": "node scripts/test-root-discipline.mjs",
     "test:destructive-ops-gate": "node scripts/test-destructive-ops-gate.mjs",
+    "test:pipeline-coordination": "node scripts/test-pipeline-coordination.mjs",
     "dev": "npx http-server -p 3000 -c-1 -s .",
     "smoke": "node tests/smoke/baseline.test.mjs",
     "prepare": "husky"
