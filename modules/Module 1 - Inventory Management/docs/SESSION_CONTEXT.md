@@ -1,7 +1,51 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1_LENS_PALETTE_RETIRE_UNIFIED — 2026-05-17 (🟡 CLOSED WITH ONE DEFERRED CRITERION — Tier C VFV deferred to opticup-localhost-tester; lens-tabs.css palette swapped navy→gold per mockup ratification D-M1-02..D-M1-14; M1_INVENTORY_UNIFIED_SCREEN §1.5 R-1..R-13 marked DEPRECATED; foundation SPEC 1 of 4 for the M1 lens mockup-fidelity rebuild Pipeline)
+M1 Lens Mockup-Fidelity Rebuild — Foundation Phase Authoring Complete — 2026-05-17 (SPEC 1 closed 🟡, SPECs 2 + 3 + 4a authored with execution deferred to dedicated sessions — see "Foundation Phase Handoff" section below)
+
+## 2026-05-17 — Foundation Phase Authoring Handoff (Foreman dispatch)
+
+**Status:** 4 of 4 foundation SPECs authored. 1 of 4 fully executed + closed (SPEC 1). 3 of 4 await dedicated execution sessions. Foreman STOPS per user instruction.
+
+**Foundation SPECs (1→2→3→4a sequential):**
+
+| # | SPEC | Status | Commits | Execution est. (Brief) | Blocking? |
+|---|------|--------|---------|------------------------|-----------|
+| 1 | `M1_LENS_PALETTE_RETIRE_UNIFIED` | 🟡 CLOSED with Tier C deferred | `cbe3a8e` author, `eddc8a1` execute, `0949e97` close | ~2-3h (actual ~2h) | done |
+| 2 | `M1_5_SHARED_COMPONENTS_PHASE_0` | 📄 AUTHORED, execution deferred | `9fafd93` author | ~7-8h (8 shared components + Rule 21 deep-dive) | yes — blocks SPECs 4a + 4-9 |
+| 3 | `M1_LENS_DB_SCHEMA_RECEIPTS_NOTES` | 📄 AUTHORED, execution deferred | `80cb4cb` author | ~2h (1 ALTER COLUMN + 1 CREATE TABLE + 2 perm keys) | partial — blocks SPEC 4a + SPEC 5 |
+| 4a | `M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION` | 📄 AUTHORED, execution blocked | `4a89cfe` author | ~3-4h | blocked on SPECs 2 + 3 |
+
+**Recommended next-session ordering (parallelizable where dependencies allow):**
+
+- **Track A** (sequential, blocking the rest): SPEC 2 → SPEC 4a → unblocks Groups A/B/C
+- **Track B** (independent of A, can run in parallel with SPEC 2): SPEC 3 → unblocks SPEC 5
+
+Either: 2 fresh sessions in parallel (SPEC 2 + SPEC 3), then 1 session for SPEC 4a after both close.
+
+**Foreman handoff notes:**
+
+- SPEC 1 was a clean ~2h palette rewrite; only Tier C VFV deferred to opticup-localhost-tester (near-zero regression risk on a priori grounds — pure CSS color-value swap).
+- SPEC 2 is the largest of the 4 (~7-8h) — Brief lists 8 components but Foreman's §0 Rule 21 sweep flagged HIGH-overlap candidates (`data-table` vs `table-builder.js`; `wizard-step-indicator` vs `modal-wizard.js`; drawers vs `modal-builder.js`). Executor pre-flight MUST produce `RULE_21_INVESTIGATION.md` as first commit before any new code lands.
+- SPEC 3 scope is significantly smaller than Brief assumed (1 column ADD instead of 4 — `purchase_receipt` already has 3 of the 4 Brief-named columns from Lens-1A). Caught at Foreman §0 author-time verification.
+- SPEC 4a is purely authored — depends on SPEC 2 + SPEC 3 outputs.
+- After SPECs 2 + 3 + 4a close, the Brief's Groups A/B/C (6 screen-rebuild SPECs 4-9 + SPEC 10) become eligible for parallel-worktree execution.
+
+**Cross-cutting decisions captured during authoring (apply to all foundation SPECs):**
+
+- The Brief's "no time budget per Pipeline — mockup fidelity wins" is honored by deferring rushed execution to dedicated sessions.
+- Pattern P-AR-16 (Mockup IS the spec) applied in SPEC 1 — overrode the Brief's "dark navy table headers" instruction in favor of mockup-reality (light slate for data tables).
+- Iron Rule 21 enforced at SPEC author time, not deferred to executor — SPEC 2 §0 documents the per-component overlap candidates explicitly.
+
+**Pending Master-Doc updates (deferred to end of foundation phase):**
+
+- `MASTER_ROADMAP.md §3` — single update after all 4 foundation SPECs close 🟢/🟡 cleaner than per-SPEC updates.
+- `docs/GLOBAL_MAP.md` — update happens during SPEC 2 closure (new shared components register here).
+- `docs/GLOBAL_SCHEMA.sql` — update happens during SPEC 3 closure (new table + column register here).
+
+---
+
+## 2026-05-17 — M1_LENS_PALETTE_RETIRE_UNIFIED (🟡 CLOSED — SPEC 1 of 4 foundation, Full-Auto Pipeline)
 
 ## 2026-05-17 — M1_LENS_PALETTE_RETIRE_UNIFIED (🟡 CLOSED — SPEC 1 of 4 foundation, Full-Auto Pipeline)
 
