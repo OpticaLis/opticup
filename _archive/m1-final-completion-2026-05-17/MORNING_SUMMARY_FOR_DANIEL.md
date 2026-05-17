@@ -1,5 +1,25 @@
 🌅 בוקר טוב, דניאל.
 
+**עדכון אחר ה־VFV הידני שלך בבוקר 2026-05-17:** מצאת באג קריטי בשלב 1 — הכפתורים החדשים היו `display:none` למרות שלמשתמש יש את ההרשאות. אתה צדקת לחלוטין. הריצה הקודמת VFV־ה את "האלמנט קיים ב־DOM" במקום "המשתמש יכול לראות+ללחוץ+להשתמש". 🔴
+
+**ביצעתי Phase 1-FIX (קומיט `7f1dc31`):**
+- שורש הבעיה: `js/auth-service.js:applyUIPermissions()` קרא `hasPermission()` עם השורה המלאה `"lens.catalog.private.manage|lens.catalog.global.view"` — חזר false (זה לא מפתח תקין), הסתיר את כל הכפתורים עם `|` OR syntax. דרס את התוצאה הנכונה של `PermissionUI.apply()`.
+- תיקון: helper `_orPerm` ש־ Splits על `|` ובודק כל חלק בנפרד. גם data-permission וגם data-tab-permission. תיקון אוטומטי גם לכל כפתור עתידי עם OR syntax.
+- הוספתי גם `PermissionUI.refresh()` defensive API ב־`shared/js/permission-ui.js` (חופף inline display:none + סורק מחדש).
+
+**VFV אמיתי בוצע אחרי התיקון (Chrome MCP, fresh reload, real user click path):**
+- ✅ עדשות → לחץ "הקטלוג שלי" → 6 מותגי משקפיים
+- ✅ עדשות מגע → לחץ "הקטלוג שלי" → 5 מותגי עדשות מגע
+- ✅ אביזרים → לחץ "הקטלוג שלי" → 5 מותגי אביזרים
+- ✅ Drill-down: brand → designs → variants → detail pane — הכל עובד
+- ✅ CRUD דרך תיבת ה־prompt האמיתית: זרעתי 3 מותגים פרטיים לדמו
+  - `אופטיקה אורית — אביזרים`
+  - `אופטיקה אורית — עדשות`
+  - `אופטיקה אורית — עדשות מגע`
+- ✅ פריזמה: 0 שורות חדשות (אומת)
+
+**שמרתי לזיכרון:** `feedback_vfv_must_use_not_just_inspect.md` — "אלמנט קיים ב־DOM" ≠ "המשתמש יכול להשתמש". מעכשיו כל VFV חייב לקרוא כפתור + להזין נתונים + לוודא DB+UI feedback + לצלם הצלחה.
+
 ריצת לילה הסתיימה 🟡 — **שלב 1 הוטמע במלואו (6 קומיטים), שלבים 2-5 לא בוצעו**. משך הצידוד: ~3 שעות פיתוח אחרי 2 escalation cycles ארכיטקטוניים.
 
 ## סטטוס שלבים
