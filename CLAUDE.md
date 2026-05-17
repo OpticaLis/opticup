@@ -350,6 +350,10 @@ Stop and wait for instructions if ANY of these happen:
 9. **Backups (automatic, not discretionary)** — before any operation that touches **more than 5 files** OR **refactors more than 100 lines in a single file** OR **renames any file**, the Executor MUST create a backup at `modules/Module N/backups/{YYYY-MM-DD}_{SPEC_SLUG}/` and copy the affected files (plus CLAUDE.md and the owning module's SESSION_CONTEXT.md, MODULE_SPEC.md, MODULE_MAP.md, ROADMAP.md, CHANGELOG.md, db-schema.sql) before the destructive step. This is execution discipline, not a judgment call — there is no "I'll skip the backup, the change is small" path. Failing to back up when the trigger fires is a stop-on-deviation event. The Sentinel scans for orphan backups outside this convention and flags them in `docs/guardian/GUARDIAN_ALERTS.md`.
 10. **Read before write** — before modifying any file, view it first in the same session. Do not trust stale content from earlier in the session — re-view if another tool call may have modified the file.
 
+### Parallel Pipeline Coordination (added 2026-05-17 by `PARALLEL_PIPELINE_COORDINATION` SPEC)
+
+When two or more Claude Code sessions run concurrently on the same on-disk repo, each Pipeline (Executor / Reviewer / Localhost-Tester / Foreman / Supervisor) MUST claim a session lock at start and pre-check for collisions before any `git checkout` / `git merge` / `git rebase` / `git reset --hard` / `git push` / file edit on a path outside its declared `files_owned_globs`. Mechanism: `scripts/pipeline-coordination.mjs` (5 commands: `claim` / `release` / `check-collision` / `heartbeat` / `cleanup-stale`); lock files live at `_archive/pipeline-sessions/*.lock` (gitignored — session-local state); collisions always halt + escalate (no automatic resolution). See each Pipeline skill's `## First Action → Pre-Action Collision Check` sub-section for the per-skill bootstrap command. Remediates the 2026-05-17 cross-Pipeline branch-state incident (`modules/Module 1.5 - Shared Components/docs/specs/SUPERVISOR_SKILL_PHASE_1/FOREMAN_REVIEW.md` §10 F-EXTRA-1).
+
 ### Multi-Machine
 
 Three development machines:
