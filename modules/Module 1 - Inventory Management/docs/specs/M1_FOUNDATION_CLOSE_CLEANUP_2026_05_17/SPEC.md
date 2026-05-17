@@ -32,7 +32,7 @@ This SPEC handles F-2 + F-4. F-5 is acknowledged as deferred-by-design, not bloc
 | S2 | Old 8-arg signature dropped OR retained as deprecated wrapper | Foreman call — see §5 below | per Foreman decision |
 | S3 | RPC call in `lens-inventory-quick-receipt-bridge.js` (or wherever the 2-step lives) passes `has_no_invoice` in the RPC call | `grep -rn "has_no_invoice" js/ modules/` shows direct param, no 2-step UPDATE | direct param |
 | S4 | 2-step UPDATE workaround removed | `grep -rn "has_no_invoice" js/ modules/ \| grep -i "update"` returns 0 hits | 0 |
-| S5 | `lens-inventory-quick-scan.js` deleted | `ls modules/inventory/lens-inventory-quick-scan.js 2>&1` | file not found |
+| S5 | `lens-inventory-quick-scan.js` deleted | `ls modules/lens-inventory/lens-inventory-quick-scan.js 2>&1` | file not found |
 | S6 | Loader manifest no longer references the stub | `grep -rn "lens-inventory-quick-scan" js/ modules/ inventory.html` | 0 hits |
 | S7 | Tier C VFV (smoke) — receipt with `has_no_invoice=TRUE` still persists | Chrome MCP run + DB query of latest `purchase_receipt` | row exists with flag=true |
 | S8 | Iron Rule 31 + 32 gates green at each commit | `npm run verify:integrity` | exit 0 |
@@ -42,7 +42,7 @@ This SPEC handles F-2 + F-4. F-5 is acknowledged as deferred-by-design, not bloc
 
 1. **`CREATE OR REPLACE FUNCTION m1_create_receipt_from_box(... 9 args ...)`** — adds `p_has_no_invoice` parameter. Reversible by re-running prior CREATE.
 2. **(Foreman decision §5)** Either: (a) `DROP FUNCTION m1_create_receipt_from_box(<8-arg signature>)` after consumer migration, OR (b) keep 8-arg as `WRAPPER` that calls 9-arg with `p_has_no_invoice => FALSE`. Both reversible.
-3. **`rm modules/inventory/lens-inventory-quick-scan.js`** — delete stub. Reversible from git history.
+3. **`rm modules/lens-inventory/lens-inventory-quick-scan.js`** — delete stub. Reversible from git history.
 4. **Edit loader-manifest** to remove the stub reference.
 
 **Forbidden:**

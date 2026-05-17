@@ -62,6 +62,10 @@
     buttons.forEach(function (b) { b.disabled = true; b.textContent = 'יוצר...'; });
 
     try {
+      // M1_FOUNDATION_CLOSE_CLEANUP_2026_05_17 commit 3: migrated to 9-arg
+      // overload. GR flow always requires a delivery note (see line 12 guard),
+      // so p_has_no_invoice is always FALSE here. The 8-arg signature is
+      // dropped in the same commit; this is the only flow change.
       const { data, error } = await sb.rpc('m1_create_receipt_from_box', {
         p_tenant_id: tid,
         p_supplier_id: supplierId,
@@ -71,6 +75,7 @@
         p_box_supplier_barcode: null,
         p_supplier_number: window.LensGR.supplierRow ? String(window.LensGR.supplierRow.supplier_number || '') || null : null,
         p_confirmed_by: me ? me.id : null,
+        p_has_no_invoice: false,
       });
       if (error) throw error;
       // K2 returns a UUID directly (RETURNS uuid, not a row).

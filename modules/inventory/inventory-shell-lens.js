@@ -38,7 +38,6 @@
         'modules/lens-inventory/lens-inventory-lot-pane.js',
         'modules/lens-inventory/lens-inventory-modals.js',
         'modules/lens-inventory/lens-inventory-modal-shows.js',
-        'modules/lens-inventory/lens-inventory-quick-scan.js',
         'modules/lens-inventory/lens-inventory-main.js'
       ]
     },
