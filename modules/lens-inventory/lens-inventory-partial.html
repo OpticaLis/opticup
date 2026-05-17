@@ -223,15 +223,28 @@
           </div>
           <div class="manual-add-grid">
             <div class="field-group">
-              <label>כמות:</label>
+              <label for="manual-qty">כמות:</label>
               <input type="number" id="manual-qty" placeholder="1" min="1" />
             </div>
             <div class="field-group">
-              <label>עלות (לא כולל מע"מ):</label>
+              <label for="manual-cost">עלות (לא כולל מע"מ):</label>
               <input type="text" id="manual-cost" placeholder="&#8362;85" />
             </div>
           </div>
-          <button type="button" class="btn-add-stock" id="manual-add-submit" title="הוסף למלאי (יבוצע בלשונית הבאה)">&#10133; הוסף למלאי</button>
+          <!-- Phase C — supplier + delivery-note + undocumented checkbox -->
+          <div class="field-group">
+            <label for="manual-supplier">ספק:</label>
+            <select id="manual-supplier"><option value="">&mdash; בחר ספק &mdash;</option></select>
+          </div>
+          <div class="field-group">
+            <label for="manual-dn">תעודת משלוח (אופציונלי):</label>
+            <input type="text" id="manual-dn" placeholder="DN-2026-..." />
+          </div>
+          <label class="manual-undocumented-row" for="manual-undocumented">
+            <input type="checkbox" id="manual-undocumented" />
+            <span>ללא תעודה (דורש בדיקת מנהל)</span>
+          </label>
+          <button type="button" class="btn-add-stock" id="manual-add-submit" title="הוסף למלאי">&#10133; הוסף למלאי</button>
         </div>
       </div>
 

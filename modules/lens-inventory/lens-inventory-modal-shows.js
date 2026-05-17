@@ -162,15 +162,149 @@
     });
   }
 
+  // ==================================================================
+  // Phase C — Manual Add panel: supplier dropdown + submit handler
+  // Quick Scan drawer + Full Receive modal helpers (shared _submitAddStock).
+  // RPC: m1_create_receipt_from_box (10-arg signature, Phase C-C1).
+  // ==================================================================
+  async function _loadSuppliersForManualAdd() {
+    var sel = document.getElementById('manual-supplier');
+    if (!sel) return;
+    try {
+      var tid = getTenantId();
+      // Defense-in-depth: explicit tenant filter (Rule 22) + active filter.
+      var { data: tenantRow } = await sb.from('tenants')
+        .select('default_supplier_id')
+        .eq('id', tid)
+        .single();
+      var defaultId = tenantRow && tenantRow.default_supplier_id || '';
+      var { data: suppliers, error } = await sb.from('suppliers')
+        .select('id, name')
+        .eq('tenant_id', tid)
+        .eq('active', true)
+        .order('name');
+      if (error) throw error;
+      var html = '<option value="">— בחר ספק —</option>';
+      (suppliers || []).forEach(function(s) {
+        var selected = (s.id === defaultId) ? ' selected' : '';
+        html += '<option value="' + escapeHtml(s.id) + '"' + selected + '>' + escapeHtml(s.name) + '</option>';
+      });
+      sel.innerHTML = html;
+    } catch (e) {
+      console.warn('_loadSuppliersForManualAdd:', e.message);
+    }
+  }
+
+  function _resolveVariantContext() {
+    var v = document.getElementById('filter-variant');
+    return {
+      variant_id: v && v.value ? v.value : null,
+      design_id:  (document.getElementById('filter-design') || {}).value || null
+    };
+  }
+
+  async function _submitAddStock(params) {
+    // params: { variant_id, sph, cyl, qty_received, unit_cost,
+    //           supplier_id, delivery_note_number,
+    //           is_documented, undocumented_reason, source }
+    if (!params.supplier_id) {
+      Toast.error('בחר ספק לפני שמירה');
+      return null;
+    }
+    if (!params.is_documented && !hasPermission('inventory.add.undocumented')) {
+      Toast.error('אין הרשאה להוסיף מלאי ללא תעודה (פנה למנהל)');
+      return null;
+    }
+    var tid = getTenantId();
+    var line = {
+      variant_id: params.variant_id || null,
+      sph: params.sph,
+      cyl: params.cyl,
+      qty_received: Number(params.qty_received) || 0,
+      unit_cost: Number(params.unit_cost) || 0,
+      is_manual_addition: !params.variant_id
+    };
+    if (line.qty_received < 1) {
+      Toast.error('כמות חייבת להיות גדולה מ-0');
+      return null;
+    }
+    try {
+      var emp = JSON.parse(sessionStorage.getItem('tenant_employee') || '{}');
+      var { data, error } = await sb.rpc('m1_create_receipt_from_box', {
+        p_tenant_id: tid,
+        p_supplier_id: params.supplier_id,
+        p_delivery_note_number: params.delivery_note_number || null,
+        p_lines: [line],
+        p_box_id: null,
+        p_box_supplier_barcode: null,
+        p_supplier_number: null,
+        p_confirmed_by: emp.id || null,
+        p_is_documented: !!params.is_documented,
+        p_undocumented_reason: params.undocumented_reason || null
+      });
+      if (error) throw error;
+      Toast.success('מלאי עודכן (' + (params.source || 'manual') + ')');
+      // Trigger grid + lot refresh if the page exposes a reload helper.
+      if (window.LensInv && typeof window.LensInv.reloadStock === 'function') {
+        try { window.LensInv.reloadStock(); } catch (_) {}
+      }
+      return data; // receipt_id
+    } catch (e) {
+      console.error('_submitAddStock:', e);
+      Toast.error('שגיאה בהוספת מלאי: ' + (e.message || e));
+      return null;
+    }
+  }
+
+  function _attachManualAddHandler() {
+    var btn = document.getElementById('manual-add-submit');
+    if (!btn || btn.dataset.wired === '1') return;
+    btn.dataset.wired = '1';
+    btn.addEventListener('click', async function() {
+      var ctx = _resolveVariantContext();
+      var sph = (document.getElementById('manual-sph') || {}).value;
+      var cyl = (document.getElementById('manual-cyl') || {}).value;
+      var qty = (document.getElementById('manual-qty') || {}).value;
+      var cost = (document.getElementById('manual-cost') || {}).value;
+      var supplier = (document.getElementById('manual-supplier') || {}).value;
+      var dn = (document.getElementById('manual-dn') || {}).value;
+      var und = (document.getElementById('manual-undocumented') || {}).checked;
+      var receiptId = await _submitAddStock({
+        variant_id: ctx.variant_id,
+        sph: sph || null,
+        cyl: cyl || null,
+        qty_received: qty,
+        unit_cost: cost,
+        supplier_id: supplier,
+        delivery_note_number: dn,
+        is_documented: !und,
+        undocumented_reason: und ? 'הוספה ידנית מתוך מסך מלאי' : null,
+        source: 'manual'
+      });
+      if (receiptId) {
+        // Clear inputs after success
+        ['manual-sph','manual-cyl','manual-qty','manual-cost','manual-dn'].forEach(function(id) {
+          var el = document.getElementById(id); if (el) el.value = '';
+        });
+        var u = document.getElementById('manual-undocumented'); if (u) u.checked = false;
+      }
+    });
+  }
+
   function attach() {
     _attachCloseHandlers();
     _attachRptTabs();
     _attachScanReasonChips();
     _attachSidePanelQtyControls();
     attachHeaderActionDispatcher();
+    // Phase C — Manual Add panel wiring
+    _loadSuppliersForManualAdd();
+    _attachManualAddHandler();
   }
 
   window.LensInvModalShows = {
-    openReportsModal, openScanModal, openWizardModal, closeModal, attach
+    openReportsModal, openScanModal, openWizardModal, closeModal, attach,
+    // Phase C exports for Quick Scan drawer + Full Receive modal (C-C3/C-C4)
+    _submitAddStock, _loadSuppliersForManualAdd
   };
 })();
