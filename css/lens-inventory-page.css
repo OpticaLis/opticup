@@ -540,3 +540,43 @@
     margin-inline-start: 0;
   }
 }
+
+/* =============================================================================
+   M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION (2026-05-17) — Round 2 mockup
+   - Entry-helper-strip (persistent reminder below page-header)
+   - btn-receive (header "קבל סחורה" action button — gold-tinted call-out)
+   - col-permission-gated (mockup-aligned class for hidden-by-permission price
+     columns; permission-ui hides via [data-permission] attr — class adds the
+     visual lock-prefix to match mockup. Shared infra uses .tb-col-permission-
+     gated; here we mirror the mockup's plain .col-permission-gated.)
+   ============================================================================= */
+.lens-tab-section .entry-helper-strip {
+  background: #eff6ff;
+  color: #1e40af;
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: 1px solid #bfdbfe;
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lens-tab-section .entry-helper-strip .icon-info { font-size: 16px; }
+
+.lens-tab-section .btn-receive {
+  background: #fdf6e3;
+  border-color: #c9a555;
+  color: #b8954a;
+  font-weight: 600;
+}
+.lens-tab-section .btn-receive:hover {
+  background: #f8eccf;
+  border-color: #b8954a;
+}
+
+.lens-tab-section .col-permission-gated::before {
+  content: '🔒 ';
+  font-size: 9px;
+  opacity: 0.7;
+}

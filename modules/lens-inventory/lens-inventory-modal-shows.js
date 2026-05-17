@@ -117,6 +117,11 @@
   }
 
   // Header action button dispatcher — replaces the Toast stub in main.js.
+  // M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION (2026-05-17): scan-in + bulk-add
+  // now funnel through the shared Quick Receipt drawer (Brief decision #9). The old
+  // direct-to-stock LensInvQuickScan path is retired; scan-in opens the scan modal
+  // which (on submit) opens the drawer. Bulk wizard funnel happens via the
+  // bulk-wizard-stage-to-drawer button handler (see _attachBulkWizardFunnel).
   function attachHeaderActionDispatcher() {
     document.addEventListener('click', (e) => {
       const btn = e.target && e.target.closest && e.target.closest('[data-lens-inv-action]');
@@ -125,21 +130,58 @@
       switch (action) {
         case 'reports':   openReportsModal(); break;
         case 'scan-in':
-          // Phase C C-C3 — replaced sample-data modal with Quick Scan drawer
-          if (window.LensInvQuickScan && typeof window.LensInvQuickScan.open === 'function') {
-            window.LensInvQuickScan.open();
-          } else {
-            openScanModal('in'); // fallback (should never trigger; new file loads via shell registry)
-          }
+          // Round 2 mockup: scan modal still opens for IN mode, but its submit
+          // funnels to Quick Receipt drawer (handled in _attachScanInFunnel).
+          openScanModal('in');
           break;
         case 'scan-out':  openScanModal('out'); break;
         case 'bulk-add':  openWizardModal(); break;
+        case 'receive-goods':
+          // Top-header "קבל סחורה" — opens drawer empty for direct delivery-note + items entry.
+          if (window.LensInv && window.LensInv.quickReceiptDrawer) {
+            window.LensInv.quickReceiptDrawer.open();
+          } else if (window.Toast) {
+            Toast.error('טיוטת קבלה לא מוכנה עדיין — נסה שוב מאוחר יותר');
+          }
+          break;
         case 'export':
           if (window.Toast) Toast.info('ייצוא Excel — יחובר לכפתור Export בלשונית הבאה');
           break;
         case 'search':
           if (window.Toast) Toast.info('חיפוש מתקדם — מודאל ייבנה בלשונית הבאה');
           break;
+      }
+    });
+  }
+
+  // Scan modal IN-mode submit → close modal + open Quick Receipt drawer.
+  // (OUT-mode submit retains the legacy direct-decrement flow; not handled here.)
+  function _attachScanInFunnel() {
+    document.addEventListener('click', (e) => {
+      const btn = e.target && e.target.id === 'scanSubmitBtn' ? e.target : null;
+      if (!btn) return;
+      // Only IN-mode (header has modal-header-green class on the parent modal)
+      const modal = document.getElementById('scanModal');
+      const header = document.getElementById('scanModalHeader');
+      const isIn = header && header.classList.contains('modal-header-green');
+      if (!isIn) return; // OUT-mode keeps its own handler
+      _setActive(modal, false);
+      if (window.LensInv && window.LensInv.quickReceiptDrawer) {
+        window.LensInv.quickReceiptDrawer.open();
+      }
+    });
+  }
+
+  // Bulk wizard "העבר לטיוטת קבלה" → close wizard + open drawer.
+  // Full N-row staging from wizard inputs is a future SPEC; this commit only
+  // honors the funnel rule (no direct-to-stock from wizard).
+  function _attachBulkWizardFunnel() {
+    document.addEventListener('click', (e) => {
+      const btn = e.target && e.target.id === 'bulk-wizard-stage-to-drawer' ? e.target : null;
+      if (!btn) return;
+      _setActive(document.getElementById('bulkModal'), false);
+      if (window.LensInv && window.LensInv.quickReceiptDrawer) {
+        window.LensInv.quickReceiptDrawer.open();
       }
     });
   }
@@ -169,39 +211,11 @@
     });
   }
 
-  // ==================================================================
-  // Phase C — Manual Add panel: supplier dropdown + submit handler
-  // Quick Scan drawer + Full Receive modal helpers (shared _submitAddStock).
-  // RPC: m1_create_receipt_from_box (10-arg signature, Phase C-C1).
-  // ==================================================================
-  async function _loadSuppliersForManualAdd() {
-    var sel = document.getElementById('manual-supplier');
-    if (!sel) return;
-    try {
-      var tid = getTenantId();
-      // Defense-in-depth: explicit tenant filter (Rule 22) + active filter.
-      var { data: tenantRow } = await sb.from('tenants')
-        .select('default_supplier_id')
-        .eq('id', tid)
-        .single();
-      var defaultId = tenantRow && tenantRow.default_supplier_id || '';
-      var { data: suppliers, error } = await sb.from('suppliers')
-        .select('id, name')
-        .eq('tenant_id', tid)
-        .eq('active', true)
-        .order('name');
-      if (error) throw error;
-      var html = '<option value="">— בחר ספק —</option>';
-      (suppliers || []).forEach(function(s) {
-        var selected = (s.id === defaultId) ? ' selected' : '';
-        html += '<option value="' + escapeHtml(s.id) + '"' + selected + '>' + escapeHtml(s.name) + '</option>';
-      });
-      sel.innerHTML = html;
-    } catch (e) {
-      console.warn('_loadSuppliersForManualAdd:', e.message);
-    }
-  }
-
+  // Manual-add panel: SPEC 4a (2026-05-17) — supplier dropdown now disabled
+  // (supplier captured once in Quick Receipt drawer Section A). Direct-write
+  // _submitAddStock + _loadSuppliersForManualAdd were retired as part of the
+  // funnel rule (Brief decision #9). Atomic receipt creation lives in
+  // lens-inventory-main.js handleQuickReceiptSubmit.
   function _resolveVariantContext() {
     var v = document.getElementById('filter-variant');
     return {
@@ -210,104 +224,53 @@
     };
   }
 
-  // Phase C C-C2 DM-3 (Tier C VFV finding): purchase_receipt_line.location_id is NOT NULL.
-  // Cache the first tenant_location id for the active tenant.
-  var _defaultLocationCache = null;
-  async function _resolveDefaultLocationId() {
-    if (_defaultLocationCache) return _defaultLocationCache;
-    try {
-      var tid = getTenantId();
-      var { data, error } = await sb.from('tenant_location')
-        .select('id, is_default')
-        .eq('tenant_id', tid)
-        .order('is_default', { ascending: false, nullsFirst: false })
-        .limit(1);
-      if (error) throw error;
-      _defaultLocationCache = (data && data[0] && data[0].id) || null;
-      return _defaultLocationCache;
-    } catch (e) { console.warn('_resolveDefaultLocationId:', e.message); return null; }
-  }
-
-  async function _submitAddStock(params) {
-    // params: { variant_id, sph, cyl, qty_received, unit_cost, supplier_id, source }
-    // Post-debt-decoupling: delivery_note_number + is_documented + undocumented_reason
-    // params REMOVED. Inventory does not track documentation state; that belongs to
-    // the supplier-debt module.
-    if (!params.supplier_id) {
-      Toast.error('בחר ספק לפני שמירה');
-      return null;
-    }
-    var tid = getTenantId();
-    var locId = await _resolveDefaultLocationId();
-    if (!locId) {
-      Toast.error('לא נמצא מיקום מלאי לדייר זה');
-      return null;
-    }
-    var line = {
-      variant_id: params.variant_id || null,
-      location_id: locId,
-      sph: params.sph,
-      cyl: params.cyl,
-      qty_received: Number(params.qty_received) || 0,
-      unit_cost: Number(params.unit_cost) || 0,
-      is_manual_addition: !params.variant_id
-    };
-    if (line.qty_received < 1) {
-      Toast.error('כמות חייבת להיות גדולה מ-0');
-      return null;
-    }
-    try {
-      var emp = JSON.parse(sessionStorage.getItem('tenant_employee') || '{}');
-      var { data, error } = await sb.rpc('m1_create_receipt_from_box', {
-        p_tenant_id: tid,
-        p_supplier_id: params.supplier_id,
-        p_delivery_note_number: null,
-        p_lines: [line],
-        p_box_id: null,
-        p_box_supplier_barcode: null,
-        p_supplier_number: null,
-        p_confirmed_by: emp.id || null
-      });
-      if (error) throw error;
-      Toast.success('מלאי עודכן (' + (params.source || 'manual') + ')');
-      // Trigger grid + lot refresh if the page exposes a reload helper.
-      if (window.LensInv && typeof window.LensInv.reloadStock === 'function') {
-        try { window.LensInv.reloadStock(); } catch (_) {}
-      }
-      return data; // receipt_id
-    } catch (e) {
-      console.error('_submitAddStock:', e);
-      Toast.error('שגיאה בהוספת מלאי: ' + (e.message || e));
-      return null;
-    }
-  }
-
+  // M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION (2026-05-17): manual-add no longer
+  // direct-writes to stock. It STAGES the item into the Quick Receipt drawer's
+  // Section B; the user then completes delivery-note metadata in Section A and
+  // persists everything via "סיים קבלה". This honors Brief decision #9 (drawer =
+  // sole entry path). The supplier dropdown in the manual-add card is disabled —
+  // supplier is captured once in the drawer.
   function _attachManualAddHandler() {
     var btn = document.getElementById('manual-add-submit');
     if (!btn || btn.dataset.wired === '1') return;
     btn.dataset.wired = '1';
-    btn.addEventListener('click', async function() {
+    btn.addEventListener('click', function() {
       var ctx = _resolveVariantContext();
       var sph = (document.getElementById('manual-sph') || {}).value;
       var cyl = (document.getElementById('manual-cyl') || {}).value;
-      var qty = (document.getElementById('manual-qty') || {}).value;
+      var qty = parseInt((document.getElementById('manual-qty') || {}).value, 10) || 1;
       var cost = (document.getElementById('manual-cost') || {}).value;
-      var supplier = (document.getElementById('manual-supplier') || {}).value;
-      var receiptId = await _submitAddStock({
-        variant_id: ctx.variant_id,
-        sph: sph || null,
-        cyl: cyl || null,
-        qty_received: qty,
-        unit_cost: cost,
-        supplier_id: supplier,
-        source: 'manual'
-      });
-      if (receiptId) {
-        // Clear inputs after success
-        ['manual-sph','manual-cyl','manual-qty','manual-cost'].forEach(function(id) {
-          var el = document.getElementById(id); if (el) el.value = '';
-        });
+      var barcode = (document.getElementById('manual-barcode') || {}).value;
+      if (!(window.LensInv && window.LensInv.quickReceiptDrawer)) {
+        if (window.Toast) Toast.error('טיוטת קבלה לא מוכנה — נסה שוב');
+        return;
       }
+      // Build a staged item shape per QuickReceiptDrawer API:
+      //   { id, name, variant?, qty, unitCost?, meta?: { sph, cyl, ... } }
+      var itemId = 'manual-' + Date.now();
+      var item = {
+        id: itemId,
+        name: barcode ? ('ברקוד: ' + barcode) : (ctx.variant_id ? 'וריאציה נבחרת' : 'הוספה ידנית'),
+        variant: ctx.variant_id || null,
+        qty: qty,
+        unitCost: cost ? Number(String(cost).replace(/[^0-9.\-]/g, '')) || null : null,
+        meta: (sph || cyl) ? { sph: sph || '—', cyl: cyl || '—' } : null,
+        // Carry the variant_id + sph/cyl for the onSubmit RPC mapping
+        _line: {
+          variant_id: ctx.variant_id || null,
+          sph: sph || null,
+          cyl: cyl || null,
+          qty_received: qty,
+          unit_cost: cost ? Number(String(cost).replace(/[^0-9.\-]/g, '')) || 0 : 0,
+          is_manual_addition: !ctx.variant_id
+        }
+      };
+      window.LensInv.quickReceiptDrawer.stageItem(item);
+      window.LensInv.quickReceiptDrawer.open();
+      // Clear manual-add inputs (supplier stays disabled).
+      ['manual-sph','manual-cyl','manual-qty','manual-cost','manual-barcode'].forEach(function(id) {
+        var el = document.getElementById(id); if (el) el.value = '';
+      });
     });
   }
 
@@ -317,14 +280,14 @@
     _attachScanReasonChips();
     _attachSidePanelQtyControls();
     attachHeaderActionDispatcher();
-    // Phase C — Manual Add panel wiring
-    _loadSuppliersForManualAdd();
+    // SPEC 4a — Quick Receipt drawer funnel wiring
+    _attachScanInFunnel();
+    _attachBulkWizardFunnel();
+    // Phase C — Manual Add panel wiring (now stages to drawer per SPEC 4a)
     _attachManualAddHandler();
   }
 
   window.LensInvModalShows = {
-    openReportsModal, openScanModal, openWizardModal, closeModal, attach,
-    // Phase C exports for Quick Scan drawer + Full Receive modal (C-C3/C-C4)
-    _submitAddStock, _loadSuppliersForManualAdd
+    openReportsModal, openScanModal, openWizardModal, closeModal, attach
   };
 })();

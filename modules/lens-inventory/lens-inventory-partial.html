@@ -34,9 +34,18 @@
       <button type="button" class="btn" data-lens-inv-action="export" title="ייצוא נתוני המסך הנוכחי ל-Excel">&#128229; ייצוא Excel</button>
       <button type="button" class="btn" data-lens-inv-action="search" title="חיפוש לפי ברקוד, סדרה, או SPH/CYL">&#128269; חיפוש מתקדם</button>
       <button type="button" class="btn btn-scan-out" data-lens-inv-action="scan-out" title="סריקת ברקודים להורדה מהמלאי">&#128247; סריקה &mdash; הורדה</button>
-      <button type="button" class="btn btn-scan-in" data-lens-inv-action="scan-in" title="סריקת ברקודים להוספה למלאי">&#128247; סריקה &mdash; הוספה</button>
-      <button type="button" class="btn btn-primary" data-lens-inv-action="bulk-add" title="הוספת טווח עדשות עם Wizard">&#10133; הוספה מרובה (Wizard)</button>
+      <button type="button" class="btn btn-scan-in" data-lens-inv-action="scan-in" title="סריקת ברקודים — נכנס לטיוטת קבלה">&#128247; סריקה &mdash; הוספה</button>
+      <button type="button" class="btn btn-receive" data-lens-inv-action="receive-goods" title="פתח טיוטת קבלת סחורה (תעודת משלוח + ספק + N פריטים)">&#128230; קבל סחורה</button>
+      <button type="button" class="btn btn-primary" data-lens-inv-action="bulk-add" title="הוספת טווח עדשות עם Wizard — מועברת לטיוטת קבלה">&#10133; הוספה מרובה (Wizard)</button>
     </div>
+  </div>
+
+  <!-- Entry-helper-strip (Round 2 mockup): persistent reminder that all inventory
+       additions must capture delivery-note metadata. Reinforces the Quick Receipt
+       drawer = sole entry path rule (Brief decision #9). -->
+  <div class="entry-helper-strip">
+    <span class="icon-info">&#8505;&#65039;</span>
+    <span>כל הוספה למלאי דורשת מספר תעודה (או סימון "אין תעודה" לבדיקה עתידית).</span>
   </div>
 
   <!-- ============ FILTERS PANEL (6 chip rows) ============ -->
@@ -232,12 +241,17 @@
             </div>
           </div>
           <!-- Phase C (post-debt-decoupling) — supplier only; delivery-note + manager-review
-               UI removed per architectural rule (inventory module does not own document tracking). -->
+               UI removed per architectural rule (inventory module does not own document tracking).
+               Round 2 (M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION 2026-05-17): supplier dropdown
+               retained but no longer participates in the manual-add submit; supplier is captured
+               once in the Quick Receipt drawer Section A instead. Dropdown kept as a hint to the
+               user that supplier will be requested in the drawer. -->
           <div class="field-group">
-            <label for="manual-supplier">ספק:</label>
-            <select id="manual-supplier"><option value="">&mdash; בחר ספק &mdash;</option></select>
+            <label for="manual-supplier">ספק (יוזן בטיוטת קבלה):</label>
+            <select id="manual-supplier" disabled><option value="">&mdash; ייקבע בטיוטת קבלה &mdash;</option></select>
           </div>
-          <button type="button" class="btn-add-stock" id="manual-add-submit" title="הוסף למלאי">&#10133; הוסף למלאי</button>
+          <!-- Button label updated per Daniel decision #9: stages item to drawer, not direct-to-stock. -->
+          <button type="button" class="btn-add-stock" id="manual-add-submit" title="הוסף לטיוטת קבלה (נדרש למלא ספק + תעודת משלוח בטיוטה)">&#10133; הוסף לטיוטת קבלה</button>
         </div>
       </div>
 
@@ -538,9 +552,13 @@
         </div>
 
       </div>
+      <!-- Per Daniel decision #9 + Round 2 mockup: IN-mode submit closes the scan modal
+           and opens the Quick Receipt drawer (scanned items become drawer Section B
+           staging in a future SPEC). OUT-mode submit retains the legacy direct-decrement
+           flow (sole exception to "no direct-to-stock" rule — OUT path is not stock-add). -->
       <div class="modal-footer">
         <button type="button" class="btn btn-ghost" data-modal-close="scanModal">ביטול</button>
-        <button type="button" class="btn scan-submit-in" id="scanSubmitBtn">&#10003; הכנס למלאי (5 פריטים)</button>
+        <button type="button" class="btn scan-submit-in" id="scanSubmitBtn">&#10003; העבר לטיוטת קבלה</button>
       </div>
     </div>
   </div>
@@ -607,46 +625,24 @@
         </div>
 
       </div>
+      <!-- Wizard completion funnels the 65-row output into the Quick Receipt drawer
+           (Daniel decision Round 2 — wizard does not direct-write to stock). User fills
+           delivery-note metadata in Section A; "סיים קבלה" persists all rows with
+           shared metadata. SPEC 4a wiring: button onclick handled in lens-inventory-modal-shows.js. -->
       <div class="modal-footer">
         <button type="button" class="btn btn-ghost" data-modal-close="bulkModal">ביטול</button>
-        <button type="button" class="btn btn-success">&#10003; צור 65 שורות מלאי</button>
+        <button type="button" class="btn btn-success" id="bulk-wizard-stage-to-drawer">&#10003; העבר לטיוטת קבלה</button>
       </div>
     </div>
   </div>
 
-  <!-- ============ QUICK SCAN DRAWER (Phase C C-C3) ============ -->
-  <aside id="drawer-quick-scan" class="quick-scan-drawer" aria-hidden="true">
-    <div class="qs-drawer-header">
-      <span class="qs-drawer-title">&#128247; סריקה מהירה — הוספה למלאי</span>
-      <button type="button" id="drawer-qs-close" class="qs-drawer-close" aria-label="סגור">&times;</button>
-    </div>
-    <div class="qs-drawer-body">
-      <div class="field-group">
-        <label for="drawer-qs-barcode">ברקוד / מזהה וריאנט:</label>
-        <input type="text" id="drawer-qs-barcode" placeholder="לדוגמה: LV-000005" autocomplete="off" />
-        <small>הקש Enter לאחר הקלדה/סריקה</small>
-      </div>
-      <div id="drawer-qs-resolved" class="qs-resolved-box">
-        <div class="qs-resolved-empty">סרוק/הזן ברקוד כדי לטעון פרטי וריאנט.</div>
-      </div>
-      <div id="drawer-qs-manual-row" class="manual-add-grid" style="display:none">
-        <div class="field-group"><label for="drawer-qs-sph">SPH:</label><input type="text" id="drawer-qs-sph" placeholder="-2.50" /></div>
-        <div class="field-group"><label for="drawer-qs-cyl">CYL:</label><input type="text" id="drawer-qs-cyl" placeholder="-0.75" /></div>
-      </div>
-      <div class="manual-add-grid">
-        <div class="field-group"><label for="drawer-qs-qty">כמות:</label><input type="number" id="drawer-qs-qty" min="1" placeholder="1" /></div>
-        <div class="field-group"><label for="drawer-qs-cost">עלות יחידה (לא כולל מע"מ):</label><input type="text" id="drawer-qs-cost" placeholder="&#8362;85" /></div>
-      </div>
-      <div class="field-group">
-        <label for="drawer-qs-supplier">ספק:</label>
-        <select id="drawer-qs-supplier"><option value="">&mdash; בחר ספק &mdash;</option></select>
-      </div>
-      <!-- Phase C (post-debt-decoupling) — delivery-note + manager-review UI removed
-           per architectural rule (inventory does not own document tracking). -->
-    </div>
-    <div class="qs-drawer-footer">
-      <button type="button" id="drawer-qs-submit" class="btn btn-success qs-drawer-submit">&#10003; הוסף למלאי</button>
-    </div>
-  </aside>
+  <!-- ============ QUICK RECEIPT DRAWER MOUNT POINT (M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION) ============
+       Replaces the previous Phase C C-C3 #drawer-quick-scan (direct-to-stock path)
+       per Brief decision #9 (Quick Receipt = SOLE inventory-entry path) + Round 2
+       mockup. The shared QuickReceiptDrawer component populates this mount point
+       with the drawer DOM on bootstrap. Section A captures delivery_note_number +
+       supplier_id + receipt_date + has_no_invoice ONCE; Section B stages N items
+       inheriting the metadata. -->
+  <div id="quickReceiptDrawer"></div>
 
 </div>

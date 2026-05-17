@@ -118,6 +118,116 @@
     });
   }
 
+  // ─── Quick Receipt drawer initialization (SPEC M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION) ───
+  //
+  // Loads suppliers (tenant-scoped, active only — Iron Rule 22 defense-in-depth),
+  // initializes the shared QuickReceiptDrawer component at #quickReceiptDrawer,
+  // and exposes the instance at window.LensInv.quickReceiptDrawer so entry-point
+  // dispatchers can call .open()/.stageItem().
+  async function initQuickReceiptDrawer() {
+    if (!window.QuickReceiptDrawer || typeof window.QuickReceiptDrawer.init !== 'function') {
+      console.warn('[lens-inventory] QuickReceiptDrawer shared component not loaded');
+      return;
+    }
+    const mount = document.getElementById('quickReceiptDrawer');
+    if (!mount) {
+      console.warn('[lens-inventory] #quickReceiptDrawer mount point missing');
+      return;
+    }
+    // Load suppliers tenant-scoped (Rule 22).
+    let suppliers = [];
+    try {
+      const tid = getTenantId();
+      const { data, error } = await sb.from('suppliers')
+        .select('id, name').eq('tenant_id', tid).eq('active', true).order('name');
+      if (error) throw error;
+      suppliers = (data || []).map(function (s) { return { id: s.id, name: s.name }; });
+    } catch (e) {
+      console.warn('[lens-inventory] supplier load for drawer:', e.message);
+    }
+
+    const drawer = window.QuickReceiptDrawer.init(mount, {
+      suppliers: suppliers,
+      allowNoInvoice: true,
+      onSubmit: handleQuickReceiptSubmit,
+      onCancel: function () { /* no-op; drawer closes itself */ }
+    });
+    window.LensInv.quickReceiptDrawer = drawer;
+    console.log('[lens-inventory] QuickReceiptDrawer initialized with',
+      suppliers.length, 'suppliers');
+  }
+
+  // Drawer onSubmit handler — persists N staged items under shared metadata.
+  // Strategy: call existing m1_create_receipt_from_box RPC (8-arg, atomic
+  // receipt + lines), then a defense-in-depth UPDATE on purchase_receipt to
+  // set has_no_invoice when "אין תעודה" was checked. The RPC pre-dates SPEC 3's
+  // has_no_invoice column; the 2-step is a stopgap until a 9-arg RPC overload
+  // ships. Documented in FINDINGS as a follow-up tech-debt item.
+  async function handleQuickReceiptSubmit(payload) {
+    const meta = payload && payload.meta || {};
+    const items = (payload && payload.items) || [];
+    if (!meta.supplier_id) { Toast.error('בחר ספק בטיוטה'); throw new Error('no supplier'); }
+    if (!items.length) { Toast.error('אין פריטים לקבלה'); throw new Error('no items'); }
+    if (!meta.has_no_invoice && !meta.delivery_note_number) {
+      Toast.error('הזן מספר תעודת משלוח (או סמן "אין תעודה")');
+      throw new Error('no delivery note');
+    }
+    const tid = getTenantId();
+    // Resolve default location (same pattern as _submitAddStock cache).
+    let locId = null;
+    try {
+      const { data, error } = await sb.from('tenant_location')
+        .select('id, is_default').eq('tenant_id', tid)
+        .order('is_default', { ascending: false, nullsFirst: false }).limit(1);
+      if (error) throw error;
+      locId = (data && data[0] && data[0].id) || null;
+    } catch (e) { console.warn('[quick-receipt] location resolve:', e.message); }
+    if (!locId) { Toast.error('לא נמצא מיקום מלאי לדייר זה'); throw new Error('no location'); }
+
+    // Map drawer items to RPC line shape.
+    const lines = items.map(function (it) {
+      // Prefer the structured _line payload built by stageItem callers.
+      const ln = it._line || {};
+      return {
+        variant_id: ln.variant_id || it.variant || null,
+        location_id: locId,
+        sph: ln.sph || (it.meta && it.meta.sph) || null,
+        cyl: ln.cyl || (it.meta && it.meta.cyl) || null,
+        qty_received: Number(ln.qty_received || it.qty) || 1,
+        unit_cost: Number(ln.unit_cost || it.unitCost) || 0,
+        is_manual_addition: ln.is_manual_addition != null ? ln.is_manual_addition : !(ln.variant_id || it.variant)
+      };
+    });
+    const emp = JSON.parse(sessionStorage.getItem('tenant_employee') || '{}');
+    const { data: receiptId, error: rpcErr } = await sb.rpc('m1_create_receipt_from_box', {
+      p_tenant_id: tid,
+      p_supplier_id: meta.supplier_id,
+      p_delivery_note_number: meta.has_no_invoice ? null : (meta.delivery_note_number || null),
+      p_lines: lines,
+      p_box_id: null,
+      p_box_supplier_barcode: null,
+      p_supplier_number: null,
+      p_confirmed_by: emp.id || null
+    });
+    if (rpcErr) { Toast.error('שמירה נכשלה: ' + (rpcErr.message || rpcErr)); throw rpcErr; }
+    // Persist has_no_invoice — column added in SPEC 3 but RPC not updated to accept it.
+    // Defense-in-depth: tenant_id filter on UPDATE (Iron Rule 22) even though RLS enforces.
+    if (meta.has_no_invoice && receiptId) {
+      const { error: upErr } = await sb.from('purchase_receipt')
+        .update({ has_no_invoice: true })
+        .eq('id', receiptId).eq('tenant_id', tid);
+      if (upErr) {
+        console.error('[quick-receipt] has_no_invoice update failed', upErr);
+        Toast.warning('הקבלה נשמרה אך סימון "אין תעודה" לא עודכן: ' + (upErr.message || upErr));
+        // Don't throw — receipt was created; the flag is best-effort.
+      }
+    }
+    Toast.success('קבלה ' + items.length + ' פריטים נשמרה בהצלחה');
+    if (typeof window.LensInv.reloadStock === 'function') {
+      try { window.LensInv.reloadStock(); } catch (_) {}
+    }
+  }
+
   // ─── Bootstrap ───
   async function bootstrap() {
     const ok = await gateOrRedirect();
@@ -131,7 +241,9 @@
       }
       attachBottomTabs();
       attachVariantRangeDisplay();
-      console.log('[lens-inventory] bootstrap complete (1to1 rebuild)');
+      // SPEC 4a — init Quick Receipt drawer after the partial is mounted.
+      await initQuickReceiptDrawer();
+      console.log('[lens-inventory] bootstrap complete (1to1 rebuild + Quick Receipt drawer)');
     } catch (err) {
       console.error('[lens-inventory] bootstrap failed', err);
       if (window.Toast && typeof Toast.error === 'function') {
