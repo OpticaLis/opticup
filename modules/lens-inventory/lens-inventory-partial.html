@@ -1,40 +1,136 @@
 <!-- lens-inventory-partial.html — body fragment for inventory.html lens-tab.
      Fetched lazily by InvShellLens; injected into the section.lens-tab-section
      with data-tab="inventory". Semantic markup only — visual tokens applied
-     by css/lens-tabs.css (M1_INVENTORY_UNIFIED_SCREEN SPEC §1.5).
-     Internal #access-gate + #app retained so the existing
-     modules/lens-inventory/* JS module bootstrap can run without modification. -->
+     by css/lens-tabs.css.
+
+     Phase A rebuild (M1_LENS_MOCKUP_FIDELITY_REBUILD, 2026-05-18):
+     Structure follows LENS_INVENTORY_MOCKUP.html (D-M1-02, 1117 lines). Gold
+     primary accent + dark-navy headers per mockup §1. Preserves the existing
+     #access-gate + #app wrappers and the filter-brand / filter-design /
+     filter-variant / grid-container / lot-container IDs so the existing
+     modules/lens-inventory/* JS modules bootstrap unmodified.
+
+     Deferred to follow-up session (next Phase A continuation):
+       - Reports modal (mockup §"REPORTS MODAL", ~120 lines of HTML)
+       - Scan IN/OUT modals (mockup §"SCAN MODAL", ~90 lines)
+       - Bulk Wizard modal (mockup §"BULK ADD WIZARD MODAL", ~80 lines)
+       - Selected-cell gold-gradient header card with lots + qty + target editor
+         (current build shows lots in side panel; gold header card needs
+         JS wiring to capture cell click context — deferred to keep JS untouched
+         this Phase per scope discipline)
+       - Filter rows for lens-type / material / index / stock-status (require
+         either new DB fields OR client-side filter, both broader scope)
+       - Bottom tabs: movements / pricing / alerts / analytics (table population
+         requires DB queries against stock_movement view — broader scope)
+
+     Header action buttons (📊 דוחות, 📷 סריקה הוספה, 📷 סריקה הורדה, ➕ הוספה
+     מרובה Wizard) are present per mockup but bound to no-op handlers (Toast
+     "בקרוב") until their respective modals are built in follow-up sessions. -->
 
 <div id="access-gate" style="display:none">
   <div class="empty-state">אין הרשאה למסך זה (lens.inventory.view).</div>
 </div>
 
-<div id="app" style="display:none">
-  <div class="lens-page-title">&#128300; ניהול מלאי עדשות <span class="badge">תצוגה</span></div>
+<div id="app" class="lens-inv-page" style="display:none">
 
-  <div class="lens-filter-bar">
-    <label>סוג ייצור:</label>
-    <button class="chip active" data-production-filter="stock" id="filter-stock">&#128230; מלאי קבוע</button>
-    <button class="chip" data-production-filter="custom" id="filter-custom">&#127919; מיוחד הזמנה</button>
-  </div>
-
-  <div class="lens-filter-bar">
-    <label>מותג:</label>
-    <select id="filter-brand"><option value="">— הכל —</option></select>
-    <label>דגם:</label>
-    <select id="filter-design"><option value="">— בחר דגם —</option></select>
-    <label>וריאציה:</label>
-    <select id="filter-variant"><option value="">— בחר וריאציה —</option></select>
-  </div>
-
-  <div class="lens-grid-layout">
-    <div class="lens-panel">
-      <div class="lens-panel-header"><h3>טבלת SPH &times; CYL</h3></div>
-      <div id="grid-container" style="padding:16px"><div class="empty-state">בחר וריאציה לתצוגה</div></div>
+  <!-- ============ PAGE HEADER ============ -->
+  <div class="lens-inv-header">
+    <div class="lens-inv-title">
+      <span>&#128300; ניהול מלאי עדשות־ראייה</span>
+      <span class="badge" id="lens-inv-context-badge">Optic Up</span>
     </div>
-    <div class="lens-panel">
-      <div class="lens-panel-header"><h3>חבילות מלאי (Lots)</h3></div>
-      <div id="lot-container" style="padding:16px"><div class="empty-state">בחר תא בטבלה לצפייה בחבילות</div></div>
+    <div class="lens-inv-actions">
+      <button type="button" class="btn" data-lens-inv-action="reports" title="דוחות חוסרים, עודף, ומצב מלאי">&#128202; דוחות</button>
+      <button type="button" class="btn" data-lens-inv-action="export" title="ייצוא נתוני המסך הנוכחי ל-Excel">&#128229; ייצוא Excel</button>
+      <button type="button" class="btn" data-lens-inv-action="search" title="חיפוש לפי ברקוד, סדרה, או SPH/CYL">&#128269; חיפוש מתקדם</button>
+      <button type="button" class="btn btn-scan-out" data-lens-inv-action="scan-out" title="סריקת ברקודים להורדה מהמלאי">&#128247; סריקה — הורדה</button>
+      <button type="button" class="btn btn-scan-in" data-lens-inv-action="scan-in" title="סריקת ברקודים להוספה למלאי">&#128247; סריקה — הוספה</button>
+      <button type="button" class="btn btn-primary" data-lens-inv-action="bulk-add" title="הוספת טווח עדשות עם Wizard">&#10133; הוספה מרובה (Wizard)</button>
     </div>
   </div>
+
+  <!-- ============ FILTERS PANEL ============ -->
+  <div class="lens-inv-filters">
+
+    <!-- Production-type chip row (emphasized) -->
+    <div class="filter-row filter-row-emphasized">
+      <span class="filter-label-strong">סוג ייצור:</span>
+      <button type="button" class="chip active" data-production-filter="stock" id="filter-stock">&#128230; מדף (Stock)</button>
+      <button type="button" class="chip" data-production-filter="custom" id="filter-custom">&#127981; ייצור (Custom)</button>
+      <span class="filter-hint">&#128161; הסינון מסנן את כל המסך — גריד, חוסרים, מצב מלאי</span>
+    </div>
+
+    <!-- Variant selector row: brand → design → variant cascade (existing JS) -->
+    <div class="filter-row variant-selector-row">
+      <div class="field-group">
+        <label for="filter-brand">מותג</label>
+        <select id="filter-brand"><option value="">— הכל —</option></select>
+      </div>
+      <div class="field-group">
+        <label for="filter-design">סדרה (Design)</label>
+        <select id="filter-design"><option value="">— בחר דגם —</option></select>
+      </div>
+      <div class="field-group">
+        <label for="filter-variant">וריאציה (Index × ציפוי × קוטר)</label>
+        <select id="filter-variant"><option value="">— בחר וריאציה —</option></select>
+      </div>
+      <div class="field-group field-group-readonly">
+        <label>טווח הוריאנט</label>
+        <div class="variant-range-display" id="variant-range-display">— בחר וריאציה לתצוגה —</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ MAIN: GRID PANEL + SIDE PANEL ============ -->
+  <div class="lens-inv-main">
+
+    <!-- GRID PANEL -->
+    <div class="lens-inv-grid-panel">
+      <div class="grid-panel-header">
+        <h3>רשת SPH &times; CYL</h3>
+        <div class="grid-legend">
+          <span><span class="legend-box legend-on-target"></span>תואם ליעד</span>
+          <span><span class="legend-box legend-low"></span>מתחת ליעד</span>
+          <span><span class="legend-box legend-out-needed"></span>אזל (יש יעד)</span>
+          <span><span class="legend-box legend-over-target"></span>עודף</span>
+          <span><span class="legend-box legend-no-target"></span>ללא יעד</span>
+          <span><span class="legend-box legend-unavailable"></span>לא אצל הספק</span>
+        </div>
+      </div>
+      <div id="grid-container" class="grid-container">
+        <div class="empty-state">בחר וריאציה לתצוגה</div>
+      </div>
+    </div>
+
+    <!-- SIDE PANEL: selected-cell card containing lots -->
+    <div class="lens-inv-side-panel">
+      <div class="panel-card">
+        <div class="panel-card-header panel-card-header-gold">
+          <span>&#128205; תא נבחר</span>
+          <span class="panel-card-header-sub" id="selected-cell-coords">—</span>
+        </div>
+        <div class="panel-card-body">
+          <div id="lot-container" class="lot-container">
+            <div class="empty-state">לחץ על תא בטבלה לצפייה בחבילות</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ BOTTOM TABS (shell, content deferred) ============ -->
+  <div class="lens-inv-bottom-section">
+    <div class="lens-inv-bottom-tabs-header" role="tablist">
+      <button type="button" class="bottom-tab active" data-bottom-tab="movements" role="tab" aria-selected="true">&#128203; תנועות מלאי</button>
+      <button type="button" class="bottom-tab" data-bottom-tab="pricing" role="tab" aria-selected="false">&#128176; מחירים והנחות</button>
+      <button type="button" class="bottom-tab" data-bottom-tab="alerts" role="tab" aria-selected="false">&#9888;&#65039; התראות</button>
+      <button type="button" class="bottom-tab" data-bottom-tab="analytics" role="tab" aria-selected="false">&#128202; ניתוח מלאי</button>
+    </div>
+    <div class="lens-inv-bottom-tabs-body" role="tabpanel">
+      <div class="empty-state">תנועות מלאי לוריאציה הנוכחית — הצגה בלשונית הבאה של ה-Pipeline.</div>
+    </div>
+  </div>
+
 </div>

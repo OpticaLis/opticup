@@ -6,9 +6,22 @@
 (function () {
   'use strict';
 
+  function _writeSelectedCellCoords(sph, cyl) {
+    const coords = document.getElementById('selected-cell-coords');
+    if (!coords) return;
+    const fmt = (v) => {
+      if (v === '' || v == null) return '—';
+      const n = parseFloat(v);
+      if (isNaN(n)) return String(v);
+      return (n >= 0 ? '+' : '') + n.toFixed(2);
+    };
+    coords.textContent = fmt(sph) + ' × ' + fmt(cyl);
+  }
+
   async function showLotsFor(sph, cyl) {
     const cont = document.getElementById('lot-container');
     cont.innerHTML = '<div class="empty-state">טוען חבילות…</div>';
+    _writeSelectedCellCoords(sph, cyl);
 
     try {
       const lots = await fetchAll('stock_lot', [

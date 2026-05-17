@@ -1,0 +1,197 @@
+/* =====================================================================
+   lens-inventory-page.css
+   M1_LENS_MOCKUP_FIDELITY_REBUILD — Phase A (2026-05-18)
+
+   Gold-theme overrides scoped to .lens-inv-page wrapper (lens-inventory
+   tab). Per Daniel-ratified mockup LENS_INVENTORY_MOCKUP.html (D-M1-02):
+   gold (#c9a555) primary accent, dark-navy (#34495e) grid headers, side
+   panel with gold-gradient cell-info header. Scoped under .lens-inv-page
+   so other lens tabs (designs, pricing, PO, GR, pos-list, catalog-admin)
+   keep their own theme decisions.
+
+   Loaded by inventory.html alongside lens-tabs.css. The two files split
+   responsibility: lens-tabs.css = shared lens-tab primitives (navy theme,
+   nav strips), this file = lens-inventory page-specific (gold theme).
+   ===================================================================== */
+
+/* === Page wrapper === */
+.lens-tab-section .lens-inv-page { display: flex; flex-direction: column; gap: 12px; padding: 0 4px; }
+
+/* === HEADER === */
+.lens-tab-section .lens-inv-header {
+  background: #fff; padding: 14px 20px; border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; flex-wrap: wrap;
+}
+.lens-tab-section .lens-inv-title {
+  font-size: 20px; font-weight: 600; color: #2c3e50;
+  display: flex; align-items: center; gap: 8px;
+}
+.lens-tab-section .lens-inv-title .badge {
+  font-size: 11px; background: #e8eaf6; color: #3949ab;
+  padding: 3px 8px; border-radius: 10px; font-weight: normal;
+  margin-inline-start: 6px;
+}
+.lens-tab-section .lens-inv-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.lens-tab-section .lens-inv-actions .btn {
+  padding: 8px 14px; border: 1px solid #d0d4d9; background: #fff;
+  border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;
+  color: #2c3e50; display: inline-flex; align-items: center; gap: 6px;
+  transition: background .15s, border-color .15s, color .15s; font-family: inherit;
+}
+.lens-tab-section .lens-inv-actions .btn:hover { background: #f0f2f5; }
+.lens-tab-section .lens-inv-actions .btn.btn-primary { background: #c9a555; color: #fff; border-color: #c9a555; }
+.lens-tab-section .lens-inv-actions .btn.btn-primary:hover { background: #b8954a; border-color: #b8954a; }
+.lens-tab-section .lens-inv-actions .btn.btn-scan-out {
+  background: #fef0ef; color: #c0392b; border-color: #e74c3c; font-weight: 600;
+}
+.lens-tab-section .lens-inv-actions .btn.btn-scan-out:hover { background: #fde0de; border-color: #c0392b; }
+.lens-tab-section .lens-inv-actions .btn.btn-scan-in {
+  background: #e8f8ef; color: #1e8449; border-color: #27ae60; font-weight: 600;
+}
+.lens-tab-section .lens-inv-actions .btn.btn-scan-in:hover { background: #d4f1e0; border-color: #1e8449; }
+
+/* === FILTERS PANEL === */
+.lens-tab-section .lens-inv-filters {
+  background: #fff; padding: 14px 20px; border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.lens-tab-section .lens-inv-filters .filter-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lens-tab-section .lens-inv-filters .filter-row.filter-row-emphasized {
+  background: #fdf6e3; border: 1px solid #f4c430; border-radius: 6px; padding: 10px 14px;
+}
+.lens-tab-section .lens-inv-filters .filter-label-strong {
+  font-weight: 700; color: #856404; font-size: 13px; min-width: 80px;
+}
+.lens-tab-section .lens-inv-filters .filter-hint { font-size: 11px; color: #64748b; margin-inline-start: auto; }
+
+/* Override the global lens .chip to gold inside .lens-inv-page */
+.lens-tab-section .lens-inv-page .chip {
+  padding: 6px 14px; border: 1px solid #c9a555; background: #fff;
+  border-radius: 20px; font-size: 12px; cursor: pointer; color: #5d6d7e;
+  font-family: inherit; transition: background .15s, color .15s;
+}
+.lens-tab-section .lens-inv-page .chip:hover { background: #faf3e0; }
+.lens-tab-section .lens-inv-page .chip.active { background: #c9a555; color: #fff; border-color: #c9a555; }
+.lens-tab-section .lens-inv-page .chip.secondary { border-color: #95a5a6; }
+.lens-tab-section .lens-inv-page .chip.secondary.active { background: #34495e; border-color: #34495e; }
+
+/* Variant selector row */
+.lens-tab-section .lens-inv-filters .variant-selector-row { gap: 16px; }
+.lens-tab-section .lens-inv-filters .field-group {
+  display: flex; flex-direction: column; gap: 4px; min-width: 160px;
+}
+.lens-tab-section .lens-inv-filters .field-group label {
+  font-size: 11px; color: #5d6d7e; font-weight: 600; letter-spacing: .3px;
+}
+.lens-tab-section .lens-inv-filters .field-group select {
+  padding: 8px 12px; border: 1px solid #d0d4d9; border-radius: 6px;
+  font-size: 13px; background: #fff; font-family: inherit;
+}
+.lens-tab-section .lens-inv-filters .field-group.field-group-readonly { margin-inline-start: auto; min-width: 220px; }
+.lens-tab-section .lens-inv-filters .variant-range-display {
+  font-size: 12px; color: #27ae60; font-weight: 600; padding-top: 4px;
+}
+.lens-tab-section .lens-inv-filters .variant-range-display.empty { color: #95a5a6; font-weight: 400; }
+
+/* === MAIN: grid + side panel === */
+.lens-tab-section .lens-inv-main { display: grid; grid-template-columns: 1fr 320px; gap: 12px; }
+.lens-tab-section .lens-inv-grid-panel {
+  background: #fff; border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden;
+}
+.lens-tab-section .lens-inv-grid-panel .grid-panel-header {
+  padding: 12px 20px; border-bottom: 1px solid #ecf0f1;
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; flex-wrap: wrap;
+}
+.lens-tab-section .lens-inv-grid-panel .grid-panel-header h3 { font-size: 14px; color: #2c3e50; margin: 0; }
+.lens-tab-section .lens-inv-grid-panel .grid-legend {
+  display: flex; gap: 12px; font-size: 11px; align-items: center;
+  flex-wrap: wrap; color: #5d6d7e;
+}
+.lens-tab-section .lens-inv-grid-panel .grid-legend > span { display: inline-flex; align-items: center; gap: 4px; }
+
+.lens-tab-section .legend-box {
+  display: inline-block; width: 14px; height: 14px;
+  border-radius: 3px; border: 1px solid #d0d4d9; vertical-align: middle;
+}
+.lens-tab-section .legend-box.legend-on-target  { background: #e8f5e9; border-color: #27ae60; }
+.lens-tab-section .legend-box.legend-low        { background: #fff7e0; border-color: #f4c430; }
+.lens-tab-section .legend-box.legend-out-needed { background: #ffe0e0; border-color: #e74c3c; }
+.lens-tab-section .legend-box.legend-over-target{ background: #d1f5ef; border-color: #1abc9c; }
+.lens-tab-section .legend-box.legend-no-target  { background: #fff;    border-color: #d0d4d9; }
+.lens-tab-section .legend-box.legend-unavailable{ background: #ecf0f1; border-color: #95a5a6; }
+
+.lens-tab-section .lens-inv-grid-panel .grid-container { padding: 16px 20px; overflow-x: auto; }
+
+/* Grid cells — gold-theme inside .lens-inv-page */
+.lens-tab-section .lens-inv-page table.lens-grid { font-size: 11px; }
+.lens-tab-section .lens-inv-page table.lens-grid th {
+  background: #34495e; color: #fff; border-bottom: none;
+  padding: 6px 4px; font-size: 10px; text-align: center;
+}
+.lens-tab-section .lens-inv-page table.lens-grid td { padding: 6px 4px; text-align: center; }
+.lens-tab-section .lens-inv-page table.lens-grid td.cell-stock { background: #e8f5e9; color: #1b5e20; font-weight: 700; }
+.lens-tab-section .lens-inv-page table.lens-grid td.cell-empty { background: #fff; color: #2c3e50; }
+.lens-tab-section .lens-inv-page table.lens-grid td.cell-selected {
+  background: #c9a555; color: #fff; box-shadow: inset 0 0 0 2px #b8954a;
+}
+.lens-tab-section .lens-inv-page table.lens-grid td .qty-btn {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 1px solid #cbd5e1; background: #fff; cursor: pointer;
+  font-size: 11px; line-height: 1; margin: 0 1px; color: #2c3e50; padding: 0;
+}
+.lens-tab-section .lens-inv-page table.lens-grid td .qty-btn[data-action="add"] {
+  background: #27ae60; color: #fff; border-color: #27ae60;
+}
+.lens-tab-section .lens-inv-page table.lens-grid td .qty-btn[data-action="reduce"] {
+  background: #e74c3c; color: #fff; border-color: #e74c3c;
+}
+
+/* === Side panel === */
+.lens-tab-section .lens-inv-side-panel { display: flex; flex-direction: column; gap: 12px; }
+.lens-tab-section .lens-inv-side-panel .panel-card {
+  background: #fff; border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden;
+}
+.lens-tab-section .lens-inv-side-panel .panel-card-header {
+  padding: 10px 16px; border-bottom: 1px solid #ecf0f1; background: #f8f9fb;
+  font-size: 13px; font-weight: 600; color: #2c3e50;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.lens-tab-section .lens-inv-side-panel .panel-card-header.panel-card-header-gold {
+  background: linear-gradient(135deg, #c9a555 0%, #b8954a 100%); color: #fff; border-bottom: none;
+}
+.lens-tab-section .lens-inv-side-panel .panel-card-header-gold .panel-card-header-sub {
+  font-size: 14px; font-weight: 700;
+  background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 6px;
+}
+.lens-tab-section .lens-inv-side-panel .panel-card-body { padding: 14px 16px; }
+.lens-tab-section .lens-inv-side-panel .lot-container { font-size: 12px; }
+
+/* === BOTTOM TABS === */
+.lens-tab-section .lens-inv-bottom-section {
+  background: #fff; border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden;
+}
+.lens-tab-section .lens-inv-bottom-tabs-header { display: flex; border-bottom: 1px solid #ecf0f1; background: #f8f9fb; }
+.lens-tab-section .bottom-tab {
+  padding: 12px 20px; cursor: pointer; font-size: 13px; color: #5d6d7e;
+  background: transparent; border: none; border-inline-start: 1px solid #ecf0f1;
+  transition: background .15s, color .15s; font-family: inherit; font-weight: 500;
+}
+.lens-tab-section .bottom-tab:first-child { border-inline-start: none; }
+.lens-tab-section .bottom-tab:hover { background: #f0f2f5; }
+.lens-tab-section .bottom-tab.active {
+  background: #fff; color: #c9a555; font-weight: 700;
+  border-bottom: 2px solid #c9a555; margin-bottom: -1px;
+}
+.lens-tab-section .lens-inv-bottom-tabs-body { padding: 16px 20px; min-height: 120px; }
+
+/* === Mobile === */
+@media (max-width: 900px) {
+  .lens-tab-section .lens-inv-main { grid-template-columns: 1fr; }
+}
