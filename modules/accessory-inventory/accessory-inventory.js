@@ -50,7 +50,7 @@
         .select('variant_id, qty_on_hand, location_id')
         .eq('tenant_id', getTenantId());
       return (resp && resp.data) || [];
-    } catch (e) { return []; }
+    } catch (e) { console.warn('[AccessoryInv] loadStock failed', e); return []; }
   }
 
   function row(v, stockByVariant) {
@@ -74,8 +74,8 @@
     var container = document.getElementById('ac-inv-container');
     if (!container) return;
     container.innerHTML = '<div class="empty-state">טוען...</div>';
-    var variants = await loadVariants();
-    var stock = await loadStock();
+    var results = await Promise.all([loadVariants(), loadStock()]);
+    var variants = results[0]; var stock = results[1];
     var stockByVariant = {};
     stock.forEach(function (s) {
       var prev = stockByVariant[s.variant_id] || { qty: 0 };

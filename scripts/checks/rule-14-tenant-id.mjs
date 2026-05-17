@@ -19,8 +19,10 @@ const TENANT_COL_RE = /(?:owner_)?tenant_id\s+UUID(?:\s+NOT\s+NULL)?/i;
 //   (b) Universal reference — `currencies` (ISO-4217 codes, identical for every
 //       tenant; M1A-DEBT-01 hotfix 2026-05-14 documented exception).
 const GLOBAL_SINGLETON_EXEMPT = new Set([
-  'lens_variant_display_seq',  // (a) M1 Lens Phase 1A: scope='global' singleton for next_lens_variant_display_id() RPC; lens_variant is platform-owned.
-  'currencies',                // (b) M1A-DEBT-01 hotfix 2026-05-14: GLOBAL ISO-4217 reference table; RLS read_anywhere + write_platform_only via is_platform_super_admin().
+  'lens_variant_display_seq',          // (a) M1 Lens Phase 1A: scope='global' singleton for next_lens_variant_display_id() RPC; lens_variant is platform-owned.
+  'currencies',                        // (b) M1A-DEBT-01 hotfix 2026-05-14: GLOBAL ISO-4217 reference table; RLS read_anywhere + write_platform_only via is_platform_super_admin().
+  'contact_lens_variant_display_seq',  // (a') M1 CL Phase 2026-05-16: same singleton pattern as lens_variant_display_seq for next_contact_variant_display_id() RPC. Closes F-5 of M1_CONTACT_LENSES_ACCESSORIES FINDINGS.
+  'accessory_variant_display_seq',     // (a'') M1 Accessory Phase 2026-05-16: same pattern for next_accessory_variant_display_id() RPC.
 ]);
 
 function isMigration(filePath) {
