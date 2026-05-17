@@ -2405,3 +2405,25 @@ ALTER TABLE public.purchase_receipt
 --    (js/shared.js T block, after PURCHASE_RECEIPT_LINE).
 --    FIELD_MAP entry added: lens_variant_notes block (variant_id, body,
 --    author_id) in js/shared-field-map.js.
+--
+-- 3) 20260517161725_m1_lens_permission_seeds_view_cost_price_and_lens_pricing_edit
+--    Seeds 2 permission keys + 4 role grants per ARCHITECT_DECISION 001:
+--      permissions rows (4 total = 2 keys × 2 tenants):
+--        inventory.view_cost_price (module='inventory', action='view_cost_price',
+--          name_he='צפייה במחיר עלות')
+--        lens_pricing.edit         (module='lens_pricing', action='edit',
+--          name_he='עריכת תמחור עדשות')
+--      role_permissions rows (8 total = 2 keys × 2 tenants × 2 roles):
+--        ceo + manager get both keys in both tenants (prizma + demo).
+--    Both INSERTs use ON CONFLICT (PK) DO NOTHING idempotency. tenants.slug
+--    resolved at migration time — no hardcoded UUIDs.
+--
+--    Replaces the original SPEC §9 template which assumed wrong column names
+--    (key/description) and a non-existent admin role. See
+--    docs/specs/M1_LENS_DB_SCHEMA_RECEIPTS_NOTES/
+--    ARCHITECT_DECISION_001_SPEC3_AMENDMENT.md for the full decision rationale
+--    and the source-of-truth amendment.
+--
+--    Follow-up tracked: TECH_DEBT M1-DEBT-XX — permissions_template global
+--    table + auto-replication trigger (eliminates per-tenant duplication
+--    before tenant 3 onboarding). Out of SPEC 3 scope.
