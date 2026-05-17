@@ -172,3 +172,89 @@
 .tbl-sticky-bar::-webkit-scrollbar { height: 10px; }
 .tbl-sticky-bar::-webkit-scrollbar-thumb { background: var(--color-gray-400); border-radius: 5px; }
 .tbl-sticky-spacer { height: 1px; }
+
+/* =============================================================================
+   GROUP-HEADER ROW (group-header-row.js, used in PO + GR mockups)
+   Source-band banding (purple = customer-custom, blue = stock, amber = manual)
+   Tokens defined in shared/css/tokens.css.
+   ============================================================================= */
+.tb-group-header { border-top: 2px solid var(--color-gray-300, #cbd5e1); }
+.tb-group-header-cell {
+  padding: var(--space-sm, 8px) var(--space-md, 12px);
+  font-weight: var(--font-weight-bold, 700);
+  font-size: var(--font-size-sm, 0.85rem);
+  color: var(--color-gray-900, #1e293b);
+}
+.tb-group-header-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm, 8px);
+}
+.tb-group-header-icon { font-size: 1.1em; line-height: 1; }
+.tb-group-header-label { flex: 1; }
+.tb-group-header-count { color: var(--mockup-sub, #64748b); font-weight: var(--font-weight-normal, 400); font-size: var(--font-size-xs, 0.75rem); }
+
+.tb-group-header-purple { background: var(--src-purple-bg, #faf5ff); }
+.tb-group-header-purple .tb-group-header-label { color: var(--src-purple-fg, #6d28d9); }
+.tb-group-header-blue   { background: var(--src-blue-bg, #eff6ff); }
+.tb-group-header-blue   .tb-group-header-label { color: var(--src-blue-fg, #1e3a8a); }
+.tb-group-header-amber  { background: var(--src-amber-bg, #fffbeb); }
+.tb-group-header-amber  .tb-group-header-label { color: var(--src-amber-fg, #92400e); }
+
+/* =============================================================================
+   PERMISSION-GATED COLUMNS (data-table extension)
+   Cells/headers tagged with .tb-col-permission-gated render a tiny lock-hint
+   prefix before label. PermissionUI scans data-permission attrs to hide rows
+   that fail the gate. The hint is only visual — actual hiding happens in
+   PermissionUI.apply().
+   ============================================================================= */
+.tb-col-permission-gated::before {
+  content: '🔒 ';
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+/* =============================================================================
+   PAGINATION (data-table extension)
+   Lives outside the table wrapper, rendered by table-builder.js when
+   config.pagination is supplied.
+   ============================================================================= */
+.tb-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md, 12px);
+  padding: var(--space-sm, 8px) var(--space-md, 12px);
+  border-top: 1px solid var(--color-gray-200, #e2e8f0);
+  font-size: var(--font-size-sm, 0.85rem);
+  color: var(--mockup-text-soft, #5d6d7e);
+  flex-wrap: wrap;
+}
+.tb-pagination-info { font-weight: var(--font-weight-medium, 500); }
+.tb-pagination-controls { display: flex; align-items: center; gap: var(--space-xs, 4px); }
+.tb-pagination-btn {
+  padding: 4px 10px;
+  background: var(--color-bg-card, #ffffff);
+  border: 1px solid var(--color-gray-300, #cbd5e1);
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  font-size: var(--font-size-sm, 0.85rem);
+  font-family: var(--font-family, inherit);
+  color: var(--color-gray-700, #334155);
+  min-width: 32px;
+}
+.tb-pagination-btn:hover:not(:disabled) { background: var(--color-gray-100, #f1f5f9); }
+.tb-pagination-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.tb-pagination-btn.active {
+  background: var(--gold-active, #c9a555);
+  color: var(--color-white, #ffffff);
+  border-color: var(--gold-active, #c9a555);
+}
+.tb-pagination-page-size {
+  padding: 4px 8px;
+  border: 1px solid var(--color-gray-300, #cbd5e1);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-bg-card, #ffffff);
+  font-size: var(--font-size-sm, 0.85rem);
+  font-family: var(--font-family, inherit);
+}
