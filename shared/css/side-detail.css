@@ -1,0 +1,124 @@
+/* side-detail.css — Right-pinned side detail panel styles
+   ============================================================================
+   Consumed by shared/js/side-detail-panel.js. Sits next to main content in
+   a 2-col grid (main-content { display: grid; grid-template-columns: 1fr 320px-380px; }).
+   Gradient header on top, scrollable body with sections.
+   ============================================================================ */
+
+.side-detail-panel {
+  background: var(--color-bg-card, #ffffff);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.08));
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+}
+
+.side-detail-header {
+  padding: var(--space-md, 12px) 18px;
+  color: var(--color-white, #ffffff);
+  font-size: var(--font-size-md, 0.92rem);
+  font-weight: var(--font-weight-semibold, 600);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.side-detail-title {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  line-height: var(--line-height-tight, 1.25);
+}
+
+/* Header variants */
+.side-detail-header-gold    { background: var(--gradient-header, linear-gradient(135deg, #c9a555 0%, #b8954a 100%)); }
+.side-detail-header-navy    { background: var(--accent-navy, #1e3a8a); }
+.side-detail-header-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+.side-detail-header-amber   { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+
+/* Body — scrollable */
+.side-detail-body {
+  padding: var(--space-lg, 16px) 18px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+/* Section */
+.side-detail-section {
+  margin-bottom: var(--space-lg, 16px);
+  padding-bottom: var(--space-md, 12px);
+  border-bottom: 1px solid var(--mockup-border, #ecf0f1);
+}
+.side-detail-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.side-detail-section-title {
+  font-size: var(--font-size-xs, 0.75rem);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--mockup-text, #2c3e50);
+  margin-bottom: var(--space-sm, 8px);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.side-detail-section-body {
+  font-size: var(--font-size-sm, 0.85rem);
+  color: var(--color-gray-700, #334155);
+  line-height: var(--line-height-normal, 1.5);
+}
+
+.side-detail-section-footer {
+  margin-top: var(--space-sm, 8px);
+  padding-top: var(--space-sm, 8px);
+  border-top: 1px dashed var(--mockup-border, #ecf0f1);
+  display: flex;
+  gap: var(--space-sm, 8px);
+  justify-content: flex-end;
+}
+
+/* Section variants */
+.side-detail-section-highlight {
+  background: var(--gold-line, #fdf6e3);
+  padding: var(--space-md, 12px);
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--gold-active, #c9a555);
+  border-bottom: 1px solid var(--gold-active, #c9a555);
+}
+
+.side-detail-section-warn {
+  background: var(--color-warning-light, #fef3c7);
+  padding: var(--space-md, 12px);
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--color-warning, #f59e0b);
+  border-bottom: 1px solid var(--color-warning, #f59e0b);
+}
+
+.side-detail-section-info {
+  background: var(--accent-navy-soft, #e6f1fb);
+  padding: var(--space-md, 12px);
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--accent-navy, #1e3a8a);
+  border-bottom: 1px solid var(--accent-navy, #1e3a8a);
+}
+
+/* Helper rows used inside sections (matches mockup patterns) */
+.side-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-sm, 8px) 0;
+  border-bottom: 1px solid var(--color-gray-100, #f5f6fa);
+  font-size: var(--font-size-sm, 0.85rem);
+}
+.side-detail-row:last-child { border-bottom: none; }
+.side-detail-row .side-detail-key { color: var(--mockup-text-soft, #5d6d7e); }
+.side-detail-row .side-detail-val { font-weight: var(--font-weight-semibold, 600); color: var(--mockup-text, #2c3e50); }
+
+/* Mobile — full width below main */
+@media (max-width: 900px) {
+  .side-detail-panel { max-height: none; }
+}
