@@ -1,9 +1,18 @@
-/* lens-tabs.css — visual unification primitives for lens tab partials.
-   Sealed by M1_INVENTORY_UNIFIED_SCREEN SPEC §1.5 R-1..R-13 (2026-05-16).
+/* lens-tabs.css — visual primitives for lens tab partials.
 
-   Goal: map lens-specific UI primitives (production-type chip toggle,
-   SPH×CYL grid, designs table, PO stat cards, status chips) to frames
-   tokens so lens tabs look identical to frames tabs.
+   Mockup-aligned per D-M1-02..D-M1-14 ratification 2026-05-14.
+   The prior visual-palette retargeting from M1_INVENTORY_UNIFIED_SCREEN §1.5
+   R-1..R-13 (sealed 2026-05-16) has been RETIRED per
+   M1_LENS_PALETTE_RETIRE_UNIFIED SPEC (2026-05-17). Structural rules
+   (R-7 chrome, R-10 access-gate, R-11/R-12 spacing) remain in force as
+   conventions for partials.
+
+   Goal: provide cross-tab CSS primitives (chip toggle, status chips,
+   stat-cards, panel cards, lens nav strip) that match the canonical
+   mockups under modules/Module 1 - Inventory Management/architecture-brief/mockups/.
+
+   Per-screen specifics (SPH×CYL grid, screen chrome, modals) live in
+   per-screen stylesheets (e.g. lens-inventory-page.css).
 
    The lens partials carry semantic markup only — no inline <style>. This
    sheet is loaded once by inventory.html. */
@@ -35,15 +44,16 @@
   margin-inline-start: 6px;
 }
 
-/* ===== R-3: production-type chip toggle — Navy (was Gold) ===== */
+/* ===== Production-type chip toggle — Gold (mockup-aligned 2026-05-17).
+   Replaces R-3 (navy retargeting), retired by M1_LENS_PALETTE_RETIRE_UNIFIED. ===== */
 .lens-tab-section .chip {
   padding: 6px 14px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #c9a555;
   background: #fff;
   border-radius: 999px;
   font-size: 12px;
   cursor: pointer;
-  color: #475569;
+  color: #5d6d7e;
   font-family: inherit;
   display: inline-flex;
   align-items: center;
@@ -51,13 +61,14 @@
 }
 
 .lens-tab-section .chip:hover {
-  border-color: #1e3a8a;
+  background: #faf3e0;
+  border-color: #b8954a;
 }
 
 .lens-tab-section .chip.active {
-  background: #1e3a8a;
+  background: #c9a555;
   color: #fff;
-  border-color: #1e3a8a;
+  border-color: #c9a555;
 }
 
 /* ===== R-4: lens table headers — light slate (was dark slate) ===== */
@@ -106,17 +117,18 @@
   background: #d1fae5;
 }
 
-/* ===== R-8: action buttons — reuse frames .btn-* classes (no inline overrides).
-   Provide a no-op fallback so legacy .btn-primary / .btn-success markup still
-   renders pleasantly if a partial body slipped through with an old class. ===== */
+/* ===== Action buttons — mockup-aligned 2026-05-17.
+   Replaces R-8 (frames-tokens override), retired by M1_LENS_PALETTE_RETIRE_UNIFIED.
+   .btn-primary now uses the mockup's gold accent. .btn-success keeps the
+   mockup green for "confirm-and-create" actions (קבל סחורה / שמור). ===== */
 .lens-tab-section .btn-primary,
 .lens-tab-section .toggle-btn.activate {
-  background: #1e3a8a;
+  background: #c9a555;
   color: #fff;
-  border-color: #1e3a8a;
+  border-color: #c9a555;
 }
 
-.lens-tab-section .btn-primary:hover { background: #1e40af; }
+.lens-tab-section .btn-primary:hover { background: #b8954a; }
 
 .lens-tab-section .btn-success {
   background: #059669;
@@ -141,7 +153,7 @@
   border-color: #cbd5e1;
 }
 
-/* ===== Filter bar — frames-aligned panel ===== */
+/* ===== Filter bar — panel layout ===== */
 .lens-tab-section .lens-filter-bar {
   background: #fff;
   padding: 14px 18px;
@@ -225,6 +237,7 @@
 .lens-tab-section .stat-card.sent      { border-inline-end-color: #3b82f6; }
 .lens-tab-section .stat-card.partial   { border-inline-end-color: #d97706; }
 .lens-tab-section .stat-card.received  { border-inline-end-color: #059669; }
+.lens-tab-section .stat-card.overdue   { border-inline-end-color: #dc2626; }
 .lens-tab-section .stat-card.cancelled { border-inline-end-color: #94a3b8; }
 
 .lens-tab-section .stat-card .stat-label {
@@ -248,11 +261,17 @@
   margin-top: 2px;
 }
 
-/* ===== Status chips (frames-aligned palette) ===== */
+/* ===== Status chips (mockup-aligned palette).
+   Note: chip-sent navy text and chip-received green are state indicators
+   from the mockup (LENS_ACTIVE_POS_LIST_MOCKUP.html), NOT the retired
+   frames-alignment. These intentionally remain. chip-overdue added
+   2026-05-17 per M1_LENS_PALETTE_RETIRE_UNIFIED — required by lens-pos-list
+   to show overdue POs (LENS_ACTIVE_POS_LIST_MOCKUP "⚠️ באיחור" stat-card). ===== */
 .lens-tab-section .chip-draft     { background: #f1f5f9; color: #475569; }
 .lens-tab-section .chip-sent      { background: #dbeafe; color: #1e3a8a; }
 .lens-tab-section .chip-partial   { background: #fef3c7; color: #92400e; }
 .lens-tab-section .chip-received  { background: #d1fae5; color: #065f46; }
+.lens-tab-section .chip-overdue   { background: #fee2e2; color: #991b1b; }
 .lens-tab-section .chip-cancelled { background: #f1f5f9; color: #94a3b8; }
 
 /* ===== Empty state ===== */
@@ -313,12 +332,12 @@
 }
 
 #lensNav button:hover {
-  background: #f1f5f9;
-  color: #1e3a8a;
+  background: #faf3e0;
+  color: #b8954a;
 }
 
 #lensNav button.active {
-  background: #1e3a8a;
+  background: #c9a555;
   color: #fff;
   font-weight: 600;
 }
@@ -355,14 +374,14 @@
 
 #contactNav button:hover,
 #accessoryNav button:hover {
-  background: #f1f5f9;
-  color: #1e3a8a;
+  background: #faf3e0;
+  color: #b8954a;
 }
 
 #contactNav button.active,
 #accessoryNav button.active {
-  background: #1e3a8a;
+  background: #c9a555;
   color: #fff;
   font-weight: 600;
-  border-color: #1e3a8a;
+  border-color: #c9a555;
 }
