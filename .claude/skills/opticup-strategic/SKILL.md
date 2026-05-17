@@ -134,6 +134,25 @@ When this skill loads, do these steps:
 1. **Read auto-memory** — your persistent memory at `/mnt/.auto-memory/MEMORY.md`
    gives you the project overview without reading dozens of files.
 
+**Step 0.5 — Cowork-VM viability check (only in Cowork sessions; skip on Claude Code):**
+
+Before any planned git write, run:
+```bash
+stat .git/index.lock 2>&1 | head -1
+ls .git/index.lock 2>&1
+rm -f .git/index.lock 2>&1
+```
+
+If `stat` succeeds but `rm` reports "No such file or directory" → ghost
+file in FUSE mount → all destructive ops in this session must be
+dispatched to Claude Code via ACTIVATION_PROMPT. Don't try to execute
+in-VM. Add this finding to the SPEC §4 Destructive Operations as
+"Dispatched to desktop" and stop after authoring.
+
+This is the **REPO_CLEANUP_2026_05_18 lesson** — confirmed empirically
+when the executor re-verified on desktop and found 0/2,339 phantom
+modifications.
+
 2. **Read CLAUDE.md** — the project constitution at the repo root. This contains
    the 30 Iron Rules that govern all development. Non-negotiable.
 

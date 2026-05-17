@@ -127,6 +127,27 @@ Exit 0 = lock claimed; the script prints the lock filename. Exit 1 = another ses
 
 **Executor-typical globs:** `js/**`, `modules/Module N/**`, `shared/**`, `supabase/migrations/**`, `<SPEC_FOLDER>/**`. Set `--branch-owned develop` unless a SPEC explicitly targets a release branch.
 
+**Pre-Action #2: Cowork-SPEC desktop re-verification gate (only when executing a SPEC authored by a Cowork session).**
+
+If the SPEC §2 Background cites Cowork-VM-side classification of modified
+files OR references FUSE-mount measurements: RE-VERIFY all classification
+numbers on the desktop before any destructive op.
+
+Specifically:
+- `git status --porcelain | Measure-Object -Line` on desktop
+- Compare to Cowork-side counts in SPEC §2.3
+- If desktop sees clean tree → SPEC is no-op; close as such, write
+  FINDINGS.md with classification-mismatch evidence, escalate
+- If desktop sees same/similar counts → SPEC scope holds; proceed
+- If desktop sees DIFFERENT counts (neither clean nor same) → unknown
+  3rd state; STOP, escalate
+
+This is the **REPO_CLEANUP_2026_05_18 lesson** — confirmed empirically
+when Cowork-side classified 2,340 files but desktop saw 6. The 2,334
+non-existent files would have been a no-op bulk commit if executed blind.
+
+Desktop = source of truth. FUSE mount = snapshot that may lag.
+
 7. **Confirm readiness:**
    > "Repo: opticalis/opticup. Branch: develop. Machine: [Win/Mac]. Repo: [clean/dirty-handled]. Module: [X]. Ready."
 

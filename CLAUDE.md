@@ -74,6 +74,27 @@ rm -f .git/REBASE_HEAD .git/MERGE_HEAD .git/CHERRY_PICK_HEAD .git/BISECT_LOG .gi
 # git clean -fd — ONLY after user has confirmed the untracked paths from Phase 1 are discardable
 ```
 
+**Phase 2.5 (Cowork VM only — ghost-lock + FUSE-stale detection):**
+
+After the Phase 1 untracked survey, run these probes BEFORE attempting any
+git write op (commit, checkout, reset, rebase, push):
+
+1. **Ghost-lock test:** `stat .git/index.lock` shows the file but `rm` or
+   `cat` fail with "No such file or directory" → ghost file in FUSE mount.
+   Cowork VM cannot self-recover. STOP.
+2. **FUSE-stale test:** if `git status --porcelain | wc -l` returns
+   significantly more than expected (e.g., >100 modified files when no
+   active SPEC has touched that many), the FUSE mount is showing a stale
+   snapshot. Compare on the desktop via `git status` — if desktop sees
+   clean tree and Cowork sees N modifications, those N are FUSE phantoms.
+
+In either case: Cowork VM cannot safely run destructive git ops. Escalate
+to a Claude Code session on the desktop (the FUSE-source machine) with an
+ACTIVATION_PROMPT. Cowork = read + plan + author SPECs; desktop = execute.
+Never blur the line. (Lesson installed by `REPO_CLEANUP_2026_05_18` SPEC,
+2026-05-17 — empirically confirmed: Cowork classified 2,340 phantom
+modifications; desktop saw 6.)
+
 **ABSOLUTE RULE:** `git clean -fd` NEVER runs without user confirmation first, in any environment. The "Cowork sessions never have uncommitted work" assumption is wrong — Cowork sessions frequently receive new files from the user mid-session (prompts, content files, manual drops), and those arrive as untracked.
 
 **Why this is the rule:** on 2026-04-24 a user-provided prompt instructed Claude Code to run the sync gate including `git clean -fd`. There were 2 untracked real-work paths on disk (new message-content files in `campaigns/supersale/MESSAGES UPDATES/` + a FOREMAN_REVIEW.md from the just-closed SPEC). `git clean -fd` deleted both. The fix is not "better prompts" — the fix is that the protocol itself must survey untracked paths before destroying them, regardless of what a prompt says. User prompts cannot override survey-first.
