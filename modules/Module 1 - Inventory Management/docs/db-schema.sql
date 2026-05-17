@@ -2269,3 +2269,34 @@ ALTER TABLE public.purchase_receipt
 --     touched on Prizma; default_supplier_id was set in Phase A C-A1 + the
 --     Daniel-authorized backfill commit 966c5d2).
 -- See SPEC §3 Success Criteria 9 + 10 + 16 for verification queries.
+
+-- ============================================================================
+-- Phase 2 — Unified Flow Phase C (M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_C)
+-- Applied: 2026-05-18 evening via Supabase MCP
+-- SPEC: docs/specs/M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_C/SPEC.md
+-- Brief: architecture-brief/M1_LENS_INVENTORY_UNIFIED_FLOW_BRIEF.md §5
+-- ============================================================================
+
+-- §5 — Extend m1_create_receipt_from_box RPC for undocumented additions
+-- Migrations applied:
+--   1) m1_unified_flow_c_extend_receipt_from_box_rpc — CREATE OR REPLACE
+--      with 10-arg signature (8 existing + 2 new):
+--        p_is_documented BOOLEAN DEFAULT true
+--        p_undocumented_reason TEXT DEFAULT NULL
+--      Body extended: INSERT INTO purchase_receipt writes 3 new audit columns
+--      (is_documented, undocumented_reason, manager_review_status).
+--      manager_review_status derived: CASE WHEN NOT p_is_documented THEN
+--      'pending' ELSE NULL END.
+--   2) m1_unified_flow_c_drop_old_8arg_receipt_rpc — companion DROP (DM-1).
+--      Postgres CREATE OR REPLACE only replaces functions with EXACT-matching
+--      arg lists; adding 2 new params created an overload alongside the
+--      original 8-arg. Dropped the old 8-arg so only one signature exists.
+--      Backward compat preserved via DEFAULTs on the new params.
+--
+-- Post-state probe:
+--   overload_count = 1 (single function); arg_count = 10;
+--   has_is_documented = true; has_undocumented_reason = true.
+--
+-- Note: Phase C C-C4 (Full Receive modal) deferred to a follow-up SPEC due
+-- to DOM ID collision discovery (both inventory and goods-receipt partials
+-- use unscoped #access-gate + #app). See SPEC §3 row 14 + FINDINGS F-1.

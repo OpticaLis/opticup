@@ -126,7 +126,7 @@ Phase A added the DB substrate; Phase B added per-tenant default supplier. Phase
 | 12 | Tier C VFV — Flow 1 Quick Scan | end-to-end on demo: open drawer, scan/type a valid demo variant barcode, enter qty, submit → new purchase_receipt row + new stock_lot + grid cell reflects new qty; screenshot pair (before/after) saved | TEST_REPORT.md |
 | 12.X | Brief §5.5 ref step 1 "scan a real variant barcode" | applies via Tier C flow 1 | TEST_REPORT |
 | 13 | Tier C VFV — Flow 2 Manual Add | end-to-end on demo: fill panel fields incl. supplier (pre-filled to AZMON) + undocumented checkbox + submit → purchase_receipt row with `is_documented=false` + `manager_review_status='pending'`; screenshot pair | TEST_REPORT.md |
-| 14 | Tier C VFV — Flow 3 Full Receive modal | end-to-end on demo: open modal, modal renders goods-receipt partial, add 1+ lines, submit → new purchase_receipt row(s) + modal closes + grid refreshes; screenshot pair | TEST_REPORT.md |
+| 14 | ~~Tier C VFV — Flow 3 Full Receive modal~~ | **DEFERRED to follow-up SPEC** — see FINDINGS F-1 (DM-2): embedding lens-goods-receipt-partial inside a modal on the inventory page causes DOM ID collisions (`#access-gate`, `#app`) that require a scoped-ID refactor of the GR partial — beyond Phase C's intended surface area. Existing `tab=goods-receipt` deep-link route continues to serve the Full Receive workflow unchanged. | n/a — deferred |
 | 15 | Demo DB delta during Tier C | exactly 3 new purchase_receipt rows attributable to Tier C flows (one per flow); +N stock_lot rows; +N stock_movement rows | live DB count delta |
 | 16 | Prizma row delta | exactly 0 rows on every table (purchase_receipt, stock_lot, stock_movement, tenants, permissions, role_permissions, suppliers, suppliers) | live DB count delta |
 | 17 | Smoke 7/7 PASS | unchanged | `npm run smoke` |
@@ -220,9 +220,9 @@ After Phase C:
 | 2 | C-C1 | `feat(m1-inv-phase-c): extend m1_create_receipt_from_box RPC to record undocumented additions` |
 | 3 | C-C2 | `feat(m1-inv-phase-c): wire Manual Add panel — supplier auto-fill + delivery-note + undocumented checkbox` |
 | 4 | C-C3 | `feat(m1-inv-phase-c): replace scan-in modal with Quick Scan drawer + variant lookup` |
-| 5 | C-C4 | `feat(m1-inv-phase-c): add Full Receive modal embedding goods-receipt partial` |
-| 6 | C-C5 | `docs(m1-inv-phase-c): db-schema.sql Phase 2C section + SPEC §13.A marker` |
-| 7 | C-C6 | `chore(m1-inv-phase-c): close — EXECUTION_REPORT + FINDINGS` |
+| ~~5~~ | ~~C-C4~~ | **DEFERRED to follow-up SPEC** (see DM-2 / FINDINGS F-1). |
+| 5 | C-C5 | `docs(m1-inv-phase-c): db-schema.sql Phase 2C section + SPEC §13.A marker` |
+| 6 | C-C6 | `chore(m1-inv-phase-c): close — EXECUTION_REPORT + FINDINGS` |
 
 ---
 
@@ -255,6 +255,11 @@ After Phase C:
 
 | # | Commit | Type | Affects |
 |---|--------|------|---------|
-| _(populated at execution time)_ | | | |
+| 1 | C-C1 `1eb2b5e` | DDL (RPC) | `m1_create_receipt_from_box` extended 8→10 args; +DROP of old 8-arg (DM-1) |
+| 2 | C-C2 `84345bf` | UI + JS | Manual Add panel: supplier dropdown + delivery-note + undocumented checkbox + handler; `_submitAddStock` shared helper |
+| 3 | C-C3 `19b026d` | UI + JS + CSS | Quick Scan drawer (new file `lens-inventory-quick-scan.js` + drawer HTML + 56 lines CSS); scan-IN button rerouted from modal to drawer |
+| ~~4~~ | ~~C-C4~~ | ~~UI~~ | **DEFERRED** (FINDINGS F-1 / DM-2) — Full Receive modal blocked by DOM ID collision; existing `tab=goods-receipt` route continues unchanged |
+| 5 | C-C5 (this commit) | docs | M1 db-schema.sql Phase 2C section + this §13.A marker |
+| 6 | C-C6 | docs | EXECUTION_REPORT.md + FINDINGS.md (F-1 Full Receive deferral) |
 
 *End of SPEC. Foreman-sealed 2026-05-18 evening. Phase C is the largest in the Pipeline — multi-flow Tier C VFV expected.*
