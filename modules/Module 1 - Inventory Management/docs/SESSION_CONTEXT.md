@@ -1,6 +1,49 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
+M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_A — 2026-05-18 evening (🟢 CLOSED, executor scope; Pipeline paused awaiting Daniel decision on Prizma `default_supplier_id` backfill)
+
+## 2026-05-18 evening — M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_A (🟢 CLOSED, Pipeline pause)
+
+**Pipeline:** `M1_LENS_INVENTORY_UNIFIED_FLOW` (5 sequential phases A → B → C → D → E per Brief `architecture-brief/M1_LENS_INVENTORY_UNIFIED_FLOW_BRIEF.md`). This is Phase A.
+
+**Goal:** DB substrate for the inventory-screen unified add-stock flow — `tenants.default_supplier_id` + 5 `purchase_receipt` audit columns + 2 permission keys + role grants. No UI changes; no new RPCs (the m1_create_receipt_from_box extension is Phase C; the new mark_receipt_reviewed RPC is Phase D).
+
+**Pipeline commits (3 executor + Foreman close, `5a2ed41..746976a`):**
+
+- `5a2ed41` C-A0 — opticup-strategic sealed SPEC (265 lines): §0 Pre-Authoring Reality Check (4 column-existence probes + supplier probe + RPC signature + roles + role_permissions structure), §1.5 Cross-Reference Check (0 collisions / 9 hits resolved), §5.3 Runtime Semantics Rehearsal (CHECK NULL + FK SET NULL traced), §3 16 measurable success criteria, §4 11 destructive ops declared, §10 grant matrix. Escalation file filed for Daniel re: Prizma backfill (בדולח supplier_id = 0b868b66-...). Tag `pre-m1-inv-unified-flow-phase-a-2026-05-18` placed at parent `1b6d138`.
+- `cc16997` C-A1 — opticup-executor applied 3 Supabase MCP migrations (`m1_unified_flow_a_schema` + `m1_unified_flow_a_perms` + `m1_unified_flow_a_demo_default_supplier`). M1 db-schema.sql appended +46 lines. SPEC §13.A Execution Marker added with criterion verification table. Demo `default_supplier_id` set to AZMON (bb4bdec6-...). Prizma `default_supplier_id` HELD NULL per escalation.
+- `746976a` C-A2 — opticup-executor close. EXECUTION_REPORT.md (144 lines) self-score 9.5/10. FINDINGS.md (2 INFO entries: F-1 Rule 32 hook heading regex, F-2 architect-pending-applied warning).
+- _(this commit)_ Foreman FOREMAN_REVIEW.md 🟢 CLOSED + this SESSION_CONTEXT block.
+
+**Pipeline stats:**
+
+- 3 commits + Foreman close = 4 total. All single-concern, all on develop, no merges, no amends, no force-pushes.
+- 0 escalations to Foreman mid-Pipeline (executor caught & resolved D-1 heading-format false start in 1 cycle).
+- 1 escalation to Daniel: Prizma backfill authorization (escalation file laid out 3 options; Daniel decision unblocks Phase B).
+- Iron Rule 31 + 32 gates: exit 0 every commit.
+- Smoke 7/7 PASS post-C-A1.
+- 0 Prizma data-table row delta (purchase_receipt + tenants row count flat); +2 permissions + 10 role_permissions on Prizma per Brief §3.4 design.
+
+**Schema/code delta:**
+
+- 1 new column on `tenants` (`default_supplier_id` UUID NULL FK ON DELETE SET NULL).
+- 5 new columns on `purchase_receipt` (`is_documented` BOOL NOT NULL DEFAULT true / `undocumented_reason` TEXT NULL / `manager_review_status` TEXT CHECK ∈ 4 values OR NULL / `manager_reviewed_by` UUID FK employees / `manager_reviewed_at` TIMESTAMPTZ).
+- 2 new permission keys (`inventory.add.undocumented` + `inventory.manager_review.approve`) × 2 tenants = 4 permission rows.
+- 20 new `role_permissions` rows (5 roles × 2 perms × 2 tenants — 8 granted=true for ceo+manager, 12 granted=false).
+- 1 demo backfill UPDATE (tenants.default_supplier_id = AZMON).
+- 0 new tables, 0 new RPCs, 0 new views, 0 new files, 0 new JS/CSS code (Phase A is DB-only).
+
+**Status:**
+
+- 🟢 Phase A executor scope CLOSED — 9/9 SPEC §3 DB criteria PASS + Foreman spot-check audit PASS.
+- ⏳ Pipeline PAUSED pending Daniel decision on Prizma `default_supplier_id` backfill. Three options in escalation file (`escalations/2026-05-18T_M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_A_PRIZMA_AUTH.md`): (1) authorize backfill to בדולח; (2) skip backfill (use Phase B settings UI later); (3) name a different supplier.
+- ⏳ Pending application: 2 P-AUTHOR + 3 P-EXEC improvement proposals from this FOREMAN_REVIEW (apply at next opticup-strategic session or Pipeline continuation).
+- ⏳ Next phases: B (Settings UI for default supplier), C (3 add-stock flows on inventory screen), D (Unified log undocumented filter + manager review), E (skill harvest).
+
+---
+
+## Previous Last Updated
 M1_5_CAT_SIDEBAR_COMPONENT (consumer-side refactor of inventory.html + css/inventory-shell.css) — 2026-05-17 morning (🟢 CLOSED — Full Auto Pipeline, cross-module SPEC owned by Module 1.5)
 
 ## 2026-05-17 morning — M1_5_CAT_SIDEBAR_COMPONENT — consumer-side cross-reference
