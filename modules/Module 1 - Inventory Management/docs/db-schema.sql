@@ -2379,3 +2379,29 @@ ALTER TABLE public.purchase_receipt
 --
 --    FIELD_MAP entry added: 'אין תעודה':'has_no_invoice' (purchase_receipt
 --    block in js/shared-field-map.js).
+--
+-- 2) 20260517161421_m1_lens_variant_notes
+--    CREATE TABLE lens_variant_notes (
+--      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--      variant_id UUID NOT NULL REFERENCES lens_variant(id) ON DELETE CASCADE,
+--      tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+--      author_id UUID NOT NULL REFERENCES auth.users(id),
+--      body TEXT NOT NULL,
+--      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+--      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+--    );
+--    CREATE INDEX idx_lens_variant_notes_variant_id ON lens_variant_notes(variant_id);
+--    CREATE INDEX idx_lens_variant_notes_tenant_id  ON lens_variant_notes(tenant_id);
+--    ALTER TABLE lens_variant_notes ENABLE ROW LEVEL SECURITY;
+--    CREATE POLICY service_bypass ON lens_variant_notes
+--      TO service_role USING (true);
+--    CREATE POLICY tenant_isolation ON lens_variant_notes
+--      TO public USING (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json ->> 'tenant_id'::text))::uuid);
+--    Multiple notes per variant allowed; no UNIQUE beyond PK.
+--    Backs the Pricing screen לוגים+הערות drawer (Brief decision #18).
+--    Consumer code lives in SPEC 5 (pricing rebuild).
+--
+--    T constant added: T.LENS_VARIANT_NOTES = 'lens_variant_notes'
+--    (js/shared.js T block, after PURCHASE_RECEIPT_LINE).
+--    FIELD_MAP entry added: lens_variant_notes block (variant_id, body,
+--    author_id) in js/shared-field-map.js.

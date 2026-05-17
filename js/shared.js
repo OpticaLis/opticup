@@ -66,6 +66,7 @@ const T = {
   STOCK_ADJUSTMENT_REASON: 'stock_adjustment_reason',
   PURCHASE_RECEIPT: 'purchase_receipt',
   PURCHASE_RECEIPT_LINE: 'purchase_receipt_line',
+  LENS_VARIANT_NOTES: 'lens_variant_notes',
   PURCHASE_ORDER: 'purchase_order',
   PURCHASE_ORDER_LINE: 'purchase_order_line',
   SUPPLIER_DEBT: 'supplier_debt',

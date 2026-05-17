@@ -262,6 +262,10 @@ const FIELD_MAP = {
     'מצב לפני':'before_state','מצב אחרי':'after_state',
     'הוצע ע"י':'proposed_by','אושר ע"י':'approved_by','אושר בתאריך':'approved_at',
     'סיבת דחייה':'rejection_reason','הערות':'notes'
+  },
+  // ─── M1 Lens — SPEC M1_LENS_DB_SCHEMA_RECEIPTS_NOTES (2026-05-17) ─────
+  lens_variant_notes: {
+    'וריאציה':'variant_id','תוכן':'body','מחבר':'author_id'
   }
 };
 
