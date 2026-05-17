@@ -1,0 +1,117 @@
+/* chip-filter.css — Chip-filter row styles
+   ============================================================================
+   Consumed by shared/js/chip-filter-row.js. Reads gold/slate tokens from
+   shared/css/tokens.css. Zero hardcoded colors. Hebrew RTL aware.
+   ============================================================================ */
+
+.chip-filter-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm, 8px);
+  flex-wrap: wrap;
+  padding: var(--space-sm, 8px) var(--space-md, 12px);
+}
+
+.chip-filter-label {
+  min-width: 70px;
+  font-size: var(--font-size-sm, 0.85rem);
+  color: var(--mockup-text-soft, #5d6d7e);
+  font-weight: var(--font-weight-medium, 500);
+  margin-inline-end: var(--space-xs, 4px);
+}
+
+.chip-filter-chip {
+  padding: 6px 14px;
+  border: 1px solid var(--gold-active, #c9a555);
+  background: var(--color-bg-card, #ffffff);
+  color: var(--mockup-text-soft, #5d6d7e);
+  border-radius: var(--radius-full, 9999px);
+  font-size: var(--font-size-xs, 0.75rem);
+  font-family: var(--font-family, inherit);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast, 150ms ease);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: var(--line-height-tight, 1.25);
+}
+
+.chip-filter-chip:hover {
+  background: var(--gold-tint, #faf3e0);
+}
+
+.chip-filter-chip:focus { outline: none; }
+.chip-filter-chip:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  box-shadow: var(--shadow-focus);
+}
+
+.chip-filter-chip.active {
+  background: var(--gold-active, #c9a555);
+  color: var(--color-white, #ffffff);
+  border-color: var(--gold-active, #c9a555);
+}
+
+.chip-filter-chip:disabled,
+.chip-filter-chip.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Secondary variant — slate outline instead of gold (matches mockup's
+   "chip.secondary" — used for "שתיהן" + chips that group differently) */
+.chip-filter-chip.secondary {
+  border-color: var(--mockup-text-muted, #95a5a6);
+}
+.chip-filter-chip.secondary.active {
+  background: var(--color-gray-700, #334155);
+  border-color: var(--color-gray-700, #334155);
+  color: var(--color-white, #ffffff);
+}
+
+/* Icon + count slots */
+.chip-filter-icon {
+  font-size: var(--font-size-sm, 0.85rem);
+  line-height: 1;
+}
+.chip-filter-count {
+  background: rgba(255, 255, 255, 0.25);
+  padding: 1px 6px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold, 600);
+  margin-inline-start: 2px;
+}
+.chip-filter-chip:not(.active) .chip-filter-count {
+  background: var(--color-gray-100, #f1f5f9);
+  color: var(--mockup-text-soft, #5d6d7e);
+}
+
+/* Variant: secondary (slate) row wrapper — slightly muted */
+.chip-filter-secondary .chip-filter-chip {
+  border-color: var(--mockup-text-muted, #95a5a6);
+  color: var(--mockup-text-soft, #5d6d7e);
+}
+.chip-filter-secondary .chip-filter-chip.active {
+  background: var(--color-gray-700, #334155);
+  border-color: var(--color-gray-700, #334155);
+  color: var(--color-white, #ffffff);
+}
+
+/* Mobile: tighter spacing */
+@media (max-width: 640px) {
+  .chip-filter-row {
+    gap: var(--space-xs, 4px);
+    padding: var(--space-xs, 4px) var(--space-sm, 8px);
+  }
+  .chip-filter-label {
+    min-width: 0;
+    width: 100%;
+  }
+  .chip-filter-chip {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+}
