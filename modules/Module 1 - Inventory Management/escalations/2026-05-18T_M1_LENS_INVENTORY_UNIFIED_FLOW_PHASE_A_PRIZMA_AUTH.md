@@ -5,7 +5,7 @@
 **Brief reference:** §11 Destructive Operations §5 + §13 Pre-Flight §1
 **Type:** Single-row UPDATE on Prizma production tenant — REQUIRES DANIEL AUTHORIZATION
 **Filed:** 2026-05-18 evening (Claude Code, Pipeline Foreman)
-**Status:** PENDING DANIEL DECISION
+**Status:** ✅ RESOLVED 2026-05-18 evening — Daniel selected Option 1 (authorize backfill to בדולח)
 
 ---
 
@@ -65,3 +65,33 @@ Demo will be backfilled autonomously to its first active supplier `AZMON (דמו
 ---
 
 *Escalation filed per Iron Rule 32 + Brief §11. No Prizma DB writes will be performed by Claude Code in this Pipeline until Daniel responds. Demo writes proceed.*
+
+---
+
+## ✅ RESOLUTION — 2026-05-18 evening
+
+Daniel selected **Option 1** — authorize backfill to בדולח.
+
+**Migration applied:** `m1_unified_flow_a_prizma_default_supplier_DANIEL_AUTHORIZED` (via Supabase MCP).
+
+**SQL executed:**
+```sql
+UPDATE public.tenants
+SET default_supplier_id = '0b868b66-e814-4a4b-af57-f300e5a95a5f'::uuid
+WHERE id = '6ad0781b-37f0-47a9-92e3-be9ed1477e1c'::uuid;
+-- 1 row updated.
+```
+
+**Post-UPDATE verification (per Daniel's 3 requested checks + 2 Foreman additions):**
+
+| Check | Result |
+|---|---|
+| 1. `SELECT default_supplier_id FROM tenants WHERE slug = 'prizma'` returns בדולח id | ✅ MATCH — `0b868b66-e814-4a4b-af57-f300e5a95a5f` |
+| 1b. FK join resolves to supplier name "בדולח" | ✅ MATCH — name="בדולח" |
+| 2. `SELECT default_supplier_id FROM tenants WHERE slug = 'demo'` returns AZMON id | ✅ MATCH — `bb4bdec6-5fe0-4e27-b6b6-ba097cf37112` (unchanged from Phase A C-A1) |
+| 3. No other Prizma row was touched | ✅ tenant row count = 1; name + slug unchanged; no schema-side change |
+| 4. Prizma data tables unchanged (independent re-check) | ✅ purchase_receipt=0, permissions=85, role_permissions=278 — all match post-Phase-A baselines |
+
+**Iron Rule 32 reminder per Daniel:** this single UPDATE is the only authorized Prizma write in this Pipeline. Any subsequent Prizma writes require a separate escalation + Daniel approval. Phases B + C + D have ZERO Prizma writes in scope.
+
+**Pipeline unblocked.** Phase B SPEC authoring begins.
