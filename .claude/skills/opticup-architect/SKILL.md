@@ -1199,3 +1199,41 @@ The Architect's own SKILL.md grows ONLY when the pattern is strategic-process-le
 **Evidence:** 2026-05-15 ceremony surfaced Pattern A (5 strikes) — SPEC authoring, routed to strategic. Pattern B (4 strikes) — execution tactics, routed to executor. Only P-AR-11 + P-AR-12 themselves belonged to opticup-architect.
 
 **Application:** at every ceremony, after harvesting patterns, classify destination skill BEFORE writing the SKILL_PENDING entry. Each pattern lands in exactly one skill file.
+
+### P-AR-16 (CRITICAL, non-overridable) — When user-approved mockup HTML files exist, they are MANDATORY inputs to every UI-touching Brief.
+
+**Promoted to skill 2026-05-18 morning. Severity: CRITICAL — non-overridable.**
+
+When a user-approved UI mockup file exists at `modules/Module N - Name/architecture-brief/mockups/*.html` (ratified via a documented decision log entry), EVERY subsequent Brief that touches that UI surface MUST:
+
+1. **List the mockup file in §Read List as MANDATORY input** — not optional, not "for reference," not implicit. The Executor MUST read the mockup HTML before authoring any code for the screen.
+
+2. **Bind §7 Success Criteria to mockup fidelity** — each success criterion either:
+   - References the mockup explicitly ("matches the SPH × CYL grid layout in LENS_INVENTORY_MOCKUP.html lines 142-189")
+   - Documents the deliberate divergence ("Decision X-N: deviate from mockup section Y because Z; mockup updated to v2 in same Pipeline")
+
+3. **Mandate Tester mockup-vs-live comparison** — the Localhost-Tester's Tier C VFV (per opticup-localhost-tester SKILL.md) must include a "Mockup Fidelity Check" sub-step: open the mockup in one Chrome tab + the live surface in another, capture both screenshots side-by-side, describe each visual difference, classify each as INTENTIONAL DEVIATION (with justification) or DRIFT (must fix before 🟢).
+
+4. **NO 🟢 if material drift exists** — drift on CRITICAL elements (layout structure, primary filters, source-categorization, side panels) → 🔴. Drift on MEDIUM elements (spacing, sizes, exact colors) → 🟡 with TECH_DEBT entry, but only if material to user workflow.
+
+**The trap this prevents:** A Brief author who described UI in prose without referencing the mockup creates an information loss between Daniel's approval and the Executor's build. The Executor builds to the prose; the prose omits 90% of the mockup's visual decisions; result is structural skeleton without the approved design. This recurred 5+ times during M1 lens work in the week of 2026-05-12 to 2026-05-18.
+
+**Application in Brief authoring (effective immediately):**
+
+Every UI-touching Brief I write from 2026-05-18 forward includes:
+
+§ Read List — Mandatory Inputs (REVISED for P-AR-16):
+- List every mockup HTML file the SPEC touches
+- Each mockup gets a 1-line description of what it depicts + the decision that approved it (e.g., "LENS_INVENTORY_MOCKUP.html — D-M1-02 ratified 2026-05-14")
+
+§ Success Criteria — Mockup Fidelity Section:
+- Per screen: "Side-by-side Chrome MCP screenshot of mockup vs live shows ≤ N material differences, all classified as intentional deviations"
+- If material drift > 0 and not pre-authorized → Pipeline does not return 🟢
+
+§ Pre-flight — Mockup Inventory:
+- Executor lists every mockup file relevant to the SPEC scope
+- Executor opens each mockup in Chrome MCP, captures its current state, references it during build
+
+**Cost:** Adds ~15 minutes per UI Brief. Saves the ~40-50 hours of "rebuild to match mockups" SPECs that this gap created in M1.
+
+**Anti-pattern caught:** "The Brief said filters at top; I added a filter chip — done." The mockup said "production_type chip pair + 3-tier brand→design→variant cascade selects + bulk search bar + sticky toolbar". The chip alone is necessary not sufficient. P-AR-16 forces the Executor to consult the mockup directly, not interpret prose.

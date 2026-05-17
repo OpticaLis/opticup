@@ -1349,3 +1349,22 @@ When authoring a SPEC, the Pre-Flight section must enumerate every concrete prob
 **Required Pre-Flight style:** numbered list of explicit probes, each with exact SQL/command/file path, each with expected result OR "report actual, do not assume."
 
 **ROI per SPEC:** Catches ~3-5 author bugs at SPEC-author time instead of mid-execution. M1 Lens Procurement caught 4 author bugs at executor pre-flight that should have been caught at SPEC author time per this rule.
+
+### Additional mandatory §7 subsection for SPECs whose Briefs reference user-approved mockups (added 2026-05-18, P-AR-16 enforcement at SPEC layer)
+
+When a Brief lists mockup HTML files in its Read List, the SPEC's §7 MUST include this subsection verbatim:
+
+```
+### Mockup Fidelity Verification
+
+The Tester MUST perform per opticup-localhost-tester SKILL.md Tier C + Mockup Fidelity Check:
+
+| # | Surface | Mockup file (path) | Comparison method |
+|---|---------|---------------------|-------------------|
+| 1 | <name>  | <full path>         | Side-by-side Chrome screenshots; describe each material visual difference; classify as INTENTIONAL or DRIFT |
+| 2 | ... | ... | ... |
+
+Pipeline returns 🟢 only when ALL surfaces show zero material DRIFT (intentional deviations require pre-authorization in the SPEC's §Decisions or §Out-of-Scope). DRIFT on CRITICAL elements (layout, primary filters, source-splits, hero panels) → 🔴 immediately, loop back to Executor.
+```
+
+This subsection is REQUIRED for all UI-touching SPECs whose Briefs reference mockups. SQL-only / EF-only / docs-only SPECs can omit.

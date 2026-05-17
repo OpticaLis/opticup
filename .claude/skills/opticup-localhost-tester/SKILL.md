@@ -325,3 +325,43 @@ Adds ~10-20 minutes per Pipeline (depending on surface count). Pipeline budgets 
 ### Self-improvement note for the Architect (this skill's author)
 
 Briefs should EXPLICITLY enumerate the surfaces VFV must cover and the bug-regression queries it must answer. The Brief's §7 Success Criteria should bind one VFV result to each user-observable claim. This is opticup-architect's responsibility — see P-AR-15 (companion update in opticup-architect/SKILL.md).
+
+### Tier C extension — Mockup Fidelity Check (when Brief references mockup HTML files)
+
+**Status:** Mandatory when applicable. Activated when a Brief's Read List includes mockup HTML files. Added 2026-05-18 per architect P-AR-16.
+
+**Procedure per applicable surface:**
+
+1. **Open the mockup HTML** in Chrome MCP at 1920×1080. Capture full-viewport screenshot.
+2. **Open the live URL** in a second Chrome MCP tab at 1920×1080. Capture full-viewport screenshot.
+3. **Place them side-by-side** in the TEST_REPORT (linked screenshots, not embedded).
+4. **Describe each material visual difference** in writing:
+   - Layout structure (grid columns, row counts, section ordering)
+   - Filter/control elements (presence, type, position)
+   - Color application (primary accent, status colors, badges)
+   - Side panels / detail cards
+   - Stat banners / alert banners
+   - Action buttons (presence, position, icons)
+   - Special UI elements (chips, badges, toggles, tabs)
+5. **Classify each difference** as one of:
+   - **INTENTIONAL DEVIATION** — explicitly authorized by the SPEC's §Decisions or §Out-of-Scope section. Reference the SPEC line.
+   - **DRIFT** — unauthorized difference. Must be fixed before 🟢.
+6. **Compute fidelity verdict per surface:**
+   - 0 DRIFT items → 🟢 fidelity pass
+   - Any DRIFT on MEDIUM elements → 🟡 fidelity warning (proceed only if MEDIUM impact, document as TECH_DEBT)
+   - Any DRIFT on CRITICAL or HIGH elements → 🔴 fidelity fail (loop back to Executor)
+
+**TEST_REPORT.md must include per applicable surface:**
+
+```
+### Mockup Fidelity Check — Surface N: <name>
+**Mockup screenshot:** <path>
+**Live screenshot:** <path>
+**Material differences observed:**
+1. [Description] — [Classification: INTENTIONAL/DRIFT] — [Severity: CRITICAL/HIGH/MEDIUM/LOW]
+2. ...
+**Fidelity verdict:** 🟢 / 🟡 / 🔴
+**DRIFT items requiring fix:** [list]
+```
+
+**Pipeline aggregation:** Any single 🔴 fidelity verdict → Pipeline cannot close 🟢 overall. The Tester returns the Pipeline to the Executor for fixes, with the DRIFT list as the actionable input.
