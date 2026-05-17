@@ -1109,3 +1109,57 @@ After every Write or Edit that touches a file >100 lines OR >5KB, **and before d
 **Cumulative cost of skipping:** in the 2026-05-15 incident, I lost 60 lines of §9-12 in MONOREPO_MIGRATION_BRIEF.md and had to restore from `git show 473cdc8:...` then re-append the missing content via shell heredoc. ~15 minutes of recovery work for a 30-second check that would have caught it pre-delivery.
 
 **This rule applies to every Write/Edit, not just batched edits.** Single-edit truncations have also been observed (less frequent but documented).
+
+---
+
+### P-AR-15 (HIGH) — Every Brief's §7 Success Criteria must enumerate VFV surfaces + bug-regression queries the Tester must answer.
+
+**Promoted to skill 2026-05-17.** Companion to opticup-localhost-tester Tier C (Visual Functional Verification, MANDATORY).
+
+**The pattern:** when a Brief states a user-observable goal ("sidebar on the right", "no overlap on category X", "lens screens unified with frames design"), §7 Success Criteria must include an explicit Tester verification line per goal, with form:
+
+> "VFV on surface <name>: <observable state> verified via Chrome MCP at 1920×1080. Bug from Brief §1 Purpose <quote> verified RESOLVED."
+
+This makes the Brief audit-trail-able: every user-observable claim is bound to one Tester VFV result.
+
+**Why this matters:** the Tester operates against the SPEC's success criteria. If the criteria are stated as "smoke 7/7 PASS + screenshot captured," the Tester returns 🟢 even when the user-observable goal is unmet. If the criteria are stated as "VFV on surface X confirms no overlap, with screenshot evidence," the Tester is forced to actually look at the result.
+
+**Anti-pattern (caught 2026-05-16 + 2026-05-17 — fourth firing on M1_FINAL_NIGHT_PHASE_1 2026-05-17):**
+- Brief says: "fix the sidebar overlap bug"
+- §7 says: "smoke 7/7 PASS + Chrome MCP screenshots captured"
+- Tester captures screenshots showing the bug still present, but the success criterion "screenshots captured" is met, so Pipeline returns 🟢
+- Daniel sees the bug post-merge
+
+**Application:** in every Brief I author from 2026-05-17 forward, §7 includes:
+- A "VFV surfaces" subsection listing every screen/tab the Pipeline modifies
+- A "bug-regression queries" subsection listing every user-observable bug claim from §1 Purpose, with explicit "must be RESOLVED in VFV"
+
+This costs ~5 extra minutes per Brief. Saves hours of re-fix Pipelines.
+
+(Note: numbered P-AR-15 to leave room for P-AR-06..P-AR-14 future entries; the architect intentionally jumps numbers to slot related entries in numeric proximity later.)
+
+---
+
+### P-AR-13 (HIGH) — Architecture commitments must be tested against code reality before they become Brief load-bearing.
+
+**Promoted to skill 2026-05-16 (M1 Lens Night Pipeline D-M1-09 reframing).**
+
+When an Architecture Brief includes a commitment about future code structure ("X will be extracted into Y", "Z will be a shared component in Module N.M", "the generic receipt component"), the NEXT Brief that touches that area MUST validate the commitment against actual code before propagating it forward.
+
+**The trap:** Decision-time commitments about code shape are made before the code exists. They can be wrong. If left unchallenged, they cascade through 3-5 SPECs as load-bearing assumptions, until a refactor SPEC attempts to honor them and discovers they are architecturally false.
+
+**Evidence (M1 D-M1-09):** the "generic Module 1.5 component" promise was authored 2026-05-14 before lens-receipt code existed. It propagated through 4 SPECs (Phase 1B Procurement violated it; Gap Closure noted the violation; Strategic Audit elevated it to a HIGH finding; Night Pipeline Part A attempted to fix it). The Night Pipeline's empirical analysis found 0 shareable lines between frames-receipt and lens-receipt. The original commitment was wrong; reframing was the right move.
+
+**The rule:** every Architect Brief that references a prior architectural decision MUST include a §"Decision Reality Check" sub-section that does ONE of:
+1. **Validate** — confirm prior decision is still anchored in current code (grep + responsibility-mapping). Cite code locations.
+2. **Reframe** — explicitly note the prior decision needs re-examination, with recommendation for closure-as-RESOLVED OR reframing to a different axis.
+3. **Defer** — explicitly mark as "forward-promise, not yet code-bound; next code-touching SPEC will validate."
+
+**Application timing:**
+- SPECs that build NEW code → defer (3) acceptable
+- SPECs that REFACTOR per prior commitment → validate (1) mandatory
+- SPECs whose execution proves commitment infeasible → reframe (2) with empirical evidence
+
+**ROI:** prevents 4-SPEC-deep promise propagation when the original commitment was architecturally false. M1 paid that cost; future modules should not.
+
+**Anti-pattern caught:** my own Strategic Audit (2026-05-15 evening) elevated D-M1-09 to a HIGH finding without doing this check. A 30-minute reality-check would have surfaced "0 shareable lines" before the Night Pipeline was authored — and the Brief would have started with the reframing question instead of attempting the refactor first.

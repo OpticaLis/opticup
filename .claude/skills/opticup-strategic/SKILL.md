@@ -1298,3 +1298,29 @@ Eliminates ~3 min of AskUserQuestion per occurrence — OPEN-021 alone has fired
 - P-ST-03 (MEDIUM) — `_down.sql` / rollback-artifact gate-compatibility note → SPEC_TEMPLATE §6.
 - P-ST-04 (MEDIUM) — CRLF-aware diff recipe → SPEC_TEMPLATE §3 boilerplate.
 - P-ST-05 (MEDIUM) — Smoke-type taxonomy (`Type: db | api | code-review | visual-browser`) → SPEC_TEMPLATE §12.
+
+---
+
+### Mandatory §7 template addition for UI-touching SPECs (added 2026-05-17)
+
+When authoring §7 Success Criteria for any SPEC that modifies UI files, include this sub-section verbatim:
+
+```
+### Visual Functional Verification (VFV) Surfaces
+
+The Tester MUST perform VFV per opticup-localhost-tester SKILL.md Tier C on the following surfaces:
+
+| # | Surface | URL pattern | Bug-regression check |
+|---|---------|-------------|----------------------|
+| 1 | <name>  | <url>       | Brief §1 stated "<bug quote>" — must be RESOLVED |
+| 2 | <name>  | <url>       | <next bug or "N/A — additive surface"> |
+| ... | ... | ... | ... |
+
+Pipeline returns 🟢 only if all surfaces return 🟢 or 🟡 in TEST_REPORT.md. Any 🔴 surface → loop back to Executor.
+```
+
+Fill the table from the Brief's §1 Purpose (each user-observable goal becomes one row) + §2 Scope (each modified UI file maps to ≥1 surface).
+
+This is non-optional for UI SPECs. SQL-only / EF-only / docs-only SPECs can omit the section.
+
+**4th firing of the VFV-gap pattern (2026-05-17 M1_FINAL_NIGHT_PHASE_1):** Phase 1 closed 🟡 with "smoke 3/8 surfaces"; Daniel observed lens private-catalog tab missing entirely. The Executor's smoke checked DOM-element-present via programmatic activation but not real-user click. A SPEC §7 that listed 8 VFV surfaces with explicit "must be CLICKABLE + must render component + must allow Add brand" criteria would have prevented mis-passing. Companion: opticup-architect P-AR-15 + opticup-localhost-tester Tier C.
