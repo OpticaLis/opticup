@@ -230,4 +230,25 @@ For the 1 new permission key, the grant matrix is the SAME for both tenants (mir
 
 > SPEC.md will be staged in the same commit as the destructive ops (C-B1). The Iron Rule 32 hook reads §4 to validate destructive ops. Executor MUST `git add` SPEC.md alongside the migration/code files in C-B1 (with §13.A Marker appended).
 
-*End of SPEC. Foreman-sealed 2026-05-18 evening. Ready for executor dispatch.*
+### 13.A — Migrations + edits applied (Executor, C-B1)
+
+| # | Migration / File | Type | Affects |
+|---|------------------|------|---------|
+| 1 | `m1_unified_flow_b_settings_inventory_manage_perm` | DML | +2 permissions rows + 10 role_permissions rows |
+| 2 | `settings.html` | edit | +15 lines — new `.settings-section` (id=settings-section-inventory) inserted between AI Learning section and Save button; contains `<select id="set-default-supplier">` |
+| 3 | `modules/settings/settings-page.js` | edit | +42 lines — SETTINGS_FIELDS gets `set-default-supplier`/`default_supplier_id`/`select` entry; new `gateInventorySection()` + `loadSupplierOptions()` functions; both called from `loadSettings()` before render |
+| 4 | `modules/Module 1 - Inventory Management/docs/db-schema.sql` | append | +37 lines — Phase B section documenting the perm seed |
+
+Post-state verification (executor, pre-commit):
+- C4: settings.html = 307 lines (BASE 292, within [292, 325]) ✓
+- C5: 1 hit for "ניהול מלאי" + 1 hit for `id="set-default-supplier"` in settings.html ✓
+- C6: settings-page.js = 338 lines (BASE 296, within [296, 345]) ✓
+- C7: SETTINGS_FIELDS has the `default_supplier_id` entry ✓
+- C8: `loadSupplierOptions` defined + called from `loadSettings` (≥2 occurrences) ✓
+- C9: `settings.inventory.manage` × 2 tenants = 2 permissions rows ✓
+- C10: 10 role_permissions rows / 4 granted=true (ceo+manager × 1 perm × 2 tenants) ✓
+- C16: Prizma data tables unchanged (purchase_receipt=0, tenants row count=1); permissions +1, role_permissions +5 — exactly the +6 Prizma rows authorized by §4 ✓
+
+Tier C VFV (Brief §4.3 steps 1-3) deferred to Localhost-Tester stage. Step 4 (inventory auto-fill) cross-phase deferred to Phase C per §0.C drift B-2.
+
+*End of SPEC. Foreman-sealed 2026-05-18 evening. Executor C-B1 closed 2026-05-18 evening.*

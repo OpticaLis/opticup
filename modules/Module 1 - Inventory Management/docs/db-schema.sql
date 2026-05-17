@@ -2232,3 +2232,40 @@ ALTER TABLE public.purchase_receipt
 --   PRIZMA ROW COUNTS UNCHANGED on purchase_receipt + tenants data; only +2 permissions
 --     and +10 role_permissions rows for the new keys are seeded.
 -- See SPEC §3 Success Criteria 4-11 + 16 for verification queries.
+
+-- ============================================================================
+-- Phase 2 — Unified Flow Phase B (M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_B)
+-- Applied: 2026-05-18 evening via Supabase MCP
+-- SPEC: docs/specs/M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_B/SPEC.md
+-- Brief: architecture-brief/M1_LENS_INVENTORY_UNIFIED_FLOW_BRIEF.md §4
+-- ============================================================================
+
+-- §4.1 — Settings UI permission key (gates the new "ניהול מלאי" section)
+-- Migration: m1_unified_flow_b_settings_inventory_manage_perm
+-- Schema-side: 0 new tables/columns; permission registry add only.
+
+-- New permission key: settings.inventory.manage
+--   Module: settings
+--   Action: inventory.manage
+--   Hebrew name: ניהול הגדרות מלאי
+--   Description: גישה לעריכת הגדרות מלאי בהגדרות, כולל ספק ברירת המחדל לקבלת סחורה.
+--   Tenants seeded: Prizma (6ad0781b-...) + Demo (8d8cfa7e-...)
+--
+-- Role grants (10 rows = 5 system roles × 1 perm × 2 tenants):
+--   ceo                  granted=true   (both tenants)
+--   manager              granted=true   (both tenants)
+--   team_lead            granted=false  (both tenants)
+--   viewer               granted=false  (both tenants)
+--   worker               granted=false  (both tenants)
+-- 4 granted=true rows total. Mirrors Phase A grant matrix pattern.
+
+-- Phase B does NOT add any schema objects. The default_supplier_id column on
+-- tenants was added in Phase A; Phase B exposes the UI to set it.
+
+-- Post-state probes (vs Phase-A baselines):
+--   permissions: +1 row per tenant (Prizma 85→86, Demo 85→86).
+--   role_permissions: +5 rows per tenant (Prizma 278→283, Demo 278→283).
+--   PRIZMA DATA TABLES UNCHANGED: tenants row count=1 (only permission registry
+--     touched on Prizma; default_supplier_id was set in Phase A C-A1 + the
+--     Daniel-authorized backfill commit 966c5d2).
+-- See SPEC §3 Success Criteria 9 + 10 + 16 for verification queries.
