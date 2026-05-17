@@ -58,6 +58,35 @@ Before testing anything, do these in order. No exceptions.
    and wait for the script to print "ALL UP" (max 30 seconds). If the script
    exits 1 — STOP. Document in TEST_REPORT.md as a `RED — env-blocker`.
 
+### Pre-Action Collision Check (added 2026-05-17 by PARALLEL_PIPELINE_COORDINATION)
+
+Before any `git checkout`, `git merge`, `git rebase`, `git reset --hard`, `git push`, or any file edit on a path outside this session's declared `files_owned_globs`, run:
+
+```
+node scripts/pipeline-coordination.mjs check-collision \
+    --branch-owned <BRANCH> \
+    --files-owned-globs <GLOB1>,<GLOB2>,...
+```
+
+Exit 0 = no collision, proceed. Exit 1 = collision detected; the script prints the colliding lock's `spec_slug` + `pid_or_session_id`. STOP, write `modules/Module N/escalations/{ISO_TS}_pipeline-collision.md`, run Supervisor Triage (Shadow Mode per CLAUDE.md §11), then emit the standard Hebrew escalation line.
+
+**Bootstrap step (claim a lock at session start):** as the first action in this session (after repo + branch verification + server health-check, before any test run that writes to the demo tenant), run:
+
+```
+node scripts/pipeline-coordination.mjs claim \
+    --spec-slug <SPEC_SLUG> \
+    --branch-owned <BRANCH> \
+    --files-owned-globs <GLOB1>,<GLOB2>,...
+```
+
+Exit 0 = lock claimed; the script prints the lock filename. Exit 1 = another session already holds the requested branch or a conflicting glob — STOP per the collision protocol above.
+
+**Heartbeat:** the protocol uses a passive heartbeat — every `claim`, `check-collision`, or `heartbeat` invocation updates the session's `last_heartbeat`. A long-idle session does NOT need a background process; the next pre-action call refreshes the timestamp. Locks older than 10 minutes without heartbeat are stale and may be cleaned via `node scripts/pipeline-coordination.mjs cleanup-stale` (audit log written).
+
+**Release at session end:** `node scripts/pipeline-coordination.mjs release --spec-slug <SPEC_SLUG>` deletes this session's lock cleanly. Skipping release is non-fatal (the lock will be cleaned as stale after 10 min) but every Pipeline skill's hand-off step SHOULD call release to keep the directory tidy.
+
+**Tester-typical globs:** `<SPEC_FOLDER>/TEST_REPORT.md` + `tests/smoke/<SPEC_SLUG>.test.mjs` (if SPEC-specific test added). The Tester is read-only on project code; locks are tight.
+
 ## Smoke Test Protocol
 
 The baseline smoke suite is `tests/smoke/baseline.test.mjs`. Run it

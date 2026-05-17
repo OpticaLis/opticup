@@ -152,6 +152,35 @@ When this skill loads, do these steps:
    repair SPEC first. Warnings (exit 2) are informational. Reference:
    `scripts/verify-tree-integrity.mjs`.
 
+### Pre-Action Collision Check (added 2026-05-17 by PARALLEL_PIPELINE_COORDINATION)
+
+Before any `git checkout`, `git merge`, `git rebase`, `git reset --hard`, `git push`, or any file edit on a path outside this session's declared `files_owned_globs`, run:
+
+```
+node scripts/pipeline-coordination.mjs check-collision \
+    --branch-owned <BRANCH> \
+    --files-owned-globs <GLOB1>,<GLOB2>,...
+```
+
+Exit 0 = no collision, proceed. Exit 1 = collision detected; the script prints the colliding lock's `spec_slug` + `pid_or_session_id`. STOP, write `modules/Module N/escalations/{ISO_TS}_pipeline-collision.md`, run Supervisor Triage (Shadow Mode per CLAUDE.md §11), then emit the standard Hebrew escalation line.
+
+**Bootstrap step (claim a lock at session start):** as the first action in this session (after repo + branch verification, before authoring any SPEC or writing any FOREMAN_REVIEW), run:
+
+```
+node scripts/pipeline-coordination.mjs claim \
+    --spec-slug <SPEC_SLUG> \
+    --branch-owned <BRANCH> \
+    --files-owned-globs <GLOB1>,<GLOB2>,...
+```
+
+Exit 0 = lock claimed; the script prints the lock filename. Exit 1 = another session already holds the requested branch or a conflicting glob — STOP per the collision protocol above.
+
+**Heartbeat:** the protocol uses a passive heartbeat — every `claim`, `check-collision`, or `heartbeat` invocation updates the session's `last_heartbeat`. A long-idle session does NOT need a background process; the next pre-action call refreshes the timestamp. Locks older than 10 minutes without heartbeat are stale and may be cleaned via `node scripts/pipeline-coordination.mjs cleanup-stale` (audit log written).
+
+**Release at session end:** `node scripts/pipeline-coordination.mjs release --spec-slug <SPEC_SLUG>` deletes this session's lock cleanly. Skipping release is non-fatal (the lock will be cleaned as stale after 10 min) but every Pipeline skill's hand-off step SHOULD call release to keep the directory tidy.
+
+**Foreman-typical globs:** `modules/Module N/docs/specs/<SLUG>/**`, `CLAUDE.md`, `MASTER_ROADMAP.md`, `modules/Module N/docs/SESSION_CONTEXT.md`, `modules/Module N/docs/CHANGELOG.md`. Master-doc updates need broad globs; SPEC seal/close usually only needs the SPEC folder.
+
 5. **Confirm readiness** to Daniel in Hebrew, briefly:
    > "קראתי את המצב. אנחנו ב-[module] [phase]. [one line status]. מה הכיוון?"
 
