@@ -1,0 +1,227 @@
+/* lens-pricing-page.css — page-frame layout for the lens-pricing tab.
+   M1_LENS_PRICING_REBUILD (2026-05-17): 1:1 mockup rebuild per
+   architecture-brief/mockups/LENS_PRICING_MOCKUP.html.
+
+   Page-frame only (header, view-mode toggle, top-tabs, filters wrapper,
+   bulk toolbar, table panel). Shared component visuals come from
+   shared/css/{chip-filter,stat-card,lens-details,table,tokens}.css.
+
+   Scope locked to .lens-tab-section[data-tab="pricing"]. */
+
+.lens-tab-section[data-tab="pricing"] .lens-pricing-page {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--color-bg-page, #f5f6fa);
+  min-height: 100%;
+}
+
+/* ───────── Page header ───────── */
+.lens-tab-section[data-tab="pricing"] .lens-pricing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 14px 18px;
+  border: 1px solid var(--color-border, #e5e7eb);
+}
+.lens-tab-section[data-tab="pricing"] .lens-pricing-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+.lens-tab-section[data-tab="pricing"] .lens-pricing-title .badge {
+  background: #ecf0f1;
+  color: #5d6d7e;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.lens-tab-section[data-tab="pricing"] .lens-pricing-actions { display: flex; gap: 8px; }
+
+/* ───────── View-mode toggle (per Daniel decision #12) ───────── */
+.lens-tab-section[data-tab="pricing"] .view-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  width: fit-content;
+  font-size: 13px;
+}
+.lens-tab-section[data-tab="pricing"] .view-mode-toggle .vm-btn {
+  background: transparent;
+  border: 0;
+  padding: 6px 14px;
+  cursor: pointer;
+  color: #5d6d7e;
+  border-radius: 18px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+.lens-tab-section[data-tab="pricing"] .view-mode-toggle .vm-btn:hover { color: #2c3e50; }
+.lens-tab-section[data-tab="pricing"] .view-mode-toggle .vm-btn.active {
+  background: #1e3a8a;
+  color: #ffffff;
+}
+.lens-tab-section[data-tab="pricing"] .view-mode-toggle .vm-hint {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-inline-start: 8px;
+}
+
+/* ───────── Top tabs ───────── */
+.lens-tab-section[data-tab="pricing"] .top-tabs {
+  display: flex;
+  background: #ffffff;
+  border-radius: 8px 8px 0 0;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-bottom: 2px solid var(--color-border, #e5e7eb);
+  overflow: hidden;
+}
+.lens-tab-section[data-tab="pricing"] .top-tab {
+  padding: 14px 24px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #5d6d7e;
+  border: 0;
+  background: transparent;
+  border-bottom: 3px solid transparent;
+  transition: all 0.15s;
+}
+.lens-tab-section[data-tab="pricing"] .top-tab:hover { color: #2c3e50; }
+.lens-tab-section[data-tab="pricing"] .top-tab.active {
+  color: #1e3a8a;
+  border-bottom-color: #1e3a8a;
+  font-weight: 600;
+}
+.lens-tab-section[data-tab="pricing"] .top-tab .badge-num {
+  background: #e74c3c;
+  color: #ffffff;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 11px;
+  margin-inline-end: 6px;
+  font-weight: 700;
+}
+
+/* ───────── Filters wrapper ───────── */
+.lens-tab-section[data-tab="pricing"] .lens-pricing-filters {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ───────── Alert info banner ───────── */
+.lens-tab-section[data-tab="pricing"] .alert-info {
+  background: #d1ecf1;
+  color: #0c5460;
+  border-left: 4px solid #17a2b8;
+  padding: 10px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lens-tab-section[data-tab="pricing"] .alert-info .alert-icon { font-size: 16px; }
+.lens-tab-section[data-tab="pricing"] .alert-info .alert-link {
+  color: #0c5460;
+  font-weight: 600;
+  margin-inline-start: auto;
+  text-decoration: none;
+}
+.lens-tab-section[data-tab="pricing"] .alert-info .alert-link:hover { text-decoration: underline; }
+
+/* ───────── Bulk toolbar (edit mode + selection ≥ 1) ───────── */
+.lens-tab-section[data-tab="pricing"] .bulk-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  padding: 10px 14px;
+  border-radius: 6px;
+  flex-wrap: wrap;
+}
+.lens-tab-section[data-tab="pricing"] .bulk-toolbar-label {
+  font-weight: 700;
+  color: #92400e;
+  font-size: 12px;
+}
+.lens-tab-section[data-tab="pricing"] .bulk-toolbar-sep { color: #cbd5e1; }
+
+/* ───────── Main table panel ───────── */
+.lens-tab-section[data-tab="pricing"] .lens-pricing-main {
+  display: block;
+}
+.lens-tab-section[data-tab="pricing"] .lens-pricing-table-panel {
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  overflow: hidden;
+}
+.lens-tab-section[data-tab="pricing"] .lens-pricing-table-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  background: #f8f9fb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.lens-tab-section[data-tab="pricing"] .lens-pricing-table-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+.lens-tab-section[data-tab="pricing"] .lens-pricing-table-meta {
+  font-size: 11px;
+  color: #5d6d7e;
+}
+.lens-tab-section[data-tab="pricing"] #lens-pricing-grid {
+  padding: 12px 16px;
+  min-height: 200px;
+}
+
+/* ───────── Hidden tab panes ───────── */
+.lens-tab-section[data-tab="pricing"] .lens-pricing-tab-pane[hidden],
+.lens-tab-section[data-tab="pricing"] .lens-pricing-tab-pane[style*="display:none"] { display: none; }
+
+/* ───────── Readonly mode: hide edit-only UI (bulk toolbar + inline-edit inputs) ───────── */
+.lens-tab-section[data-tab="pricing"][data-view-mode="readonly"] .bulk-toolbar { display: none !important; }
+.lens-tab-section[data-tab="pricing"][data-view-mode="readonly"] .lens-pricing-page .edit-only { display: none !important; }
+
+/* ───────── Cost column permission gating (mockup-aligned class) ───────── */
+.lens-tab-section[data-tab="pricing"] .col-permission-gated::before {
+  content: '🔒 ';
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+/* ───────── Status badges (pending / active) ───────── */
+.lens-tab-section[data-tab="pricing"] .status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.lens-tab-section[data-tab="pricing"] .status-badge.status-active { background: #d4edda; color: #155724; }
+.lens-tab-section[data-tab="pricing"] .status-badge.status-pending { background: #fff3cd; color: #856404; }

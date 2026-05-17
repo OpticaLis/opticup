@@ -68,6 +68,8 @@
         'modules/lens-pricing/lens-pricing-grid.js',
         'modules/lens-pricing/lens-pricing-inline-edit.js',
         'modules/lens-pricing/lens-pricing-bulk.js',
+        'modules/lens-pricing/lens-pricing-stats.js',
+        'modules/lens-pricing/lens-pricing-drawer.js',
         'modules/lens-pricing/lens-pricing-main.js'
       ]
     },

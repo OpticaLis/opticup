@@ -1,28 +1,122 @@
 <!-- lens-pricing-partial.html — body fragment for inventory.html lens-tab.
-     M1_INVENTORY_UNIFIED_SCREEN SPEC §1.5 — frames-aligned tokens via lens-tabs.css. -->
+     M1_LENS_PRICING_REBUILD (2026-05-17): 1:1 mockup rebuild per
+     architecture-brief/mockups/LENS_PRICING_MOCKUP.html (Pattern P-AR-16).
 
-<div id="access-gate" style="display:none">
+     Mount points for 5 shared components:
+       - StatCardRow (4 cards: active offerings / pending / temporary deals / total)
+       - ChipFilter (3 rows: production / supplier / brand)
+       - TableBuilder + extensions (cost-permission gating + sell-price resolver)
+       - LensDetailsDrawer (logs + notes tabs)
+       - WizardStepIndicator (bulk apply wizard — reuses existing bulk modal)
+
+     Permission gating:
+       - Screen access: lens.pricing.manage (existing pattern)
+       - View-mode default: lens_pricing.edit → 'edit' else 'readonly'
+       - Cost column: inventory.view_cost_price (.col-permission-gated)
+       - Notes CRUD write actions: lens_pricing.edit (UI gate; RLS final)
+-->
+
+<div id="access-gate-pricing" style="display:none">
   <div class="empty-state">אין הרשאה למסך זה (lens.pricing.manage).</div>
 </div>
 
-<div id="app" style="display:none">
-  <div class="lens-page-title">&#128176; קטלוג ומחירי עדשות</div>
+<div id="app-pricing" class="lens-pricing-page" style="display:none">
 
-  <div class="lens-filter-bar">
-    <label>סוג ייצור:</label>
-    <button class="chip active" data-production-filter="stock" id="filter-stock">&#128230; מלאי קבוע</button>
-    <button class="chip" data-production-filter="custom" id="filter-custom">&#127919; מיוחד הזמנה</button>
-    <label>מותג:</label>
-    <select id="filter-brand"><option value="">— הכל —</option></select>
+  <!-- ============ PAGE HEADER ============ -->
+  <div class="lens-pricing-header">
+    <div class="lens-pricing-title">
+      <span>&#128176; ניהול תמחור עדשות</span>
+      <span class="badge" id="lens-pricing-context-badge">Optic Up &middot; טוען&hellip;</span>
+    </div>
+    <div class="lens-pricing-actions">
+      <button type="button" class="btn" data-lens-pricing-action="export" title="ייצוא מחירון ל-Excel">&#128229; ייצוא</button>
+      <button type="button" class="btn" data-lens-pricing-action="refresh" title="רענן מקטלוג">&#128260; רענן</button>
+      <button type="button" class="btn btn-primary" data-lens-pricing-action="save" title="שמור שינויים">&#10003; שמור שינויים</button>
+    </div>
   </div>
 
-  <div class="lens-filter-bar">
-    <button class="btn btn-p" id="btn-bulk-apply">&#9881;&#65039; פעולה קבוצתית על נבחרים</button>
-    <button class="btn btn-g" id="btn-refresh">&#128260; רענן</button>
+  <!-- ============ VIEW-MODE TOGGLE ============ -->
+  <div class="view-mode-toggle">
+    <button type="button" class="vm-btn" data-view-mode="edit"><span>&#9999;&#65039;</span> עריכה</button>
+    <button type="button" class="vm-btn" data-view-mode="readonly"><span>&#128065;</span> צפייה</button>
+    <span class="vm-hint">ברירת מחדל לפי הרשאת lens_pricing.edit</span>
   </div>
 
-  <div class="lens-panel">
-    <div class="pricing-summary" id="pricing-summary" style="padding:8px 14px;font-size:12px;color:#64748b"></div>
-    <div id="pricing-container"><div class="empty-state">טוען…</div></div>
+  <!-- ============ STAT CARDS ============ -->
+  <div id="lens-pricing-stats-mount"></div>
+
+  <!-- ============ TOP TABS ============ -->
+  <div class="top-tabs" role="tablist">
+    <button type="button" class="top-tab active" data-top-tab="active" role="tab" aria-selected="true">&#128176; מחירים פעילים</button>
+    <button type="button" class="top-tab" data-top-tab="pending" role="tab" aria-selected="false">
+      <span class="badge-num" id="pending-tab-badge">0</span> ממתינים לאישור
+    </button>
+    <button type="button" class="top-tab" data-top-tab="promotions" role="tab" aria-selected="false">&#128197; מבצעים זמניים</button>
+    <button type="button" class="top-tab" data-top-tab="history" role="tab" aria-selected="false">&#128220; היסטוריית מחירים</button>
   </div>
+
+  <!-- ============ FILTERS (3 chip-filter rows) ============ -->
+  <div class="lens-pricing-filters">
+    <div id="lens-pricing-prod-filter-mount"></div>
+    <div id="lens-pricing-supplier-filter-mount"></div>
+    <div id="lens-pricing-brand-filter-mount"></div>
+  </div>
+
+  <!-- ============ ALERT (pending-approval banner) ============ -->
+  <div class="alert-info" id="lens-pricing-alert" style="display:none">
+    <span class="alert-icon">&#8505;&#65039;</span>
+    <span class="alert-text" id="lens-pricing-alert-text">&mdash;</span>
+    <a href="#" class="alert-link" data-alert-action="open-pending">פתח טאב "ממתינים לאישור" &larr;</a>
+  </div>
+
+  <!-- ============ BULK TOOLBAR (edit mode only, when ≥1 row selected) ============ -->
+  <div class="bulk-toolbar" id="lens-pricing-bulk-toolbar" style="display:none">
+    <span class="bulk-toolbar-label">&#9889; פעולות מסיביות (<span id="bulk-selected-count">0</span> שורות נבחרו)</span>
+    <span class="bulk-toolbar-sep">|</span>
+    <button type="button" class="btn btn-primary" data-bulk-action="open-wizard">&#9881;&#65039; פתח Wizard לפעולה קבוצתית</button>
+  </div>
+
+  <!-- ============ MAIN: PRICING TABLE + DRAWER MOUNT ============ -->
+  <div class="lens-pricing-main">
+
+    <!-- TAB PANE: ACTIVE PRICES (default) -->
+    <div class="lens-pricing-tab-pane" data-tab-pane="active">
+      <div class="lens-pricing-table-panel">
+        <div class="lens-pricing-table-header">
+          <h3 id="lens-pricing-table-title">מחירים פעילים</h3>
+          <span class="lens-pricing-table-meta" id="lens-pricing-table-meta">&mdash;</span>
+        </div>
+        <div id="lens-pricing-grid"><div class="empty-state">טוען&hellip;</div></div>
+      </div>
+    </div>
+
+    <!-- TAB PANE: PENDING APPROVAL -->
+    <div class="lens-pricing-tab-pane" data-tab-pane="pending" style="display:none">
+      <div class="lens-pricing-table-panel">
+        <div class="lens-pricing-table-header">
+          <h3>ממתינים לאישור</h3>
+          <span class="lens-pricing-table-meta">הצעות שינוי מחיר מהספק</span>
+        </div>
+        <div class="empty-state" id="lens-pricing-pending-empty">אין הצעות ממתינות לאישור.</div>
+      </div>
+    </div>
+
+    <!-- TAB PANE: PROMOTIONS / HISTORY (Foundation Phase scope — placeholder content) -->
+    <div class="lens-pricing-tab-pane" data-tab-pane="promotions" style="display:none">
+      <div class="lens-pricing-table-panel">
+        <div class="empty-state">מבצעים זמניים &mdash; ייבנה בלשונית עתידית של ה-Pipeline.</div>
+      </div>
+    </div>
+    <div class="lens-pricing-tab-pane" data-tab-pane="history" style="display:none">
+      <div class="lens-pricing-table-panel">
+        <div class="empty-state">היסטוריית מחירים &mdash; ייבנה בלשונית עתידית של ה-Pipeline.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ LENS DETAILS DRAWER MOUNT POINT ============ -->
+  <!-- Populated by LensDetailsDrawer.init() at bootstrap; opened per row "פרטים נוספים" click. -->
+  <div id="lensDetailsDrawer"></div>
+
 </div>
