@@ -42,9 +42,10 @@
     // Brands: pre-existing pattern (global catalog)
     const { data: bs } = await sb.from('lens_brand').select('id, name').eq('is_deleted', false).order('name');
     window.LensPricing.brands = bs || [];
-    // Suppliers: tenant-scoped
+    // Suppliers: tenant-scoped (note: suppliers table has no is_deleted column;
+    // verified live 2026-05-17 via information_schema). Active flag is the gate.
     const { data: ss } = await sb.from('suppliers')
-      .select('id, name').eq('tenant_id', tid).eq('active', true).eq('is_deleted', false).order('name');
+      .select('id, name').eq('tenant_id', tid).eq('active', true).order('name');
     window.LensPricing.suppliers = ss || [];
   }
 
