@@ -243,4 +243,23 @@ For the 2 new permission keys, the grant matrix is the SAME for both tenants:
 
 > This SPEC.md will be staged in the same commit as the destructive ops (C-A1). The Iron Rule 32 hook (`scripts/checks/destructive-ops-declared.mjs`) reads §4 above to validate that every destructive operation in the staged tree was pre-declared. Executor MUST `git add` SPEC.md alongside the migration files in C-A1.
 
-*End of SPEC. Foreman-sealed 2026-05-18 evening. Ready for executor dispatch.*
+### 13.A — Migrations applied (Executor, C-A1)
+
+| # | Migration name | Type | Affects |
+|---|----------------|------|---------|
+| 1 | `m1_unified_flow_a_schema` | DDL | tenants.default_supplier_id + 5 purchase_receipt audit cols + COMMENTs |
+| 2 | `m1_unified_flow_a_perms` | DML | +4 permissions rows + 20 role_permissions rows |
+| 3 | `m1_unified_flow_a_demo_default_supplier` | DML | 1 row update on tenants (demo only) |
+
+Post-state verification: 9/9 SPEC §3 DB criteria PASS (criteria 4-11 + 16).
+- C4: `tenants.default_supplier_id` exists (uuid, nullable=YES) ✓
+- C5: 5 of 5 purchase_receipt audit columns present ✓
+- C6: CHECK constraint `((manager_review_status = ANY (ARRAY['pending','approved','requires_doc','exception_allowed'])) OR (manager_review_status IS NULL))` ✓
+- C7: 10/10 existing demo receipts auto-backfilled `is_documented=true` ✓
+- C8: demo `default_supplier_id = bb4bdec6-5fe0-4e27-b6b6-ba097cf37112` (AZMON) ✓
+- C9: Prizma `default_supplier_id = NULL` (pending Daniel) ✓
+- C10: `permissions` +4 rows (2 keys × 2 tenants) ✓
+- C11: `role_permissions` +20 rows (10 per tenant; 8 granted=true total — ceo+manager × 2 perms × 2 tenants) ✓
+- C16: Prizma data-table row delta = 0; Prizma permissions +2, role_permissions +10 (per Phase A design) ✓
+
+*End of SPEC. Foreman-sealed 2026-05-18 evening. Executor C-A1 closed 2026-05-18 evening.*

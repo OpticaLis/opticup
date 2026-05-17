@@ -2186,3 +2186,49 @@ CREATE INDEX IF NOT EXISTS idx_supdocs_doc_numbers ON supplier_documents USING G
 --   - **PRIZMA ROW COUNTS UNCHANGED** across all 27 SPEC sec.0.E baseline tables.
 --     Verified post-Stage-5. SPEC sec.3 S32 PASS at mid-Pipeline.
 -- See SPEC sec.12.1 Execution Markers C-D1, C-D-CORRECTIVE, C-D2, C-D3 for full SQL bodies.
+
+-- ============================================================================
+-- Phase 2 — Unified Flow Phase A (M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_A)
+-- Applied: 2026-05-18 evening via Supabase MCP
+-- SPEC: docs/specs/M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_A/SPEC.md
+-- Brief: architecture-brief/M1_LENS_INVENTORY_UNIFIED_FLOW_BRIEF.md §3
+-- ============================================================================
+
+-- §3.1 — Per-tenant default supplier (pre-fills the M1 inventory add-stock UI)
+ALTER TABLE public.tenants
+  ADD COLUMN default_supplier_id UUID NULL
+  REFERENCES public.suppliers(id) ON DELETE SET NULL;
+COMMENT ON COLUMN public.tenants.default_supplier_id IS
+  'Tenant''s default supplier for inventory add-stock flows. Pre-fills the supplier dropdown on Quick Scan / Manual Add / Full Receive surfaces (M1 inventory screen unified flow, Phase A). NULL = no default set; settings UI prompts user to pick.';
+
+-- §3.2 — Purchase receipt audit columns (track undocumented additions)
+ALTER TABLE public.purchase_receipt
+  ADD COLUMN is_documented BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN undocumented_reason TEXT NULL,
+  ADD COLUMN manager_review_status TEXT NULL
+    CHECK (manager_review_status IN ('pending','approved','requires_doc','exception_allowed')
+           OR manager_review_status IS NULL),
+  ADD COLUMN manager_reviewed_by UUID NULL REFERENCES public.employees(id),
+  ADD COLUMN manager_reviewed_at TIMESTAMPTZ NULL;
+
+-- §3.4 — Permission keys + role grants (5 system roles × 2 perms × 2 tenants)
+-- See SPEC §10 grant matrix. ceo + manager get both; team_lead + viewer + worker get neither.
+-- Migration: m1_unified_flow_a_perms (INSERT ... ON CONFLICT DO NOTHING idempotent)
+-- 2 new keys: inventory.add.undocumented, inventory.manager_review.approve
+-- 20 new role_permissions rows (8 granted=true, 12 granted=false)
+
+-- Backfill: demo tenant default_supplier_id = AZMON (דמו) (bb4bdec6-5fe0-4e27-b6b6-ba097cf37112)
+-- Prizma backfill HELD per escalation 2026-05-18T_M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_A_PRIZMA_AUTH.md
+
+-- Post-state probes:
+--   tenants.default_supplier_id column added; nullable=YES; FK SET NULL on supplier delete.
+--   purchase_receipt 5 audit columns added; CHECK constraint accepts 4 values + NULL.
+--   purchase_receipt: 10 existing demo receipts backfilled is_documented=true automatically
+--     by Postgres DEFAULT (O(1) — metadata-only, no table rewrite per PG11+).
+--   permissions: +4 rows (2 keys × 2 tenants).
+--   role_permissions: +20 rows (10 per tenant; 4 granted_true per tenant — ceo + manager × 2 keys).
+--   Demo tenant.default_supplier_id = bb4bdec6-... (set this commit).
+--   Prizma tenant.default_supplier_id = NULL (PENDING Daniel authorization).
+--   PRIZMA ROW COUNTS UNCHANGED on purchase_receipt + tenants data; only +2 permissions
+--     and +10 role_permissions rows for the new keys are seeded.
+-- See SPEC §3 Success Criteria 4-11 + 16 for verification queries.
