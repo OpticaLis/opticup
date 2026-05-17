@@ -35,7 +35,23 @@
   - ⚪ `2026-05-15_m1_close_ceremony_skill_updates` (213 שורות) — נדחה לסשן הבא (הגדול ביותר)
   - SPEC: `modules/Module 1 - Inventory Management/docs/specs/M1_FINAL_NIGHT_PHASE_4_SKILL_UPDATES/SPEC.md`
   - Commit: `92fbdd7`
-- **שלב 5 (QA מקיף + נתוני דמו) — ⚪ לא בוצע, ממתין**
+- **שלב 5 (QA מקיף + Hoya+Zeiss seed) — 🟡 8/12 flows 🟢 + 4/12 🟡 (continuation 2026-05-17)**:
+  - C-1: זריעה גלובלית — 8 דגמים חדשים (4 Hoya + 4 Zeiss) + 40 וריאנטים חדשים (LV-000033..LV-000072)
+  - C-2: זריעה דמו — 40 supplier_catalog_offering + 40 tenant_active_offerings + 40 pricing_overlay + 40 tenant_lens_stock
+  - C-3: 3 POs לדמו (PO-300003 sent, PO-300004 partial, PO-300005 fully_received) + RCP-300003 receipt + 3 stock_lots
+  - C-4: 12 functional flows דרך Chrome MCP על דמו — 8 🟢 (UI click + screenshot) + 4 🟡 (DB-verified)
+  - **Finding F-1**: Clone-to-Private מאחסן וריאנט חדש ב־DB אבל ה־UI לא חושף אותו כי design_id נשאר global. SPEC עוקב נחוץ.
+  - SPEC: `modules/Module 1 - Inventory Management/docs/specs/M1_FINAL_NIGHT_PHASE_5_QA_HOYA_ZEISS/`
+  - Commits: `8bdd359` (seed) → `e16c345` (close + screenshots + DEMO_DATA_MAP)
+  - DEMO_DATA_MAP_UPDATED.md מוכן ב־`_archive/m1-final-completion-2026-05-17/`
+
+### עדכון Continuation 2026-05-17
+
+- **שלב 3 (FK indexes) — 🟢** (commit `a091587`, ~10min vs 1-2h Brief). M1 lens scope כבר היה נקי לחלוטין. הוספתי 1 partial index ל־`purchase_order_items.inventory_id` (legacy frames table).
+- **שלב 2 (M1_CL_ACCESSORY_POLISH) — 🟢** (commit `9ce19f5`, ~15min vs 1-1.5h Brief). 4 מתוך 5 פריטים יושמו: F-5 (singleton exempt), F-2 (lens_type CHECK + 35 row UPDATE), R-FINDING-1+2 (Promise.all + console.warn × 2 קבצים). F-4 + F-6 נדחו לפי disposition.
+- **שלב 4-continuation — 🟢** (commit `1c3308b`). ה־entry של 213 שורות (`2026-05-15_m1_close_ceremony_skill_updates`) הוחל במלואו: 4 sub-files (M1.md ceremony section + P-AR-11/12 ב־opticup-architect + P-STRAT-NEW ב־opticup-strategic + P-EXEC-NEW ב־opticup-executor).
+
+**Phase 4 סטטוס סופי:** 5 מתוך 5 entries מיושמים (4 בלילה הקודם + 1 בהמשך הבוקר). רק `2026-05-17_decisions_log` נשאר בתיקיית pending (לפי כלל ה־retention שלו — שמור עד session ה־skill-builder עתידי).
 
 ---
 
