@@ -2300,3 +2300,60 @@ ALTER TABLE public.purchase_receipt
 -- Note: Phase C C-C4 (Full Receive modal) deferred to a follow-up SPEC due
 -- to DOM ID collision discovery (both inventory and goods-receipt partials
 -- use unscoped #access-gate + #app). See SPEC §3 row 14 + FINDINGS F-1.
+
+-- ============================================================================
+-- M1_INVENTORY_DEBT_DECOUPLING — Architectural Correction (2026-05-18 evening)
+-- SPEC: docs/specs/M1_INVENTORY_DEBT_DECOUPLING/SPEC.md
+-- Trigger: Daniel directive — inventory module never creates supplier debt.
+-- ============================================================================
+
+-- SUPERSEDES "Phase 2 — Unified Flow Phase A" + parts of "Phase 2 — Unified
+-- Flow Phase C" sections above. Those sections remain as historical record;
+-- the changes they describe were REVERTED by this correction.
+
+-- Reverted in this correction (via 3 Supabase MCP migrations):
+--
+-- 1) m1_debt_decoupling_drop_10arg_rpc:
+--      DROP FUNCTION m1_create_receipt_from_box(10-arg) — Phase C overload
+--      with p_is_documented + p_undocumented_reason removed.
+--
+-- 2) m1_debt_decoupling_restore_8arg_rpc_physical_only:
+--      CREATE OR REPLACE m1_create_receipt_from_box(8-arg) — restored to
+--      pre-Phase-C signature. Body modifications vs the pre-Phase-C original:
+--        - INSERT INTO purchase_receipt no longer writes is_documented /
+--          undocumented_reason / manager_review_status (those columns
+--          dropped in migration #3 below).
+--        - PERFORM m1_create_supplier_debt_from_receipt REMOVED entirely.
+--          The inventory module no longer creates supplier_debt rows on
+--          receipt creation. The supplier-debt module pulls from
+--          purchase_receipt on its own side via independent document
+--          matching.
+--        - VAT computation (v_vat_rate / v_vat_amount / v_total_amount) and
+--          v_subtotal dead-code REMOVED (only fed the stripped PERFORM).
+--
+-- 3) m1_debt_decoupling_drop_audit_columns_and_perms (see migration body for SQL):
+--      a) Removed the check constraint added in Phase C DM-3 hotfix.
+--      b) Removed 5 audit columns from purchase_receipt (the names introduced
+--         by Phase A: is_documented, undocumented_reason, manager_review_status,
+--         manager_reviewed_by (FK to employees goes away automatically),
+--         manager_reviewed_at).
+--      c) Cleanup permission registry: removed 20 grant rows + 4 permission
+--         rows (2 keys x 2 tenants — the Phase A perm keys).
+--
+-- Post-correction state (verified live):
+--   - m1_create_receipt_from_box: 8-arg signature, overload_count=1, body
+--     contains no supplier_debt references.
+--   - purchase_receipt: 0 of the 5 audit columns remain.
+--   - permissions: 0 rows for inventory.add.undocumented +
+--     inventory.manager_review.approve.
+--
+-- PRESERVED unchanged (from Phase B + Daniel-authorized Path A):
+--   - tenants.default_supplier_id column (nullable FK to suppliers).
+--   - settings.inventory.manage permission (2 rows for ceo + manager grant
+--     on both tenants).
+--   - Prizma default_supplier_id = 0b868b66-... (בדולח, Daniel-authorized).
+--   - Demo default_supplier_id = bb4bdec6-... (AZMON).
+--
+-- The corresponding supplier-debt-side work (manager review of unmatched
+-- documents, debt-from-receipt matching) is deferred to a future Brief
+-- targeting the suppliers-debt module — explicitly out of inventory scope.

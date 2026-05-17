@@ -228,10 +228,27 @@ After this SPEC:
 
 > SPEC.md will be staged in each commit (C-D1..C-D4) that contains destructive ops. Hook reads §4 above.
 
-### 13.A — Migrations + edits applied (populated per-commit by Executor)
+### 13.A — Migrations + edits applied (Executor, populated per-commit)
 
 | # | Commit | Type | Affects |
 |---|--------|------|---------|
-| _(populated at execution time)_ | | | |
+| 1 | C-D1 `8205966` | DDL (RPC) | DROP 10-arg overload + CREATE OR REPLACE 8-arg with supplier_debt PERFORM removed |
+| 2 | C-D2 `e6a9bd4` | DDL + DML | DROP 5 audit columns + DROP CHECK + DELETE 2 perms + DELETE 20 grants |
+| 3 | C-D3 `c980250` | UI + JS | Strip undocumented + delivery-note UI from Manual Add panel + Quick Scan drawer + JS helpers; comment-only audit trail kept |
+| 4 | C-D4 (this commit) | docs | M1 db-schema.sql Architectural Correction section + this §13.A |
+| 5 | C-D5 | docs | EXECUTION_REPORT + FINDINGS + TEST_REPORT |
+
+Post-state verification (all SPEC §3 criteria 4-14 + 16-17 PASS):
+- C4: RPC arg_count=8, overload_count=1 ✓
+- C5: RPC body grep — `m1_create_supplier_debt_from_receipt` not present ✓
+- C6: 0 of 5 audit columns remain ✓
+- C7: CHECK constraint absent ✓
+- C8: 0 rows in permissions for the 2 keys ✓
+- C9: 0 rows in role_permissions for the 2 perm_ids ✓
+- C10-13: 0 occurrences of the 4 removed DOM IDs in HTML/JS ✓ (1 comment-only audit-trail line per JS file)
+- C14: Phase B preserved (default_supplier_id column alive; Prizma=בדולח; demo=AZMON; settings.inventory.manage = 2 rows) ✓
+- C16-17: Tier C in C-D5 verifies physical-only flow + zero supplier_debt creation; Prizma row delta documented
+
+*End of SPEC. Foreman-sealed 2026-05-18 evening. C-D1..C-D4 closed 2026-05-18 evening.*
 
 *End of SPEC. Foreman-sealed 2026-05-18 evening. Architectural correction Pipeline.*
