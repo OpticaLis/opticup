@@ -137,10 +137,36 @@
     });
   }
 
+  // Side-panel ➕➖ wiring — replaces the inline cell qty-btn pattern
+  // (mockup moves the controls to the side panel; we route them to the existing
+  // handleAdd / handleReduce in lens-inventory-modals.js, providing the
+  // currently selected cell's sph/cyl as context).
+  function _attachSidePanelQtyControls() {
+    document.addEventListener('click', (e) => {
+      const btn = e.target && e.target.closest && e.target.closest('[data-qty-action]');
+      if (!btn) return;
+      const action = btn.dataset.qtyAction; // 'plus' | 'minus'
+      const selectedCell = document.querySelector('.grid-cell.cell-selected');
+      if (!selectedCell) {
+        if (window.Toast) Toast.info('בחר תחילה תא בטבלה');
+        return;
+      }
+      const sph = selectedCell.dataset.sph || '';
+      const cyl = selectedCell.dataset.cyl || '';
+      if (!window.LensInvModals) return;
+      if (action === 'plus' && typeof window.LensInvModals.handleAdd === 'function') {
+        window.LensInvModals.handleAdd(sph, cyl);
+      } else if (action === 'minus' && typeof window.LensInvModals.handleReduce === 'function') {
+        window.LensInvModals.handleReduce(sph, cyl);
+      }
+    });
+  }
+
   function attach() {
     _attachCloseHandlers();
     _attachRptTabs();
     _attachScanReasonChips();
+    _attachSidePanelQtyControls();
     attachHeaderActionDispatcher();
   }
 

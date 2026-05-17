@@ -22,7 +22,13 @@
     if (meta) {
       const variant = (window.LensInv.variants || []).find(v => v.id === window.LensInv.variantId);
       const diameter = (variant && (variant.diameter_mm || variant.diameter)) || null;
-      meta.textContent = diameter ? ('קוטר: ' + diameter + 'mm') : 'בחר תא בטבלה לצפייה בחבילות';
+      if (diameter) {
+        meta.textContent = 'קוטר: ' + diameter + 'mm';
+      } else if (variant && variant.display_id) {
+        meta.textContent = variant.display_id + ' · n=' + (variant.refractive_index || '—');
+      } else {
+        meta.textContent = '';
+      }
     }
   }
 
