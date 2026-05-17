@@ -1,6 +1,43 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
+M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_B — 2026-05-18 evening (🟢 CLOSED — Settings UI for default supplier shipped; Daniel-authorized Prizma backfill applied; Pipeline continues to Phase C)
+
+## 2026-05-18 evening — M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_B (🟢 CLOSED)
+
+**Goal:** Ship Settings page section + permission key for per-tenant `default_supplier_id` configuration. Reuse existing `SETTINGS_FIELDS` + `saveSettings()` infrastructure per Rule 21.
+
+**Pipeline commits (3 executor + Tester + Foreman close, `c2b9cf8..HEAD`):**
+- `c2b9cf8` C-B0 — SPEC seed (Foreman). §0.C pre-resolved 2 Brief drifts (B-1 PIN claim, B-2 cross-phase step 4 deferral).
+- `e275b7d` C-B1 — Implementation (Executor). settings.html 292→307 + settings-page.js 296→338 + M1 db-schema.sql 2234→2271. Supabase MCP migration `m1_unified_flow_b_settings_inventory_manage_perm` (+2 permissions, +10 role_permissions).
+- `8b35120` C-B2 — Executor close (EXECUTION_REPORT 9.9/10 + FINDINGS 1 INFO file-size).
+- `7694407` Tier C VFV (Tester). 4 screenshots; 3/3 Brief §4.3 criteria + 4 bonus checks PASS; demo baseline restored.
+- _(this commit)_ FOREMAN_REVIEW 🟢 CLOSED + this SC block.
+
+**Pipeline stats:** 5 commits total. Smoke 7/7 PASS. Integrity exit 0. 0 escalations. 0 Prizma data writes (the +1 permissions / +5 role_permissions Prizma rows are the only Phase B Prizma writes per design — Phase A's Daniel-authorized backfill of `tenants.default_supplier_id` already applied in commit `966c5d2`).
+
+**Schema/code delta:**
+- +1 permission key (`settings.inventory.manage` × 2 tenants).
+- +10 role_permissions rows (4 granted=true; ceo + manager × 1 perm × 2 tenants).
+- 0 new tables / 0 new RPCs / 0 new views.
+- settings.html +15 lines (new `.settings-section` for "ניהול מלאי" with `<select id="set-default-supplier">`).
+- settings-page.js +42 lines (SETTINGS_FIELDS entry + `gateInventorySection()` + `loadSupplierOptions()` + 2 call sites from `loadSettings()`).
+
+**Tier C VFV results:**
+- ✅ Section visible to ceo role (settings.inventory.manage=true).
+- ✅ Dropdown populated with 39 options (1 placeholder + 38 active demo suppliers).
+- ✅ Save → DB updates `tenants.default_supplier_id` end-to-end (tested with Cleaz, restored to AZMON).
+- ✅ Negative gating: section hidden when permission flag flipped to false (direct gate function call).
+- ⏭️ Brief §4.3 step 4 (inventory screen auto-fill) cross-phase deferred to Phase C per SPEC §0.C drift B-2.
+
+**Status:**
+- 🟢 Phase B CLOSED. Settings UI live on demo.
+- 🔜 Phase C starts next: 3 add-stock flows on inventory screen (Quick Scan drawer / Manual Add panel refactor / Full Receive modal) + `m1_create_receipt_from_box` RPC extension. Largest phase in Pipeline.
+- ⏳ Skill harvest backlog: 8 improvement proposals accumulated across Phases A + B (4 P-AUTHOR + 4 P-EXEC). Apply at Phase E.
+
+---
+
+## Previous Last Updated
 M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_A — 2026-05-18 evening (🟢 CLOSED, executor scope; Pipeline paused awaiting Daniel decision on Prizma `default_supplier_id` backfill)
 
 ## 2026-05-18 evening — M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_A (🟢 CLOSED, Pipeline pause)
