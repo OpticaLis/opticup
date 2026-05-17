@@ -1,5 +1,30 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-17 late evening — PARALLEL_PIPELINE_COORDINATION — file-system-mediated session locks
+
+SPEC: `PARALLEL_PIPELINE_COORDINATION` ([folder](specs/PARALLEL_PIPELINE_COORDINATION/))
+
+**Full-Auto Pipeline.** Single chat, ~1.0h wall-clock. Single SPEC per Brief §10 Daniel-locked Decision #1 (no phasing). Direct remediation of SUPERVISOR_SKILL_PHASE_1 F-EXTRA-1 (2026-05-17 cross-Pipeline branch-state incident, ~20 min recovery cost).
+
+**10 Pipeline commits (`7dd4a3c..b774eed` + Foreman close):**
+
+- `7dd4a3c` — `chore(spec): seal PARALLEL_PIPELINE_COORDINATION SPEC + track Brief + Activation Prompt` (C0).
+- `ea66504` — `feat(infra): add pipeline-coordination script + 8 tests` (C1) — `scripts/pipeline-coordination.mjs` (329 lines, 5 sub-commands, Node built-ins only) + `scripts/test-pipeline-coordination.mjs` (228 lines, 6 unit + 2 E2E) + `package.json` `test:pipeline-coordination` script.
+- `1d8f5bb` — `chore(infra): add _archive/pipeline-sessions folder with .gitkeep + .gitignore` (C2) — path-level .gitignore: ignores `*.lock`, un-ignores `.gitkeep` + `stale-cleanup-*.log` + `.gitignore` itself.
+- `cdc2a6e` — `docs(skills): wire Pre-Action Collision Check into 5 Pipeline skills` (C3) — Shared Block S1 inserted into executor / reviewer / localhost-tester / strategic / supervisor SKILL.md, +29 lines each.
+- `27adffa` — `docs(claude.md): add §9 Parallel Pipeline Coordination sub-section` (C4) — one-paragraph rule pointing at script + lock-file folder + per-skill First Action sub-section, +4 lines.
+- `0a08fcf` — `docs(file-structure): register 4 new pipeline-coordination files` (C5).
+- `77f2982` — `chore(spec): close PARALLEL_PIPELINE_COORDINATION Executor phase with retrospective` (C6) — EXECUTION_REPORT.md (178 lines, 21/23 §3 criteria GREEN + 1 D-1 deviation + 2 deferred to downstream) + FINDINGS.md (34 lines, 2 INFO, DISMISS/DEFER).
+- `e6aa006` — `docs(spec): REVIEW for PARALLEL_PIPELINE_COORDINATION — 🟢 PASS` (C7) — independent re-verification of 21/23 criteria + 3 spot-checks; 1 INFO R-FINDING-1 (Block S1 per-skill phrase, DISMISS).
+- `b774eed` — `chore(spec): PARALLEL_PIPELINE_COORDINATION smoke test report — 🟢 GREEN` (C8) — smoke 7/7 PASS demo (4.5s), SPEC E2E 8/8 PASS re-run, Tier C VFV N/A.
+- `<C10>` — `chore(spec): close PARALLEL_PIPELINE_COORDINATION` — FOREMAN_REVIEW + this CHANGELOG + SESSION_CONTEXT + MASTER_ROADMAP + OPEN_TASKS updates.
+
+**Iron Rules clean.** Rules 12 / 21 / 23 / 31 / 32 verified across all 10 commits. **0 destructive operations** (per-commit destructive-ops audit returns empty; SPEC §4 declared `None.` and honored verbatim). **0 escalations to Daniel.** D-1 (CLAUDE.md ≤ 400 stale baseline) caught by P-EXEC-2 binding rule at Executor Step 0 and handled correctly via the §5 operational delta trigger (+4 actual vs +25 cap).
+
+**Architecture impact.** Pipeline-collision detection is now OPERATIONAL at SPEC closure. Any concurrent Pipeline opened after `b774eed` will execute `claim` at bootstrap, `check-collision` before every branch op, and halt + escalate on collision. The F-EXTRA-1 incident class (silent working-tree migration during parallel `git checkout`/`git merge`) cannot recur silently. First real-use validation will occur the next time two Pipelines open against the same repo.
+
+**4 skill improvements queued** for next opticup-strategic session per Self-Improvement Mandate: P-AUTHOR-1 (tighten §3a Shared Edit Block Sameness contract) + P-AUTHOR-2 (pre-seal governance-doc baseline re-measurement) + P-EXEC-1 (multi-skill identical-edit Read-then-Edit discipline) + P-EXEC-2 (absolute-cap-as-delta when pre-existing-violated). **1 new-SPEC stub queued**: `PARALLEL_PIPELINE_COORDINATION_PRE_COMMIT_GATE` (Brief §9 Risks row 4 — pre-commit-time enforcement that first commit of session must have an active lock).
+
 ## 2026-05-17 evening — SUPERVISOR_SKILL_PHASE_1 — Triage layer (Shadow Mode launch)
 
 SPEC: `SUPERVISOR_SKILL_PHASE_1` ([folder](specs/SUPERVISOR_SKILL_PHASE_1/))
