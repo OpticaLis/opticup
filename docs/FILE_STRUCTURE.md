@@ -63,9 +63,14 @@ _archive/
 ├── launch-plan-versions/       — historical MASTER_LIVE_PLAN versions
 │   (MASTER_LIVE_PLAN_v1.md — current truth lives in /MASTER_ROADMAP.md)
 │
-└── session-outputs/            — 53 historical session prompts/handoffs from old outputs/
-    (PROMPT_*.md, INSTRUCTIONS_*.md, HANDOFF_*.md, NIGHT_HANDOFF.md,
-     campaign-mockups/, campaign-screen-screenshots/)
+├── session-outputs/            — 53 historical session prompts/handoffs from old outputs/
+│   (PROMPT_*.md, INSTRUCTIONS_*.md, HANDOFF_*.md, NIGHT_HANDOFF.md,
+│    campaign-mockups/, campaign-screen-screenshots/)
+│
+└── pipeline-sessions/          — Parallel Pipeline lock files (added 2026-05-17)
+    (*.lock files gitignored; .gitkeep tracked; stale-cleanup-*.log tracked
+     for audit; see scripts/pipeline-coordination.mjs + CLAUDE.md §9
+     Parallel Pipeline Coordination)
 ```
 
 **Discipline:** files arrive here only via the Root Discipline Rule (CLAUDE.md §0.5). They are git-tracked but not actively maintained. Recover via `git log --follow <path>` / `git show <hash>:<path>`.
@@ -289,7 +294,9 @@ scripts/
 ├── sync-watcher.js             — Node.js folder watcher (Windows Service, CSV+XLSX)
 ├── sync-export.js              — reverse sync: export new inventory to XLS for Access
 ├── install-service.js          — install as Windows Service
-└── uninstall-service.js        — uninstall from Windows Services
+├── uninstall-service.js        — uninstall from Windows Services
+├── pipeline-coordination.mjs   — Parallel Pipeline session-lock protocol (added 2026-05-17)
+└── test-pipeline-coordination.mjs — regression + E2E tests for pipeline-coordination
 ```
 
 ## watcher-deploy/
