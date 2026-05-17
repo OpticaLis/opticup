@@ -1,7 +1,61 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1 Lens Mockup-Fidelity Rebuild — Foundation Phase COMPLETE 🟢 — 2026-05-17 (SPEC 1 🟡, SPEC 2 🟡, SPEC 3 🟢, SPEC 4a 🟢 — all 4 foundation SPECs closed; Groups A/B/C eligible for parallel-worktree dispatch on Daniel's approval — see "2026-05-17 — M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION" section below)
+M1 Lens Mockup-Fidelity Rebuild — Foundation Phase 100% COMPLETE 🟢 (incl. cleanup) — 2026-05-17. SPEC 1 🟡, SPEC 2 🟡, SPEC 3 🟢, SPEC 4a 🟢, M1_FOUNDATION_CLOSE_CLEANUP 🟢. F-2 + F-4 RESOLVED. F-5 DEFERRED to SPEC 5. Groups A/B/C eligible for parallel-worktree dispatch on Daniel's approval.
+
+## 2026-05-17 — M1_FOUNDATION_CLOSE_CLEANUP_2026_05_17 (🟢 CLOSED — cleanup before Groups A/B/C dispatch)
+
+**Status:** ✅ Closed. F-2 (RPC overload gap) + F-4 (stub removal) from SPEC 4a FINDINGS now RESOLVED. F-5 (sell-price placeholder) remains DEFERRED to SPEC 5 per SPEC §2.
+
+**Pipeline shape:** Halted-and-resumed (1 session). Pre-flight grep found a 2nd consumer of the 8-arg RPC outside the SPEC §4 allowlist (`modules/lens-goods-receipt/lens-goods-receipt-close.js:65`); Daniel authorized scope expansion in chat to include that sibling module + flagged the typo class. Pipeline resumed with all 4 commits landed cleanly.
+
+**Commits:**
+- `434ae16` chore(spec): SPEC authored
+- `edbd812` feat(db): m1 lens — overload m1_create_receipt_from_box with 9-arg has_no_invoice variant
+- `dbe4661` refactor(lens-inventory): pass has_no_invoice through 9-arg RPC, drop 2-step UPDATE workaround
+- `6c1e742` chore(repo): migrate GR consumer, DROP 8-arg RPC, remove quick-scan stub + manifest entry
+- _(this commit)_ chore(spec): close M1_FOUNDATION_CLOSE_CLEANUP_2026_05_17 with retrospective
+
+**DB state post-cleanup:**
+- Only the 9-arg `m1_create_receipt_from_box(uuid, uuid, text, jsonb, uuid, text, text, uuid, boolean)` exists in `pg_proc`. Old 8-arg signature dropped.
+- The K2 RPC now writes `has_no_invoice` atomically inside the same transaction as the receipt + lines + lots + movements (no 2-step UPDATE anywhere in the project).
+
+**JS consumers (both migrated to 9-arg):**
+- `modules/lens-inventory/lens-inventory-main.js handleQuickReceiptSubmit` — passes `p_has_no_invoice: !!meta.has_no_invoice` (drawer "אין תעודה" checkbox state). The post-call UPDATE block is gone.
+- `modules/lens-goods-receipt/lens-goods-receipt-close.js close()` — passes `p_has_no_invoice: false` literal (GR flow always has a delivery note per line 12 guard; never sets the flag).
+
+**Stub + manifest cleanup:**
+- `modules/lens-inventory/lens-inventory-quick-scan.js` DELETED (was a 38-line redirect stub).
+- `modules/inventory/inventory-shell-lens.js:41` entry removed.
+
+**Tier C VFV (live on demo tenant) — PASSED.**
+- Drawer staged 1 item, "אין תעודה" checked, supplier Duke selected, submit fired → receipt `62335d00-8bb0-...` landed with `has_no_invoice=TRUE` via the 9-arg RPC (single atomic transaction, no UPDATE statement).
+- 2 screenshots in `docs/specs/M1_FOUNDATION_CLOSE_CLEANUP_2026_05_17/screenshots/`.
+- Smoke row soft-deleted afterwards (Iron Rule 3).
+- 0 console errors.
+
+**Foundation Phase scoreboard (post-cleanup):**
+
+| # | SPEC | Status | Close commit |
+|---|------|--------|--------------|
+| 1 | M1_LENS_PALETTE_RETIRE_UNIFIED | 🟡 | `0949e97` |
+| 2 | M1_5_SHARED_COMPONENTS_PHASE_0 | 🟡 | `73c50b1` |
+| 3 | M1_LENS_DB_SCHEMA_RECEIPTS_NOTES | 🟢 | `0e7d524` |
+| 4a | M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION | 🟢 | `03caea9` |
+| 4.5 | **M1_FOUNDATION_CLOSE_CLEANUP_2026_05_17** | 🟢 | _(this commit)_ |
+
+**Findings (logged to FINDINGS.md, not absorbed):**
+- F-X MEDIUM — SPEC author allowlist + path typos (`modules/inventory/` vs `modules/lens-inventory/`) — Foreman pre-seal path-check discipline lesson for the next SPEC.
+- F-1 INFO — `modules/inventory/inventory-shell-lens.js` 344 lines (pre-existing, over 300 target).
+- F-2 INFO — `LensInvQuickScan` comment retained in modal-shows.js:122 as historical documentation.
+- F-3 LOW — Iron Rule 32 hook path-match strictness caught the SPEC typo (positive outcome; minor friction).
+- F-4 INFO — Advisor WARN on anon-callable SECDEF inherited by 9-arg overload (intentional project pattern; K2 contract).
+
+**Downstream (unblocked):**
+- Cowork-Architect writes brief FOREMAN_REVIEW.md.
+- Groups A/B/C dispatch (SPECs 5-10, 6 screen rebuilds in parallel worktrees, ~10-14h wall clock) eligible on Daniel's approval.
+
+---
 
 ## 2026-05-17 — M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION (🟢 CLOSED — SPEC 4a of 4 foundation, FOUNDATION COMPLETE)
 

@@ -6,6 +6,47 @@
 
 ## Lens UI Rebuild Phase 0 — Foundation (COMPLETE 2026-05-17)
 
+### M1_FOUNDATION_CLOSE_CLEANUP_2026_05_17 — 2026-05-17 (🟢 CLOSED — Foundation cleanup before Groups A/B/C)
+
+**Scope:** Resolve F-2 (RPC overload gap) + F-4 (stub removal) from SPEC 4a FOREMAN_REVIEW before parallel Groups A/B/C dispatch. F-5 (sell-price placeholder) remains DEFERRED to SPEC 5 by design.
+
+**Pipeline shape:** Halted at §6 stop-trigger when pre-flight grep found a 2nd RPC consumer (`modules/lens-goods-receipt/lens-goods-receipt-close.js:65`) outside the SPEC §4 allowlist. Daniel-Architect authorized scope expansion + flagged the recurring "`modules/inventory/` missing `lens-` prefix" typo class. Pipeline resumed with all 4 commits landed.
+
+**Commits:**
+- `434ae16` chore(spec): SPEC authored
+- `edbd812` feat(db): m1 lens — overload m1_create_receipt_from_box with 9-arg has_no_invoice variant
+- `dbe4661` refactor(lens-inventory): pass has_no_invoice through 9-arg RPC, drop 2-step UPDATE workaround
+- `6c1e742` chore(repo): migrate GR consumer, DROP 8-arg RPC, remove quick-scan stub + manifest entry
+- _(this commit)_ chore(spec): close M1_FOUNDATION_CLOSE_CLEANUP_2026_05_17 with retrospective
+
+**DB migrations applied:**
+- `20260517172923_m1_lens_receipt_from_box_9arg_has_no_invoice` (CREATE OR REPLACE 9-arg overload)
+- `20260517173411_m1_lens_receipt_from_box_drop_8arg` (DROP FUNCTION 8-arg signature)
+
+**Files changed:**
+- `supabase/migrations/` — 2 new migration files
+- `modules/lens-inventory/lens-inventory-main.js` — handleQuickReceiptSubmit now passes p_has_no_invoice; 14-line 2-step UPDATE block removed (272 → 260 lines)
+- `modules/lens-goods-receipt/lens-goods-receipt-close.js` — added p_has_no_invoice: false literal
+- `modules/lens-inventory/lens-inventory-quick-scan.js` — **DELETED** (was a 38-line redirect stub)
+- `modules/inventory/inventory-shell-lens.js` — removed the stub's manifest entry
+- `modules/Module 1 - Inventory Management/docs/specs/M1_FOUNDATION_CLOSE_CLEANUP_2026_05_17/SPEC.md` — 2 in-execution path-typo fixes (Daniel-authorized allowlist correction class)
+
+**Tier C VFV (live on demo tenant) — PASSED.**
+- Drawer staged 1 item, "אין תעודה" checked, supplier Duke selected, submit fired
+- Receipt `62335d00-...` landed with `has_no_invoice=TRUE` directly via the 9-arg RPC (no 2-step UPDATE)
+- 2 screenshots captured in SPEC folder
+- 0 console errors
+- Smoke row soft-deleted (Iron Rule 3)
+
+**Findings (logged to FINDINGS.md, not absorbed):**
+- F-X MEDIUM — SPEC author path-typo lesson (process)
+- F-1 INFO — `inventory-shell-lens.js` over 300-line target (pre-existing)
+- F-2 INFO — `LensInvQuickScan` comment retained as documentation
+- F-3 LOW — Iron Rule 32 hook path-match strictness (caught the SPEC typo correctly)
+- F-4 INFO — Advisor WARN inherited by 9-arg overload (intentional K2 contract pattern)
+
+---
+
 ### SPEC 4a — M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION — 2026-05-17 (🟢 CLOSED — FOUNDATION COMPLETE)
 
 **Scope:** Integration SPEC — wires SPEC 2's shared `QuickReceiptDrawer` component into the live lens-inventory screen and consumes SPEC 3's DB schema (`purchase_receipt.has_no_invoice`, permission keys). Applies the Round 1+2 mockup updates per Brief decision #9 (Quick Receipt = SOLE inventory-entry path).
