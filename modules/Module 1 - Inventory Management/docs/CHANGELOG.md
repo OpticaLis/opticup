@@ -4,7 +4,66 @@
 
 ---
 
-## Lens UI Rebuild Phase 0 — Foundation (in progress 2026-05-17)
+## Lens UI Rebuild Phase 0 — Foundation (COMPLETE 2026-05-17)
+
+### SPEC 4a — M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION — 2026-05-17 (🟢 CLOSED — FOUNDATION COMPLETE)
+
+**Scope:** Integration SPEC — wires SPEC 2's shared `QuickReceiptDrawer` component into the live lens-inventory screen and consumes SPEC 3's DB schema (`purchase_receipt.has_no_invoice`, permission keys). Applies the Round 1+2 mockup updates per Brief decision #9 (Quick Receipt = SOLE inventory-entry path).
+
+**Pipeline shape:** Single-session, straight-through execution under Bounded Autonomy. No escalations. ~3.5h end-to-end.
+
+**Commits:**
+- `4a89cfe` chore(spec): author M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION SPEC — execution blocked pending SPEC 2 + SPEC 3
+- `1f41024` feat(lens-inventory): wire Quick Receipt drawer + entry-helper-strip + funnel scanner/manual-add/wizard
+- `582448d` feat(lens-inventory): price columns in lots-table + movements-table with cost-price permission gating
+- _(this commit)_ chore(spec): close M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION with retrospective
+
+**Files changed:**
+- `inventory.html` — added shared/css/tokens.css + shared/css/quick-receipt.css + shared/js/quick-receipt-drawer.js loads
+- `modules/lens-inventory/lens-inventory-partial.html` — added "קבל סחורה" top-header button, entry-helper-strip, drawer mount point; movements-table 8 → 9 cols (מחיר מכירה + permission-gated עלות יחידה); manual-add card updates; removed old `#drawer-quick-scan`
+- `modules/lens-inventory/lens-inventory-main.js` — `initQuickReceiptDrawer()` + `handleQuickReceiptSubmit()` + PermissionUI.applyTo on bootstrap
+- `modules/lens-inventory/lens-inventory-modal-shows.js` — new funnel attachers (`_attachScanInFunnel`, `_attachBulkWizardFunnel`); receive-goods action; manual-add stages to drawer; removed dead `_submitAddStock` + `_loadSuppliersForManualAdd`
+- `modules/lens-inventory/lens-inventory-lot-pane.js` — renderLots() 4 → 5 cols (sell_price placeholder + permission-gated cost)
+- `modules/lens-inventory/lens-inventory-quick-scan.js` — 146 → 38-line redirect stub (`open()` → `QuickReceiptDrawer.open()`)
+- `css/lens-inventory-page.css` — added .entry-helper-strip + .btn-receive + .col-permission-gated styles
+
+**Tier C VFV (live on demo tenant):**
+- Drawer opens from "קבל סחורה" with 38 demo suppliers loaded
+- Manual-add stages item to drawer Section B correctly
+- "סיים קבלה" with `has_no_invoice=true` → RPC returns receipt_id → 2-step UPDATE lands `has_no_invoice=true` in DB → success Toast
+- Smoke-test receipt soft-deleted (Iron Rule 3)
+- 6 screenshots in SPEC folder `screenshots/` for visual reference
+- 0 console errors
+
+**Persistence path:** Drawer's `onSubmit` calls `m1_create_receipt_from_box(8-arg)` then `sb.from('purchase_receipt').update({has_no_invoice}).eq(id).eq(tenant_id)` — 2-step stopgap because the RPC pre-dates SPEC 3's column. Defense-in-depth tenant_id filter on the UPDATE (Iron Rule 22).
+
+**Findings (logged to FINDINGS.md, not absorbed):**
+- F-1 INFO — SPEC §3 #3 partial line-count estimate wrong by structure (drawer DOM is in shared component)
+- F-2 MEDIUM — `m1_create_receipt_from_box` needs a 9-arg overload accepting `p_has_no_invoice` (eliminate 2-step workaround)
+- F-3 INFO — `_submitAddStock` deletion leaves clean RPC ownership (main.js handleQuickReceiptSubmit is sole consumer)
+- F-4 LOW — `lens-inventory-quick-scan.js` is a 38-line stub awaiting full removal in next M1 maintenance SPEC
+- F-5 MEDIUM — sell-price column shows "—" placeholder until SPEC 5 wires `effective_price` resolver
+- F-6 INFO — pre-existing http-server PID 12672 from 2026-05-10 served (worked correctly with `-c-1`)
+- F-7 INFO — Chrome MCP bfcache served pre-edit content on first navigate (hard-reload resolved)
+
+---
+
+### Foundation Phase Summary (2026-05-17)
+
+All 4 foundation SPECs CLOSED:
+
+| # | SPEC | Status | Commits | Duration |
+|---|------|--------|---------|----------|
+| 1 | M1_LENS_PALETTE_RETIRE_UNIFIED | 🟡 (Tier C deferred) | cbe3a8e, eddc8a1, 0949e97 | ~2h |
+| 2 | M1_5_SHARED_COMPONENTS_PHASE_0 | 🟡 (Tier C smoke ✅) | 9fafd93..73c50b1 (15 commits) | ~7h |
+| 3 | M1_LENS_DB_SCHEMA_RECEIPTS_NOTES | 🟢 | 80cb4cb, 05e28bb, 447f3f6, 999c433, 0e7d524 | ~2h |
+| 4a | M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION | 🟢 | 4a89cfe, 1f41024, 582448d, (this) | ~3.5h |
+
+**Total:** ~14.5h across 4 Pipelines (Brief budget 14-17h).
+
+**Downstream:** Groups A/B/C (SPECs 5-10, 6 screen rebuilds) eligible for parallel-worktree dispatch on Daniel's authorization after foundation review by Cowork-Architect.
+
+---
 
 ### SPEC 3 — M1_LENS_DB_SCHEMA_RECEIPTS_NOTES — 2026-05-17 (🟢 CLOSED)
 

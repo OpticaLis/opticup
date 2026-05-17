@@ -1,7 +1,71 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1 Lens Mockup-Fidelity Rebuild — SPEC 3 (DB Schema Receipts & Notes) closed 🟢 — 2026-05-17 (SPEC 1 closed 🟡, SPEC 2 closed 🟡, SPEC 3 closed 🟢, SPEC 4a unblocked and ready to execute — see "2026-05-17 — M1_LENS_DB_SCHEMA_RECEIPTS_NOTES" section below)
+M1 Lens Mockup-Fidelity Rebuild — Foundation Phase COMPLETE 🟢 — 2026-05-17 (SPEC 1 🟡, SPEC 2 🟡, SPEC 3 🟢, SPEC 4a 🟢 — all 4 foundation SPECs closed; Groups A/B/C eligible for parallel-worktree dispatch on Daniel's approval — see "2026-05-17 — M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION" section below)
+
+## 2026-05-17 — M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION (🟢 CLOSED — SPEC 4a of 4 foundation, FOUNDATION COMPLETE)
+
+**Status:** ✅ Closed. **Foundation phase complete — 4 of 4 SPECs executed + closed.**
+
+**Pipeline shape:** Single session, straight-through execution under Bounded Autonomy. No escalations. 3 of 4 foundation SPECs hit the bar without escalation (SPEC 1 + SPEC 2 + SPEC 4a); only SPEC 3 needed an Architect amendment (resolved via ARCHITECT_DECISION_001).
+
+**Commits (SPEC 4a, this Pipeline):**
+- `4a89cfe` chore(spec): author M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION SPEC
+- `1f41024` feat(lens-inventory): wire Quick Receipt drawer + entry-helper-strip + funnel scanner/manual-add/wizard
+- `582448d` feat(lens-inventory): price columns in lots-table + movements-table with cost-price permission gating
+- _(this commit)_ chore(spec): close M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION with retrospective
+
+**Round 1+2 mockup features now live in lens-inventory screen:**
+- New top-header "📦 קבל סחורה" button → opens shared QuickReceiptDrawer empty
+- Entry-helper-strip below page-header (persistent ℹ️ reminder)
+- Scanner IN-mode submit → drawer (closes modal, opens drawer)
+- Manual-add card → stages item to drawer Section B + opens drawer (supplier dropdown disabled — captured once in drawer)
+- Bulk wizard "צור N שורות" → renamed "העבר לטיוטת קבלה", funnels to drawer
+- `מחיר מכירה` column added to lots-table + movements-table (always visible)
+- `עלות` / `עלות יחידה` column tagged `.col-permission-gated` + `data-permission="inventory.view_cost_price"` — hidden for users without the key
+- Old `LensInvQuickScan` direct-to-stock drawer retired (file reduced to 38-line redirect stub)
+- Old `_submitAddStock` direct-write function removed (dead after funnel)
+
+**Persistence path (consumer of SPEC 3's schema):**
+- Drawer's `onSubmit({meta, items})` calls existing 8-arg `m1_create_receipt_from_box` RPC.
+- Defense-in-depth UPDATE on `purchase_receipt` sets `has_no_invoice=TRUE` when "אין תעודה" checked (2-step stopgap; tracked as FINDINGS F-2 for follow-up 9-arg RPC overload).
+- Tenant_id filter on every read + write (Iron Rule 22).
+
+**Tier C VFV — PASSED.** Live demo-tenant smoke:
+1. Drawer opens with all 38 demo suppliers loaded from DB.
+2. Manual-add staged 1 item correctly (meta + _line shape).
+3. Submit with `has_no_invoice=true` → RPC returned receipt_id → UPDATE landed `has_no_invoice=true` in DB.
+4. Smoke-test receipt soft-deleted (Iron Rule 3).
+5. 0 console errors. 6 screenshots in `docs/specs/M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION/screenshots/`.
+
+**Foundation phase scoreboard:**
+
+| # | SPEC | Status | Close commit | Duration |
+|---|------|--------|--------------|----------|
+| 1 | `M1_LENS_PALETTE_RETIRE_UNIFIED` | 🟡 (Tier C deferred) | `0949e97` | ~2h |
+| 2 | `M1_5_SHARED_COMPONENTS_PHASE_0` | 🟡 (with Tier C smoke harness) | `73c50b1` | ~7h |
+| 3 | `M1_LENS_DB_SCHEMA_RECEIPTS_NOTES` | 🟢 | `0e7d524` | ~2h (across 2 sessions) |
+| 4a | `M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION` | 🟢 | _(this commit)_ | ~3.5h |
+
+**Total foundation cost:** ~14.5 hours across 4 Pipelines. Brief estimate was ~14-17h. Within budget.
+
+**Downstream — Groups A/B/C ready for parallel dispatch:**
+
+Per Brief §"Groups A/B/C eligible for parallel-worktree", the 6 remaining screen rebuilds are now unblocked:
+- **Group A (Active Designs + Pricing):** SPECs 5, 6
+- **Group B (Purchase Order + Pos-List):** SPECs 7, 8
+- **Group C (GR + Catalog Admin):** SPECs 9, 10
+
+Daniel reviews the foundation before authorizing parallel dispatch. Cowork-Architect writes FOREMAN_REVIEW.md for SPEC 4a (and may bundle foundation-phase retro).
+
+**Cross-cutting findings to harvest at foundation review:**
+
+- F-1 (SPEC line-count estimate) — SPEC authors should not estimate partial growth for drawer-integration SPECs (shared component supplies its own DOM).
+- F-2 (RPC overload gap) — author small follow-up SPEC `M1_RPC_HAS_NO_INVOICE_OVERLOAD` (~30 min) OR file as TECH_DEBT before SaaS launch.
+- F-4 (quick-scan.js stub removal) — bundle into next M1 maintenance SPEC (also includes the other M1_UNIFIED_* tech debt).
+- F-5 (sell-price placeholder in lots-table) — wires up in SPEC 5 (Pricing rebuild) via `LensPricing.resolveSellPrice` helper.
+
+---
 
 ## 2026-05-17 — M1_LENS_DB_SCHEMA_RECEIPTS_NOTES (🟢 CLOSED — SPEC 3 of 4 foundation)
 
