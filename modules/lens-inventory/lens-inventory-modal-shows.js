@@ -124,7 +124,14 @@
       const action = btn.dataset.lensInvAction;
       switch (action) {
         case 'reports':   openReportsModal(); break;
-        case 'scan-in':   openScanModal('in'); break;
+        case 'scan-in':
+          // Phase C C-C3 — replaced sample-data modal with Quick Scan drawer
+          if (window.LensInvQuickScan && typeof window.LensInvQuickScan.open === 'function') {
+            window.LensInvQuickScan.open();
+          } else {
+            openScanModal('in'); // fallback (should never trigger; new file loads via shell registry)
+          }
+          break;
         case 'scan-out':  openScanModal('out'); break;
         case 'bulk-add':  openWizardModal(); break;
         case 'export':

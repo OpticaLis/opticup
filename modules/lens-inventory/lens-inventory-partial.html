@@ -621,4 +621,45 @@
     </div>
   </div>
 
+  <!-- ============ QUICK SCAN DRAWER (Phase C C-C3) ============ -->
+  <aside id="drawer-quick-scan" class="quick-scan-drawer" aria-hidden="true">
+    <div class="qs-drawer-header">
+      <span class="qs-drawer-title">&#128247; סריקה מהירה — הוספה למלאי</span>
+      <button type="button" id="drawer-qs-close" class="qs-drawer-close" aria-label="סגור">&times;</button>
+    </div>
+    <div class="qs-drawer-body">
+      <div class="field-group">
+        <label for="drawer-qs-barcode">ברקוד / מזהה וריאנט:</label>
+        <input type="text" id="drawer-qs-barcode" placeholder="לדוגמה: LV-000005" autocomplete="off" />
+        <small>הקש Enter לאחר הקלדה/סריקה</small>
+      </div>
+      <div id="drawer-qs-resolved" class="qs-resolved-box">
+        <div class="qs-resolved-empty">סרוק/הזן ברקוד כדי לטעון פרטי וריאנט.</div>
+      </div>
+      <div id="drawer-qs-manual-row" class="manual-add-grid" style="display:none">
+        <div class="field-group"><label for="drawer-qs-sph">SPH:</label><input type="text" id="drawer-qs-sph" placeholder="-2.50" /></div>
+        <div class="field-group"><label for="drawer-qs-cyl">CYL:</label><input type="text" id="drawer-qs-cyl" placeholder="-0.75" /></div>
+      </div>
+      <div class="manual-add-grid">
+        <div class="field-group"><label for="drawer-qs-qty">כמות:</label><input type="number" id="drawer-qs-qty" min="1" placeholder="1" /></div>
+        <div class="field-group"><label for="drawer-qs-cost">עלות יחידה (לא כולל מע"מ):</label><input type="text" id="drawer-qs-cost" placeholder="&#8362;85" /></div>
+      </div>
+      <div class="field-group">
+        <label for="drawer-qs-supplier">ספק:</label>
+        <select id="drawer-qs-supplier"><option value="">&mdash; בחר ספק &mdash;</option></select>
+      </div>
+      <div class="field-group">
+        <label for="drawer-qs-dn">תעודת משלוח (אופציונלי):</label>
+        <input type="text" id="drawer-qs-dn" placeholder="DN-2026-..." />
+      </div>
+      <label class="manual-undocumented-row" for="drawer-qs-undocumented">
+        <input type="checkbox" id="drawer-qs-undocumented" />
+        <span>ללא תעודה (דורש בדיקת מנהל)</span>
+      </label>
+    </div>
+    <div class="qs-drawer-footer">
+      <button type="button" id="drawer-qs-submit" class="btn btn-success qs-drawer-submit">&#10003; הוסף למלאי</button>
+    </div>
+  </aside>
+
 </div>
