@@ -1,0 +1,302 @@
+/* =====================================================================
+   lens-inventory-modals.css
+   M1_LENS_INVENTORY_MOCKUP_1TO1 — Sub-Phase A1 (2026-05-18)
+
+   Modal styles for the 3 inline modals in the lens-inventory partial:
+     • Reports modal — width 1000px, navy gradient header
+     • Scan modal   — width 720px, dynamic header (green IN / red OUT)
+     • Wizard modal — width 600px, gold gradient header
+
+   Sister file to css/lens-inventory-page.css. Both load from inventory.html
+   for the lens-inventory tab. All rules scoped under `.lens-tab-section
+   .lens-inv-page` to prevent bleed onto other lens tabs.
+
+   Modals attach a `.modal-overlay` overlay over the body when active.
+   ===================================================================== */
+
+/* ───────── Modal overlay + chrome ───────── */
+.lens-tab-section .lens-inv-page .modal-overlay {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  align-items: center; justify-content: center;
+}
+.lens-tab-section .lens-inv-page .modal-overlay.active { display: flex; }
+.lens-tab-section .lens-inv-page .modal {
+  background: #fff; border-radius: 10px;
+  width: 600px; max-width: 90vw; max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  direction: rtl;
+}
+.lens-tab-section .lens-inv-page .modal.modal-wide { width: 1000px; }
+.lens-tab-section .lens-inv-page .modal.modal-medium { width: 720px; }
+
+.lens-tab-section .lens-inv-page .modal-header {
+  padding: 18px 24px; border-bottom: 1px solid #ecf0f1;
+  background: linear-gradient(135deg, #c9a555 0%, #b8954a 100%);
+  color: #fff; border-radius: 10px 10px 0 0;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.lens-tab-section .lens-inv-page .modal-header.modal-header-navy {
+  background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+}
+.lens-tab-section .lens-inv-page .modal-header.modal-header-green {
+  background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
+}
+.lens-tab-section .lens-inv-page .modal-header.modal-header-red {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+}
+.lens-tab-section .lens-inv-page .modal-title {
+  font-size: 18px; font-weight: 600;
+}
+.lens-tab-section .lens-inv-page .modal-close {
+  background: none; border: none; color: #fff;
+  font-size: 24px; cursor: pointer; padding: 0;
+  width: 30px; height: 30px; line-height: 1;
+}
+.lens-tab-section .lens-inv-page .modal-body { padding: 24px; }
+.lens-tab-section .lens-inv-page .modal-footer {
+  padding: 16px 24px; border-top: 1px solid #ecf0f1;
+  display: flex; justify-content: flex-end; gap: 8px;
+  background: #f8f9fb; border-radius: 0 0 10px 10px;
+}
+.lens-tab-section .lens-inv-page .modal-footer .btn {
+  padding: 8px 14px; border: 1px solid #d0d4d9; background: #fff;
+  border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;
+  color: #2c3e50; font-family: inherit;
+}
+.lens-tab-section .lens-inv-page .modal-footer .btn.btn-ghost {
+  background: transparent; border-color: transparent; color: #5d6d7e;
+}
+.lens-tab-section .lens-inv-page .modal-footer .btn.btn-success {
+  background: #27ae60; color: #fff; border-color: #27ae60;
+}
+
+/* ───────── REPORTS MODAL (mockup lines 690-808) ───────── */
+.lens-tab-section .lens-inv-page .reports-modal-body { padding: 0; }
+
+.lens-tab-section .lens-inv-page .rpt-tabs {
+  display: flex; border-bottom: 1px solid #ecf0f1; background: #f8f9fb;
+}
+.lens-tab-section .lens-inv-page .rpt-tab {
+  padding: 14px 22px; cursor: pointer; font-size: 13px; font-weight: 500;
+  color: #5d6d7e; border-bottom: 3px solid transparent;
+  background: transparent; border-top: none; border-inline-start: none; border-inline-end: none;
+  font-family: inherit;
+  transition: color .15s, border-color .15s;
+}
+.lens-tab-section .lens-inv-page .rpt-tab:hover { background: #f0f2f5; }
+.lens-tab-section .lens-inv-page .rpt-tab.active { font-weight: 600; }
+.lens-tab-section .lens-inv-page .rpt-tab.active.rpt-tab-missing  { color: #c0392b; border-bottom-color: #e74c3c; }
+.lens-tab-section .lens-inv-page .rpt-tab.active.rpt-tab-below    { color: #856404; border-bottom-color: #f4c430; }
+.lens-tab-section .lens-inv-page .rpt-tab.active.rpt-tab-over     { color: #0e7a6a; border-bottom-color: #1abc9c; }
+.lens-tab-section .lens-inv-page .rpt-tab.active.rpt-tab-all      { color: #2c3e50; border-bottom-color: #34495e; }
+.lens-tab-section .lens-inv-page .rpt-tab.active.rpt-tab-filtered { color: #c9a555; border-bottom-color: #c9a555; }
+
+.lens-tab-section .lens-inv-page .rpt-filters {
+  padding: 12px 20px; background: #fff; border-bottom: 1px solid #ecf0f1;
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+}
+.lens-tab-section .lens-inv-page .rpt-filters .filter-label-inline {
+  font-size: 12px; color: #5d6d7e;
+}
+.lens-tab-section .lens-inv-page .rpt-filters select {
+  padding: 6px 10px; border: 1px solid #d0d4d9; border-radius: 6px;
+  font-size: 12px; background: #fff; font-family: inherit;
+}
+.lens-tab-section .lens-inv-page .rpt-filters .rpt-actions {
+  margin-inline-start: auto; display: flex; gap: 8px;
+}
+.lens-tab-section .lens-inv-page .rpt-filters .rpt-actions .btn {
+  padding: 6px 10px; font-size: 12px;
+}
+.lens-tab-section .lens-inv-page .rpt-filters .rpt-actions .btn.btn-order {
+  background: #c9a555; color: #fff; border-color: #c9a555;
+}
+
+.lens-tab-section .lens-inv-page .rpt-table-wrap {
+  max-height: 450px; overflow-y: auto;
+}
+.lens-tab-section .lens-inv-page .rpt-table {
+  width: 100%; font-size: 12px; border-collapse: collapse;
+}
+.lens-tab-section .lens-inv-page .rpt-table thead {
+  position: sticky; top: 0; background: #f8f9fb; z-index: 5;
+}
+.lens-tab-section .lens-inv-page .rpt-table th {
+  text-align: right; padding: 10px 12px; color: #5d6d7e;
+  border-bottom: 2px solid #ecf0f1; font-weight: 600;
+}
+.lens-tab-section .lens-inv-page .rpt-table th.rpt-th-center { text-align: center; }
+.lens-tab-section .lens-inv-page .rpt-table td {
+  padding: 8px 12px; border-bottom: 1px solid #f5f6fa;
+}
+.lens-tab-section .lens-inv-page .rpt-table td.rpt-td-center { text-align: center; }
+.lens-tab-section .lens-inv-page .rpt-table tr.row-missing { background: #fdf2f0; }
+.lens-tab-section .lens-inv-page .rpt-table .qty-zero { color: #c0392b; font-weight: 700; }
+.lens-tab-section .lens-inv-page .rpt-table .qty-cell-strong { font-weight: 600; }
+.lens-tab-section .lens-inv-page .rpt-table .status-pill {
+  background: #e74c3c; color: #fff; padding: 2px 8px;
+  border-radius: 10px; font-size: 11px; font-weight: 600;
+}
+.lens-tab-section .lens-inv-page .rpt-table tfoot {
+  position: sticky; bottom: 0; background: #34495e; color: #fff;
+}
+.lens-tab-section .lens-inv-page .rpt-table tfoot td {
+  padding: 10px 12px; font-weight: 600;
+}
+.lens-tab-section .lens-inv-page .rpt-table tfoot .total-shortage {
+  color: #ffb3b3; text-align: center;
+}
+.lens-tab-section .lens-inv-page .rpt-table tfoot .total-est {
+  text-align: center; font-size: 11px; font-weight: 400;
+}
+
+/* ───────── SCAN MODAL (mockup lines 810-908) ───────── */
+.lens-tab-section .lens-inv-page .scan-area {
+  background: #f8f9fb; border: 2px dashed #c9a555; border-radius: 10px;
+  padding: 20px; text-align: center; margin-bottom: 18px;
+}
+.lens-tab-section .lens-inv-page .scan-area .scan-instruction {
+  font-size: 13px; color: #5d6d7e; margin-bottom: 8px;
+}
+.lens-tab-section .lens-inv-page .scan-area input {
+  width: 100%; max-width: 400px; padding: 14px 18px;
+  font-size: 18px; text-align: center; letter-spacing: 2px;
+  border: 2px solid #c9a555; border-radius: 8px; font-family: inherit;
+}
+.lens-tab-section .lens-inv-page .scan-area .scan-helper {
+  font-size: 11px; color: #95a5a6; margin-top: 8px;
+}
+
+.lens-tab-section .lens-inv-page .scan-reason-row {
+  margin-bottom: 18px;
+}
+.lens-tab-section .lens-inv-page .scan-reason-row .reason-label {
+  font-size: 13px; font-weight: 600; color: #2c3e50;
+  display: block; margin-bottom: 8px;
+}
+.lens-tab-section .lens-inv-page .scan-reason-row .reason-required {
+  color: #e74c3c;
+}
+.lens-tab-section .lens-inv-page .scan-reason-chips {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.lens-tab-section .lens-inv-page .scan-reason-chips .chip {
+  border-color: #e74c3c; color: #c0392b;
+}
+.lens-tab-section .lens-inv-page .scan-reason-chips .chip.active {
+  background: #e74c3c; color: #fff; border-color: #e74c3c;
+}
+.lens-tab-section .lens-inv-page .scan-reason-note {
+  width: 100%; padding: 8px 12px; border: 1px solid #d0d4d9;
+  border-radius: 6px; font-size: 13px; margin-top: 10px; font-family: inherit;
+}
+
+.lens-tab-section .lens-inv-page .scanned-items {
+  border: 1px solid #ecf0f1; border-radius: 8px; overflow: hidden;
+}
+.lens-tab-section .lens-inv-page .scanned-items-header {
+  padding: 10px 14px; background: #f8f9fb;
+  font-size: 13px; font-weight: 600; color: #2c3e50;
+  display: flex; justify-content: space-between;
+}
+.lens-tab-section .lens-inv-page .scanned-items-helper {
+  font-size: 11px; color: #5d6d7e; font-weight: 400;
+}
+.lens-tab-section .lens-inv-page .scanned-items-table {
+  width: 100%; font-size: 12px; border-collapse: collapse;
+}
+.lens-tab-section .lens-inv-page .scanned-items-table thead tr { background: #fafbfc; }
+.lens-tab-section .lens-inv-page .scanned-items-table th {
+  text-align: right; padding: 8px 12px; color: #5d6d7e;
+  border-bottom: 1px solid #ecf0f1; font-weight: 600;
+}
+.lens-tab-section .lens-inv-page .scanned-items-table th.th-center { text-align: center; }
+.lens-tab-section .lens-inv-page .scanned-items-table td {
+  padding: 8px 12px;
+}
+.lens-tab-section .lens-inv-page .scanned-items-table td.td-mono {
+  font-family: 'Consolas', 'Menlo', monospace;
+}
+.lens-tab-section .lens-inv-page .scanned-items-table td.td-center { text-align: center; }
+.lens-tab-section .lens-inv-page .scanned-items-table tr.row-alt { background: #fafbfc; }
+.lens-tab-section .lens-inv-page .scanned-items-table tr.row-warn { background: #fff3cd; }
+.lens-tab-section .lens-inv-page .scanned-items-table .scan-warn-text { color: #856404; }
+.lens-tab-section .lens-inv-page .scanned-items-table .scan-ok    { color: #27ae60; }
+.lens-tab-section .lens-inv-page .scanned-items-table .scan-warn  { color: #f4c430; }
+
+.lens-tab-section .lens-inv-page .scan-submit-in {
+  background: #27ae60; color: #fff; border-color: #27ae60;
+}
+.lens-tab-section .lens-inv-page .scan-submit-out {
+  background: #e74c3c; color: #fff; border-color: #e74c3c;
+}
+
+/* ───────── BULK WIZARD MODAL (mockup lines 910-977) ───────── */
+.lens-tab-section .lens-inv-page .wizard-step {
+  margin-bottom: 24px;
+}
+.lens-tab-section .lens-inv-page .wizard-step .step-num {
+  display: inline-block;
+  width: 24px; height: 24px;
+  background: #c9a555; color: #fff;
+  border-radius: 50%;
+  text-align: center; line-height: 24px;
+  font-size: 13px; font-weight: 600;
+  margin-inline-end: 8px;
+}
+.lens-tab-section .lens-inv-page .wizard-step .step-label {
+  font-size: 14px; font-weight: 600; color: #2c3e50;
+  margin-bottom: 10px; display: flex; align-items: center;
+}
+.lens-tab-section .lens-inv-page .wizard-step .step-body {
+  font-size: 13px; color: #2c3e50;
+}
+.lens-tab-section .lens-inv-page .wizard-step .step-body-pill {
+  background: #f8f9fb; padding: 10px 14px; border-radius: 6px;
+  font-size: 13px; color: #5d6d7e;
+}
+.lens-tab-section .lens-inv-page .wizard-step .step-body-pill strong {
+  color: #2c3e50;
+}
+.lens-tab-section .lens-inv-page .range-inputs {
+  display: grid; grid-template-columns: 1fr 30px 1fr;
+  gap: 8px; align-items: center;
+}
+.lens-tab-section .lens-inv-page .range-inputs .range-sep {
+  text-align: center; color: #95a5a6;
+}
+.lens-tab-section .lens-inv-page .range-inputs input {
+  padding: 8px 12px; border: 1px solid #d0d4d9; border-radius: 6px;
+  font-size: 13px; text-align: center; font-family: inherit;
+}
+.lens-tab-section .lens-inv-page .wizard-grid-2col {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  align-items: end;
+}
+.lens-tab-section .lens-inv-page .wizard-grid-2col .field-group label {
+  font-size: 11px; color: #5d6d7e; font-weight: 600; letter-spacing: .3px;
+}
+.lens-tab-section .lens-inv-page .wizard-grid-2col .field-group input {
+  padding: 8px 12px; border: 1px solid #d0d4d9; border-radius: 6px;
+  font-size: 13px; font-family: inherit;
+}
+.lens-tab-section .lens-inv-page .wizard-grid-2col .wizard-helper {
+  font-size: 12px; color: #5d6d7e; padding-bottom: 10px;
+}
+.lens-tab-section .lens-inv-page .wizard-preview {
+  background: #f8f9fb; border: 1px dashed #c9a555;
+  border-radius: 8px; padding: 14px 18px; margin-top: 16px;
+}
+.lens-tab-section .lens-inv-page .wizard-preview .preview-num {
+  font-size: 28px; font-weight: 700; color: #c9a555;
+}
+.lens-tab-section .lens-inv-page .wizard-preview .preview-label {
+  font-size: 13px; color: #5d6d7e;
+}
+.lens-tab-section .lens-inv-page .wizard-preview .preview-label strong {
+  color: #2c3e50;
+}
