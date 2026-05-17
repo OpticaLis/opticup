@@ -46,7 +46,8 @@ Iron Rule 32 — REQUIRED DECLARATION. This SPEC declares the following destruct
    - `_archive/architect-pending-entries/2026-05-16_d_m1_09_reframing.md` (entry's own instruction line 101: "After applying, delete this file.")
    - `_archive/architect-pending-entries/2026-05-17_localhost_tester_visual_functional_verification.md` (entry's own instruction line 183: "delete this file")
 
-   Wait — that's 3 deletions, not 2. Updating: **File delete × 3.**
+   Wait — that's 3 deletions, not 2. Updating: **File delete × 4** (with 4th added in Phase 4-continuation 2026-05-17):
+   - `_archive/architect-pending-entries/2026-05-15_m1_close_ceremony_skill_updates.md` (entry's own instruction line 213: "When this file is consumed and the 4 updates above are applied, delete this file.")
 
 2. **File append × 5** (additive to existing files; no DROP, no overwrite of prior content):
    - opticup-localhost-tester/SKILL.md

@@ -1163,3 +1163,39 @@ When an Architecture Brief includes a commitment about future code structure ("X
 **ROI:** prevents 4-SPEC-deep promise propagation when the original commitment was architecturally false. M1 paid that cost; future modules should not.
 
 **Anti-pattern caught:** my own Strategic Audit (2026-05-15 evening) elevated D-M1-09 to a HIGH finding without doing this check. A 30-minute reality-check would have surfaced "0 shareable lines" before the Night Pipeline was authored — and the Brief would have started with the reframing question instead of attempting the refactor first.
+
+---
+
+### P-AR-11 (MEDIUM) — Module Close Ceremony for a multi-Pipeline day batches all closures in ONE Cowork session
+
+**Promoted to skill 2026-05-15 (M1 Lens Module Close Ceremony).**
+
+When 3+ SPECs close on the same module on the same day, the Module Close Ceremony processes ALL of them in a SINGLE Cowork session, not per-SPEC. The Pattern Recurrence Tracker only fires when multiple SPECs are reviewed against each other — single-SPEC closures rarely meet the 3-strike threshold.
+
+**Evidence:** M1 Lens day 2026-05-15 closed 9 SPECs. Single batched ceremony took ~30-45 minutes and surfaced 5+4+3 = 12 strike-events across 3 distinct patterns. Per-SPEC ceremonies would have taken 9-13 hours and missed every recurring pattern.
+
+**Application:**
+- Trigger: 3+ SPECs closed on the same module in 24-48h window.
+- Action: open one Cowork session, read all FOREMAN_REVIEWs in one pass, build the Pattern Recurrence Tracker, route promoted patterns to the right skill.
+- Pre-empts: per-SPEC ceremonies that miss cross-SPEC recurring patterns.
+
+**ROI:** ~8-10 hours saved per multi-Pipeline day. Captures 100% of cross-SPEC patterns vs 0% with per-SPEC ceremonies.
+
+---
+
+### P-AR-12 (LOW) — Architect's ceremony job is to ROUTE harvested patterns to the right skill, not absorb into opticup-architect
+
+**Promoted to skill 2026-05-15 (M1 Lens Module Close Ceremony).**
+
+When a Module Close Ceremony surfaces a pattern, the Architect classifies WHICH skill owns it:
+
+- **SPEC-authoring discipline** (pre-flight probes, audit completeness, brief vs reality) → `opticup-strategic` SKILL.md
+- **Execution tactics** (mid-execution adaptation, fallback recipes, MIGRATION.md patterns) → `opticup-executor` SKILL.md
+- **Reviewer discipline** (audit depth, severity classification) → `opticup-reviewer` SKILL.md
+- **Cross-module / strategic / process** (audit drift, retired-SPEC handling, ceremony cadence) → `opticup-architect` SKILL.md (this skill)
+
+The Architect's own SKILL.md grows ONLY when the pattern is strategic-process-level. Bloating opticup-architect with SPEC-authoring tactics or execution recipes is the anti-pattern.
+
+**Evidence:** 2026-05-15 ceremony surfaced Pattern A (5 strikes) — SPEC authoring, routed to strategic. Pattern B (4 strikes) — execution tactics, routed to executor. Only P-AR-11 + P-AR-12 themselves belonged to opticup-architect.
+
+**Application:** at every ceremony, after harvesting patterns, classify destination skill BEFORE writing the SKILL_PENDING entry. Each pattern lands in exactly one skill file.

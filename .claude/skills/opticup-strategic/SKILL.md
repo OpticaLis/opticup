@@ -1324,3 +1324,28 @@ Fill the table from the Brief's §1 Purpose (each user-observable goal becomes o
 This is non-optional for UI SPECs. SQL-only / EF-only / docs-only SPECs can omit the section.
 
 **4th firing of the VFV-gap pattern (2026-05-17 M1_FINAL_NIGHT_PHASE_1):** Phase 1 closed 🟡 with "smoke 3/8 surfaces"; Daniel observed lens private-catalog tab missing entirely. The Executor's smoke checked DOM-element-present via programmatic activation but not real-user click. A SPEC §7 that listed 8 VFV surfaces with explicit "must be CLICKABLE + must render component + must allow Add brand" criteria would have prevented mis-passing. Companion: opticup-architect P-AR-15 + opticup-localhost-tester Tier C.
+
+---
+
+### P-STRAT-NEW — Pre-flight probes in SPEC §0/§1.5 must be EXHAUSTIVE, not DECLARATIVE.
+
+**Source: 5-strike pattern from M1 Lens Module Close 2026-05-15 (Pattern A) + 3-strike sub-pattern (Pattern C).**
+
+When authoring a SPEC, the Pre-Flight section must enumerate every concrete probe the executor will run BEFORE Commit 1. Listing categories of probes ("audit smoke-touched schema") is insufficient — list every specific probe with the exact SQL/grep/file inspection.
+
+**Probe types to enumerate:**
+
+1. **Column existence + type per table the SPEC touches** — `information_schema.columns` query naming every column the SPEC will read or write.
+2. **CHECK constraint definitions** — `pg_get_constraintdef` for every constraint relevant to inserts/updates the SPEC performs.
+3. **Function body inspection** — `SELECT prosrc FROM pg_proc WHERE proname=...` for every RPC the SPEC modifies or relies on.
+4. **Column-reference cross-table probe** — when a SPEC references column X in multiple tables, verify it exists with the same type on each table.
+5. **Orchestrator call-arity audit** — every place where a function the SPEC modifies is called from JS/EFs/other RPCs, verify signature compatibility.
+6. **Fixture content audit** — when smoke tests use existing data, list the fixture rows by ID + state expected.
+7. **Baseline coverage** — every table the §smoke-tests-section will touch must have a pre-write row count or md5 captured in §0.
+8. **Multi-rule verify probe** — when a SPEC fixes multiple Iron Rule violations, run the verify gate ONCE for each rule explicitly, not as a single combined run.
+
+**Forbidden Pre-Flight style:** "Audit relevant tables" / "Verify constraints" / "Check function signatures" without listing names.
+
+**Required Pre-Flight style:** numbered list of explicit probes, each with exact SQL/command/file path, each with expected result OR "report actual, do not assume."
+
+**ROI per SPEC:** Catches ~3-5 author bugs at SPEC-author time instead of mid-execution. M1 Lens Procurement caught 4 author bugs at executor pre-flight that should have been caught at SPEC author time per this rule.
