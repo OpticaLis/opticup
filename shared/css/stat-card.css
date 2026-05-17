@@ -1,0 +1,111 @@
+/* stat-card.css — Stat-card row styles
+   ============================================================================
+   Consumed by shared/js/stat-card-row.js. Border-inline-end (RTL: right) is
+   the variant-colored accent stripe; the rest of the card is light.
+   ============================================================================ */
+
+.stat-card-row {
+  display: grid;
+  gap: var(--space-md, 12px);
+  margin-bottom: var(--space-md, 12px);
+}
+
+.stat-card {
+  background: var(--color-bg-card, #ffffff);
+  padding: 16px 18px;
+  border-radius: var(--radius-md, 8px);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.08));
+  border-inline-end: 4px solid var(--gold-active, #c9a555);
+  cursor: pointer;
+  transition: transform var(--transition-fast, 150ms ease),
+              box-shadow var(--transition-fast, 150ms ease);
+  user-select: none;
+  display: block;
+}
+
+.stat-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.stat-card:focus { outline: none; }
+.stat-card:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  box-shadow: var(--shadow-focus);
+}
+
+.stat-card.active {
+  background: var(--gold-tint, #faf3e0);
+}
+
+.stat-card.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stat-card-icon {
+  font-size: var(--font-size-md, 0.92rem);
+  margin-bottom: var(--space-xs, 4px);
+}
+
+.stat-card-label {
+  font-size: 11px;
+  color: var(--mockup-text-soft, #5d6d7e);
+  letter-spacing: 0.3px;
+  font-weight: var(--font-weight-semibold, 600);
+  margin-bottom: var(--space-xs, 4px);
+  text-transform: uppercase;
+}
+
+.stat-card-value {
+  font-size: 24px;
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--mockup-text, #2c3e50);
+  margin-bottom: 2px;
+  line-height: var(--line-height-tight, 1.25);
+}
+
+.stat-card-sub {
+  font-size: 11px;
+  color: var(--mockup-text-muted, #95a5a6);
+}
+
+/* =============================================================================
+   VARIANTS — colored border-inline-end + value color
+   Mockup mapping:
+   - default     → gold (no rule needed; base class is gold)
+   - active      → green (e.g., Designs Selection .stat-card.active)
+   - pending     → amber (e.g., Designs Selection .stat-card.pending)
+   - draft/sent/partial/received/overdue/disabled → POs list variants
+   ============================================================================= */
+
+.stat-card-default { border-inline-end-color: var(--gold-active, #c9a555); }
+.stat-card-default.active .stat-card-value { color: var(--gold-active, #c9a555); }
+
+.stat-card-active        { border-inline-end-color: #27ae60; }
+.stat-card-active .stat-card-value { color: #27ae60; }
+
+.stat-card-pending       { border-inline-end-color: #f4c430; }
+.stat-card-pending .stat-card-value { color: #d39e00; }
+
+.stat-card-disabled      { border-inline-end-color: var(--mockup-text-muted, #95a5a6); opacity: 0.5; cursor: not-allowed; }
+
+.stat-card-draft         { border-inline-end-color: var(--chip-draft-fg, #64748b); }
+.stat-card-sent          { border-inline-end-color: var(--color-info, #3b82f6); }
+.stat-card-partial       { border-inline-end-color: var(--chip-partial-fg, #92400e); }
+.stat-card-received      { border-inline-end-color: var(--color-success-hover, #059669); }
+.stat-card-overdue       { border-inline-end-color: var(--chip-overdue-fg, #991b1b); }
+
+.stat-card-info          { border-inline-end-color: var(--accent-navy, #1e3a8a); background: var(--accent-navy-soft, #e6f1fb); }
+.stat-card-info .stat-card-value { color: var(--accent-navy, #1e3a8a); }
+
+/* Mobile — stack to 2 columns then 1 */
+@media (max-width: 900px) {
+  .stat-card-row { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 480px) {
+  .stat-card-row { grid-template-columns: 1fr !important; }
+  .stat-card { padding: 12px 14px; }
+  .stat-card-value { font-size: 20px; }
+}
