@@ -4,7 +4,66 @@
 
 ---
 
-## Lens UI Rebuild — Group A (in progress 2026-05-17)
+## Lens UI Rebuild — Group A (COMPLETE 2026-05-17)
+
+### SPEC 5 — M1_LENS_PRICING_REBUILD — 2026-05-17 (🟢 CLOSED — Group A SPEC 5 of 6, F-5 RESOLVED)
+
+**Scope:** Largest of the 6 lens SPECs (1211-line mockup). 1:1 rebuild of `modules/lens-pricing/` per `architecture-brief/mockups/LENS_PRICING_MOCKUP.html`. Plus F-5 resolution: NEW `shared/js/lens-price-resolver.js` (effective_price RPC wrapper) + lens-inventory lot-pane wired to consume it.
+
+**Pipeline shape:** Single session, straight-through under Bounded Autonomy. ~2.5h. Mid-execution Tier C hotfix (suppliers query). F-1 SPEC 3 schema gap caught + logged + escalated, not absorbed.
+
+**Commits:**
+- `52c0b0b` chore(spec): author Group A SPECs (4 + 5)
+- `cee4994` feat(shared): lens-price-resolver wraps effective_price RPC + wire lens-inventory lots-table (F-5)
+- `41384b6` refactor(lens-pricing): 1:1 mockup rebuild + view-mode toggle + 4 tabs + drawer + cost gating
+- `070a30d` fix(lens-pricing): drop nonexistent is_deleted filter from suppliers load
+- _(this commit)_ chore(spec): close M1_LENS_PRICING_REBUILD with retrospective
+
+**Files changed:**
+- NEW `shared/js/lens-price-resolver.js` (70 lines) — module-1.5 shared helper
+- `modules/lens-inventory/lens-inventory-lot-pane.js` (+36 lines, F-5 wire)
+- `modules/lens-pricing/lens-pricing-partial.html` (28 → 122)
+- `modules/lens-pricing/lens-pricing-main.js` (60 → 200; orchestrator + view-mode + tabs)
+- `modules/lens-pricing/lens-pricing-filters.js` (130 → 181; chip-filter mounts + resolver consumer)
+- `modules/lens-pricing/lens-pricing-grid.js` (133 → 181; TableBuilder consumer with cost gating)
+- NEW `modules/lens-pricing/lens-pricing-stats.js` (41) — StatCardRow with 4 cards
+- NEW `modules/lens-pricing/lens-pricing-drawer.js` (149) — LensDetailsDrawer with notes CRUD
+- NEW `css/lens-pricing-page.css` (195 lines, scoped)
+- `inventory.html` (+5 script/CSS loads)
+- `modules/inventory/inventory-shell-lens.js` (+2 manifest entries → 350 hard-cap)
+- `docs/GLOBAL_MAP.md` — LensPriceResolver registered as shared cross-module helper
+
+**Tier C VFV:**
+- View-mode toggle works (edit ↔ readonly)
+- 4 top-tabs switch panes; pending tab badge shows live count (0)
+- 3 chip-filter rows populate from live data
+- TableBuilder renders 41 offerings with 8 columns + cost permission gating
+- Drawer opens with logs + notes tabs
+- F-5 resolver path verified via pricing screen's 41-entry effectivePrices
+- Inventory tab regression-clean
+- 4 screenshots in SPEC folder
+- 0 console errors
+
+**Findings (3 logged):**
+- F-1 MEDIUM: lens_variant_notes.author_id FK → auth.users (PIN auth incompatibility). SPEC 3 schema gap, follow-up SPEC `M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX` (~30 min) recommended.
+- F-2 INFO: F-5 demo-data gap (0/19 stock_lot rows have supplier_offering_id). Optional seed SPEC for cross-tab Tier C history.
+- F-3 LOW (ABSORBED): suppliers query bogus is_deleted filter, fixed mid-Tier-C in `070a30d`.
+
+---
+
+### Group A summary (2026-05-17)
+
+Both Group A SPECs closed 🟢:
+- SPEC 4 (Designs Selection): 1:1 mockup; 5 shared components; ~70 min execution.
+- SPEC 5 (Pricing): largest of the 6; F-5 resolution shipped; ~2.5h execution.
+- Total wall clock: ~3.5h (Path X sequential; well under 10–12h estimate).
+
+Cross-cutting findings + recommended follow-up SPECs:
+- M1_LENS_DESIGNS_TOGGLE_PER_LOCATION_SEMANTICS (SPEC 4 F-1, MEDIUM, ~2-3h)
+- M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX (SPEC 5 F-1, MEDIUM, ~30 min)
+- M1_DEMO_BACKFILL_STOCK_LOT_OFFERING_IDS (SPEC 5 F-2, optional, ~30 min)
+
+---
 
 ### SPEC 4 — M1_LENS_DESIGNS_SELECTION_REBUILD — 2026-05-17 (🟢 CLOSED — Group A SPEC 4 of 6)
 

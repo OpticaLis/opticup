@@ -1,7 +1,60 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1 Lens Mockup-Fidelity Rebuild — Group A SPEC 4 (Designs Selection) closed 🟢 — 2026-05-17 (Path X sequential per Daniel). SPECs 1+2+3+4a+4.5 closed; SPEC 4 closed; SPEC 5 (Pricing rebuild) dispatching next per autonomous Path X protocol. F-5 still DEFERRED to SPEC 5 (resolution shipped there).
+M1 Lens Mockup-Fidelity Rebuild — Group A 100% CLOSED 🟢 — 2026-05-17 (Path X sequential per Daniel). SPECs 1+2+3+4a+4.5+4+5 ALL CLOSED. F-5 RESOLVED (resolver shipped + lens-inventory lot-pane wired). 2 follow-up SPECs queued: M1_LENS_DESIGNS_TOGGLE_PER_LOCATION_SEMANTICS (SPEC 4 F-1) + M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX (SPEC 5 F-1). Groups B + C eligible for next dispatch.
+
+## 2026-05-17 — M1_LENS_PRICING_REBUILD (🟢 CLOSED — Group A SPEC 5 of 6, F-5 RESOLVED)
+
+**Status:** ✅ Closed. Largest of the 6 SPECs. Group A 100% complete (4 + 5 both closed). ~2.5h execution (well under 6–7h estimate — F-5 isolation saved time).
+
+**Pipeline shape:** Single session, straight-through under Bounded Autonomy (Path X). Mid-execution Tier C hotfix (suppliers query) caught + fixed in dedicated commit. F-1 schema gap (SPEC 3 FK target) logged + escalated to follow-up SPEC, not absorbed.
+
+**Commits:**
+- `52c0b0b` chore(spec): author Group A SPECs (4 + 5) (Foreman)
+- `cee4994` feat(shared): lens-price-resolver wraps effective_price RPC + wire lens-inventory lots-table (F-5)
+- `41384b6` refactor(lens-pricing): 1:1 mockup rebuild + view-mode toggle + 4 tabs + drawer + cost gating
+- `070a30d` fix(lens-pricing): drop nonexistent is_deleted filter from suppliers load (Tier C hotfix)
+- _(this commit)_ chore(spec): close M1_LENS_PRICING_REBUILD with retrospective
+
+**What shipped:**
+- NEW shared/js/lens-price-resolver.js — thin wrapper for effective_price RPC; cross-module shared helper
+- F-5 RESOLVED: lens-inventory-lot-pane.js renderLots() wires sell-price cells via the resolver. Wiring proven correct (pricing screen's effectivePrices resolves 41 entries with real prices).
+- Pricing screen full 1:1 rebuild: header + view-mode toggle + 4 stat cards + 4 top-tabs + 3 chip-filter rows + bulk toolbar + alert banner + 8-column table with cost-permission gating + LensDetailsDrawer with logs + notes tabs.
+- View-mode default driven by hasPermission('lens_pricing.edit'); admin can preview readonly.
+- Cost column gated by inventory.view_cost_price (PermissionUI hides for users without the key).
+- Notes CRUD via direct PostgREST per Foreman §0 (RLS canonical 2-policy).
+
+**Tier C VFV (live on demo tenant):**
+- Pricing screen: 41 active offerings × 8 columns; resolver populated; view-mode toggle flips correctly; 4 tabs switch correctly.
+- Drawer: opens for first design's variant; both tabs render.
+- Suppliers chip row populated post-hotfix (Prizma Optic 1, SHALDAG 20, Steuer 20).
+- Inventory tab regression: scope-clean (drawer + price columns + permissions intact).
+- 0 console errors (only pre-existing GoTrueClient warns).
+- 4 screenshots in SPEC folder.
+- LensPriceResolver registered in docs/GLOBAL_MAP.md as shared cross-module helper.
+
+**Findings (3 logged):**
+- F-1 MEDIUM: lens_variant_notes.author_id FK targets auth.users(id) but project uses PIN auth → notes CREATE FK violation. SPEC 3 schema design gap surfaced by SPEC 5 first CRUD. Recommend M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX (~30 min DDL).
+- F-2 INFO: F-5 lot-pane wiring correct but 0 of 19 demo stock_lot rows have supplier_offering_id. Optional follow-up demo-data seed SPEC for cross-tab Tier C history.
+- F-3 LOW (ABSORBED): suppliers .eq('is_deleted', false) filter on nonexistent column → silent 0 rows. Fixed mid-Tier-C in commit 070a30d.
+
+**Group A scoreboard (post-this-commit):**
+
+| # | SPEC | Status |
+|---|------|--------|
+| 4 | M1_LENS_DESIGNS_SELECTION_REBUILD | 🟢 |
+| 5 | M1_LENS_PRICING_REBUILD | 🟢 |
+
+**Downstream:** Groups B + C eligible for next dispatch. Recommended order (per parent Brief):
+- Group B (3 SPECs): Purchase Order + Pos-List + Goods Receipt
+- Group C (2 SPECs): Catalog Admin + Private Catalog
+- SPEC 10: any remaining
+
+Daniel decides next dispatch protocol (Path X again, or Path Y after building coordination-tool extension).
+
+---
+
+## 2026-05-17 — M1_LENS_DESIGNS_SELECTION_REBUILD (🟢 CLOSED — Group A SPEC 4 of 6)
 
 ## 2026-05-17 — M1_LENS_DESIGNS_SELECTION_REBUILD (🟢 CLOSED — Group A SPEC 4 of 6)
 
