@@ -27,7 +27,14 @@
 - **שלב 1 (קטלוג פרטי) — 🟢 קוד מוטמע, 🟡 VFV חלקי**
 - **שלב 2 (ליטוש) — ⚪ לא בוצע, ממתין**
 - **שלב 3 (אינדקסי FK) — ⚪ לא בוצע, ממתין**
-- **שלב 4 (עדכוני סקילים) — ⚪ לא בוצע, ממתין**
+- **שלב 4 (עדכוני סקילים) — 🟡 4 מתוך 5 entries יושמו (התיקון בלילה הקודם)**:
+  - ✅ `2026-05-17_localhost_tester_visual_functional_verification` — 3 קבצים עודכנו (opticup-localhost-tester Tier C, opticup-architect P-AR-15, opticup-strategic §7 VFV template)
+  - ✅ `2026-05-17_decisions_log_for_autonomous_skill` — Pattern Index של החלטות שלך נוסף ל־CROSS.md (קובץ ה־entry נשמר לפי הוראתו)
+  - ✅ `2026-05-16_d_m1_09_reframing` — 2 קבצים (M1.md + opticup-architect P-AR-13)
+  - ✅ `2026-05-15_P42_SELF_VALIDATE_BEFORE_DELIVERY` — כבר היה מיושם בשורה 1092, מחקתי orphan
+  - ⚪ `2026-05-15_m1_close_ceremony_skill_updates` (213 שורות) — נדחה לסשן הבא (הגדול ביותר)
+  - SPEC: `modules/Module 1 - Inventory Management/docs/specs/M1_FINAL_NIGHT_PHASE_4_SKILL_UPDATES/SPEC.md`
+  - Commit: `92fbdd7`
 - **שלב 5 (QA מקיף + נתוני דמו) — ⚪ לא בוצע, ממתין**
 
 ---
