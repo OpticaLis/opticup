@@ -1,7 +1,57 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_C — 2026-05-18 evening (🟡 CLOSED WITH FOLLOW-UPS — RPC + Manual Add + Quick Scan drawer shipped; F-4 + F-5 HIGH findings block Phase D start; Daniel decision required on F-4 path before continuing)
+M1_INVENTORY_DEBT_DECOUPLING — 2026-05-18 evening (🟢 CLOSED — architectural correction strips inventory/debt collision; Phase B preserved; Pipeline ends; develop → main PR ready)
+
+## 2026-05-18 evening — M1_INVENTORY_DEBT_DECOUPLING (🟢 CLOSED — architectural correction)
+
+**Trigger:** Daniel HALT directive mid-Pipeline (during Phase C close): "THE INVENTORY MODULE NEVER CREATES SUPPLIER DEBT." Phase D + remaining F-4 work cancelled — they were misconceived (manager review of unmatched documents belongs to supplier-debt module). Auto-memory rule `project_inventory_debt_decoupling_rule.md` written for durable cross-session enforcement.
+
+**Pipeline commits (Executor 5 + Tester + Foreman close — `037ab17..HEAD`):**
+- `037ab17` C-D0 SPEC seed
+- `8205966` C-D1 RPC revert (10 → 8 args; supplier_debt PERFORM + VAT + audit-column writes all stripped)
+- `e6a9bd4` C-D2 DROP 5 audit columns + DELETE 2 perms + 20 grants
+- `c980250` C-D3 Strip undocumented checkbox + delivery-note inputs from Manual Add panel + Quick Scan drawer + JS helpers
+- `875a32a` C-D4 db-schema.sql Architectural Correction section + SPEC §13.A (D-1 comment-keyword hook trap resolved in same cycle)
+- `8b3ad5c` C-D5 Tier C TEST_REPORT 🟢 GREEN + 2 screenshots + EXECUTION_REPORT 10/10 + FINDINGS
+- _(this commit)_ Foreman FOREMAN_REVIEW 🟢 CLOSED + this SC update
+
+**Pipeline stats:**
+- 6 commits + Foreman close = 7 total. All single-concern, all on develop, no merges/amends/force-pushes.
+- 0 escalations to Daniel mid-execution.
+- Iron Rule 31 + 32 exit 0 every commit.
+- Smoke 7/7 PASS.
+- 0 Prizma DATA writes; schema-level DROP COLUMNs + DELETE permission rows only.
+
+**Schema/code delta (net of full Pipeline A+B+C+correction):**
+- 1 new column on `tenants`: `default_supplier_id` UUID NULL FK to suppliers, ON DELETE SET NULL. Prizma=בדולח, demo=AZMON.
+- 1 new permission key: `settings.inventory.manage` × 2 tenants + 10 role grants (ceo + manager).
+- 1 modified RPC: `m1_create_receipt_from_box` — body now physical-only (no supplier_debt cascade, no VAT computation).
+- Settings page: new "ניהול מלאי" section with searchable supplier dropdown.
+- Inventory page: Quick Scan drawer (right-side slide-in, supplier auto-fill, barcode resolution) + Manual Add panel wired (was cosmetic stub).
+- 1 new file: `modules/lens-inventory/lens-inventory-quick-scan.js` (146 lines).
+- All Phase A audit columns, undocumented permission keys, supplier_debt-from-receipt cascade — STRIPPED.
+
+**Tier C VFV results (correction SPEC):**
+- ✅ Manual Add (variant-less) submission: 1 receipt created + 0 supplier_debt cascade — primary architectural goal verified empirically on demo.
+- ✅ Phase B preservation: 4 of 4 sub-checks PASS (default_supplier_id alive, Prizma=בדולח, demo=AZMON, settings.inventory.manage permission present).
+- 🟡 Quick Scan with real variant: UI works + variant resolves; submit blocked by F-5 pre-existing trigger integer-cast bug (NOT a regression; bug pre-dates Pipeline; carries forward).
+
+**Findings (F-1 of correction SPEC = re-attribution of F-5 from Phase C):**
+- F-1 HIGH carry-forward — `M1_DIAGNOSE_RECEIPT_INTEGER_CAST` SPEC needed (pre-existing trigger bug on variant-bearing path).
+- F-2 LOW — file-size carry from Phase C, cohesion-justified.
+
+**Status:**
+- 🟢 Pipeline ENDS. Architectural correction CLOSED clean. Auto-memory rule durable for future sessions.
+- ⏳ Carry-forward SPECs: `M1_DIAGNOSE_RECEIPT_INTEGER_CAST` (F-5/F-1, HIGH), `M1_LENS_GOODS_RECEIPT_SCOPED_IDS` (Phase C F-1, MEDIUM — Full Receive modal prerequisite), supplier-debt-module manager-review surfaces (separate Brief, supplier-debt module).
+- ⏳ Pending master-doc updates: MASTER_ROADMAP.md, GLOBAL_MAP.md, GLOBAL_SCHEMA.sql, M1 MODULE_MAP.md, M1 MODULE_SPEC.md (defer to a separate Integration Ceremony SPEC after develop → main PR).
+- ⏳ 8 P-AUTHOR + P-EXEC improvement proposals accumulated across Pipeline + correction; apply at next opticup-strategic session.
+- 🚀 Recommended PR title (Daniel's): "M1 inventory: default supplier + 3 add-stock flows + debt-decoupling correction"
+
+---
+
+## Previous Last Updated
+M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_C — 2026-05-18 evening (🟡 CLOSED WITH FOLLOW-UPS — RPC + Manual Add + Quick Scan drawer shipped; F-4 + F-5 HIGH findings block Phase D start; Daniel decision required on F-4 path before continuing) — **SUPERSEDED by correction SPEC above; F-4 architecturally resolved by removing inventory's debt-creation responsibility entirely**
 
 ## 2026-05-18 evening — M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_C (🟡 CLOSED WITH FOLLOW-UPS)
 
