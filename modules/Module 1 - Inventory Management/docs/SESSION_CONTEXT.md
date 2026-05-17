@@ -1,6 +1,53 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
+M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_C — 2026-05-18 evening (🟡 CLOSED WITH FOLLOW-UPS — RPC + Manual Add + Quick Scan drawer shipped; F-4 + F-5 HIGH findings block Phase D start; Daniel decision required on F-4 path before continuing)
+
+## 2026-05-18 evening — M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_C (🟡 CLOSED WITH FOLLOW-UPS)
+
+**Pipeline state:** Phase A 🟢 + Phase B 🟢 + Phase C 🟡 closed. Pipeline PAUSED before Phase D pending F-4 resolution.
+
+**Goal:** Ship 3 add-stock flows on the inventory screen + extend `m1_create_receipt_from_box` RPC for undocumented additions. Brief §5.
+
+**Pipeline commits (Foreman + Executor + Tester + Foreman close — `b3c8a31..HEAD`, 9 commits):**
+- `b3c8a31` C-C0 SPEC seed (Foreman, 259 lines)
+- `1eb2b5e` C-C1 RPC extension (8→10 args) + DM-1 companion DROP
+- `84345bf` C-C2 Manual Add panel wiring + shared `_submitAddStock`
+- `19b026d` C-C3 Quick Scan drawer (new file + HTML + CSS) replaces scan-in modal
+- `d3aa172` C-C5 db-schema.sql Phase 2C section + C-C4 deferral
+- `0253f8d` C-C6 EXECUTION_REPORT (9.4/10) + FINDINGS (3 entries)
+- `98b3d50` Tier C VFV fixes (location_id resolver + lens_design.name column + DM-3 hotfix migration for delivery_note_number NULL-able)
+- `6b88573` Tier C TEST_REPORT 🟡 PARTIAL + 4 screenshots
+- _(this commit)_ Foreman FOREMAN_REVIEW 🟡 CLOSED WITH FOLLOW-UPS + this SC block
+
+**Schema/code delta:**
+- RPC `m1_create_receipt_from_box`: 8→10 args (backward-compat DEFAULTs; old 8-arg overload dropped per DM-1). Body extended: INSERT writes 3 new audit columns.
+- ALTER `purchase_receipt.delivery_note_number` DROP NOT NULL + CHECK (NOT is_documented OR delivery_note_number IS NOT NULL) — DM-3 hotfix.
+- 1 new file: `modules/lens-inventory/lens-inventory-quick-scan.js` (150 lines).
+- 4 modified files: `lens-inventory-partial.html` (+54), `lens-inventory-modal-shows.js` (+166), `css/lens-inventory-modals.css` (+56), `modules/inventory/inventory-shell-lens.js` (+1).
+
+**Tier C VFV results:**
+- ✅ Flow 2 Manual Add (documented + is_manual_addition path): end-to-end VERIFIED on demo with screenshots; created RCP-0-0003 + AZMON auto-fill PASS; cleanup deleted.
+- 🟡 Flow 1 Quick Scan: UI surface VERIFIED (drawer slide-in, barcode lookup LV-000003 → Essilor Progressive, supplier load); submit BLOCKED by F-5 (pre-existing RPC trigger integer-cast on PO300005-1 when real variant_id passed).
+- ⏭️ Flow 3 Full Receive modal: DEFERRED per DM-2 (DOM ID collision — F-1).
+- 🔴 Undocumented path (both Flow 1 + 2): BLOCKED by F-4 cascade (supplier_debt.delivery_note_number NOT NULL).
+
+**Findings:**
+- F-1 MEDIUM — C-C4 deferred; follow-up SPEC `M1_LENS_GOODS_RECEIPT_SCOPED_IDS` (prerequisite) + Full Receive modal (after).
+- F-2 LOW — 3 file-size warnings; defer until natural splitting boundary.
+- F-3 LOW — Phase A FIELD_MAP retroactive gap (bundle into Phase D).
+- **F-4 HIGH — Phase A audit-column NOT NULL cascade unhandled in downstream supplier_debt. BLOCKS Phase D's "ללא תעודה" filter from being meaningful.** Path B (defer supplier_debt creation until manager_review_status='approved') recommended; Daniel decision pending.
+- F-5 HIGH — Pre-existing trigger integer-cast bug surfaces on variant-based add; diagnostic SPEC `M1_DIAGNOSE_RECEIPT_INTEGER_CAST` needed in parallel with F-4.
+
+**Status:**
+- 🟡 Phase C CLOSED WITH FOLLOW-UPS. UI scaffolding production-acceptable; user-facing happy path needs F-4 + F-5 follow-ups.
+- 🛑 **Pipeline PAUSED before Phase D pending Daniel decision on F-4 path** (A mechanical vs B business-aligned defer-debt-creation).
+- ⏳ 6 improvement proposals harvested across Phases A+B+C (4 P-AUTHOR + 6 P-EXEC) → apply at Phase E.
+- ⏳ Phase D scope remains: unified log "ללא תעודה" filter + manager-review badge column + action button + `mark_receipt_reviewed` RPC.
+
+---
+
+## Previous Last Updated
 M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_B — 2026-05-18 evening (🟢 CLOSED — Settings UI for default supplier shipped; Daniel-authorized Prizma backfill applied; Pipeline continues to Phase C)
 
 ## 2026-05-18 evening — M1_LENS_INVENTORY_UNIFIED_FLOW_PHASE_B (🟢 CLOSED)
