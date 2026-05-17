@@ -391,6 +391,157 @@
     color: #856404;
     border-radius: 4px;
   }
+
+  /* === PERMISSION-GATED COLUMNS (added 2026-05-17 per Daniel decisions #11+#13) ===
+     Columns marked .col-permission-gated + data-permission="..." are hidden by
+     the rebuild executor's JS layer when the session user lacks the named permission.
+     The lock-icon visual hint signals "gated column" to anyone reviewing the mockup. */
+  .col-permission-gated::before { content: '🔒 '; font-size: 9px; opacity: 0.7; }
+  .permission-hidden-demo {
+    background: #f1f5f9;
+    color: #94a3b8;
+    font-style: italic;
+    text-align: center;
+    font-size: 11px;
+  }
+
+  /* === QUICK RECEIPT DRAWER (added 2026-05-17 per Daniel decisions #9 + #14 + #15) ===
+     Right-pinned (RTL: inset-inline-start:0) drawer; opens when user scans a barcode
+     that matches an open PO line, clicks "הוסף ידנית", or clicks "קבל סחורה".
+     Section A captures delivery-note metadata ONCE for the whole receipt session.
+     Section B stages the N items being received. On "סיים קבלה" all N items inherit
+     the same delivery_note_number + supplier_id + receipt_date in their audit trail. */
+  .quick-receipt-drawer {
+    position: fixed;
+    inset-inline-start: 0;  /* RTL: right edge of viewport */
+    top: 0;
+    bottom: 0;
+    width: 420px;
+    max-width: 90vw;
+    background: white;
+    box-shadow: -4px 0 16px rgba(0,0,0,0.15);
+    display: none;
+    flex-direction: column;
+    z-index: 200;
+  }
+  .quick-receipt-drawer.active { display: flex; }
+
+  .qrd-header {
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #c9a555 0%, #b8954a 100%);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .qrd-title { font-size: 16px; font-weight: 600; }
+  .qrd-close {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.5);
+    color: white;
+    width: 30px; height: 30px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+  }
+  .qrd-close:hover { background: rgba(255,255,255,0.15); }
+
+  .qrd-body { flex: 1; overflow-y: auto; padding: 18px 20px; }
+
+  .qrd-section {
+    margin-bottom: 22px;
+    padding-bottom: 18px;
+    border-bottom: 1px dashed #ecf0f1;
+  }
+  .qrd-section:last-child { border-bottom: none; margin-bottom: 0; }
+
+  .qrd-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .qrd-field { margin-bottom: 10px; }
+  .qrd-field label { display: block; font-size: 12px; color: #5d6d7e; margin-bottom: 4px; font-weight: 600; }
+  .qrd-field input[type="text"], .qrd-field input[type="date"], .qrd-field select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d0d4d9;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    background: white;
+  }
+  .qrd-field input:disabled { background: #f8f9fb; color: #95a5a6; }
+  .qrd-helper-warning { font-size: 11px; color: #c0392b; margin-top: 4px; }
+  .qrd-checkbox-label { display: flex; align-items: center; gap: 6px; font-weight: 500; cursor: pointer; }
+
+  .qrd-staged-item {
+    background: #f8f9fb;
+    border: 1px solid #ecf0f1;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .qrd-staged-item .item-name { flex: 1; font-size: 12px; color: #2c3e50; font-weight: 600; }
+  .qrd-staged-item .item-meta { font-size: 10px; color: #95a5a6; margin-top: 2px; font-weight: normal; }
+  .qrd-qty-controls { display: flex; align-items: center; gap: 4px; }
+  .qrd-qty-controls button {
+    width: 24px; height: 24px;
+    border-radius: 4px;
+    border: 1px solid #d0d4d9;
+    background: white;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .qrd-qty-controls input {
+    width: 40px;
+    padding: 3px 4px;
+    border: 1px solid #d0d4d9;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .qrd-remove-item {
+    background: transparent;
+    border: 1px solid #fbe5e2;
+    color: #e74c3c;
+    width: 26px; height: 26px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .qrd-empty-state {
+    padding: 24px 16px;
+    text-align: center;
+    color: #95a5a6;
+    font-size: 12px;
+    background: #f8f9fb;
+    border: 1px dashed #d0d4d9;
+    border-radius: 6px;
+  }
+
+  .qrd-footer {
+    padding: 14px 20px;
+    border-top: 1px solid #ecf0f1;
+    background: #f8f9fb;
+    display: flex;
+    gap: 8px;
+    position: sticky;
+    bottom: 0;
+  }
+  .qrd-footer .btn { flex: 1; justify-content: center; }
 </style>
 </head>
 <body>
@@ -410,7 +561,10 @@
     <button class="btn">📥 ייצוא Excel</button>
     <button class="btn">🔍 חיפוש מתקדם</button>
     <button class="btn" onclick="openScanModal('out')" style="background:#fef0ef; border-color:#e74c3c; color:#c0392b; font-weight:600;">📷 סריקה — הורדה</button>
+    <!-- "סריקה — הוספה" entry adds scanned items to the Quick Receipt drawer (Section B), NOT directly to stock. (Daniel decision #9) -->
     <button class="btn" onclick="openScanModal('in')" style="background:#e8f8ef; border-color:#27ae60; color:#1e8449; font-weight:600;">📷 סריקה — הוספה</button>
+    <!-- NEW entry point per Daniel decision #9: explicit "קבל סחורה" opens the Quick Receipt drawer directly. -->
+    <button class="btn" onclick="document.getElementById('quickReceiptDrawer').classList.add('active')" style="background:#fdf6e3; border-color:#c9a555; color:#b8954a; font-weight:600;">📦 קבל סחורה</button>
     <button class="btn btn-primary" onclick="document.getElementById('bulkModal').classList.add('active')">➕ הוספה מרובה (Wizard)</button>
   </div>
 </div>
@@ -552,11 +706,39 @@
         </div>
         <table class="lots-table">
           <thead>
-            <tr><th>אצווה</th><th>נכנס</th><th>עלות</th><th>נותר</th></tr>
+            <tr>
+              <th>אצווה</th>
+              <th>נכנס</th>
+              <th>מחיר מכירה</th>
+              <th class="col-permission-gated" data-permission="inventory.view_cost_price">עלות</th>
+              <th>נותר</th>
+            </tr>
           </thead>
           <tbody>
-            <tr><td><span class="fifo-tag">FIFO #1</span>L-2401</td><td>15.03</td><td>₪82</td><td><strong>2</strong></td></tr>
-            <tr><td>L-2418</td><td>02.05</td><td>₪85</td><td><strong>3</strong></td></tr>
+            <tr>
+              <td><span class="fifo-tag">FIFO #1</span>L-2401</td>
+              <td>15.03</td>
+              <td>₪149</td>
+              <td class="col-permission-gated" data-permission="inventory.view_cost_price">₪82</td>
+              <td><strong>2</strong></td>
+            </tr>
+            <tr>
+              <td>L-2418</td>
+              <td>02.05</td>
+              <td>₪155</td>
+              <td class="col-permission-gated" data-permission="inventory.view_cost_price">₪85</td>
+              <td><strong>3</strong></td>
+            </tr>
+            <!-- Worker view demo — same row, but the cost column would be HIDDEN by the rebuild
+                 executor's JS for users without inventory.view_cost_price. Mockup shows it as
+                 a muted "— הסתר —" placeholder so the rebuild executor sees the gating pattern. -->
+            <tr>
+              <td>L-2419 <span style="font-size:9px; color:#94a3b8;">(worker view)</span></td>
+              <td>05.05</td>
+              <td>₪149</td>
+              <td class="col-permission-gated permission-hidden-demo" data-permission="inventory.view_cost_price">— הסתר —</td>
+              <td><strong>1</strong></td>
+            </tr>
           </tbody>
         </table>
         <div style="display:flex; justify-content:space-between; gap:10px; margin-top:10px; padding-top:10px; border-top:1px dashed #ecf0f1;">
@@ -584,6 +766,8 @@
     </div>
 
     <!-- Quick Add -->
+    <!-- This entry adds to the Quick Receipt drawer staging (Section B), NOT directly to stock. (Daniel decision #9)
+         The drawer opens automatically; this form's fields pre-populate the drawer's "add item" sub-form. -->
     <div class="panel-card">
       <div class="panel-card-header">הוספה ידנית</div>
       <div class="panel-card-body">
@@ -602,7 +786,11 @@
           <div class="field-group"><label>כמות:</label><input type="number" placeholder="1" /></div>
           <div class="field-group"><label>עלות (לא כולל מע"מ):</label><input type="text" placeholder="₪85" /></div>
         </div>
-        <button class="btn btn-success" style="width:100%; margin-top:12px; justify-content:center;">➕ הוסף למלאי</button>
+        <!-- Button label updated per Daniel decision #9: stages item to drawer, not direct-to-stock. -->
+        <button class="btn btn-success" style="width:100%; margin-top:12px; justify-content:center;"
+                onclick="document.getElementById('quickReceiptDrawer').classList.add('active')">
+          ➕ הוסף לטיוטת קבלה
+        </button>
       </div>
     </div>
 
@@ -626,7 +814,8 @@
           <th>SPH × CYL</th>
           <th>אצווה</th>
           <th>כמות</th>
-          <th>עלות יחידה</th>
+          <th>מחיר מכירה</th>
+          <th class="col-permission-gated" data-permission="inventory.view_cost_price">עלות יחידה</th>
           <th>מסמך</th>
           <th>משתמש</th>
         </tr>
@@ -638,7 +827,8 @@
           <td>-2.50 × -0.75</td>
           <td>L-2401 (FIFO)</td>
           <td style="color:#e74c3c;">−1</td>
-          <td>₪82.00</td>
+          <td>₪149.00</td>
+          <td class="col-permission-gated" data-permission="inventory.view_cost_price">₪82.00</td>
           <td>הזמנה #4521</td>
           <td>שירה</td>
         </tr>
@@ -648,7 +838,8 @@
           <td>-3.00 × -1.00</td>
           <td>L-2425 (חדש)</td>
           <td style="color:#27ae60;">+1</td>
-          <td>₪82.00</td>
+          <td>₪149.00</td>
+          <td class="col-permission-gated" data-permission="inventory.view_cost_price">₪82.00</td>
           <td>החזרה #87</td>
           <td>אבי</td>
         </tr>
@@ -658,7 +849,22 @@
           <td>טווח שלם</td>
           <td>L-2418 (חדש)</td>
           <td style="color:#27ae60;">+48</td>
-          <td>₪85.00</td>
+          <td>₪155.00</td>
+          <td class="col-permission-gated" data-permission="inventory.view_cost_price">₪85.00</td>
+          <td>קבלת סחורה #312</td>
+          <td>דניאל</td>
+        </tr>
+        <!-- Worker view demo — same row, but the cost cell would be HIDDEN by the rebuild
+             executor's JS for users without inventory.view_cost_price. Mockup shows it as
+             a muted "— הסתר —" placeholder so the rebuild executor sees the gating pattern. -->
+        <tr>
+          <td>10.05.26 09:46 <span style="font-size:9px; color:#94a3b8;">(worker view)</span></td>
+          <td><span class="movement-type purchase">רכישה מספק</span></td>
+          <td>טווח שלם</td>
+          <td>L-2418 (חדש)</td>
+          <td style="color:#27ae60;">+48</td>
+          <td>₪155.00</td>
+          <td class="col-permission-gated permission-hidden-demo" data-permission="inventory.view_cost_price">— הסתר —</td>
           <td>קבלת סחורה #312</td>
           <td>דניאל</td>
         </tr>
@@ -668,7 +874,8 @@
           <td>-1.00 × 0.00</td>
           <td>L-2415</td>
           <td style="color:#3498db;">←2</td>
-          <td>₪82.00</td>
+          <td>₪149.00</td>
+          <td class="col-permission-gated" data-permission="inventory.view_cost_price">₪82.00</td>
           <td>העברה #15</td>
           <td>דניאל</td>
         </tr>
@@ -678,7 +885,8 @@
           <td>-2.00 × -0.50</td>
           <td>L-2422 (חדש)</td>
           <td style="color:#f39c12;">+2</td>
-          <td>₪85.00</td>
+          <td>₪155.00</td>
+          <td class="col-permission-gated" data-permission="inventory.view_cost_price">₪85.00</td>
           <td>ספירה #44</td>
           <td>שירה</td>
         </tr>
@@ -900,6 +1108,10 @@
       </div>
 
     </div>
+    <!-- "in" mode submit: items feed the Quick Receipt drawer (Section B) for the per-session
+         delivery-note metadata batching (Daniel decision #9 + #15). "out" mode submit:
+         direct decrement (existing behavior). The submit button label + behavior is set by
+         openScanModal(mode) in the JS below. -->
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeScanModal()">ביטול</button>
       <button class="btn" id="scanSubmitBtn" style="color:white;">✓ הכנס למלאי (5 פריטים)</button>
@@ -1083,9 +1295,14 @@ function openScanModal(mode) {
     header.style.background = 'linear-gradient(135deg, #27ae60 0%, #1e8449 100%)';
     document.getElementById('scanModalTitle').textContent = '📷 סריקה — הוספה למלאי';
     reasonRow.style.display = 'none';
-    submitBtn.textContent = '✓ הכנס למלאי (5 פריטים)';
+    // Per Daniel decision #9: "in" mode feeds the Quick Receipt drawer (Section B), NOT direct stock.
+    submitBtn.textContent = '✓ העבר לטיוטת קבלה (5 פריטים)';
     submitBtn.style.background = '#27ae60';
     submitBtn.style.borderColor = '#27ae60';
+    submitBtn.onclick = function () {
+      closeScanModal();
+      document.getElementById('quickReceiptDrawer').classList.add('active');
+    };
   } else {
     header.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
     document.getElementById('scanModalTitle').textContent = '📷 סריקה — הורדה מהמלאי';
@@ -1112,6 +1329,128 @@ function switchRpt(el, type) {
   el.style.fontWeight = '600';
 }
 </script>
+
+<!--
+  ===== QUICK RECEIPT DRAWER — Bulk Receipt Flow (per Daniel decision #15) =====
+  - User opens drawer (via scanner match / "הוסף ידנית" / "קבל סחורה" button)
+  - User scans/adds N items (each item gets staged in Section B)
+  - User fills delivery_note_number + supplier_id ONCE in Section A
+  - On "סיים קבלה": all N items receive the same delivery_note_number + supplier_id
+    + receipt_date in their audit trail (NOT per-item — shared across the session)
+  - DB schema: each item gets its own stock_lot entry, but delivery_note_number (TEXT)
+    is shared across all entries created in this drawer session
+  - has_no_invoice (BOOLEAN) is set per delivery_note when "אין תעודה" was checked
+  - Cross-ref: see modules/Module 1 - Inventory Management/architecture-brief/INVOICES_INBOX_PLACEHOLDER.md
+    for the future Invoices Inbox screen that consumes these delivery-note records.
+
+  This drawer is shown OPEN (.active) in the mockup so reviewers can see the layout.
+  In production, JS adds/removes .active based on the user's entry-point interaction.
+-->
+<div class="quick-receipt-drawer active" id="quickReceiptDrawer">
+  <div class="qrd-header">
+    <div class="qrd-title">📦 קבלת סחורה למלאי</div>
+    <button class="qrd-close" onclick="document.getElementById('quickReceiptDrawer').classList.remove('active')" title="סגור">×</button>
+  </div>
+
+  <div class="qrd-body">
+
+    <!-- Section A — delivery-note metadata (shared across all items in this session) -->
+    <div class="qrd-section">
+      <div class="qrd-section-title">📄 פרטי תעודה (משותף לכל פריטי הקבלה)</div>
+
+      <div class="qrd-field">
+        <label for="qrd-delivery-note">מספר תעודת משלוח</label>
+        <input type="text" id="qrd-delivery-note" placeholder="DN-2026-XXXX" value="DN-2026-1148" />
+      </div>
+
+      <div class="qrd-field" style="margin-top:-4px;">
+        <label class="qrd-checkbox-label">
+          <input type="checkbox" id="qrd-no-invoice"
+                 onchange="
+                   document.getElementById('qrd-delivery-note').disabled = this.checked;
+                   document.getElementById('qrd-no-invoice-warning').style.display = this.checked ? 'block' : 'none';
+                 " />
+          אין תעודה
+        </label>
+        <div class="qrd-helper-warning" id="qrd-no-invoice-warning" style="display:none;">
+          ⚠ הקבלה תיסומן בדוח החריגים למנהל
+        </div>
+      </div>
+
+      <div class="qrd-field">
+        <label for="qrd-supplier">ספק</label>
+        <select id="qrd-supplier">
+          <option value="">— בחר ספק —</option>
+          <option selected>לפידות בע"מ</option>
+          <option>בדולח עדשות</option>
+          <option>סגם בע"מ</option>
+        </select>
+      </div>
+
+      <div class="qrd-field">
+        <label for="qrd-receipt-date">תאריך קבלה</label>
+        <input type="date" id="qrd-receipt-date" value="2026-05-17" />
+      </div>
+    </div>
+
+    <!-- Section B — staged items (built by scanner + manual-add entries) -->
+    <div class="qrd-section">
+      <div class="qrd-section-title">📋 פריטים שנוספו לקבלה הזו (<span id="qrd-item-count">3</span>)</div>
+
+      <!-- Empty state (shown when no items staged — mockup keeps it as comment for reference) -->
+      <!--
+      <div class="qrd-empty-state">
+        סרוק או הוסף ידנית פריטים. כל הפריטים שתוסיף יקושרו לפרטי התעודה למעלה.
+      </div>
+      -->
+
+      <!-- Sample populated state — 3 items staged -->
+      <div class="qrd-staged-item">
+        <div class="item-name">
+          Hoya · Hilux EYAS BLC · 1.67 · 70mm
+          <div class="item-meta">SPH -2.50 × CYL -0.75</div>
+        </div>
+        <div class="qrd-qty-controls">
+          <button title="הפחת">−</button>
+          <input type="number" value="2" min="1" />
+          <button title="הוסף">+</button>
+        </div>
+        <button class="qrd-remove-item" title="הסר מהקבלה">×</button>
+      </div>
+
+      <div class="qrd-staged-item">
+        <div class="item-name">
+          Hoya · Hilux EYAS UVC HVLL · 1.6 · 70mm
+          <div class="item-meta">SPH -3.00 × CYL -1.00</div>
+        </div>
+        <div class="qrd-qty-controls">
+          <button title="הפחת">−</button>
+          <input type="number" value="1" min="1" />
+          <button title="הוסף">+</button>
+        </div>
+        <button class="qrd-remove-item" title="הסר מהקבלה">×</button>
+      </div>
+
+      <div class="qrd-staged-item">
+        <div class="item-name">
+          Hoya · Defender UV 420 SN · 1.67 · 70mm
+          <div class="item-meta">SPH -1.50 × CYL 0.00</div>
+        </div>
+        <div class="qrd-qty-controls">
+          <button title="הפחת">−</button>
+          <input type="number" value="3" min="1" />
+          <button title="הוסף">+</button>
+        </div>
+        <button class="qrd-remove-item" title="הסר מהקבלה">×</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="qrd-footer">
+    <button class="btn btn-primary">✓ סיים קבלה (6 יח׳)</button>
+    <button class="btn">ביטול</button>
+  </div>
+</div>
 
 </body>
 </html>

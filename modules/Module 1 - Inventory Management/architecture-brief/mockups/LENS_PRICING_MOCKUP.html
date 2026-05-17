@@ -85,6 +85,97 @@
   .new-price { color: #c0392b; font-weight: 700; }
 
   .alert-info { background: #d1ecf1; border-right: 4px solid #0c5460; padding: 10px 14px; border-radius: 6px; font-size: 12px; color: #0c5460; margin-bottom: 12px; }
+
+  /* === VIEW-MODE TOGGLE (added 2026-05-17 per Daniel decision #12) ===
+     Pill-style 2-button switch between Edit (admin/manager) and Readonly (worker) modes.
+     Default-active state is permission-driven: lens_pricing.edit → edit; otherwise → readonly. */
+  .view-mode-toggle {
+    display: inline-flex;
+    background: #f0f2f5;
+    border-radius: 999px;
+    padding: 3px;
+    margin: 12px 0;
+    gap: 2px;
+  }
+  .view-mode-toggle button {
+    padding: 8px 22px;
+    border: none;
+    background: transparent;
+    color: #5d6d7e;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .view-mode-toggle button:hover { color: #2c3e50; }
+  .view-mode-toggle button.active {
+    background: #c9a555;
+    color: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+  .view-mode-toggle .mode-hint {
+    align-self: center;
+    margin-inline-start: 14px;
+    font-size: 11px;
+    color: #95a5a6;
+  }
+
+  /* === PERMISSION-GATED COLUMNS (added 2026-05-17 per Daniel decisions #11+#13) ===
+     Same pattern as LENS_INVENTORY_MOCKUP. Renderer hides if !hasPermission(data-permission). */
+  .col-permission-gated::before { content: '🔒 '; font-size: 9px; opacity: 0.7; }
+
+  /* === READONLY MODE — flat sortable table (added 2026-05-17 per Daniel decision #12) ===
+     Worker default — shows all lenses in tenant's catalog regardless of stock presence.
+     Compact filter row at top + flat table with 10 columns. Not-in-stock rows muted. */
+  .readonly-filter-row {
+    background: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    margin-bottom: 12px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .readonly-filter-row select, .readonly-filter-row input {
+    padding: 7px 10px;
+    border: 1px solid #d0d4d9;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: inherit;
+    background: white;
+  }
+  .readonly-filter-row input[type="text"]:not(.search-box) { width: 70px; text-align: center; }
+
+  .readonly-flat-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+  .readonly-flat-table thead th {
+    text-align: right;
+    padding: 10px 14px;
+    background: #f8f9fb;
+    color: #5d6d7e;
+    font-weight: 600;
+    font-size: 11px;
+    border-bottom: 2px solid #ecf0f1;
+    cursor: pointer;
+    user-select: none;
+    position: sticky;
+    top: 0;
+  }
+  .readonly-flat-table thead th::after { content: ' ↕'; color: #cbd5e1; font-size: 10px; font-weight: normal; }
+  .readonly-flat-table thead th.sorted-asc::after { content: ' ↑'; color: #c9a555; font-weight: 700; }
+  .readonly-flat-table thead th.sorted-desc::after { content: ' ↓'; color: #c9a555; font-weight: 700; }
+  .readonly-flat-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f5f6fa;
+    vertical-align: middle;
+  }
+  .readonly-flat-table tbody tr.no-stock { color: #94a3b8; font-style: italic; }
+  .readonly-flat-table tbody tr.no-stock td:nth-last-child(1) { color: #94a3b8; font-weight: normal; }
+  .readonly-flat-table tbody tr:not(.no-stock) td:nth-last-child(1) { font-weight: 700; color: #27ae60; }
+  .readonly-flat-table tbody tr:hover { background: #faf3e0; }
 </style>
 </head>
 <body>
@@ -105,6 +196,28 @@
     <button class="btn btn-primary">📝 צור הסכם הנחה חדש</button>
   </div>
 </div>
+
+<!--
+  ===== VIEW-MODE TOGGLE (Edit / Readonly) — per Daniel decision #12 =====
+  Two-mode UI for the same pricing screen:
+  - Edit mode (admin/manager): bulk pricing tools, approval flow, series hierarchy — as currently mocked below
+  - Readonly mode (worker default): flat sortable list with quick filters, shows EVERY lens
+    in the tenant's catalog regardless of stock presence
+
+  Permission gating: lens_pricing.edit → defaults to edit; otherwise → readonly.
+  User with edit permission can still switch to readonly via the toggle (e.g., to use it as
+  a sales reference). DB query is identical; only presentation differs.
+
+  In production JS toggles which <section> is visible. In the mockup BOTH sections are
+  drawn inline so reviewers can compare layouts.
+-->
+<div class="view-mode-toggle">
+  <button class="active" data-view-mode="edit">✏️ עריכה</button>
+  <button data-view-mode="readonly">👁 צפייה</button>
+  <span class="mode-hint">ברירת מחדל לפי הרשאת lens_pricing.edit</span>
+</div>
+
+<section data-view-mode="edit">
 
 <!-- TABS -->
 <div class="top-tabs">
@@ -467,6 +580,177 @@
 
   </div>
 </div>
+
+</section>
+<!-- end of section[data-view-mode="edit"] -->
+
+<!--
+  ===== READONLY MODE SECTION — worker default (per Daniel decision #12) =====
+  Flat sortable list with quick filters. Shows ALL lenses in tenant's catalog
+  regardless of stock presence. Not-in-stock rows are visually muted; in-stock
+  rows show the qty in bold green. Cost-price column gated by
+  lens_pricing.view_cost_price (per Daniel decision #11 + #13). Same column-permission
+  pattern as inventory mockup — rebuild executor's JS layer reads
+  data-permission attribute and hides accordingly.
+-->
+<section data-view-mode="readonly" style="display:block;">
+
+  <!-- Compact filter row -->
+  <div class="readonly-filter-row">
+    <span style="font-size:12px; color:#5d6d7e; font-weight:600;">סינון מהיר:</span>
+    <select>
+      <option>חברה: הכל</option>
+      <option>Hoya</option>
+      <option>Essilor</option>
+      <option>Zeiss</option>
+    </select>
+    <select>
+      <option>סוג: הכל</option>
+      <option>חד-מוקדי</option>
+      <option>מולטיפוקל</option>
+      <option>פרוגרסיב</option>
+    </select>
+    <select>
+      <option>קוטר: הכל</option>
+      <option>65mm</option>
+      <option>70mm</option>
+      <option>75mm</option>
+    </select>
+    <span style="font-size:11px; color:#95a5a6;">SPH</span>
+    <input type="text" placeholder="מ-" />
+    <input type="text" placeholder="עד" />
+    <span style="font-size:11px; color:#95a5a6; margin-inline-start:6px;">CYL</span>
+    <input type="text" placeholder="מ-" />
+    <input type="text" placeholder="עד" />
+    <input type="text" class="search-box" placeholder="🔍 חפש סדרה / וריאנט..." style="margin-inline-start:auto;" />
+  </div>
+
+  <!-- Flat sortable table -->
+  <div class="pricing-panel">
+    <div class="panel-header">
+      <h3>קטלוג סדרות — מצב צפייה</h3>
+      <span style="font-size:11px; color:#5d6d7e;">12 שורות · לחיצה על כותרת עמודה למיון</span>
+    </div>
+    <div style="max-height:600px; overflow-y:auto;">
+      <table class="readonly-flat-table">
+        <thead>
+          <tr>
+            <th>חברה</th>
+            <th>סדרה</th>
+            <th>סוג</th>
+            <th>קוטר</th>
+            <th class="sorted-asc">SPH</th>
+            <th>CYL</th>
+            <th>מחיר מכירה</th>
+            <th class="col-permission-gated" data-permission="lens_pricing.view_cost_price">מחיר עלות</th>
+            <th>הנחה</th>
+            <th>כמות במלאי</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Hoya</td><td>Hilux EYAS BLC</td><td>חד-מוקדי</td><td>70mm</td>
+            <td>-2.50</td><td>-0.75</td>
+            <td>₪149</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪82</td>
+            <td>50%</td>
+            <td>5</td>
+          </tr>
+          <tr>
+            <td>Hoya</td><td>Hilux EYAS BLC</td><td>חד-מוקדי</td><td>70mm</td>
+            <td>-3.00</td><td>-1.00</td>
+            <td>₪149</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪82</td>
+            <td>50%</td>
+            <td>3</td>
+          </tr>
+          <tr class="no-stock">
+            <td>Hoya</td><td>Hilux EYAS BLC</td><td>חד-מוקדי</td><td>70mm</td>
+            <td>-3.50</td><td>-0.75</td>
+            <td>₪149</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪82</td>
+            <td>50%</td>
+            <td>0</td>
+          </tr>
+          <tr>
+            <td>Hoya</td><td>Hilux EYAS UVC HVLL</td><td>חד-מוקדי</td><td>70mm</td>
+            <td>+1.50</td><td>-0.50</td>
+            <td>₪165</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪92</td>
+            <td>48%</td>
+            <td>4</td>
+          </tr>
+          <tr class="no-stock">
+            <td>Hoya</td><td>Hilux UV Control Photo</td><td>חד-מוקדי</td><td>70mm</td>
+            <td>-2.00</td><td>-0.50</td>
+            <td>₪210</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪118</td>
+            <td>50%</td>
+            <td>0</td>
+          </tr>
+          <tr>
+            <td>Hoya</td><td>Defender UV 420 SN</td><td>חד-מוקדי</td><td>70mm</td>
+            <td>-1.50</td><td>0.00</td>
+            <td>₪126</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪70</td>
+            <td>55%</td>
+            <td>8</td>
+          </tr>
+          <tr>
+            <td>Hoya</td><td>Hoyalux iD MyStyle V+</td><td>מולטיפוקל</td><td>70mm</td>
+            <td>-1.50</td><td>-0.25</td>
+            <td>₪390</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪218</td>
+            <td>40%</td>
+            <td>2</td>
+          </tr>
+          <tr class="no-stock">
+            <td>Hoya</td><td>Hoyalux iD LifeStyle V+</td><td>מולטיפוקל</td><td>70mm</td>
+            <td>-2.00</td><td>-0.50</td>
+            <td>₪420</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪235</td>
+            <td>40%</td>
+            <td>0</td>
+          </tr>
+          <tr>
+            <td>Essilor</td><td>Varilux X 4D</td><td>פרוגרסיב</td><td>70mm</td>
+            <td>0.00</td><td>0.00</td>
+            <td>₪480</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪270</td>
+            <td>42%</td>
+            <td>3</td>
+          </tr>
+          <tr class="no-stock">
+            <td>Essilor</td><td>Varilux Comfort Max</td><td>פרוגרסיב</td><td>65mm</td>
+            <td>+0.50</td><td>-0.25</td>
+            <td>₪380</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪215</td>
+            <td>42%</td>
+            <td>0</td>
+          </tr>
+          <tr>
+            <td>Zeiss</td><td>SmartLife Individual 2</td><td>מולטיפוקל</td><td>70mm</td>
+            <td>-1.00</td><td>-0.50</td>
+            <td>₪510</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪290</td>
+            <td>43%</td>
+            <td>1</td>
+          </tr>
+          <tr class="no-stock">
+            <td>Zeiss</td><td>DriveSafe</td><td>חד-מוקדי</td><td>70mm</td>
+            <td>-2.50</td><td>0.00</td>
+            <td>₪240</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪138</td>
+            <td>43%</td>
+            <td>0</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</section>
+<!-- end of section[data-view-mode="readonly"] -->
 
 </body>
 </html>
