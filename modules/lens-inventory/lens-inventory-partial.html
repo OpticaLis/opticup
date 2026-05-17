@@ -1,31 +1,21 @@
 <!-- lens-inventory-partial.html — body fragment for inventory.html lens-tab.
      Fetched lazily by InvShellLens; injected into the section.lens-tab-section
-     with data-tab="inventory". Semantic markup only — visual tokens applied
-     by css/lens-tabs.css.
+     with data-tab="inventory".
 
-     Phase A rebuild (M1_LENS_MOCKUP_FIDELITY_REBUILD, 2026-05-18):
-     Structure follows LENS_INVENTORY_MOCKUP.html (D-M1-02, 1117 lines). Gold
-     primary accent + dark-navy headers per mockup §1. Preserves the existing
-     #access-gate + #app wrappers and the filter-brand / filter-design /
-     filter-variant / grid-container / lot-container IDs so the existing
-     modules/lens-inventory/* JS modules bootstrap unmodified.
+     M1_LENS_INVENTORY_MOCKUP_1TO1 Sub-Phase A2 rebuild (2026-05-18):
+     Structure follows LENS_INVENTORY_MOCKUP.html (D-M1-02, 1117 lines) 1:1.
+     Preserves the existing JS contracts: #access-gate, #app, #filter-brand,
+     #filter-design, #filter-variant, #grid-container, #lot-container,
+     #selected-cell-coords, #variant-range-display so the existing
+     modules/lens-inventory/*.js modules bootstrap unmodified. Brand select
+     is HIDDEN (.field-group-hidden) and driven by the row-6 brand chips
+     — visible UI matches mockup which only shows Design + Diameter
+     selects above the grid. Three inline modals (Reports / Scan / Wizard)
+     mirror mockup §"REPORTS MODAL" / §"SCAN MODAL" / §"BULK ADD WIZARD".
 
-     Deferred to follow-up session (next Phase A continuation):
-       - Reports modal (mockup §"REPORTS MODAL", ~120 lines of HTML)
-       - Scan IN/OUT modals (mockup §"SCAN MODAL", ~90 lines)
-       - Bulk Wizard modal (mockup §"BULK ADD WIZARD MODAL", ~80 lines)
-       - Selected-cell gold-gradient header card with lots + qty + target editor
-         (current build shows lots in side panel; gold header card needs
-         JS wiring to capture cell click context — deferred to keep JS untouched
-         this Phase per scope discipline)
-       - Filter rows for lens-type / material / index / stock-status (require
-         either new DB fields OR client-side filter, both broader scope)
-       - Bottom tabs: movements / pricing / alerts / analytics (table population
-         requires DB queries against stock_movement view — broader scope)
-
-     Header action buttons (📊 דוחות, 📷 סריקה הוספה, 📷 סריקה הורדה, ➕ הוספה
-     מרובה Wizard) are present per mockup but bound to no-op handlers (Toast
-     "בקרוב") until their respective modals are built in follow-up sessions. -->
+     Visual styling lives in css/lens-inventory-page.css +
+     css/lens-inventory-modals.css. Behavioral wiring in lens-inventory-*.js.
+-->
 
 <div id="access-gate" style="display:none">
   <div class="empty-state">אין הרשאה למסך זה (lens.inventory.view).</div>
@@ -37,49 +27,104 @@
   <div class="lens-inv-header">
     <div class="lens-inv-title">
       <span>&#128300; ניהול מלאי עדשות־ראייה</span>
-      <span class="badge" id="lens-inv-context-badge">Optic Up</span>
+      <span class="badge" id="lens-inv-context-badge">Optic Up &middot; אופטיקה פריזמה &middot; סניף ראשי</span>
     </div>
     <div class="lens-inv-actions">
       <button type="button" class="btn" data-lens-inv-action="reports" title="דוחות חוסרים, עודף, ומצב מלאי">&#128202; דוחות</button>
       <button type="button" class="btn" data-lens-inv-action="export" title="ייצוא נתוני המסך הנוכחי ל-Excel">&#128229; ייצוא Excel</button>
       <button type="button" class="btn" data-lens-inv-action="search" title="חיפוש לפי ברקוד, סדרה, או SPH/CYL">&#128269; חיפוש מתקדם</button>
-      <button type="button" class="btn btn-scan-out" data-lens-inv-action="scan-out" title="סריקת ברקודים להורדה מהמלאי">&#128247; סריקה — הורדה</button>
-      <button type="button" class="btn btn-scan-in" data-lens-inv-action="scan-in" title="סריקת ברקודים להוספה למלאי">&#128247; סריקה — הוספה</button>
+      <button type="button" class="btn btn-scan-out" data-lens-inv-action="scan-out" title="סריקת ברקודים להורדה מהמלאי">&#128247; סריקה &mdash; הורדה</button>
+      <button type="button" class="btn btn-scan-in" data-lens-inv-action="scan-in" title="סריקת ברקודים להוספה למלאי">&#128247; סריקה &mdash; הוספה</button>
       <button type="button" class="btn btn-primary" data-lens-inv-action="bulk-add" title="הוספת טווח עדשות עם Wizard">&#10133; הוספה מרובה (Wizard)</button>
     </div>
   </div>
 
-  <!-- ============ FILTERS PANEL ============ -->
+  <!-- ============ FILTERS PANEL (6 chip rows) ============ -->
   <div class="lens-inv-filters">
 
-    <!-- Production-type chip row (emphasized) -->
-    <div class="filter-row filter-row-emphasized">
-      <span class="filter-label-strong">סוג ייצור:</span>
-      <button type="button" class="chip active" data-production-filter="stock" id="filter-stock">&#128230; מדף (Stock)</button>
-      <button type="button" class="chip" data-production-filter="custom" id="filter-custom">&#127981; ייצור (Custom)</button>
-      <span class="filter-hint">&#128161; הסינון מסנן את כל המסך — גריד, חוסרים, מצב מלאי</span>
+    <!-- Row 1: Production type (Stock/Custom/Both) — blue-emphasized -->
+    <div class="filter-row filter-row-production">
+      <span class="filter-label">סוג עדשה:</span>
+      <button type="button" class="chip chip-stock active" data-production-filter="stock">&#128230; מדף (Stock)</button>
+      <button type="button" class="chip chip-custom" data-production-filter="custom">&#127981; ייצור (Custom)</button>
+      <button type="button" class="chip secondary" data-production-filter="both">&#128256; שתיהן</button>
+      <span class="filter-hint">&#128161; הסינון מסנן את כל המסך &mdash; גריד, חוסרים, מצב מלאי</span>
     </div>
 
-    <!-- Variant selector row: brand → design → variant cascade (existing JS) -->
-    <div class="filter-row variant-selector-row">
-      <div class="field-group">
-        <label for="filter-brand">מותג</label>
-        <select id="filter-brand"><option value="">— הכל —</option></select>
-      </div>
-      <div class="field-group">
-        <label for="filter-design">סדרה (Design)</label>
-        <select id="filter-design"><option value="">— בחר דגם —</option></select>
-      </div>
-      <div class="field-group">
-        <label for="filter-variant">וריאציה (Index × ציפוי × קוטר)</label>
-        <select id="filter-variant"><option value="">— בחר וריאציה —</option></select>
-      </div>
-      <div class="field-group field-group-readonly">
-        <label>טווח הוריאנט</label>
-        <div class="variant-range-display" id="variant-range-display">— בחר וריאציה לתצוגה —</div>
-      </div>
+    <!-- Row 2: Lens type (single / bifocal / multifocal / progressive) -->
+    <div class="filter-row filter-row-lens-type">
+      <span class="filter-label">סוג עדשה:</span>
+      <button type="button" class="chip active" data-lens-type="single">חד-מוקדי</button>
+      <button type="button" class="chip" data-lens-type="bifocal">דו-מוקדי</button>
+      <button type="button" class="chip" data-lens-type="multifocal">מולטיפוקל</button>
+      <button type="button" class="chip" data-lens-type="progressive">פרוגרסיב משרדית</button>
     </div>
 
+    <!-- Row 3: Material / tint -->
+    <div class="filter-row filter-row-material">
+      <span class="filter-label">חומר/גוון:</span>
+      <button type="button" class="chip active" data-material="clear">שקוף</button>
+      <button type="button" class="chip" data-material="photochromic">מתכהה (Photochromic)</button>
+      <button type="button" class="chip" data-material="tinted">צבע (Tinted)</button>
+      <button type="button" class="chip" data-material="polaroid">פולורואיד</button>
+    </div>
+
+    <!-- Row 4: Index -->
+    <div class="filter-row filter-row-index">
+      <span class="filter-label">Index:</span>
+      <button type="button" class="chip" data-index="1.5">1.5</button>
+      <button type="button" class="chip" data-index="1.56">1.56</button>
+      <button type="button" class="chip" data-index="1.6">1.6</button>
+      <button type="button" class="chip active" data-index="1.67">1.67</button>
+      <button type="button" class="chip" data-index="1.74">1.74</button>
+    </div>
+
+    <!-- Row 5: Stock status (6 colored-border chips) -->
+    <div class="filter-row filter-row-status">
+      <span class="filter-label">מצב מלאי:</span>
+      <button type="button" class="chip active" data-stock-status="all">הכל</button>
+      <button type="button" class="chip chip-out" data-stock-status="out">&#128308; חסר (אזל)</button>
+      <button type="button" class="chip chip-low" data-stock-status="low">&#128993; מתחת ליעד</button>
+      <button type="button" class="chip chip-on-target" data-stock-status="on-target">&#128994; תואם ליעד</button>
+      <button type="button" class="chip chip-over" data-stock-status="over">&#128311; עודף</button>
+      <button type="button" class="chip secondary" data-stock-status="no-target">&#9899; ללא יעד</button>
+    </div>
+
+    <!-- Row 6: Brand chips + Supplier chips inline -->
+    <div class="filter-row filter-row-brand-supplier">
+      <span class="filter-label">מותג:</span>
+      <button type="button" class="chip secondary active" data-brand-name="Hoya">Hoya</button>
+      <button type="button" class="chip secondary" data-brand-name="Essilor">Essilor</button>
+      <button type="button" class="chip secondary" data-brand-name="Zeiss">Zeiss</button>
+      <button type="button" class="chip secondary" data-brand-name="Shamir">Shamir</button>
+      <button type="button" class="chip secondary" data-brand-name="Rodenstock">Rodenstock</button>
+      <span class="filter-label label-supplier">ספק:</span>
+      <button type="button" class="chip secondary active" data-supplier-name="לפידות">לפידות</button>
+      <button type="button" class="chip secondary" data-supplier-name="בדולח">בדולח</button>
+      <button type="button" class="chip secondary" data-supplier-name="סגם">סגם</button>
+    </div>
+
+  </div>
+
+  <!-- ============ VARIANT SELECTOR (Design + Diameter + Range) ============ -->
+  <div class="lens-inv-variant-selector">
+    <!-- Hidden brand select — driven by row-6 brand chips; preserves cascade JS contract -->
+    <div class="field-group field-group-hidden">
+      <label for="filter-brand">מותג</label>
+      <select id="filter-brand"><option value="">— הכל —</option></select>
+    </div>
+    <div class="field-group">
+      <label for="filter-design">סדרה (Design):</label>
+      <select id="filter-design"><option value="">— בחר דגם —</option></select>
+    </div>
+    <div class="field-group">
+      <label for="filter-variant">קוטר (Diameter):</label>
+      <select id="filter-variant"><option value="">— בחר וריאציה —</option></select>
+    </div>
+    <div class="field-group field-group-range">
+      <label>טווח הוריאנט (מהיצרן):</label>
+      <div class="variant-range-display empty" id="variant-range-display">— בחר וריאציה לתצוגה —</div>
+    </div>
   </div>
 
   <!-- ============ MAIN: GRID PANEL + SIDE PANEL ============ -->
@@ -88,13 +133,13 @@
     <!-- GRID PANEL -->
     <div class="lens-inv-grid-panel">
       <div class="grid-panel-header">
-        <h3>רשת SPH &times; CYL</h3>
+        <h3 id="grid-context-label">רשת SPH &times; CYL</h3>
         <div class="grid-legend">
           <span><span class="legend-box legend-on-target"></span>תואם ליעד</span>
           <span><span class="legend-box legend-low"></span>מתחת ליעד</span>
           <span><span class="legend-box legend-out-needed"></span>אזל (יש יעד)</span>
-          <span><span class="legend-box legend-over-target"></span>עודף</span>
-          <span><span class="legend-box legend-no-target"></span>ללא יעד</span>
+          <span><span class="legend-box legend-over-target"></span>עודף מעל היעד</span>
+          <span><span class="legend-box legend-no-target"></span>0 ללא יעד</span>
           <span><span class="legend-box legend-unavailable"></span>לא אצל הספק</span>
         </div>
       </div>
@@ -103,33 +148,463 @@
       </div>
     </div>
 
-    <!-- SIDE PANEL: selected-cell card containing lots -->
+    <!-- SIDE PANEL -->
     <div class="lens-inv-side-panel">
+
+      <!-- Card 1: Selected cell — lots-table + qty controls + target editor -->
       <div class="panel-card">
-        <div class="panel-card-header panel-card-header-gold">
+        <div class="panel-card-header">
           <span>&#128205; תא נבחר</span>
-          <span class="panel-card-header-sub" id="selected-cell-coords">—</span>
         </div>
         <div class="panel-card-body">
-          <div id="lot-container" class="lot-container">
-            <div class="empty-state">לחץ על תא בטבלה לצפייה בחבילות</div>
+
+          <!-- Gold-gradient banner with SPH × CYL value -->
+          <div class="selected-cell-info" id="selected-cell-info">
+            <div class="label">SPH &times; CYL</div>
+            <div class="value" id="selected-cell-coords">&mdash;</div>
+            <div class="meta" id="selected-cell-meta">בחר תא בטבלה לצפייה בחבילות</div>
           </div>
+
+          <!-- Lot drill-down (existing showLotsFor renders into #lot-container) -->
+          <div id="lot-container" class="lot-container">
+            <div class="empty-state">בחר תא בטבלה לצפייה בחבילות</div>
+          </div>
+
+          <!-- Stock + Target stats row (mockup §"תא נבחר") -->
+          <div class="stock-target-row" id="stock-target-row" style="display:none">
+            <div class="stat-col">
+              <div class="stat-label">במלאי</div>
+              <strong class="stat-value-stock" id="stat-stock-value">0</strong>
+            </div>
+            <div class="stat-col">
+              <div class="stat-label">יעד</div>
+              <div class="target-editor">
+                <input type="number" id="target-input" value="0" min="0" />
+                <button type="button" id="target-save" title="עדכן יעד">&#10003;</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Status hint (over/low/out/on-target/no-target) -->
+          <div class="status-hint hint-no-target" id="cell-status-hint" style="display:none"></div>
+
+          <!-- qty controls (large + and -) -->
+          <div class="qty-controls" id="qty-controls" style="display:none">
+            <button type="button" class="qty-btn minus" data-qty-action="minus">&minus;</button>
+            <span class="qty-display" id="qty-display">0</span>
+            <button type="button" class="qty-btn plus" data-qty-action="plus">+</button>
+          </div>
+
         </div>
       </div>
+
+      <!-- Card 2: Manual add -->
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <span>הוספה ידנית</span>
+        </div>
+        <div class="panel-card-body">
+          <div class="field-group">
+            <label>ברקוד / סריקה:</label>
+            <div class="quick-action">
+              <input type="text" id="manual-barcode" placeholder="סרוק או הקלד..." />
+              <button type="button" class="btn-icon" title="סריקה" data-lens-inv-action="scan-in">&#128247;</button>
+            </div>
+          </div>
+          <div class="manual-add-grid">
+            <div class="field-group">
+              <label>SPH:</label>
+              <input type="text" id="manual-sph" placeholder="-2.50" />
+            </div>
+            <div class="field-group">
+              <label>CYL:</label>
+              <input type="text" id="manual-cyl" placeholder="-0.75" />
+            </div>
+          </div>
+          <div class="manual-add-grid">
+            <div class="field-group">
+              <label>כמות:</label>
+              <input type="number" id="manual-qty" placeholder="1" min="1" />
+            </div>
+            <div class="field-group">
+              <label>עלות (לא כולל מע"מ):</label>
+              <input type="text" id="manual-cost" placeholder="&#8362;85" />
+            </div>
+          </div>
+          <button type="button" class="btn-add-stock" id="manual-add-submit" title="הוסף למלאי (יבוצע בלשונית הבאה)">&#10133; הוסף למלאי</button>
+        </div>
+      </div>
+
     </div>
 
   </div>
 
-  <!-- ============ BOTTOM TABS (shell, content deferred) ============ -->
+  <!-- ============ BOTTOM TABS ============ -->
   <div class="lens-inv-bottom-section">
     <div class="lens-inv-bottom-tabs-header" role="tablist">
       <button type="button" class="bottom-tab active" data-bottom-tab="movements" role="tab" aria-selected="true">&#128203; תנועות מלאי</button>
       <button type="button" class="bottom-tab" data-bottom-tab="pricing" role="tab" aria-selected="false">&#128176; מחירים והנחות</button>
-      <button type="button" class="bottom-tab" data-bottom-tab="alerts" role="tab" aria-selected="false">&#9888;&#65039; התראות</button>
+      <button type="button" class="bottom-tab" data-bottom-tab="alerts" role="tab" aria-selected="false">&#9888;&#65039; התראות (3)</button>
       <button type="button" class="bottom-tab" data-bottom-tab="analytics" role="tab" aria-selected="false">&#128202; ניתוח מלאי</button>
     </div>
-    <div class="lens-inv-bottom-tabs-body" role="tabpanel">
-      <div class="empty-state">תנועות מלאי לוריאציה הנוכחית — הצגה בלשונית הבאה של ה-Pipeline.</div>
+    <div class="lens-inv-bottom-tabs-body" id="bottom-tabs-body" role="tabpanel">
+      <!-- Default: movements tab content (sample data per mockup §1) -->
+      <table class="movements-table" id="movements-sample-table">
+        <thead>
+          <tr>
+            <th>תאריך</th>
+            <th>סוג תנועה</th>
+            <th>SPH &times; CYL</th>
+            <th>אצווה</th>
+            <th>כמות</th>
+            <th>עלות יחידה</th>
+            <th>מסמך</th>
+            <th>משתמש</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>12.05.26 14:23</td>
+            <td><span class="movement-type sale">מכירה</span></td>
+            <td>-2.50 &times; -0.75</td>
+            <td>L-2401 (FIFO)</td>
+            <td class="movement-qty-out">&minus;1</td>
+            <td>&#8362;82.00</td>
+            <td>הזמנה #4521</td>
+            <td>שירה</td>
+          </tr>
+          <tr>
+            <td>12.05.26 11:08</td>
+            <td><span class="movement-type return">החזרה מלקוח</span></td>
+            <td>-3.00 &times; -1.00</td>
+            <td>L-2425 (חדש)</td>
+            <td class="movement-qty-in">+1</td>
+            <td>&#8362;82.00</td>
+            <td>החזרה #87</td>
+            <td>אבי</td>
+          </tr>
+          <tr>
+            <td>10.05.26 09:45</td>
+            <td><span class="movement-type purchase">רכישה מספק</span></td>
+            <td>טווח שלם</td>
+            <td>L-2418 (חדש)</td>
+            <td class="movement-qty-in">+48</td>
+            <td>&#8362;85.00</td>
+            <td>קבלת סחורה #312</td>
+            <td>דניאל</td>
+          </tr>
+          <tr>
+            <td>08.05.26 16:30</td>
+            <td><span class="movement-type transfer">העברה בין סניפים</span></td>
+            <td>-1.00 &times; 0.00</td>
+            <td>L-2415</td>
+            <td class="movement-qty-tr">&larr;2</td>
+            <td>&#8362;82.00</td>
+            <td>העברה #15</td>
+            <td>דניאל</td>
+          </tr>
+          <tr>
+            <td>07.05.26 10:12</td>
+            <td><span class="movement-type adjustment">תיקון ספירה</span></td>
+            <td>-2.00 &times; -0.50</td>
+            <td>L-2422 (חדש)</td>
+            <td class="movement-qty-adj">+2</td>
+            <td>&#8362;85.00</td>
+            <td>ספירה #44</td>
+            <td>שירה</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ REPORTS MODAL ============ -->
+  <div class="modal-overlay" id="reportsModal" role="dialog" aria-modal="true" aria-labelledby="reportsModalTitle">
+    <div class="modal modal-wide">
+      <div class="modal-header modal-header-navy">
+        <div class="modal-title" id="reportsModalTitle">&#128202; דוחות מלאי</div>
+        <button type="button" class="modal-close" data-modal-close="reportsModal" aria-label="סגור">&times;</button>
+      </div>
+      <div class="modal-body reports-modal-body">
+
+        <!-- Report type tabs -->
+        <div class="rpt-tabs">
+          <button type="button" class="rpt-tab rpt-tab-missing active" data-rpt-tab="missing">&#128308; חסרים (אזלו) &mdash; 14</button>
+          <button type="button" class="rpt-tab rpt-tab-below" data-rpt-tab="below">&#128993; מתחת ליעד &mdash; 23</button>
+          <button type="button" class="rpt-tab rpt-tab-over" data-rpt-tab="over">&#128311; עודף &mdash; 8</button>
+          <button type="button" class="rpt-tab rpt-tab-all" data-rpt-tab="all">&#128203; כל המלאי &mdash; 412</button>
+          <button type="button" class="rpt-tab rpt-tab-filtered" data-rpt-tab="filtered">&#127919; לפי סינון נוכחי</button>
+        </div>
+
+        <!-- Report filters bar -->
+        <div class="rpt-filters">
+          <span class="filter-label-inline">סינון נוסף:</span>
+          <select><option>כל סוגי העדשה</option><option>חד-מוקדי</option><option>מולטיפוקל</option></select>
+          <select><option>כל המותגים</option><option>Hoya</option><option>Essilor</option></select>
+          <select><option>כל הספקים</option><option>לפידות</option><option>בדולח</option></select>
+          <select><option>כל הסניפים</option><option>סניף ראשי</option><option>סניף שני</option></select>
+          <div class="rpt-actions">
+            <button type="button" class="btn">&#128229; ייצוא Excel</button>
+            <button type="button" class="btn">&#128424;&#65039; הדפסה</button>
+            <button type="button" class="btn btn-order">&#128722; הזמן חוסרים מהספק</button>
+          </div>
+        </div>
+
+        <!-- Report table -->
+        <div class="rpt-table-wrap">
+          <table class="rpt-table">
+            <thead>
+              <tr>
+                <th>סדרה</th>
+                <th>מותג</th>
+                <th>ספק</th>
+                <th>Index</th>
+                <th>קוטר</th>
+                <th class="rpt-th-center">SPH</th>
+                <th class="rpt-th-center">CYL</th>
+                <th class="rpt-th-center">יעד</th>
+                <th class="rpt-th-center">במלאי</th>
+                <th class="rpt-th-center">חסר</th>
+                <th class="rpt-th-center">מצב</th>
+                <th>סניף</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row-missing">
+                <td>Hilux EYAS BLC</td><td>Hoya</td><td>לפידות</td>
+                <td>1.67</td><td>70mm</td>
+                <td class="rpt-td-center qty-cell-strong">-3.50</td>
+                <td class="rpt-td-center qty-cell-strong">-0.75</td>
+                <td class="rpt-td-center">2</td>
+                <td class="rpt-td-center qty-zero">0</td>
+                <td class="rpt-td-center qty-zero">-2</td>
+                <td class="rpt-td-center"><span class="status-pill">&#128308; אזל</span></td>
+                <td>ראשי</td>
+              </tr>
+              <tr class="row-missing">
+                <td>Hilux EYAS BLC</td><td>Hoya</td><td>לפידות</td>
+                <td>1.67</td><td>70mm</td>
+                <td class="rpt-td-center qty-cell-strong">-4.00</td>
+                <td class="rpt-td-center qty-cell-strong">-1.00</td>
+                <td class="rpt-td-center">2</td>
+                <td class="rpt-td-center qty-zero">0</td>
+                <td class="rpt-td-center qty-zero">-2</td>
+                <td class="rpt-td-center"><span class="status-pill">&#128308; אזל</span></td>
+                <td>ראשי</td>
+              </tr>
+              <tr class="row-missing">
+                <td>Hilux EYAS UVC HVLL</td><td>Hoya</td><td>לפידות</td>
+                <td>1.6</td><td>70mm</td>
+                <td class="rpt-td-center qty-cell-strong">+1.50</td>
+                <td class="rpt-td-center qty-cell-strong">-0.50</td>
+                <td class="rpt-td-center">3</td>
+                <td class="rpt-td-center qty-zero">0</td>
+                <td class="rpt-td-center qty-zero">-3</td>
+                <td class="rpt-td-center"><span class="status-pill">&#128308; אזל</span></td>
+                <td>ראשי</td>
+              </tr>
+              <tr class="row-missing">
+                <td>Defender UV 420 SN</td><td>Hoya</td><td>לפידות</td>
+                <td>1.6</td><td>70mm</td>
+                <td class="rpt-td-center qty-cell-strong">-2.00</td>
+                <td class="rpt-td-center qty-cell-strong">0.00</td>
+                <td class="rpt-td-center">4</td>
+                <td class="rpt-td-center qty-zero">0</td>
+                <td class="rpt-td-center qty-zero">-4</td>
+                <td class="rpt-td-center"><span class="status-pill">&#128308; אזל</span></td>
+                <td>ראשי</td>
+              </tr>
+              <tr class="row-missing">
+                <td>Hilux EYAS BLC</td><td>Hoya</td><td>לפידות</td>
+                <td>1.67</td><td>70mm</td>
+                <td class="rpt-td-center qty-cell-strong">-5.00</td>
+                <td class="rpt-td-center qty-cell-strong">-1.50</td>
+                <td class="rpt-td-center">2</td>
+                <td class="rpt-td-center qty-zero">0</td>
+                <td class="rpt-td-center qty-zero">-2</td>
+                <td class="rpt-td-center"><span class="status-pill">&#128308; אזל</span></td>
+                <td>שני</td>
+              </tr>
+              <tr><td colspan="12" style="padding:14px; text-align:center; color:#95a5a6; font-size:12px;">... ועוד 9 שורות</td></tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="9">סה"כ חסרים: 14 שורות</td>
+                <td class="total-shortage">-39 יחידות</td>
+                <td colspan="2" class="total-est">ערך הזמנה משוער: &#8362;3,315 (ללא מע"מ)</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCAN MODAL (IN/OUT) ============ -->
+  <div class="modal-overlay" id="scanModal" role="dialog" aria-modal="true" aria-labelledby="scanModalTitle">
+    <div class="modal modal-medium">
+      <div class="modal-header" id="scanModalHeader">
+        <div class="modal-title" id="scanModalTitle">&#128247; סריקה &mdash; הוספה למלאי</div>
+        <button type="button" class="modal-close" data-modal-close="scanModal" aria-label="סגור">&times;</button>
+      </div>
+      <div class="modal-body">
+
+        <!-- Scan input area -->
+        <div class="scan-area">
+          <div class="scan-instruction">סרוק את ברקוד העדשה (או הקלד ידנית)</div>
+          <input type="text" id="scanInput" placeholder="ממתין לסריקה..." autocomplete="off" />
+          <div class="scan-helper">לחץ Enter אחרי כל סריקה</div>
+        </div>
+
+        <!-- Reason row (only for OUT mode) -->
+        <div class="scan-reason-row" id="scanReasonRow">
+          <label class="reason-label">סיבת הורדה מהמלאי: <span class="reason-required">*</span></label>
+          <div class="scan-reason-chips">
+            <button type="button" class="chip active" data-scan-reason="return-supplier">החזרה לספק</button>
+            <button type="button" class="chip" data-scan-reason="broken">פגום / שבר</button>
+            <button type="button" class="chip" data-scan-reason="entry-error">טעות הזנה</button>
+            <button type="button" class="chip" data-scan-reason="lost">אבד</button>
+            <button type="button" class="chip" data-scan-reason="count-fix">תיקון ספירה</button>
+            <button type="button" class="chip" data-scan-reason="other">אחר (הוסף הערה)</button>
+          </div>
+          <input type="text" class="scan-reason-note" placeholder="הערה (אופציונלי)..." />
+        </div>
+
+        <!-- Scanned items table -->
+        <div class="scanned-items">
+          <div class="scanned-items-header">
+            <span>פריטים שנסרקו (5)</span>
+            <span class="scanned-items-helper">לחיצה ימנית להסרה</span>
+          </div>
+          <table class="scanned-items-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>ברקוד</th>
+                <th>סדרה</th>
+                <th>SPH &times; CYL</th>
+                <th>אצווה</th>
+                <th class="th-center">סטטוס</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td class="td-mono">7290011234567</td>
+                <td>Hilux EYAS BLC 1.67</td>
+                <td>-2.50 &times; -0.75</td>
+                <td>L-2401</td>
+                <td class="td-center"><span class="scan-ok">&#10003;</span></td>
+              </tr>
+              <tr class="row-alt">
+                <td>2</td>
+                <td class="td-mono">7290011234574</td>
+                <td>Hilux EYAS BLC 1.67</td>
+                <td>-3.00 &times; -1.00</td>
+                <td>L-2401</td>
+                <td class="td-center"><span class="scan-ok">&#10003;</span></td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td class="td-mono">7290011234581</td>
+                <td>Hilux EYAS BLC 1.67</td>
+                <td>-2.00 &times; -0.50</td>
+                <td>L-2418</td>
+                <td class="td-center"><span class="scan-ok">&#10003;</span></td>
+              </tr>
+              <tr class="row-alt">
+                <td>4</td>
+                <td class="td-mono">7290011234598</td>
+                <td>Hilux EYAS BLC 1.67</td>
+                <td>-2.00 &times; -0.50</td>
+                <td>L-2418</td>
+                <td class="td-center"><span class="scan-ok">&#10003;</span></td>
+              </tr>
+              <tr class="row-warn">
+                <td>5</td>
+                <td class="td-mono">7290011999999</td>
+                <td class="scan-warn-text" colspan="3">ברקוד לא מזוהה &mdash; נדרשת הקלדה ידנית</td>
+                <td class="td-center"><span class="scan-warn">&#9888;</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-modal-close="scanModal">ביטול</button>
+        <button type="button" class="btn scan-submit-in" id="scanSubmitBtn">&#10003; הכנס למלאי (5 פריטים)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ BULK ADD WIZARD MODAL ============ -->
+  <div class="modal-overlay" id="bulkModal" role="dialog" aria-modal="true" aria-labelledby="bulkModalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="bulkModalTitle">&#10133; Wizard &mdash; הוספת טווח עדשות למלאי</div>
+        <button type="button" class="modal-close" data-modal-close="bulkModal" aria-label="סגור">&times;</button>
+      </div>
+      <div class="modal-body">
+
+        <div class="wizard-step">
+          <div class="step-label"><span class="step-num">1</span> בחר וריאנט עדשה</div>
+          <div class="step-body-pill">
+            <strong>Hoya Hilux EYAS BLC 1.67 שקוף 70mm</strong><br>
+            <span style="font-size:11px;">ספק: לפידות &middot; טווח יצרן: SPH -10..+6, CYL 0..-4</span>
+          </div>
+        </div>
+
+        <div class="wizard-step">
+          <div class="step-label"><span class="step-num">2</span> טווח SPH</div>
+          <div class="range-inputs">
+            <input type="text" value="-6.00" />
+            <span class="range-sep">עד</span>
+            <input type="text" value="+6.00" />
+          </div>
+        </div>
+
+        <div class="wizard-step">
+          <div class="step-label"><span class="step-num">3</span> טווח CYL</div>
+          <div class="range-inputs">
+            <input type="text" value="0.00" />
+            <span class="range-sep">עד</span>
+            <input type="text" value="-2.00" />
+          </div>
+        </div>
+
+        <div class="wizard-step">
+          <div class="step-label"><span class="step-num">4</span> מלאי יעד לכל תא (מינימום רצוי על המדף)</div>
+          <div class="wizard-grid-2col">
+            <div class="field-group">
+              <label>יעד:</label>
+              <input type="number" value="2" min="1" />
+            </div>
+            <div class="wizard-helper">
+              כאשר המלאי בפועל יהיה מתחת ליעד &mdash; התא יסומן בצהוב. אזל לחלוטין &rarr; אדום. מעל היעד &rarr; טורקיז.
+            </div>
+          </div>
+        </div>
+
+        <div class="wizard-step">
+          <div class="step-label"><span class="step-num">5</span> כמות התחלתית לכל תא + עלות יחידה</div>
+          <div class="wizard-grid-2col">
+            <div class="field-group"><label>כמות התחלתית:</label><input type="number" value="2" min="1" /></div>
+            <div class="field-group"><label>עלות יחידה (&#8362;, לא כולל מע"מ):</label><input type="text" value="85" /></div>
+          </div>
+        </div>
+
+        <div class="wizard-preview">
+          <div class="preview-num">65 שורות מלאי + יעדים</div>
+          <div class="preview-label">ייווצרו (13 ערכי SPH &times; 5 ערכי CYL). אצווה חדשה: L-2426. סה"כ עלות: <strong>&#8362;11,050</strong>. יעד כולל: 130 יחידות.</div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-modal-close="bulkModal">ביטול</button>
+        <button type="button" class="btn btn-success">&#10003; צור 65 שורות מלאי</button>
+      </div>
     </div>
   </div>
 
