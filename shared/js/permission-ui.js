@@ -62,9 +62,33 @@
     r.querySelectorAll('[data-tab-permission]').forEach(_processTabEl);
   }
 
+  // Clear inline display:none from previously-hidden gated elements so a
+  // re-scan can re-evaluate them. Necessary when permissions are seeded
+  // AFTER the initial PermissionUI.apply() — e.g., a new permission key
+  // added between sessions; the cached lookup returned false at first
+  // scan, the button got display:none inline, and apply() has no UN-hide
+  // path because it only ADDS hides. refresh() does clear+scan as a unit.
+  // Added 2026-05-17 by M1_FINAL_NIGHT_PHASE_1_PRIVATE_CATALOG_UNIFIED
+  // Phase 1-FIX after Daniel manual verification caught new tab buttons
+  // hidden despite user having the seeded perms.
+  function _refresh(root) {
+    var r = root || document;
+    r.querySelectorAll('[data-permission], [data-tab-permission]').forEach(function (el) {
+      if (el.style && el.style.display === 'none') el.style.removeProperty('display');
+      if (el.hasAttribute('disabled') && el.getAttribute('data-permission-mode') === 'disable') {
+        el.removeAttribute('disabled');
+        if (el.style) { el.style.removeProperty('opacity'); el.style.removeProperty('pointer-events'); }
+        if (el.title === 'אין הרשאה') el.removeAttribute('title');
+      }
+    });
+    _scan(r);
+  }
+
   window.PermissionUI = {
-    apply()            { _scan(document); },
-    applyTo(container) { if (container) _scan(container); },
-    check(permission)  { return _checkPermStr(permission); }
+    apply()              { _scan(document); },
+    applyTo(container)   { if (container) _scan(container); },
+    check(permission)    { return _checkPermStr(permission); },
+    refresh(root)        { _refresh(root); },
+    refreshTo(container) { if (container) _refresh(container); }
   };
 })();
