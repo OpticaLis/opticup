@@ -255,6 +255,19 @@ Triggered when the dispatch line includes **"Pipeline mode: full-auto"**.
 If `Skill: opticup-localhost-tester` fails to load: retry ONCE. On second failure, write an escalation to `modules/Module N/escalations/{ISO_TS}_skill-load-failure.md` and emit:
 `🛑 נתקעתי על טעינת Skill: opticup-localhost-tester — escalation: {path}`
 
+### Pre-Escalation: Supervisor Triage (Shadow Mode — added 2026-05-17 by SUPERVISOR_SKILL_PHASE_1)
+
+**Before writing any non-skill-load-failure escalation file**, you MUST first invoke the Supervisor Triage protocol. SKILL-LOAD-FAILURE escalations bypass Triage (the dispatcher needs to know immediately).
+
+For all other escalations (audit findings that need an Architect decision, ambiguity in SPEC scope discovered mid-review, Iron-Rule edge cases the SPEC didn't anticipate):
+
+1. Write the escalation file first, using the standard 5-heading shape (`Stuck at:`, `What I tried:`, `Options I see:`, `My recommendation:`, `Question for Architect:`).
+2. Run Triage by following `.claude/skills/opticup-supervisor/core/triage-protocol.md` against the file you just wrote. The protocol validates format, checks Hard-Stop categories, searches canonical decision sources, and writes a sibling `ARCHITECT_DECISION_*.md` response.
+3. Emit the Supervisor's status line (Hebrew) per the adapter's localization.
+4. **In Shadow Mode (current launch state) — STILL emit your standard Reviewer escalation Hebrew line afterward** (`🛑 Review חוסם — {SLUG} REOPEN, escalation: {path}`). Both Supervisor and human-escalation paths run in parallel for the 3-day learning window per CLAUDE.md §11 → Supervisor layer.
+
+Hard-Stop categories defined in `.claude/skills/opticup-supervisor/adapters/opticup/skill-destinations.md` (production-tenant write, main-branch touch, RLS policy change, secrets exposure, destructive Supabase op, strategic scope change, Iron Rule change) ALWAYS escalate to the Foreman/Daniel regardless of how strong a canonical-source match would have been.
+
 ### Status Line (Hebrew, single line, per phase)
 
 The Reviewer emits ONE Hebrew status line at end of its phase. ≤ 60 chars. Examples:

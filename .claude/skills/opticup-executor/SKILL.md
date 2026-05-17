@@ -1068,6 +1068,28 @@ SPEC retro corpus. Run both checks every time.
 escalate to the Foreman (opticup-strategic), which is the only chat that
 speaks to Daniel in strategic terms.
 
+### Pre-Escalation: Supervisor Triage (Shadow Mode — added 2026-05-17 by SUPERVISOR_SKILL_PHASE_1)
+
+**Before writing the escalation file** at `modules/Module N/escalations/{ISO_TS}_{TOPIC}.md`, you MUST first invoke the Supervisor Triage protocol:
+
+1. **Write the escalation file first** — it is the input to Triage. Use the standard 5-heading shape (`Stuck at:`, `What I tried:`, `Options I see:`, `My recommendation:`, `Question for Architect:`).
+2. **Then run Triage** by following `.claude/skills/opticup-supervisor/core/triage-protocol.md` against the file you just wrote. The protocol:
+   - Validates the escalation format.
+   - Checks the Hard-Stop categories in `.claude/skills/opticup-supervisor/adapters/opticup/skill-destinations.md`.
+   - If no Hard-Stop fires, searches the canonical decision sources in the priority order locked by `.claude/skills/opticup-supervisor/adapters/opticup/decisions-log-paths.md`.
+   - Writes a sibling response file `ARCHITECT_DECISION_{ISO_TS}_{TOPIC}.md` with `Status: SHADOW_PROPOSAL` + `Confidence: N` + `Cited source: …`.
+   - Appends a row to `_archive/supervisor-log/shadow-{YYYY-MM-DD}.md`.
+3. **Emit the Supervisor's status line** (Hebrew) to the dispatcher per the adapter's localization.
+4. **In Shadow Mode (the launch state — current), STILL emit your standard escalation Hebrew line to the Foreman afterward.** Both Supervisor and human-escalation paths run in parallel for the 3-day learning window per CLAUDE.md §11 → Supervisor layer.
+
+**Why this order:** the Foreman receives BOTH (a) your standard escalation line (preserving today's behavior end-to-end) AND (b) the Supervisor's proposed resolution path. Daniel resolves; the Supervisor's match/mismatch feeds the learning loop.
+
+**When NOT to run Triage:**
+- The escalation is a SKILL-LOAD failure (your dispatcher needs to know immediately; do not detour through Triage).
+- The escalation involves Hard-Stop categories (production-tenant write, main-branch touch, RLS policy change, secrets exposure — see Adapter). For these, you may write the escalation file AND optionally run Triage; the Supervisor will emit `🛑 Hard-Stop` and forward to Daniel anyway. Triage is fast (a few file reads) so the cost of running it is near zero.
+
+**Active Mode (future flip — not the launch state):** when Daniel approves the Active flip via a CLAUDE.md §11 update, the Supervisor's `Status: ACTIVE_RESOLUTION` at Confidence ≥ 3 lets the pipeline auto-resume without emitting your standard escalation Hebrew line. Until that flip, Shadow Mode is the contract.
+
 **Pre-existing untracked / modified files in Full-Auto Pipeline mode.** When
 the dispatch line includes "Full-Auto Pipeline" or "no Daniel questions", do
 NOT apply CLAUDE.md §1 step 4 (the "ask once" gate). Instead, log the

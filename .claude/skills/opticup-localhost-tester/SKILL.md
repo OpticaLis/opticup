@@ -222,6 +222,19 @@ Triggered when the dispatch line includes **"Pipeline mode: full-auto"**.
 
 If `Skill: opticup-strategic` fails to load: retry ONCE. On second failure, write an escalation to `modules/Module N/escalations/{ISO_TS}_skill-load-failure.md` and emit the standard Hebrew escalation line. If `npm run smoke` fails: retry ONCE (some flakiness around server warm-up is known); on second failure, set TEST_REPORT verdict to FAIL, write FINDINGS entry, escalate.
 
+### Pre-Escalation: Supervisor Triage (Shadow Mode — added 2026-05-17 by SUPERVISOR_SKILL_PHASE_1)
+
+**Before writing any non-skill-load-failure escalation file**, you MUST first invoke the Supervisor Triage protocol. SKILL-LOAD-FAILURE escalations bypass Triage. VFV-BLOCKED escalations (`escalations/{ISO_TS}_VFV_BLOCKED.md` per §"Authority and escalation") MAY run Triage — Supervisor's response often suggests a known login/auth path that unblocks VFV without escalating to the Foreman.
+
+For all other escalations (smoke failures with ambiguous root cause, VFV finding a regression whose disposition isn't clear from the SPEC, layout drift on a surface the SPEC didn't explicitly target):
+
+1. Write the escalation file first, using the standard 5-heading shape (`Stuck at:`, `What I tried:`, `Options I see:`, `My recommendation:`, `Question for Architect:`).
+2. Run Triage by following `.claude/skills/opticup-supervisor/core/triage-protocol.md`. It writes a sibling `ARCHITECT_DECISION_*.md` response with `Status: SHADOW_PROPOSAL` + `Confidence: N` + `Cited source: …`, and appends a row to `_archive/supervisor-log/shadow-{YYYY-MM-DD}.md`.
+3. Emit the Supervisor's status line (Hebrew) per the adapter's localization.
+4. **In Shadow Mode (current launch state) — STILL emit your standard Tester escalation Hebrew line afterward** (`🛑 Smoke {N}/7 — escalation: {path}` or VFV-blocked equivalent). Both paths run in parallel for the 3-day learning window per CLAUDE.md §11 → Supervisor layer.
+
+Hard-Stop categories defined in `.claude/skills/opticup-supervisor/adapters/opticup/skill-destinations.md` (production-tenant write, main-branch touch, RLS policy change, secrets exposure, destructive Supabase op, strategic scope change, Iron Rule change) ALWAYS escalate to the Foreman/Daniel regardless of how strong a canonical-source match would have been.
+
 ### Status Line (Hebrew, single line, per phase)
 
 The Localhost-Tester emits ONE Hebrew status line at end of its phase. ≤ 60 chars. Examples:
