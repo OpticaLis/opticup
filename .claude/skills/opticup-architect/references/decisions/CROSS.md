@@ -216,3 +216,6 @@ The skill MUST NOT autonomously decide:
 - Coordination Brief: `modules/Module 1.5 - Shared Components/architecture-brief/PARALLEL_PIPELINE_COORDINATION_BRIEF.md`
 - Coordination retrospective: `modules/Module 1.5 - Shared Components/docs/specs/PARALLEL_PIPELINE_COORDINATION/FOREMAN_REVIEW.md`
 
+### Decision H — Applied pending-entries deletion is not Iron Rule 32 destructive
+Sweep-and-delete is the documented end-state per opticup-architect SKILL "Cowork File-Write Capability Map" + "Sweep Layer 1" protocol. Deletion without per-instance SPEC + `--no-verify` acceptable. Codify in Iron Rule 32 documentation as standing exception.
+
