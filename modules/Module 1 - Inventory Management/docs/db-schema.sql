@@ -2357,3 +2357,25 @@ ALTER TABLE public.purchase_receipt
 -- The corresponding supplier-debt-side work (manager review of unmatched
 -- documents, debt-from-receipt matching) is deferred to a future Brief
 -- targeting the suppliers-debt module — explicitly out of inventory scope.
+
+-- ============================================================================
+-- M1_LENS_DB_SCHEMA_RECEIPTS_NOTES — Foundation deltas for lens mockup rebuild
+-- SPEC: docs/specs/M1_LENS_DB_SCHEMA_RECEIPTS_NOTES/SPEC.md
+-- Brief: architecture-brief/M1_LENS_MOCKUP_FIDELITY_FULL_REBUILD_BRIEF.md
+-- Architect decision: docs/specs/M1_LENS_DB_SCHEMA_RECEIPTS_NOTES/
+--                     ARCHITECT_DECISION_001_SPEC3_AMENDMENT.md
+-- Date: 2026-05-17
+-- ============================================================================
+
+-- Applied via 3 Supabase MCP migrations:
+--
+-- 1) 20260517161202_m1_lens_purchase_receipt_has_no_invoice
+--    ALTER TABLE purchase_receipt ADD COLUMN has_no_invoice
+--      BOOLEAN NOT NULL DEFAULT FALSE.
+--    Backs the Brief decision #14 "אין תעודה" checkbox on the inventory
+--    quick-receipt drawer. When TRUE, the receipt flows to the bookkeeper
+--    Invoices Inbox for manager audit. Existing rows default to FALSE
+--    (legacy receipts presumed documented).
+--
+--    FIELD_MAP entry added: 'אין תעודה':'has_no_invoice' (purchase_receipt
+--    block in js/shared-field-map.js).

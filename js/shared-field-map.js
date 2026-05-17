@@ -218,6 +218,7 @@ const FIELD_MAP = {
     'תעודת משלוח התקבלה בתאריך':'delivery_note_received_at',
     'סחורה התקבלה בתאריך':'goods_received_at','קישור מסמך סרוק':'scanned_doc_url',
     'קופסת משלוח (M9)':'shipping_box_id','ברקוד ספק על הקופסה':'shipping_box_supplier_barcode',
+    'אין תעודה':'has_no_invoice',
     'סטטוס':'status','אישר ע"י':'confirmed_by','אושר בתאריך':'confirmed_at','הערות':'notes'
   },
   purchase_receipt_line: {

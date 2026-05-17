@@ -139,6 +139,13 @@
 --                             (AFTER INSERT on stock_movement → pending_lens_advancement_queue)
 --   M1 Lens Phase 1A VIEWS:
 --     v_suppliers_for_m9 (K5 contract; security_invoker=on; read-only for M9)
+--
+--   M1 Lens — DB Schema Receipts & Notes deltas (added 2026-05-17 by
+--   SPEC M1_LENS_DB_SCHEMA_RECEIPTS_NOTES):
+--     - purchase_receipt.has_no_invoice BOOLEAN NOT NULL DEFAULT FALSE
+--       (Brief decision #14 — bookkeeper Invoices Inbox flag)
+--     - lens_variant_notes (new tenant-scoped table, RLS canonical pattern;
+--       backs Pricing screen לוגים+הערות drawer per Brief decision #18)
 
 -- ------------------------------------------------------------
 -- Module 1.5 — Shared Components (14 tables)
