@@ -1,5 +1,35 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-17 evening — SUPERVISOR_SKILL_PHASE_1 — Triage layer (Shadow Mode launch)
+
+SPEC: `SUPERVISOR_SKILL_PHASE_1` ([folder](specs/SUPERVISOR_SKILL_PHASE_1/))
+
+**Full-Auto Pipeline.** Single chat, ~3.5 hours wall-clock (incl. cross-Pipeline-branch incident pause). 1st of 3 SPECs from the sealed `SUPERVISOR_SKILL_BRIEF` (2026-05-17, v1, 211 lines). Phase 2 (Retry) + Phase 3 (Harvest) are independently shippable; queued in OPEN_TASKS.
+
+**9 Pipeline commits (`974eba9..d8073eb`):**
+
+- `8f0546f` — `chore(spec): seal SUPERVISOR_SKILL_PHASE_1 SPEC + Brief + Activation Prompt` (C0) — Brief + Activation Prompt tracked + SPEC.md sealed (480 lines, 17 success criteria, §7 `None.` destructive ops declaration).
+- `39426ac` — `feat(supervisor): add skill skeleton + Core protocol files (project-agnostic)` (C1) — New skill `opticup-supervisor`: SKILL.md (225 lines) + core/triage-protocol.md (233 lines, 5-step procedure) + core/escalation-format.md (142 lines, required-fields spec). Core verified project-agnostic (0 leaks).
+- `16cbb0f` — `feat(supervisor): add Optic Up adapter + archive folders (Hard-Stops + decision-paths)` (C2) — adapters/opticup/decisions-log-paths.md (148 lines, Daniel-locked priority order from Brief §13: DECISIONS_LOG → CROSS.md → M{N}.md → CLAUDE.md → MASTER_ROADMAP; auto-memory confidence cap = 3) + adapters/opticup/skill-destinations.md (111 lines, 7 Hard-Stop categories + Phase-3 reference table). `_archive/supervisor-log/.gitkeep` + `_archive/supervisor-pending-promotions/.gitkeep` created.
+- `c5f7390` — `feat(skills): wire Executor + Reviewer + Localhost-Tester to Supervisor Triage (Shadow Mode)` (C3) — 3 Pipeline SKILL.md files gained "Pre-Escalation: Supervisor Triage (Shadow Mode)" sub-section. executor +22, reviewer +13, tester +13. Hard-Stop categories referenced; Shadow Mode contract: both paths run in parallel.
+- `d51e82f` — `docs(claude): describe Supervisor layer + Shadow Mode in §11 Autonomous Mode` (C4) — CLAUDE.md §11 +6 lines vs HEAD (after 2 trim iterations to honor §0's stale-baseline cap intent).
+- `469346c` — `test(supervisor): E2E Triage on synthetic main-push escalation (Confidence 5, cites CLAUDE.md §9 #7)` (C5) — synthetic escalation + `ARCHITECT_DECISION_*.md` (Status: SHADOW_PROPOSAL, Confidence: 5, Cited source: CLAUDE.md §9 #7 verbatim quote) + shadow-2026-05-17.md log row. In-flight Adapter clarification: Hard-Stop fires on AUTHORIZATION-shaped questions, not RULE-APPLICATION-shaped (committed in same commit).
+- `21429ac` — `chore(spec): EXECUTION_REPORT + FINDINGS for SUPERVISOR_SKILL_PHASE_1` (C6, cherry-picked) — 15/17 §3 criteria GREEN at Executor close; 3 in-flight deviations all resolved (Core scrub D-1, stale-baseline trim D-2, Hard-Stop semantics clarification D-3); 4 findings (0 CRITICAL, 0 HIGH, 1 MEDIUM, 2 LOW, 1 INFO); 2 Executor proposals queued.
+- `da55618` — `chore(spec): REVIEW for SUPERVISOR_SKILL_PHASE_1 — 🟢 PASS` — Independent re-verification of 15/17 §3 criteria. Iron Rules 12/21/23/31/32 all clean. Core project-agnostic re-grep: 0 hits. Citation honesty spot-check: byte-accurate quote at CLAUDE.md:348. 2 INFO findings (R-FINDING-1 SPEC length, R-FINDING-2 forward-looking Adapter table); both DISMISS.
+- `d8073eb` — `chore(spec): SUPERVISOR_SKILL_PHASE_1 smoke test report — 🟢 GREEN` — Smoke 7/7 PASS (5.84s on demo tenant) + SPEC §14 cases 2–14 PASS (13/13). Tier C VFV N/A (no runtime UI surface; skill-infra + docs + archive only). Handing back to Foreman.
+
+**Cross-Pipeline incident logged:** The parallel M1-expansion Pipeline merged develop → release/m1-inventory-2026-05-18 mid-execution, switching the Executor's working-tree HEAD. C6 initially landed on release; Executor STOPPED per Bounded Autonomy + asked Daniel for clearance; Daniel chose Option 1 (cherry-pick C6 to develop, leave release alone). Recovery clean after parallel session resolved its merge. F-EXTRA-1 logs a future SPEC stub for cross-Pipeline git-state coordination.
+
+**4 skill improvements harvested (2 author + 2 executor) for next strategic touch:**
+- **opticup-strategic P-AUTHOR-1** — Placeholders-first contract for project-portable Core/Adapter SPECs (SPEC sample blocks use `<PLACEHOLDER>` form, not real project names).
+- **opticup-strategic P-AUTHOR-2** — Baselines must carry both 'Measured-at HEAD' and 'Seal-commit HEAD' commit hashes; mismatch = automatic FAIL for SPEC author quality.
+- **opticup-executor P-EXEC-1** — Placeholders-first when writing Core/Adapter content (mirrors P-AUTHOR-1 at execution).
+- **opticup-executor P-EXEC-2** — Stale-baseline sanity check at execution start (Step 1.5 sub-step 0; flag if SPEC's claimed BASE_* > 10% drift vs current HEAD).
+
+**State at close:** Supervisor operational in Shadow Mode as of 2026-05-17 12:15 local. The 3-day learning window begins now; next Pipeline escalation triggers Triage. Active Mode flip is a separate Daniel decision after the window (Brief §11 + §12 criteria: ≥80% match AND no Confidence-5 mismatches).
+
+---
+
 ## 2026-05-17 afternoon — M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2 — VFV-verified Option A layout fix (margin-inline-start)
 
 SPEC: `M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2` ([folder](specs/M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2/))

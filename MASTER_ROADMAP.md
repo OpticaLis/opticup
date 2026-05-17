@@ -88,6 +88,8 @@ Each module that needs to ship to LIVE day gets an Architecture Brief (cross-mod
 
 ## 3. Current State (May 2026 — post-cutover)
 
+**🟢 Supervisor Skill (משגיח) Phase 1 LIVE in Shadow Mode — 2026-05-17 evening (Full-Auto Pipeline single chat).** New `opticup-supervisor` skill operational: when any of the 3 Pipeline skills (executor / reviewer / localhost-tester) is about to write an escalation file, it FIRST invokes the Supervisor Triage protocol — searches canonical decision sources (DECISIONS_LOG → CROSS.md → M{N}.md → CLAUDE.md → MASTER_ROADMAP; auto-memory at confidence cap = 3 per Brief §13.1) and writes a sibling `ARCHITECT_DECISION_*.md` with Status + Confidence + Cited source. Shadow Mode (launch state) runs Supervisor + Daniel in parallel for a 3-day learning window before any Active Mode flip. Brief §11 + §12 + §13 are Daniel-locked. Core/Adapter split for project portability (Core 0-leak verified by Executor + Reviewer + Tester). 9 Pipeline commits `974eba9..d8073eb`. 17/17 §3 criteria GREEN. Iron Rules 12/21/23/31/32 all clean. Smoke 7/7 PASS (5.84s on demo). 4 skill harvests queued. SPECs 2 (Retry) + 3 (Harvest) queued in OPEN_TASKS. See `modules/Module 1.5 - Shared Components/docs/specs/SUPERVISOR_SKILL_PHASE_1/`.
+
 **Prizma is LIVE in production** (cutover executed 2026-05-03). Module 4 (CRM)
 operating full pipeline: storefront `/supersale/` form → `lead-intake` EF →
 `crm_leads` → automations → SMS/Email via Make-as-pipe. WhatsApp QR walk-in
