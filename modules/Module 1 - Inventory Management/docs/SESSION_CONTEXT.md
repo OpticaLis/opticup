@@ -1,7 +1,52 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1 Lens Mockup-Fidelity Rebuild — Foundation Phase 100% COMPLETE 🟢 (incl. cleanup) — 2026-05-17. SPEC 1 🟡, SPEC 2 🟡, SPEC 3 🟢, SPEC 4a 🟢, M1_FOUNDATION_CLOSE_CLEANUP 🟢. F-2 + F-4 RESOLVED. F-5 DEFERRED to SPEC 5. Groups A/B/C eligible for parallel-worktree dispatch on Daniel's approval.
+M1 Lens Mockup-Fidelity Rebuild — Group A SPEC 4 (Designs Selection) closed 🟢 — 2026-05-17 (Path X sequential per Daniel). SPECs 1+2+3+4a+4.5 closed; SPEC 4 closed; SPEC 5 (Pricing rebuild) dispatching next per autonomous Path X protocol. F-5 still DEFERRED to SPEC 5 (resolution shipped there).
+
+## 2026-05-17 — M1_LENS_DESIGNS_SELECTION_REBUILD (🟢 CLOSED — Group A SPEC 4 of 6)
+
+**Status:** ✅ Closed. First of 6 lens-screen rebuilds post-Foundation. ~70 min execution.
+
+**Pipeline shape:** Single session, straight-through under Bounded Autonomy. No escalations. Path X (sequential) — SPEC 5 dispatch follows automatically per Daniel directive.
+
+**Commits:**
+- `52c0b0b` chore(spec): author Group A SPECs (4 + 5) — Designs Selection + Pricing rebuilds
+- `452d9e6` refactor(lens-active-designs): 1:1 mockup rebuild consuming 5 shared components
+- _(this commit)_ chore(spec): close M1_LENS_DESIGNS_SELECTION_REBUILD with retrospective
+
+**What shipped:**
+- Partial (22 → 70 lines): mount points only; shared components supply DOM at init time
+- main.js (58 → 135): orchestrator + permission gate + context badge + delegated dispatcher
+- tree.js (152 → 126): pure data loader (brands + designs + offerings + variants + active state + recomputeStats)
+- toggle.js (37 → 65): extended with toggleOfferingSilent + toggleMany for batch use
+- 4 new module files: stats.js, filters.js, table.js, detail.js (88+136+224+129 = 577 lines)
+- CSS: NEW css/lens-active-designs-page.css (260 lines, scoped to .lens-tab-section[data-tab="active-designs"])
+- inventory.html: +5 shared JS loads + 3 shared CSS loads
+- inventory-shell-lens.js: +4 manifest entries
+
+**Live verification (Tier C VFV on demo tenant):**
+- Page loads with 4 stat cards bound to live DB: 8 active designs / 40 active variants / 0 private series / 46 unselected
+- 4 chip-filter rows render (production / status / lens type / brand) with 16 brand chips + design counts
+- Brand-grouped table renders 9 designs across 3 brand groups (Hoya 4, SmokeBrand_M1A 1, Zeiss 4)
+- Row click opens side panel with detail rows + 5-variant table + activate-all/deactivate-all bulk-action buttons
+- 0 console errors (only pre-existing GoTrueClient warns)
+- Inventory regression check: lens-inventory tab still works (drawer + price columns + permissions)
+- 3 screenshots in SPEC folder
+
+**Findings (3 logged, none absorbed):**
+- F-1 MEDIUM — `toggle_active_offering` RPC with p_location_id=null creates separate "all-locations" row instead of flipping per-location actuals. Pre-existing RPC semantics; bulk-action UX promise vs data effect mismatch. Recommend follow-up SPEC `M1_LENS_DESIGNS_TOGGLE_PER_LOCATION_SEMANTICS` (~2-3h).
+- F-2 INFO — Bulk action uses Promise.all (N RPC calls) instead of single-transaction batch. Resolved if F-1's follow-up takes option (a) bulk RPC.
+- F-3 INFO — inventory-shell-lens.js 348 lines (pre-existing over-target; SPEC 4 added 4 manifest entries).
+
+**Brief defect logged for Architect harvest:**
+- `shared/js/data-table.js` phantom path in Brief — caught at SPEC §0 author-time by Step 1.6; resolved by citing the correct `shared/js/table-builder.js` + `table-builder-extensions.js` (SPEC 2 EXTEND verdict).
+- `lens.designs.view` phantom permission key — caught at SPEC §0; resolved by gating only on `lens.designs.manage` per existing pattern.
+
+**Downstream:** Per Path X directive — auto-dispatching SPEC 5 (`M1_LENS_PRICING_REBUILD`) immediately after this push. Largest of the 6 SPECs (~6–7h). Includes F-5 resolution (sell-price resolver wires lens-inventory lots-table).
+
+---
+
+## 2026-05-17 — M1_FOUNDATION_CLOSE_CLEANUP_2026_05_17 (🟢 CLOSED — cleanup before Groups A/B/C dispatch)
 
 ## 2026-05-17 — M1_FOUNDATION_CLOSE_CLEANUP_2026_05_17 (🟢 CLOSED — cleanup before Groups A/B/C dispatch)
 

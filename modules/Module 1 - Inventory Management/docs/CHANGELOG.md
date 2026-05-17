@@ -4,6 +4,47 @@
 
 ---
 
+## Lens UI Rebuild — Group A (in progress 2026-05-17)
+
+### SPEC 4 — M1_LENS_DESIGNS_SELECTION_REBUILD — 2026-05-17 (🟢 CLOSED — Group A SPEC 4 of 6)
+
+**Scope:** 1:1 mockup rebuild of `modules/lens-active-designs/` (Designs Selection screen) per `architecture-brief/mockups/LENS_DESIGNS_SELECTION_MOCKUP.html`. Consumes 5 SPEC 2 shared components (StatCardRow, ChipFilter, TableBuilder + extensions, SideDetailPanel, GroupHeaderRow). 22-line skeleton → mockup-aligned 70-line partial with mount points; 3 thin JS files → 7 module files totaling ~903 lines.
+
+**Pipeline shape:** Single-session straight-through under Bounded Autonomy (Path X sequential per Daniel directive). ~70 min execution. No escalations.
+
+**Commits:**
+- `52c0b0b` chore(spec): author Group A SPECs (4 + 5)
+- `452d9e6` refactor(lens-active-designs): 1:1 mockup rebuild consuming 5 shared components
+- _(this commit)_ chore(spec): close M1_LENS_DESIGNS_SELECTION_REBUILD with retrospective
+
+**Files changed (11 in rebuild + 5 in closeout):**
+- Partial rewrite: `modules/lens-active-designs/lens-active-designs-partial.html` (22 → 70)
+- Main orchestrator: `modules/lens-active-designs/lens-active-designs-main.js` (58 → 135)
+- Data loader: `modules/lens-active-designs/lens-active-designs-tree.js` (152 → 126; renderer retired)
+- Toggle extended: `modules/lens-active-designs/lens-active-designs-toggle.js` (37 → 65; +toggleOfferingSilent +toggleMany)
+- 4 NEW modules: `lens-active-designs-{stats,filters,table,detail}.js`
+- NEW CSS: `css/lens-active-designs-page.css` (260 lines, scoped)
+- `inventory.html`: +5 shared JS loads + 3 shared CSS loads
+- `modules/inventory/inventory-shell-lens.js`: +4 manifest entries for the new sub-modules
+
+**Tier C VFV (live on demo tenant):**
+- 4 stat cards render with live DB values (8/40/0/46) matching pre-flight
+- 4 chip-filter rows + 16 brand chips with design counts
+- Brand-grouped table renders 9 designs across 3 brand groups
+- Row click opens SideDetailPanel with 5-variant table + bulk actions
+- Bulk deactivate-all smoke fired Toast successfully; surfaced RPC semantics finding F-1
+- 0 console errors (only pre-existing GoTrueClient warns)
+- Inventory tab regression check passes (drawer + price columns + permissions intact)
+- 3 screenshots in SPEC folder `screenshots/`
+- Smoke-test side-effect rows soft-deleted per Iron Rule 3
+
+**Findings (3 logged, not absorbed):**
+- F-1 MEDIUM — `toggle_active_offering(p_location_id=null)` creates parallel "all-locations" row rather than flipping per-location actuals. Pre-existing RPC semantics surfaced by new UI. Recommend `M1_LENS_DESIGNS_TOGGLE_PER_LOCATION_SEMANTICS` follow-up SPEC (~2-3h).
+- F-2 INFO — Bulk action Promise.all (N RPC calls) not single-transaction batch. Bundles with F-1's follow-up.
+- F-3 INFO — `inventory-shell-lens.js` 348 lines (pre-existing over-target; SPEC 4 added 4 manifest lines).
+
+---
+
 ## Lens UI Rebuild Phase 0 — Foundation (COMPLETE 2026-05-17)
 
 ### M1_FOUNDATION_CLOSE_CLEANUP_2026_05_17 — 2026-05-17 (🟢 CLOSED — Foundation cleanup before Groups A/B/C)
