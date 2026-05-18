@@ -1,7 +1,34 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-**M1 LENS — STAGE 2A T-INFRA-1 SESSION BRIDGE SHIPPED (Executor 🟢, awaiting Reviewer + Tester)** — 2026-05-18 night (Path X). `M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE` closes Stage 2A's T-INFRA-1 carry. Tight 6-line patch inside `gatePlatformAdminTabs()` in `modules/inventory/inventory-shell-lens.js`: routes the `is_platform_super_admin` RPC through a transient Supabase client that reads `storageKey: 'optic_admin_auth'` (admin.html's session) instead of the default `sb` client (which uses the PIN-tenant storage). Function-scoped (no `window.*` promotion), `autoRefreshToken: false` (prevents background-refresh contention with admin.html's primary client), try/catch fail-safe (any constructor error → fall back to default `sb` → RPC runs as anon → button stays hidden). Zero DB changes. Tenant PIN users + anon users remain unaffected (button hidden). Tier C VFV (3 cases — admin visible / tenant hidden / anon hidden) deferred to Localhost-Tester. **With this fix + the RLS unblocker, Stage 2A is now functionally end-to-end visible from inventory.html — Daniel can author Stage 2B (Excel import).**
+**M1 LENS — STAGE 2A T-INFRA-1 SESSION BRIDGE CLOSED 🟢 (Foreman)** — 2026-05-18 night (Path X). `M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE` full pipeline ran end-to-end (Foreman author → Executor → Reviewer → Tester → Foreman closure) and closed Stage 2A's T-INFRA-1 carry. Tight 7-line patch inside `gatePlatformAdminTabs()` in `modules/inventory/inventory-shell-lens.js`: routes the `is_platform_super_admin` RPC through a transient Supabase client with `storageKey: 'optic_admin_auth'` (admin.html's session) + `autoRefreshToken: false` (prevents background-refresh contention) + try/catch fail-safe. Function-scoped (no `window.*`). Zero DB changes. Zero scope creep — admin.html / catalog-auth.js / shared.js / auth-service.js / admin-platform/auth.js all untouched. **Tier C VFV 4/4 PASS:** Case A (Daniel admin → button visible + Stage 2A screen opens on click, real Supabase session via MCP refresh-token exchange, no mock); Case B (tenant PIN → button hidden); Case C (anon → button hidden, page redirects to landing); 0 new console errors. **Hook gate passed cleanly — no `--no-verify` needed this run** (patch contains no destructive SQL keywords). **Stage 2A effective verdict: 🟢 GREEN** — all 3 carries resolved (T-BLOCK-2 via RLS unblocker; T-INFRA-1 via this; 3 in-flight fixes via Foreman hotfix in Stage 2A run). Stage 2B (Excel import) unblocked + ready for Architect Brief.
+
+## 2026-05-18 night — M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE (🟢 FOREMAN CLOSED — Stage 2A T-INFRA-1 carry)
+
+**Status:** 🟢 CLOSED. 0 BLOCKER, 0 HIGH, 0 MEDIUM, 0 LOW code findings. 3 process/tooling observations → 3 SKILL improvement proposals (P-AUTHOR-1 + P-AUTHOR-2 + P-EXEC-1 + P-EXEC-2).
+
+**Pipeline run (5 commits since SPEC commit `e19e3ab`):**
+- Foreman: `e19e3ab` chore(spec): author M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE
+- Executor: `fc24e6c` fix(inventory-shell): bridge admin.html session into platform-admin gate RPC (T-INFRA-1)
+- Executor close-retro: `37956f2` chore(spec): close M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE with retrospective
+- Reviewer: `fc4ca8d` chore(spec): reviewer audit (🟡 PASS-WITH-FOLLOWUPS, 0 new findings, full agreement with Executor)
+- Tester: `483fea3` chore(spec): localhost tester Tier C VFV (🟢 GREEN, 4/4 PASS, Approach 1 real Daniel session)
+- Foreman closure: _(this commit)_ chore(spec): Foreman closure M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE
+
+**Findings (3 process/tooling):** all dispositioned as SKILL improvement proposals; 0 code defects.
+
+**Stage 2A all-carries resolved (effective 🟢):**
+- T-BLOCK-2 (RLS write gap) → `M1_PLATFORM_CATALOG_RLS_WRITE_BYPASS` 🟡 (effective 🟢)
+- T-INFRA-1 (admin session bridge) → THIS SPEC 🟢
+- T-BLOCK-1 + T-MED-1 + T-MIN-1 (in-flight Executor defects) → Foreman hotfix `a34b09c` in Stage 2A run
+
+**5-stage plan:** Stage 1 🟢 / Stage 2A 🟢 effective / **Session Bridge 🟢** (this) / Stage 2B unblocked + ready for Architect Brief / Stages 3/4/5 queued.
+
+**Strategic next:** Architect authors Stage 2B Brief (Excel import dialog). Queued NEW_SPEC `M1_5_IRON_RULE_32_HOOK_SQL_PATTERN_AUTHORIZATION` to close the hook auth-parser gap (independent infrastructure work).
+
+---
+
+## 2026-05-18 night — M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE (🟢 EXECUTOR — superseded by Foreman closure above)
 
 ## 2026-05-18 night — M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE (Executor 🟢 closed — awaiting Reviewer + Tester + Foreman closure)
 
