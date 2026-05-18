@@ -1,5 +1,30 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
+## 2026-05-18 — M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE_PHASE_2 (🟢 CLOSED — defect class closed across all 8 next_*_number RPCs)
+
+**Status:** ✅ Closed. ~30 min execution. 0 findings, 0 deviations.
+
+**Scope:** Extends Phase 1's regex guard `~ '^[0-9]+$'` to the 4 sibling sequential-number RPCs (`next_box_number`, `next_internal_doc_number`, `next_purchase_order_number`, `next_return_number`). After this SPEC, all 8 `next_*_number` RPCs in the project are resilient to non-numeric suffix corruption.
+
+**Commits:**
+- `4daba86` chore(spec): author M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE_PHASE_2 SPEC
+- `40a52c4` fix(db): phase 2 — harden 4 sibling next_*_number RPCs against non-numeric suffix
+- _(this commit)_ chore(spec): close M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE_PHASE_2
+
+**Tier C empirical proof (4 cycles, all PASS):**
+- `next_box_number` → `BOX-0002` ✅
+- `next_internal_doc_number` → `DOC-00028` ✅
+- `next_purchase_order_number` → `PO-300007` ✅
+- `next_return_number` → `RET-9016-0003` ✅
+
+All 4 corrupt-suffix injections soft-deleted (Iron Rule 3). get_advisors clean (0 ERROR/CRITICAL).
+
+**Defect class status:** **CLOSED across all 8 next_*_number RPCs.** Regex-guard pattern is the canonical design for any new sequential-number generator going forward.
+
+**Next:** SKILL_HARVEST_2026_05_18 — codify 10 proposals harvested across today's 5-SPEC arc.
+
+---
+
 ## 2026-05-18 — M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE (🟢 CLOSED — cross-module RPC hardening)
 
 **Status:** ✅ Closed. ~30 min execution. 1 INFO (process), 0 defects.
