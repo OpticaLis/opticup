@@ -4,6 +4,31 @@
 
 ---
 
+## Lens UI Rebuild — Post-Group-A Fixes (2026-05-18)
+
+### SPEC FK_FIX — M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX — 2026-05-18 (🟢 CLOSED — unblocks Group B drawer reuse)
+
+**Scope:** Pivot `lens_variant_notes.author_id` FK target from `auth.users(id)` to `employees(id) ON DELETE SET NULL`. Resolves SPEC 5 F-1 (notes CREATE blocked under PIN auth). DB-only — zero JS changes (consumer already passes `employees.id`).
+
+**Pipeline shape:** Single session, ~30 min, Path X sequential (Foreman + Executor in same Claude Code session). Zero findings, zero deviations.
+
+**Commits:**
+- `0c88706` chore(spec): author M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX SPEC + parent Brief
+- `9356073` fix(db): m1 lens — pivot lens_variant_notes.author_id FK from auth.users to employees
+- _(this commit)_ chore(spec): close M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX with retrospective
+
+**Files changed:**
+- NEW `supabase/migrations/20260518061712_m1_lens_variant_notes_drop_authusers_fk.sql`
+- NEW `supabase/migrations/20260518061713_m1_lens_variant_notes_add_employees_fk.sql`
+- `modules/Module 1 - Inventory Management/docs/db-schema.sql` (+33 lines — schema log block)
+- 4 SPEC artifacts + 1 Tier C screenshot + parent Brief (co-committed)
+
+**Tier C VFV:** Pricing drawer → notes tab → "➕ הוסף הערה" → smoke body → "שמור" → row inserted (`f9e0db90...`), `author_id` = sessionStorage tenant_employee.id, hard-delete cleanup, 0 console errors, `get_advisors(security)` clean.
+
+**Findings:** 0.
+
+---
+
 ## Lens UI Rebuild — Group A (COMPLETE 2026-05-17)
 
 ### SPEC 5 — M1_LENS_PRICING_REBUILD — 2026-05-17 (🟢 CLOSED — Group A SPEC 5 of 6, F-5 RESOLVED)

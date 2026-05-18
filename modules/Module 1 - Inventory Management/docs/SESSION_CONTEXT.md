@@ -1,7 +1,44 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1 Lens Mockup-Fidelity Rebuild — Group A 100% CLOSED 🟢 — 2026-05-17 (Path X sequential per Daniel). SPECs 1+2+3+4a+4.5+4+5 ALL CLOSED. F-5 RESOLVED (resolver shipped + lens-inventory lot-pane wired). 2 follow-up SPECs queued: M1_LENS_DESIGNS_TOGGLE_PER_LOCATION_SEMANTICS (SPEC 4 F-1) + M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX (SPEC 5 F-1). Groups B + C eligible for next dispatch.
+M1 Lens Mockup-Fidelity Rebuild — Group A 🟢 + Post-Group-A FK Fix 🟢 CLOSED — 2026-05-18 (Path X sequential). SPECs 1+2+3+4a+4.5+4+5+FK_FIX ALL CLOSED. lens_variant_notes.author_id now FKs to employees(id) ON DELETE SET NULL; Pricing-drawer notes CRUD verified end-to-end on demo. Toggle semantics SPEC (SPEC 4 F-1) deferred to after Group B per Foreman recommendation. Next: Foreman authors 3 Group B SPECs (Purchase Order / POs List / Goods Receipt) per POST_GROUP_A_FIXES_AND_GROUP_B_BRIEF Step 4, then reports back to Daniel before dispatching SPEC 6 executor.
+
+## 2026-05-18 — M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX (🟢 CLOSED — Post-Group-A fix, unblocks Group B drawer reuse)
+
+**Status:** ✅ Closed. ~30 min execution (matched estimate). Zero findings, zero deviations.
+
+**Commits:**
+- `0c88706` chore(spec): author M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX SPEC + parent Brief (Foreman)
+- `9356073` fix(db): m1 lens — pivot lens_variant_notes.author_id FK from auth.users to employees
+- _(this commit)_ chore(spec): close M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX with retrospective
+
+**What shipped:**
+- 2 DDL migrations: DROP CONSTRAINT to auth.users, ADD CONSTRAINT to employees(id) ON DELETE SET NULL
+- Module db-schema.sql appended with the FK pivot block
+- Pricing-drawer notes CRUD now works end-to-end (author_id = sessionStorage tenant_employee.id matches employees.id FK target)
+
+**Tier C VFV (live on demo tenant):**
+- Pricing screen → drawer → notes tab → "➕ הוסף הערה" → smoke body → "שמור" → Toast shown
+- DB confirms row inserted (id `f9e0db90...`, author_id `bb1961f7...` matches sessionStorage emp.id, tenant_id demo)
+- Hard-delete cleanup: 0 rows remain
+- 0 console errors (only pre-existing GoTrueClient warns)
+- 1 screenshot in SPEC folder
+- get_advisors(security) clean — 0 new HIGH/ERROR, 0 mentions of lens_variant_notes
+
+**Findings:** 0. Pre-flight (Step 1.6 paths + 1.7 consumer grep + DB row count + employees.id type) returned all-clear; SPEC sealed cleanly.
+
+**Downstream queue:**
+
+| Item | Status |
+|------|--------|
+| Group B SPEC 6 — M1_LENS_PURCHASE_ORDER_REBUILD | ⏳ authoring next |
+| Group B SPEC 7 — M1_LENS_ACTIVE_POS_LIST_REBUILD | ⏳ authoring next |
+| Group B SPEC 8 — M1_LENS_GOODS_RECEIPT_REBUILD | ⏳ authoring next |
+| M1_LENS_DESIGNS_TOGGLE_PER_LOCATION_SEMANTICS | ⏳ deferred to AFTER Group B |
+
+Per parent Brief Step 4, Foreman authors all 3 Group B SPECs sealed before dispatching SPEC 6 executor; reports summary to Daniel for confirmation.
+
+---
 
 ## 2026-05-17 — M1_LENS_PRICING_REBUILD (🟢 CLOSED — Group A SPEC 5 of 6, F-5 RESOLVED)
 
