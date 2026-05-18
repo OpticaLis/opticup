@@ -2427,3 +2427,33 @@ ALTER TABLE public.purchase_receipt
 --    Follow-up tracked: TECH_DEBT M1-DEBT-XX — permissions_template global
 --    table + auto-replication trigger (eliminates per-tenant duplication
 --    before tenant 3 onboarding). Out of SPEC 3 scope.
+
+-- =====================================================================
+-- M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX 2026-05-18 IDT
+-- =====================================================================
+-- Pivots lens_variant_notes.author_id FK target from auth.users(id) to
+-- employees(id) ON DELETE SET NULL. Project uses pin-auth Edge Function;
+-- no rows in auth.users → original FK was unreachable for INSERTs from
+-- the Pricing-drawer notes UI. Pivot makes the FK target the canonical
+-- employees table where tenant_employee.id in sessionStorage = employees.id.
+--
+-- Table was empty at migration time (0 rows project-wide) → zero data risk.
+-- author_id column remains NOT NULL — ON DELETE SET NULL is reserved-for-
+-- future when the column becomes nullable; no-op today (no deletes occur
+-- because INSERT path always sets author_id).
+--
+-- Migrations:
+-- 1) 20260518061712_m1_lens_variant_notes_drop_authusers_fk
+--    ALTER TABLE lens_variant_notes
+--      DROP CONSTRAINT lens_variant_notes_author_id_fkey;
+-- 2) 20260518061713_m1_lens_variant_notes_add_employees_fk
+--    ALTER TABLE lens_variant_notes
+--      ADD CONSTRAINT lens_variant_notes_author_id_fkey
+--      FOREIGN KEY (author_id) REFERENCES employees(id) ON DELETE SET NULL;
+--
+-- Verified post-migration: 0 FKs to auth.users for that constraint name,
+-- 1 FK to public.employees, NOT NULL preserved. get_advisors(security):
+-- no new HIGH/ERROR on lens_variant_notes.
+--
+-- See specs/M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX/ for full SPEC + execution
+-- artifacts.
