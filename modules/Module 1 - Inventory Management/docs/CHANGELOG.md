@@ -4,6 +4,24 @@
 
 ---
 
+## Stage 2A finishing-touch — Inventory-Shell Platform-Admin Session Bridge 🟡 (Executor closed, awaiting Reviewer + Tester + Foreman) (2026-05-18 night)
+
+### M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE — 2026-05-18 night
+
+**Scope:** Closes Stage 2A's T-INFRA-1 carry. Tight 6-line patch inside `gatePlatformAdminTabs()` in `modules/inventory/inventory-shell-lens.js`. Routes the `is_platform_super_admin` RPC through a transient Supabase client constructed with `storageKey: 'optic_admin_auth'` so it reads admin.html's session (Google-OAuth JWT) instead of the PIN-tenant session under the default storageKey. Function-scoped (no `window.*` promotion per S-TRANSIENT-SCOPE). `autoRefreshToken: false` avoids background-refresh contention with admin.html's primary client. Try/catch fail-safe: any constructor error → fall back to default `sb` → RPC runs as anon → returns false → button stays hidden.
+
+**DB shipped:** Zero. No DB changes.
+
+**Code shipped:** `modules/inventory/inventory-shell-lens.js` 343 → 349 LOC (+7 added / -1 deleted in `git diff` — net +6 lines + 1 modified char (`sb.rpc` → `rpcClient.rpc`)). Existing `.then()` / `.catch()` body inside the gate function is byte-identical to pre-patch.
+
+**🟡 verdict driver:** Executor pass only — Reviewer + Tester + Foreman closure pending.
+
+**Findings (0):** No findings surfaced during execution. Minor SPEC-internal §3 ↔ §8 inconsistency noted in EXECUTION_REPORT §5 (Executor proposal for SPEC author).
+
+**5-stage plan:** Stage 1 🟢 / Stage 2A 🟡→🟢 effective (T-BLOCK-2 + T-INFRA-1 both resolved post this SPEC) / RLS Unblocker 🟡 / **Session Bridge 🟡** (this) / Stage 2B queued (now functionally unblocked).
+
+---
+
 ## Stage 2A unblocker — Platform Catalog RLS Write Bypass 🟡 CLOSED-WITH-FOLLOWUPS (2026-05-18 night)
 
 ### M1_PLATFORM_CATALOG_RLS_WRITE_BYPASS — 2026-05-18 night
