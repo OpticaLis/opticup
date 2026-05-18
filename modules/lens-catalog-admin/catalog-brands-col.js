@@ -1,12 +1,15 @@
 // catalog-brands-col.js — Brands column (col 2 of the 4-col grid).
-// M1_LENS_CATALOG_TRUE_REBUILD 2026-05-18: rewired to filter by selected supplier.
-// When state.selectedSupplier is set, brands are filtered via supplier_brand_distribution
-// (tenant-scoped M:N). When no supplier selected → empty state ("בחר ספק ←").
-// Brands themselves remain GLOBAL (owner_tenant_id IS NULL) — the M:N table scopes
-// which subset is distributed by which supplier within a tenant.
+// M1_LENS_CATALOG_TRUE_REBUILD 2026-05-18: filter by selected supplier.
+// M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A 2026-05-18:
+//   - Brand-card count badge reflects distinct lens_design IDs for the
+//     active product_type tab (not raw supplier_brand_distribution count)
+//   - Zero-series hint ("⚠ ללא סדרות") rendered when count = 0
+//   - Per-brand quick-import button rendered (DISABLED — Stage 2B)
+//   - "➕ מותג חדש" uses proper modal (no window.prompt)
 
 import { sb } from './catalog-auth.js';
 import { showToast, escapeHtml } from './lens-catalog-admin.js';
+import { openModal, validateRequired, closeModal } from './catalog-modal-helpers.js';
 
 export function wireBrandsCol(state, onBrandSelected) {
   // Search filter
@@ -14,28 +17,13 @@ export function wireBrandsCol(state, onBrandSelected) {
     const q = e.target.value.trim().toLowerCase();
     renderBrandsList(state, onBrandSelected, q);
   });
-  // Add-brand button
-  document.getElementById('btn-add-brand').addEventListener('click', async () => {
-    const name = window.prompt('שם המותג החדש (מותג גלובל — נראה לכל הטננטים):');
-    if (!name || !name.trim()) return;
-    const trimmed = name.trim();
-    const { data, error } = await sb
-      .from('lens_brand')
-      .insert({ name: trimmed, is_published: false, owner_tenant_id: null })
-      .select('id, name')
-      .single();
-    if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
-    state.brands.push({ ...data, is_published: false, lifecycle_status: 'active' });
-    state.brands.sort((a, b) => a.name.localeCompare(b.name, 'he'));
-    document.getElementById('brands-count').textContent = state.brands.length;
-    renderBrandsList(state, onBrandSelected, '');
-    showToast(`נוסף מותג: ${trimmed} (טיוטה — לחץ פרסם כשמוכן)`, 'success');
-  });
+  // Add-brand button — opens modal (Stage 2A) instead of window.prompt
+  document.getElementById('btn-add-brand').addEventListener('click', () => openAddBrandModal(state, onBrandSelected));
 }
 
 // Loads brands distributed by the currently-selected supplier within the
-// currently-selected tenant. If no supplier (or no tenant) is selected,
-// state.brands becomes empty and the column renders an empty hint.
+// currently-selected tenant. Each brand carries a `design_count` for the
+// CURRENT product_type tab — recomputed when tab changes via Promise.all.
 export async function loadBrandsForSupplier(state) {
   if (!state.selectedSupplier || !state.selectedTenant) {
     state.brands = [];
@@ -69,7 +57,23 @@ export async function loadBrandsForSupplier(state) {
     .eq('is_deleted', false)
     .order('name');
   if (bErr) { showToast('שגיאה בטעינת מותגים: ' + bErr.message, 'error'); return; }
-  state.brands = brands ?? [];
+  // Step 3: design_count per brand for the active product_type (Stage 2A)
+  const { data: designs, error: dgErr } = await sb
+    .from('lens_design')
+    .select('id, brand_id')
+    .in('brand_id', brandIds)
+    .eq('product_type', state.activeProductTab)
+    .is('owner_tenant_id', null)
+    .eq('is_deleted', false);
+  if (dgErr) { showToast('שגיאה בספירת סדרות: ' + dgErr.message, 'error'); return; }
+  const designCountMap = new Map();
+  (designs ?? []).forEach(d => {
+    designCountMap.set(d.brand_id, (designCountMap.get(d.brand_id) ?? 0) + 1);
+  });
+  state.brands = (brands ?? []).map(b => ({
+    ...b,
+    design_count: designCountMap.get(b.id) ?? 0,
+  }));
   document.getElementById('brands-count').textContent = state.brands.length;
   renderBrandsList(state, window.__catalogOnBrandSelected ?? null, '');
 }
@@ -90,22 +94,77 @@ function renderBrandsList(state, onBrandSelectedFn, query) {
     list.innerHTML = '<div class="empty-state">' + (query ? 'אין תוצאות' : 'אין מותגים לספק זה') + '</div>';
     return;
   }
-  list.innerHTML = filtered.map(b => `
-    <div class="lens-cat-admin-list-item" data-id="${b.id}">
-      <div>
-        <div class="item-title">${escapeHtml(b.name)}</div>
-        <div class="item-meta">${b.is_published ? 'מפורסם' : 'טיוטה'}</div>
+  list.innerHTML = filtered.map(b => {
+    const designCount = b.design_count ?? 0;
+    const stats = designCount === 0
+      ? '<span class="no-series-hint">⚠ ללא סדרות</span>'
+      : `<span>${designCount} סדרות</span>`;
+    return `
+      <div class="brand-card lens-cat-admin-brand-card" data-id="${escapeHtml(b.id)}">
+        <div class="brand-top">
+          <div class="brand-name">${escapeHtml(b.name)}</div>
+          <span class="item-count">${designCount}</span>
+        </div>
+        <div class="brand-stats">${stats}</div>
+        <button class="quick-import" data-brand-id="${escapeHtml(b.id)}"
+                title="זמין בשלב 2ב" disabled type="button">📥 ייבוא קטלוג מותג</button>
       </div>
-    </div>
-  `).join('');
-  list.querySelectorAll('.lens-cat-admin-list-item').forEach(el => {
-    el.addEventListener('click', () => {
+    `;
+  }).join('');
+  list.querySelectorAll('.brand-card').forEach(el => {
+    el.addEventListener('click', (evt) => {
+      // Don't trigger card selection when clicking the disabled quick-import button
+      if (evt.target.closest('.quick-import')) return;
       const brand = state.brands.find(b => b.id === el.dataset.id);
-      list.querySelectorAll('.lens-cat-admin-list-item').forEach(x => x.classList.remove('selected'));
-      el.classList.add('selected');
+      list.querySelectorAll('.brand-card').forEach(x => x.classList.remove('selected', 'active'));
+      el.classList.add('selected', 'active');
       const fn = onBrandSelectedFn ?? window.__catalogOnBrandSelected;
       if (fn) fn(brand);
     });
   });
   if (onBrandSelectedFn) window.__catalogOnBrandSelected = onBrandSelectedFn;
+}
+
+// Mockup-faithful create-brand modal.
+function openAddBrandModal(state, onBrandSelectedFn) {
+  const bodyHtml = `
+    <div class="lens-catalog-admin-modal-form">
+      <div class="field field-required">
+        <label for="modal-brand-name">שם המותג</label>
+        <input type="text" id="modal-brand-name" data-required name="name"
+               placeholder="HOYA / Essilor / Tokai / ..." autocomplete="off" />
+      </div>
+      <div class="modal-hint">
+        מותג גלובל — נראה לכל הטננטים. שיוך לספק מתבצע דרך
+        חלוקת-מותגים פר-טננט (לא נכלל ביצירה הראשונית).
+      </div>
+    </div>
+  `;
+  const modalEl = openModal({
+    title: '➕ מותג חדש',
+    bodyHtml,
+    submitLabel: 'צור מותג',
+    cancelLabel: 'ביטול',
+    onSubmit: async (formEl) => {
+      const v = validateRequired(formEl);
+      if (!v.ok) {
+        showToast('שדות חובה חסרים: ' + v.missing.join(', '), 'error');
+        return false;
+      }
+      const name = formEl.querySelector('#modal-brand-name').value.trim();
+      const { data, error } = await sb
+        .from('lens_brand')
+        .insert({ name, is_published: false, owner_tenant_id: null })
+        .select('id, name, is_published, lifecycle_status')
+        .single();
+      if (error) { showToast('שגיאה: ' + error.message, 'error'); return false; }
+      state.brands.push({ ...data, design_count: 0 });
+      state.brands.sort((a, b) => a.name.localeCompare(b.name, 'he'));
+      document.getElementById('brands-count').textContent = state.brands.length;
+      renderBrandsList(state, onBrandSelectedFn, '');
+      showToast(`נוסף מותג: ${name} (טיוטה — שייך לספק דרך חלוקת מותגים)`, 'success');
+      closeModal(modalEl);
+      return true;
+    },
+  });
 }

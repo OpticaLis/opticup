@@ -1,18 +1,17 @@
-<!-- lens-catalog-admin-partial.html — M1_LENS_CATALOG_TRUE_REBUILD 2026-05-18.
-     TRUE 1:1 mockup-fidelity per architecture-brief/mockups/
-     LENS_PLATFORM_CATALOG_ADMIN_MOCKUP.html. 4-column dark drill:
-       COL 1: Suppliers      (#suppliers-list)  ← NEW per mockup
-       COL 2: Brands          (#brands-list)    filtered by supplier
-       COL 3: Series          (#designs-list)   filtered by brand
-       COL 4: Detail+Variants (#detail-pane)    inline variants table
+<!-- lens-catalog-admin-partial.html — M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A (2026-05-18)
+     Stage 2A extends Stage 1's 4-column drill with:
+       - Top-level product-type tabs strip (עדשות משקפיים / עדשות מגע)
+       - Mockup-faithful header (title + counts badge + 4 action buttons)
+       - Zero-series hint markup support (rendered by JS in brand-card)
+       - Disabled tooltips for Stage 2B / Stage 4 features
 
-     Page-frame CSS in css/lens-catalog-admin-page.css scoped to
-     [data-tab="catalog-admin"]. Internal IDs preserved where JS depends
-     on them. Variants are NO LONGER a separate column — they live as
-     an inline table inside the detail pane (col 4) per mockup.
+     The 4-column grid below (Suppliers → Brands → Series → Detail+Variants)
+     is the same shell as Stage 1; the tabs strip is OUTSIDE the grid and
+     swaps the drill scope (product_type filter) without remounting.
 
-     OAuth: localhost-only dev-mode bypass via ?dev=1 (catalog-auth.js
-     M1_LENS_CATALOG_TRUE_REBUILD S18). Production hostnames preserved. -->
+     Page-frame CSS in css/lens-catalog-admin-page.css + new tabs/modals CSS
+     in css/lens-catalog-admin-tabs-modals.css. Both scoped to
+     [data-tab="catalog-admin"]. -->
 
 <div id="auth-gate" class="lens-cat-admin-auth-gate" style="display:none;padding:40px;text-align:center">
   <h2 id="auth-gate-title" style="color:#f1f5f9">בודק הרשאות…</h2>
@@ -27,16 +26,34 @@
     🔐 PLATFORM ADMIN — אזור ניהול גלובלי (Optic Up Team Only)
   </div>
 
-  <!-- Header -->
+  <!-- Header — mockup §line 325-337 fidelity. Title + counts badge + 4 buttons -->
   <div class="lens-cat-admin-header">
     <div class="lens-cat-admin-title">
       🌐 ניהול קטלוגי עדשות
-      <span class="badge">קטלוג גלובלי</span>
+      <span class="badge" id="catalog-counts-badge">— ספקים · — מותגים · — סדרות · — וריאנטים</span>
     </div>
     <div class="lens-cat-admin-actions">
-      <button class="btn btn-import" id="btn-import" type="button">📥 ייבוא קטלוג מותג</button>
-      <button class="btn btn-primary" id="btn-publish-all" type="button" title="Publish drafts">📣 פרסם כל הטיוטות</button>
+      <button class="btn btn-import" id="btn-import" type="button"
+              title="זמין בשלב 2ב" disabled>📥 ייבוא קטלוג מותג</button>
+      <button class="btn" id="btn-export" type="button"
+              title="זמין בשלב 2ב" disabled>📊 ייצוא Excel</button>
+      <button class="btn" id="btn-changelog" type="button"
+              title="זמין בשלב 2ב" disabled>📝 לוג שינויים</button>
+      <button class="btn btn-primary" id="btn-add-supplier-header" type="button">➕ ספק חדש</button>
     </div>
+  </div>
+
+  <!-- Top-level product-type tabs strip (Stage 2A). Filters brands+series+variants
+       schema by product_type. Active state toggled in JS via state.activeProductTab. -->
+  <div class="lens-cat-admin-product-tabs" role="tablist" aria-label="סוג מוצר">
+    <button class="lens-cat-admin-product-tab active"
+            data-product-tab="glasses" role="tab" aria-selected="true" type="button">
+      👓 עדשות משקפיים
+    </button>
+    <button class="lens-cat-admin-product-tab"
+            data-product-tab="contact_lens" role="tab" aria-selected="false" type="button">
+      👁 עדשות מגע
+    </button>
   </div>
 
   <!-- Tenant selector pill (drives Suppliers col scope + offerings preview) -->
@@ -71,7 +88,7 @@
       </div>
     </div>
 
-    <!-- COL 2: Brands (filtered by selected supplier) -->
+    <!-- COL 2: Brands (filtered by selected supplier + product_type tab) -->
     <div class="lens-cat-admin-col">
       <div class="lens-cat-admin-col-header">
         <div class="lens-cat-admin-col-header-top">
@@ -91,7 +108,7 @@
       </div>
     </div>
 
-    <!-- COL 3: Series (was "Designs" — renamed per mockup) -->
+    <!-- COL 3: Series (filtered by brand + product_type tab) -->
     <div class="lens-cat-admin-col">
       <div class="lens-cat-admin-col-header">
         <div class="lens-cat-admin-col-header-top">
@@ -121,6 +138,6 @@
 
   <input type="file" id="import-file" accept=".xlsx,.xls" style="display:none">
 
-  <!-- Local toast container (preserved per stale-comment note) -->
+  <!-- Local toast container -->
   <div id="toast-container"></div>
 </div>

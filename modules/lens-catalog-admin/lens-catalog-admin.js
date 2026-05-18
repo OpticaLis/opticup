@@ -1,23 +1,22 @@
 // lens-catalog-admin.js — entry point for the lens-catalog-admin tab.
-// M1_LENS_CATALOG_TRUE_REBUILD 2026-05-18: 4-column drill per mockup —
-// Suppliers (col 1) → Brands (col 2) → Series (col 3) → Detail+Variants (col 4).
-// Variants are NOT a separate column anymore; they render as a table inside
-// the detail pane (col 4) per LENS_PLATFORM_CATALOG_ADMIN_MOCKUP §COL 4.
+// M1_LENS_CATALOG_TRUE_REBUILD 2026-05-18: 4-column drill per mockup.
+// M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A 2026-05-18: adds top-level product-type
+//   tabs (glasses / contact_lens) + counts badge in header + URL ?ptab= hydration.
 // Per Iron Rule 12: ≤350 LOC. This file orchestrates; sub-modules do the work.
 
 import { gateAuthOrRedirect, sb } from './catalog-auth.js';
 import { wireSuppliersCol, loadSuppliers } from './catalog-suppliers-col.js';
 import { wireBrandsCol, loadBrandsForSupplier } from './catalog-brands-col.js';
-import { wireDesignsCol } from './catalog-designs-col.js';
+import { wireDesignsCol, loadDesignsForBrand } from './catalog-designs-col.js';
 import { wireDetailPane, renderDesignDetailPane } from './catalog-detail-pane.js';
-import { wireImportFlow } from './catalog-import.js';
 
 // Shared state — small enough to inline; refactor to a store if it grows
 const state = {
-  selectedTenant: null,    // { id, name, slug } — drives both Suppliers col + offerings preview
+  selectedTenant: null,    // { id, name, slug } — drives Suppliers col + offerings preview
   selectedSupplier: null,  // { id, name, supplier_number, active, brand_count }
   selectedBrand: null,     // { id, name, is_published }
-  selectedDesign: null,    // { id, brand_id, name, lens_type, material, is_published }
+  selectedDesign: null,    // { id, brand_id, name, lens_type, product_type, version, ... }
+  activeProductTab: 'glasses',  // 'glasses' | 'contact_lens' — Stage 2A top-level filter
   suppliers: [],
   brands: [],
   designs: [],
@@ -30,44 +29,154 @@ async function bootstrap() {
   if (!okay) return;
   document.getElementById('app').style.display = 'block';
 
-  // 2. Load tenant list — drives the column 1 (Suppliers) data scope
+  // 2. Hydrate activeProductTab from URL ?ptab= (Stage 2A) — must precede loaders
+  hydrateProductTabFromUrl();
+
+  // 3. Load tenant list — drives the column 1 (Suppliers) data scope
   await loadTenantList();
 
-  // 3. Wire columns (suppliers / brands / designs / detail)
+  // 4. Wire columns (suppliers / brands / designs / detail) + product-tab strip
   wireSuppliersCol(state, onSupplierSelected);
   wireBrandsCol(state, onBrandSelected);
   wireDesignsCol(state, onDesignSelected);
   wireDetailPane(state);
-  wireImportFlow(state, () => loadBrandsForSupplier(state));
+  wireProductTabs();
+  wireHeaderActions();
 
-  // 4. Empty initial state — user must pick a tenant before suppliers populate
+  // 5. Empty initial state — user must pick a tenant before suppliers populate
   await loadSuppliers(state);
 
-  // 5. Tenant selector wiring
+  // 6. Tenant selector wiring
   document.getElementById('tenant-select').addEventListener('change', (e) => {
     state.selectedTenant = state.tenants.find(t => t.id === e.target.value) ?? null;
-    state.selectedSupplier = null;
-    state.selectedBrand = null;
-    state.selectedDesign = null;
-    state.suppliers = [];
-    state.brands = [];
-    state.designs = [];
-    document.getElementById('brands-list').innerHTML =
-      '<div class="empty-state">בחר ספק ←</div>';
-    document.getElementById('designs-list').innerHTML =
-      '<div class="empty-state">בחר מותג ←</div>';
-    document.getElementById('detail-pane').innerHTML =
-      '<div class="empty-state">בחר סדרה כדי לראות פרטים + וריאציות</div>';
-    document.getElementById('brands-count').textContent = '0';
-    document.getElementById('designs-count').textContent = '0';
+    resetDownstream();
     loadSuppliers(state);
+  });
+
+  // 7. Initial counts badge load (independent of selection — global totals)
+  loadCountsBadge();
+}
+
+window.LensCatalogAdmin = { bootstrap, switchProductTab };
+window.addEventListener('DOMContentLoaded', bootstrap);
+
+// ===== Product-type tabs (Stage 2A) =========================================
+
+function hydrateProductTabFromUrl() {
+  const params = new URLSearchParams(location.search);
+  const ptab = params.get('ptab');
+  if (ptab === 'contact_lens' || ptab === 'glasses') {
+    state.activeProductTab = ptab;
+    // Reflect in DOM aria-selected
+    document.querySelectorAll('.lens-cat-admin-product-tab').forEach(btn => {
+      const isActive = btn.dataset.productTab === ptab;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+  }
+}
+
+function wireProductTabs() {
+  document.querySelectorAll('.lens-cat-admin-product-tab').forEach(btn => {
+    btn.addEventListener('click', () => switchProductTab(btn.dataset.productTab));
   });
 }
 
-window.LensCatalogAdmin = { bootstrap };
-window.addEventListener('DOMContentLoaded', bootstrap);
+// Public — also exposed via window.LensCatalogAdmin.switchProductTab for tests
+export async function switchProductTab(nextTab) {
+  if (nextTab !== 'glasses' && nextTab !== 'contact_lens') return;
+  if (state.activeProductTab === nextTab) return;
+  state.activeProductTab = nextTab;
+  // Update tab visual state
+  document.querySelectorAll('.lens-cat-admin-product-tab').forEach(btn => {
+    const isActive = btn.dataset.productTab === nextTab;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
+  // Reflect in URL (replaceState — no history entry per tab toggle)
+  const url = new URL(location.href);
+  url.searchParams.set('ptab', nextTab);
+  history.replaceState(null, '', url.toString());
+  // Reset downstream selections — brand+series no longer valid (different product_type)
+  state.selectedBrand = null;
+  state.selectedDesign = null;
+  state.brands = [];
+  state.designs = [];
+  document.getElementById('brands-count').textContent = '0';
+  document.getElementById('designs-count').textContent = '0';
+  document.getElementById('brands-list').innerHTML =
+    '<div class="empty-state">בחר ספק ←</div>';
+  document.getElementById('designs-list').innerHTML =
+    '<div class="empty-state">בחר מותג ←</div>';
+  document.getElementById('detail-pane').innerHTML =
+    '<div class="empty-state">בחר סדרה כדי לראות פרטים + וריאציות</div>';
+  // Reload brands if a supplier is currently selected (filter re-evaluates)
+  if (state.selectedSupplier) await loadBrandsForSupplier(state);
+}
 
-// Selection callbacks — clear downstream + load next column
+// ===== Header actions (Stage 2A) ============================================
+
+function wireHeaderActions() {
+  // Header "➕ ספק חדש" mirrors the col1 footer button — delegate
+  const headerBtn = document.getElementById('btn-add-supplier-header');
+  if (headerBtn) {
+    headerBtn.addEventListener('click', () => {
+      const colBtn = document.getElementById('btn-add-supplier');
+      if (colBtn) colBtn.click();
+    });
+  }
+  // btn-import / btn-export / btn-changelog are disabled (Stage 2B) — no wiring
+}
+
+// ===== Counts badge (Stage 2A) ==============================================
+
+async function loadCountsBadge() {
+  // Header badge shows global counts (cross-supplier/brand, cross-product). Updates on
+  // product-tab switch are scope-aware (filters by product_type for design+variant counts).
+  const el = document.getElementById('catalog-counts-badge');
+  if (!el) return;
+  try {
+    const productType = state.activeProductTab;
+    const [{ count: brandsCount }, { count: designsCount }, suppliersRes, variantsRes] =
+      await Promise.all([
+        sb.from('lens_brand').select('id', { count: 'exact', head: true })
+          .is('owner_tenant_id', null).eq('is_deleted', false),
+        sb.from('lens_design').select('id', { count: 'exact', head: true })
+          .eq('product_type', productType).is('owner_tenant_id', null).eq('is_deleted', false),
+        sb.from('suppliers').select('id', { count: 'exact', head: true }).eq('active', true),
+        productType === 'glasses'
+          ? sb.from('lens_variant').select('id', { count: 'exact', head: true })
+              .is('owner_tenant_id', null).eq('is_deleted', false)
+          : sb.from('contact_lens_variant').select('id', { count: 'exact', head: true })
+              .is('owner_tenant_id', null).eq('is_deleted', false),
+      ]);
+    el.textContent =
+      `${suppliersRes.count ?? 0} ספקים · ${brandsCount ?? 0} מותגים · ` +
+      `${designsCount ?? 0} סדרות · ${variantsRes.count ?? 0} וריאנטים`;
+  } catch (err) {
+    el.textContent = '— ספקים · — מותגים · — סדרות · — וריאנטים';
+    console.warn('[catalog-admin] counts badge load failed:', err);
+  }
+}
+
+// ===== Selection callbacks ==================================================
+
+function resetDownstream() {
+  state.selectedSupplier = null;
+  state.selectedBrand = null;
+  state.selectedDesign = null;
+  state.suppliers = [];
+  state.brands = [];
+  state.designs = [];
+  document.getElementById('brands-list').innerHTML =
+    '<div class="empty-state">בחר ספק ←</div>';
+  document.getElementById('designs-list').innerHTML =
+    '<div class="empty-state">בחר מותג ←</div>';
+  document.getElementById('detail-pane').innerHTML =
+    '<div class="empty-state">בחר סדרה כדי לראות פרטים + וריאציות</div>';
+  document.getElementById('brands-count').textContent = '0';
+  document.getElementById('designs-count').textContent = '0';
+}
 
 function onSupplierSelected(supplier) {
   state.selectedSupplier = supplier;
@@ -97,42 +206,8 @@ async function onBrandSelected(brand) {
     '<div class="empty-state">בחר סדרה כדי לראות פרטים + וריאציות</div>';
   document.getElementById('designs-search').disabled = false;
   document.getElementById('btn-add-design').disabled = false;
-  // Load designs for this brand (global catalog)
-  const { data, error } = await sb
-    .from('lens_design')
-    .select('id, brand_id, name, lens_type, material, is_published, lifecycle_status')
-    .eq('brand_id', brand.id)
-    .is('owner_tenant_id', null)
-    .eq('is_deleted', false)
-    .order('name');
-  if (error) { showToast('שגיאה בטעינת סדרות: ' + error.message, 'error'); return; }
-  state.designs = data ?? [];
-  document.getElementById('designs-count').textContent = state.designs.length;
-  renderDesignsList();
-}
-
-function renderDesignsList() {
-  const list = document.getElementById('designs-list');
-  if (state.designs.length === 0) {
-    list.innerHTML = '<div class="empty-state">אין סדרות למותג זה</div>';
-    return;
-  }
-  list.innerHTML = state.designs.map(d => `
-    <div class="lens-cat-admin-list-item" data-id="${d.id}">
-      <div>
-        <div class="item-title">${escapeHtml(d.name)}</div>
-        <div class="item-meta">${escapeHtml(d.lens_type)}${d.is_published ? '' : ' • טיוטה'}</div>
-      </div>
-    </div>
-  `).join('');
-  list.querySelectorAll('.lens-cat-admin-list-item').forEach(el => {
-    el.addEventListener('click', () => {
-      const design = state.designs.find(d => d.id === el.dataset.id);
-      list.querySelectorAll('.lens-cat-admin-list-item').forEach(x => x.classList.remove('selected'));
-      el.classList.add('selected');
-      onDesignSelected(design);
-    });
-  });
+  // Delegate to designs-col loader (product_type-aware filter)
+  await loadDesignsForBrand(state);
 }
 
 async function onDesignSelected(design) {
