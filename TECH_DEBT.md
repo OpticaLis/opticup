@@ -591,6 +591,22 @@ Both are ~1-hour SPECs.
 
 **Source:** `modules/Module 3 - Storefront/docs/specs/M3_DEMO_STOREFRONT_FORMS_DEPLOYMENT/FINDINGS.md` Finding M3-FINDINGS-02 (executor-discovered 2026-05-11).
 
+### #14 — 🟡 Sequential Numbering: structural migration to PostgreSQL SEQUENCEs (TD-SEQ-NUMBERING-STRUCTURAL)
+
+**Where:** 8 sequential-number RPCs across the project — `next_lot_number`, `next_receipt_number`, `next_po_number`, `next_transfer_number`, `next_box_number`, `next_internal_doc_number`, `next_purchase_order_number`, `next_return_number`.
+
+**Why it's debt:** All 8 use the pattern `MAX(CAST(SUBSTRING(<col> FROM <offset>) AS INT)) + 1` against the data column itself instead of a PostgreSQL SEQUENCE object with `nextval()`. A single row with a non-numeric suffix (e.g., demo's seeded `LOT-PO300005-1` in `stock_lot`) causes the CAST to throw, the RPC to return NULL, and every subsequent insert through that RPC to fail.
+
+**Why not the structural fix today:** Two resilience SPECs (`M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE` + `_PHASE_2`, both 🟢 closed 2026-05-18) applied a regex guard `WHERE ... ~ '^[0-9]+$'` to filter non-conforming rows before the CAST. This patches the crash but is a tactical guard, not the structural fix. Daniel raised the architectural concern 2026-05-18 evening: "מספור אחיד בסדר עולה שלא יכול להישבר" — a unified numbering system in ascending order that cannot break. PostgreSQL `SEQUENCE` objects via `nextval()` are the canonical answer.
+
+**Investigation status:** Phase 1 read-only investigation Pipeline ran 2026-05-18. Report at `modules/Module 1.5 - Shared Components/architecture-brief/SEQUENTIAL_NUMBERING_INVESTIGATION_REPORT.md`.
+
+**Planned fix (Phase 2 SPEC, deferred until after M1 lens 100% closes):** Design the unified numbering shape, create sequences with `last_value` seeded from current MAX, rewrite the 8 RPCs to use `nextval()`, update JS consumers if format changes, remove the regex-guard patches (no longer needed). Full Tier C VFV on all 8 RPCs (insert + monotonic + cannot-break-under-corruption).
+
+**Effort:** Phase 2 estimate 4-6 hours (one architect-authored SPEC).
+
+**Source:** Today's Path X arc — `M1_LENS_GOODS_RECEIPT_REBUILD/FINDINGS.md F-1 HIGH` discovered the defect class; `M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE` + `_PHASE_2` closed the tactical patch across all 8 RPCs; Daniel raised the structural concern in the same evening.
+
 ---
 
 ## Resolved Debt
