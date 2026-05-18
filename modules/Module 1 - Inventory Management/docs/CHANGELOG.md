@@ -4,6 +4,35 @@
 
 ---
 
+## Lens Rebuild — Stage 1 of 5 (Mockup Fidelity, Visual Re-Skin) 🟢 EXECUTOR CLOSED (2026-05-18)
+
+### M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1 — 2026-05-18 (🟢 EXECUTOR CLOSED — awaiting Reviewer + Localhost-Tester)
+
+**Scope:** Re-skin the shared `CatalogPrivateAdmin` component so its two sub-tabs render two mockup-faithful chromes via page-scope CSS, scoped by `[data-catalog-theme="dark"|"light"]`. Stage 1 of architect's 5-stage M1 lens-catalog rebuild plan. Visual fidelity only — no data, no schema, no RPC, no logic.
+
+**Commits:**
+- `70c5a9a` feat(catalog-private-admin): mockup-faithful dark/light re-skin via [data-catalog-theme]
+- _(this commit)_ chore(spec): close M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1 with retrospective
+
+**Files changed:**
+- NEW `shared/css/catalog-private-admin.css` (346 LOC) — DARK block from LENS_PLATFORM_CATALOG_ADMIN_MOCKUP (#0f172a / #1e293b / #334155 / #1e3a8a + rgba(30,58,138,0.3) focus-ring), LIGHT block from LENS_INVENTORY_MOCKUP (#f5f6fa / #c9a555 / #b8954a / #34495e Hybrid-Navy palette).
+- MODIFY `shared/js/catalog-private-admin.js` (339 → 344 LOC, +5 under +11 budget) — `dataset.catalogTheme` plumbing in `buildShell` + `switchSubtab`.
+- MODIFY `inventory.html` — one `<link>` after `cat-sidebar.css` + 2-line comment (28→29 stylesheet links).
+- MODIFY `MODULE_MAP.md` — row 80 for new CSS file.
+- Backup: NOT triggered (4 files / +5 JS LOC). Pre-execution git tag: `pre-M1-stage1-mockup-fidelity-20260518-1740`.
+
+**Verified:**
+- §3 criteria 14/14 executor-measurable pass; 2 deferred to Localhost-Tester (S-LOCALHOST-VFV + S-NO-CONSOLE).
+- Iron Rule 31 integrity gate exit 0; Iron Rule 32 destructive-ops gate exit 0 on Commit 1.
+- No `:root` mutation in `shared/css/styles.css` (Brief D3 honored).
+- No edits to `modules/lens-catalog-admin/**` (out-of-scope per §7).
+
+**Findings:** 1 INFO — F-1: `docs/FILE_STRUCTURE.md` not updated for new CSS file (per CLAUDE.md §10 Integration Ceremony cadence). Foreman to decide TECH_DEBT entry vs append-to-closure-commit vs dismiss.
+
+**Awaiting:** Reviewer commit audit + Localhost-Tester Tier C VFV (4+ screenshots + TEST_REPORT.md) + Foreman FOREMAN_REVIEW.md closure.
+
+---
+
 ## Lens UI Rebuild — Group B 🟢 100% COMPLETE (2026-05-18)
 
 ### M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE (Module 1.5) — 2026-05-18 (🟢 CLOSED — resolves SPEC 8 F-1)

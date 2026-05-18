@@ -1,9 +1,35 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-**M1 LENS — REWORK IN PROGRESS** — 2026-05-18 late evening (Path X multi-session). The "100% COMPLETE" declared earlier today was REVERTED after Daniel's live-screen review found SPEC 9 + 10 polish-by-validation outputs missing the Suppliers column + private-catalog rebuild. Correction SPEC `M1_LENS_CATALOG_TRUE_REBUILD` ran Commits 1+2 (TRUE 4-col mockup rebuild + Suppliers col + dev-mode OAuth bypass + orphan delete) — shipped clean. Commits 3+4+5 (private rewrite + Tier C VFV + closure) DEFERRED. Paired SPEC `M1_LENS_CATALOG_SEED_FROM_EXCEL` ABORTED mid-execution after Excel data-quality issues surfaced (glasses + contact-lens duration categories + health-fund pricing all conflated in one source sheet). M1 lens UI surface is mid-rebuild; awaiting new architect Brief.
+**M1 LENS — STAGE 1 OF 5 SHIPPED** — 2026-05-18 evening (Path X). Architect's 5-stage mockup-fidelity rebuild plan opened with `M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1` (visual re-skin only — no data/schema). Commit 1 (`70c5a9a`) shipped: new 346-LOC `shared/css/catalog-private-admin.css` + `[data-catalog-theme]` JS plumbing in `shared/js/catalog-private-admin.js` + `<link>` in `inventory.html` + MODULE_MAP row 80. Reviewer + Localhost-Tester to run before final SPEC close. The earlier "100% COMPLETE" declared mid-day was REVERTED after Daniel's live-screen review; correction SPEC `M1_LENS_CATALOG_TRUE_REBUILD` shipped Commits 1+2 (TRUE 4-col mockup rebuild + Suppliers col + dev-mode OAuth bypass + orphan delete) but partial-closed with Commits 3+4+5 deferred. Stage 1 of the new plan now restarts the deferred private-catalog work under the no-polish-by-validation discipline.
+
+## 2026-05-18 evening — M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1 (🟢 EXECUTOR DONE — awaiting Reviewer + Tester)
+
+**Status:** 🟢 Executor closed clean. Real CSS + JS edits shipped (zero-change closure NOT taken). Pipeline still needs Reviewer + Localhost-Tester + Foreman closure.
+
+**Commits shipped:**
+- `70c5a9a` feat(catalog-private-admin): mockup-faithful dark/light re-skin via [data-catalog-theme]
+- _(this commit)_ chore(spec): close M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1 with retrospective (EXECUTION_REPORT + FINDINGS + SESSION_CONTEXT + CHANGELOG)
+
+**Code shipped (Commit 1):**
+- NEW `shared/css/catalog-private-admin.css` (346 LOC) — base shell + `[data-catalog-theme="dark"]` block (slate-900 from LENS_PLATFORM_CATALOG_ADMIN_MOCKUP) + `[data-catalog-theme="light"]` block (Hybrid-Navy from LENS_INVENTORY_MOCKUP). 36 distinct hex literals in dark + 18 in light; rgba(30,58,138,0.3) focus-ring honored.
+- MODIFY `shared/js/catalog-private-admin.js` (339→344 LOC, +5 / under +11 budget / under 350 hard cap) — `buildShell` initializes `dataset.catalogTheme = 'dark'` matching `init()`'s initial sub-tab 'global'; `switchSubtab` writes `dataset.catalogTheme = sub === 'private' ? 'light' : 'dark'`.
+- MODIFY `inventory.html` (28→29 stylesheet links) — one `<link rel="stylesheet" href="shared/css/catalog-private-admin.css">` after `cat-sidebar.css`.
+- MODIFY `MODULE_MAP.md` — row 80 added for the new CSS file.
+- No `:root` mutation in `shared/css/styles.css`. No edits to `modules/lens-catalog-admin/**`. No DB / RPC / schema work.
+- Pre-execution git tag: `pre-M1-stage1-mockup-fidelity-20260518-1740`. Iron Rule 9 backup not triggered (4 files, +5 JS LOC — under both thresholds).
+
+**§3 criteria status (14 measurable):** 14 / 14 executor-measurable criteria pass; 2 deferred to Localhost-Tester (S-LOCALHOST-VFV, S-NO-CONSOLE). Iron Rule 31 + Iron Rule 32 gates exit 0. Verify --staged exit 0 with one soft-target warning (JS 345 lines vs 300 target — well under 350 hard cap, accepted by gate).
+
+**Findings (1 INFO):** F-1 — `docs/FILE_STRUCTURE.md` not updated for new CSS file; recommended path (a) TECH_DEBT entry for Integration-Ceremony batch update.
+
+**Awaiting:** Reviewer audit of commit `70c5a9a` for Iron Rule 12/21 + selector→emitted-class match + color-form completeness. Localhost-Tester Tier C VFV (4 screenshots + TEST_REPORT.md). Foreman closure + FOREMAN_REVIEW.md.
+
+---
 
 ## 2026-05-18 late evening — M1_LENS_CATALOG_TRUE_REBUILD (🟡 PARTIALLY EXECUTED — Commits 1+2 shipped, Commits 3+4+5 deferred)
+
+**Note:** Stage 1 above (M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1) restarts the deferred Commit-3-style private-catalog work under no-polish-by-validation discipline. This partial-close entry remains for historical traceability.
 
 **Status:** 🟡 Partially closed clean. Architect-authorized partial close after paired SPEC B aborted.
 
