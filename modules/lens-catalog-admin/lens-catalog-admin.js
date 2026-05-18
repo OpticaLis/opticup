@@ -222,7 +222,7 @@ async function loadTenantList() {
   state.tenants = data ?? [];
   const sel = document.getElementById('tenant-select');
   sel.innerHTML = '<option value="">— בחר טננט —</option>' +
-    state.tenants.map(t => `<option value="${t.id}">${escapeHtml(t.name)} (${t.slug})</option>`).join('');
+    state.tenants.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)} (${escapeHtml(t.slug)})</option>`).join('');
 }
 
 // Minimal toast — full Toast.* is in shared/, but this page is platform-only & lean
