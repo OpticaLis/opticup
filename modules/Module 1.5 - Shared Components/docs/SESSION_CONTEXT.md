@@ -1,5 +1,44 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
+## 2026-05-18 night — M1_5_PLATFORM_ADMIN_AUTH_STORAGEKEY_ISOLATION (🟢 EXECUTOR CLOSED — true producer-side fix for Stage 2A T-INFRA-1)
+
+**Status:** ✅ Executor stage closed. ~5 min execution. 0 findings (empty FINDINGS.md placeholder). Awaiting Reviewer + Tester + Foreman closure.
+
+**Scope:** 1-line patch to `modules/admin-platform/admin-auth.js:7` adding `{ auth: { storageKey: 'optic_admin_auth' } }` as the third arg to `supabase.createClient`. Isolates admin.html's session into the `optic_admin_auth` localStorage key (matching the bridge shipped in prior `M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE` SPEC) and removes the storage-key collision between admin.html login and inventory.html PIN-tenant login.
+
+**Why this SPEC exists:** the prior SESSION_BRIDGE SPEC (closed 🟢 4/4 PASS at HEAD `ac8eb5f`) was a FALSE POSITIVE. The Tester used Approach 1 (synthetic `auth.setSession()` planting a session into `optic_admin_auth`) — production never reaches that state because admin.html's actual login writes to the DEFAULT Supabase key, not `optic_admin_auth`. Daniel surfaced the broken state via real screenshot. The bridge code (consumer side) was correct; the producer side (admin-auth.js, no storageKey override) was wrong. This SPEC fixes the producer side with ONE line.
+
+**Patch shipped (single-line form):**
+```javascript
+const adminSb = supabase.createClient(ADMIN_SUPABASE_URL, ADMIN_SUPABASE_ANON, { auth: { storageKey: 'optic_admin_auth' } });
+```
+
+**Verification:**
+- `grep -c "storageKey: 'optic_admin_auth'" modules/admin-platform/admin-auth.js` → 1 ✅
+- File LOC: 105 (unchanged, ≤ 350 Iron Rule 12) ✅
+- `git diff` scope: line 7 ONLY (1 insertion + 1 deletion) ✅
+- Args intact: `createClient(ADMIN_SUPABASE_URL, ADMIN_SUPABASE_ANON, ...)` still present ✅
+- Integrity gate exit 0 ✅
+- verify --staged: 0 violations / 0 warnings ✅
+- ZERO changes to admin.html, js/shared.js, js/auth-service.js, catalog-auth.js, inventory-shell-lens.js ✅
+
+**Post-deployment one-time cost:** Daniel needs to re-log into admin.html ONCE after this deploys (existing session in default key won't migrate). Documented in SPEC §0.3.
+
+**Convergence:** after this patch, 3 files agree on the canonical platform-admin storage namespace `optic_admin_auth`:
+- `modules/admin-platform/admin-auth.js:7` (NEW — this SPEC)
+- `modules/lens-catalog-admin/catalog-auth.js:10` (existing)
+- `modules/inventory/inventory-shell-lens.js:301` (bridge — shipped in prior SPEC)
+
+**Files:** SPEC folder at `docs/specs/M1_5_PLATFORM_ADMIN_AUTH_STORAGEKEY_ISOLATION/` (SPEC + ACTIVATION_PROMPT + EXECUTION_REPORT + FINDINGS). Pre-execution snapshot tag `pre-M1-5-storagekey-isolation-20260518-1931`.
+
+**Commits (2 since SPEC author commit `4cb62a7`):**
+- Executor: `6cfb92f` fix(admin-auth): isolate adminSb session under storageKey 'optic_admin_auth' (closes Stage 2A T-INFRA-1 producer side)
+- Executor close-retro: _(this commit)_ chore(spec): close M1_5_PLATFORM_ADMIN_AUTH_STORAGEKEY_ISOLATION with retrospective
+
+**Next:** Awaiting Reviewer + Tester (REAL Chrome MCP flow, NO synthetic auth.setSession) + Foreman closure.
+
+---
+
 ## 2026-05-18 — M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES (🟢 CLOSED — structural Phase 2 hybrid; 4 of 8 RPCs sequence-based)
 
 **Status:** ✅ Closed. ~45 min execution. 1 INFO finding (self-corrected mid-execution), 0 defects to ship.

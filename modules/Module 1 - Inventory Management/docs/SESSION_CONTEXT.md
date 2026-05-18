@@ -1,7 +1,27 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-**M1 LENS — STAGE 2A T-INFRA-1 SESSION BRIDGE CLOSED 🟢 (Foreman)** — 2026-05-18 night (Path X). `M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE` full pipeline ran end-to-end (Foreman author → Executor → Reviewer → Tester → Foreman closure) and closed Stage 2A's T-INFRA-1 carry. Tight 7-line patch inside `gatePlatformAdminTabs()` in `modules/inventory/inventory-shell-lens.js`: routes the `is_platform_super_admin` RPC through a transient Supabase client with `storageKey: 'optic_admin_auth'` (admin.html's session) + `autoRefreshToken: false` (prevents background-refresh contention) + try/catch fail-safe. Function-scoped (no `window.*`). Zero DB changes. Zero scope creep — admin.html / catalog-auth.js / shared.js / auth-service.js / admin-platform/auth.js all untouched. **Tier C VFV 4/4 PASS:** Case A (Daniel admin → button visible + Stage 2A screen opens on click, real Supabase session via MCP refresh-token exchange, no mock); Case B (tenant PIN → button hidden); Case C (anon → button hidden, page redirects to landing); 0 new console errors. **Hook gate passed cleanly — no `--no-verify` needed this run** (patch contains no destructive SQL keywords). **Stage 2A effective verdict: 🟢 GREEN** — all 3 carries resolved (T-BLOCK-2 via RLS unblocker; T-INFRA-1 via this; 3 in-flight fixes via Foreman hotfix in Stage 2A run). Stage 2B (Excel import) unblocked + ready for Architect Brief.
+**M1 LENS — STAGE 2A T-INFRA-1 CORRECTED (true producer-side fix shipped via Module 1.5)** — 2026-05-18 night. The prior SESSION_BRIDGE SPEC's "🟢 4/4 PASS" verdict was a FALSE POSITIVE. Real-flow correction shipped via `M1_5_PLATFORM_ADMIN_AUTH_STORAGEKEY_ISOLATION` (Module 1.5 owns the cross-cutting auth-isolation infrastructure). See "2026-05-18 night — FALSE-POSITIVE CORRECTION" entry below.
+
+## 2026-05-18 night — FALSE-POSITIVE CORRECTION on prior M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE verdict
+
+**The prior verdict (🟢 4/4 PASS) was a FALSE POSITIVE.** The bridge code I shipped inside `gatePlatformAdminTabs()` (reading from `localStorage` key `optic_admin_auth`) was correct — but admin.html's actual login in `modules/admin-platform/admin-auth.js:7` was writing to the DEFAULT Supabase storageKey (no override), NOT to `optic_admin_auth`. The Tester's Approach 1 verification used synthetic `auth.setSession()` to plant a session directly into `optic_admin_auth` — a state production never reaches. Daniel surfaced the actual broken state via real screenshot.
+
+**Producer-side fix shipped via Module 1.5:** `M1_5_PLATFORM_ADMIN_AUTH_STORAGEKEY_ISOLATION` — 1-line patch to `modules/admin-platform/admin-auth.js:7` adding `{ auth: { storageKey: 'optic_admin_auth' } }` as the third arg to `supabase.createClient`. See `modules/Module 1.5 - Shared Components/docs/specs/M1_5_PLATFORM_ADMIN_AUTH_STORAGEKEY_ISOLATION/` for full SPEC + retrospective. Commit `6cfb92f`.
+
+**Effect:** Daniel logs into admin.html → session stored under `optic_admin_auth` (NOT default key) → PIN-auth on inventory.html no longer evicts admin session → bridge (already shipped) finds the session → "🔧 קטלוג מערכת" button surfaces in lens-nav → clicking opens Stage 2A 4-column platform admin screen. Real end-to-end flow via REAL Chrome MCP, NO synthetic injection.
+
+**One-time deployment cost:** Daniel must re-log into admin.html ONCE post-deployment (existing session in default key doesn't migrate).
+
+**Stage 2A status (revised):** 🟢 effective verdict NOT YET CONFIRMED for T-INFRA-1 — pending Tester real-flow verification of the storageKey patch. The prior bridge-side close stands (bridge code correct); the producer-side fix now ships. Once Tester Tier C VFV PASSES with REAL Chrome MCP flow (NO `auth.setSession()` planting), Stage 2A T-INFRA-1 is genuinely closed.
+
+**Class of defect (for SKILL learning loop):** SPEC author confused two similarly-named files (`modules/lens-catalog-admin/catalog-auth.js` vs `modules/admin-platform/admin-auth.js`) based on filename pattern + the `optic_admin_auth` storageKey string. A 60-second `grep -n "src=" admin.html | grep auth` would have shown admin.html loads `admin-platform/admin-auth.js`, NOT `catalog-auth.js`. Lesson codified in P-AUTHOR-1 of the new SPEC: for ANY auth-flow SPEC, the author MUST enumerate ACTUAL loaded JS files via `grep "<script src=" <entry-page>.html` before inferring from filenames or storageKey strings.
+
+---
+
+## 2026-05-18 night — M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE (🟢 FOREMAN CLOSED — BRIDGE CODE CORRECT, but verdict's T-INFRA-1 close was premature; producer-side fix shipped 2026-05-18 night via M1_5_PLATFORM_ADMIN_AUTH_STORAGEKEY_ISOLATION)
+
+> **CORRECTION (2026-05-18 night):** the "4/4 PASS" verdict below was a false positive. See "FALSE-POSITIVE CORRECTION" section above. Bridge code itself remains valid; the producer-side admin-auth.js fix shipped via Module 1.5 SPEC `M1_5_PLATFORM_ADMIN_AUTH_STORAGEKEY_ISOLATION` completes the chain.
 
 ## 2026-05-18 night — M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE (🟢 FOREMAN CLOSED — Stage 2A T-INFRA-1 carry)
 
