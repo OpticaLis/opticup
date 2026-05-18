@@ -1,7 +1,29 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1 Lens Mockup-Fidelity Rebuild — **Groups A 🟢 + B 🟢 + C SPEC 9 🟢** — 2026-05-18 (Path X sequential). Group C started: SPEC 9 (Catalog Admin, dark theme + 4-col layout) closed 🟢 — pure-CSS rebuild, 0 JS changes, platform-admin Google OAuth flow preserved. Next: SPEC 10 (Private Catalog, light theme polish of shared cross-category component).
+M1 Lens Mockup-Fidelity Rebuild — **Groups A 🟢 + B 🟢 + C SPECs 9 🟢 + 10 🟢** — 2026-05-18 (Path X sequential). SPEC 10 closed as polish-by-validation: existing shared component already meets all measurable SPEC criteria; cross-category Tier C across 3 product types (lens / contact_lens / accessory) confirmed 0 console errors. Last SPEC remaining: SPEC 12 (Toggle Semantics — server-side array RPC).
+
+## 2026-05-18 — M1_LENS_PRIVATE_CATALOG_REBUILD (🟢 CLOSED — Group C SPEC 2 of 3, polish-by-validation)
+
+**Status:** ✅ Closed with 0 code changes. ~20 min execution. 0 findings.
+
+**Decision rationale:** The existing `shared/js/catalog-private-admin.js` (339 lines, sealed by `M1_FINAL_NIGHT_PHASE_1_PRIVATE_CATALOG_UNIFIED`) already implements the 4-column light-themed layout, tenant-scoped reads, sub-tab switching, permission gating, and cross-category contract that SPEC 10 §3 requires. Adding code would be net-negative. SPEC closes as a verification-only deliverable.
+
+**Commits:**
+- `dc4cc2f` chore(spec): author Group C SPECs (9 + 10 + 12)
+- _(this commit)_ chore(spec): close M1_LENS_PRIVATE_CATALOG_REBUILD with retrospective (polish-by-validation)
+
+**Tier C VFV:**
+- `?cat=lenses&tab=private-catalog` → 6 brands loaded
+- `?cat=contact_lenses&tab=private-catalog` → 5 brands loaded
+- `?cat=accessories&tab=private-catalog` → 5 brands loaded
+- 0 console errors
+
+**SKILL proposal harvested:** P-AUTHOR-2026-05-18-F — codify "polish-by-validation" outcome pattern for polish SPECs on already-shipped shared components.
+
+**Next:** SPEC 12 (Toggle Semantics) — last SPEC before M1 LENS 100% COMPLETE.
+
+---
 
 ## 2026-05-18 — M1_LENS_CATALOG_ADMIN_REBUILD (🟢 CLOSED — Group C SPEC 1 of 3)
 
