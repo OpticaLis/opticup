@@ -1,0 +1,323 @@
+/* lens-purchase-order-page.css — page-frame layout for the lens-purchase-order tab.
+   M1_LENS_PURCHASE_ORDER_REBUILD (2026-05-18): 1:1 mockup rebuild per
+   architecture-brief/mockups/LENS_PURCHASE_ORDER_MOCKUP.html.
+
+   Page-frame only (header, wizard mount, filter bar, items panel, side panel,
+   summary/delivery/settings cards). Shared component visuals come from
+   shared/css/{wizard-step-indicator,table,tokens}.css.
+
+   Scope locked to .lens-tab-section[data-tab="purchase-order"]. */
+
+.lens-tab-section[data-tab="purchase-order"] .lens-purchase-order-page {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--color-bg-page, #f5f6fa);
+  min-height: 100%;
+}
+
+/* ───────── Page header ───────── */
+.lens-tab-section[data-tab="purchase-order"] .lens-po-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 14px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-title .badge {
+  font-size: 11px;
+  background: #e8eaf6;
+  color: #3949ab;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: 400;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ───────── Wizard mount ───────── */
+.lens-tab-section[data-tab="purchase-order"] .lens-po-wizard {
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ───────── Filter bar ───────── */
+.lens-tab-section[data-tab="purchase-order"] .lens-po-filter-bar {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 12px;
+  align-items: end;
+  background: #fff;
+  border-radius: 8px;
+  padding: 14px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-filter-bar .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-filter-bar label {
+  font-size: 12px;
+  color: #5d6d7e;
+  font-weight: 500;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-filter-bar select,
+.lens-tab-section[data-tab="purchase-order"] .lens-po-filter-bar input,
+.lens-tab-section[data-tab="purchase-order"] .lens-po-filter-bar textarea {
+  padding: 8px 12px;
+  border: 1px solid #d0d4d9;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+/* ───────── Main 2-column grid ───────── */
+.lens-tab-section[data-tab="purchase-order"] .lens-po-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 12px;
+}
+
+/* ───────── Items panel ───────── */
+.lens-tab-section[data-tab="purchase-order"] .lens-po-items-panel {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-items-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid #ecf0f1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-items-header h3 {
+  font-size: 14px;
+  color: #2c3e50;
+  margin: 0;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-items-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-info-banner {
+  padding: 10px 20px;
+  background: #fff3cd;
+  border-bottom: 1px solid #ecf0f1;
+  font-size: 12px;
+  color: #856404;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-items-scroll {
+  max-height: 600px;
+  overflow-y: auto;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-items-scroll table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-items-scroll thead th {
+  text-align: right;
+  padding: 10px 12px;
+  background: #f8f9fb;
+  color: #5d6d7e;
+  font-weight: 600;
+  font-size: 11px;
+  border-bottom: 2px solid #ecf0f1;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-items-scroll td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f5f6fa;
+  vertical-align: middle;
+}
+.lens-tab-section[data-tab="purchase-order"] .design-cell {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 12px;
+}
+.lens-tab-section[data-tab="purchase-order"] .design-cell .sub {
+  font-size: 10px;
+  color: #95a5a6;
+  margin-top: 2px;
+  font-weight: 400;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-items-scroll .qty-input {
+  width: 60px;
+  padding: 5px 8px;
+  border: 1px solid #d0d4d9;
+  border-radius: 4px;
+  font-size: 12px;
+  text-align: center;
+  font-weight: 600;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-items-scroll .row-action {
+  padding: 4px 8px;
+  border: 1px solid #ecf0f1;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-items-scroll .row-action.remove {
+  color: #e74c3c;
+  border-color: #fbe5e2;
+}
+.lens-tab-section[data-tab="purchase-order"] .auto-flag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #d1f5ef;
+  color: #0e7a6a;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.lens-tab-section[data-tab="purchase-order"] .manual-flag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.lens-tab-section[data-tab="purchase-order"] .custom-flag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #ede9fe;
+  color: #6d28d9;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* Source-band row backgrounds (override default for visual continuity in mockup) */
+.lens-tab-section[data-tab="purchase-order"] tr[data-source-row="custom"] { background: #faf5ff; }
+.lens-tab-section[data-tab="purchase-order"] tr[data-source-row="manual"] { background: #fffbeb; }
+
+/* ───────── Side panel ───────── */
+.lens-tab-section[data-tab="purchase-order"] .lens-po-side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-supplier-info {
+  background: #fdf6e3;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-supplier-info h4 {
+  font-size: 12px;
+  color: #856404;
+  margin: 0 0 6px;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-supplier-info p {
+  font-size: 11px;
+  color: #5d6d7e;
+  line-height: 1.5;
+  margin: 0;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-card-header {
+  padding: 12px 18px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-card-header-primary {
+  background: linear-gradient(135deg, #c9a555 0%, #b8954a 100%);
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-card-header-slate {
+  background: #34495e;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-card-body {
+  padding: 14px 18px;
+}
+.lens-tab-section[data-tab="purchase-order"] .summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 13px;
+}
+.lens-tab-section[data-tab="purchase-order"] .summary-row .key { color: #5d6d7e; }
+.lens-tab-section[data-tab="purchase-order"] .summary-row .val { font-weight: 600; color: #2c3e50; }
+.lens-tab-section[data-tab="purchase-order"] .summary-row .val-auto { color: #0e7a6a; }
+.lens-tab-section[data-tab="purchase-order"] .summary-row .val-manual { color: #3949ab; }
+.lens-tab-section[data-tab="purchase-order"] .summary-row.dashed-top {
+  padding-top: 10px;
+  border-top: 1px dashed #ecf0f1;
+}
+.lens-tab-section[data-tab="purchase-order"] .summary-row.total {
+  font-size: 16px;
+  font-weight: 700;
+  padding: 12px 0;
+  border-top: 2px solid #ecf0f1;
+  margin-top: 6px;
+  color: #c9a555;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-field-label {
+  display: block;
+  font-size: 12px;
+  color: #5d6d7e;
+  margin-bottom: 4px;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-field {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d0d4d9;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  margin-bottom: 10px;
+}
+.lens-tab-section[data-tab="purchase-order"] textarea.lens-po-field {
+  min-height: 60px;
+  resize: vertical;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-settings-note {
+  background: #f0f9ff;
+  border-inline-end: 4px solid #1e3a8a;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #475569;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-side-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lens-tab-section[data-tab="purchase-order"] .lens-po-side-actions .btn {
+  justify-content: center;
+  padding: 12px;
+}

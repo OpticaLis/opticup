@@ -1,17 +1,21 @@
-// lens-purchase-order-supplier.js — supplier picker + supplier change handler
-// Loads active suppliers for current tenant, populates the dropdown, and on change
-// triggers shortages reload for the picked supplier.
+// lens-purchase-order-supplier.js — supplier picker + change handler + side-card render
+// Iron Rule 7: reads via fetchAll wrapper. Iron Rule 22: tenant scoped.
 
 (function () {
   'use strict';
 
+  function esc(s) {
+    if (typeof escapeHtml === 'function') return escapeHtml(s);
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  }
+
   async function loadSuppliers() {
     const tid = getTenantId();
     if (!tid) throw new Error('tenant_id missing');
-    // Iron Rule 7: fetchAll(tableName, filters) where filters is an array of [col, op, val] tuples
-    // (per js/supabase-ops.js:78). tenant_id is auto-added by the wrapper.
     const rows = await fetchAll(T.SUPPLIERS, [['active', 'eq', true]]);
-    (rows || []).sort(function (a, b) { return (a.name || '').localeCompare(b.name || '', 'he'); });
+    (rows || []).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
     window.LensPO.suppliers = rows || [];
     renderSupplierOptions();
     bindSupplierChange();
@@ -22,14 +26,29 @@
     if (!sel) return;
     const current = sel.value;
     sel.innerHTML = '<option value="">— בחר ספק —</option>';
-    window.LensPO.suppliers.forEach(function (s) {
+    window.LensPO.suppliers.forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.id;
-      // escapeHtml-safe: use textContent on Option (browser handles encoding)
       opt.textContent = (s.supplier_number ? '#' + s.supplier_number + ' · ' : '') + (s.name || '(ללא שם)');
       sel.appendChild(opt);
     });
     if (current) sel.value = current;
+  }
+
+  function renderSupplierInfoCard(supplier) {
+    const card = document.getElementById('po-supplier-info');
+    const nameEl = document.getElementById('po-supplier-name');
+    const metaEl = document.getElementById('po-supplier-meta-lines');
+    if (!card || !nameEl || !metaEl) return;
+    if (!supplier) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    nameEl.textContent = supplier.name || '(ללא שם)';
+    const parts = [];
+    if (supplier.phone) parts.push('טלפון: ' + esc(supplier.phone));
+    if (supplier.email) parts.push('אימייל: ' + esc(supplier.email));
+    if (supplier.payment_terms) parts.push('תנאי תשלום: <strong>' + esc(supplier.payment_terms) + '</strong>');
+    if (supplier.default_currency) parts.push('מטבע ברירת מחדל: ' + esc(supplier.default_currency));
+    metaEl.innerHTML = parts.join('<br>');
   }
 
   function bindSupplierChange() {
@@ -38,26 +57,33 @@
     sel.addEventListener('change', async function () {
       const id = sel.value || null;
       window.LensPO.supplierId = id;
-      const row = window.LensPO.suppliers.find(function (s) { return s.id === id; });
+      const row = window.LensPO.suppliers.find(s => s.id === id);
       window.LensPO.supplierRow = row || null;
-      // Reset lines on supplier change to avoid mixing supplier sources
+      // Reset on supplier change so lines never mix supplier sources
       window.LensPO.lines = [];
       window.LensPO.poId = null;
       window.LensPO.poNumber = null;
       window.LensPO.poStatus = null;
       const sentBtn = document.getElementById('btn-mark-sent');
+      const cancelBtn = document.getElementById('btn-cancel-po');
       if (sentBtn) sentBtn.style.display = 'none';
+      if (cancelBtn) cancelBtn.style.display = 'none';
       const badge = document.getElementById('po-status-badge');
       if (badge) badge.textContent = 'טיוטה חדשה';
+      renderSupplierInfoCard(row);
       if (id) {
+        window.LensPO.setStep(window.LensPO.STEP.ITEMS);
         await window.LensPOShortages.reloadForCurrentSupplier();
       } else {
+        window.LensPO.setStep(window.LensPO.STEP.SUPPLIER);
         const c = document.getElementById('lines-container');
         if (c) c.innerHTML = '<div class="empty-state">בחר ספק כדי לטעון חוסרים.</div>';
+        const banner = document.getElementById('po-info-banner');
+        if (banner) banner.style.display = 'none';
       }
       window.LensPO.recomputeSummary();
     });
   }
 
-  window.LensPOSupplier = { loadSuppliers, renderSupplierOptions };
+  window.LensPOSupplier = { loadSuppliers, renderSupplierOptions, renderSupplierInfoCard };
 })();
