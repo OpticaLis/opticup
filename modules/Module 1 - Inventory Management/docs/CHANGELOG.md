@@ -4,6 +4,30 @@
 
 ---
 
+## Stage 2A unblocker — Platform Catalog RLS Write Bypass 🟡 CLOSED-WITH-FOLLOWUPS (2026-05-18 night)
+
+### M1_PLATFORM_CATALOG_RLS_WRITE_BYPASS — 2026-05-18 night
+
+**Scope:** Resolves Stage 2A's T-BLOCK-2 architectural carry. Adds a new RLS policy `platform_admin_bypass` (FOR ALL, USING + WITH CHECK both calling `public.is_platform_super_admin()`) on each of 4 global lens-catalog tables: `lens_brand`, `lens_design`, `lens_variant`, `contact_lens_variant`. Pattern is canonical "function-call inside policy clause" — first instance in project; becomes precedent for future similar admin-bypass needs (M11/M13/M14). Net effect: Stage 2A's 4 creation modals can now submit successfully (DB layer unblocked).
+
+**DB shipped:** Single migration `supabase/migrations/20260518230000_m1_platform_catalog_rls_write_bypass.sql` (37 LOC). 4 DROP POLICY IF EXISTS + 4 CREATE POLICY blocks. Idempotent. Applied via Supabase MCP `apply_migration`; 4 new rows in `pg_policies` verified post-apply; 12 existing policies byte-identical.
+
+**Code shipped:** Zero JS/CSS/HTML changes (SPEC §3 S-NO-CLIENT-CHANGES). Only the migration file + `MODULE_MAP.md` row.
+
+**🟡 verdict drivers:**
+- DB migration ✅ applied + verified. All 4 new policies present (cmd=ALL, qual + with_check = `is_platform_super_admin()`).
+- Iron Rule 32 hook architectural gap surfaced: `destructive-ops-declared.mjs` flags every `DROP POLICY` keyword (in active SQL + comments) but the auth-parser only consumes file-deletion authorization, not SQL-pattern authorization. Daniel granted explicit one-time `--no-verify` chat go-ahead per Iron Rule 32 protocol (the only authorized bypass path).
+- Tier C VFV: 8 cases — 4 positive (platform admin INSERT to each global table → succeeds) + 4 negative (tenant manager INSERT global row → 403). Verified via SET LOCAL request.jwt.claims + Supabase MCP execute_sql.
+
+**Findings (3):**
+- F-1 HIGH (architectural) — Iron Rule 32 hook lacks SQL-pattern authorization parsing. NEW_SPEC `M1_5_IRON_RULE_32_HOOK_SQL_PATTERN_AUTHORIZATION` queued (bundles F-2 comment-awareness).
+- F-PRE-1 INFO — `contact_lens_variant.public_view.cmd='ALL'` vs siblings' `cmd='SELECT'` pre-existing drift. TECH_DEBT bundled with Stage 2A leftover cleanup.
+- F-2 LOW — already-tracked hook comment-awareness gap. Bundled into F-1's NEW_SPEC.
+
+**5-stage plan progresses:** Stage 1 🟢 / Stage 2A 🟡→🟢 (effective, T-BLOCK-2 resolved by this SPEC) / **Stage 2A unblocker 🟡** (this) / Stage 2B queued.
+
+---
+
 ## Lens Rebuild — Stage 2A of 5 (Platform Catalog Admin Mockup Fidelity) 🟢 EXECUTOR CLOSED (2026-05-18)
 
 ### M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A — 2026-05-18 (🟢 EXECUTOR CLOSED — awaiting Reviewer + Tester)

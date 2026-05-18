@@ -1,7 +1,34 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-**M1 LENS — STAGE 2A OF 5 CLOSED 🟡 (Foreman)** — 2026-05-18 evening (Path X). Full pipeline completed: Foreman SPEC author → Executor → Reviewer → Localhost-Tester → Foreman closure. Stage 2A ships the Platform Catalog Admin mockup-faithful screen (`modules/lens-catalog-admin/`) — 2 product-type tabs (glasses + contact_lens), 4 proper creation modals (replacing `window.prompt()`), mockup-faithful detail pane (version badge + adoption count + 3-button save bar), `lens_design.version` DB column added + backfilled to 145 designs. **🟡 verdict drivers:** all 34 Executor-measurable §3 criteria + 4 of 6 Tester-measurable VFV criteria PASS; 2 VFV criteria PARTIAL because Tester surfaced pre-existing architectural blocker T-BLOCK-2 (RLS write-policy gap on global lens-catalog tables — no platform-admin bypass for non-service-role JWTs). T-BLOCK-2 is OUT OF SCOPE for Stage 2A (pre-existing, not introduced); escalated to Architect via FOREMAN_REVIEW §7 with 3 architectural options (A: RLS bypass policy / B: SECURITY DEFINER RPCs / C: server-side admin UI). Foreman recommends Option A.
+**M1 LENS — STAGE 2A UNBLOCKER SHIPPED 🟡** — 2026-05-18 night (Path X). `M1_PLATFORM_CATALOG_RLS_WRITE_BYPASS` resolves Stage 2A's T-BLOCK-2 carry. Architect's Brief chose direct `public.is_platform_super_admin()` call inside RLS policy USING/WITH CHECK clauses (rejecting Foreman's earlier JWT-claim-mint Option A formulation in favor of leaner pattern). ONE migration ships 4 new `platform_admin_bypass` policies on `lens_brand`/`lens_design`/`lens_variant`/`contact_lens_variant` (FOR ALL, both USING + WITH CHECK call the function). DB applied + verified via Supabase MCP. **🟡 driver:** Iron Rule 32 hook architectural gap surfaced — `destructive-ops-declared.mjs` cannot consume SPEC `## Destructive Operations` SQL-pattern authorizations (only handles file-deletes). Daniel granted explicit one-time `--no-verify` chat go-ahead per Iron Rule 32 protocol. NEW_SPEC `M1_5_IRON_RULE_32_HOOK_SQL_PATTERN_AUTHORIZATION` queued (bundles F-2 comment-awareness fix). **Stage 2A's 4 creation modals now functionally unblocked** (DB layer permits writes for platform admins; client code unchanged). Tier C VFV: 8 cases (4 positive + 4 negative submit tests) verified via SET LOCAL JWT claims.
+
+## 2026-05-18 night — M1_PLATFORM_CATALOG_RLS_WRITE_BYPASS (🟡 FOREMAN CLOSED — Stage 2A unblocker)
+
+**Status:** 🟡 CLOSED-WITH-FOLLOWUPS. DB target state achieved + verified; Stage 2A T-BLOCK-2 carry RESOLVED. 1 architectural NEW_SPEC queued for Iron Rule 32 hook gap.
+
+**Pipeline run (commits since SPEC commit `6ce37cf`):**
+- Foreman: `6ce37cf` chore(spec): author M1_PLATFORM_CATALOG_RLS_WRITE_BYPASS
+- Executor: (DB migration applied; commit blocked by Iron Rule 32 hook architectural gap → escalation file written)
+- Foreman: Daniel-authorized `--no-verify` bypass; Commit 1 (feat-db) + Commit 2 (chore-spec closure) commits land under bypass.
+- Reviewer: REVIEWER_REPORT.md
+- Tester: TEST_REPORT.md (8 cases: 4 positive + 4 negative)
+- Foreman: closure (this commit)
+
+**DB shipped:** 4 new `platform_admin_bypass` policies (cmd=ALL, qual + with_check = `is_platform_super_admin()`) on the 4 global lens-catalog tables. All 12 existing policies untouched. Migration file at `supabase/migrations/20260518230000_m1_platform_catalog_rls_write_bypass.sql` (37 LOC).
+
+**Findings (3):**
+- F-1 HIGH (architectural, NEW) — Iron Rule 32 hook lacks SQL-pattern authorization parsing → NEW_SPEC `M1_5_IRON_RULE_32_HOOK_SQL_PATTERN_AUTHORIZATION` queued.
+- F-PRE-1 INFO (carry from §0.4) — `contact_lens_variant.public_view.cmd='ALL'` vs siblings' `cmd='SELECT'` pre-existing drift → TECH_DEBT.
+- F-2 LOW (already-tracked) — hook comment-awareness gap → bundled into F-1's NEW_SPEC.
+
+**Stage 2A effective status update:** Stage 2A's 🟡 verdict was driven by T-BLOCK-2 (RLS write gap). This SPEC ships that fix. Stage 2A's 4 creation modals now operate end-to-end at the DB layer. Stage 2A retrospective status remains 🟡 in its own SPEC folder for historical record; Stage 2B (Excel import) is now unblocked to start.
+
+**5-stage plan:** Stage 1 🟢 / Stage 2A 🟡 (effective 🟢 post this SPEC) / **RLS Unblocker 🟡** (this) / Stage 2B/3/4/5 queued.
+
+---
+
+## 2026-05-18 evening — M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A (🟡 FOREMAN CLOSED — Stage 2A of 5; T-BLOCK-2 resolved by RLS unblocker above)
 
 ## 2026-05-18 evening — M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A (🟡 FOREMAN CLOSED — Stage 2A of 5)
 
