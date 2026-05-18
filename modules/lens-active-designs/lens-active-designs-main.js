@@ -67,6 +67,10 @@
       ]);
       const tenantName = (tenantRow && tenantRow.name) || 'Tenant';
       const locCount = (locations && locations.length) || 0;
+      // SPEC 12 (2026-05-18): cache locations on the namespace so detail.js
+      // can route bulk activate/deactivate through the array RPC with explicit
+      // location_ids (no more p_location_id=null placeholder rows).
+      window.LensAD.locations = locations || [];
       el.textContent = 'Optic Up · ' + tenantName + ' · ' + locCount + ' סניפים';
     } catch (e) {
       console.warn('[lens-ad] context badge load failed', e.message);

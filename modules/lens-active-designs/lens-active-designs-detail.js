@@ -80,8 +80,16 @@
       const makeActive = (action === 'activate-all');
       btn.disabled = true;
       try {
-        await window.LensADToggle.toggleMany(offerings.map(o => o.id), makeActive);
-        if (window.Toast) Toast.success(makeActive ? 'כל הוריאנטים הופעלו' : 'כל הוריאנטים בוטלו');
+        // SPEC 12 (2026-05-18): route bulk through the array RPC so all branches
+        // get explicit per-location rows (no more p_location_id=null placeholder).
+        const locations = (window.LensAD.locations || []).map(l => l.id).filter(Boolean);
+        if (locations.length > 0 && window.LensADToggle.toggleAcrossLocations) {
+          await window.LensADToggle.toggleAcrossLocations(offerings.map(o => o.id), locations, makeActive);
+        } else {
+          // Fallback to legacy per-row when locations list is unavailable
+          await window.LensADToggle.toggleMany(offerings.map(o => o.id), makeActive);
+          if (window.Toast) Toast.success(makeActive ? 'כל הוריאנטים הופעלו' : 'כל הוריאנטים בוטלו');
+        }
         await window.LensAD.refreshAll();
       } catch (err) {
         console.error('[lens-ad-detail] bulk action failed', err);
