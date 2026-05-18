@@ -1,7 +1,47 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-**M1 LENS — STAGE 1 OF 5 SHIPPED** — 2026-05-18 evening (Path X). Architect's 5-stage mockup-fidelity rebuild plan opened with `M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1` (visual re-skin only — no data/schema). Commit 1 (`70c5a9a`) shipped: new 346-LOC `shared/css/catalog-private-admin.css` + `[data-catalog-theme]` JS plumbing in `shared/js/catalog-private-admin.js` + `<link>` in `inventory.html` + MODULE_MAP row 80. Reviewer + Localhost-Tester to run before final SPEC close. The earlier "100% COMPLETE" declared mid-day was REVERTED after Daniel's live-screen review; correction SPEC `M1_LENS_CATALOG_TRUE_REBUILD` shipped Commits 1+2 (TRUE 4-col mockup rebuild + Suppliers col + dev-mode OAuth bypass + orphan delete) but partial-closed with Commits 3+4+5 deferred. Stage 1 of the new plan now restarts the deferred private-catalog work under the no-polish-by-validation discipline.
+**M1 LENS — STAGE 2A OF 5 SHIPPED (Executor)** — 2026-05-18 evening (Path X). Stage 2A: Platform Catalog Admin mockup-fidelity rebuild. Stage 1 (`70c5a9a`, 2026-05-18) re-skinned the tenant-side `shared/js/catalog-private-admin.js` chrome — closed 🟢 Foreman after Tier C VFV 18/2/0. Stage 2A extends the SEPARATE `modules/lens-catalog-admin/` surface (the Platform Catalog Admin screen, not the tenant `private-catalog` tab) to full mockup fidelity: 2 top-level product-type tabs (glasses/contact_lens), counts badge, 4 proper creation modals replacing `window.prompt()`, mockup-faithful detail pane (version badge + adoption count + 3-button save bar), and 1 additive DB migration adding `lens_design.version`. Awaiting Reviewer + Localhost-Tester + Foreman closure.
+
+## 2026-05-18 evening — M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A (🟢 EXECUTOR DONE — awaiting Reviewer + Tester)
+
+**Status:** 🟢 Executor closed clean. Real code + DB changes shipped (zero-change closure NOT taken). Pipeline still needs Reviewer + Localhost-Tester + Foreman closure.
+
+**Commits shipped:**
+- `96dcb22` feat(db): add lens_design.version column for series-level versioning
+- `4fb4ec3` feat(catalog-admin): product-type tabs (glasses + contact_lens) + product_type-aware drill
+- `53b597c` feat(catalog-admin): mockup-faithful detail pane + variant modal + supplier modal
+- _(this commit)_ chore(spec): close M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A with retrospective
+
+**DB shipped:**
+- `ALTER TABLE public.lens_design ADD COLUMN version integer NOT NULL DEFAULT 1` — backfilled to 1 on all 145 existing global designs (86 glasses + 34 contact_lens + 25 accessory). Migration file: `migrations/M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A_lens_design_version.sql`.
+
+**Code shipped (in `modules/lens-catalog-admin/`):**
+- NEW `catalog-modal-helpers.js` (160 LOC) — openModal / closeModal / wireModal / validateRequired / focusFirstInput. Single modal-helpers module shared by all 4 creation modals.
+- NEW `catalog-variant-modal.js` (226 LOC) — openVariantModal(state, onCreated?) branches on activeProductTab → glasses form (lens_variant: display_id/refractive_index/diameter_mm/sph_min/max required) or contact form (contact_lens_variant: display_id/base_curve/sph/wearing_schedule required). Inserts as global rows (owner_tenant_id: null).
+- NEW `css/lens-catalog-admin-tabs-modals.css` (197 LOC) — tabs strip + counts badge + brand-card chrome + modal overlay. Page-scoped to `[data-tab="catalog-admin"]` except modal classes which carry the `lens-catalog-admin-modal-` prefix.
+- MODIFY `lens-catalog-admin.js` (169→244 LOC) — state.activeProductTab + switchProductTab() (URL ?ptab= hydration) + counts badge loader + header actions wiring.
+- MODIFY `lens-catalog-admin-partial.html` (126→143 LOC) — product-tabs strip ABOVE the 4-col grid; mockup-faithful header (title + counts badge + 4 buttons: 3 disabled with tooltip "זמין בשלב 2ב" + 1 active "➕ ספק חדש"); zero-series hint markup support.
+- MODIFY `catalog-designs-col.js` (77→161 LOC) — filters by `product_type = state.activeProductTab`; new `loadDesignsForBrand(state)` exported; lens_type select options swap per tab; modal replaces 3× window.prompt() flow.
+- MODIFY `catalog-brands-col.js` (111→170 LOC) — design_count per brand for the active product_type (re-evaluates on tab switch); zero-series hint render; per-brand quick-import button rendered DISABLED with tooltip; modal replaces window.prompt.
+- MODIFY `catalog-suppliers-col.js` (113→157 LOC) — modal replaces window.prompt; optional supplier_number field.
+- MODIFY `catalog-detail-pane.js` (152→317 LOC) — version badge in title ('v{N} · פעיל' / 'v{N} · טיוטה'); adoption count strip from tenant_active_offerings → supplier_catalog_offering join; series core fields editable (name + lens_type select + sub-toggle visual-only + description DISABLED); variants table schema swap per product_type; save bar wired (💾 שמור גרסה FULLY WIRED via atomic .update incrementing version; 📋 שכפל + 🗑 השבת placeholder toasts).
+- MODIFY `inventory.html` — 1 new `<link>` for the new CSS file after line 49.
+- UNCHANGED `catalog-auth.js` (53 LOC), `catalog-import.js` (125 LOC), `css/lens-catalog-admin-page.css` (479 LOC).
+- Backup: `modules/Module 1 - Inventory Management/backups/2026-05-18_M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A/` (13 files; gitignored).
+- Pre-execution git tag: `pre-M1-stage2a-platform-admin-20260518-1910`.
+
+**§3 criteria status:** 34/34 executor-measurable criteria pass (including S-MIGRATION-APPLIED + S-MIGRATION-BACKFILL = 145 rows). 6 deferred to Localhost-Tester (S-VFV-GLASSES-TAB, S-VFV-CONTACTS-TAB, S-VFV-EMPTY-STATE, S-VFV-POPULATED, S-VFV-CREATION-FLOWS, S-VFV-NO-CONSOLE).
+
+**Findings:** See `docs/specs/M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A/FINDINGS.md`.
+
+**Awaiting:** Reviewer audit + Localhost-Tester Tier C VFV (6 snapshots + DB row verification per modal) + Foreman closure + FOREMAN_REVIEW.md.
+
+---
+
+## 2026-05-18 evening — M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1 (🟢 FOREMAN CLOSED — Stage 1 of 5)
+
+**Status:** 🟢 Closed. Foreman closure 2026-05-18 with Tier C VFV 18/2/0. Stage 1 (tenant-side dark/light re-skin) shipped; Stage 2A extends the Platform Catalog Admin SEPARATE surface (see above).
 
 ## 2026-05-18 evening — M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1 (🟢 EXECUTOR DONE — awaiting Reviewer + Tester)
 

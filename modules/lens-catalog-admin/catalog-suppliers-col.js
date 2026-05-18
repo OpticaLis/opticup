@@ -1,7 +1,7 @@
 // catalog-suppliers-col.js — Suppliers column (col 1 of the 4-col grid).
 // M1_LENS_CATALOG_TRUE_REBUILD 2026-05-18: New column added per mockup §COL 1.
 // M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A 2026-05-18:
-//   - Replaces window.prompt() with proper modal via catalog-modal-helpers.
+//   - Replaces the legacy prompt-based flow with a proper modal via catalog-modal-helpers.
 //
 // Suppliers are TENANT-SCOPED (not platform-global), so this column is
 // dependent on the tenant selector at the top of the page. When the user

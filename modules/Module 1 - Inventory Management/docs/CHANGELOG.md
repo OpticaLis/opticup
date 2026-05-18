@@ -4,6 +4,45 @@
 
 ---
 
+## Lens Rebuild — Stage 2A of 5 (Platform Catalog Admin Mockup Fidelity) 🟢 EXECUTOR CLOSED (2026-05-18)
+
+### M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A — 2026-05-18 (🟢 EXECUTOR CLOSED — awaiting Reviewer + Tester)
+
+**Scope:** Mockup-faithful rebuild of the **Platform Catalog Admin** screen (`modules/lens-catalog-admin/`, gated by `is_platform_super_admin` RPC). Stage 2A of architect's 5-stage M1 lens-catalog rebuild plan. Does NOT touch `shared/js/catalog-private-admin.js` (Stage 1's tenant-side surface — that's Stage 4 scope). Stage 2A adds: 2 top-level product-type tabs (glasses / contact_lens) that filter brands + series + variants schema; 4 creation modals replacing `window.prompt()` calls; mockup-faithful detail pane (version badge + adoption count + 3-button save bar); 1 additive DB migration adding `lens_design.version`. Excel import wiring deferred to Stage 2B (buttons rendered DISABLED with tooltip "זמין בשלב 2ב").
+
+**Commits:**
+- `96dcb22` feat(db): add lens_design.version column for series-level versioning
+- `4fb4ec3` feat(catalog-admin): product-type tabs (glasses + contact_lens) + product_type-aware drill
+- `53b597c` feat(catalog-admin): mockup-faithful detail pane + variant modal + supplier modal
+- _(this commit)_ chore(spec): close M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A with retrospective
+
+**Files changed:**
+- DB MIGRATION `migrations/M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A_lens_design_version.sql` — ALTER TABLE lens_design ADD COLUMN version integer NOT NULL DEFAULT 1; applied via Supabase MCP. Backfilled to 1 on all 145 existing global designs.
+- NEW `modules/lens-catalog-admin/catalog-modal-helpers.js` (160 LOC) — shared modal helpers (openModal / closeModal / wireModal / validateRequired / focusFirstInput).
+- NEW `modules/lens-catalog-admin/catalog-variant-modal.js` (226 LOC) — single-variant create modal with schema swap per product_type.
+- NEW `css/lens-catalog-admin-tabs-modals.css` (197 LOC) — tabs strip + counts badge + brand-card chrome + modal overlay styles.
+- MODIFY `modules/lens-catalog-admin/lens-catalog-admin.js` (169→244 LOC) — state.activeProductTab + switchProductTab + URL ?ptab= hydration + counts badge loader.
+- MODIFY `modules/lens-catalog-admin/lens-catalog-admin-partial.html` (126→143 LOC) — product-tabs strip + mockup header + 3 disabled buttons + zero-series hint markup.
+- MODIFY `modules/lens-catalog-admin/catalog-designs-col.js` (77→161 LOC) — product_type filter + new `loadDesignsForBrand` export + modal replaces 3 window.prompt() flow.
+- MODIFY `modules/lens-catalog-admin/catalog-brands-col.js` (111→170 LOC) — product_type-aware design_count + zero-series hint + per-brand disabled quick-import button + modal replaces window.prompt.
+- MODIFY `modules/lens-catalog-admin/catalog-suppliers-col.js` (113→157 LOC) — modal replaces window.prompt + optional supplier_number field.
+- MODIFY `modules/lens-catalog-admin/catalog-detail-pane.js` (152→317 LOC) — version badge + adoption count + series fields editor + variants table schema swap + save bar with version-increment save handler.
+- MODIFY `inventory.html` — 1 new `<link>` for the new CSS file (line 50).
+- Backup: `modules/Module 1 - Inventory Management/backups/2026-05-18_M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A/` (13 files; gitignored). Pre-execution git tag: `pre-M1-stage2a-platform-admin-20260518-1910`.
+
+**Verified:**
+- §3 criteria 34/34 executor-measurable pass; 6 deferred to Localhost-Tester (S-VFV-*).
+- Iron Rule 31 integrity gate exit 0; Iron Rule 32 destructive-ops gate exit 0.
+- All JS files ≤350 LOC (max 317 in catalog-detail-pane.js).
+- New CSS file 197 LOC (within SPEC §3 180-350 range).
+- `shared/js/catalog-private-admin.js` + `shared/css/catalog-private-admin.css` byte-identical (S-PRIVATE-CATALOG-UNTOUCHED).
+- 0 `window.prompt(` calls remaining in `modules/lens-catalog-admin/*.js`.
+- `lens_design.version` exists with NOT NULL DEFAULT 1; 145 rows backfilled.
+
+**Findings:** See `docs/specs/M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A/FINDINGS.md`.
+
+---
+
 ## Lens Rebuild — Stage 1 of 5 (Mockup Fidelity, Visual Re-Skin) 🟢 EXECUTOR CLOSED (2026-05-18)
 
 ### M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1 — 2026-05-18 (🟢 EXECUTOR CLOSED — awaiting Reviewer + Localhost-Tester)

@@ -297,11 +297,7 @@ async function saveSeriesVersion(state) {
   const nextVersion = (design.version ?? 1) + 1;
   const { data, error } = await sb
     .from('lens_design')
-    .update({
-      name: newName,
-      lens_type: newLensType,
-      version: nextVersion,
-    })
+    .update({ name: newName, lens_type: newLensType, version: nextVersion })
     .eq('id', design.id)
     .is('owner_tenant_id', null)
     .select('id, brand_id, name, lens_type, product_type, material, is_published, lifecycle_status, version')

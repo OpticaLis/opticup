@@ -5,7 +5,7 @@
 //   - Category select inside the create modal swaps option set per active tab
 //     (glasses: single_vision/progressive/bifocal/office/occupational;
 //      contact_lens: soft_contact/hard_contact)
-//   - Replaces window.prompt() flow with modal via catalog-modal-helpers
+//   - Replaces the legacy 3-prompt flow with a proper modal via catalog-modal-helpers
 
 import { sb } from './catalog-auth.js';
 import { showToast, escapeHtml as esc } from './lens-catalog-admin.js';

@@ -2266,14 +2266,19 @@ await sb.from('inventory').update({ quantity: newQty }).eq('id', id);
 
 **New files (lens-specific):**
 - `lens-catalog-admin.html` (root, 254 LOC) — Platform Catalog Admin entry
-- `modules/lens-catalog-admin/*.js` (7 files, 40-184 LOC each):
-  - `lens-catalog-admin.js` — entry, state, callbacks
-  - `catalog-auth.js` — auth gate via is_platform_super_admin RPC
-  - `catalog-brands-col.js` — brands column + add
-  - `catalog-designs-col.js` — designs column + add
-  - `catalog-variants-col.js` — variants column + add (calls next_lens_variant_display_id)
-  - `catalog-detail-pane.js` — variant detail + per-tenant offerings + publish toggle
-  - `catalog-import.js` — xlsx → JSON → lens-catalog-import EF
+- `modules/lens-catalog-admin/*.js` (8 files):
+  - `lens-catalog-admin.js` (244 LOC) — entry, state, callbacks, switchProductTab, counts badge (Stage 2A)
+  - `catalog-auth.js` (53 LOC) — auth gate via is_platform_super_admin RPC + localhost dev bypass
+  - `catalog-suppliers-col.js` (157 LOC) — Suppliers column (col 1) + modal create
+  - `catalog-brands-col.js` (170 LOC) — Brands column (col 2) + product_type-aware count + modal create + zero-series hint
+  - `catalog-designs-col.js` (161 LOC) — Series column (col 3) + product_type filter + modal create with lens_type option swap
+  - `catalog-detail-pane.js` (317 LOC) — Detail pane (col 4): version badge + adoption count + series fields editor + variants table schema swap + save bar with version increment
+  - `catalog-modal-helpers.js` (160 LOC, Stage 2A NEW) — openModal / closeModal / wireModal / validateRequired / focusFirstInput
+  - `catalog-variant-modal.js` (226 LOC, Stage 2A NEW) — single-variant create modal with schema swap per product_type
+  - `catalog-import.js` (125 LOC) — xlsx → JSON → lens-catalog-import EF (button disabled in Stage 2A, deferred to Stage 2B)
+- `css/lens-catalog-admin-page.css` (479 LOC) — base page-frame CSS
+- `css/lens-catalog-admin-tabs-modals.css` (197 LOC, Stage 2A NEW) — tabs strip + counts badge + brand-card + modal overlay
+- `migrations/M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A_lens_design_version.sql` (Stage 2A NEW) — adds `lens_design.version` integer NOT NULL DEFAULT 1
 - `supabase/functions/lens-catalog-import/` (3 files):
   - `index.ts` — request handler + brand/design/variant/offering loop (299 LOC)
   - `validate.ts` — types + per-row validation (59 LOC)
