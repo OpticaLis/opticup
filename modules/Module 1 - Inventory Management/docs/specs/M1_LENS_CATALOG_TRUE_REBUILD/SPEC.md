@@ -93,6 +93,8 @@ Same defect class:
 5. **Edit `inventory.html`** — possibly add CSS link if new CSS file created. Reversible.
 6. **NEW: Edit `modules/lens-catalog-admin/catalog-auth.js`** to add localhost-only dev-mode bypass (gated by `location.hostname === 'localhost' && URLSearchParams.get('dev') === '1'`). ~15-20 lines, reversible. Per architect decision (2026-05-18 late evening): the SPEC's earlier §4 Forbidden listed "no change to OAuth gate logic"; this item now AUTHORIZED specifically for the localhost dev-mode escape hatch. Production hostnames NEVER trigger the bypass — `hostname === 'localhost'` is the only path. A console.warn fires every time the bypass is used so it cannot pass silently. See §3 S18 + S19 for verification.
 
+7. **NEW (architect amend 2026-05-18 late evening): Delete `modules/lens-catalog-admin/catalog-variants-col.js`** (orphan after Commit 1 — `wireVariantsCol` no longer imported by the orchestrator since variants moved into the inline detail-pane table per mockup §COL 4). Rule 21 (No Orphans) requires deletion in the same SPEC that orphaned the file. Reversible via git revert. Authorized in this amendment specifically — declaring per Iron Rule 32. Ships in Commit 2.
+
 **Forbidden:**
 - Any DB schema changes (no DDL — schema is fine; data seed handled by paired SPEC `M1_LENS_CATALOG_SEED_FROM_EXCEL`)
 - Any change to permissions table (gating is already correct per SPEC 3)
@@ -159,17 +161,16 @@ This SPEC's Tier C VFV is NON-NEGOTIABLE and stricter than the standard. **Tier 
 
 ## 7. Commit Plan
 
-Revised 2026-05-18 late evening per architect decision. 2-pass Tier C: Commits 1-4 ship code + Pass 1 structural screenshots (empty data OK); then SPEC B seeds demo; then Commits 5-6 do Pass 2 drill screenshots + close.
+Revised twice. First (2026-05-18 late evening) — split Tier C into Pass 1 + Pass 2 around SPEC B execution. Second (2026-05-18 late evening, after Commit 1 shipped) — Daniel chose Path X order reversal: SPEC A Commit 2 deletes the orphan now; SPEC B runs in full BEFORE returning to SPEC A's Tier C, so every Chrome MCP capture happens with real Excel-seeded data (no empty-data screenshots wasted).
 
 | # | Commit subject | Files | When |
 |---|---|---|---|
-| 1 | `feat(lens-catalog-admin): TRUE mockup rebuild — add Suppliers column + brand-filter-by-supplier drill + localhost dev-mode bypass` | partial.html rewrite + new catalog-suppliers-col.js + lens-catalog-admin.js orchestrator edits + catalog-brands-col.js filter-by-supplier edit + catalog-auth.js dev-mode bypass + css/lens-catalog-admin-page.css extensions for col 1 | After §0 pre-flight |
-| 2 | `feat(lens-catalog-admin): Tier C VFV Pass 1 — structural screenshots (empty data, post-OAuth-bypass)` | screenshots/01_admin_4col_layout_empty.png + 02_admin_oauth_bypass_works.png | After Commit 1 |
-| 3 | `feat(catalog-private-admin): TRUE 1:1 visual clone of admin with light theme + scope=tenant` | shared/js/catalog-private-admin.js rewrite + new shared/css/catalog-private-admin.css + inventory.html CSS link | After Commit 2 |
-| 4 | `feat(lens-catalog-private): Tier C VFV Pass 1 — structural screenshot (empty data)` | screenshots/05_private_overview_light_empty.png | After Commit 3 |
-| **GATE** | **Execute paired SPEC `M1_LENS_CATALOG_SEED_FROM_EXCEL` (demo seed only — Prizma seed STOPS for Daniel auth). Returns to this SPEC after demo verified.** | — | — |
-| 5 | `feat(lens-catalog): Tier C VFV Pass 2 — drill flow screenshots with seeded demo data + mockup side-by-side classification` | screenshots/03_admin_supplier_click_brands.png + 04_admin_drill_complete.png + 06_private_drill_complete.png | After SPEC B closes (demo seeded) |
-| 6 | `docs(spec): close M1_LENS_CATALOG_TRUE_REBUILD with EXECUTION_REPORT + FINDINGS + FOREMAN_REVIEW placeholder + mockup fidelity table` | EXECUTION_REPORT.md + FINDINGS.md + FOREMAN_REVIEW.md (placeholder) + Module 1 SESSION_CONTEXT/CHANGELOG/MODULE_MAP updates | After Commit 5 |
+| 1 ✅ | `feat(lens-catalog-admin): TRUE mockup rebuild — add Suppliers column + brand-filter-by-supplier drill + localhost dev-mode bypass` (`434f254`) | partial.html rewrite + catalog-suppliers-col.js + lens-catalog-admin.js orchestrator + catalog-brands-col.js filter-by-supplier + catalog-auth.js dev-mode bypass + catalog-detail-pane.js inline variants table + css/lens-catalog-admin-page.css | shipped |
+| 2 | `chore(lens-catalog-admin): delete catalog-variants-col.js orphan (Rule 21 cleanup)` | DELETE modules/lens-catalog-admin/catalog-variants-col.js + this SPEC.md amendment | Now (architect-amended) |
+| **GATE A** | **Execute paired SPEC `M1_LENS_CATALOG_SEED_FROM_EXCEL` end-to-end on demo only. STOP and ask Daniel before Prizma seed.** | — | — |
+| 3 | `feat(catalog-private-admin): TRUE 1:1 visual clone of admin with light theme + scope=tenant` | shared/js/catalog-private-admin.js rewrite + new shared/css/catalog-private-admin.css + inventory.html CSS link | After SPEC B closes (demo seeded) |
+| 4 | `feat(lens-catalog): Tier C VFV — drill flow screenshots with seeded demo data + mockup side-by-side classification` | screenshots/01-06 captured against real data (combines former Pass 1 + Pass 2 since data is now available) | After Commit 3 |
+| 5 | `docs(spec): close M1_LENS_CATALOG_TRUE_REBUILD with EXECUTION_REPORT + FINDINGS + FOREMAN_REVIEW placeholder + mockup fidelity table` | EXECUTION_REPORT.md + FINDINGS.md + FOREMAN_REVIEW.md (placeholder) + Module 1 SESSION_CONTEXT/CHANGELOG/MODULE_MAP updates | After Commit 4 |
 
 ## 8. QA / Verification Plan
 
