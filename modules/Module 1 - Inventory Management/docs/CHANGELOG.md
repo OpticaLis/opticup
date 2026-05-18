@@ -4,6 +4,37 @@
 
 ---
 
+## Lens UI Rebuild — Group B (in progress 2026-05-18)
+
+### SPEC 6 — M1_LENS_PURCHASE_ORDER_REBUILD — 2026-05-18 (🟢 CLOSED — Group B SPEC 1 of 3)
+
+**Scope:** Full 1:1 rebuild of `modules/lens-purchase-order/` per `architecture-brief/mockups/LENS_PURCHASE_ORDER_MOCKUP.html` (387 lines). 4-step wizard via WizardSteps shared component; 3 source-type bands (custom/stock/manual) via GroupHeaderRow. 2-column grid layout with side-panel cards. State-machine driven step transitions. Cancel + mark-sent + back contextually surfaced per step.
+
+**Pipeline shape:** Single session, ~1.5h. Path X sequential.
+
+**Commits:**
+- `5d96549` chore(spec): author Group B SPECs (6 + 7 + 8)
+- `92c1639` refactor(lens-purchase-order): 1:1 mockup rebuild — 4-step wizard with shared components
+- _(this commit)_ chore(spec): close M1_LENS_PURCHASE_ORDER_REBUILD with retrospective
+
+**Files changed:**
+- NEW `css/lens-purchase-order-page.css` (243 lines, scoped page-frame)
+- `modules/lens-purchase-order/lens-purchase-order-main.js` (106 → 205)
+- `modules/lens-purchase-order/lens-purchase-order-supplier.js` (63 → 89)
+- `modules/lens-purchase-order/lens-purchase-order-shortages.js` (205 → 209)
+- `modules/lens-purchase-order/lens-purchase-order-manual.js` (68 → 72)
+- `modules/lens-purchase-order/lens-purchase-order-create.js` (91 → 129; +cancel)
+- `modules/lens-purchase-order/lens-purchase-order-partial.html` (75 → 121)
+- `modules/lens-purchase-order/lens-purchase-order-pdf.js` UNCHANGED (27)
+- `inventory.html` +3 lines (wizard-step-indicator CSS+JS, page CSS link)
+- Backup: 14 files in `modules/Module 1 - Inventory Management/backups/M1_LENS_PURCHASE_ORDER_REBUILD_2026-05-18/` (gitignored)
+
+**Tier C:** PO-300006 created on demo (SHALDAG supplier, 14 lines, ₪1,038.40 incl 18% VAT) → mark-sent → cancel with reason → soft-delete. 4 screenshots. 0 errors from new code.
+
+**Findings:** 1 LOW (ABSORBED pre-existing PostgREST join 400 with working fallback). 0 deviations.
+
+---
+
 ## Lens UI Rebuild — Post-Group-A Fixes (2026-05-18)
 
 ### SPEC FK_FIX — M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX — 2026-05-18 (🟢 CLOSED — unblocks Group B drawer reuse)

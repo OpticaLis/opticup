@@ -1,7 +1,51 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1 Lens Mockup-Fidelity Rebuild — Group A 🟢 + Post-Group-A FK Fix 🟢 CLOSED — 2026-05-18 (Path X sequential). SPECs 1+2+3+4a+4.5+4+5+FK_FIX ALL CLOSED. lens_variant_notes.author_id now FKs to employees(id) ON DELETE SET NULL; Pricing-drawer notes CRUD verified end-to-end on demo. Toggle semantics SPEC (SPEC 4 F-1) deferred to after Group B per Foreman recommendation. Next: Foreman authors 3 Group B SPECs (Purchase Order / POs List / Goods Receipt) per POST_GROUP_A_FIXES_AND_GROUP_B_BRIEF Step 4, then reports back to Daniel before dispatching SPEC 6 executor.
+M1 Lens Mockup-Fidelity Rebuild — Group A 🟢 + FK Fix 🟢 + Group B SPEC 6 🟢 CLOSED — 2026-05-18 (Path X sequential). SPECs 1+2+3+4a+4.5+4+5+FK_FIX+**6_PO_REBUILD** ALL CLOSED. Purchase Order screen rebuilt 1:1 to mockup with 4-step wizard + 3 source-type bands (custom/stock/manual) via Phase 0 shared components. Tier C verified: PO-300006 created + sent + cancelled + soft-deleted on demo. 1 LOW finding (ABSORBED pre-existing PostgREST join 400 with working fallback). Next: SPEC 7 (Active POs List) dispatch under Path X.
+
+## 2026-05-18 — M1_LENS_PURCHASE_ORDER_REBUILD (🟢 CLOSED — Group B SPEC 6 of 8, F-EXEC-1 + F-AUTHOR-1 proposals harvested)
+
+**Status:** ✅ Closed. ~1.5h execution (well under 5-6h estimate). 1 LOW finding (absorbed pre-existing behavior). 0 deviations.
+
+**Commits:**
+- `5d96549` chore(spec): author Group B SPECs (6 + 7 + 8) — covers SPEC 6 authoring
+- `92c1639` refactor(lens-purchase-order): 1:1 mockup rebuild — 4-step wizard with shared components (rebased onto guardian daily commit `8967042`)
+- _(this commit)_ chore(spec): close M1_LENS_PURCHASE_ORDER_REBUILD with retrospective
+
+**What shipped:**
+- 5 rewritten JS files (main 205, shortages 209, create 129, supplier 89, manual 72) + pdf.js unchanged (27) + 1 new partial (121)
+- NEW `css/lens-purchase-order-page.css` (243 lines) — page-frame layout scoped to `[data-tab="purchase-order"]`
+- inventory.html +3 lines (wizard-step-indicator CSS + JS + page CSS)
+- State-machine driven 4-step wizard via WizardSteps shared component
+- 3 source-type bands (purple/blue/amber) via GroupHeaderRow.toHtml synthetic-row pattern
+- New `cancel_purchase_order` RPC consumer wired into the side panel
+- Iron Rule 9 backup of 14 files preserved (gitignored)
+
+**Tier C VFV (live on demo tenant):**
+- Step 1 → 2 → 3 → 4 wizard progression captured in 4 screenshots
+- PO-300006 created (id `79c0df5d...`), 14 lines, ₪1,038.40 incl 18% VAT
+- Mark-sent → status='sent'
+- Cancel with reason → status='cancelled', cancelled_reason populated
+- Soft-delete cleanup (Iron Rule 3)
+- Zero error-level console messages from new code
+- Group A regression check: Pricing tab unchanged (41/41 rows + 4 stat cards + 3 chip-filter rows intact)
+
+**Findings (1 logged):**
+- F-1 LOW (ABSORBED pre-existing): supplier-join PostgREST relation 400 in shortages query with working ungrouped fallback. Recommended ~30min follow-up SPEC `M1_LENS_PURCHASE_ORDER_SHORTAGES_QUERY_CLEANUP` to drop the failing attempt. Not blocking.
+
+**SKILL proposals harvested:**
+- Strategic P-AUTHOR-1: Step 1.6 should distinguish "USED IN MOCKUP" vs "available in shared/"
+- Executor P-EXEC-1: Headless smoke polls must wait on STATE-COMPLETE conditions, not single-trigger-field conditions
+
+**Group B scoreboard:**
+
+| # | SPEC | Status |
+|---|------|--------|
+| 6 | M1_LENS_PURCHASE_ORDER_REBUILD | 🟢 |
+| 7 | M1_LENS_ACTIVE_POS_LIST_REBUILD | ⏳ next |
+| 8 | M1_LENS_GOODS_RECEIPT_REBUILD | ⏳ after 7 |
+
+---
 
 ## 2026-05-18 — M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX (🟢 CLOSED — Post-Group-A fix, unblocks Group B drawer reuse)
 
