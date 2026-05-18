@@ -6,6 +6,34 @@
 
 ## Lens UI Rebuild — Group B (in progress 2026-05-18)
 
+### SPEC 8 — M1_LENS_GOODS_RECEIPT_REBUILD — 2026-05-18 (🟡 CLOSED-WITH-HIGH-FINDING — Group B SPEC 3 of 3)
+
+**Scope:** UI rebuild of `modules/lens-goods-receipt/` per `architecture-brief/mockups/LENS_GOODS_RECEIPT_MOCKUP.html` (635 lines). 5-field step-meta header + source-type ChipFilter row + 3 side-panel cards (summary / customer-tied / debt-preview). `p_has_no_invoice` wired to RPC. Debt-decoupling rule enforced in code + UI text. RPC contracts unchanged.
+
+**Status:** UI rebuild verified end-to-end on demo (page load, supplier picker, 3-line auto-load under PO group header, 3 cards, debt-decoupling text). Tier C receipt CREATE smoke ⛔ blocked by F-1 pre-existing demo data corruption (`next_lot_number` cannot parse 3 corrupt `stock_lot.lot_number` values). NOT introduced by this SPEC.
+
+**Pipeline shape:** Single session, ~1.5h. Stop-on-deviation per §6.
+
+**Commits:**
+- `5d96549` chore(spec): author Group B SPECs (6 + 7 + 8)
+- `e10923a` refactor(lens-goods-receipt): 1:1 mockup rebuild — 3 side-panel cards + chip-filter + has_no_invoice toggle
+- _(this commit)_ chore(spec): close M1_LENS_GOODS_RECEIPT_REBUILD with HIGH finding
+
+**Files changed:**
+- NEW `css/lens-goods-receipt-page.css` (175 lines)
+- `modules/lens-goods-receipt/lens-goods-receipt-partial.html` (92 → 131) — 3-card side panel + chip-filter mount + has_no_invoice checkbox
+- `modules/lens-goods-receipt/lens-goods-receipt-main.js` (124 → 182) — orchestrator + ChipFilter + customer-tied list + has_no_invoice toggle
+- `modules/lens-goods-receipt/lens-goods-receipt-lines.js` (166 → 171) — sourceFilter integration + PO group-header rows
+- `modules/lens-goods-receipt/lens-goods-receipt-close.js` (105 → 106) — wire has_no_invoice from window state; clean stale supplier_debt comment
+- Unchanged (RPC integration kept): supplier 81, manual 82, pre-fill 38, shipping-box 17, delivery-note 30
+- `inventory.html` +1 CSS link
+
+**Tier C:** Overview + supplier-picked + 3-line auto-load verified (2 screenshots). Close-receipt smoke blocked by F-1.
+
+**Findings:** 1 HIGH (PRE-EXISTING — F-1: 3 corrupt demo `stock_lot.lot_number` values break `next_lot_number`). 2 SKILL proposals (P-AUTHOR-1: next_*_number suffix probe; P-EXEC-1: 22P02 triage).
+
+---
+
 ### SPEC 7 — M1_LENS_ACTIVE_POS_LIST_REBUILD — 2026-05-18 (🟢 CLOSED — Group B SPEC 2 of 3)
 
 **Scope:** Full 1:1 rebuild of `modules/lens-pos-list/` per `architecture-brief/mockups/LENS_ACTIVE_POS_LIST_MOCKUP.html` (509 lines). 5 stat-cards via StatCardRow with OVERDUE as a DERIVED predicate (not a status enum — Step 5.3 trap codified). Source-type ChipFilter row. SideDetailPanel for selected PO. Progress bar per row, overdue row class, footer summary with alerts.

@@ -1,7 +1,51 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1 Lens Mockup-Fidelity Rebuild — Group A 🟢 + FK Fix 🟢 + Group B SPEC 6 🟢 + **SPEC 7 🟢** CLOSED — 2026-05-18 (Path X sequential). SPECs 1+2+3+4a+4.5+4+5+FK_FIX+6_PO+**7_POS_LIST** ALL CLOSED. Active POs List rebuilt 1:1 with 5 stat-cards (overdue is DERIVED predicate per Step 5.3) + ChipFilter source row + SideDetailPanel + progress bar + overdue row class. Tier C verified: backdated PO-300003 → overdue card flipped 0→1→0 (matches DB truth at every step), chip filters narrow rows, side panel opens. 1 LOW (RESOLVED in-run) + 1 INFO (registry file growth — follow-up tech debt). Next: SPEC 8 (Goods Receipt) dispatch.
+M1 Lens Mockup-Fidelity Rebuild — Group A 🟢 + FK Fix 🟢 + Group B SPECs 6 🟢 + 7 🟢 + **8 🟡 (closed-with-HIGH-finding)** — 2026-05-18 (Path X sequential). Group B 100% AUTHORED + 95% EXECUTED. SPEC 8 UI rebuild + 9-arg RPC wiring + debt-decoupling rule enforcement all VERIFIED; Tier C smoke creation BLOCKED by F-1 HIGH pre-existing demo data corruption (3 stock_lot rows with `LOT-PO300005-1/-2/-3` suffixes break `next_lot_number`'s CAST AS INT). Foreman recommends Option B: ~30min resilience SPEC `M1_RPC_NEXT_LOT_NUMBER_NON_NUMERIC_SAFE` fixes all 4 `next_*_number` RPCs to filter `~ '^[0-9]+$'` before CAST. Daniel decides.
+
+## 2026-05-18 — M1_LENS_GOODS_RECEIPT_REBUILD (🟡 CLOSED-WITH-HIGH-FINDING — Group B SPEC 8 of 8)
+
+**Status:** 🟡 UI rebuild complete and verified; smoke blocked by pre-existing F-1. ~1.5h execution.
+
+**Commits:**
+- `5d96549` chore(spec): author Group B SPECs (6 + 7 + 8) — covers SPEC 8 authoring
+- `e10923a` refactor(lens-goods-receipt): 1:1 mockup rebuild — 3 side-panel cards + chip-filter + has_no_invoice toggle
+- _(this commit)_ chore(spec): close M1_LENS_GOODS_RECEIPT_REBUILD with HIGH finding
+
+**What shipped:**
+- 4 rewritten JS (main 182, lines 171, close 106 edit, partial 131) + 5 unchanged (supplier/manual/pre-fill/shipping-box/delivery-note)
+- NEW `css/lens-goods-receipt-page.css` (175 lines)
+- 5-field step-meta (supplier / DN / date / M9-box / has-no-invoice)
+- 4 chip filters (הכל / מדף / ייצור / סומן כהתקבל)
+- 3 side-panel cards (📊 summary / 🧍 customer / 💰 debt-preview)
+- `p_has_no_invoice` wired from checkbox to RPC arg
+- Debt-decoupling rule enforced in code + UI text ("מודול המלאי לא יוצר חוב באופן ישיר")
+- inventory.html +1 CSS link
+
+**Tier C VFV:**
+- Overview render: ✅ (`01_overview_3_side_cards.png`)
+- Supplier picked → 3 lines loaded: ✅ (`02_supplier_picked_3_lines.png`)
+- Close receipt smoke: ⛔ BLOCKED by F-1 (NOT introduced by this SPEC)
+- Console errors during smoke attempt: 1 logged (THE F-1 finding); 0 on screen render
+
+**Findings (1 logged):**
+- **F-1 HIGH (PRE-EXISTING):** `next_lot_number` fails on 3 corrupt demo `stock_lot.lot_number` values (`LOT-PO300005-1/-2/-3`). Blocks ALL future m1_create_receipt_from_box smokes on demo until resolved. Foreman recommends Option B resilience SPEC.
+
+**SKILL proposals harvested:**
+- Strategic P-AUTHOR-1: §1.5 should include `next_*_number` suffix-conformance probe
+- Executor P-EXEC-1: 22P02 + sequence-number generator → suspect data corruption, not payload
+
+**Group B scoreboard:**
+
+| # | SPEC | Status |
+|---|------|--------|
+| 6 | M1_LENS_PURCHASE_ORDER_REBUILD | 🟢 |
+| 7 | M1_LENS_ACTIVE_POS_LIST_REBUILD | 🟢 |
+| 8 | M1_LENS_GOODS_RECEIPT_REBUILD | 🟡 (closed-with-HIGH-finding) |
+
+**Authoring + UI execution: 100% Group B complete. Awaiting Daniel's resolution decision on F-1.**
+
+---
 
 ## 2026-05-18 — M1_LENS_ACTIVE_POS_LIST_REBUILD (🟢 CLOSED — Group B SPEC 7 of 8, 3 SKILL proposals harvested)
 
