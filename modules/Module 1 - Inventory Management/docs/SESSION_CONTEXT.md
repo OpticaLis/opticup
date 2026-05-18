@@ -1,7 +1,28 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1 Lens Mockup-Fidelity Rebuild — Group A 🟢 + FK Fix 🟢 + Group B SPECs 6 🟢 + 7 🟢 + **8 🟡 (closed-with-HIGH-finding)** — 2026-05-18 (Path X sequential). Group B 100% AUTHORED + 95% EXECUTED. SPEC 8 UI rebuild + 9-arg RPC wiring + debt-decoupling rule enforcement all VERIFIED; Tier C smoke creation BLOCKED by F-1 HIGH pre-existing demo data corruption (3 stock_lot rows with `LOT-PO300005-1/-2/-3` suffixes break `next_lot_number`'s CAST AS INT). Foreman recommends Option B: ~30min resilience SPEC `M1_RPC_NEXT_LOT_NUMBER_NON_NUMERIC_SAFE` fixes all 4 `next_*_number` RPCs to filter `~ '^[0-9]+$'` before CAST. Daniel decides.
+M1 Lens Mockup-Fidelity Rebuild — **Group A 🟢 + FK Fix 🟢 + Group B 100% COMPLETE 🟢 + Resilience SPEC 🟢** — 2026-05-18 (Path X sequential, single session). SPECs 1+2+3+4a+4.5+4+5+FK_FIX+6_PO+7_POS_LIST+**8_GR**+M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE all CLOSED 🟢. SPEC 8's F-1 HIGH (pre-existing demo data corruption blocking `next_lot_number`) resolved by the Module 1.5 resilience SPEC that hardened all 4 `next_*_number` RPCs with `~ '^[0-9]+$'` regex guard. Tier C rerun successful: `RCP-9016-0001` + 3 numeric-suffix lots created + soft-deleted. SPEC 8 FOREMAN_REVIEW written → verdict 🟡 → 🟢. Group B 100% COMPLETE. Daniel decides next: Group C dispatch OR Phase 2 sibling-RPC SPEC.
+
+## 2026-05-18 — SPEC 8 verdict upgraded 🟡 → 🟢 by M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE
+
+**Status:** ✅ FOREMAN_REVIEW written; F-1 RESOLVED. Group B = SPEC 6 🟢 / SPEC 7 🟢 / SPEC 8 🟢. **100% COMPLETE.**
+
+The Module 1.5 resilience SPEC (`M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE`) added a regex guard `~ '^[0-9]+$'` to the WHERE clause of all 4 `next_*_number` RPCs (lot, receipt, po, transfer). The previously-blocked SPEC 8 smoke now succeeds end-to-end on demo. See `docs/specs/M1_LENS_GOODS_RECEIPT_REBUILD/FOREMAN_REVIEW.md` for the upgrade audit.
+
+**Group B final scoreboard:**
+
+| # | SPEC | Status |
+|---|------|--------|
+| 6 | M1_LENS_PURCHASE_ORDER_REBUILD | 🟢 |
+| 7 | M1_LENS_ACTIVE_POS_LIST_REBUILD | 🟢 |
+| 8 | M1_LENS_GOODS_RECEIPT_REBUILD | 🟢 (upgraded from 🟡) |
+| — | M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE (Module 1.5) | 🟢 |
+
+**SKILL proposals harvested from the 4-SPEC day (10 total):** 5 strategic + 5 executor. Queued for opportunistic `SKILL_HARVEST_2026_05_18` SPEC.
+
+**Phase 2 follow-up (recommended, deferred):** `M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE_PHASE_2` extends the regex guard to the 4 sibling RPCs (`next_box_number`, `next_internal_doc_number`, `next_purchase_order_number`, `next_return_number`). ~30 min; dispatch after Group C or opportunistically.
+
+---
 
 ## 2026-05-18 — M1_LENS_GOODS_RECEIPT_REBUILD (🟡 CLOSED-WITH-HIGH-FINDING — Group B SPEC 8 of 8)
 

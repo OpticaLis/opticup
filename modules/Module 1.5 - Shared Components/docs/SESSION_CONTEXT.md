@@ -1,5 +1,24 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
+## 2026-05-18 — M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE (🟢 CLOSED — cross-module RPC hardening)
+
+**Status:** ✅ Closed. ~30 min execution. 1 INFO (process), 0 defects.
+
+**Scope:** Resolves M1_LENS_GOODS_RECEIPT_REBUILD F-1 HIGH (pre-existing demo data corruption blocking `next_lot_number`). Hardens 4 cross-module sequential-number RPCs (`next_lot_number`, `next_receipt_number`, `next_po_number`, `next_transfer_number`) with regex guard `~ '^[0-9]+$'` before each `MAX(CAST(... AS INT))` step. Non-numeric suffix rows (e.g. demo's seeded `LOT-PO300005-*`) silently filtered out — no data deletion. Placed under Module 1.5 per Daniel's instruction since the RPCs are cross-module infrastructure used by lens-inventory, lens-purchase-order, lens-goods-receipt, frames purchasing, and future lens-transfers.
+
+**Commits:**
+- `d683fa8` chore(spec): author M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE SPEC
+- `d083dd0` fix(db): harden 4 next_*_number RPCs against non-numeric suffix corruption
+- _(this commit)_ chore(spec): close + upgrade SPEC 8 verdict 🟡 → 🟢
+
+**Verified live:** all 4 RPC bodies contain regex pattern + signatures unchanged + 3 corrupt rows still present (filter ignores, no UPDATE). Tier C rerun of SPEC 8's blocked smoke succeeded: `RCP-9016-0001` + 3 numeric-suffix lots created + soft-deleted. get_advisors(security) returned 0 ERROR/CRITICAL.
+
+**Phase 2 recommendation:** `M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE_PHASE_2` (~30 min) extends the regex guard to the 4 sibling RPCs (`next_box_number`, `next_internal_doc_number`, `next_purchase_order_number`, `next_return_number`). Dispatch after Group C or opportunistically.
+
+**Downstream effect:** SPEC 8 (Module 1 lens-goods-receipt) verdict officially upgraded 🟡 → 🟢. Group B = 100% COMPLETE.
+
+---
+
 ## Current Status
 - **Phase:** **M1_5_SHARED_COMPONENTS_PHASE_0 CLOSED 🟢** (2026-05-17, Bounded-Autonomy single-session). SPEC 2 of M1 Lens Mockup-Fidelity Full Rebuild Pipeline. Shipped 8 shared components + 1 tokens file end-to-end with no escalations: (1) `shared/css/tokens.css` (149 lines — mockup palette + source-band + dark + gradient + toggle + progress + wstep tokens); (2) `shared/js/chip-filter-row.js` + `shared/css/chip-filter.css`; (3) `shared/js/stat-card-row.js` + `shared/css/stat-card.css`; (4) `shared/js/group-header-row.js` + extensions to `shared/css/table.css` for `.tb-group-header*` / `.tb-col-permission-gated::before` / `.tb-pagination*`; (5) `shared/js/wizard-step-indicator.js` + `shared/css/wizard-step-indicator.css` (page-level, distinct from modal-wizard.js); (6) `shared/js/side-detail-panel.js` + `shared/css/side-detail.css`; (7) **EXTEND** `shared/js/table-builder.js` (298→349 lines, Iron-Rule-12 safe) + NEW `shared/js/table-builder-extensions.js` (86 lines housing the pagination helpers that would have pushed table-builder.js past 350) for data-table feature (pagination + permission-gated columns + group-header rows); (8) `shared/js/quick-receipt-drawer.js` + `shared/css/quick-receipt.css`; (9) `shared/js/lens-details-drawer.js` + `shared/css/lens-details.css`. Total 9 new JS files + 8 new/extended CSS files. RULE_21_INVESTIGATION.md committed as the SPEC's mandatory first deliverable per §9 — 1 EXTEND verdict (data-table → existing table-builder.js, additive) + 7 NEW verdicts (no replace+migrate, no destructive ops, §7 stayed `None.`). All commits passed pre-commit gates (Iron Rules 12/14/15/18/21/23/31/32). Tier C smoke harness shipped as `shared/tests/M1_5_SPEC2_components-test.html`; runtime VFV deferred to opticup-localhost-tester per SPEC 1's A-2 precedent — 🟡 CLOSED WITH ONE DEFERRED CRITERION pattern available if Tier C visual verification surfaces drift. Pipeline-coordination lock claimed at start, released at close; 0 collisions with parallel SPEC 3 (DB Schema) session.
 - **Branch:** develop

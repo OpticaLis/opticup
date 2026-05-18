@@ -4,7 +4,29 @@
 
 ---
 
-## Lens UI Rebuild — Group B (in progress 2026-05-18)
+## Lens UI Rebuild — Group B 🟢 100% COMPLETE (2026-05-18)
+
+### M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE (Module 1.5) — 2026-05-18 (🟢 CLOSED — resolves SPEC 8 F-1)
+
+**Scope:** Hardened 4 `next_*_number` RPCs (next_lot_number, next_receipt_number, next_po_number, next_transfer_number) with regex guard `~ '^[0-9]+$'` before CAST. Placed under Module 1.5 (shared infra). 4 CREATE OR REPLACE migrations; signatures unchanged. Tier C rerun of SPEC 8's blocked smoke succeeds. SPEC 8 verdict upgraded 🟡 → 🟢. Group B 100% COMPLETE.
+
+**Commits:**
+- `d683fa8` chore(spec): author M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE SPEC
+- `d083dd0` fix(db): harden 4 next_*_number RPCs against non-numeric suffix corruption
+- _(this commit)_ chore(spec): close + upgrade SPEC 8 verdict 🟡→🟢
+
+**Files changed:**
+- NEW 4 migrations in `supabase/migrations/` (one per RPC)
+- NEW SPEC folder under `modules/Module 1.5 - Shared Components/docs/specs/M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE/`
+- NEW `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_GOODS_RECEIPT_REBUILD/FOREMAN_REVIEW.md` (SPEC 8 verdict upgrade)
+
+**DB verified live:** all 4 RPCs contain regex pattern; signatures preserved; 3 corrupt `LOT-PO300005-*` rows still present (filtered out, not modified); get_advisors clean of new HIGH/ERROR.
+
+**Findings:** 1 INFO (PROCESS — Tier C cleanup pattern for K2 RPC side-effects on po_line counters; codified into P-AUTHOR-1).
+
+---
+
+
 
 ### SPEC 8 — M1_LENS_GOODS_RECEIPT_REBUILD — 2026-05-18 (🟡 CLOSED-WITH-HIGH-FINDING — Group B SPEC 3 of 3)
 
