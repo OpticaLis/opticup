@@ -293,7 +293,13 @@
   // Restored by M1_INVENTORY_UNIFIED_SCREEN_FUNCTIONAL_HOTFIX (2026-05-16).
   function gatePlatformAdminTabs() {
     if (typeof sb === 'undefined' || !sb || typeof sb.rpc !== 'function') return;
-    sb.rpc('is_platform_super_admin').then(function (r) {
+    // M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE: route the platform-admin
+    // gate RPC through a transient client that reads the admin.html session
+    // (storageKey 'optic_admin_auth'). Default sb misses Google-OAuth admin JWTs.
+    // Fail-safe: any error → fall back to default sb → RPC runs as anon → false → button hidden.
+    var rpcClient = sb;
+    try { rpcClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: true, autoRefreshToken: false, storageKey: 'optic_admin_auth' } }); } catch (_) { /* keep default sb */ }
+    rpcClient.rpc('is_platform_super_admin').then(function (r) {
       var isAdmin = !!(r && r.data === true);
       if (isAdmin) return;
       // Hide the catalog-admin button + section for non-platform-admin users.
