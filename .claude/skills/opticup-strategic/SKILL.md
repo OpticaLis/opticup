@@ -1593,3 +1593,84 @@ Pipeline returns 🟢 only when ALL surfaces show zero material DRIFT (intention
 ```
 
 This subsection is REQUIRED for all UI-touching SPECs whose Briefs reference mockups. SQL-only / EF-only / docs-only SPECs can omit.
+
+---
+
+## Patterns from SKILL_HARVEST_2026_05_18 (5 applied)
+
+Harvested from today's Path X arc (5 SPECs: FK fix + Group B SPEC 6/7/8 + 2 resilience SPECs). Format: rule / why / how-to-apply / empirical evidence.
+
+### P-STRAT-2026-05-18-A — §0 path-resolution should distinguish "USED IN MOCKUP" vs "available in `shared/`"
+
+**Rule:** When listing Phase 0 shared-component dependencies in `§0` Path verification, do not stop at "file exists in `shared/js/`". Verify each listed component is actually used in the mockup that drives the SPEC. If the mockup doesn't use it, drop it from the dependency list before sealing.
+
+**Why:** SPEC 6 (M1_LENS_PURCHASE_ORDER_REBUILD) §0 listed `side-detail-panel` as a Phase 0 dep based on the Brief's component shopping list. The actual 387-line mockup used inline per-row editors + a static side-card stack — no `SideDetailPanel.init()` mount needed. The executor caught it during rebuild, documented the discrepancy as a non-deviation in EXECUTION_REPORT §5. No harm done, but the §0 statement was incorrect.
+
+**How to apply:** During §0 Path verification, for each listed shared component, add a one-line mockup-citation cross-check: `shared/js/X.js — MOCKUP CITES: <selector or class name from mockup> on line <N>`. If no citation can be made, remove the component from the dependency list. Takes ~30 seconds per component; eliminates the "available but unused" §0 noise.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_PURCHASE_ORDER_REBUILD/EXECUTION_REPORT.md §5 Deviations` (2026-05-18).
+
+### P-STRAT-2026-05-18-B — §0 should include a global-name probe for shared components
+
+**Rule:** When a SPEC lists a Phase 0 shared component in `§0`, also record the JS global the component exposes by running a one-line grep against the file. Filenames don't always match globals.
+
+**Why:** SPEC 7 (M1_LENS_ACTIVE_POS_LIST_REBUILD) initial mount call used `window.ChipFilterRow.init(host, { activeId: 'all', onChipClick: ... })`. The shared component file is `shared/js/chip-filter-row.js` but the global it exposes is `window.ChipFilter` (no `Row` suffix), and the API uses `activeIds: ['all']` + `onSelect`. Mount silently failed (chip row never rendered) until the executor inspected the file. Cost: ~3 minutes Tier C debug.
+
+**How to apply:** Add to §0 Path verification table a "Global" column. Populate via:
+```
+grep -oE 'window\.[A-Za-z]+\s*=' shared/js/<component>.js
+# Example output: window.ChipFilter =
+```
+Record the global verbatim. Future executors writing the mount call read the correct name from §0, not from a filename-inference heuristic.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_ACTIVE_POS_LIST_REBUILD/FINDINGS.md F-1` (2026-05-18, LOW resolved in-run).
+
+### P-STRAT-2026-05-18-C — §1.5 should include `next_*_number` suffix-conformance probe
+
+**Rule:** Any SPEC whose Tier C smoke calls a K-RPC that PERFORMs a `next_*_number` sequence-number generator MUST include a §1.5 probe for non-conforming suffix data in the target table.
+
+**Why:** SPEC 8 (M1_LENS_GOODS_RECEIPT_REBUILD) F-1 HIGH: the rebuild was correct end-to-end, but `m1_create_receipt_from_box` calls `next_lot_number` which crashed with `22P02 invalid input syntax for type integer: "PO300005-1"` because 3 demo `stock_lot` rows had non-numeric suffixes (`LOT-PO300005-1/-2/-3`, seeded by an earlier manual test). The defect was invisible to Step 1.6 / 1.7 / standard schema pre-flight. Required a follow-up resilience SPEC (Phase 1 + Phase 2) to harden all 8 `next_*_number` RPCs project-wide. Catching at SPEC-author time would have prevented the 🟡 verdict-with-finding lifecycle.
+
+**How to apply:** Add to §1.5 (or §0 DB pre-flight) when the SPEC's smoke involves any of `m1_create_receipt_from_box`, `record_transfer`, `place_purchase_order`, or any future K-RPC calling a sequence generator:
+```sql
+-- Probe for non-conforming suffix rows
+SELECT count(*) FROM <target_table>
+ WHERE tenant_id = '<demo_tid>'
+   AND <number_col> LIKE '<prefix>%'
+   AND NOT (SUBSTRING(<number_col> FROM <offset>) ~ '^[0-9]+$');
+```
+If count > 0 → flag in SPEC's §0 OR open a tiny data-cleanup SPEC OR rely on the now-shipped Phase 1+2 regex guards. ~60 seconds; catches the entire defect class.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_GOODS_RECEIPT_REBUILD/FINDINGS.md F-1` + `M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE` + `_PHASE_2` (2026-05-18).
+
+### P-STRAT-2026-05-18-D — Tier C cleanup pattern for K-RPC smokes must enumerate ALL side-effect tables
+
+**Rule:** When a SPEC's Tier C smoke calls a K-RPC that does multi-table atomic updates (e.g., `m1_create_receipt_from_box` updates `purchase_receipt + purchase_receipt_line + stock_lot + stock_movement + purchase_order_line + purchase_order` header), the §8 QA / Tier C section MUST enumerate the cleanup pattern for ALL side-effect tables, not just the primary insert.
+
+**Why:** Resilience Phase 1 Tier C smoke created `RCP-9016-0001` via `m1_create_receipt_from_box`. Soft-deleting the receipt + 3 stock_lot rows (Iron Rule 3) did NOT auto-reverse the side-effect on `purchase_order_line.qty_received` counters (bumped 0/0/0 → 5/3/4) or the `purchase_order` header status (flipped 'sent' → 'fully_received'). Discovered mid-cleanup; explicit follow-up UPDATE + status reset needed. Took ~2 minutes to repair; would have been zero if the §8 cleanup template called it out at author time.
+
+**How to apply:** §8 cleanup template for K-RPC smokes:
+```sql
+-- 1) Soft-delete primary records (Iron Rule 3)
+UPDATE stock_lot       SET is_deleted = true WHERE purchase_receipt_id = '{id}';
+UPDATE purchase_receipt SET is_deleted = true WHERE id = '{id}';
+-- 2) Roll back atomic side-effects on linked PO state
+UPDATE purchase_order_line SET qty_received = qty_received - {amount per line}
+WHERE id IN ({list of po_line_ids touched});
+UPDATE purchase_order SET status = '{previous_status}'
+WHERE id = '{po_id_touched}';
+```
+Future K-RPC SPECs reuse this template. The §8 author records the side-effect-table list while writing the SPEC; the executor follows it mechanically.
+
+**Source:** `modules/Module 1.5 - Shared Components/docs/specs/M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE/FINDINGS.md F-1 (INFO)` (2026-05-18).
+
+### P-STRAT-2026-05-18-E — 🟡→🟢 verdict-upgrade FOREMAN_REVIEW should be written by the same session that lands the resolving fix
+
+**Rule:** When a SPEC closes 🟡 (closed-with-finding) and a follow-up SPEC in the same Path X session resolves the blocker, the FOREMAN_REVIEW for the original SPEC marking the verdict upgrade 🟡 → 🟢 should be written in the closure commit of the resolving SPEC — NOT deferred to a separate session.
+
+**Why:** Today's flow: SPEC 8 closed 🟡 → Daniel auth → resilience SPEC closed 🟢 → SPEC 8 FOREMAN_REVIEW upgrade 🟡 → 🟢 written in the resilience SPEC's closure commit. Keeps the lineage tight, prevents "verdict orphans" (SPECs frozen at 🟡 with a resolved finding but never lifted in a state file), and makes the upgrade discoverable from both directions (the SPEC 8 folder has the review; the resilience SPEC's closure references it).
+
+**How to apply:** When authoring a resolving SPEC (one whose Goal is "resolve F-X of SPEC-Y"), include in §10 Commit Plan: "Closure commit also writes `<spec-y-path>/FOREMAN_REVIEW.md` marking F-X RESOLVED + verdict 🟡 → 🟢". Include `<spec-y-path>/FOREMAN_REVIEW.md` in §11 `files_owned_globs`. Codify the verdict upgrade in the SAME commit as EXECUTION_REPORT + FINDINGS — single push.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_GOODS_RECEIPT_REBUILD/FOREMAN_REVIEW.md` (2026-05-18, written by the resilience SPEC's closure session).
+

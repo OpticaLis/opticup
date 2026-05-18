@@ -1325,3 +1325,92 @@ When SPEC execution surfaces dependencies the author didn't anticipate, the exec
 - When the adaptation introduces new destructive operations (must escalate first)
 
 **ROI per SPEC:** Avoids ~30-60 min of escalation cycles for routine dependency surprises. Bounded by the SPEC's own destructive-ops envelope.
+
+---
+
+## Patterns from SKILL_HARVEST_2026_05_18 (5 applied)
+
+Harvested from today's Path X arc (5 SPECs: FK fix + Group B SPEC 6/7/8 + 2 resilience SPECs). Format: rule / why / how-to-apply / empirical evidence.
+
+### P-EXEC-2026-05-18-A — Headless smoke polls must wait on STATE-COMPLETE conditions, not single-trigger-field
+
+**Rule:** When polling for a Tier C async operation to complete in a headless test (Chrome MCP `evaluate_script` with a `for/setTimeout` wait loop), the loop's exit condition must check a STATE-COMPLETE multi-field assertion — never a single field that flips early in the chain.
+
+**Why:** SPEC 6 (Purchase Order) Tier C: first poll exited at `window.LensPO.poId !== null`. The `place_purchase_order` RPC sets `poId` BEFORE the subsequent `select po_number, status` lookup completes and BEFORE `setStep(STEP_SEND)` fires. Result: the test reported `poNumber=null`, `activeStep=2` (wrong), `sentBtn=hidden`. Required a second poll on `currentStep === 3 && poNumber` to capture the true completed state. Cost: ~2 minutes Tier C debug + a misleading first-pass result.
+
+**How to apply:** Identify the LAST state mutation in the success chain (here: `setStep(STEP_SEND)` AND `poNumber` populated). Make the poll's exit condition the AND of all post-trigger fields, not the first one set:
+
+```js
+for (let i = 0; i < 30; i++) {
+  await new Promise(r => setTimeout(r, 250));
+  if (window.LensPO.currentStep === 3 && window.LensPO.poNumber) break;
+}
+```
+
+If the SPEC has a documented post-RPC state shape (e.g., `STEP_SEND` + `poNumber` + sent-btn visible), encode all three.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_PURCHASE_ORDER_REBUILD/FINDINGS.md F-1 P-EXEC-1` (2026-05-18).
+
+### P-EXEC-2026-05-18-B — Read shared component API contract block BEFORE writing the mount call
+
+**Rule:** When wiring a Phase 0 shared component (`StatCardRow`, `ChipFilter`, `SideDetailPanel`, `WizardSteps`, `GroupHeaderRow`, etc.), the executor MUST read the component file's API contract block (first 30 lines) before writing the `MyComponent.init(host, config)` call. Filenames don't always match globals; config keys vary (`activeId` vs `activeIds`, `onSelect` vs `onChipClick`).
+
+**Why:** SPEC 7 (POs List) Tier C: initial wiring used `window.ChipFilterRow.init(host, { activeId: 'all', onChipClick: (id) => ... })`. The file is `shared/js/chip-filter-row.js` BUT the global is `window.ChipFilter`, the active-key is `activeIds: ['all']` (array), and the callback is `onSelect(activeIds: Array)`. Three mismatches in one call. Mount silently failed; the chip row never rendered. Cost: ~3 minutes debug before discovering the API doc at the top of the file.
+
+**How to apply:** Before writing the `.init()` call, run `head -30 shared/js/<component>.js`. The first 30 lines contain the canonical API contract block. Read it. Verify (a) the `window.X` global name, (b) every config key the SPEC tells you to set, (c) the callback's name and signature, (d) the returned handle shape (often `{ setActive, getActive, destroy }`). Takes ~30 seconds. Eliminates the entire "wired but silent" defect class.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_ACTIVE_POS_LIST_REBUILD/FINDINGS.md F-1 P-EXEC-2` (2026-05-18).
+
+### P-EXEC-2026-05-18-C — Pair DB mutate+restore in adjacent tool calls before any unrelated navigation
+
+**Rule:** When a Tier C smoke mutates DB state for verification purposes (e.g., backdating an `expected_delivery_at` to drive an "overdue" computed predicate, injecting a corrupt-suffix row to test a regex guard), the restore (UPDATE back to original / soft-delete the test row) MUST be paired with the mutate in adjacent tool calls — before any unrelated navigation or follow-on Tier C step.
+
+**Why:** SPEC 7 Tier C backdated PO-300003's `expected_delivery_at` to drive the overdue card from 0 → 1, took a screenshot, then restored. The restore ran before the regression-check navigation. Today's flow got this right. The SKILL didn't explicitly call out the ordering — easy to forget under time pressure, which would leave demo in a non-canonical state for the next session.
+
+**How to apply:** Codify the pattern in Tier C plans:
+
+1. mutate DB (`UPDATE X SET y = '<test value>'`)
+2. take screenshot / verify UI reflects the mutation
+3. restore DB (`UPDATE X SET y = '<original value>'`) — MUST be the next call after step 2
+4. THEN navigate to regression-check pages
+
+If you need MULTIPLE mutations in one Tier C, batch them inside a single transaction (`DO $$ BEGIN ... END $$`) or restore in REVERSE order at the end of the Tier C block. Never end a session with un-restored test mutations.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_ACTIVE_POS_LIST_REBUILD/FINDINGS.md F-1 P-EXEC-3` (2026-05-18).
+
+### P-EXEC-2026-05-18-D — `22P02 + sequence-number RPC` triage rule
+
+**Rule:** When a Tier C RPC smoke fails with PostgreSQL error code `22P02 "invalid input syntax for type integer"`, the executor's first triage hypothesis must be **a `next_*_number` sequence generator parsing non-conforming suffix data in its target table** — NOT a payload defect in the JS code passing arguments to the RPC.
+
+**Why:** SPEC 8 (Goods Receipt) Tier C `m1_create_receipt_from_box` failed with `22P02 "PO300005-1"`. First instinct was to inspect the JS payload (was `p_supplier_number` being formatted wrong? did `qty_received` have a bad string?). Wrong. The error came from inside `next_lot_number`'s `MAX(CAST(SUBSTRING(lot_number FROM 5) AS INT))` choking on 3 demo `LOT-PO300005-*` rows seeded weeks earlier. ~5 minutes of debug + a hypothesis shift before the right cause surfaced.
+
+**How to apply:** Triage decision tree — when error code is `22P02 "invalid input syntax for type integer"` AND failing RPC is in the K-RPC family (`m1_create_receipt_from_box`, `record_transfer`, `place_purchase_order`):
+
+1. DO NOT inspect JS payload first
+2. `pg_get_functiondef` of the RPC body
+3. Identify any `next_*_number` call inside the body
+4. `SELECT <col> FROM <target_table> WHERE <col> LIKE '<prefix>%' AND NOT (SUBSTRING(<col> FROM <offset>) ~ '^[0-9]+$')`
+5. If rows returned → confirmed: sequence-number generator + non-conforming data
+6. Open a hardening SPEC (or apply the now-shipped Phase 1+2 regex guard if already in scope)
+
+Saves ~5 minutes per occurrence + prevents wrong-cause-chase. As of 2026-05-18 Phase 2 close, all 8 `next_*_number` RPCs are hardened, so future occurrences should be rare — but the triage tree stays useful for new RPCs added without the guard.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_GOODS_RECEIPT_REBUILD/FINDINGS.md F-1 P-EXEC-1` (2026-05-18).
+
+### P-EXEC-2026-05-18-E — Soft-delete column inventory + `set_config('request.jwt.claims', ...)` for JWT-gated RPCs from MCP
+
+**Rule:** (a) Soft-delete column names vary per table — check before writing the UPDATE. (b) When calling a SECURITY DEFINER + JWT-tenant-gated RPC from Supabase MCP `execute_sql` (no real JWT in the request), wrap the call in a DO block that first sets `request.jwt.claims` via `set_config(...)`.
+
+**Why (a):** Resilience Phase 1 cleanup used `UPDATE stock_lot SET is_deleted=true, deleted_at=now()` — failed with `42703 column "deleted_at" of relation "stock_lot" does not exist`. Same for `purchase_receipt`. Cost: ~1 minute repair. Column-schema variations across tables: `stock_lot` and `purchase_receipt` have only `is_deleted`; `purchase_order` has both `is_deleted` and `deleted_at`; `lens_variant_notes` has neither (hard-delete by design per SPEC 3).
+
+**Why (b):** Resilience Phase 2 Tier C cycles called the 4 sibling RPCs directly via `execute_sql`. Each RPC's body has the canonical JWT-tenant guard that raises `42501` if `request.jwt.claims->>'tenant_id'` is NULL. MCP `execute_sql` doesn't pass a JWT. The canonical workaround inside a DO block uses `set_config('request.jwt.claims', json_build_object('tenant_id', v_tid::text, 'role', 'authenticated')::text, true)` — the `true` third arg makes it transaction-local so it auto-reverts at COMMIT/ROLLBACK.
+
+**How to apply (a):** Before any soft-delete UPDATE, run a column probe via information_schema. Cheat-sheet for project tables (verified 2026-05-18):
+
+- `stock_lot`, `purchase_receipt`, `shipments`, `supplier_documents`, `supplier_returns`: `is_deleted` ONLY (no `deleted_at`)
+- `purchase_order`: BOTH `is_deleted` and `deleted_at`
+- `lens_variant_notes`: NEITHER (hard-delete by design per SPEC 3)
+
+**How to apply (b):** Tier C template for JWT-gated RPCs from MCP wraps the call in `DO $$ ... PERFORM set_config('request.jwt.claims', ...); v_result := my_rpc(...); ... END $$;`. Eliminates the 42501 friction on every direct-RPC Tier C smoke. See the 4 Tier C cycles in `M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE_PHASE_2/EXECUTION_REPORT.md §3.2` for canonical examples.
+
+**Source:** `modules/Module 1.5 - Shared Components/docs/specs/M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE/FINDINGS.md` + `M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE_PHASE_2/EXECUTION_REPORT.md §3.2` (2026-05-18).

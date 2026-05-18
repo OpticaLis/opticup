@@ -335,6 +335,8 @@ When a module's Architecture Brief is sealed:
 
 **Post-LIVE Action:** ALL Architecture Briefs sealed (M5/M6/M7/M8/M9/M11/M12/M13/M14/M15). Module Strategists begin SPEC authoring with M1-extension as first blocker.
 
+- **SKILL_HARVEST_2026_05_18 — 2026-05-18** — Codified 10 SKILL proposals (5 P-STRAT + 5 P-EXEC) harvested across today's 5-SPEC Path X arc (M1 FK Fix + Group B SPECs 6/7/8 + Resilience Phase 1 + Resilience Phase 2). Format per Daniel's brief: rule / why / how-to-apply / empirical evidence (with SPEC source citation). Appended to `.claude/skills/opticup-strategic/SKILL.md` and `.claude/skills/opticup-executor/SKILL.md` under new section `## Patterns from SKILL_HARVEST_2026_05_18`. **Strategic harvest:** §0 path-resolution mockup-citation rule, §0 global-name probe for shared components, §1.5 `next_*_number` suffix-conformance probe, K-RPC Tier C cleanup must enumerate ALL side-effect tables, 🟡→🟢 verdict-upgrade should be written in the resolving SPEC's session. **Executor harvest:** STATE-COMPLETE polling rule, read-component-API-before-mount-call rule, mutate+restore-adjacent-tool-calls rule, `22P02 + next_*_number` triage tree, soft-delete column inventory + `set_config('request.jwt.claims', ...)` pattern for JWT-gated RPCs from MCP. Total wall clock for the 5-SPEC arc + 2 resilience SPECs + SKILL harvest: ~6 hours single Claude Code session, Path X sequential, 0 escalations to Daniel apart from authorization gates between SPEC groups. See `modules/Module 1.5 - Shared Components/docs/specs/SKILL_HARVEST_2026_05_18/` for SPEC + EXECUTION_REPORT + FINDINGS.
+
 ---
 
 *Maintained by `opticup-architect` skill. Bootstrap loads this index file only. Module-detail files loaded on demand when working in that module.*
