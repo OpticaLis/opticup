@@ -1,0 +1,346 @@
+/* catalog-private-admin.css — Mockup-faithful dark/light re-skin for the
+   shared CatalogPrivateAdmin component (shared/js/catalog-private-admin.js).
+   Sub-tab "global" → DARK chrome per LENS_PLATFORM_CATALOG_ADMIN_MOCKUP.html.
+   Sub-tab "private" → LIGHT chrome per LENS_INVENTORY_MOCKUP.html palette.
+   Scoping is page-local: rules apply only under [data-catalog-theme="..."].
+   Author: M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1 (2026-05-18).
+   Iron Rule D3: no :root mutation; no edits to shared/css/styles.css. */
+
+/* ===== Base mount shell (theme-agnostic) ============================== */
+[data-catalog-theme] {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  direction: rtl;
+  border-radius: 8px;
+  padding: 14px 16px;
+  transition: background-color 0.15s, color 0.15s;
+}
+[data-catalog-theme] .lens-page-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 600;
+  padding: 4px 0 10px;
+  margin-bottom: 8px;
+}
+[data-catalog-theme] .lens-panel {
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+[data-catalog-theme] .lens-panel-header {
+  padding: 12px 16px;
+}
+[data-catalog-theme] .lens-panel-header h3 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  margin: 0;
+}
+[data-catalog-theme] .list-item {
+  padding: 11px 14px;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+[data-catalog-theme] .list-item .item-meta {
+  font-size: 11px;
+  margin-top: 2px;
+}
+[data-catalog-theme] .empty-state {
+  padding: 14px 16px;
+  font-size: 12px;
+  text-align: center;
+}
+[data-catalog-theme] .catalog-subtabs {
+  border-radius: 6px;
+  padding: 4px;
+  margin-bottom: 12px;
+  display: flex;
+  gap: 6px;
+}
+[data-catalog-theme] .catalog-subtabs button[data-subtab] {
+  flex: 1;
+  padding: 8px 14px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background-color 0.1s, color 0.1s, border-color 0.1s;
+}
+
+/* ===== DARK theme (sub-tab "global") =================================
+   Source: LENS_PLATFORM_CATALOG_ADMIN_MOCKUP.html (slate-900 palette).
+   Mockup colors: bg #0f172a, card #1e293b, border #334155, text #e2e8f0
+   #f1f5f9, muted #94a3b8 #64748b, accent #1e3a8a #1e40af #60a5fa #bfdbfe,
+   focus-ring rgba(30,58,138,0.3), success #065f46 #6ee7b7,
+   draft #422006 #fcd34d, purple-import #7c3aed #5b21b6. */
+[data-catalog-theme="dark"] {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+[data-catalog-theme="dark"] .lens-page-title {
+  color: #f1f5f9;
+}
+[data-catalog-theme="dark"] .lens-page-title .badge {
+  background: #1e3a8a;
+  color: #bfdbfe;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: normal;
+}
+[data-catalog-theme="dark"] .catalog-subtabs {
+  background: #1e293b;
+  border: 1px solid #334155;
+}
+[data-catalog-theme="dark"] .catalog-subtabs button[data-subtab] {
+  background: transparent;
+  color: #94a3b8;
+  border-color: transparent;
+}
+[data-catalog-theme="dark"] .catalog-subtabs button[data-subtab]:hover {
+  background: #334155;
+  color: #f1f5f9;
+}
+[data-catalog-theme="dark"] .catalog-subtabs button[data-subtab].active {
+  background: #1e3a8a;
+  color: #ffffff;
+  border-color: #1e40af;
+  box-shadow: 0 0 0 2px rgba(30,58,138,0.3);
+}
+[data-catalog-theme="dark"] .lens-panel {
+  background: #1e293b;
+  border: 1px solid #334155;
+}
+[data-catalog-theme="dark"] .lens-panel-header {
+  background: #0f172a;
+  border-bottom: 1px solid #334155;
+}
+[data-catalog-theme="dark"] .lens-panel-header h3 {
+  color: #f1f5f9;
+}
+[data-catalog-theme="dark"] .lens-panel .badge {
+  font-size: 11px;
+  background: #334155;
+  color: #94a3b8;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+[data-catalog-theme="dark"] [data-list] {
+  background: #1e293b;
+}
+[data-catalog-theme="dark"] .list-item {
+  border-bottom: 1px solid #334155;
+  color: #f1f5f9;
+}
+[data-catalog-theme="dark"] .list-item .item-meta {
+  color: #94a3b8;
+}
+[data-catalog-theme="dark"] .list-item:hover {
+  background: #334155;
+}
+[data-catalog-theme="dark"] .list-item.selected {
+  background: #1e3a8a;
+  color: #ffffff;
+  border-right: 3px solid #60a5fa;
+}
+[data-catalog-theme="dark"] .list-item.selected .item-meta {
+  color: #bfdbfe;
+}
+[data-catalog-theme="dark"] .empty-state {
+  color: #64748b;
+}
+[data-catalog-theme="dark"] [data-detail] {
+  color: #e2e8f0;
+  background: #1e293b;
+}
+[data-catalog-theme="dark"] .badge-private {
+  background: #422006;
+  color: #fcd34d;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 600;
+  margin-right: 4px;
+}
+[data-catalog-theme="dark"] .btn.btn-g,
+[data-catalog-theme="dark"] .btn.btn-p,
+[data-catalog-theme="dark"] .btn.btn-r {
+  border: 1px solid #475569;
+  background: #334155;
+  color: #e2e8f0;
+  border-radius: 5px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+[data-catalog-theme="dark"] .btn.btn-g:hover,
+[data-catalog-theme="dark"] .btn.btn-p:hover {
+  background: #1e3a8a;
+  color: #ffffff;
+  border-color: #1e40af;
+}
+[data-catalog-theme="dark"] .btn.btn-r:hover {
+  background: #7c2d12;
+  color: #ffffff;
+  border-color: #991b1b;
+}
+[data-catalog-theme="dark"] [data-add] {
+  background: transparent;
+  border: 1px dashed #475569;
+  color: #94a3b8;
+}
+[data-catalog-theme="dark"] [data-add]:hover {
+  border-color: #1e3a8a;
+  color: #60a5fa;
+  background: rgba(30,58,138,0.3);
+}
+
+/* ===== LIGHT theme (sub-tab "private") ================================
+   Source: LENS_INVENTORY_MOCKUP.html (Hybrid-Navy palette).
+   Mockup colors: bg #f5f6fa, card #ffffff #f8f9fb, text #2c3e50 #5d6d7e,
+   primary #c9a555 #b8954a (selected + primary buttons), navy #34495e (headers),
+   border #d0d4d9 #ecf0f1, success #27ae60 #229954, error #e74c3c #c0392b,
+   amber #f4c430 #856404. */
+[data-catalog-theme="light"] {
+  background: #f5f6fa;
+  color: #2c3e50;
+}
+[data-catalog-theme="light"] .lens-page-title {
+  color: #2c3e50;
+}
+[data-catalog-theme="light"] .lens-page-title .badge {
+  background: #faf3e0;
+  color: #c9a555;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: normal;
+}
+[data-catalog-theme="light"] .catalog-subtabs {
+  background: #ffffff;
+  border: 1px solid #d0d4d9;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+[data-catalog-theme="light"] .catalog-subtabs button[data-subtab] {
+  background: transparent;
+  color: #5d6d7e;
+  border-color: transparent;
+}
+[data-catalog-theme="light"] .catalog-subtabs button[data-subtab]:hover {
+  background: #faf3e0;
+  color: #2c3e50;
+}
+[data-catalog-theme="light"] .catalog-subtabs button[data-subtab].active {
+  background: #c9a555;
+  color: #ffffff;
+  border-color: #b8954a;
+}
+[data-catalog-theme="light"] .lens-panel {
+  background: #ffffff;
+  border: 1px solid #d0d4d9;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+[data-catalog-theme="light"] .lens-panel-header {
+  background: #f8f9fb;
+  border-bottom: 1px solid #ecf0f1;
+}
+[data-catalog-theme="light"] .lens-panel-header h3 {
+  color: #34495e;
+}
+[data-catalog-theme="light"] .lens-panel .badge {
+  font-size: 11px;
+  background: #ecf0f1;
+  color: #5d6d7e;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+[data-catalog-theme="light"] [data-list] {
+  background: #ffffff;
+}
+[data-catalog-theme="light"] .list-item {
+  border-bottom: 1px solid #ecf0f1;
+  color: #2c3e50;
+}
+[data-catalog-theme="light"] .list-item .item-meta {
+  color: #5d6d7e;
+}
+[data-catalog-theme="light"] .list-item:hover {
+  background: #faf3e0;
+}
+[data-catalog-theme="light"] .list-item.selected {
+  background: #c9a555;
+  color: #ffffff;
+  border-right: 3px solid #b8954a;
+}
+[data-catalog-theme="light"] .list-item.selected .item-meta {
+  color: #fef3c7;
+}
+[data-catalog-theme="light"] .empty-state {
+  color: #95a5a6;
+}
+[data-catalog-theme="light"] [data-detail] {
+  color: #2c3e50;
+  background: #ffffff;
+}
+[data-catalog-theme="light"] .badge-private {
+  background: #fff7e0;
+  color: #856404;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 600;
+  margin-right: 4px;
+  border: 1px solid #f4c430;
+}
+[data-catalog-theme="light"] .btn.btn-g {
+  border: 1px solid #d0d4d9;
+  background: #ffffff;
+  color: #2c3e50;
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+[data-catalog-theme="light"] .btn.btn-g:hover {
+  background: #faf3e0;
+  border-color: #c9a555;
+}
+[data-catalog-theme="light"] .btn.btn-p {
+  background: #c9a555;
+  color: #ffffff;
+  border: 1px solid #b8954a;
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+[data-catalog-theme="light"] .btn.btn-p:hover {
+  background: #b8954a;
+}
+[data-catalog-theme="light"] .btn.btn-r {
+  background: #e74c3c;
+  color: #ffffff;
+  border: 1px solid #c0392b;
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+[data-catalog-theme="light"] .btn.btn-r:hover {
+  background: #c0392b;
+}
+[data-catalog-theme="light"] [data-add] {
+  background: #ffffff;
+  border: 1px dashed #c9a555;
+  color: #c9a555;
+}
+[data-catalog-theme="light"] [data-add]:hover {
+  background: #faf3e0;
+  border-color: #b8954a;
+  color: #b8954a;
+}

@@ -30,6 +30,9 @@
     state.privatePerm = privatePerm;
     state.modKey = mod;
 
+    // Mockup-fidelity re-skin (M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1):
+    // initial sub-tab is 'global' per init(); dark theme is the default value.
+    opts.mountEl.dataset.catalogTheme = 'dark';
     opts.mountEl.innerHTML = `
       <div class="lens-page-title">
         📚 קטלוג ${escapeHtml(catLabel)}
@@ -96,6 +99,8 @@
   function switchSubtab(opts, state, sub) {
     state.subtab = sub;
     state.selectedBrand = state.selectedDesign = state.selectedVariant = null;
+    // Mockup-fidelity re-skin: 'global' → dark chrome, 'private' → light chrome.
+    opts.mountEl.dataset.catalogTheme = sub === 'private' ? 'light' : 'dark';
     opts.mountEl.querySelector('[data-role="active-tab-badge"]').textContent = sub === 'private' ? 'פרטי' : 'גלובלי';
     opts.mountEl.querySelectorAll('button[data-subtab]').forEach(b => b.classList.toggle('active', b.dataset.subtab === sub));
     // Show "+ Add" buttons only on private subtab and only if user has manage perm

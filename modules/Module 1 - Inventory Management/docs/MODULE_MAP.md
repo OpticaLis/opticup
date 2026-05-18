@@ -142,6 +142,7 @@
 | 78 | stock-count-filters.js | modules/stock-count/stock-count-filters.js | 253 | Pre-count filter screen: brand/product-type filter selection before starting a new stock count, builds filter_criteria JSONB for stock_counts.filter_criteria column |
 
 | 79 | watcher-deploy/ | watcher-deploy/ | 8 files | Standalone deployment package: sync-watcher.js, sync-export.js, install-service.js (with --export-dir), uninstall-service.js, setup.bat (Hebrew interactive installer), uninstall.bat, package.json, README.txt (Hebrew UTF-8 BOM). Designed for USB/Dropbox copy to Windows machines without Git/IDE |
+| 80 | catalog-private-admin.css | shared/css/catalog-private-admin.css | 346 | Page-scope re-skin for CatalogPrivateAdmin component; toggles dark (sub-tab "global", LENS_PLATFORM_CATALOG_ADMIN_MOCKUP palette) ↔ light (sub-tab "private", LENS_INVENTORY_MOCKUP Hybrid-Navy palette) chrome via `[data-catalog-theme="dark"\|"light"]` selectors. JS plumbing in shared/js/catalog-private-admin.js writes `dataset.catalogTheme` on buildShell + switchSubtab. No `:root` mutation. Added 2026-05-18 by M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1. |
 
 **Total: ~113 JS files across 14 module folders + 10 global files + 9 shared/js files + watcher-deploy/ (8-file standalone package), ~23,900 lines** (includes scripts/sync-watcher.js + sync-export.js)
 
