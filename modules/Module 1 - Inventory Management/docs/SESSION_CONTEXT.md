@@ -1,7 +1,50 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1 Lens Mockup-Fidelity Rebuild — **Groups A 🟢 + B 🟢 + C SPECs 9 🟢 + 10 🟢** — 2026-05-18 (Path X sequential). SPEC 10 closed as polish-by-validation: existing shared component already meets all measurable SPEC criteria; cross-category Tier C across 3 product types (lens / contact_lens / accessory) confirmed 0 console errors. Last SPEC remaining: SPEC 12 (Toggle Semantics — server-side array RPC).
+🎉 **M1 LENS 100% COMPLETE** 🎉 — 2026-05-18 (Path X sequential, single Claude Code session). Groups A 🟢 + B 🟢 + C 🟢 + FK Fix 🟢 + Resilience Phase 1+2 🟢 + SKILL Harvest 🟢 + Sequential Numbering Investigation 🟢 + Group C (SPECs 9 🟢 + 10 🟢 + 12 🟢). SPEC 12 closes with new `toggle_active_offerings_array` RPC delivering atomic per-(offering × location) bulk toggle, resolving SPEC 4 F-1 MEDIUM. Tier C verified: 2 per-location rows created atomically + bulk deactivate flips both + cleanup soft-delete. 2 SKILL proposals harvested for future codification (P-AUTHOR-G + P-AUTHOR-H).
+
+## 2026-05-18 — M1_LENS_DESIGNS_TOGGLE_PER_LOCATION_SEMANTICS (🟢 CLOSED — Group C SPEC 3 of 3; M1 LENS 100% COMPLETE)
+
+**Status:** ✅ Closed. ~45 min execution including 1 in-run JS patch (cache locations) + 1 hotfix migration (REVOKE FROM anon). 2 INFO findings (both resolved in-run).
+
+**Commits:**
+- `dc4cc2f` chore(spec): author Group C SPECs (9 + 10 + 12)
+- `4043af7` feat(db): toggle_active_offerings_array RPC for atomic per-location bulk toggle
+- _(this commit)_ chore(spec): close M1_LENS_DESIGNS_TOGGLE_PER_LOCATION_SEMANTICS — M1 LENS 100% COMPLETE
+
+**What shipped:**
+- NEW `toggle_active_offerings_array(uuid, uuid[], uuid[], boolean)` RPC — atomic per-pair iteration, ON CONFLICT semantics matching single-row RPC
+- 2 migrations (initial CREATE + hotfix REVOKE FROM anon to match canonical M1A grant pattern)
+- `lens-active-designs-toggle.js` (65 → 110 lines) + `toggleAcrossLocations` helper
+- `lens-active-designs-detail.js` (130 → 137 lines) — bulk path routes through new helper, legacy fallback retained
+- `lens-active-designs-main.js` (+4 lines) — cache `window.LensAD.locations` for detail.js to consume
+- Old `toggle_active_offering` (per-row) UNCHANGED
+
+**Tier C VFV:** SmokeDesign_M1A bulk activate → 2 rows `(loc-A + loc-B)` with `location_id NOT NULL` at same timestamp → bulk deactivate flips both atomically → soft-delete cleanup. Legacy NULL-location placeholder row UNTOUCHED (out of scope per SPEC §7). get_advisors clean (0 ERROR; 1 expected WARN matching Phase 1+2 pattern).
+
+**Findings (2 INFO):**
+- F-1 (RESOLVED IN-RUN): `window.LensAD.locations` not cached at bootstrap → fixed via 1-line addition in `_updateContextBadge`
+- F-2 (RESOLVED IN-RUN): Supabase's `anon` role gets EXECUTE separately from `PUBLIC` → fixed via hotfix migration
+
+**SKILL proposals harvested:**
+- P-AUTHOR-G: canonical 3-line grant footer for Supabase SECURITY DEFINER RPCs (REVOKE PUBLIC + REVOKE anon + GRANT authenticated)
+- P-AUTHOR-H: SPEC §0 should verify shared-namespace fields are actually written
+
+**M1 LENS scoreboard — 100% COMPLETE:**
+
+| Group | SPECs | Status |
+|-------|-------|--------|
+| Group A | 1+2+3+4a+4.5+4+5 | 🟢 (closed earlier today) |
+| FK Fix | FK_FIX | 🟢 |
+| Group B | 6+7+8 | 🟢 (SPEC 8 upgraded 🟡→🟢 via resilience) |
+| Resilience | Phase 1 + Phase 2 | 🟢 |
+| SKILL Harvest | SKILL_HARVEST_2026_05_18 | 🟢 |
+| Investigation | Sequential Numbering Phase 1 | 🟢 |
+| Group C | 9 + 10 + 12 | 🟢 |
+
+**Total today:** 13 SPECs + 1 investigation closed in single Path X Claude Code session.
+
+---
 
 ## 2026-05-18 — M1_LENS_PRIVATE_CATALOG_REBUILD (🟢 CLOSED — Group C SPEC 2 of 3, polish-by-validation)
 
