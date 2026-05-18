@@ -58,6 +58,35 @@ Before testing anything, do these in order. No exceptions.
    and wait for the script to print "ALL UP" (max 30 seconds). If the script
    exits 1 — STOP. Document in TEST_REPORT.md as a `RED — env-blocker`.
 
+### Pre-Action Collision Check (added 2026-05-17 by PARALLEL_PIPELINE_COORDINATION)
+
+Before any `git checkout`, `git merge`, `git rebase`, `git reset --hard`, `git push`, or any file edit on a path outside this session's declared `files_owned_globs`, run:
+
+```
+node scripts/pipeline-coordination.mjs check-collision \
+    --branch-owned <BRANCH> \
+    --files-owned-globs <GLOB1>,<GLOB2>,...
+```
+
+Exit 0 = no collision, proceed. Exit 1 = collision detected; the script prints the colliding lock's `spec_slug` + `pid_or_session_id`. STOP, write `modules/Module N/escalations/{ISO_TS}_pipeline-collision.md`, run Supervisor Triage (Shadow Mode per CLAUDE.md §11), then emit the standard Hebrew escalation line.
+
+**Bootstrap step (claim a lock at session start):** as the first action in this session (after repo + branch verification + server health-check, before any test run that writes to the demo tenant), run:
+
+```
+node scripts/pipeline-coordination.mjs claim \
+    --spec-slug <SPEC_SLUG> \
+    --branch-owned <BRANCH> \
+    --files-owned-globs <GLOB1>,<GLOB2>,...
+```
+
+Exit 0 = lock claimed; the script prints the lock filename. Exit 1 = another session already holds the requested branch or a conflicting glob — STOP per the collision protocol above.
+
+**Heartbeat:** the protocol uses a passive heartbeat — every `claim`, `check-collision`, or `heartbeat` invocation updates the session's `last_heartbeat`. A long-idle session does NOT need a background process; the next pre-action call refreshes the timestamp. Locks older than 10 minutes without heartbeat are stale and may be cleaned via `node scripts/pipeline-coordination.mjs cleanup-stale` (audit log written).
+
+**Release at session end:** `node scripts/pipeline-coordination.mjs release --spec-slug <SPEC_SLUG>` deletes this session's lock cleanly. Skipping release is non-fatal (the lock will be cleaned as stale after 10 min) but every Pipeline skill's hand-off step SHOULD call release to keep the directory tidy.
+
+**Tester-typical globs:** `<SPEC_FOLDER>/TEST_REPORT.md` + `tests/smoke/<SPEC_SLUG>.test.mjs` (if SPEC-specific test added). The Tester is read-only on project code; locks are tight.
+
 ## Smoke Test Protocol
 
 The baseline smoke suite is `tests/smoke/baseline.test.mjs`. Run it
@@ -221,6 +250,19 @@ Triggered when the dispatch line includes **"Pipeline mode: full-auto"**.
 ### Retry policy
 
 If `Skill: opticup-strategic` fails to load: retry ONCE. On second failure, write an escalation to `modules/Module N/escalations/{ISO_TS}_skill-load-failure.md` and emit the standard Hebrew escalation line. If `npm run smoke` fails: retry ONCE (some flakiness around server warm-up is known); on second failure, set TEST_REPORT verdict to FAIL, write FINDINGS entry, escalate.
+
+### Pre-Escalation: Supervisor Triage (Shadow Mode — added 2026-05-17 by SUPERVISOR_SKILL_PHASE_1)
+
+**Before writing any non-skill-load-failure escalation file**, you MUST first invoke the Supervisor Triage protocol. SKILL-LOAD-FAILURE escalations bypass Triage. VFV-BLOCKED escalations (`escalations/{ISO_TS}_VFV_BLOCKED.md` per §"Authority and escalation") MAY run Triage — Supervisor's response often suggests a known login/auth path that unblocks VFV without escalating to the Foreman.
+
+For all other escalations (smoke failures with ambiguous root cause, VFV finding a regression whose disposition isn't clear from the SPEC, layout drift on a surface the SPEC didn't explicitly target):
+
+1. Write the escalation file first, using the standard 5-heading shape (`Stuck at:`, `What I tried:`, `Options I see:`, `My recommendation:`, `Question for Architect:`).
+2. Run Triage by following `.claude/skills/opticup-supervisor/core/triage-protocol.md`. It writes a sibling `ARCHITECT_DECISION_*.md` response with `Status: SHADOW_PROPOSAL` + `Confidence: N` + `Cited source: …`, and appends a row to `_archive/supervisor-log/shadow-{YYYY-MM-DD}.md`.
+3. Emit the Supervisor's status line (Hebrew) per the adapter's localization.
+4. **In Shadow Mode (current launch state) — STILL emit your standard Tester escalation Hebrew line afterward** (`🛑 Smoke {N}/7 — escalation: {path}` or VFV-blocked equivalent). Both paths run in parallel for the 3-day learning window per CLAUDE.md §11 → Supervisor layer.
+
+Hard-Stop categories defined in `.claude/skills/opticup-supervisor/adapters/opticup/skill-destinations.md` (production-tenant write, main-branch touch, RLS policy change, secrets exposure, destructive Supabase op, strategic scope change, Iron Rule change) ALWAYS escalate to the Foreman/Daniel regardless of how strong a canonical-source match would have been.
 
 ### Status Line (Hebrew, single line, per phase)
 

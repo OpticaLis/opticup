@@ -116,8 +116,25 @@ hand-carries to Claude Code (Cowork-VM cannot reach localhost).
 **Step 8 — FOREMAN_REVIEW:** Read all artifacts. Write FOREMAN_REVIEW.md
 including 2 strategic + 2 executor improvement proposals. Verdict: 🟢/🟡/🔴.
 
-**Step 9 — Hand-off message to Daniel:** "🟢 SPEC X closed. תעביר לקלאוד
-קוד: [git add + commit message]. מה הכיוון הבא?"
+**Step 9 — Hand-off message to Daniel (STRICT format):** Two-part message,
+in this exact order:
+
+1. **First part — Push instruction** (this BLOCKS until Daniel confirms push
+   landed): "✋ ה-FOREMAN_REVIEW.md נכתב ל-Cowork outputs ו-FUSE-rendered ל-disk
+   ב-`{path}`. הוא **עדיין לא ב-origin**. תעביר לקלאוד קוד:
+   `git add {path} && git commit -m '{message}' && git push origin develop`.
+   חכה לאישור push לפני שאני סוגר."
+
+2. **Second part — ONLY after Daniel reports push landed** (e.g., "נדחף"
+   / "pushed" / commit hash visible in chat): "🟢 SPEC X closed at {hash}.
+   מה הכיוון הבא?"
+
+**NEVER emit Part 2 before Daniel confirms Part 1.** Cowork has no way to
+verify the push (FUSE mount is read+write but git writes fail per ghost-lock).
+Until Daniel says "pushed" or you can see the new commit in
+`git log origin/develop` via Cowork bash, the Pipeline is NOT closed. Writing
+"🟢 SPEC closed" while the FOREMAN_REVIEW commit is missing is a discipline
+violation Daniel had to catch manually in REPO_CLEANUP_2026_05_18.
 
 **NEVER:**
 - Skip the plain-Hebrew translation before approval.
@@ -126,6 +143,41 @@ including 2 strategic + 2 executor improvement proposals. Verdict: 🟢/🟡/�
 - Try to commit/push from Cowork (see "Cowork Environment Constraints").
 - Send Daniel a wall of text with file paths instead of conducting the
   dance.
+- **Emit "🟢 SPEC closed" / closing summary BEFORE Daniel confirms the
+  FOREMAN_REVIEW commit + push landed.** Writing to Cowork outputs is
+  authoring, not closing. The Pipeline closes only when origin/develop
+  contains the FOREMAN_REVIEW commit. Verify via Cowork bash
+  `git log origin/develop -3 --oneline` if Daniel's confirmation is
+  ambiguous. (REPO_CLEANUP_2026_05_18 lesson, 2026-05-17 — Daniel had
+  to manually identify the missing push.)
+
+## Cowork Environment Constraints
+
+### Closing-the-loop discipline
+
+When this skill is acting as Foreman closing a Pipeline (Step 8 + 9 of the
+"Strategic-to-Executor Dance"), the closeout has two phases:
+
+**Phase A — Author the artifact (Cowork can do this):**
+- Write FOREMAN_REVIEW.md to Cowork outputs path
+- FUSE mount auto-syncs to the desktop disk
+- Verify the file is on-disk via Cowork bash `ls -la <path>`
+
+**Phase B — Land the artifact in origin (only Claude Code can do this):**
+- Daniel hand-carries `git add + commit + push` commands to Claude Code
+- Claude Code on desktop pushes to origin/develop
+- Daniel reports back "pushed" + (ideally) the commit hash
+- Cowork verifies via `git fetch origin && git log origin/develop -3 --oneline`
+  to confirm the new commit landed
+
+Phase A WITHOUT Phase B is a half-closed Pipeline. The FOREMAN_REVIEW exists
+on disk but not in git history. Future sessions reading the SPEC folder
+through git will not see it. **Treat Phase A completion as "ready for
+closeout" — not as "closed".** Closed = origin contains the commit.
+
+Same discipline applies to ARCHITECT_DECISION_*.md, RESOLVED_ escalation
+renames, and any other Cowork-authored artifact that needs to survive in
+git history.
 
 ## First Action — Every Session
 
@@ -133,6 +185,90 @@ When this skill loads, do these steps:
 
 1. **Read auto-memory** — your persistent memory at `/mnt/.auto-memory/MEMORY.md`
    gives you the project overview without reading dozens of files.
+
+**Step 0.5 — Cowork-VM viability check (only in Cowork sessions; skip on Claude Code):**
+
+Before any planned git write, run:
+```bash
+stat .git/index.lock 2>&1 | head -1
+ls .git/index.lock 2>&1
+rm -f .git/index.lock 2>&1
+```
+
+If `stat` succeeds but `rm` reports "No such file or directory" → ghost
+file in FUSE mount → all destructive ops in this session must be
+dispatched to Claude Code via ACTIVATION_PROMPT. Don't try to execute
+in-VM. Add this finding to the SPEC §4 Destructive Operations as
+"Dispatched to desktop" and stop after authoring.
+
+This is the **REPO_CLEANUP_2026_05_18 lesson** — confirmed empirically
+when the executor re-verified on desktop and found 0/2,339 phantom
+modifications.
+
+### Step 0.7 — Abnormal-state triage gate (Cowork sessions only)
+
+After Step 0.5 detects no ghost lock, but BEFORE reading any other files,
+run this 5-second triage:
+
+```bash
+cd /sessions/*/mnt/opticup
+COUNT=$(git status --porcelain | wc -l)
+echo "Modified+untracked entries: $COUNT"
+```
+
+**If COUNT > 50 entries → STOP self-investigation.** Do NOT run multi-file
+probes, do NOT classify buckets, do NOT author a 297-line cleanup SPEC under
+Cowork-side evidence. The FUSE mount is showing snapshot lag at scale; any
+classification done here will be partially invalid by definition.
+
+**Instead, write a short investigation Brief to outputs immediately:**
+
+```
+modules/Module N/docs/specs/{REPO_TRIAGE_SLUG}/INVESTIGATION_BRIEF.md
+```
+
+Brief contents (≤ 50 lines):
+1. **What Cowork sees** — the raw `git status` summary + the abnormal symptoms
+   (count, ghost-lock state, FUSE permissions oddities)
+2. **What I cannot verify from here** — explicit list of probes that require
+   the desktop (real-file delete, write ops, process inspection, host-side
+   `git` state)
+3. **What I need Claude Code to determine** — bucket classification on the
+   ACTUAL repo, disposition recommendation per bucket, list of any genuinely
+   new work to preserve
+4. **What Claude Code should NOT do** — destructive ops without coming back
+   with classification first
+5. **What gets reported back** — short structured summary (bucket counts +
+   ambiguous items + recommended disposition)
+
+Then write a 5-line Hebrew hand-off to Daniel:
+"זיהיתי {symptom} ב-Cowork ({count} שינויים חשודים). לא חוקר מכאן — ה-FUSE
+mount לא אמין למצב כזה. כתבתי INVESTIGATION_BRIEF לקלאוד קוד. תעביר אותו
+ושלח לי בחזרה את הסיכום שלו, ואז אני אכתוב SPEC אמיתי מבוסס על תמונת המכונה."
+
+**Why this discipline exists (REPO_CLEANUP_2026_05_18 lesson):** On 2026-05-17,
+Cowork-Architect spent ~60 min running probes inside Cowork VM that classified
+2,340 modifications + a ghost `.git/index.lock`. The desktop reality, when
+finally checked: 6 modifications, no ghost lock. ~95% of the investigation
+work was wasted because Cowork's FUSE mount cannot reliably mirror the
+desktop's git state when the snapshot is stale. A Brief to Claude Code on the
+desktop, written in the first 5 minutes, would have returned a correct
+classification in 10-15 minutes and saved 45+ minutes of wasted Cowork
+sandbox cycles plus a SPEC re-scoping round.
+
+**Anti-pattern to avoid:** "But I can probe a sample of 20 files first to
+confirm whether the count is real" — this is exactly what happened on
+2026-05-17. The sample looked conclusive, the bulk classification looked
+clean, the SPEC was authored under it. Then the desktop saw 6 entries. The
+20-file sample is just as susceptible to FUSE staleness as any other Cowork
+read. Don't trust Cowork file-state evidence at scale; dispatch to desktop.
+
+**Exception:** count > 50 of files YOU JUST authored in this Cowork session
+(SPECs, briefs, Hebrew drafts) is normal — those are outputs Daniel will hand
+over. The trigger is for *modifications to existing tracked files*, not new
+authoring output. Differentiate via `git status --porcelain | grep -c '^[ MD]'`
+(modified/deleted to tracked files) vs `grep -c '^??'` (new untracked). The
+threshold applies to the former only.
 
 2. **Read CLAUDE.md** — the project constitution at the repo root. This contains
    the 30 Iron Rules that govern all development. Non-negotiable.
@@ -151,6 +287,35 @@ When this skill loads, do these steps:
    event — do not author new SPECs on top of a corrupted tree; open a
    repair SPEC first. Warnings (exit 2) are informational. Reference:
    `scripts/verify-tree-integrity.mjs`.
+
+### Pre-Action Collision Check (added 2026-05-17 by PARALLEL_PIPELINE_COORDINATION)
+
+Before any `git checkout`, `git merge`, `git rebase`, `git reset --hard`, `git push`, or any file edit on a path outside this session's declared `files_owned_globs`, run:
+
+```
+node scripts/pipeline-coordination.mjs check-collision \
+    --branch-owned <BRANCH> \
+    --files-owned-globs <GLOB1>,<GLOB2>,...
+```
+
+Exit 0 = no collision, proceed. Exit 1 = collision detected; the script prints the colliding lock's `spec_slug` + `pid_or_session_id`. STOP, write `modules/Module N/escalations/{ISO_TS}_pipeline-collision.md`, run Supervisor Triage (Shadow Mode per CLAUDE.md §11), then emit the standard Hebrew escalation line.
+
+**Bootstrap step (claim a lock at session start):** as the first action in this session (after repo + branch verification, before authoring any SPEC or writing any FOREMAN_REVIEW), run:
+
+```
+node scripts/pipeline-coordination.mjs claim \
+    --spec-slug <SPEC_SLUG> \
+    --branch-owned <BRANCH> \
+    --files-owned-globs <GLOB1>,<GLOB2>,...
+```
+
+Exit 0 = lock claimed; the script prints the lock filename. Exit 1 = another session already holds the requested branch or a conflicting glob — STOP per the collision protocol above.
+
+**Heartbeat:** the protocol uses a passive heartbeat — every `claim`, `check-collision`, or `heartbeat` invocation updates the session's `last_heartbeat`. A long-idle session does NOT need a background process; the next pre-action call refreshes the timestamp. Locks older than 10 minutes without heartbeat are stale and may be cleaned via `node scripts/pipeline-coordination.mjs cleanup-stale` (audit log written).
+
+**Release at session end:** `node scripts/pipeline-coordination.mjs release --spec-slug <SPEC_SLUG>` deletes this session's lock cleanly. Skipping release is non-fatal (the lock will be cleaned as stale after 10 min) but every Pipeline skill's hand-off step SHOULD call release to keep the directory tidy.
+
+**Foreman-typical globs:** `modules/Module N/docs/specs/<SLUG>/**`, `CLAUDE.md`, `MASTER_ROADMAP.md`, `modules/Module N/docs/SESSION_CONTEXT.md`, `modules/Module N/docs/CHANGELOG.md`. Master-doc updates need broad globs; SPEC seal/close usually only needs the SPEC folder.
 
 5. **Confirm readiness** to Daniel in Hebrew, briefly:
    > "קראתי את המצב. אנחנו ב-[module] [phase]. [one line status]. מה הכיוון?"
@@ -925,6 +1090,66 @@ preserves semantic colors per Brief §2.4. Catching this at SPEC-author time
 would have avoided the mid-Pipeline script change. (Source: improvement
 proposal #1 from M1_5_SKETCH_RESKIN_BATCH_3 FOREMAN_REVIEW, 2026-05-11.)
 
+### Step 1.6 — Pre-Seal Path Verification (MANDATORY — applied 2026-05-17 after 2-strike of path-typo class)
+
+Every literal filesystem path mentioned in the SPEC MUST be verified to exist on disk BEFORE sealing. Specifically check:
+
+- Every path in §3 Success Criteria verification commands (`ls`, `Test-Path`, `grep -rn`)
+- Every path in §4 Destructive Operations (rm/edit targets)
+- Every path in §7 Out-of-Scope (paths to NOT touch)
+- Every path in §9 Commit Plan (Files column)
+- Every path in §11 Pipeline Coordination (files_owned_globs)
+- Every path in §13 Lessons (references)
+
+**Verification command (Cowork):**
+```bash
+cd /sessions/*/mnt/opticup
+# For each path in SPEC, run:
+ls "<path>" 2>&1 | head -1
+# Expected: file/dir listed. NOT: "No such file or directory".
+```
+
+**Verification command (Claude Code desktop):**
+```powershell
+cd C:\Users\User\opticup
+Test-Path "<path>"  # Expected: True
+```
+
+If ANY path returns false-existence → STOP, fix the SPEC, re-verify. Do NOT seal a SPEC with phantom paths.
+
+**Common typo classes this catches:**
+- `modules/inventory/` vs `modules/lens-inventory/` (sibling module prefix)
+- `modules/Module 1/` vs `modules/Module 1 - Inventory Management/` (truncated module folder name)
+- `shared/css/foo.css` vs `shared/css/foo.css.bak` (extension drift)
+- File renamed after audit but SPEC still cites old name
+
+**Why this is non-overridable:** the SPEC contract is a written agreement with the executor. Paths that don't exist break the contract before execution starts. The executor will catch it via Rule-32 hook or pre-flight, but each catch costs ~15 min retry. Author-side prevention is 30 seconds.
+
+**2-strike empirical history:**
+- 2026-05-17 SPEC 4a (M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION): §4 allowlist used `modules/inventory/` (lens-goods-receipt missed)
+- 2026-05-17 SPEC 4.5 (M1_FOUNDATION_CLOSE_CLEANUP_2026_05_17): §3 + §4 + §5 used `modules/inventory/lens-inventory-quick-scan.js` (actual: `modules/lens-inventory/lens-inventory-quick-scan.js`); 3 occurrences in one SPEC
+
+### Step 1.7 — Embedded Pre-Flight Grep for Consumer Counts (MANDATORY when SPEC claims "only N consumers")
+
+When SPEC §5 (Foreman Decision) asserts "only N consumers of X exist", the SPEC §6 Stop-Triggers MUST contain the exact grep/Select-String command the executor will run at pre-flight to verify the claim.
+
+Example shape:
+
+```bash
+# Cowork:
+grep -rn "m1_create_receipt_from_box" js/ modules/ supabase/functions/ | grep -v ".bak"
+```
+
+```powershell
+# Claude Code desktop:
+Select-String -Path "js\**\*.js","modules\**\*.js","supabase\functions\**\*.ts" -Pattern "m1_create_receipt_from_box" -SimpleMatch
+```
+
+If the grep returns N+1+ → executor STOPs and escalates. If the SPEC §6 does NOT contain the grep command, the executor must author one before pre-flight (adds noise + variability). Embedding the command in SPEC §6 makes the verification deterministic.
+
+**1-strike empirical history (early-promoted because it pairs naturally with Step 1.6):**
+- 2026-05-17 SPEC 4.5 (M1_FOUNDATION_CLOSE_CLEANUP_2026_05_17): §5 said "only 1 consumer" — actual was 2. Executor wrote the grep ad-hoc, found `lens-goods-receipt-close.js:65`, halted correctly. With this rule in force, the grep is canonical and the verification is faster.
+
 ### Step 2 — Create the SPEC Folder
 
 Location pattern (folder, NOT file):
@@ -1368,3 +1593,84 @@ Pipeline returns 🟢 only when ALL surfaces show zero material DRIFT (intention
 ```
 
 This subsection is REQUIRED for all UI-touching SPECs whose Briefs reference mockups. SQL-only / EF-only / docs-only SPECs can omit.
+
+---
+
+## Patterns from SKILL_HARVEST_2026_05_18 (5 applied)
+
+Harvested from today's Path X arc (5 SPECs: FK fix + Group B SPEC 6/7/8 + 2 resilience SPECs). Format: rule / why / how-to-apply / empirical evidence.
+
+### P-STRAT-2026-05-18-A — §0 path-resolution should distinguish "USED IN MOCKUP" vs "available in `shared/`"
+
+**Rule:** When listing Phase 0 shared-component dependencies in `§0` Path verification, do not stop at "file exists in `shared/js/`". Verify each listed component is actually used in the mockup that drives the SPEC. If the mockup doesn't use it, drop it from the dependency list before sealing.
+
+**Why:** SPEC 6 (M1_LENS_PURCHASE_ORDER_REBUILD) §0 listed `side-detail-panel` as a Phase 0 dep based on the Brief's component shopping list. The actual 387-line mockup used inline per-row editors + a static side-card stack — no `SideDetailPanel.init()` mount needed. The executor caught it during rebuild, documented the discrepancy as a non-deviation in EXECUTION_REPORT §5. No harm done, but the §0 statement was incorrect.
+
+**How to apply:** During §0 Path verification, for each listed shared component, add a one-line mockup-citation cross-check: `shared/js/X.js — MOCKUP CITES: <selector or class name from mockup> on line <N>`. If no citation can be made, remove the component from the dependency list. Takes ~30 seconds per component; eliminates the "available but unused" §0 noise.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_PURCHASE_ORDER_REBUILD/EXECUTION_REPORT.md §5 Deviations` (2026-05-18).
+
+### P-STRAT-2026-05-18-B — §0 should include a global-name probe for shared components
+
+**Rule:** When a SPEC lists a Phase 0 shared component in `§0`, also record the JS global the component exposes by running a one-line grep against the file. Filenames don't always match globals.
+
+**Why:** SPEC 7 (M1_LENS_ACTIVE_POS_LIST_REBUILD) initial mount call used `window.ChipFilterRow.init(host, { activeId: 'all', onChipClick: ... })`. The shared component file is `shared/js/chip-filter-row.js` but the global it exposes is `window.ChipFilter` (no `Row` suffix), and the API uses `activeIds: ['all']` + `onSelect`. Mount silently failed (chip row never rendered) until the executor inspected the file. Cost: ~3 minutes Tier C debug.
+
+**How to apply:** Add to §0 Path verification table a "Global" column. Populate via:
+```
+grep -oE 'window\.[A-Za-z]+\s*=' shared/js/<component>.js
+# Example output: window.ChipFilter =
+```
+Record the global verbatim. Future executors writing the mount call read the correct name from §0, not from a filename-inference heuristic.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_ACTIVE_POS_LIST_REBUILD/FINDINGS.md F-1` (2026-05-18, LOW resolved in-run).
+
+### P-STRAT-2026-05-18-C — §1.5 should include `next_*_number` suffix-conformance probe
+
+**Rule:** Any SPEC whose Tier C smoke calls a K-RPC that PERFORMs a `next_*_number` sequence-number generator MUST include a §1.5 probe for non-conforming suffix data in the target table.
+
+**Why:** SPEC 8 (M1_LENS_GOODS_RECEIPT_REBUILD) F-1 HIGH: the rebuild was correct end-to-end, but `m1_create_receipt_from_box` calls `next_lot_number` which crashed with `22P02 invalid input syntax for type integer: "PO300005-1"` because 3 demo `stock_lot` rows had non-numeric suffixes (`LOT-PO300005-1/-2/-3`, seeded by an earlier manual test). The defect was invisible to Step 1.6 / 1.7 / standard schema pre-flight. Required a follow-up resilience SPEC (Phase 1 + Phase 2) to harden all 8 `next_*_number` RPCs project-wide. Catching at SPEC-author time would have prevented the 🟡 verdict-with-finding lifecycle.
+
+**How to apply:** Add to §1.5 (or §0 DB pre-flight) when the SPEC's smoke involves any of `m1_create_receipt_from_box`, `record_transfer`, `place_purchase_order`, or any future K-RPC calling a sequence generator:
+```sql
+-- Probe for non-conforming suffix rows
+SELECT count(*) FROM <target_table>
+ WHERE tenant_id = '<demo_tid>'
+   AND <number_col> LIKE '<prefix>%'
+   AND NOT (SUBSTRING(<number_col> FROM <offset>) ~ '^[0-9]+$');
+```
+If count > 0 → flag in SPEC's §0 OR open a tiny data-cleanup SPEC OR rely on the now-shipped Phase 1+2 regex guards. ~60 seconds; catches the entire defect class.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_GOODS_RECEIPT_REBUILD/FINDINGS.md F-1` + `M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE` + `_PHASE_2` (2026-05-18).
+
+### P-STRAT-2026-05-18-D — Tier C cleanup pattern for K-RPC smokes must enumerate ALL side-effect tables
+
+**Rule:** When a SPEC's Tier C smoke calls a K-RPC that does multi-table atomic updates (e.g., `m1_create_receipt_from_box` updates `purchase_receipt + purchase_receipt_line + stock_lot + stock_movement + purchase_order_line + purchase_order` header), the §8 QA / Tier C section MUST enumerate the cleanup pattern for ALL side-effect tables, not just the primary insert.
+
+**Why:** Resilience Phase 1 Tier C smoke created `RCP-9016-0001` via `m1_create_receipt_from_box`. Soft-deleting the receipt + 3 stock_lot rows (Iron Rule 3) did NOT auto-reverse the side-effect on `purchase_order_line.qty_received` counters (bumped 0/0/0 → 5/3/4) or the `purchase_order` header status (flipped 'sent' → 'fully_received'). Discovered mid-cleanup; explicit follow-up UPDATE + status reset needed. Took ~2 minutes to repair; would have been zero if the §8 cleanup template called it out at author time.
+
+**How to apply:** §8 cleanup template for K-RPC smokes:
+```sql
+-- 1) Soft-delete primary records (Iron Rule 3)
+UPDATE stock_lot       SET is_deleted = true WHERE purchase_receipt_id = '{id}';
+UPDATE purchase_receipt SET is_deleted = true WHERE id = '{id}';
+-- 2) Roll back atomic side-effects on linked PO state
+UPDATE purchase_order_line SET qty_received = qty_received - {amount per line}
+WHERE id IN ({list of po_line_ids touched});
+UPDATE purchase_order SET status = '{previous_status}'
+WHERE id = '{po_id_touched}';
+```
+Future K-RPC SPECs reuse this template. The §8 author records the side-effect-table list while writing the SPEC; the executor follows it mechanically.
+
+**Source:** `modules/Module 1.5 - Shared Components/docs/specs/M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE/FINDINGS.md F-1 (INFO)` (2026-05-18).
+
+### P-STRAT-2026-05-18-E — 🟡→🟢 verdict-upgrade FOREMAN_REVIEW should be written by the same session that lands the resolving fix
+
+**Rule:** When a SPEC closes 🟡 (closed-with-finding) and a follow-up SPEC in the same Path X session resolves the blocker, the FOREMAN_REVIEW for the original SPEC marking the verdict upgrade 🟡 → 🟢 should be written in the closure commit of the resolving SPEC — NOT deferred to a separate session.
+
+**Why:** Today's flow: SPEC 8 closed 🟡 → Daniel auth → resilience SPEC closed 🟢 → SPEC 8 FOREMAN_REVIEW upgrade 🟡 → 🟢 written in the resilience SPEC's closure commit. Keeps the lineage tight, prevents "verdict orphans" (SPECs frozen at 🟡 with a resolved finding but never lifted in a state file), and makes the upgrade discoverable from both directions (the SPEC 8 folder has the review; the resilience SPEC's closure references it).
+
+**How to apply:** When authoring a resolving SPEC (one whose Goal is "resolve F-X of SPEC-Y"), include in §10 Commit Plan: "Closure commit also writes `<spec-y-path>/FOREMAN_REVIEW.md` marking F-X RESOLVED + verdict 🟡 → 🟢". Include `<spec-y-path>/FOREMAN_REVIEW.md` in §11 `files_owned_globs`. Codify the verdict upgrade in the SAME commit as EXECUTION_REPORT + FINDINGS — single push.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_GOODS_RECEIPT_REBUILD/FOREMAN_REVIEW.md` (2026-05-18, written by the resilience SPEC's closure session).
+

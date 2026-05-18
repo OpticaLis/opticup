@@ -63,9 +63,14 @@ _archive/
 ├── launch-plan-versions/       — historical MASTER_LIVE_PLAN versions
 │   (MASTER_LIVE_PLAN_v1.md — current truth lives in /MASTER_ROADMAP.md)
 │
-└── session-outputs/            — 53 historical session prompts/handoffs from old outputs/
-    (PROMPT_*.md, INSTRUCTIONS_*.md, HANDOFF_*.md, NIGHT_HANDOFF.md,
-     campaign-mockups/, campaign-screen-screenshots/)
+├── session-outputs/            — 53 historical session prompts/handoffs from old outputs/
+│   (PROMPT_*.md, INSTRUCTIONS_*.md, HANDOFF_*.md, NIGHT_HANDOFF.md,
+│    campaign-mockups/, campaign-screen-screenshots/)
+│
+└── pipeline-sessions/          — Parallel Pipeline lock files (added 2026-05-17)
+    (*.lock files gitignored; .gitkeep tracked; stale-cleanup-*.log tracked
+     for audit; see scripts/pipeline-coordination.mjs + CLAUDE.md §9
+     Parallel Pipeline Coordination)
 ```
 
 **Discipline:** files arrive here only via the Root Discipline Rule (CLAUDE.md §0.5). They are git-tracked but not actively maintained. Recover via `git log --follow <path>` / `git show <hash>:<path>`.
@@ -157,25 +162,46 @@ js/
 
 ```
 shared/
-├── css/                        — 8 files
-│   ├── variables.css           — CSS variables (theme, colors, spacing)
+├── css/                        — 16 files
+│   ├── variables.css           — base CSS variables (theme, colors, spacing)
+│   ├── tokens.css              — mockup palette + source-band + dark + gradient + toggle + wstep tokens (M1_5_SHARED_COMPONENTS_PHASE_0, 2026-05-17)
 │   ├── components.css          — shared UI components
 │   ├── components-extra.css    — extended components
 │   ├── layout.css              — layout helpers
 │   ├── forms.css               — form styles
 │   ├── modal.css               — modal styles
-│   ├── table.css               — table styles
-│   └── toast.css               — toast notifications
-└── js/                         — 9 files
+│   ├── table.css               — table styles (incl. .tb-group-header*, .tb-col-permission-gated, .tb-pagination* added 2026-05-17)
+│   ├── toast.css               — toast notifications
+│   ├── cat-sidebar.css         — category sidebar (M1_5_CAT_SIDEBAR_COMPONENT)
+│   ├── chip-filter.css         — chip-filter row (M1_5_SHARED_COMPONENTS_PHASE_0, 2026-05-17)
+│   ├── stat-card.css           — stat-card row (M1_5_SHARED_COMPONENTS_PHASE_0)
+│   ├── side-detail.css         — right-pinned side detail panel (M1_5_SHARED_COMPONENTS_PHASE_0)
+│   ├── wizard-step-indicator.css — page-level wizard stepper (M1_5_SHARED_COMPONENTS_PHASE_0)
+│   ├── quick-receipt.css       — Quick Receipt drawer (M1_5_SHARED_COMPONENTS_PHASE_0)
+│   └── lens-details.css        — Lens Details drawer (M1_5_SHARED_COMPONENTS_PHASE_0)
+└── js/                         — 23 files
     ├── modal-builder.js        — programmatic modal builder
-    ├── modal-wizard.js         — multi-step wizard modals
+    ├── modal-wizard.js         — multi-step wizard modals (in-modal flows)
     ├── toast.js                — toast notification system
-    ├── table-builder.js        — programmatic table builder
+    ├── table-builder.js        — programmatic table builder (extended 2026-05-17 with pagination, permission-gated cols, group-header rows)
+    ├── table-builder-extensions.js — pagination DOM helpers for table-builder.js (M1_5_SHARED_COMPONENTS_PHASE_0, 2026-05-17; load BEFORE table-builder.js)
     ├── supabase-client.js      — tenant-aware Supabase wrapper
     ├── activity-logger.js      — writes to activity_log table
     ├── permission-ui.js        — UI permission gating
     ├── pin-modal.js            — shared PIN prompt
-    └── theme-loader.js         — applies CSS variables from tenant ui_config
+    ├── theme-loader.js         — applies CSS variables from tenant ui_config
+    ├── plan-helpers.js         — plan/feature gate helpers
+    ├── sort-utils.js           — client-side column sorting
+    ├── table-resize.js         — column resize + sticky scrollbar
+    ├── catalog-private-admin.js — private catalog admin (M1 Lens Phase 1A)
+    ├── cat-sidebar.js          — category sidebar ES Module (M1_5_CAT_SIDEBAR_COMPONENT)
+    ├── chip-filter-row.js      — chip-filter row (M1_5_SHARED_COMPONENTS_PHASE_0, 2026-05-17)
+    ├── stat-card-row.js        — stat-card row (M1_5_SHARED_COMPONENTS_PHASE_0)
+    ├── side-detail-panel.js    — right-pinned side detail panel (M1_5_SHARED_COMPONENTS_PHASE_0)
+    ├── wizard-step-indicator.js — page-level wizard stepper, distinct from modal-wizard.js (M1_5_SHARED_COMPONENTS_PHASE_0)
+    ├── group-header-row.js     — source-banded <tr> helper for data tables (M1_5_SHARED_COMPONENTS_PHASE_0)
+    ├── quick-receipt-drawer.js — Quick Receipt drawer (M1_5_SHARED_COMPONENTS_PHASE_0)
+    └── lens-details-drawer.js  — Lens Details 2-tab drawer (M1_5_SHARED_COMPONENTS_PHASE_0)
 ```
 
 **Rule:** `shared/` is READ-ONLY for feature modules. Changes go through Module 1.5 only.
@@ -289,7 +315,9 @@ scripts/
 ├── sync-watcher.js             — Node.js folder watcher (Windows Service, CSV+XLSX)
 ├── sync-export.js              — reverse sync: export new inventory to XLS for Access
 ├── install-service.js          — install as Windows Service
-└── uninstall-service.js        — uninstall from Windows Services
+├── uninstall-service.js        — uninstall from Windows Services
+├── pipeline-coordination.mjs   — Parallel Pipeline session-lock protocol (added 2026-05-17)
+└── test-pipeline-coordination.mjs — regression + E2E tests for pipeline-coordination
 ```
 
 ## watcher-deploy/

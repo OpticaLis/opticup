@@ -41,6 +41,35 @@ Architecture, patterns, performance, maintainability, recommendations.
 4. **Run `git diff develop~N..develop --stat`** — see which files changed
 5. **Read each changed file** before reviewing it
 
+### Pre-Action Collision Check (added 2026-05-17 by PARALLEL_PIPELINE_COORDINATION)
+
+Before any `git checkout`, `git merge`, `git rebase`, `git reset --hard`, `git push`, or any file edit on a path outside this session's declared `files_owned_globs`, run:
+
+```
+node scripts/pipeline-coordination.mjs check-collision \
+    --branch-owned <BRANCH> \
+    --files-owned-globs <GLOB1>,<GLOB2>,...
+```
+
+Exit 0 = no collision, proceed. Exit 1 = collision detected; the script prints the colliding lock's `spec_slug` + `pid_or_session_id`. STOP, write `modules/Module N/escalations/{ISO_TS}_pipeline-collision.md`, run Supervisor Triage (Shadow Mode per CLAUDE.md §11), then emit the standard Hebrew escalation line.
+
+**Bootstrap step (claim a lock at session start):** as the first action in this session (after repo + branch verification, before any file edit), run:
+
+```
+node scripts/pipeline-coordination.mjs claim \
+    --spec-slug <SPEC_SLUG> \
+    --branch-owned <BRANCH> \
+    --files-owned-globs <GLOB1>,<GLOB2>,...
+```
+
+Exit 0 = lock claimed; the script prints the lock filename. Exit 1 = another session already holds the requested branch or a conflicting glob — STOP per the collision protocol above.
+
+**Heartbeat:** the protocol uses a passive heartbeat — every `claim`, `check-collision`, or `heartbeat` invocation updates the session's `last_heartbeat`. A long-idle session does NOT need a background process; the next pre-action call refreshes the timestamp. Locks older than 10 minutes without heartbeat are stale and may be cleaned via `node scripts/pipeline-coordination.mjs cleanup-stale` (audit log written).
+
+**Release at session end:** `node scripts/pipeline-coordination.mjs release --spec-slug <SPEC_SLUG>` deletes this session's lock cleanly. Skipping release is non-fatal (the lock will be cleaned as stale after 10 min) but every Pipeline skill's hand-off step SHOULD call release to keep the directory tidy.
+
+**Reviewer-typical globs:** `<SPEC_FOLDER>/REVIEW.md` (read-only audit; usually no write outside the SPEC folder). The Reviewer rarely needs broad globs — pin the lock to the SPEC folder + REVIEW.md only.
+
 ## Level 1 — Iron Rule Compliance Checklist
 
 For every changed file, check:
@@ -254,6 +283,19 @@ Triggered when the dispatch line includes **"Pipeline mode: full-auto"**.
 
 If `Skill: opticup-localhost-tester` fails to load: retry ONCE. On second failure, write an escalation to `modules/Module N/escalations/{ISO_TS}_skill-load-failure.md` and emit:
 `🛑 נתקעתי על טעינת Skill: opticup-localhost-tester — escalation: {path}`
+
+### Pre-Escalation: Supervisor Triage (Shadow Mode — added 2026-05-17 by SUPERVISOR_SKILL_PHASE_1)
+
+**Before writing any non-skill-load-failure escalation file**, you MUST first invoke the Supervisor Triage protocol. SKILL-LOAD-FAILURE escalations bypass Triage (the dispatcher needs to know immediately).
+
+For all other escalations (audit findings that need an Architect decision, ambiguity in SPEC scope discovered mid-review, Iron-Rule edge cases the SPEC didn't anticipate):
+
+1. Write the escalation file first, using the standard 5-heading shape (`Stuck at:`, `What I tried:`, `Options I see:`, `My recommendation:`, `Question for Architect:`).
+2. Run Triage by following `.claude/skills/opticup-supervisor/core/triage-protocol.md` against the file you just wrote. The protocol validates format, checks Hard-Stop categories, searches canonical decision sources, and writes a sibling `ARCHITECT_DECISION_*.md` response.
+3. Emit the Supervisor's status line (Hebrew) per the adapter's localization.
+4. **In Shadow Mode (current launch state) — STILL emit your standard Reviewer escalation Hebrew line afterward** (`🛑 Review חוסם — {SLUG} REOPEN, escalation: {path}`). Both Supervisor and human-escalation paths run in parallel for the 3-day learning window per CLAUDE.md §11 → Supervisor layer.
+
+Hard-Stop categories defined in `.claude/skills/opticup-supervisor/adapters/opticup/skill-destinations.md` (production-tenant write, main-branch touch, RLS policy change, secrets exposure, destructive Supabase op, strategic scope change, Iron Rule change) ALWAYS escalate to the Foreman/Daniel regardless of how strong a canonical-source match would have been.
 
 ### Status Line (Hebrew, single line, per phase)
 

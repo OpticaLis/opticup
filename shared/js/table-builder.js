@@ -56,6 +56,10 @@
     const onSort = config.onSort || null;
     const onRowClick = config.onRowClick || null;
     const sticky = config.stickyHeader || false;
+    // SPEC 2 data-table extension: pagination + permission-gated cols + group-header rows
+    const paginationConf = config.pagination || null;
+    let _currentPage = paginationConf ? (paginationConf.currentPage || 1) : 1;
+    let _pageSize    = paginationConf ? (paginationConf.pageSize    || 25) : 0;
 
     let _data = [];          // current row data
     let _loading = false;
@@ -85,6 +89,11 @@
       if (col.sortable && col.type !== 'actions') {
         th.classList.add('tb-th-sortable');
         th.addEventListener('click', () => _handleSort(col.key));
+      }
+
+      if (col.permission) {  // SPEC 2: PermissionUI.apply() hides if not granted
+        th.classList.add('tb-col-permission-gated');
+        th.setAttribute('data-permission', col.permission);
       }
 
       thEls[col.key] = th;
@@ -151,6 +160,7 @@
         const td = document.createElement('td');
         td.className = 'tb-td';
         if (col.cssClass) td.classList.add(col.cssClass);
+        if (col.permission) td.setAttribute('data-permission', col.permission);
 
         const val = row[col.key];
         const type = col.type || 'text';
@@ -193,8 +203,41 @@
       }
 
       const frag = document.createDocumentFragment();
-      _data.forEach(row => frag.appendChild(_renderRow(row)));
+      _visibleSlice().forEach(row => {
+        if (row && row._groupHeader && window.GroupHeaderRow) {
+          frag.appendChild(window.GroupHeaderRow.render({
+            sourceType: row.sourceType, label: row.label, count: row.count,
+            colSpan: cols.length, icon: row.icon
+          }));
+        } else {
+          frag.appendChild(_renderRow(row));
+        }
+      });
       tbody.appendChild(frag);
+      _renderPagination();
+      if (window.PermissionUI && typeof window.PermissionUI.applyTo === 'function') {
+        try { window.PermissionUI.applyTo(wrapper); } catch (_e) {}
+      }
+    }
+
+    // SPEC 2 pagination — heavy lifting lives in table-builder-extensions.js
+    function _visibleSlice() {
+      if (!paginationConf || _pageSize <= 0) return _data;
+      const start = (_currentPage - 1) * _pageSize;
+      return _data.slice(start, start + _pageSize);
+    }
+    function _renderPagination() {
+      if (!paginationConf || !window.TableBuilderExtensions) return;
+      const clamped = window.TableBuilderExtensions.renderPagination(wrapper, {
+        total: _data.length, pageSize: _pageSize, currentPage: _currentPage,
+        onPageChange: function (p) {
+          _currentPage = p; _renderBody();
+          if (typeof paginationConf.onPageChange === 'function') {
+            try { paginationConf.onPageChange(p); } catch (_e) {}
+          }
+        }
+      });
+      if (clamped) _currentPage = clamped;
     }
 
     // ===================== Empty state =====================
@@ -239,8 +282,16 @@
         if (_destroyed) return;
         _data = Array.isArray(rows) ? rows.slice() : [];
         _loading = false;
+        if (paginationConf) _currentPage = 1;
         _renderBody();
       },
+
+      setPage(page) {
+        if (_destroyed || !paginationConf) return;
+        if (typeof page !== 'number' || page < 1) return;
+        _currentPage = page; _renderBody();
+      },
+      getPage() { return paginationConf ? _currentPage : 1; },
 
       setLoading(isLoading) {
         if (_destroyed) return;

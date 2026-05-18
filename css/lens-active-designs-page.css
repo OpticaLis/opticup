@@ -1,0 +1,260 @@
+/* lens-active-designs-page.css — page-level layout for the lens-active-designs tab.
+   M1_LENS_DESIGNS_SELECTION_REBUILD (2026-05-17): 1:1 mockup rebuild per
+   architecture-brief/mockups/LENS_DESIGNS_SELECTION_MOCKUP.html.
+
+   This file ONLY ships page-frame styles (header, filters wrapper, 2-col main
+   layout, side-panel placeholder). Component visuals come from the shared CSS
+   loaded by inventory.html — chip-filter.css, stat-card.css, side-detail.css,
+   table.css, tokens.css.
+
+   Scope is locked to .lens-tab-section[data-tab="active-designs"] so it
+   cannot leak to other lens tabs. */
+
+.lens-tab-section[data-tab="active-designs"] .lens-ad-page {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--color-bg-page, #f5f6fa);
+  min-height: 100%;
+}
+
+/* ───────── Page header ───────── */
+.lens-tab-section[data-tab="active-designs"] .lens-ad-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 14px 18px;
+  border: 1px solid var(--color-border, #e5e7eb);
+}
+
+.lens-tab-section[data-tab="active-designs"] .lens-ad-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+.lens-tab-section[data-tab="active-designs"] .lens-ad-title .badge {
+  background: #ecf0f1;
+  color: #5d6d7e;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.lens-tab-section[data-tab="active-designs"] .lens-ad-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.lens-tab-section[data-tab="active-designs"] .btn-create-private {
+  border-color: #3949ab;
+  color: #3949ab;
+}
+.lens-tab-section[data-tab="active-designs"] .btn-create-private:hover {
+  background: #eef2ff;
+  border-color: #3949ab;
+}
+
+/* ───────── Filters wrapper ───────── */
+.lens-tab-section[data-tab="active-designs"] .lens-ad-filters {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ───────── Main layout (catalog table + side panel) ───────── */
+.lens-tab-section[data-tab="active-designs"] .lens-ad-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .lens-tab-section[data-tab="active-designs"] .lens-ad-main {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lens-tab-section[data-tab="active-designs"] .lens-ad-catalog-panel {
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  overflow: hidden;
+}
+
+.lens-tab-section[data-tab="active-designs"] .lens-ad-catalog-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  background: #f8f9fb;
+}
+.lens-tab-section[data-tab="active-designs"] .lens-ad-catalog-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.lens-tab-section[data-tab="active-designs"] #lens-ad-designs-table {
+  padding: 12px 16px;
+  min-height: 160px;
+}
+
+.lens-tab-section[data-tab="active-designs"] .lens-ad-side-panel {
+  position: sticky;
+  top: 16px;
+}
+
+.lens-tab-section[data-tab="active-designs"] .lens-ad-side-placeholder {
+  padding: 32px 16px;
+  text-align: center;
+  color: #95a5a6;
+  font-size: 13px;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px dashed #d0d4d9;
+}
+
+/* ───────── Per-row toggle switch (reuses lens-active-designs-toggle.js) ───────── */
+.lens-tab-section[data-tab="active-designs"] .toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  cursor: pointer;
+}
+.lens-tab-section[data-tab="active-designs"] .toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.lens-tab-section[data-tab="active-designs"] .toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: #bdc3c7;
+  border-radius: 20px;
+  transition: background 0.2s;
+}
+.lens-tab-section[data-tab="active-designs"] .toggle-slider::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  background: #ffffff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.lens-tab-section[data-tab="active-designs"] .toggle-switch input:checked + .toggle-slider {
+  background: #27ae60;
+}
+.lens-tab-section[data-tab="active-designs"] .toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(-16px);
+}
+
+/* ───────── Lens-type + material badges + variants pill (used in table custom render) ───────── */
+.lens-tab-section[data-tab="active-designs"] .lens-type-badge {
+  display: inline-block;
+  background: #e3f2fd;
+  color: #0d47a1;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.lens-tab-section[data-tab="active-designs"] .lens-type-badge.progressive {
+  background: #fce4ec;
+  color: #c2185b;
+}
+.lens-tab-section[data-tab="active-designs"] .lens-type-badge.office {
+  background: #e1f5fe;
+  color: #01579b;
+}
+
+.lens-tab-section[data-tab="active-designs"] .material-badge {
+  display: inline-block;
+  background: #f5f5f5;
+  color: #5d6d7e;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+.lens-tab-section[data-tab="active-designs"] .material-badge.clear { background: #ecf0f1; color: #5d6d7e; }
+.lens-tab-section[data-tab="active-designs"] .material-badge.photo { background: #fff3cd; color: #856404; }
+.lens-tab-section[data-tab="active-designs"] .material-badge.tint  { background: #ffe4e1; color: #c0392b; }
+
+.lens-tab-section[data-tab="active-designs"] .variants-pill {
+  display: inline-block;
+  background: #f0f4f8;
+  color: #2c3e50;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.lens-tab-section[data-tab="active-designs"] .location-pills {
+  display: flex;
+  gap: 4px;
+}
+.lens-tab-section[data-tab="active-designs"] .location-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  background: #ecf0f1;
+  color: #95a5a6;
+}
+.lens-tab-section[data-tab="active-designs"] .location-pill.active {
+  background: #d1f5ef;
+  color: #0e7a6a;
+}
+
+.lens-tab-section[data-tab="active-designs"] .design-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+.lens-tab-section[data-tab="active-designs"] .design-attrs {
+  font-size: 11px;
+  color: #95a5a6;
+  margin-top: 2px;
+}
+
+/* ───────── Side detail panel — extends shared side-detail.css ───────── */
+.lens-tab-section[data-tab="active-designs"] .lens-ad-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 13px;
+  border-bottom: 1px solid #ecf0f1;
+}
+.lens-tab-section[data-tab="active-designs"] .lens-ad-detail-row .key { color: #5d6d7e; }
+.lens-tab-section[data-tab="active-designs"] .lens-ad-detail-row .val { color: #2c3e50; font-weight: 500; }
+
+.lens-tab-section[data-tab="active-designs"] .lens-ad-bulk-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #ecf0f1;
+}
+.lens-tab-section[data-tab="active-designs"] .lens-ad-bulk-actions .btn {
+  flex: 1;
+  justify-content: center;
+  font-size: 12px;
+}

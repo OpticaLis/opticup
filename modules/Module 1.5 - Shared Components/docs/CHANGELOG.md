@@ -1,5 +1,112 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-18 — M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES — 4 PG sequences + 4 RPC rewrites (Phase 2 hybrid)
+
+SPEC: `M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES` ([folder](specs/M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES/))
+Parent debt: `TECH_DEBT.md` #14 (TD-SEQ-NUMBERING-STRUCTURAL) → status updated to PARTIAL.
+Parent report: `architecture-brief/SEQUENTIAL_NUMBERING_INVESTIGATION_REPORT.md` (Phase 1 read-only investigation, commit `0c049fb`).
+
+**Path X sequential execution.** ~45 min wall-clock. 20 of 20 §3 success criteria PASS. Tier C empirical proof on all 4 migrated RPCs.
+
+**Strategic call (§0):** Option E (HYBRID) over pure Option A. The 4 plain global-counter RPCs migrate to `SEQUENCE + nextval()`; the 4 supplier-scoped + dynamic-prefix RPCs stay regex-guarded as the canonical pattern for their use cases. Documented rationale: pure global sequences would regress per-(tenant, supplier) counter semantics on `RCP-{supplier}-NNNN` / `PO-{supplier}-NNNN` / `RET-{supplier}-NNNN` and is incompatible with `next_internal_doc_number`'s dynamic prefix.
+
+**3 commits (after `72dfe47` SPEC author):**
+
+- _(this commit batch C2)_ `feat(db): 4 PG SEQUENCEs + rewrite 4 next_*_number RPCs to use nextval()` — 8 migration files under `supabase/migrations/20260518130000..130007_*.sql`. 4 `CREATE SEQUENCE` (lot/transfer/box/purchase_order; START 19/2/2/300007). 4 `CREATE OR REPLACE FUNCTION` rewriting `next_lot_number` / `next_transfer_number` / `next_box_number` / `next_purchase_order_number` to use `nextval()` + `LPAD()` while preserving signatures + JWT guard exactly.
+- _(this commit batch C3)_ `chore(spec): close M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES — Phase 2 hybrid complete; 4 of 8 RPCs sequence-based` — EXECUTION_REPORT.md + FINDINGS.md + this CHANGELOG + SESSION_CONTEXT + TECH_DEBT.md #14 PARTIAL.
+
+**Iron Rules clean.** Rules 31 + 32 verified at every commit. §4 declared 4 `CREATE SEQUENCE` + 4 `CREATE OR REPLACE FUNCTION` as the authorized destructive ops; per-commit destructive-ops audit clean (no unauthorized patterns).
+
+**Tier C verification (4 cycles, all PASS):** Each cycle injected a corrupt-suffix row, set the JWT claim via `set_config('request.jwt.claims', ...)`, called the RPC 3 times, verified format regex + strict monotonic increase + starting value + corrupt-row resistance, then soft-deleted the corrupt row. Final last_values: `seq_lot_number=21`, `seq_transfer_number=4`, `seq_box_number=4`, `seq_purchase_order_number=300009` (all = START + 3 ✅). Sequence-based RPCs confirmed to ignore table contents by design.
+
+**Security advisor:** 0 new ERROR/HIGH. 4 in-scope RPCs surface only `authenticated_security_definer_function_executable` WARN baseline noise (pre-existing on all SECURITY DEFINER + authenticated functions; not a regression).
+
+**Self-introduced deviation (F-1, INFO):** v1 CREATE OR REPLACE FUNCTION migrations accidentally added a `service_role` JWT bypass branch (pattern-matched from BLOCK_A_DEMO_TESTS.sql) not authorized by the SPEC. Caught immediately after applying and before Tier C ran; reverted via 4 v2 migrations restoring the byte-equivalent original 2-line JWT guard. 0 impact on success criteria. Codification proposal queued for `opticup-executor` SKILL.md (FINDINGS.md F-1).
+
+**Architecture impact.** TD-SEQ-NUMBERING-STRUCTURAL moves from 🟡 to PARTIAL — 4 of 8 RPCs now structurally sequence-based; the cannot-break-by-data-corruption property is achieved for those 4 cases. The remaining 4 RPCs retain the Phase 1+2 regex-guard hardening as the canonical pattern. Optional Phase 3 (pure Option A) is OUT OF SCOPE here and deferred indefinitely (would regress per-supplier counter continuity).
+
+## 2026-05-17 evening — M1_5_SHARED_COMPONENTS_PHASE_0 — 8 shared components + tokens (M1 Lens rebuild Phase 0)
+
+SPEC: `M1_5_SHARED_COMPONENTS_PHASE_0` ([folder](specs/M1_5_SHARED_COMPONENTS_PHASE_0/))
+Source Brief: `modules/Module 1 - Inventory Management/architecture-brief/M1_LENS_MOCKUP_FIDELITY_FULL_REBUILD_BRIEF.md` §SPEC 2.
+
+**Bounded-Autonomy single-session execution.** Pipeline coordination lock claimed at start, released at close; 0 collisions with parallel SPEC 3 (`M1_LENS_DB_SCHEMA_RECEIPTS_NOTES`). No escalations to Daniel; SPEC §7 Destructive Operations stayed `None.` per Rule 21 investigation (no replace+migrate verdicts).
+
+**11 commits (after `236b6b8` SPEC_START):**
+
+- `f1ab3c1` — `chore(spec): M1_5_SHARED_COMPONENTS_PHASE_0 — Rule 21 investigation` — RULE_21_INVESTIGATION.md (152 lines), mandatory first deliverable per SPEC §9. Per-component verdicts: 1 EXTEND (data-table → existing table-builder.js) + 7 NEW + 0 replace+migrate.
+- `975b777` — `feat(shared/tokens): mockup palette + source-band + progress + dark + gradient + toggle tokens` — `shared/css/tokens.css` (149 lines).
+- `facc069` — `feat(shared): chip-filter-row + chip-filter.css` — `shared/js/chip-filter-row.js` (115 lines) + `shared/css/chip-filter.css` (117 lines).
+- `3f1bf77` — `feat(shared): stat-card-row + stat-card.css` — `shared/js/stat-card-row.js` (139) + `shared/css/stat-card.css` (111).
+- `693401a` — `feat(shared): group-header-row + table.css extensions for group/permission/pagination` — `shared/js/group-header-row.js` (104) + table.css 174→260 (Iron-Rule-12 safe).
+- `6260be6` — `feat(shared): wizard-step-indicator + wizard-step-indicator.css` — `shared/js/wizard-step-indicator.js` (131) + `shared/css/wizard-step-indicator.css` (121). DISTINCT from modal-wizard.js (`.wstep-*` prefix vs `.wizard-step-*`).
+- `556dea9` — `feat(shared): side-detail-panel + side-detail.css` — `shared/js/side-detail-panel.js` (166) + `shared/css/side-detail.css` (124).
+- `017b825` — `feat(shared): data-table extension — pagination, permission-gated cols, group-header rows` — EXTEND table-builder.js 298→349 + NEW `shared/js/table-builder-extensions.js` (86) to keep Iron Rule 12 safe. NO breaking API change for existing consumers.
+- `1b39c5a` — `feat(shared): quick-receipt-drawer + quick-receipt.css` — `shared/js/quick-receipt-drawer.js` (275) + `shared/css/quick-receipt.css` (220). Enforces Daniel decision #9 (sole inventory-entry path).
+- `7b344bc` — `feat(shared): lens-details-drawer + lens-details.css` — `shared/js/lens-details-drawer.js` (278) + `shared/css/lens-details.css` (210). 2-tab variant detail drawer (logs read-only + notes edit-by-permission).
+- `<close>` — `chore(spec): close M1_5_SHARED_COMPONENTS_PHASE_0 with retrospective + Tier C smoke harness + docs` — EXECUTION_REPORT.md + FINDINGS.md + Tier C component-test HTML + GLOBAL_MAP/FILE_STRUCTURE/MODULE_MAP/CHANGELOG/SESSION_CONTEXT/ROADMAP updates.
+
+**Iron Rules clean.** Rules 12 / 14 / 15 / 18 / 21 / 23 / 31 / 32 verified at every commit by pre-commit hooks (no bypasses). Largest file post-edit: `shared/js/table-builder.js` at 349 / 350 cap — the Rule-21-investigation's planned split into `table-builder-extensions.js` came in just before the cap, validating the §5 mitigation.
+
+**Architecture impact.** All 6 subsequent lens-screen rebuild SPECs (4-9) can now consume the 8 primitives instead of re-implementing them inline. Iron Rule 21 violation prevented for 6 future Pipelines × ~5 primitives each = ~30 duplicate code paths avoided. Module 1.5's component surface grew from 11 → 16 distinct JS exports.
+
+**Tier C verification.** A component-isolation test harness at `shared/tests/M1_5_SPEC2_components-test.html` mounts each of the 8 components in isolation; runtime visual verification deferred to opticup-localhost-tester per the SPEC 1 Author Proposal A-2 precedent (multi-SPEC marathon Pattern, deferral is correct discipline). The harness validates structural rendering + basic API surface (chip-filter click, stat-card select, stepper advance, drawer open/close). Daniel and/or Tester run Chrome MCP capture against this page when convenient.
+
+## 2026-05-17 late evening — PARALLEL_PIPELINE_COORDINATION — file-system-mediated session locks
+
+SPEC: `PARALLEL_PIPELINE_COORDINATION` ([folder](specs/PARALLEL_PIPELINE_COORDINATION/))
+
+**Full-Auto Pipeline.** Single chat, ~1.0h wall-clock. Single SPEC per Brief §10 Daniel-locked Decision #1 (no phasing). Direct remediation of SUPERVISOR_SKILL_PHASE_1 F-EXTRA-1 (2026-05-17 cross-Pipeline branch-state incident, ~20 min recovery cost).
+
+**10 Pipeline commits (`7dd4a3c..b774eed` + Foreman close):**
+
+- `7dd4a3c` — `chore(spec): seal PARALLEL_PIPELINE_COORDINATION SPEC + track Brief + Activation Prompt` (C0).
+- `ea66504` — `feat(infra): add pipeline-coordination script + 8 tests` (C1) — `scripts/pipeline-coordination.mjs` (329 lines, 5 sub-commands, Node built-ins only) + `scripts/test-pipeline-coordination.mjs` (228 lines, 6 unit + 2 E2E) + `package.json` `test:pipeline-coordination` script.
+- `1d8f5bb` — `chore(infra): add _archive/pipeline-sessions folder with .gitkeep + .gitignore` (C2) — path-level .gitignore: ignores `*.lock`, un-ignores `.gitkeep` + `stale-cleanup-*.log` + `.gitignore` itself.
+- `cdc2a6e` — `docs(skills): wire Pre-Action Collision Check into 5 Pipeline skills` (C3) — Shared Block S1 inserted into executor / reviewer / localhost-tester / strategic / supervisor SKILL.md, +29 lines each.
+- `27adffa` — `docs(claude.md): add §9 Parallel Pipeline Coordination sub-section` (C4) — one-paragraph rule pointing at script + lock-file folder + per-skill First Action sub-section, +4 lines.
+- `0a08fcf` — `docs(file-structure): register 4 new pipeline-coordination files` (C5).
+- `77f2982` — `chore(spec): close PARALLEL_PIPELINE_COORDINATION Executor phase with retrospective` (C6) — EXECUTION_REPORT.md (178 lines, 21/23 §3 criteria GREEN + 1 D-1 deviation + 2 deferred to downstream) + FINDINGS.md (34 lines, 2 INFO, DISMISS/DEFER).
+- `e6aa006` — `docs(spec): REVIEW for PARALLEL_PIPELINE_COORDINATION — 🟢 PASS` (C7) — independent re-verification of 21/23 criteria + 3 spot-checks; 1 INFO R-FINDING-1 (Block S1 per-skill phrase, DISMISS).
+- `b774eed` — `chore(spec): PARALLEL_PIPELINE_COORDINATION smoke test report — 🟢 GREEN` (C8) — smoke 7/7 PASS demo (4.5s), SPEC E2E 8/8 PASS re-run, Tier C VFV N/A.
+- `<C10>` — `chore(spec): close PARALLEL_PIPELINE_COORDINATION` — FOREMAN_REVIEW + this CHANGELOG + SESSION_CONTEXT + MASTER_ROADMAP + OPEN_TASKS updates.
+
+**Iron Rules clean.** Rules 12 / 21 / 23 / 31 / 32 verified across all 10 commits. **0 destructive operations** (per-commit destructive-ops audit returns empty; SPEC §4 declared `None.` and honored verbatim). **0 escalations to Daniel.** D-1 (CLAUDE.md ≤ 400 stale baseline) caught by P-EXEC-2 binding rule at Executor Step 0 and handled correctly via the §5 operational delta trigger (+4 actual vs +25 cap).
+
+**Architecture impact.** Pipeline-collision detection is now OPERATIONAL at SPEC closure. Any concurrent Pipeline opened after `b774eed` will execute `claim` at bootstrap, `check-collision` before every branch op, and halt + escalate on collision. The F-EXTRA-1 incident class (silent working-tree migration during parallel `git checkout`/`git merge`) cannot recur silently. First real-use validation will occur the next time two Pipelines open against the same repo.
+
+**4 skill improvements queued** for next opticup-strategic session per Self-Improvement Mandate: P-AUTHOR-1 (tighten §3a Shared Edit Block Sameness contract) + P-AUTHOR-2 (pre-seal governance-doc baseline re-measurement) + P-EXEC-1 (multi-skill identical-edit Read-then-Edit discipline) + P-EXEC-2 (absolute-cap-as-delta when pre-existing-violated). **1 new-SPEC stub queued**: `PARALLEL_PIPELINE_COORDINATION_PRE_COMMIT_GATE` (Brief §9 Risks row 4 — pre-commit-time enforcement that first commit of session must have an active lock).
+
+## 2026-05-17 evening — SUPERVISOR_SKILL_PHASE_1 — Triage layer (Shadow Mode launch)
+
+SPEC: `SUPERVISOR_SKILL_PHASE_1` ([folder](specs/SUPERVISOR_SKILL_PHASE_1/))
+
+**Full-Auto Pipeline.** Single chat, ~3.5 hours wall-clock (incl. cross-Pipeline-branch incident pause). 1st of 3 SPECs from the sealed `SUPERVISOR_SKILL_BRIEF` (2026-05-17, v1, 211 lines). Phase 2 (Retry) + Phase 3 (Harvest) are independently shippable; queued in OPEN_TASKS.
+
+**9 Pipeline commits (`974eba9..d8073eb`):**
+
+- `8f0546f` — `chore(spec): seal SUPERVISOR_SKILL_PHASE_1 SPEC + Brief + Activation Prompt` (C0) — Brief + Activation Prompt tracked + SPEC.md sealed (480 lines, 17 success criteria, §7 `None.` destructive ops declaration).
+- `39426ac` — `feat(supervisor): add skill skeleton + Core protocol files (project-agnostic)` (C1) — New skill `opticup-supervisor`: SKILL.md (225 lines) + core/triage-protocol.md (233 lines, 5-step procedure) + core/escalation-format.md (142 lines, required-fields spec). Core verified project-agnostic (0 leaks).
+- `16cbb0f` — `feat(supervisor): add Optic Up adapter + archive folders (Hard-Stops + decision-paths)` (C2) — adapters/opticup/decisions-log-paths.md (148 lines, Daniel-locked priority order from Brief §13: DECISIONS_LOG → CROSS.md → M{N}.md → CLAUDE.md → MASTER_ROADMAP; auto-memory confidence cap = 3) + adapters/opticup/skill-destinations.md (111 lines, 7 Hard-Stop categories + Phase-3 reference table). `_archive/supervisor-log/.gitkeep` + `_archive/supervisor-pending-promotions/.gitkeep` created.
+- `c5f7390` — `feat(skills): wire Executor + Reviewer + Localhost-Tester to Supervisor Triage (Shadow Mode)` (C3) — 3 Pipeline SKILL.md files gained "Pre-Escalation: Supervisor Triage (Shadow Mode)" sub-section. executor +22, reviewer +13, tester +13. Hard-Stop categories referenced; Shadow Mode contract: both paths run in parallel.
+- `d51e82f` — `docs(claude): describe Supervisor layer + Shadow Mode in §11 Autonomous Mode` (C4) — CLAUDE.md §11 +6 lines vs HEAD (after 2 trim iterations to honor §0's stale-baseline cap intent).
+- `469346c` — `test(supervisor): E2E Triage on synthetic main-push escalation (Confidence 5, cites CLAUDE.md §9 #7)` (C5) — synthetic escalation + `ARCHITECT_DECISION_*.md` (Status: SHADOW_PROPOSAL, Confidence: 5, Cited source: CLAUDE.md §9 #7 verbatim quote) + shadow-2026-05-17.md log row. In-flight Adapter clarification: Hard-Stop fires on AUTHORIZATION-shaped questions, not RULE-APPLICATION-shaped (committed in same commit).
+- `21429ac` — `chore(spec): EXECUTION_REPORT + FINDINGS for SUPERVISOR_SKILL_PHASE_1` (C6, cherry-picked) — 15/17 §3 criteria GREEN at Executor close; 3 in-flight deviations all resolved (Core scrub D-1, stale-baseline trim D-2, Hard-Stop semantics clarification D-3); 4 findings (0 CRITICAL, 0 HIGH, 1 MEDIUM, 2 LOW, 1 INFO); 2 Executor proposals queued.
+- `da55618` — `chore(spec): REVIEW for SUPERVISOR_SKILL_PHASE_1 — 🟢 PASS` — Independent re-verification of 15/17 §3 criteria. Iron Rules 12/21/23/31/32 all clean. Core project-agnostic re-grep: 0 hits. Citation honesty spot-check: byte-accurate quote at CLAUDE.md:348. 2 INFO findings (R-FINDING-1 SPEC length, R-FINDING-2 forward-looking Adapter table); both DISMISS.
+- `d8073eb` — `chore(spec): SUPERVISOR_SKILL_PHASE_1 smoke test report — 🟢 GREEN` — Smoke 7/7 PASS (5.84s on demo tenant) + SPEC §14 cases 2–14 PASS (13/13). Tier C VFV N/A (no runtime UI surface; skill-infra + docs + archive only). Handing back to Foreman.
+
+**Cross-Pipeline incident logged:** The parallel M1-expansion Pipeline merged develop → release/m1-inventory-2026-05-18 mid-execution, switching the Executor's working-tree HEAD. C6 initially landed on release; Executor STOPPED per Bounded Autonomy + asked Daniel for clearance; Daniel chose Option 1 (cherry-pick C6 to develop, leave release alone). Recovery clean after parallel session resolved its merge. F-EXTRA-1 logs a future SPEC stub for cross-Pipeline git-state coordination.
+
+**4 skill improvements harvested (2 author + 2 executor) for next strategic touch:**
+- **opticup-strategic P-AUTHOR-1** — Placeholders-first contract for project-portable Core/Adapter SPECs (SPEC sample blocks use `<PLACEHOLDER>` form, not real project names).
+- **opticup-strategic P-AUTHOR-2** — Baselines must carry both 'Measured-at HEAD' and 'Seal-commit HEAD' commit hashes; mismatch = automatic FAIL for SPEC author quality.
+- **opticup-executor P-EXEC-1** — Placeholders-first when writing Core/Adapter content (mirrors P-AUTHOR-1 at execution).
+- **opticup-executor P-EXEC-2** — Stale-baseline sanity check at execution start (Step 1.5 sub-step 0; flag if SPEC's claimed BASE_* > 10% drift vs current HEAD).
+
+**State at close:** Supervisor operational in Shadow Mode as of 2026-05-17 12:15 local. The 3-day learning window begins now; next Pipeline escalation triggers Triage. Active Mode flip is a separate Daniel decision after the window (Brief §11 + §12 criteria: ≥80% match AND no Confidence-5 mismatches).
+
+---
+
 ## 2026-05-17 afternoon — M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2 — VFV-verified Option A layout fix (margin-inline-start)
 
 SPEC: `M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2` ([folder](specs/M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2/))

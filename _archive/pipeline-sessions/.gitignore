@@ -1,0 +1,15 @@
+# Path-level .gitignore for _archive/pipeline-sessions/
+# Built by PARALLEL_PIPELINE_COORDINATION SPEC (2026-05-17) per Brief §6.
+#
+# Lock files are session-local state, NOT source-of-truth — they
+# must never enter git history.
+*.lock
+
+# But: keep this folder as a stable audit target.
+!.gitkeep
+
+# And: stale-cleanup audit logs ARE tracked for audit history (Brief §3.4 + §6).
+!stale-cleanup-*.log
+
+# And: this .gitignore itself stays tracked.
+!.gitignore

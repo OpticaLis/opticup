@@ -85,6 +85,288 @@
   .new-price { color: #c0392b; font-weight: 700; }
 
   .alert-info { background: #d1ecf1; border-right: 4px solid #0c5460; padding: 10px 14px; border-radius: 6px; font-size: 12px; color: #0c5460; margin-bottom: 12px; }
+
+  /* === VIEW-MODE TOGGLE (added 2026-05-17 per Daniel decision #12) ===
+     Pill-style 2-button switch between Edit (admin/manager) and Readonly (worker) modes.
+     Default-active state is permission-driven: lens_pricing.edit → edit; otherwise → readonly. */
+  .view-mode-toggle {
+    display: inline-flex;
+    background: #f0f2f5;
+    border-radius: 999px;
+    padding: 3px;
+    margin: 12px 0;
+    gap: 2px;
+  }
+  .view-mode-toggle button {
+    padding: 8px 22px;
+    border: none;
+    background: transparent;
+    color: #5d6d7e;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .view-mode-toggle button:hover { color: #2c3e50; }
+  .view-mode-toggle button.active {
+    background: #c9a555;
+    color: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+  .view-mode-toggle .mode-hint {
+    align-self: center;
+    margin-inline-start: 14px;
+    font-size: 11px;
+    color: #95a5a6;
+  }
+
+  /* === PERMISSION-GATED COLUMNS (added 2026-05-17 per Daniel decisions #11+#13) ===
+     Same pattern as LENS_INVENTORY_MOCKUP. Renderer hides if !hasPermission(data-permission). */
+  .col-permission-gated::before { content: '🔒 '; font-size: 9px; opacity: 0.7; }
+
+  /* === READONLY MODE — flat sortable table (added 2026-05-17 per Daniel decision #12) ===
+     Worker default — shows all lenses in tenant's catalog regardless of stock presence.
+     Compact filter row at top + flat table with 10 columns. Not-in-stock rows muted. */
+  .readonly-filter-row {
+    background: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    margin-bottom: 12px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .readonly-filter-row select, .readonly-filter-row input {
+    padding: 7px 10px;
+    border: 1px solid #d0d4d9;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: inherit;
+    background: white;
+  }
+  .readonly-filter-row input[type="text"]:not(.search-box) { width: 70px; text-align: center; }
+
+  .readonly-flat-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+  .readonly-flat-table thead th {
+    text-align: right;
+    padding: 10px 14px;
+    background: #f8f9fb;
+    color: #5d6d7e;
+    font-weight: 600;
+    font-size: 11px;
+    border-bottom: 2px solid #ecf0f1;
+    cursor: pointer;
+    user-select: none;
+    position: sticky;
+    top: 0;
+  }
+  .readonly-flat-table thead th::after { content: ' ↕'; color: #cbd5e1; font-size: 10px; font-weight: normal; }
+  .readonly-flat-table thead th.sorted-asc::after { content: ' ↑'; color: #c9a555; font-weight: 700; }
+  .readonly-flat-table thead th.sorted-desc::after { content: ' ↓'; color: #c9a555; font-weight: 700; }
+  .readonly-flat-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f5f6fa;
+    vertical-align: middle;
+  }
+  .readonly-flat-table tbody tr.no-stock { color: #94a3b8; font-style: italic; }
+  .readonly-flat-table tbody tr.no-stock td:nth-last-child(2) { color: #94a3b8; font-weight: normal; }
+  .readonly-flat-table tbody tr:not(.no-stock) td:nth-last-child(2) { font-weight: 700; color: #27ae60; }
+  .readonly-flat-table tbody tr:hover { background: #faf3e0; }
+
+  /* === ROW-ACTION button (added 2026-05-17 Round 2) ===
+     "פרטים נוספים" per-row button. Gold outline, fills gold on hover.
+     data-drawer-target="lens-details" → opens .lens-details-drawer. */
+  .row-action-btn {
+    padding: 4px 12px;
+    border: 1px solid #c9a555;
+    background: white;
+    color: #b8954a;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .row-action-btn:hover { background: #c9a555; color: white; }
+
+  /* === LENS-DETAILS DRAWER (added 2026-05-17 Round 2 per Daniel decision) ===
+     Right-pinned (RTL inset-inline-start:0). Opens from "פרטים נוספים" per-row button.
+     2 tabs: לוגים (price history + stock movements, read-only always) + הערות (notes,
+     CRUD in edit mode / read-only in view mode). */
+  .lens-details-drawer {
+    position: fixed;
+    inset-inline-start: 0;
+    top: 0;
+    bottom: 0;
+    width: 480px;
+    max-width: 92vw;
+    background: white;
+    box-shadow: -4px 0 16px rgba(0,0,0,0.15);
+    display: none;
+    flex-direction: column;
+    z-index: 200;
+  }
+  .lens-details-drawer.active { display: flex; }
+
+  .ldd-header {
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #c9a555 0%, #b8954a 100%);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .ldd-title { font-size: 15px; font-weight: 600; }
+  .ldd-close {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.5);
+    color: white;
+    width: 30px; height: 30px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+  }
+  .ldd-close:hover { background: rgba(255,255,255,0.15); }
+
+  .ldd-tabs {
+    display: flex;
+    background: #f8f9fb;
+    border-bottom: 1px solid #ecf0f1;
+  }
+  .ldd-tab {
+    flex: 1;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    color: #5d6d7e;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    border-bottom: 3px solid transparent;
+  }
+  .ldd-tab:hover { background: #f0f2f5; }
+  .ldd-tab.active {
+    color: #c9a555;
+    border-bottom-color: #c9a555;
+    background: white;
+  }
+
+  .ldd-body { flex: 1; overflow-y: auto; padding: 18px 20px; }
+  .ldd-tab-pane { display: none; }
+  .ldd-tab-pane.active { display: block; }
+
+  .ldd-section { margin-bottom: 20px; }
+  .ldd-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .ldd-mini-table { width: 100%; font-size: 11px; border-collapse: collapse; }
+  .ldd-mini-table th {
+    text-align: right;
+    padding: 6px 8px;
+    background: #f8f9fb;
+    color: #5d6d7e;
+    font-weight: 600;
+    font-size: 10px;
+    border-bottom: 1px solid #ecf0f1;
+  }
+  .ldd-mini-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #f5f6fa;
+  }
+  .ldd-mini-table tbody tr:hover { background: #faf3e0; }
+
+  .ldd-note-card {
+    background: #f8f9fb;
+    border: 1px solid #ecf0f1;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .ldd-note-meta {
+    font-size: 11px;
+    color: #95a5a6;
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .ldd-note-meta .ldd-note-author { color: #5d6d7e; font-weight: 600; }
+  .ldd-note-body { font-size: 13px; color: #2c3e50; line-height: 1.4; }
+  .ldd-note-actions { display: none; margin-top: 6px; gap: 6px; }
+  .ldd-note-actions.edit-mode { display: flex; }
+  .ldd-note-actions button {
+    padding: 3px 10px;
+    border: 1px solid #ecf0f1;
+    background: white;
+    color: #5d6d7e;
+    border-radius: 4px;
+    font-size: 10px;
+    cursor: pointer;
+  }
+
+  .ldd-add-note-btn {
+    background: #c9a555;
+    color: white;
+    border: 1px solid #c9a555;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    width: 100%;
+  }
+  .ldd-add-note-btn:hover { background: #b8954a; }
+
+  .ldd-add-note-form {
+    background: #fdf6e3;
+    border: 1px dashed #c9a555;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 12px;
+  }
+  .ldd-add-note-form textarea {
+    width: 100%;
+    min-height: 60px;
+    padding: 8px;
+    border: 1px solid #d0d4d9;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 13px;
+    resize: vertical;
+  }
+  .ldd-add-note-form .form-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    justify-content: flex-end;
+  }
+
+  .ldd-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #ecf0f1;
+    background: #f8f9fb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  /* PERMISSION-GATED note actions — same convention as col-permission-gated.
+     In edit-mode the .ldd-note-actions.edit-mode is shown; in view mode it stays display:none. */
+  .ldd-mode-edit-only { /* renderer toggles based on user permission */ }
+  .ldd-mode-readonly-only { display: none; /* by default hidden; in readonly the renderer shows it */ }
 </style>
 </head>
 <body>
@@ -105,6 +387,28 @@
     <button class="btn btn-primary">📝 צור הסכם הנחה חדש</button>
   </div>
 </div>
+
+<!--
+  ===== VIEW-MODE TOGGLE (Edit / Readonly) — per Daniel decision #12 =====
+  Two-mode UI for the same pricing screen:
+  - Edit mode (admin/manager): bulk pricing tools, approval flow, series hierarchy — as currently mocked below
+  - Readonly mode (worker default): flat sortable list with quick filters, shows EVERY lens
+    in the tenant's catalog regardless of stock presence
+
+  Permission gating: lens_pricing.edit → defaults to edit; otherwise → readonly.
+  User with edit permission can still switch to readonly via the toggle (e.g., to use it as
+  a sales reference). DB query is identical; only presentation differs.
+
+  In production JS toggles which <section> is visible. In the mockup BOTH sections are
+  drawn inline so reviewers can compare layouts.
+-->
+<div class="view-mode-toggle">
+  <button class="active" data-view-mode="edit">✏️ עריכה</button>
+  <button data-view-mode="readonly">👁 צפייה</button>
+  <span class="mode-hint">ברירת מחדל לפי הרשאת lens_pricing.edit</span>
+</div>
+
+<section data-view-mode="edit">
 
 <!-- TABS -->
 <div class="top-tabs">
@@ -182,6 +486,7 @@
             <th>מע"מ</th>
             <th>תוקף עד</th>
             <th>סטטוס</th>
+            <th>פרטים</th>
           </tr>
         </thead>
         <tbody>
@@ -202,6 +507,7 @@
             <td>—</td>
             <td>—</td>
             <td><span class="status-badge status-active">ברירת מחדל לסדרה</span></td>
+            <td style="text-align:center; color:#94a3b8;">—</td>
           </tr>
           <tr class="selected">
             <td style="text-align:center;"><input type="checkbox" checked /></td>
@@ -217,6 +523,7 @@
             <td>18% נפרד</td>
             <td>—</td>
             <td><span class="status-badge status-active">✓ פעיל</span></td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
           </tr>
           <tr>
             <td style="text-align:center;"><input type="checkbox" checked /></td>
@@ -232,6 +539,7 @@
             <td>18% נפרד</td>
             <td>—</td>
             <td><span class="status-badge status-active">✓ פעיל</span></td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
           </tr>
           <tr>
             <td style="text-align:center;"><input type="checkbox" /></td>
@@ -247,6 +555,7 @@
             <td>18% נפרד</td>
             <td>—</td>
             <td><span class="status-badge status-active">✓ פעיל</span></td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
           </tr>
           <tr style="background:#fffbeb;">
             <td style="text-align:center;"><input type="checkbox" /></td>
@@ -265,6 +574,7 @@
             <td>18% נפרד</td>
             <td>—</td>
             <td><span class="status-badge status-active">✓ פעיל</span></td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
           </tr>
           <tr class="pending">
             <td style="text-align:center;"><input type="checkbox" /></td>
@@ -280,6 +590,7 @@
             <td>18% נפרד</td>
             <td>החל מ-1.6</td>
             <td><span class="status-badge status-pending">⏳ ממתין</span></td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
           </tr>
 
           <!-- ===== SERIES 2: Hilux EYAS UVC HVLL — Default 48% ===== -->
@@ -298,6 +609,7 @@
             <td>—</td>
             <td>—</td>
             <td><span class="status-badge status-active">ברירת מחדל לסדרה</span></td>
+            <td style="text-align:center; color:#94a3b8;">—</td>
           </tr>
           <tr>
             <td style="text-align:center;"><input type="checkbox" /></td>
@@ -313,6 +625,7 @@
             <td>18% נפרד</td>
             <td>—</td>
             <td><span class="status-badge status-active">✓ פעיל</span></td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
           </tr>
 
           <!-- ===== SERIES 3: Defender UV 420 SN — Default 55% (PROMO) ===== -->
@@ -331,6 +644,7 @@
             <td>—</td>
             <td style="color:#084298; font-weight:600;">31.5.26</td>
             <td><span class="status-badge status-promo">🎯 מבצע זמני</span></td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
           </tr>
           <tr style="background:#eff6ff;">
             <td style="text-align:center;"><input type="checkbox" /></td>
@@ -346,6 +660,7 @@
             <td>18% נפרד</td>
             <td style="color:#084298; font-weight:600;">31.5.26</td>
             <td><span class="status-badge status-promo">🎯 מבצע זמני</span></td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
           </tr>
 
           <!-- ===== SERIES 4: Hoyalux iD MyStyle V+ — Default 40% (Custom) ===== -->
@@ -364,6 +679,7 @@
             <td>—</td>
             <td>—</td>
             <td><span class="status-badge status-active">ברירת מחדל לסדרה</span></td>
+            <td style="text-align:center; color:#94a3b8;">—</td>
           </tr>
           <tr>
             <td style="text-align:center;"><input type="checkbox" /></td>
@@ -379,9 +695,10 @@
             <td>18% נפרד</td>
             <td>—</td>
             <td><span class="status-badge status-active">✓ פעיל</span></td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
           </tr>
 
-          <tr><td colspan="9" style="text-align:center; padding:14px; color:#95a5a6; font-size:11px;">... ועוד 4 סדרות (Hilux UV Control Photo · Hoyalux iD LifeStyle V+ · ...)</td></tr>
+          <tr><td colspan="10" style="text-align:center; padding:14px; color:#95a5a6; font-size:11px;">... ועוד 4 סדרות (Hilux UV Control Photo · Hoyalux iD LifeStyle V+ · ...)</td></tr>
 
         </tbody>
       </table>
@@ -465,6 +782,428 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+</section>
+<!-- end of section[data-view-mode="edit"] -->
+
+<!--
+  ===== READONLY MODE SECTION — worker default (per Daniel decision #12) =====
+  Flat sortable list with quick filters. Shows ALL lenses in tenant's catalog
+  regardless of stock presence. Not-in-stock rows are visually muted; in-stock
+  rows show the qty in bold green. Cost-price column gated by
+  lens_pricing.view_cost_price (per Daniel decision #11 + #13). Same column-permission
+  pattern as inventory mockup — rebuild executor's JS layer reads
+  data-permission attribute and hides accordingly.
+-->
+<section data-view-mode="readonly" style="display:block;">
+
+  <!-- Compact filter row -->
+  <div class="readonly-filter-row">
+    <span style="font-size:12px; color:#5d6d7e; font-weight:600;">סינון מהיר:</span>
+    <select>
+      <option>חברה: הכל</option>
+      <option>Hoya</option>
+      <option>Essilor</option>
+      <option>Zeiss</option>
+    </select>
+    <select>
+      <option>סוג: הכל</option>
+      <option>חד-מוקדי</option>
+      <option>מולטיפוקל</option>
+      <option>פרוגרסיב</option>
+    </select>
+    <select>
+      <option>קוטר: הכל</option>
+      <option>65mm</option>
+      <option>70mm</option>
+      <option>75mm</option>
+    </select>
+    <span style="font-size:11px; color:#95a5a6;">SPH</span>
+    <input type="text" placeholder="מ-" />
+    <input type="text" placeholder="עד" />
+    <span style="font-size:11px; color:#95a5a6; margin-inline-start:6px;">CYL</span>
+    <input type="text" placeholder="מ-" />
+    <input type="text" placeholder="עד" />
+    <input type="text" class="search-box" placeholder="🔍 חפש סדרה / וריאנט..." style="margin-inline-start:auto;" />
+  </div>
+
+  <!-- Flat sortable table -->
+  <div class="pricing-panel">
+    <div class="panel-header">
+      <h3>קטלוג סדרות — מצב צפייה</h3>
+      <span style="font-size:11px; color:#5d6d7e;">12 שורות · לחיצה על כותרת עמודה למיון</span>
+    </div>
+    <div style="max-height:600px; overflow-y:auto;">
+      <table class="readonly-flat-table">
+        <thead>
+          <tr>
+            <th>חברה</th>
+            <th>סדרה</th>
+            <th>סוג</th>
+            <th>קוטר</th>
+            <th class="sorted-asc">SPH</th>
+            <th>CYL</th>
+            <th>מחיר מכירה</th>
+            <th class="col-permission-gated" data-permission="lens_pricing.view_cost_price">מחיר עלות</th>
+            <th>הנחה</th>
+            <th>כמות במלאי</th>
+            <th>פרטים</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Hoya</td><td>Hilux EYAS BLC</td><td>חד-מוקדי</td><td>70mm</td>
+            <td>-2.50</td><td>-0.75</td>
+            <td>₪149</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪82</td>
+            <td>50%</td>
+            <td>5</td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
+          </tr>
+          <tr>
+            <td>Hoya</td><td>Hilux EYAS BLC</td><td>חד-מוקדי</td><td>70mm</td>
+            <td>-3.00</td><td>-1.00</td>
+            <td>₪149</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪82</td>
+            <td>50%</td>
+            <td>3</td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
+          </tr>
+          <tr class="no-stock">
+            <td>Hoya</td><td>Hilux EYAS BLC</td><td>חד-מוקדי</td><td>70mm</td>
+            <td>-3.50</td><td>-0.75</td>
+            <td>₪149</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪82</td>
+            <td>50%</td>
+            <td>0</td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
+          </tr>
+          <tr>
+            <td>Hoya</td><td>Hilux EYAS UVC HVLL</td><td>חד-מוקדי</td><td>70mm</td>
+            <td>+1.50</td><td>-0.50</td>
+            <td>₪165</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪92</td>
+            <td>48%</td>
+            <td>4</td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
+          </tr>
+          <tr class="no-stock">
+            <td>Hoya</td><td>Hilux UV Control Photo</td><td>חד-מוקדי</td><td>70mm</td>
+            <td>-2.00</td><td>-0.50</td>
+            <td>₪210</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪118</td>
+            <td>50%</td>
+            <td>0</td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
+          </tr>
+          <tr>
+            <td>Hoya</td><td>Defender UV 420 SN</td><td>חד-מוקדי</td><td>70mm</td>
+            <td>-1.50</td><td>0.00</td>
+            <td>₪126</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪70</td>
+            <td>55%</td>
+            <td>8</td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
+          </tr>
+          <tr>
+            <td>Hoya</td><td>Hoyalux iD MyStyle V+</td><td>מולטיפוקל</td><td>70mm</td>
+            <td>-1.50</td><td>-0.25</td>
+            <td>₪390</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪218</td>
+            <td>40%</td>
+            <td>2</td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
+          </tr>
+          <tr class="no-stock">
+            <td>Hoya</td><td>Hoyalux iD LifeStyle V+</td><td>מולטיפוקל</td><td>70mm</td>
+            <td>-2.00</td><td>-0.50</td>
+            <td>₪420</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪235</td>
+            <td>40%</td>
+            <td>0</td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
+          </tr>
+          <tr>
+            <td>Essilor</td><td>Varilux X 4D</td><td>פרוגרסיב</td><td>70mm</td>
+            <td>0.00</td><td>0.00</td>
+            <td>₪480</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪270</td>
+            <td>42%</td>
+            <td>3</td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
+          </tr>
+          <tr class="no-stock">
+            <td>Essilor</td><td>Varilux Comfort Max</td><td>פרוגרסיב</td><td>65mm</td>
+            <td>+0.50</td><td>-0.25</td>
+            <td>₪380</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪215</td>
+            <td>42%</td>
+            <td>0</td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
+          </tr>
+          <tr>
+            <td>Zeiss</td><td>SmartLife Individual 2</td><td>מולטיפוקל</td><td>70mm</td>
+            <td>-1.00</td><td>-0.50</td>
+            <td>₪510</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪290</td>
+            <td>43%</td>
+            <td>1</td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
+          </tr>
+          <tr class="no-stock">
+            <td>Zeiss</td><td>DriveSafe</td><td>חד-מוקדי</td><td>70mm</td>
+            <td>-2.50</td><td>0.00</td>
+            <td>₪240</td>
+            <td class="col-permission-gated" data-permission="lens_pricing.view_cost_price">₪138</td>
+            <td>43%</td>
+            <td>0</td>
+            <td><button class="row-action-btn" data-drawer-target="lens-details" onclick="document.getElementById('lensDetailsDrawer').classList.add('active')">פרטים נוספים</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</section>
+<!-- end of section[data-view-mode="readonly"] -->
+
+<!--
+  ===== LENS DETAILS DRAWER — לוגים + הערות (Daniel decision Round 2, 2026-05-17) =====
+  Opens from "פרטים נוספים" button on every row in BOTH view modes.
+
+  Tab 1 (לוגים) — always read-only, regardless of user permission:
+    - היסטוריית מחירים (price log): every price/discount/cost change + approvals
+    - היסטוריית תנועות מלאי (stock movements log): receipts, sales, returns, transfers, etc.
+
+  Tab 2 (הערות) — free-form multi-line notes per variant:
+    - Edit mode (permissions.lens_pricing.edit=true): can add (button + textarea) + edit + delete
+    - Read-only mode (permissions.lens_pricing.edit=false): cards only, no add button, no per-note controls
+
+  Notes table DB schema (downstream):
+    lens_variant_notes (
+      id UUID PK,
+      variant_id UUID REFERENCES lens_variant(id),
+      tenant_id UUID NOT NULL REFERENCES tenants(id),
+      author_id UUID REFERENCES employees(id),
+      body TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      updated_at TIMESTAMPTZ
+    )
+    + tenant_id RLS + UNIQUE (id, tenant_id) per Iron Rule 18.
+
+  Permissions:
+    - lens_pricing.edit → gates write access to notes + presence of add/edit/delete UI
+    - everyone with view access to the pricing screen reads notes (no separate read perm)
+
+  Mockup display: drawer is shown OPEN (.active) with EDIT mode visible (add button + per-note
+  actions). The readonly variant hides .ldd-add-note-btn + .ldd-add-note-form + .ldd-note-actions.
+-->
+<div class="lens-details-drawer active" id="lensDetailsDrawer">
+  <div class="ldd-header">
+    <div class="ldd-title">📋 פרטי עדשה — Hoya · Hilux EYAS BLC · 1.67 · 70mm (SPH -2.50 / CYL -0.75)</div>
+    <button class="ldd-close" onclick="document.getElementById('lensDetailsDrawer').classList.remove('active')" title="סגור">×</button>
+  </div>
+
+  <div class="ldd-tabs">
+    <button class="ldd-tab active" data-tab-target="logs"
+            onclick="
+              this.parentElement.querySelectorAll('.ldd-tab').forEach(t => t.classList.remove('active'));
+              this.classList.add('active');
+              document.querySelectorAll('.ldd-tab-pane').forEach(p => p.classList.remove('active'));
+              document.getElementById('ldd-tab-logs').classList.add('active');
+            ">
+      🗂 לוגים
+    </button>
+    <button class="ldd-tab" data-tab-target="notes"
+            onclick="
+              this.parentElement.querySelectorAll('.ldd-tab').forEach(t => t.classList.remove('active'));
+              this.classList.add('active');
+              document.querySelectorAll('.ldd-tab-pane').forEach(p => p.classList.remove('active'));
+              document.getElementById('ldd-tab-notes').classList.add('active');
+            ">
+      📝 הערות
+    </button>
+  </div>
+
+  <div class="ldd-body">
+
+    <!-- TAB 1: לוגים (always read-only) -->
+    <div class="ldd-tab-pane active" id="ldd-tab-logs">
+
+      <div class="ldd-section">
+        <div class="ldd-section-title">היסטוריית מחירים</div>
+        <table class="ldd-mini-table">
+          <thead>
+            <tr>
+              <th>תאריך</th>
+              <th>סוג שינוי</th>
+              <th>ערך לפני</th>
+              <th>ערך אחרי</th>
+              <th>שינה</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>15.03.26</td>
+              <td>מחיר קטלוג</td>
+              <td>₪200</td>
+              <td>₪220</td>
+              <td>דניאל</td>
+            </tr>
+            <tr>
+              <td>15.03.26</td>
+              <td>אישור עליית מחיר</td>
+              <td>—</td>
+              <td>+10% אושר</td>
+              <td>דניאל</td>
+            </tr>
+            <tr>
+              <td>08.04.26</td>
+              <td>הנחה אישית</td>
+              <td>45%</td>
+              <td>50%</td>
+              <td>שרה</td>
+            </tr>
+            <tr>
+              <td>02.05.26</td>
+              <td>מחיר עלות</td>
+              <td>₪78</td>
+              <td>₪82</td>
+              <td>דניאל</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="ldd-section">
+        <div class="ldd-section-title">היסטוריית תנועות מלאי</div>
+        <table class="ldd-mini-table">
+          <thead>
+            <tr>
+              <th>תאריך</th>
+              <th>סוג תנועה</th>
+              <th>כמות</th>
+              <th>תעודה</th>
+              <th>ספק/לקוח</th>
+              <th>משתמש</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>10.05.26</td>
+              <td>רכישה מספק</td>
+              <td style="color:#27ae60;">+48</td>
+              <td>DN-2026-1147</td>
+              <td>לפידות בע"מ</td>
+              <td>דניאל</td>
+            </tr>
+            <tr>
+              <td>12.05.26</td>
+              <td>מכירה</td>
+              <td style="color:#e74c3c;">−1</td>
+              <td>הזמנה #4521</td>
+              <td>קוסטומר #312</td>
+              <td>שירה</td>
+            </tr>
+            <tr>
+              <td>12.05.26</td>
+              <td>החזרה מלקוח</td>
+              <td style="color:#27ae60;">+1</td>
+              <td>החזרה #87</td>
+              <td>קוסטומר #145</td>
+              <td>אבי</td>
+            </tr>
+            <tr>
+              <td>08.05.26</td>
+              <td>העברה בין סניפים</td>
+              <td style="color:#3498db;">←2</td>
+              <td>העברה #15</td>
+              <td>סניף שני ← ראשי</td>
+              <td>דניאל</td>
+            </tr>
+            <tr>
+              <td>07.05.26</td>
+              <td>תיקון ספירה</td>
+              <td style="color:#f39c12;">+2</td>
+              <td>ספירה #44</td>
+              <td>—</td>
+              <td>שירה</td>
+            </tr>
+            <tr>
+              <td>01.05.26</td>
+              <td>קבלת סחורה</td>
+              <td style="color:#27ae60;">+24</td>
+              <td>DN-2026-1102</td>
+              <td>לפידות בע"מ</td>
+              <td>דניאל</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- TAB 2: הערות (CRUD in edit mode, read-only in view mode) -->
+    <div class="ldd-tab-pane" id="ldd-tab-notes">
+
+      <!-- EDIT MODE: "הוסף הערה" button visible. In readonly mode, this button + the inline form hide. -->
+      <button class="ldd-add-note-btn" onclick="document.getElementById('ldd-add-note-form').style.display = 'block';">
+        ➕ הוסף הערה
+      </button>
+
+      <div class="ldd-add-note-form" id="ldd-add-note-form" style="display:none;">
+        <textarea placeholder="כתוב הערה חדשה..."></textarea>
+        <div class="form-actions">
+          <button class="row-action-btn" onclick="document.getElementById('ldd-add-note-form').style.display = 'none';">ביטול</button>
+          <button class="ldd-add-note-btn" style="margin:0; padding:4px 14px; width:auto;">💾 שמור</button>
+        </div>
+      </div>
+
+      <!-- Sample notes — 3 cards. In view mode: same cards, no .ldd-note-actions visible. -->
+      <div class="ldd-note-card">
+        <div class="ldd-note-meta">
+          <span class="ldd-note-author">דניאל</span>
+          <span>15.04.26 09:24</span>
+        </div>
+        <div class="ldd-note-body">חברה הפסיקה לייצר קוטר 65mm. מומלץ להציע חלופה.</div>
+        <div class="ldd-note-actions edit-mode">
+          <button>✏️ ערוך</button>
+          <button>🗑 מחק</button>
+        </div>
+      </div>
+
+      <div class="ldd-note-card">
+        <div class="ldd-note-meta">
+          <span class="ldd-note-author">שרה</span>
+          <span>22.03.26 14:50</span>
+        </div>
+        <div class="ldd-note-body">מחיר מבצע עד 31/3/26 — 800 ש"ח במקום 1100.</div>
+        <div class="ldd-note-actions edit-mode">
+          <button>✏️ ערוך</button>
+          <button>🗑 מחק</button>
+        </div>
+      </div>
+
+      <div class="ldd-note-card">
+        <div class="ldd-note-meta">
+          <span class="ldd-note-author">דניאל</span>
+          <span>10.02.26 11:08</span>
+        </div>
+        <div class="ldd-note-body">פנייה ספציפית מקוסטומר X לחיוב 6 חודשים על בסיס אספקה.</div>
+        <div class="ldd-note-actions edit-mode">
+          <button>✏️ ערוך</button>
+          <button>🗑 מחק</button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="ldd-footer">
+    <button class="row-action-btn" onclick="document.getElementById('lensDetailsDrawer').classList.remove('active')">סגור</button>
   </div>
 </div>
 

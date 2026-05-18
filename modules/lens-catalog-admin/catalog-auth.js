@@ -13,6 +13,19 @@ export const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
 export async function gateAuthOrRedirect() {
   const gateEl = document.getElementById('auth-gate');
   const errorEl = document.getElementById('auth-gate-error');
+
+  // M1_LENS_CATALOG_TRUE_REBUILD S18/S19 (2026-05-18): localhost-only dev-mode bypass.
+  // Production hostnames NEVER bypass — strict equality on 'localhost' only (no regex,
+  // no wildcard subdomain match). Console.warn fires every time so bypass cannot pass
+  // silently in QA. Use case: Tier C VFV on local dev server without a Google OAuth
+  // round-trip. Triggered by URL `?dev=1` on localhost only.
+  if (location.hostname === 'localhost'
+      && new URLSearchParams(location.search).get('dev') === '1') {
+    console.warn('[catalog-auth] DEV MODE BYPASS — localhost only. Production hostnames will not bypass.');
+    if (gateEl) gateEl.style.display = 'none';
+    return true;
+  }
+
   gateEl.style.display = 'flex';
 
   // Check Supabase Auth session

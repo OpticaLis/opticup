@@ -1,92 +1,131 @@
-<!-- lens-goods-receipt-partial.html — body fragment for inventory.html lens-tab.
-     M1_INVENTORY_UNIFIED_SCREEN SPEC §1.5 — frames-aligned tokens via lens-tabs.css. -->
+<!-- lens-goods-receipt-partial.html — M1_LENS_GOODS_RECEIPT_REBUILD 2026-05-18
+     1:1 mockup rebuild per architecture-brief/mockups/LENS_GOODS_RECEIPT_MOCKUP.html.
+     Mount points only — visuals via Phase 0 shared (GroupHeaderRow + ChipFilter)
+     + 3 informational side-panel cards (summary / customer-tied / debt-preview).
+     Per debt-decoupling rule: debt-preview is INFORMATIONAL ONLY — this module
+     does NOT write to supplier_debt. Page-frame CSS in css/lens-goods-receipt-page.css. -->
 
 <div id="access-gate" style="display:none">
   <div class="empty-state">אין הרשאה למסך זה (lens.gr.create).</div>
 </div>
 
-<div id="app" style="display:none">
-  <div class="lens-page-title">
-    &#128230; קבלת סחורה — עדשות
-    <span class="badge" id="gr-status-badge">קבלה חדשה</span>
-    <span style="flex:1"></span>
-    <button class="btn btn-g" id="btn-cancel-receipt" type="button">&#10060; ביטול</button>
-    <button class="btn btn-s" id="btn-close-receipt" type="button" disabled>&#9989; אשר וצור רשומות מלאי</button>
+<div id="app" class="lens-gr-page" style="display:none">
+
+  <!-- ───── Page header ───── -->
+  <div class="lens-gr-header">
+    <div class="lens-gr-title">
+      📦 קבלת סחורה — עדשות
+      <span class="badge" id="gr-status-badge">קבלה חדשה · טיוטה</span>
+    </div>
+    <div class="lens-gr-actions">
+      <button class="btn btn-g" id="btn-cancel-receipt" type="button">⛔ ביטול</button>
+      <button class="btn btn-p btn-primary" id="btn-close-receipt" type="button" disabled>✅ אשר וצור רשומות מלאי</button>
+    </div>
   </div>
 
-  <div class="lens-filter-bar" style="display:grid;grid-template-columns:1.3fr 1fr 0.9fr 1.2fr;gap:12px;align-items:end">
+  <!-- ───── Step meta — supplier-first ───── -->
+  <div class="lens-gr-step-meta">
     <div class="form-group">
       <label class="label-required" for="gr-supplier-select">ספק *</label>
       <select id="gr-supplier-select"><option value="">— בחר ספק —</option></select>
     </div>
     <div class="form-group">
-      <label class="label-required" for="gr-delivery-note">מספר תעודת משלוח / חשבונית *</label>
-      <input type="text" id="gr-delivery-note" placeholder="DN-2026-XXXX" />
+      <label class="label-required" for="gr-delivery-note">תעודת משלוח / חשבונית *</label>
+      <input type="text" id="gr-delivery-note" placeholder="DN-2026-1147" />
     </div>
     <div class="form-group">
-      <label for="gr-receipt-date">תאריך הקבלה</label>
+      <label class="label-required" for="gr-receipt-date">תאריך הקבלה *</label>
       <input type="date" id="gr-receipt-date" />
     </div>
     <div class="form-group">
-      <label for="gr-m9-box">&#128230; קופסה מ-M9 (אופציונלי)</label>
+      <label for="gr-m9-box">📦 קופסה מ-M9 (אופציונלי)</label>
       <select id="gr-m9-box"><option value="">— אין קישור —</option></select>
+    </div>
+    <div class="form-group form-group-wide">
+      <label class="lens-gr-no-invoice-label">
+        <input type="checkbox" id="gr-has-no-invoice" />
+        <span style="font-size:12px; color:#475569;">אין חשבונית עדיין (יישמר עד שתגיע)</span>
+      </label>
     </div>
   </div>
 
-  <div id="supplier-context" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 18px;margin-bottom:12px;display:none;justify-content:space-between;align-items:center">
+  <!-- ───── Supplier context banner ───── -->
+  <div class="lens-gr-supplier-context" id="supplier-context" style="display:none">
     <div class="ctx-left">
-      &#127970; <strong id="ctx-supplier-name" style="color:#1e3a8a">—</strong>
-      <div style="font-size:11px;color:#64748b" id="ctx-supplier-meta">—</div>
+      <span style="font-size:22px;">🏢</span>
+      <div>
+        <strong id="ctx-supplier-name">—</strong>
+        <div class="ctx-meta" id="ctx-supplier-meta">—</div>
+      </div>
     </div>
-    <div style="display:flex;gap:18px;font-size:12px">
+    <div class="ctx-stats">
       <div>הזמנות פתוחות: <strong id="ctx-open-pos">—</strong></div>
       <div>פריטים בהמתנה: <strong id="ctx-pending-units">—</strong></div>
     </div>
   </div>
 
-  <div class="lens-grid-layout">
-    <div class="lens-panel">
-      <div class="lens-panel-header"><h3>פריטים בהמתנה לקבלה</h3></div>
-      <div id="lines-container" style="max-height:560px;overflow-y:auto">
-        <div class="empty-state">בחר ספק כדי לטעון הזמנות פתוחות.</div>
+  <!-- ───── Main 2-column grid ───── -->
+  <div class="lens-gr-grid">
+
+    <!-- Items panel -->
+    <div class="lens-gr-panel">
+      <div class="lens-gr-panel-header">
+        <h3>פריטים בהמתנה לקבלה <span id="gr-supplier-inline-name"></span></h3>
+        <input type="text" id="gr-line-search" class="lens-gr-search-mini" placeholder="🔍 סינון..." />
+      </div>
+
+      <!-- Source-type chip filter row -->
+      <div id="gr-chip-filters-mount"></div>
+
+      <div class="lens-gr-lines-scroll" id="lines-container">
+        <div class="empty-state">בחר ספק כדי לטעון פריטים בהמתנה.</div>
       </div>
     </div>
 
-    <div>
-      <div class="lens-panel">
-        <div class="lens-panel-header"><h3>&#128202; סיכום הקבלה</h3></div>
-        <div id="summary-body" style="padding:14px">
-          <div class="summary-row" style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px">
-            <span style="color:#64748b">פריטים שסומנו כהתקבלו</span><span id="sum-receipt-lines" style="font-weight:600">0</span></div>
-          <div class="summary-row" style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px">
-            <span style="color:#64748b">מלאות</span><span id="sum-complete" style="color:#059669;font-weight:600">0 שורות</span></div>
-          <div class="summary-row" style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px">
-            <span style="color:#64748b">חלקיות</span><span id="sum-partial" style="color:#d97706;font-weight:600">0 שורות</span></div>
-          <div class="summary-row" style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px dashed #e2e8f0;margin-top:6px;font-size:13px">
-            <span style="color:#64748b">תוספות ידניות</span><span id="sum-manual" style="font-weight:600">0 שורות</span></div>
-          <div class="summary-row" style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid #e2e8f0;margin-top:6px;font-size:13px">
-            <span style="color:#64748b">סה&quot;כ יחידות למלאי</span><span id="sum-total-units" style="color:#059669;font-weight:700">0 יח׳</span></div>
+    <!-- Side panel (3 cards: summary, customer, debt preview) -->
+    <div class="lens-gr-side-panel">
+
+      <!-- Card 1 — Receipt summary -->
+      <div class="lens-gr-card">
+        <div class="lens-gr-card-header lens-gr-card-header-slate">📊 סיכום הקבלה</div>
+        <div class="lens-gr-card-body">
+          <div class="summary-row"><span class="key">פריטים שסומנו כהתקבלו</span><span class="val" id="sum-receipt-lines">0</span></div>
+          <div class="summary-row val-success"><span class="key">מלאות</span><span class="val" id="sum-complete">0 שורות</span></div>
+          <div class="summary-row val-warning"><span class="key">חלקיות</span><span class="val" id="sum-partial">0 שורות</span></div>
+          <div class="summary-row val-danger"><span class="key">חסרות</span><span class="val" id="sum-missing">0 שורות</span></div>
+          <div class="summary-row dashed-top"><span class="key">תוספות ידניות</span><span class="val" id="sum-manual">0 שורות</span></div>
+          <div class="summary-row solid-top val-success"><span class="key">סה"כ יחידות למלאי</span><span class="val" id="sum-total-units">0 יח׳</span></div>
         </div>
       </div>
 
-      <div class="lens-panel" style="margin-top:12px">
-        <div class="lens-panel-header" style="background:#fef3c7"><h3 style="color:#92400e">&#128176; חוב שייווצר (משוער)</h3></div>
-        <div style="padding:14px">
-          <div class="summary-row" style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px">
-            <span style="color:#64748b">סכום נטו</span><span id="sum-debt-net" style="font-weight:600">&#8362;0</span></div>
-          <div class="summary-row" style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px">
-            <span style="color:#64748b">מע&quot;מ (משוער)</span><span id="sum-debt-vat" style="font-weight:600">&#8362;0</span></div>
-          <div class="summary-row" style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid #e2e8f0;font-size:13px;font-weight:700">
-            <span style="color:#64748b">סה&quot;כ חוב</span><span id="sum-debt-total">&#8362;0</span></div>
-          <div style="font-size:11px;color:#64748b;margin-top:8px;padding:8px 10px;background:#f8fafc;border-radius:5px">
-            &#128161; החוב ייווצר במודול חובות ספקים, מקושר לקבלה זו.
+      <!-- Card 2 — Customer-tied lenses -->
+      <div class="lens-gr-card">
+        <div class="lens-gr-card-header lens-gr-card-header-green">🧍 עדשות ללקוחות</div>
+        <div class="lens-gr-card-body">
+          <div id="customer-tied-list">
+            <div style="font-size:12px; color:#94a3b8;">אין עדשות ייצור מקושרות ללקוחות בקבלה זו.</div>
           </div>
         </div>
       </div>
 
-      <button class="btn btn-s" id="btn-close-receipt-2" style="margin-top:12px;justify-content:center;padding:12px;font-weight:700;width:100%" type="button" disabled>
-        &#9989; אשר וצור רשומות מלאי
-      </button>
+      <!-- Card 3 — Debt creation preview (INFORMATIONAL ONLY; inventory does NOT write supplier_debt) -->
+      <div class="lens-gr-card">
+        <div class="lens-gr-card-header lens-gr-card-header-amber">💰 חוב שייווצר</div>
+        <div class="lens-gr-card-body">
+          <div style="font-size:12px; color:#64748b; margin-bottom:8px;">
+            תצוגה מקדימה — מבוססת על תעודת משלוח <strong id="debt-preview-dn">—</strong>:
+          </div>
+          <div class="summary-row"><span class="key">סכום מצטבר נטו</span><span class="val" id="sum-debt-net">₪0.00</span></div>
+          <div class="summary-row"><span class="key">מע"מ 18%</span><span class="val" id="sum-debt-vat">₪0.00</span></div>
+          <div class="summary-row solid-top" style="font-weight:700;"><span class="key">סה"כ חוב</span><span class="val" id="sum-debt-total" style="color:#1e3a8a;">₪0.00</span></div>
+          <div class="debt-note">💡 החוב ייווצר במודול חובות ספקים, מקושר לקבלה זו. <strong>מודול המלאי לא יוצר חוב באופן ישיר.</strong></div>
+        </div>
+      </div>
+
+      <!-- Bottom actions -->
+      <div class="lens-gr-side-actions">
+        <button class="btn btn-success" id="btn-close-receipt-2" type="button" disabled>✅ אשר וצור רשומות מלאי</button>
+      </div>
     </div>
   </div>
 </div>

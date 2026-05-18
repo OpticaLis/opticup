@@ -1,0 +1,251 @@
+/* lens-goods-receipt-page.css — page-frame for the lens-goods-receipt tab.
+   M1_LENS_GOODS_RECEIPT_REBUILD (2026-05-18): 1:1 mockup rebuild per
+   architecture-brief/mockups/LENS_GOODS_RECEIPT_MOCKUP.html.
+   Page-frame only. Shared visuals via shared/css/{chip-filter,table,tokens}.css.
+   Scope locked to .lens-tab-section[data-tab="goods-receipt"]. */
+
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-page {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--color-bg-page, #f1f5f9);
+  min-height: 100%;
+}
+
+/* ───────── Header ───────── */
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 14px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-title .badge {
+  font-size: 11px;
+  background: #dbeafe;
+  color: #1e3a8a;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: 400;
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ───────── Step meta ───────── */
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-step-meta {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 0.8fr 1.1fr 0.9fr;
+  gap: 12px;
+  align-items: end;
+  background: #fff;
+  border-radius: 8px;
+  padding: 14px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-step-meta .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-step-meta label {
+  font-size: 11px;
+  color: #5d6d7e;
+  font-weight: 600;
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-step-meta select,
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-step-meta input[type="text"],
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-step-meta input[type="date"] {
+  padding: 7px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: inherit;
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-no-invoice-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ───────── Supplier context banner ───────── */
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-supplier-context {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 12px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-supplier-context .ctx-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-supplier-context strong {
+  color: #1e3a8a;
+}
+.lens-tab-section[data-tab="goods-receipt"] .ctx-meta {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+}
+.lens-tab-section[data-tab="goods-receipt"] .ctx-stats {
+  display: flex;
+  gap: 18px;
+  font-size: 12px;
+}
+
+/* ───────── Main grid ───────── */
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 12px;
+}
+
+/* ───────── Items panel ───────── */
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-panel {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-panel-header {
+  padding: 13px 18px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-panel-header h3 {
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 600;
+  margin: 0;
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-search-mini {
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: inherit;
+  width: 200px;
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-lines-scroll {
+  max-height: 580px;
+  overflow-y: auto;
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-lines-scroll table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-lines-scroll thead th {
+  text-align: right;
+  padding: 10px 12px;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  font-size: 11px;
+  border-bottom: 2px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-lines-scroll td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-lines-scroll tr.received { background: #f0fdf4; }
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-lines-scroll tr.partial { background: #fffbeb; }
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-lines-scroll tr.manual { background: #faf5ff; }
+.lens-tab-section[data-tab="goods-receipt"] .qty-cell { display: inline-flex; align-items: center; gap: 4px; }
+.lens-tab-section[data-tab="goods-receipt"] .qty-input { width: 55px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; text-align: center; font-weight: 600; }
+.lens-tab-section[data-tab="goods-receipt"] .qty-divider { color: #94a3b8; }
+.lens-tab-section[data-tab="goods-receipt"] .qty-expected { font-size: 12px; color: #475569; font-weight: 600; }
+.lens-tab-section[data-tab="goods-receipt"] .discrepancy-cell { font-size: 10px; color: #dc2626; font-weight: 600; }
+.lens-tab-section[data-tab="goods-receipt"] .chip { display: inline-block; padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+.lens-tab-section[data-tab="goods-receipt"] .chip-stock { background: #dbeafe; color: #1e3a8a; }
+.lens-tab-section[data-tab="goods-receipt"] .chip-custom { background: #fef3c7; color: #92400e; }
+.lens-tab-section[data-tab="goods-receipt"] .chip-customer { background: #ede9fe; color: #6d28d9; }
+.lens-tab-section[data-tab="goods-receipt"] .chip-complete { background: #d1fae5; color: #065f46; }
+.lens-tab-section[data-tab="goods-receipt"] .chip-partial { background: #fef3c7; color: #92400e; }
+.lens-tab-section[data-tab="goods-receipt"] .chip-discrepancy { background: #fee2e2; color: #991b1b; }
+.lens-tab-section[data-tab="goods-receipt"] .chip-manual { background: #ede9fe; color: #6d28d9; }
+.lens-tab-section[data-tab="goods-receipt"] .design-cell { font-weight: 600; color: #1e293b; font-size: 12px; }
+.lens-tab-section[data-tab="goods-receipt"] .design-cell .sub { font-size: 10px; color: #94a3b8; margin-top: 2px; font-weight: 400; }
+.lens-tab-section[data-tab="goods-receipt"] .design-cell .meta { font-size: 10px; color: #475569; margin-top: 2px; }
+.lens-tab-section[data-tab="goods-receipt"] .row-action { padding: 4px 8px; border: 1px solid #ecf0f1; background: #fff; border-radius: 4px; cursor: pointer; font-size: 11px; }
+.lens-tab-section[data-tab="goods-receipt"] .row-action.remove { color: #e74c3c; border-color: #fbe5e2; }
+.lens-tab-section[data-tab="goods-receipt"] .manual-add-banner { padding: 12px 18px; background: #faf5ff; text-align: center; border-top: 2px dashed #d8b4fe; }
+
+/* ───────── Side panel ───────── */
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-card-header {
+  padding: 12px 18px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-card-header-slate { background: #34495e; }
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-card-header-green { background: linear-gradient(135deg, #059669 0%, #047857 100%); }
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-card-header-amber { background: linear-gradient(135deg, #d97706 0%, #b45309 100%); }
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-card-body { padding: 14px 18px; }
+.lens-tab-section[data-tab="goods-receipt"] .summary-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+.lens-tab-section[data-tab="goods-receipt"] .summary-row .key { color: #64748b; }
+.lens-tab-section[data-tab="goods-receipt"] .summary-row .val { font-weight: 600; color: #1e293b; }
+.lens-tab-section[data-tab="goods-receipt"] .summary-row.val-success .val { color: #059669; }
+.lens-tab-section[data-tab="goods-receipt"] .summary-row.val-warning .val { color: #d97706; }
+.lens-tab-section[data-tab="goods-receipt"] .summary-row.val-danger .val  { color: #dc2626; }
+.lens-tab-section[data-tab="goods-receipt"] .summary-row.dashed-top { padding-top: 10px; border-top: 1px dashed #e2e8f0; margin-top: 6px; }
+.lens-tab-section[data-tab="goods-receipt"] .summary-row.solid-top { padding-top: 10px; border-top: 1px solid #e2e8f0; margin-top: 6px; }
+.lens-tab-section[data-tab="goods-receipt"] .debt-note { font-size: 11px; color: #475569; margin-top: 8px; padding: 8px 10px; background: #f8fafc; border-radius: 5px; }
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-side-actions { display: flex; flex-direction: column; gap: 8px; }
+.lens-tab-section[data-tab="goods-receipt"] .lens-gr-side-actions .btn { justify-content: center; padding: 12px; font-weight: 700; }
+
+/* PO group header rows */
+.lens-tab-section[data-tab="goods-receipt"] tr.po-group-header td {
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 10px 16px;
+  border-top: 2px solid #bfdbfe;
+}
+.lens-tab-section[data-tab="goods-receipt"] tr.po-group-header .po-meta {
+  font-weight: 400;
+  color: #475569;
+  margin-right: 8px;
+  font-size: 11px;
+}

@@ -2357,3 +2357,103 @@ ALTER TABLE public.purchase_receipt
 -- The corresponding supplier-debt-side work (manager review of unmatched
 -- documents, debt-from-receipt matching) is deferred to a future Brief
 -- targeting the suppliers-debt module — explicitly out of inventory scope.
+
+-- ============================================================================
+-- M1_LENS_DB_SCHEMA_RECEIPTS_NOTES — Foundation deltas for lens mockup rebuild
+-- SPEC: docs/specs/M1_LENS_DB_SCHEMA_RECEIPTS_NOTES/SPEC.md
+-- Brief: architecture-brief/M1_LENS_MOCKUP_FIDELITY_FULL_REBUILD_BRIEF.md
+-- Architect decision: docs/specs/M1_LENS_DB_SCHEMA_RECEIPTS_NOTES/
+--                     ARCHITECT_DECISION_001_SPEC3_AMENDMENT.md
+-- Date: 2026-05-17
+-- ============================================================================
+
+-- Applied via 3 Supabase MCP migrations:
+--
+-- 1) 20260517161202_m1_lens_purchase_receipt_has_no_invoice
+--    ALTER TABLE purchase_receipt ADD COLUMN has_no_invoice
+--      BOOLEAN NOT NULL DEFAULT FALSE.
+--    Backs the Brief decision #14 "אין תעודה" checkbox on the inventory
+--    quick-receipt drawer. When TRUE, the receipt flows to the bookkeeper
+--    Invoices Inbox for manager audit. Existing rows default to FALSE
+--    (legacy receipts presumed documented).
+--
+--    FIELD_MAP entry added: 'אין תעודה':'has_no_invoice' (purchase_receipt
+--    block in js/shared-field-map.js).
+--
+-- 2) 20260517161421_m1_lens_variant_notes
+--    CREATE TABLE lens_variant_notes (
+--      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--      variant_id UUID NOT NULL REFERENCES lens_variant(id) ON DELETE CASCADE,
+--      tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+--      author_id UUID NOT NULL REFERENCES auth.users(id),
+--      body TEXT NOT NULL,
+--      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+--      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+--    );
+--    CREATE INDEX idx_lens_variant_notes_variant_id ON lens_variant_notes(variant_id);
+--    CREATE INDEX idx_lens_variant_notes_tenant_id  ON lens_variant_notes(tenant_id);
+--    ALTER TABLE lens_variant_notes ENABLE ROW LEVEL SECURITY;
+--    CREATE POLICY service_bypass ON lens_variant_notes
+--      TO service_role USING (true);
+--    CREATE POLICY tenant_isolation ON lens_variant_notes
+--      TO public USING (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json ->> 'tenant_id'::text))::uuid);
+--    Multiple notes per variant allowed; no UNIQUE beyond PK.
+--    Backs the Pricing screen לוגים+הערות drawer (Brief decision #18).
+--    Consumer code lives in SPEC 5 (pricing rebuild).
+--
+--    T constant added: T.LENS_VARIANT_NOTES = 'lens_variant_notes'
+--    (js/shared.js T block, after PURCHASE_RECEIPT_LINE).
+--    FIELD_MAP entry added: lens_variant_notes block (variant_id, body,
+--    author_id) in js/shared-field-map.js.
+--
+-- 3) 20260517161725_m1_lens_permission_seeds_view_cost_price_and_lens_pricing_edit
+--    Seeds 2 permission keys + 4 role grants per ARCHITECT_DECISION 001:
+--      permissions rows (4 total = 2 keys × 2 tenants):
+--        inventory.view_cost_price (module='inventory', action='view_cost_price',
+--          name_he='צפייה במחיר עלות')
+--        lens_pricing.edit         (module='lens_pricing', action='edit',
+--          name_he='עריכת תמחור עדשות')
+--      role_permissions rows (8 total = 2 keys × 2 tenants × 2 roles):
+--        ceo + manager get both keys in both tenants (prizma + demo).
+--    Both INSERTs use ON CONFLICT (PK) DO NOTHING idempotency. tenants.slug
+--    resolved at migration time — no hardcoded UUIDs.
+--
+--    Replaces the original SPEC §9 template which assumed wrong column names
+--    (key/description) and a non-existent admin role. See
+--    docs/specs/M1_LENS_DB_SCHEMA_RECEIPTS_NOTES/
+--    ARCHITECT_DECISION_001_SPEC3_AMENDMENT.md for the full decision rationale
+--    and the source-of-truth amendment.
+--
+--    Follow-up tracked: TECH_DEBT M1-DEBT-XX — permissions_template global
+--    table + auto-replication trigger (eliminates per-tenant duplication
+--    before tenant 3 onboarding). Out of SPEC 3 scope.
+
+-- =====================================================================
+-- M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX 2026-05-18 IDT
+-- =====================================================================
+-- Pivots lens_variant_notes.author_id FK target from auth.users(id) to
+-- employees(id) ON DELETE SET NULL. Project uses pin-auth Edge Function;
+-- no rows in auth.users → original FK was unreachable for INSERTs from
+-- the Pricing-drawer notes UI. Pivot makes the FK target the canonical
+-- employees table where tenant_employee.id in sessionStorage = employees.id.
+--
+-- Table was empty at migration time (0 rows project-wide) → zero data risk.
+-- author_id column remains NOT NULL — ON DELETE SET NULL is reserved-for-
+-- future when the column becomes nullable; no-op today (no deletes occur
+-- because INSERT path always sets author_id).
+--
+-- Migrations:
+-- 1) 20260518061712_m1_lens_variant_notes_drop_authusers_fk
+--    ALTER TABLE lens_variant_notes
+--      DROP CONSTRAINT lens_variant_notes_author_id_fkey;
+-- 2) 20260518061713_m1_lens_variant_notes_add_employees_fk
+--    ALTER TABLE lens_variant_notes
+--      ADD CONSTRAINT lens_variant_notes_author_id_fkey
+--      FOREIGN KEY (author_id) REFERENCES employees(id) ON DELETE SET NULL;
+--
+-- Verified post-migration: 0 FKs to auth.users for that constraint name,
+-- 1 FK to public.employees, NOT NULL preserved. get_advisors(security):
+-- no new HIGH/ERROR on lens_variant_notes.
+--
+-- See specs/M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX/ for full SPEC + execution
+-- artifacts.

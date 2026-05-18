@@ -1,0 +1,149 @@
+/* =============================================================================
+   tokens.css — Mockup-Aligned Feature Tokens for Optic Up (M1 Lens rebuild)
+   =============================================================================
+   Extends shared/css/variables.css. Loaded AFTER variables.css so any token
+   declared here that is intentionally named the same overrides the base.
+
+   Authored 2026-05-17 for M1_5_SHARED_COMPONENTS_PHASE_0 (SPEC 2 of M1 Lens
+   Mockup-Fidelity Full Rebuild Pipeline). All values extracted verbatim from
+   the 7 canonical lens mockup HTMLs under
+   `modules/Module 1 - Inventory Management/architecture-brief/mockups/`.
+
+   Rules:
+   - Every value here also appears in at least one canonical mockup
+   - When a token semantically overlaps a base variable, prefer the alias
+     pattern (--gold-active: #c9a555;) over a literal redeclaration
+   - Components that need these tokens MUST consume via var(--token), never
+     duplicate the hex literal in shared/css/*-{component}.css
+   ============================================================================= */
+
+:root {
+
+  /* =========================================================================
+     1. GOLD MOCKUP PALETTE
+     The lens-rebuild mockups use a gold accent (chip active, primary actions,
+     panel headers) that is distinct from variables.css's navy accent.
+     ========================================================================= */
+  --gold-active:        #c9a555;  /* primary gold — chip.active, btn-primary fill, wstep.active */
+  --gold-dark:          #b8954a;  /* gold hover, panel header bottom of gradient */
+  --gold-tint:          #faf3e0;  /* gold soft tint — chip hover bg, active glow ring */
+  --gold-line:          #fdf6e3;  /* warmer cream — supplier-info card bg */
+
+  /* =========================================================================
+     2. MOCKUP NEUTRAL ALIASES
+     The mockups use specific slate values that may or may not match the base
+     scale exactly. Aliases here so component CSS can read `--mockup-neutral-*`
+     and tenant theme overrides cascade correctly.
+     ========================================================================= */
+  --mockup-text:        #2c3e50;  /* page-title, td primary text */
+  --mockup-text-soft:   #5d6d7e;  /* labels, chip inactive text */
+  --mockup-text-muted:  #95a5a6;  /* sub-text, hint */
+  --mockup-table-bg:    #f8f9fb;  /* table header bg, staged-item card bg */
+  --mockup-table-fg:    #475569;  /* table header text */
+  --mockup-border:      #ecf0f1;  /* row dividers, card borders */
+  --mockup-input-border:#d0d4d9;  /* input borders */
+  --mockup-sub:         #64748b;  /* meta text in cells */
+
+  /* =========================================================================
+     3. SOURCE-BAND TOKENS (PO + GR mockups)
+     Group-header row backgrounds + chip backgrounds for source-of-record:
+     purple = custom-for-customer, blue = stock/shortage, amber = manual.
+     ========================================================================= */
+  --src-purple-bg:      #faf5ff;  /* row band + chip-customer bg */
+  --src-purple-fg:      #6d28d9;  /* chip-customer text */
+  --src-purple-chip-bg: #ede9fe;  /* darker chip variant for stronger emphasis */
+  --src-purple-chip-fg: #7c3aed;
+
+  --src-blue-bg:        #eff6ff;  /* row band + chip-stock bg */
+  --src-blue-fg:        #1e3a8a;  /* chip-stock text + qty-input focus border */
+  --src-blue-chip-bg:   #dbeafe;
+  --src-blue-chip-fg:   #1e3a8a;
+
+  --src-amber-bg:       #fffbeb;  /* row band */
+  --src-amber-fg:       #92400e;  /* chip-custom text */
+  --src-amber-chip-bg:  #fef3c7;
+  --src-amber-chip-fg:  #92400e;
+
+  /* =========================================================================
+     4. STATUS CHIP TOKENS (POs list + GR mockups)
+     ========================================================================= */
+  --chip-draft-bg:      #f1f5f9;
+  --chip-draft-fg:      #64748b;
+  --chip-sent-bg:       #dbeafe;
+  --chip-sent-fg:       #1e40af;
+  --chip-partial-bg:    #fef3c7;
+  --chip-partial-fg:    #92400e;
+  --chip-received-bg:   #d1fae5;
+  --chip-received-fg:   #065f46;
+  --chip-overdue-bg:    #fee2e2;
+  --chip-overdue-fg:    #991b1b;
+  --chip-cancelled-bg:  #e2e3e5;
+  --chip-cancelled-fg:  #495057;
+  --chip-complete-bg:   #d1fae5;
+  --chip-complete-fg:   #065f46;
+  --chip-discrepancy-bg:#fee2e2;
+  --chip-discrepancy-fg:#991b1b;
+
+  /* =========================================================================
+     5. PROGRESS-BAR TOKENS
+     Used by receipt progress widgets + bulk-add wizard indicators.
+     ========================================================================= */
+  --progress-bg:           #e2e8f0;
+  --progress-fg:           #1e3a8a;
+  --progress-fill-success: #10b981;
+  --progress-fill-partial: #d97706;
+  --progress-fill-empty:   #cbd5e1;
+
+  /* =========================================================================
+     6. DARK THEME PALETTE (Catalog Admin mockup)
+     For surfaces that intentionally render dark — admin tooling, super-admin
+     screens. Tenant theme can NOT override these (they live outside the
+     light/light-tint paradigm).
+     ========================================================================= */
+  --dark-bg:            #0f172a;
+  --dark-panel:         #1e293b;
+  --dark-border:        #334155;
+  --dark-text:          #e2e8f0;
+  --dark-text-muted:    #94a3b8;
+  --dark-input-bg:      #1e293b;
+  --dark-input-border:  #475569;
+
+  /* =========================================================================
+     7. GRADIENT HEADER (drawers, side-detail-panel)
+     Reused by quick-receipt-drawer .qrd-header, lens-details-drawer .ldd-header,
+     side-detail-panel .panel-card-header.
+     ========================================================================= */
+  --gradient-header: linear-gradient(135deg, #c9a555 0%, #b8954a 100%);
+
+  /* =========================================================================
+     8. TOGGLE-SWITCH TOKENS (Designs Selection + Pricing dual-view)
+     ========================================================================= */
+  --toggle-on:          #c9a555;   /* gold active */
+  --toggle-off:         #cbd5e1;   /* slate inactive */
+  --toggle-thumb:       #ffffff;
+  --toggle-bg-pill:     #f0f2f5;   /* pill wrapper bg (view-mode-toggle) */
+
+  /* =========================================================================
+     9. DRAWER SIZING
+     ========================================================================= */
+  --drawer-width-md:    420px;     /* quick-receipt drawer */
+  --drawer-width-lg:    480px;     /* lens-details drawer */
+  --drawer-z:           200;
+  --drawer-shadow:      -4px 0 16px rgba(0,0,0,0.15);
+
+  /* =========================================================================
+     10. WIZARD STEP INDICATOR (page-level, not modal)
+     Distinct from modal-wizard's --wizard-* (which doesn't exist as tokens —
+     hardcoded in modal.css). These are for the standalone wstep widget.
+     ========================================================================= */
+  --wstep-circle-size:    32px;
+  --wstep-circle-bg:      #ecf0f1;
+  --wstep-circle-fg:      #95a5a6;
+  --wstep-line-bg:        #ecf0f1;
+  --wstep-active-bg:      #c9a555;
+  --wstep-active-glow:    0 0 0 4px #faf3e0;
+  --wstep-done-bg:        #27ae60;
+  --wstep-label:          #5d6d7e;
+  --wstep-label-active:   #c9a555;
+  --wstep-label-done:     #27ae60;
+}

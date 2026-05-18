@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>M1_5_SHARED_COMPONENTS_PHASE_0 — Component Test Harness</title>
+<link rel="stylesheet" href="../css/variables.css" />
+<link rel="stylesheet" href="../css/tokens.css" />
+<link rel="stylesheet" href="../css/components.css" />
+<link rel="stylesheet" href="../css/forms.css" />
+<link rel="stylesheet" href="../css/layout.css" />
+<link rel="stylesheet" href="../css/table.css" />
+<link rel="stylesheet" href="../css/toast.css" />
+<link rel="stylesheet" href="../css/chip-filter.css" />
+<link rel="stylesheet" href="../css/stat-card.css" />
+<link rel="stylesheet" href="../css/side-detail.css" />
+<link rel="stylesheet" href="../css/wizard-step-indicator.css" />
+<link rel="stylesheet" href="../css/quick-receipt.css" />
+<link rel="stylesheet" href="../css/lens-details.css" />
+<style>
+  body { font-family: 'Heebo', sans-serif; background: #f5f5f5; padding: 24px; max-width: 1200px; margin: 0 auto; }
+  h1 { margin-top: 0; }
+  section { margin-bottom: 32px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  h2 { font-size: 16px; margin: 0 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid #ecf0f1; }
+  .demo-controls { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .demo-controls button {
+    padding: 6px 12px; border: 1px solid #c9a555; background: white; color: #b8954a;
+    border-radius: 4px; cursor: pointer; font-size: 12px; font-family: inherit;
+  }
+  .demo-log { margin-top: 8px; font-size: 11px; color: #5d6d7e; min-height: 18px; }
+  .layout-2col { display: grid; grid-template-columns: 1fr 320px; gap: 12px; }
+</style>
+</head>
+<body>
+
+<h1>📋 M1_5_SHARED_COMPONENTS_PHASE_0 — Component Test Harness</h1>
+<p style="font-size:13px; color:#5d6d7e;">
+  Each of the 8 components from this SPEC rendered in isolation + 2 in consumer context.
+  Open in browser to validate visual fidelity vs the lens mockups. Click each demo control
+  to exercise the component's API.
+</p>
+
+<section>
+  <h2>1️⃣ Chip Filter Row</h2>
+  <div id="demo-chip-filter"></div>
+  <div class="demo-log" id="demo-chip-filter-log"></div>
+</section>
+
+<section>
+  <h2>2️⃣ Stat Card Row</h2>
+  <div id="demo-stat-card"></div>
+  <div class="demo-log" id="demo-stat-card-log"></div>
+</section>
+
+<section>
+  <h2>3️⃣ Side Detail Panel (in 2-col layout)</h2>
+  <div class="layout-2col">
+    <div style="background:#f8f9fb; padding:20px; border-radius:8px; min-height:240px; color:#5d6d7e;">
+      (main content placeholder — side detail panel sits at right →)
+    </div>
+    <div id="demo-side-detail"></div>
+  </div>
+</section>
+
+<section>
+  <h2>4️⃣ Wizard Step Indicator (page-level)</h2>
+  <div id="demo-wstep"></div>
+  <div class="demo-controls">
+    <button data-action="wstep-back">← Back</button>
+    <button data-action="wstep-next">Next →</button>
+  </div>
+  <div class="demo-log" id="demo-wstep-log"></div>
+</section>
+
+<section>
+  <h2>5️⃣ Group Header Row (inside a TableBuilder)</h2>
+  <div id="demo-group-header"></div>
+</section>
+
+<section>
+  <h2>6️⃣ Data Table (TableBuilder extensions — pagination + permission-gated col + group rows)</h2>
+  <div id="demo-data-table"></div>
+</section>
+
+<section>
+  <h2>7️⃣ Quick Receipt Drawer</h2>
+  <div class="demo-controls">
+    <button data-action="open-qrd">Open Quick Receipt drawer</button>
+    <button data-action="stage-qrd">Stage demo item</button>
+  </div>
+  <div class="demo-log" id="demo-qrd-log"></div>
+</section>
+
+<section>
+  <h2>8️⃣ Lens Details Drawer</h2>
+  <div class="demo-controls">
+    <button data-action="open-ldd-readonly">Open in readonly</button>
+    <button data-action="open-ldd-edit">Open in edit</button>
+  </div>
+  <div class="demo-log" id="demo-ldd-log"></div>
+</section>
+
+<!-- Toast container (for drawer error surfacing) -->
+<div id="toast-c"></div>
+
+<!-- Component bundles -->
+<script src="../js/permission-ui.js"></script>
+<script src="../js/toast.js"></script>
+<script src="../js/chip-filter-row.js"></script>
+<script src="../js/stat-card-row.js"></script>
+<script src="../js/side-detail-panel.js"></script>
+<script src="../js/wizard-step-indicator.js"></script>
+<script src="../js/group-header-row.js"></script>
+<script src="../js/table-builder-extensions.js"></script>
+<script src="../js/table-builder.js"></script>
+<script src="../js/quick-receipt-drawer.js"></script>
+<script src="../js/lens-details-drawer.js"></script>
+
+<script>
+(function () {
+  'use strict';
+
+  // 1. Chip filter
+  const chipLog = document.getElementById('demo-chip-filter-log');
+  window.ChipFilter.init('#demo-chip-filter', {
+    label: 'סוג עדשה:',
+    chips: [
+      { id: 'stock',  icon: '📦', label: 'מדף (Stock)' },
+      { id: 'custom', icon: '🏭', label: 'ייצור (Custom)' },
+      { id: 'both',   label: 'שתיהן', variant: 'secondary' }
+    ],
+    activeIds: ['stock'],
+    onSelect: ids => chipLog.textContent = 'active: ' + JSON.stringify(ids)
+  });
+
+  // 2. Stat-card row
+  const statLog = document.getElementById('demo-stat-card-log');
+  window.StatCardRow.init('#demo-stat-card', {
+    columns: 5,
+    activeId: 'active',
+    cards: [
+      { id: 'all',     label: 'הכל',           value: '127', variant: 'default', sub: 'הזמנות' },
+      { id: 'active',  label: 'פעילות',        value: '83',  variant: 'active', sub: 'בתהליך' },
+      { id: 'partial', label: 'חלקיות',        value: '14',  variant: 'partial', sub: 'התקבלו חלקית' },
+      { id: 'overdue', label: 'באיחור',        value: '3',   variant: 'overdue', sub: 'מעבר ל-7 ימים' },
+      { id: 'cancel',  label: 'בוטלו',         value: '5',   variant: 'disabled' }
+    ],
+    onCardClick: id => statLog.textContent = 'selected: ' + id
+  });
+
+  // 3. Side detail panel
+  window.SideDetailPanel.init('#demo-side-detail', {
+    title: 'פרטי וריאנט',
+    headerVariant: 'gold',
+    sections: [
+      { id: 'specs', title: 'מפרט', body: 'SPH: -2.50 · CYL: -1.00 · AXIS: 90°' },
+      { id: 'stock', title: 'מלאי', body: '12 יח׳ במלאי · 3 בייצור', variant: 'highlight' },
+      { id: 'price', title: 'מחיר', body: '₪450 (עלות: ₪220)' }
+    ]
+  });
+
+  // 4. Wizard step indicator
+  const wstepLog = document.getElementById('demo-wstep-log');
+  const wstep = window.WizardSteps.init('#demo-wstep', {
+    steps: [
+      { id: 'supplier', label: 'בחירת ספק' },
+      { id: 'items',    label: 'פריטים להזמנה' },
+      { id: 'review',   label: 'בדיקה וסיכום' },
+      { id: 'send',     label: 'שליחה לספק' }
+    ],
+    activeIndex: 1,
+    onStepClick: (id, idx) => wstepLog.textContent = 'clicked: ' + id + ' @ idx=' + idx
+  });
+  document.addEventListener('click', e => {
+    const a = e.target.closest('[data-action]'); if (!a) return;
+    if (a.dataset.action === 'wstep-back') wstep.setActiveIndex(Math.max(0, wstep.getActiveIndex() - 1));
+    if (a.dataset.action === 'wstep-next') wstep.setActiveIndex(Math.min(3, wstep.getActiveIndex() + 1));
+  });
+
+  // 5. Group-header (standalone)
+  (function () {
+    const wrap = document.getElementById('demo-group-header');
+    wrap.innerHTML = '<table class="tb-table"><tbody></tbody></table>';
+    const tb = wrap.querySelector('tbody');
+    tb.appendChild(window.GroupHeaderRow.render({ sourceType: 'purple', label: 'Custom for customer', count: 3, colSpan: 4, icon: '🟣' }));
+    tb.appendChild(window.GroupHeaderRow.render({ sourceType: 'blue',   label: 'Stock / שורטה',       count: 7, colSpan: 4, icon: '🔵' }));
+    tb.appendChild(window.GroupHeaderRow.render({ sourceType: 'amber',  label: 'Manual',              count: 2, colSpan: 4, icon: '🟡' }));
+  })();
+
+  // 6. Data table — TableBuilder with extensions
+  (function () {
+    const wrap = document.getElementById('demo-data-table');
+    wrap.id = 'demo-data-table-host';
+    // Mock PermissionUI so cost_price column is shown
+    if (window.hasPermission == null) {
+      window.hasPermission = function () { return true; };
+    }
+    const tb = window.TableBuilder.create({
+      containerId: 'demo-data-table-host',
+      columns: [
+        { key: 'name', label: 'שם וריאנט', type: 'text' },
+        { key: 'qty',  label: 'כמות',     type: 'number', sortable: true },
+        { key: 'price', label: 'מחיר מכירה', type: 'currency' },
+        { key: 'cost',  label: 'מחיר עלות',  type: 'currency', permission: 'inventory.view_cost_price' }
+      ],
+      pagination: { pageSize: 5 }
+    });
+    const rows = [];
+    rows.push({ _groupHeader: true, sourceType: 'blue', label: 'Stock', count: 6 });
+    for (let i = 1; i <= 6; i++) rows.push({ id: 'b' + i, name: 'Hoya Stock #' + i, qty: i * 3, price: 450 + i*10, cost: 220 + i*5 });
+    rows.push({ _groupHeader: true, sourceType: 'purple', label: 'Custom', count: 4 });
+    for (let i = 1; i <= 4; i++) rows.push({ id: 'c' + i, name: 'Custom for client #' + i, qty: 1, price: 800 + i*50, cost: 400 + i*20 });
+    tb.setData(rows);
+  })();
+
+  // 7. Quick Receipt drawer
+  const qrdLog = document.getElementById('demo-qrd-log');
+  const qrd = window.QuickReceiptDrawer.init(document.body, {
+    suppliers: [ { id: 's1', name: 'לפידות' }, { id: 's2', name: 'בדולח' }, { id: 's3', name: 'סגם' } ],
+    onSubmit: payload => {
+      qrdLog.textContent = 'SUBMIT payload: ' + JSON.stringify(payload, null, 2).slice(0, 200) + '...';
+      return Promise.resolve();
+    }
+  });
+
+  // 8. Lens Details drawer
+  const lddLog = document.getElementById('demo-ldd-log');
+  const ldd = window.LensDetailsDrawer.init(document.body, {
+    variantId: 'demo-v1',
+    fetchLogs: () => Promise.resolve([
+      { id: 'l1', kind: 'price',    date: '2026-05-15T10:00:00Z', label: 'עליית מחיר 5%', value: '+₪25' },
+      { id: 'l2', kind: 'price',    date: '2026-04-01T10:00:00Z', label: 'מחיר חדש',     value: '₪450' },
+      { id: 'l3', kind: 'movement', date: '2026-05-17T14:00:00Z', label: 'קבלה',          delta: '+12' },
+      { id: 'l4', kind: 'movement', date: '2026-05-16T09:00:00Z', label: 'מכירה',         delta: '-2' }
+    ]),
+    fetchNotes: () => Promise.resolve([
+      { id: 'n1', body: 'הספק העלה מחיר ביוני\n– לבדוק תחליפים', author_name: 'דניאל', created_at: '2026-05-10T08:00:00Z' }
+    ]),
+    onAddNote:    (vid, body) => Promise.resolve({ id: 'n-' + Date.now(), body, author_name: 'דמו משתמש', created_at: new Date().toISOString() }),
+    onEditNote:   (id, body)  => Promise.resolve({ id, body, author_name: 'דמו משתמש', created_at: new Date().toISOString() }),
+    onDeleteNote: id          => Promise.resolve()
+  });
+
+  // Demo-control handlers for the 2 drawers
+  document.addEventListener('click', e => {
+    const a = e.target.closest('[data-action]'); if (!a) return;
+    const act = a.dataset.action;
+    if (act === 'open-qrd')          { qrd.open();      qrdLog.textContent = 'opened'; }
+    if (act === 'stage-qrd')         { qrd.stageItem({ id: 'demo-' + Date.now(), name: 'Hoya 1.50 Stock', qty: 5, meta: { sphere: '-2.50', cyl: '-1.00' } }); qrdLog.textContent = 'item staged'; qrd.open(); }
+    if (act === 'open-ldd-readonly') { ldd.open('demo-v1', 'readonly'); lddLog.textContent = 'opened readonly'; }
+    if (act === 'open-ldd-edit')     { ldd.open('demo-v1', 'edit');     lddLog.textContent = 'opened edit'; }
+  });
+
+})();
+</script>
+
+</body>
+</html>

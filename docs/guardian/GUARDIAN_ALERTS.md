@@ -274,3 +274,8 @@ Stable; no change.
 | https://www.prizma-optic.co.il/ru/category/eyeglasses | performance | 91 | 83 | -8 pts | [json](docs/guardian/lighthouse-reports/daily/2026-05-16/ru-category-eyeglasses.json) |
 
 → Full report: `docs/guardian/lighthouse-reports/daily/2026-05-16/SUMMARY.md`
+
+## Daily run — 2026-05-18 <!-- run:daily:2026-05-18 -->
+
+**ALL CLEAR** — 30/30 URLs OK; 0 comparisons against no prior baseline; 0 regressions. avg perf 87, avg a11y 95.
+→ Full report: `docs/guardian/lighthouse-reports/daily/2026-05-18/SUMMARY.md`

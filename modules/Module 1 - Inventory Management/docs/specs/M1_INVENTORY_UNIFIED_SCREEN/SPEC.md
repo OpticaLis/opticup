@@ -85,6 +85,8 @@ One inventory page. Sidebar on the **physical right** (RTL-correct). 7 lens scre
 
 ## §1.5 Visual Reconciliation Audit
 
+> ⚠️ **DEPRECATED 2026-05-17 — visual-palette rules R-1..R-13 superseded by M1_LENS_PALETTE_RETIRE_UNIFIED** per mockup ratification D-M1-02..D-M1-14 (2026-05-14). The lens-screen design source-of-truth is now the mockup HTML files under `modules/Module 1 - Inventory Management/architecture-brief/mockups/`, NOT the frames-aligned tokens this section enumerated. See `architecture-brief/M1_LENS_MOCKUP_AUDIT_2026_05_17_REPORT.md` §9.1 for root-cause analysis and `architecture-brief/M1_LENS_MOCKUP_FIDELITY_FULL_REBUILD_BRIEF.md` for the rebuild plan. **Structural rules (R-7 chrome model, R-10 access-gate handling, R-11/R-12 spacing conventions) remain in force as partial-authoring guidance — only the visual-palette intent is retired.** Per Pattern P-AR-16 (Mockup Fidelity Mandate), the mockups win over this audit's frames-aligned targets.
+
 The 7 lens screens currently diverge from the frames pattern on these axes. Each row is a unification task for the executor. The list is binding — every row MUST be addressed in C3 (visual unification).
 
 | # | Axis | Lens current | Frames canonical (target) | Source of frames token |

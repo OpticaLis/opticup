@@ -1,0 +1,276 @@
+/* lens-pos-list-page.css — page-frame layout for the lens-pos-list tab.
+   M1_LENS_ACTIVE_POS_LIST_REBUILD (2026-05-18): 1:1 mockup rebuild per
+   architecture-brief/mockups/LENS_ACTIVE_POS_LIST_MOCKUP.html.
+
+   Page-frame only. Shared component visuals come from shared/css/
+   {stat-card,chip-filter,side-detail,table,tokens}.css. Scope locked
+   to .lens-tab-section[data-tab="pos-list"]. */
+
+.lens-tab-section[data-tab="pos-list"] .lens-pos-list-page {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--color-bg-page, #f1f5f9);
+  min-height: 100%;
+}
+
+/* ───────── Page header ───────── */
+.lens-tab-section[data-tab="pos-list"] .lens-pos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 14px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.lens-tab-section[data-tab="pos-list"] .lens-pos-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
+}
+.lens-tab-section[data-tab="pos-list"] .lens-pos-title .badge {
+  font-size: 11px;
+  background: #dbeafe;
+  color: #1e3a8a;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: 400;
+}
+.lens-tab-section[data-tab="pos-list"] .lens-pos-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ───────── Filter bar ───────── */
+.lens-tab-section[data-tab="pos-list"] .lens-pos-filter-bar {
+  background: #fff;
+  padding: 12px 18px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.lens-tab-section[data-tab="pos-list"] .lens-pos-filter-bar .filter-label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 700;
+}
+.lens-tab-section[data-tab="pos-list"] .lens-pos-filter-bar select,
+.lens-tab-section[data-tab="pos-list"] .lens-pos-filter-bar input {
+  padding: 7px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: inherit;
+}
+.lens-tab-section[data-tab="pos-list"] .lens-pos-filter-bar input[type="text"] {
+  width: 240px;
+}
+
+/* ───────── Table panel ───────── */
+.lens-tab-section[data-tab="pos-list"] .lens-pos-panel {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+.lens-tab-section[data-tab="pos-list"] .lens-pos-panel-header {
+  padding: 13px 18px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.lens-tab-section[data-tab="pos-list"] .lens-pos-panel-header h3 {
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 600;
+  margin: 0;
+}
+.lens-tab-section[data-tab="pos-list"] .lens-pos-panel-header .results-count {
+  font-size: 12px;
+  color: #64748b;
+}
+.lens-tab-section[data-tab="pos-list"] .po-table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+.lens-tab-section[data-tab="pos-list"] .po-table thead th {
+  text-align: right;
+  padding: 11px 14px;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  font-size: 11px;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+.lens-tab-section[data-tab="pos-list"] .po-table tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+.lens-tab-section[data-tab="pos-list"] .po-table tbody tr {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.lens-tab-section[data-tab="pos-list"] .po-table tbody tr:hover {
+  background: #f8fafc;
+}
+.lens-tab-section[data-tab="pos-list"] .po-table tbody tr.overdue-row {
+  background: #fef2f2;
+}
+.lens-tab-section[data-tab="pos-list"] .po-table tbody tr.overdue-row:hover {
+  background: #fee2e2;
+}
+
+/* ───────── PO id + supplier cells ───────── */
+.lens-tab-section[data-tab="pos-list"] .po-id {
+  font-weight: 700;
+  color: #1e3a8a;
+  font-size: 13px;
+}
+.lens-tab-section[data-tab="pos-list"] .po-id .po-sub {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 400;
+  margin-top: 2px;
+  display: block;
+}
+.lens-tab-section[data-tab="pos-list"] .supplier-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+.lens-tab-section[data-tab="pos-list"] .supplier-name .supplier-sub {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 2px;
+  font-weight: 400;
+  display: block;
+}
+
+/* ───────── Status chips ───────── */
+.lens-tab-section[data-tab="pos-list"] .chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.lens-tab-section[data-tab="pos-list"] .chip-draft { background: #f1f5f9; color: #475569; }
+.lens-tab-section[data-tab="pos-list"] .chip-sent { background: #dbeafe; color: #1e3a8a; }
+.lens-tab-section[data-tab="pos-list"] .chip-partial { background: #fef3c7; color: #92400e; }
+.lens-tab-section[data-tab="pos-list"] .chip-received { background: #d1fae5; color: #065f46; }
+.lens-tab-section[data-tab="pos-list"] .chip-overdue { background: #fee2e2; color: #991b1b; }
+.lens-tab-section[data-tab="pos-list"] .chip-cancelled { background: #f3f4f6; color: #6b7280; }
+
+/* ───────── Progress bar ───────── */
+.lens-tab-section[data-tab="pos-list"] .progress-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lens-tab-section[data-tab="pos-list"] .progress-bar {
+  width: 100px;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.lens-tab-section[data-tab="pos-list"] .progress-fill {
+  height: 100%;
+  background: #059669;
+  border-radius: 4px;
+}
+.lens-tab-section[data-tab="pos-list"] .progress-fill.partial { background: #d97706; }
+.lens-tab-section[data-tab="pos-list"] .progress-fill.empty { background: #cbd5e1; }
+.lens-tab-section[data-tab="pos-list"] .progress-label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* ───────── Date cells ───────── */
+.lens-tab-section[data-tab="pos-list"] .date-cell { color: #475569; }
+.lens-tab-section[data-tab="pos-list"] .date-cell.overdue { color: #dc2626; font-weight: 700; }
+.lens-tab-section[data-tab="pos-list"] .date-cell .date-sub {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 2px;
+  display: block;
+}
+
+/* ───────── Source badge ───────── */
+.lens-tab-section[data-tab="pos-list"] .src-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.lens-tab-section[data-tab="pos-list"] .src-stock { background: #dbeafe; color: #1e3a8a; }
+.lens-tab-section[data-tab="pos-list"] .src-custom { background: #fef3c7; color: #92400e; }
+.lens-tab-section[data-tab="pos-list"] .src-mixed { background: #ede9fe; color: #6d28d9; }
+
+/* ───────── Row actions ───────── */
+.lens-tab-section[data-tab="pos-list"] .row-actions {
+  display: flex;
+  gap: 4px;
+}
+.lens-tab-section[data-tab="pos-list"] .row-action {
+  padding: 5px 10px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  color: #475569;
+}
+.lens-tab-section[data-tab="pos-list"] .row-action:hover {
+  background: #f1f5f9;
+  border-color: #1e3a8a;
+  color: #1e3a8a;
+}
+.lens-tab-section[data-tab="pos-list"] .row-action.primary {
+  background: #1e3a8a;
+  color: #fff;
+  border-color: #1e3a8a;
+  font-weight: 600;
+}
+.lens-tab-section[data-tab="pos-list"] .row-action.warn {
+  color: #d97706;
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+.lens-tab-section[data-tab="pos-list"] .row-action.danger {
+  color: #dc2626;
+  border-color: #fbe5e2;
+  background: #fff;
+}
+
+/* ───────── Footer summary ───────── */
+.lens-tab-section[data-tab="pos-list"] .lens-pos-footer {
+  background: #f8fafc;
+  padding: 12px 18px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #475569;
+}
+.lens-tab-section[data-tab="pos-list"] .lens-pos-footer strong {
+  color: #1e293b;
+}

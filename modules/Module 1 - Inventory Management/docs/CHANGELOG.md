@@ -4,6 +4,419 @@
 
 ---
 
+## Lens UI Rebuild — Group B 🟢 100% COMPLETE (2026-05-18)
+
+### M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE (Module 1.5) — 2026-05-18 (🟢 CLOSED — resolves SPEC 8 F-1)
+
+**Scope:** Hardened 4 `next_*_number` RPCs (next_lot_number, next_receipt_number, next_po_number, next_transfer_number) with regex guard `~ '^[0-9]+$'` before CAST. Placed under Module 1.5 (shared infra). 4 CREATE OR REPLACE migrations; signatures unchanged. Tier C rerun of SPEC 8's blocked smoke succeeds. SPEC 8 verdict upgraded 🟡 → 🟢. Group B 100% COMPLETE.
+
+**Commits:**
+- `d683fa8` chore(spec): author M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE SPEC
+- `d083dd0` fix(db): harden 4 next_*_number RPCs against non-numeric suffix corruption
+- _(this commit)_ chore(spec): close + upgrade SPEC 8 verdict 🟡→🟢
+
+**Files changed:**
+- NEW 4 migrations in `supabase/migrations/` (one per RPC)
+- NEW SPEC folder under `modules/Module 1.5 - Shared Components/docs/specs/M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE/`
+- NEW `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_GOODS_RECEIPT_REBUILD/FOREMAN_REVIEW.md` (SPEC 8 verdict upgrade)
+
+**DB verified live:** all 4 RPCs contain regex pattern; signatures preserved; 3 corrupt `LOT-PO300005-*` rows still present (filtered out, not modified); get_advisors clean of new HIGH/ERROR.
+
+**Findings:** 1 INFO (PROCESS — Tier C cleanup pattern for K2 RPC side-effects on po_line counters; codified into P-AUTHOR-1).
+
+---
+
+
+
+### SPEC 8 — M1_LENS_GOODS_RECEIPT_REBUILD — 2026-05-18 (🟡 CLOSED-WITH-HIGH-FINDING — Group B SPEC 3 of 3)
+
+**Scope:** UI rebuild of `modules/lens-goods-receipt/` per `architecture-brief/mockups/LENS_GOODS_RECEIPT_MOCKUP.html` (635 lines). 5-field step-meta header + source-type ChipFilter row + 3 side-panel cards (summary / customer-tied / debt-preview). `p_has_no_invoice` wired to RPC. Debt-decoupling rule enforced in code + UI text. RPC contracts unchanged.
+
+**Status:** UI rebuild verified end-to-end on demo (page load, supplier picker, 3-line auto-load under PO group header, 3 cards, debt-decoupling text). Tier C receipt CREATE smoke ⛔ blocked by F-1 pre-existing demo data corruption (`next_lot_number` cannot parse 3 corrupt `stock_lot.lot_number` values). NOT introduced by this SPEC.
+
+**Pipeline shape:** Single session, ~1.5h. Stop-on-deviation per §6.
+
+**Commits:**
+- `5d96549` chore(spec): author Group B SPECs (6 + 7 + 8)
+- `e10923a` refactor(lens-goods-receipt): 1:1 mockup rebuild — 3 side-panel cards + chip-filter + has_no_invoice toggle
+- _(this commit)_ chore(spec): close M1_LENS_GOODS_RECEIPT_REBUILD with HIGH finding
+
+**Files changed:**
+- NEW `css/lens-goods-receipt-page.css` (175 lines)
+- `modules/lens-goods-receipt/lens-goods-receipt-partial.html` (92 → 131) — 3-card side panel + chip-filter mount + has_no_invoice checkbox
+- `modules/lens-goods-receipt/lens-goods-receipt-main.js` (124 → 182) — orchestrator + ChipFilter + customer-tied list + has_no_invoice toggle
+- `modules/lens-goods-receipt/lens-goods-receipt-lines.js` (166 → 171) — sourceFilter integration + PO group-header rows
+- `modules/lens-goods-receipt/lens-goods-receipt-close.js` (105 → 106) — wire has_no_invoice from window state; clean stale supplier_debt comment
+- Unchanged (RPC integration kept): supplier 81, manual 82, pre-fill 38, shipping-box 17, delivery-note 30
+- `inventory.html` +1 CSS link
+
+**Tier C:** Overview + supplier-picked + 3-line auto-load verified (2 screenshots). Close-receipt smoke blocked by F-1.
+
+**Findings:** 1 HIGH (PRE-EXISTING — F-1: 3 corrupt demo `stock_lot.lot_number` values break `next_lot_number`). 2 SKILL proposals (P-AUTHOR-1: next_*_number suffix probe; P-EXEC-1: 22P02 triage).
+
+---
+
+### SPEC 7 — M1_LENS_ACTIVE_POS_LIST_REBUILD — 2026-05-18 (🟢 CLOSED — Group B SPEC 2 of 3)
+
+**Scope:** Full 1:1 rebuild of `modules/lens-pos-list/` per `architecture-brief/mockups/LENS_ACTIVE_POS_LIST_MOCKUP.html` (509 lines). 5 stat-cards via StatCardRow with OVERDUE as a DERIVED predicate (not a status enum — Step 5.3 trap codified). Source-type ChipFilter row. SideDetailPanel for selected PO. Progress bar per row, overdue row class, footer summary with alerts.
+
+**Pipeline shape:** Single session, ~1.5h. Path X sequential.
+
+**Commits:**
+- `5d96549` chore(spec): author Group B SPECs (6 + 7 + 8)
+- `e2eec53` refactor(lens-pos-list): 1:1 mockup rebuild — 5 stat-cards incl. overdue (derived) + side detail panel
+- _(this commit)_ chore(spec): close M1_LENS_ACTIVE_POS_LIST_REBUILD with retrospective
+
+**Files changed:**
+- NEW `css/lens-pos-list-page.css` (230 lines)
+- NEW `modules/lens-pos-list/lens-pos-list-stats.js` (65 lines) — StatCardRow with 5 cards, overdue derived
+- NEW `modules/lens-pos-list/lens-pos-list-detail.js` (107 lines) — SideDetailPanel for selected PO
+- `modules/lens-pos-list/lens-pos-list-main.js` (55 → 93) — orchestrator + isOverdue + sourceOf
+- `modules/lens-pos-list/lens-pos-list-table.js` (139 → 188) — progress bar + source badge + overdue row + footer
+- `modules/lens-pos-list/lens-pos-list-filters.js` (36 → 79) — ChipFilter source row + supplier select + search + clear
+- `modules/lens-pos-list/lens-pos-list-actions.js` (98 → 97) — mark-sent + cancel + open-detail
+- `modules/lens-pos-list/lens-pos-list-partial.html` (55 → 63) — mount points only
+- `modules/inventory/inventory-shell-lens.js` +2 manifest entries / -9 header comment lines (file cap workaround)
+- `inventory.html` +1 CSS link
+
+**Tier C:** Stat cards verified against live DB (backdate-then-restore for overdue smoke). Side detail panel opens correctly. Filters narrow rows from same loaded array. 3 screenshots. 0 console errors.
+
+**Findings:** 1 LOW (RESOLVED IN-RUN — ChipFilter API mismatch) + 1 INFO (registry file growth, follow-up tech debt).
+
+---
+
+### SPEC 6 — M1_LENS_PURCHASE_ORDER_REBUILD — 2026-05-18 (🟢 CLOSED — Group B SPEC 1 of 3)
+
+**Scope:** Full 1:1 rebuild of `modules/lens-purchase-order/` per `architecture-brief/mockups/LENS_PURCHASE_ORDER_MOCKUP.html` (387 lines). 4-step wizard via WizardSteps shared component; 3 source-type bands (custom/stock/manual) via GroupHeaderRow. 2-column grid layout with side-panel cards. State-machine driven step transitions. Cancel + mark-sent + back contextually surfaced per step.
+
+**Pipeline shape:** Single session, ~1.5h. Path X sequential.
+
+**Commits:**
+- `5d96549` chore(spec): author Group B SPECs (6 + 7 + 8)
+- `92c1639` refactor(lens-purchase-order): 1:1 mockup rebuild — 4-step wizard with shared components
+- _(this commit)_ chore(spec): close M1_LENS_PURCHASE_ORDER_REBUILD with retrospective
+
+**Files changed:**
+- NEW `css/lens-purchase-order-page.css` (243 lines, scoped page-frame)
+- `modules/lens-purchase-order/lens-purchase-order-main.js` (106 → 205)
+- `modules/lens-purchase-order/lens-purchase-order-supplier.js` (63 → 89)
+- `modules/lens-purchase-order/lens-purchase-order-shortages.js` (205 → 209)
+- `modules/lens-purchase-order/lens-purchase-order-manual.js` (68 → 72)
+- `modules/lens-purchase-order/lens-purchase-order-create.js` (91 → 129; +cancel)
+- `modules/lens-purchase-order/lens-purchase-order-partial.html` (75 → 121)
+- `modules/lens-purchase-order/lens-purchase-order-pdf.js` UNCHANGED (27)
+- `inventory.html` +3 lines (wizard-step-indicator CSS+JS, page CSS link)
+- Backup: 14 files in `modules/Module 1 - Inventory Management/backups/M1_LENS_PURCHASE_ORDER_REBUILD_2026-05-18/` (gitignored)
+
+**Tier C:** PO-300006 created on demo (SHALDAG supplier, 14 lines, ₪1,038.40 incl 18% VAT) → mark-sent → cancel with reason → soft-delete. 4 screenshots. 0 errors from new code.
+
+**Findings:** 1 LOW (ABSORBED pre-existing PostgREST join 400 with working fallback). 0 deviations.
+
+---
+
+## Lens UI Rebuild — Post-Group-A Fixes (2026-05-18)
+
+### SPEC FK_FIX — M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX — 2026-05-18 (🟢 CLOSED — unblocks Group B drawer reuse)
+
+**Scope:** Pivot `lens_variant_notes.author_id` FK target from `auth.users(id)` to `employees(id) ON DELETE SET NULL`. Resolves SPEC 5 F-1 (notes CREATE blocked under PIN auth). DB-only — zero JS changes (consumer already passes `employees.id`).
+
+**Pipeline shape:** Single session, ~30 min, Path X sequential (Foreman + Executor in same Claude Code session). Zero findings, zero deviations.
+
+**Commits:**
+- `0c88706` chore(spec): author M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX SPEC + parent Brief
+- `9356073` fix(db): m1 lens — pivot lens_variant_notes.author_id FK from auth.users to employees
+- _(this commit)_ chore(spec): close M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX with retrospective
+
+**Files changed:**
+- NEW `supabase/migrations/20260518061712_m1_lens_variant_notes_drop_authusers_fk.sql`
+- NEW `supabase/migrations/20260518061713_m1_lens_variant_notes_add_employees_fk.sql`
+- `modules/Module 1 - Inventory Management/docs/db-schema.sql` (+33 lines — schema log block)
+- 4 SPEC artifacts + 1 Tier C screenshot + parent Brief (co-committed)
+
+**Tier C VFV:** Pricing drawer → notes tab → "➕ הוסף הערה" → smoke body → "שמור" → row inserted (`f9e0db90...`), `author_id` = sessionStorage tenant_employee.id, hard-delete cleanup, 0 console errors, `get_advisors(security)` clean.
+
+**Findings:** 0.
+
+---
+
+## Lens UI Rebuild — Group A (COMPLETE 2026-05-17)
+
+### SPEC 5 — M1_LENS_PRICING_REBUILD — 2026-05-17 (🟢 CLOSED — Group A SPEC 5 of 6, F-5 RESOLVED)
+
+**Scope:** Largest of the 6 lens SPECs (1211-line mockup). 1:1 rebuild of `modules/lens-pricing/` per `architecture-brief/mockups/LENS_PRICING_MOCKUP.html`. Plus F-5 resolution: NEW `shared/js/lens-price-resolver.js` (effective_price RPC wrapper) + lens-inventory lot-pane wired to consume it.
+
+**Pipeline shape:** Single session, straight-through under Bounded Autonomy. ~2.5h. Mid-execution Tier C hotfix (suppliers query). F-1 SPEC 3 schema gap caught + logged + escalated, not absorbed.
+
+**Commits:**
+- `52c0b0b` chore(spec): author Group A SPECs (4 + 5)
+- `cee4994` feat(shared): lens-price-resolver wraps effective_price RPC + wire lens-inventory lots-table (F-5)
+- `41384b6` refactor(lens-pricing): 1:1 mockup rebuild + view-mode toggle + 4 tabs + drawer + cost gating
+- `070a30d` fix(lens-pricing): drop nonexistent is_deleted filter from suppliers load
+- _(this commit)_ chore(spec): close M1_LENS_PRICING_REBUILD with retrospective
+
+**Files changed:**
+- NEW `shared/js/lens-price-resolver.js` (70 lines) — module-1.5 shared helper
+- `modules/lens-inventory/lens-inventory-lot-pane.js` (+36 lines, F-5 wire)
+- `modules/lens-pricing/lens-pricing-partial.html` (28 → 122)
+- `modules/lens-pricing/lens-pricing-main.js` (60 → 200; orchestrator + view-mode + tabs)
+- `modules/lens-pricing/lens-pricing-filters.js` (130 → 181; chip-filter mounts + resolver consumer)
+- `modules/lens-pricing/lens-pricing-grid.js` (133 → 181; TableBuilder consumer with cost gating)
+- NEW `modules/lens-pricing/lens-pricing-stats.js` (41) — StatCardRow with 4 cards
+- NEW `modules/lens-pricing/lens-pricing-drawer.js` (149) — LensDetailsDrawer with notes CRUD
+- NEW `css/lens-pricing-page.css` (195 lines, scoped)
+- `inventory.html` (+5 script/CSS loads)
+- `modules/inventory/inventory-shell-lens.js` (+2 manifest entries → 350 hard-cap)
+- `docs/GLOBAL_MAP.md` — LensPriceResolver registered as shared cross-module helper
+
+**Tier C VFV:**
+- View-mode toggle works (edit ↔ readonly)
+- 4 top-tabs switch panes; pending tab badge shows live count (0)
+- 3 chip-filter rows populate from live data
+- TableBuilder renders 41 offerings with 8 columns + cost permission gating
+- Drawer opens with logs + notes tabs
+- F-5 resolver path verified via pricing screen's 41-entry effectivePrices
+- Inventory tab regression-clean
+- 4 screenshots in SPEC folder
+- 0 console errors
+
+**Findings (3 logged):**
+- F-1 MEDIUM: lens_variant_notes.author_id FK → auth.users (PIN auth incompatibility). SPEC 3 schema gap, follow-up SPEC `M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX` (~30 min) recommended.
+- F-2 INFO: F-5 demo-data gap (0/19 stock_lot rows have supplier_offering_id). Optional seed SPEC for cross-tab Tier C history.
+- F-3 LOW (ABSORBED): suppliers query bogus is_deleted filter, fixed mid-Tier-C in `070a30d`.
+
+---
+
+### Group A summary (2026-05-17)
+
+Both Group A SPECs closed 🟢:
+- SPEC 4 (Designs Selection): 1:1 mockup; 5 shared components; ~70 min execution.
+- SPEC 5 (Pricing): largest of the 6; F-5 resolution shipped; ~2.5h execution.
+- Total wall clock: ~3.5h (Path X sequential; well under 10–12h estimate).
+
+Cross-cutting findings + recommended follow-up SPECs:
+- M1_LENS_DESIGNS_TOGGLE_PER_LOCATION_SEMANTICS (SPEC 4 F-1, MEDIUM, ~2-3h)
+- M1_LENS_VARIANT_NOTES_AUTHOR_FK_FIX (SPEC 5 F-1, MEDIUM, ~30 min)
+- M1_DEMO_BACKFILL_STOCK_LOT_OFFERING_IDS (SPEC 5 F-2, optional, ~30 min)
+
+---
+
+### SPEC 4 — M1_LENS_DESIGNS_SELECTION_REBUILD — 2026-05-17 (🟢 CLOSED — Group A SPEC 4 of 6)
+
+**Scope:** 1:1 mockup rebuild of `modules/lens-active-designs/` (Designs Selection screen) per `architecture-brief/mockups/LENS_DESIGNS_SELECTION_MOCKUP.html`. Consumes 5 SPEC 2 shared components (StatCardRow, ChipFilter, TableBuilder + extensions, SideDetailPanel, GroupHeaderRow). 22-line skeleton → mockup-aligned 70-line partial with mount points; 3 thin JS files → 7 module files totaling ~903 lines.
+
+**Pipeline shape:** Single-session straight-through under Bounded Autonomy (Path X sequential per Daniel directive). ~70 min execution. No escalations.
+
+**Commits:**
+- `52c0b0b` chore(spec): author Group A SPECs (4 + 5)
+- `452d9e6` refactor(lens-active-designs): 1:1 mockup rebuild consuming 5 shared components
+- _(this commit)_ chore(spec): close M1_LENS_DESIGNS_SELECTION_REBUILD with retrospective
+
+**Files changed (11 in rebuild + 5 in closeout):**
+- Partial rewrite: `modules/lens-active-designs/lens-active-designs-partial.html` (22 → 70)
+- Main orchestrator: `modules/lens-active-designs/lens-active-designs-main.js` (58 → 135)
+- Data loader: `modules/lens-active-designs/lens-active-designs-tree.js` (152 → 126; renderer retired)
+- Toggle extended: `modules/lens-active-designs/lens-active-designs-toggle.js` (37 → 65; +toggleOfferingSilent +toggleMany)
+- 4 NEW modules: `lens-active-designs-{stats,filters,table,detail}.js`
+- NEW CSS: `css/lens-active-designs-page.css` (260 lines, scoped)
+- `inventory.html`: +5 shared JS loads + 3 shared CSS loads
+- `modules/inventory/inventory-shell-lens.js`: +4 manifest entries for the new sub-modules
+
+**Tier C VFV (live on demo tenant):**
+- 4 stat cards render with live DB values (8/40/0/46) matching pre-flight
+- 4 chip-filter rows + 16 brand chips with design counts
+- Brand-grouped table renders 9 designs across 3 brand groups
+- Row click opens SideDetailPanel with 5-variant table + bulk actions
+- Bulk deactivate-all smoke fired Toast successfully; surfaced RPC semantics finding F-1
+- 0 console errors (only pre-existing GoTrueClient warns)
+- Inventory tab regression check passes (drawer + price columns + permissions intact)
+- 3 screenshots in SPEC folder `screenshots/`
+- Smoke-test side-effect rows soft-deleted per Iron Rule 3
+
+**Findings (3 logged, not absorbed):**
+- F-1 MEDIUM — `toggle_active_offering(p_location_id=null)` creates parallel "all-locations" row rather than flipping per-location actuals. Pre-existing RPC semantics surfaced by new UI. Recommend `M1_LENS_DESIGNS_TOGGLE_PER_LOCATION_SEMANTICS` follow-up SPEC (~2-3h).
+- F-2 INFO — Bulk action Promise.all (N RPC calls) not single-transaction batch. Bundles with F-1's follow-up.
+- F-3 INFO — `inventory-shell-lens.js` 348 lines (pre-existing over-target; SPEC 4 added 4 manifest lines).
+
+---
+
+## Lens UI Rebuild Phase 0 — Foundation (COMPLETE 2026-05-17)
+
+### M1_FOUNDATION_CLOSE_CLEANUP_2026_05_17 — 2026-05-17 (🟢 CLOSED — Foundation cleanup before Groups A/B/C)
+
+**Scope:** Resolve F-2 (RPC overload gap) + F-4 (stub removal) from SPEC 4a FOREMAN_REVIEW before parallel Groups A/B/C dispatch. F-5 (sell-price placeholder) remains DEFERRED to SPEC 5 by design.
+
+**Pipeline shape:** Halted at §6 stop-trigger when pre-flight grep found a 2nd RPC consumer (`modules/lens-goods-receipt/lens-goods-receipt-close.js:65`) outside the SPEC §4 allowlist. Daniel-Architect authorized scope expansion + flagged the recurring "`modules/inventory/` missing `lens-` prefix" typo class. Pipeline resumed with all 4 commits landed.
+
+**Commits:**
+- `434ae16` chore(spec): SPEC authored
+- `edbd812` feat(db): m1 lens — overload m1_create_receipt_from_box with 9-arg has_no_invoice variant
+- `dbe4661` refactor(lens-inventory): pass has_no_invoice through 9-arg RPC, drop 2-step UPDATE workaround
+- `6c1e742` chore(repo): migrate GR consumer, DROP 8-arg RPC, remove quick-scan stub + manifest entry
+- _(this commit)_ chore(spec): close M1_FOUNDATION_CLOSE_CLEANUP_2026_05_17 with retrospective
+
+**DB migrations applied:**
+- `20260517172923_m1_lens_receipt_from_box_9arg_has_no_invoice` (CREATE OR REPLACE 9-arg overload)
+- `20260517173411_m1_lens_receipt_from_box_drop_8arg` (DROP FUNCTION 8-arg signature)
+
+**Files changed:**
+- `supabase/migrations/` — 2 new migration files
+- `modules/lens-inventory/lens-inventory-main.js` — handleQuickReceiptSubmit now passes p_has_no_invoice; 14-line 2-step UPDATE block removed (272 → 260 lines)
+- `modules/lens-goods-receipt/lens-goods-receipt-close.js` — added p_has_no_invoice: false literal
+- `modules/lens-inventory/lens-inventory-quick-scan.js` — **DELETED** (was a 38-line redirect stub)
+- `modules/inventory/inventory-shell-lens.js` — removed the stub's manifest entry
+- `modules/Module 1 - Inventory Management/docs/specs/M1_FOUNDATION_CLOSE_CLEANUP_2026_05_17/SPEC.md` — 2 in-execution path-typo fixes (Daniel-authorized allowlist correction class)
+
+**Tier C VFV (live on demo tenant) — PASSED.**
+- Drawer staged 1 item, "אין תעודה" checked, supplier Duke selected, submit fired
+- Receipt `62335d00-...` landed with `has_no_invoice=TRUE` directly via the 9-arg RPC (no 2-step UPDATE)
+- 2 screenshots captured in SPEC folder
+- 0 console errors
+- Smoke row soft-deleted (Iron Rule 3)
+
+**Findings (logged to FINDINGS.md, not absorbed):**
+- F-X MEDIUM — SPEC author path-typo lesson (process)
+- F-1 INFO — `inventory-shell-lens.js` over 300-line target (pre-existing)
+- F-2 INFO — `LensInvQuickScan` comment retained as documentation
+- F-3 LOW — Iron Rule 32 hook path-match strictness (caught the SPEC typo correctly)
+- F-4 INFO — Advisor WARN inherited by 9-arg overload (intentional K2 contract pattern)
+
+---
+
+### SPEC 4a — M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION — 2026-05-17 (🟢 CLOSED — FOUNDATION COMPLETE)
+
+**Scope:** Integration SPEC — wires SPEC 2's shared `QuickReceiptDrawer` component into the live lens-inventory screen and consumes SPEC 3's DB schema (`purchase_receipt.has_no_invoice`, permission keys). Applies the Round 1+2 mockup updates per Brief decision #9 (Quick Receipt = SOLE inventory-entry path).
+
+**Pipeline shape:** Single-session, straight-through execution under Bounded Autonomy. No escalations. ~3.5h end-to-end.
+
+**Commits:**
+- `4a89cfe` chore(spec): author M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION SPEC — execution blocked pending SPEC 2 + SPEC 3
+- `1f41024` feat(lens-inventory): wire Quick Receipt drawer + entry-helper-strip + funnel scanner/manual-add/wizard
+- `582448d` feat(lens-inventory): price columns in lots-table + movements-table with cost-price permission gating
+- _(this commit)_ chore(spec): close M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION with retrospective
+
+**Files changed:**
+- `inventory.html` — added shared/css/tokens.css + shared/css/quick-receipt.css + shared/js/quick-receipt-drawer.js loads
+- `modules/lens-inventory/lens-inventory-partial.html` — added "קבל סחורה" top-header button, entry-helper-strip, drawer mount point; movements-table 8 → 9 cols (מחיר מכירה + permission-gated עלות יחידה); manual-add card updates; removed old `#drawer-quick-scan`
+- `modules/lens-inventory/lens-inventory-main.js` — `initQuickReceiptDrawer()` + `handleQuickReceiptSubmit()` + PermissionUI.applyTo on bootstrap
+- `modules/lens-inventory/lens-inventory-modal-shows.js` — new funnel attachers (`_attachScanInFunnel`, `_attachBulkWizardFunnel`); receive-goods action; manual-add stages to drawer; removed dead `_submitAddStock` + `_loadSuppliersForManualAdd`
+- `modules/lens-inventory/lens-inventory-lot-pane.js` — renderLots() 4 → 5 cols (sell_price placeholder + permission-gated cost)
+- `modules/lens-inventory/lens-inventory-quick-scan.js` — 146 → 38-line redirect stub (`open()` → `QuickReceiptDrawer.open()`)
+- `css/lens-inventory-page.css` — added .entry-helper-strip + .btn-receive + .col-permission-gated styles
+
+**Tier C VFV (live on demo tenant):**
+- Drawer opens from "קבל סחורה" with 38 demo suppliers loaded
+- Manual-add stages item to drawer Section B correctly
+- "סיים קבלה" with `has_no_invoice=true` → RPC returns receipt_id → 2-step UPDATE lands `has_no_invoice=true` in DB → success Toast
+- Smoke-test receipt soft-deleted (Iron Rule 3)
+- 6 screenshots in SPEC folder `screenshots/` for visual reference
+- 0 console errors
+
+**Persistence path:** Drawer's `onSubmit` calls `m1_create_receipt_from_box(8-arg)` then `sb.from('purchase_receipt').update({has_no_invoice}).eq(id).eq(tenant_id)` — 2-step stopgap because the RPC pre-dates SPEC 3's column. Defense-in-depth tenant_id filter on the UPDATE (Iron Rule 22).
+
+**Findings (logged to FINDINGS.md, not absorbed):**
+- F-1 INFO — SPEC §3 #3 partial line-count estimate wrong by structure (drawer DOM is in shared component)
+- F-2 MEDIUM — `m1_create_receipt_from_box` needs a 9-arg overload accepting `p_has_no_invoice` (eliminate 2-step workaround)
+- F-3 INFO — `_submitAddStock` deletion leaves clean RPC ownership (main.js handleQuickReceiptSubmit is sole consumer)
+- F-4 LOW — `lens-inventory-quick-scan.js` is a 38-line stub awaiting full removal in next M1 maintenance SPEC
+- F-5 MEDIUM — sell-price column shows "—" placeholder until SPEC 5 wires `effective_price` resolver
+- F-6 INFO — pre-existing http-server PID 12672 from 2026-05-10 served (worked correctly with `-c-1`)
+- F-7 INFO — Chrome MCP bfcache served pre-edit content on first navigate (hard-reload resolved)
+
+---
+
+### Foundation Phase Summary (2026-05-17)
+
+All 4 foundation SPECs CLOSED:
+
+| # | SPEC | Status | Commits | Duration |
+|---|------|--------|---------|----------|
+| 1 | M1_LENS_PALETTE_RETIRE_UNIFIED | 🟡 (Tier C deferred) | cbe3a8e, eddc8a1, 0949e97 | ~2h |
+| 2 | M1_5_SHARED_COMPONENTS_PHASE_0 | 🟡 (Tier C smoke ✅) | 9fafd93..73c50b1 (15 commits) | ~7h |
+| 3 | M1_LENS_DB_SCHEMA_RECEIPTS_NOTES | 🟢 | 80cb4cb, 05e28bb, 447f3f6, 999c433, 0e7d524 | ~2h |
+| 4a | M1_LENS_INVENTORY_QUICK_RECEIPT_INTEGRATION | 🟢 | 4a89cfe, 1f41024, 582448d, (this) | ~3.5h |
+
+**Total:** ~14.5h across 4 Pipelines (Brief budget 14-17h).
+
+**Downstream:** Groups A/B/C (SPECs 5-10, 6 screen rebuilds) eligible for parallel-worktree dispatch on Daniel's authorization after foundation review by Cowork-Architect.
+
+---
+
+### SPEC 3 — M1_LENS_DB_SCHEMA_RECEIPTS_NOTES — 2026-05-17 (🟢 CLOSED)
+
+**Scope:** Foundation DB deltas for the lens mockup rebuild — 1 column ADD on `purchase_receipt`, 1 new tenant-scoped `lens_variant_notes` table with canonical 2-policy RLS, 2 new permission keys seeded for both tenants × 2 roles.
+
+**Pipeline shape:** Halted-and-resumed (2 sessions). Session A halted at pre-flight with 2 stop-on-deviation triggers (coordination collision with SPEC 2 lock + SPEC §9 template structurally wrong vs live `permissions` schema). Cowork-Architect issued `ARCHITECT_DECISION_001_SPEC3_AMENDMENT.md`; Session B executed against the amendment end-to-end.
+
+**Commits:**
+- `80cb4cb` chore(spec): author M1_LENS_DB_SCHEMA_RECEIPTS_NOTES SPEC
+- `05e28bb` feat(db): m1 lens — add purchase_receipt.has_no_invoice column
+- `447f3f6` feat(db): m1 lens — create lens_variant_notes table with RLS
+- `999c433` feat(db): m1 lens — seed inventory.view_cost_price + lens_pricing.edit permission keys
+- _(this commit)_ chore(spec): close M1_LENS_DB_SCHEMA_RECEIPTS_NOTES with retrospective
+
+**Migrations applied:**
+- `20260517161202_m1_lens_purchase_receipt_has_no_invoice` (ALTER TABLE ADD COLUMN)
+- `20260517161421_m1_lens_variant_notes` (CREATE TABLE + 2 indexes + RLS canonical pattern)
+- `20260517161725_m1_lens_permission_seeds_view_cost_price_and_lens_pricing_edit` (4 + 8 INSERT seed rows, idempotent via ON CONFLICT)
+
+**Files changed:**
+- 3 new migration files in `supabase/migrations/`
+- `docs/GLOBAL_SCHEMA.sql` — M1 Lens block annotated with SPEC 3 deltas
+- `docs/DB_TABLES_REFERENCE.md` — T.PURCHASE_RECEIPT row extended + new T.LENS_VARIANT_NOTES row
+- `modules/Module 1/docs/db-schema.sql` — full SPEC 3 section with applied DDL
+- `js/shared.js` — T.LENS_VARIANT_NOTES added (1 line)
+- `js/shared-field-map.js` — FIELD_MAP entries for purchase_receipt + lens_variant_notes (+5 entries)
+- `TECH_DEBT.md` — #M1_LENS_PERMISSIONS_TEMPLATE_AUTO_REPLICATION entry
+- New SPEC folder artifacts: `EXECUTION_REPORT.md`, `FINDINGS.md`, `MIGRATION.md`, `ARCHITECT_DECISION_001_SPEC3_AMENDMENT.md`, `ACTIVATION_PROMPT.md`, `ACTIVATION_PROMPT_v2.md`
+- Escalation file renamed `PREFLIGHT_HALT` → `RESOLVED_PREFLIGHT_HALT` per Brief Contract E
+
+**Verification:**
+- Live DB confirmed: 4 permissions rows (2 keys × 2 tenants) + 8 role_permissions rows (2 keys × 2 tenants × 2 roles)
+- `lens_variant_notes`: rls_enabled=true, 2 policies (service_bypass + tenant_isolation), 7 columns, 3 indexes
+- `purchase_receipt.has_no_invoice`: NOT NULL, DEFAULT FALSE, boolean
+- `npm run verify:integrity` exit 0 at every commit
+- `verify.mjs --staged` 0 violations across all 4 commits
+- `get_advisors(security)` — no new HIGH/ERROR after any migration
+
+**Architect amendment:** `ARCHITECT_DECISION_001_SPEC3_AMENDMENT.md` (Cowork-Architect, 2026-05-17) resolved Q1 (ceo+manager grants) / Q2 (both tenants seeded) / Q3 (accepted slug names) / Q4 (Hebrew display strings). Follow-up: TECH_DEBT `#M1_LENS_PERMISSIONS_TEMPLATE_AUTO_REPLICATION` tracks the eventual permissions_template + auto-replication trigger refactor before tenant 3 onboarding.
+
+---
+
+### SPEC 1 — M1_LENS_PALETTE_RETIRE_UNIFIED — 2026-05-17 (🟡 CLOSED with Tier C deferred)
+
+**Scope:** Retire `M1_INVENTORY_UNIFIED_SCREEN §1.5 R-1..R-13` visual-palette rules + rewrite `css/lens-tabs.css` to mockup palette per ratification `D-M1-02..D-M1-14`.
+
+**Commits:**
+- `cbe3a8e` chore(spec): author M1_LENS_PALETTE_RETIRE_UNIFIED SPEC
+- `eddc8a1` refactor(css): retire unified-screen R-1..R-13 — rewrite lens-tabs.css to mockup palette
+- _(this commit)_ chore(spec): close M1_LENS_PALETTE_RETIRE_UNIFIED with retrospective
+
+**Files changed:**
+- `css/lens-tabs.css` (368 → 387 lines, +19)
+- `modules/Module 1 - Inventory Management/docs/specs/M1_INVENTORY_UNIFIED_SCREEN/SPEC.md` (DEPRECATED note inserted at §1.5)
+- New SPEC folder artifacts: `SPEC.md`, `EXECUTION_REPORT.md`, `FOREMAN_REVIEW.md`
+- New Brief: `architecture-brief/M1_LENS_MOCKUP_FIDELITY_FULL_REBUILD_BRIEF.md`
+
+**Palette swaps (navy `#1e3a8a` → gold `#c9a555`):**
+- `.lens-tab-section .chip:hover` + `.chip.active`
+- `.lens-tab-section .btn-primary` + `:hover` (gold-dark `#b8954a`)
+- `#lensNav button.active` + `:hover`
+- `#contactNav button.active` + `#accessoryNav button.active`
+
+**New tokens (mockup-required, previously missing):**
+- `.lens-tab-section .chip-overdue { #fee2e2 / #991b1b }` — red for overdue POs
+- `.lens-tab-section .stat-card.overdue { #dc2626 border }` — red border for overdue stat-card
+
+**Unchanged (mockup-aligned in their current form, intentional):**
+- `.chip-sent` navy text — mockup state indicator for sent POs
+- `.chip-received` green text — mockup state indicator
+- `.stat-card.active` navy border — mockup selected-card indicator
+- Data-table headers light slate — mockup data-tables use light slate
+
+**Next:** SPEC 2 (`M1_5_SHARED_COMPONENTS_PHASE_0`) — 8 shared components in Module 1.5.
+
+---
+
 ## M1_5_CAT_SIDEBAR_COMPONENT (consumer-side) — 2026-05-17 morning (🟢 CLOSED — Full Auto Pipeline, ~1.5h)
 
 **Cross-module SPEC owned by Module 1.5.** Module 1 is the consumer-side refactor (inventory.html + css/inventory-shell.css). See `modules/Module 1.5 - Shared Components/docs/specs/M1_5_CAT_SIDEBAR_COMPONENT/` for full SPEC + retrospective.

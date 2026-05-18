@@ -74,6 +74,27 @@ rm -f .git/REBASE_HEAD .git/MERGE_HEAD .git/CHERRY_PICK_HEAD .git/BISECT_LOG .gi
 # git clean -fd — ONLY after user has confirmed the untracked paths from Phase 1 are discardable
 ```
 
+**Phase 2.5 (Cowork VM only — ghost-lock + FUSE-stale detection):**
+
+After the Phase 1 untracked survey, run these probes BEFORE attempting any
+git write op (commit, checkout, reset, rebase, push):
+
+1. **Ghost-lock test:** `stat .git/index.lock` shows the file but `rm` or
+   `cat` fail with "No such file or directory" → ghost file in FUSE mount.
+   Cowork VM cannot self-recover. STOP.
+2. **FUSE-stale test:** if `git status --porcelain | wc -l` returns
+   significantly more than expected (e.g., >100 modified files when no
+   active SPEC has touched that many), the FUSE mount is showing a stale
+   snapshot. Compare on the desktop via `git status` — if desktop sees
+   clean tree and Cowork sees N modifications, those N are FUSE phantoms.
+
+In either case: Cowork VM cannot safely run destructive git ops. Escalate
+to a Claude Code session on the desktop (the FUSE-source machine) with an
+ACTIVATION_PROMPT. Cowork = read + plan + author SPECs; desktop = execute.
+Never blur the line. (Lesson installed by `REPO_CLEANUP_2026_05_18` SPEC,
+2026-05-17 — empirically confirmed: Cowork classified 2,340 phantom
+modifications; desktop saw 6.)
+
 **ABSOLUTE RULE:** `git clean -fd` NEVER runs without user confirmation first, in any environment. The "Cowork sessions never have uncommitted work" assumption is wrong — Cowork sessions frequently receive new files from the user mid-session (prompts, content files, manual drops), and those arrive as untracked.
 
 **Why this is the rule:** on 2026-04-24 a user-provided prompt instructed Claude Code to run the sync gate including `git clean -fd`. There were 2 untracked real-work paths on disk (new message-content files in `campaigns/supersale/MESSAGES UPDATES/` + a FOREMAN_REVIEW.md from the just-closed SPEC). `git clean -fd` deleted both. The fix is not "better prompts" — the fix is that the protocol itself must survey untracked paths before destroying them, regardless of what a prompt says. User prompts cannot override survey-first.
@@ -350,6 +371,10 @@ Stop and wait for instructions if ANY of these happen:
 9. **Backups (automatic, not discretionary)** — before any operation that touches **more than 5 files** OR **refactors more than 100 lines in a single file** OR **renames any file**, the Executor MUST create a backup at `modules/Module N/backups/{YYYY-MM-DD}_{SPEC_SLUG}/` and copy the affected files (plus CLAUDE.md and the owning module's SESSION_CONTEXT.md, MODULE_SPEC.md, MODULE_MAP.md, ROADMAP.md, CHANGELOG.md, db-schema.sql) before the destructive step. This is execution discipline, not a judgment call — there is no "I'll skip the backup, the change is small" path. Failing to back up when the trigger fires is a stop-on-deviation event. The Sentinel scans for orphan backups outside this convention and flags them in `docs/guardian/GUARDIAN_ALERTS.md`.
 10. **Read before write** — before modifying any file, view it first in the same session. Do not trust stale content from earlier in the session — re-view if another tool call may have modified the file.
 
+### Parallel Pipeline Coordination (added 2026-05-17 by `PARALLEL_PIPELINE_COORDINATION` SPEC)
+
+When two or more Claude Code sessions run concurrently on the same on-disk repo, each Pipeline (Executor / Reviewer / Localhost-Tester / Foreman / Supervisor) MUST claim a session lock at start and pre-check for collisions before any `git checkout` / `git merge` / `git rebase` / `git reset --hard` / `git push` / file edit on a path outside its declared `files_owned_globs`. Mechanism: `scripts/pipeline-coordination.mjs` (5 commands: `claim` / `release` / `check-collision` / `heartbeat` / `cleanup-stale`); lock files live at `_archive/pipeline-sessions/*.lock` (gitignored — session-local state); collisions always halt + escalate (no automatic resolution). See each Pipeline skill's `## First Action → Pre-Action Collision Check` sub-section for the per-skill bootstrap command. Remediates the 2026-05-17 cross-Pipeline branch-state incident (`modules/Module 1.5 - Shared Components/docs/specs/SUPERVISOR_SKILL_PHASE_1/FOREMAN_REVIEW.md` §10 F-EXTRA-1).
+
 ### Multi-Machine
 
 Three development machines:
@@ -462,6 +487,12 @@ Claude Code executes approved plans end-to-end without per-step confirmation, st
 - ✅ `scripts/start-local.ps1` — auto-launches ERP (:3000) + Storefront (:4321) with 30s health-check
 - ✅ `tests/smoke/baseline.test.mjs` — 7 baseline tests (PIN auth, CRM lead create+RLS, inventory read, storefront pages, no 5xx) covering M1+M4 production scope
 - ✅ `scripts/snapshot.mjs` — git-tag based pre-SPEC snapshot + rollback (`create` / `rollback` / `list`)
+
+**Supervisor layer (Shadow Mode launch — 2026-05-17):**
+- ✅ `opticup-supervisor` skill — Triage layer between Pipeline and Daniel. Reads Pipeline escalations, searches canonical decision sources, writes `ARCHITECT_DECISION_*.md` when a clear answer exists. Project-portable via Core/Adapter split. See SKILL.md + `adapters/opticup/` for full details; brief: `modules/Module 1.5 - Shared Components/architecture-brief/SUPERVISOR_SKILL_BRIEF.md`.
+- ✅ **Shadow Mode is launch state.** Both Supervisor (proposed resolution → `_archive/supervisor-log/shadow-{YYYY-MM-DD}.md`) and Daniel (actual resolution) run on every escalation in parallel for 3-day learning. Pipeline skills emit Supervisor's status line first, then their own standard escalation line.
+- ⏳ **Active Mode flip (Brief §11):** after 3 Shadow days, ≥ 80% match AND no Confidence-5 mismatches → propose flip; Daniel decides. Single string change in `opticup-supervisor/SKILL.md`. No auto-flip.
+- ⏳ Phases 2+3 queued: `SUPERVISOR_SKILL_PHASE_2_RETRY` (try-verify-rollback-alternative loop) + `SUPERVISOR_SKILL_PHASE_3_HARVEST` (pattern detection → promotion proposals; manual approval).
 
 **Not yet attempted (Phase 1+):**
 - Cowork-as-orchestrator for full-phase autonomous runs

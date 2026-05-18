@@ -289,6 +289,23 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
   - Q3 (Phasing) — 2 sub-phases (Lens-1A / Lens-1B) per Architect recommendation.
   - Q4 (Bulk import) — structured xlsx Phase 1A; LLM agent Phase 2+.
 
+### פאזה Lens-1B-Rework 🟡 — שכתוב מסכי קטלוג עדשות עם Suppliers col + seed pipeline מתוקן — 2026-05-18 (PARTIALLY EXECUTED)
+
+- **רקע:** מסכי Lens-1B נסגרו ב-Group C 🟢 (SPECs 9 + 10 + 12) בבוקר 2026-05-18. סקירה ידנית של דניאל מצאה ש-SPEC 10 (private catalog) שלח 0 שינויי קוד ו-SPEC 9 (admin catalog) השמיט את עמודת ה-Suppliers שבה ה-mockup הצריך. ה-SPEC `M1_LENS_CATALOG_TRUE_REBUILD` הוסמך כתיקון מקיף.
+- **SPEC A — M1_LENS_CATALOG_TRUE_REBUILD 🟡 PARTIALLY EXECUTED:**
+  - Commit 1 (`434f254`) — בנייה מחדש מלאה של 4 עמודות (Suppliers → Brands → Series → Detail+Variants), drill מ-supplier לפי `supplier_brand_distribution`, dev-mode bypass ב-`catalog-auth.js` (localhost בלבד, `?dev=1`), מקרוס-לוגיקה ב-`lens-catalog-admin.js` orchestrator
+  - Commit 2 (`454491b`) — מחיקת `catalog-variants-col.js` orphan + תיקון §4 ל-SPEC כדי לאשר את המחיקה
+  - **דחוי:** Commit 3 (שכתוב `shared/js/catalog-private-admin.js` עם light theme), Commit 4 (Tier C VFV — Chrome MCP, 6 צילומים, mockup side-by-side), Commit 5 (סגירה מלאה)
+  - **סיבת הדחייה:** ה-SPEC המקביל `M1_LENS_CATALOG_SEED_FROM_EXCEL` בוטל באמצע (Excel data-quality issues — `יומיות`/`חודשיות`/`שנתיות` הם קטגוריות duration ולא brands; קופות חולים סווגו כספקים). ללא נתוני seed אמיתיים על demo, Tier C VFV §6 לא ניתן לרוץ.
+  - **EXECUTION_REPORT + FINDINGS:** `docs/specs/M1_LENS_CATALOG_TRUE_REBUILD/`
+- **SPEC B — M1_LENS_CATALOG_SEED_FROM_EXCEL 🛑 ABORTED:**
+  - `EXECUTION_REPORT.md` + `FINDINGS.md` (3 ממצאים: F-1/F-2/F-3) ב-`docs/specs/M1_LENS_CATALOG_SEED_FROM_EXCEL/`
+- **מה ממתין ל-Brief חדש:**
+  1. קוריאציה של ה-global catalog (הסרת brands לא נכונים — קטגוריות duration, קופות חולים)
+  2. seed pipeline מתוקן (Excel מפוצל ל-glasses / contact-lens / health-fund-pricing במודלי data נפרדים לפני כתיבה)
+  3. שכתוב private catalog (Commit 3 הדחוי)
+  4. Tier C VFV מלא (Commit 4 הדחוי)
+
 ### פאזה Lens-1B ⬜ — מלאי עדשות — שלב 1B (6 מסכי לקוח)
 - **תלוי ב-Lens-1A** (סכמה + RPCs + Platform Catalog Admin) שייסגר כ-✅ קודם
 - **SPEC stub:** `docs/specs/M1_LENS_INVENTORY_PHASE_1B_CUSTOMER_SCREENS/SPEC.md` — non-executable עד שה-FOREMAN_REVIEW של Lens-1A נסגר

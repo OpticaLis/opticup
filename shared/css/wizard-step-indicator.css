@@ -1,0 +1,121 @@
+/* wizard-step-indicator.css — Page-level wizard stepper styles
+   ============================================================================
+   Class prefix `.wstep-*` chosen to NOT collide with modal-wizard's
+   `.wizard-step-*` classes in shared/css/modal.css.
+
+   Tokens consumed from shared/css/tokens.css:
+     --wstep-circle-size / -circle-bg / -circle-fg
+     --wstep-line-bg
+     --wstep-active-bg / -active-glow
+     --wstep-done-bg
+     --wstep-label / -label-active / -label-done
+   ============================================================================ */
+
+.wstep-row {
+  background: var(--color-bg-card, #ffffff);
+  padding: var(--space-lg, 16px) var(--space-xl, 24px);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.08));
+  margin-bottom: var(--space-md, 12px);
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.wstep {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm, 10px);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.wstep-circle {
+  width: var(--wstep-circle-size, 32px);
+  height: var(--wstep-circle-size, 32px);
+  border-radius: 50%;
+  background: var(--wstep-circle-bg, #ecf0f1);
+  color: var(--wstep-circle-fg, #95a5a6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-weight-bold, 700);
+  font-size: var(--font-size-md, 0.92rem);
+  flex-shrink: 0;
+  transition: background var(--transition-fast, 150ms ease),
+              color var(--transition-fast, 150ms ease),
+              box-shadow var(--transition-fast, 150ms ease);
+}
+
+.wstep-label {
+  font-size: var(--font-size-sm, 0.85rem);
+  color: var(--wstep-label, #5d6d7e);
+  font-weight: var(--font-weight-medium, 500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wstep-line {
+  flex: 1 1 auto;
+  height: 2px;
+  background: var(--wstep-line-bg, #ecf0f1);
+  margin: 0 var(--space-md, 12px);
+  min-width: 8px;
+  transition: background var(--transition-fast, 150ms ease);
+}
+
+/* States */
+.wstep-active .wstep-circle {
+  background: var(--wstep-active-bg, #c9a555);
+  color: var(--color-white, #ffffff);
+  box-shadow: var(--wstep-active-glow, 0 0 0 4px #faf3e0);
+}
+.wstep-active .wstep-label {
+  color: var(--wstep-label-active, #c9a555);
+  font-weight: var(--font-weight-bold, 700);
+}
+
+.wstep-done .wstep-circle {
+  background: var(--wstep-done-bg, #27ae60);
+  color: var(--color-white, #ffffff);
+}
+.wstep-done .wstep-label {
+  color: var(--wstep-label-done, #27ae60);
+}
+
+.wstep-line-done {
+  background: var(--wstep-done-bg, #27ae60);
+}
+
+/* Clickable affordance */
+.wstep-clickable { cursor: pointer; }
+.wstep-clickable:focus { outline: none; }
+.wstep-clickable:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  box-shadow: var(--shadow-focus);
+}
+
+/* Disabled (upcoming) — already not clickable, no extra styling needed */
+.wstep[aria-disabled="true"] {
+  cursor: default;
+}
+
+/* Mobile — drop labels to icon-only, tighter spacing */
+@media (max-width: 640px) {
+  .wstep-row {
+    padding: var(--space-md, 12px) var(--space-md, 12px);
+  }
+  .wstep-label {
+    font-size: var(--font-size-xs, 0.75rem);
+    max-width: 60px;
+  }
+  .wstep-line { margin: 0 var(--space-xs, 4px); }
+}
+
+@media (max-width: 480px) {
+  .wstep-label { display: none; }
+  .wstep-line { min-width: 4px; }
+  .wstep { gap: 0; }
+}

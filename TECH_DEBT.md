@@ -7,6 +7,23 @@
 
 ## Active Debt
 
+### #M1_LENS_PERMISSIONS_TEMPLATE_AUTO_REPLICATION — 🟡 permissions_template global table + auto-replication trigger
+
+**Where:** `permissions` + `role_permissions` tables (currently tenant-scoped with per-tenant duplicate rows), `tenants` lifecycle (no auto-replication on tenant create).
+
+**What:** Today every permission key + every role grant is stored once per tenant. Adding a new permission key requires inserting `(N_tenants × 1)` rows in `permissions` and `(N_tenants × N_roles_per_key)` rows in `role_permissions`. This is what the `M1_LENS_DB_SCHEMA_RECEIPTS_NOTES` SPEC §9 amendment had to do manually (4 + 8 rows for 2 keys × 2 tenants × 2 roles). When tenant 3+ onboards, every existing permission across every module must be replicated for the new tenant — currently a manual one-off seed script per tenant.
+
+Build a `permissions_template` global table (rows store the key + module + action + name_he + description WITHOUT tenant_id), then a BEFORE INSERT trigger on `tenants` (or a maintenance RPC) that replicates every template row into `permissions` for the new tenant. Same pattern for `role_permissions_template` if needed (or merge the two via a join model).
+
+**Why it's debt (and 🟡):** Functionally working today — SPEC 3's amendment kept the per-tenant duplication pattern intact, so demo + prizma both have the 4 new permission rows. But the second a third tenant onboards, every prior permission seed must be re-applied. The longer this debt sits, the bigger the migration footprint at tenant 3 (every permission key across every module needs the template row + replication). The cost rises linearly with key count.
+
+**Planned fix:** Single dedicated SPEC (~4–6h). Steps: (1) build `permissions_template` global table + matching unique constraint, (2) backfill from current `permissions` (deduplicate per-tenant rows into single template rows + verify identity across tenants), (3) replication trigger on `tenants` INSERT — fan out template → per-tenant rows, (4) decide migration order between this and any tenant 3 onboarding. Trigger this SPEC at: any new tenant 3+ onboarding event OR Architect-led Phase 0 SaaS hardening sweep, whichever comes first.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_DB_SCHEMA_RECEIPTS_NOTES/ARCHITECT_DECISION_001_SPEC3_AMENDMENT.md` (Q2 follow-up), 2026-05-17. Identified during pre-flight discovery that `permissions` + `role_permissions` are tenant-scoped — see escalation `modules/Module 1 - Inventory Management/escalations/2026-05-17T_M1_LENS_DB_SCHEMA_RECEIPTS_NOTES_PREFLIGHT_HALT.md` §3 for the schema-shape detail.
+
+---
+
+
 ### #M1_CL_ACCESSORY_POLISH — 🟢 Bundled M1 maintenance for 5 follow-up items from M1_CONTACT_LENSES_ACCESSORIES
 
 **Where:** modules/contact-lens-*, modules/accessory-*, scripts/checks/rule-14-tenant-id.mjs, lens_design CHECK constraint, js/shared.js FIELD_MAP, tenant_*_stock schema.
@@ -573,6 +590,20 @@ Both are ~1-hour SPECs.
 **Effort:** ~30-minute migration if option (a) chosen + audit. Zero additional work if option (b).
 
 **Source:** `modules/Module 3 - Storefront/docs/specs/M3_DEMO_STOREFRONT_FORMS_DEPLOYMENT/FINDINGS.md` Finding M3-FINDINGS-02 (executor-discovered 2026-05-11).
+
+### #14 — 🟡 Sequential Numbering: structural migration to PostgreSQL SEQUENCEs (TD-SEQ-NUMBERING-STRUCTURAL) — PARTIAL (Phase 2 closed; 4 of 8 RPCs migrated)
+
+**Where:** 8 sequential-number RPCs across the project — `next_lot_number`, `next_receipt_number`, `next_po_number`, `next_transfer_number`, `next_box_number`, `next_internal_doc_number`, `next_purchase_order_number`, `next_return_number`.
+
+**Why it's debt:** All 8 originally used the pattern `MAX(CAST(SUBSTRING(<col> FROM <offset>) AS INT)) + 1` against the data column itself instead of a PostgreSQL SEQUENCE object with `nextval()`. A single row with a non-numeric suffix caused the CAST to throw, the RPC to return NULL, and every subsequent insert to fail.
+
+**Phase 2 status (CLOSED 2026-05-18):** 4 of 8 RPCs structurally migrated to PostgreSQL `SEQUENCE` + `nextval()` via SPEC `M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES` — `next_lot_number`, `next_transfer_number`, `next_box_number`, `next_purchase_order_number` (M1B0 lens). Remaining 4 (`next_receipt_number`, `next_po_number` frames, `next_return_number`, `next_internal_doc_number`) stay regex-guarded as the canonical pattern for their use cases (per-(tenant, supplier) counters + dynamic prefix — incompatible with a single global sequence). See SPEC §0 strategic design call for Option E (HYBRID) over pure Option A.
+
+**Investigation Phase 1:** Read-only investigation Pipeline ran 2026-05-18 (report at `modules/Module 1.5 - Shared Components/architecture-brief/SEQUENTIAL_NUMBERING_INVESTIGATION_REPORT.md`). Phase 1+2 hardening SPECs (`M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE` + `_PHASE_2`) applied the regex guard `WHERE ... ~ '^[0-9]+$'` to all 8 RPCs.
+
+**Optional Phase 3 (deferred):** Pure Option A — convert the remaining 4 to global sequences after stakeholder review (would regress per-supplier counter continuity in Prizma data). Not scheduled.
+
+**Source:** Path X arc — `M1_LENS_GOODS_RECEIPT_REBUILD/FINDINGS.md F-1 HIGH` discovered the defect class; `M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE` + `_PHASE_2` closed the tactical patch across all 8 RPCs; Phase 2 structural migration (`M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES`) closed the structural fix for 4 of 8 RPCs.
 
 ---
 

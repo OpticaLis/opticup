@@ -1,6 +1,91 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
+## 2026-05-18 — M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES (🟢 CLOSED — structural Phase 2 hybrid; 4 of 8 RPCs sequence-based)
+
+**Status:** ✅ Closed. ~45 min execution. 1 INFO finding (self-corrected mid-execution), 0 defects to ship.
+
+**Scope:** Structural migration of 4 plain `next_*_number` RPCs from `MAX(CAST(SUBSTRING(...) AS INT))` to PostgreSQL `SEQUENCE` + `nextval()`. Per Foreman §0 strategic design call: Option E (HYBRID) over pure Option A — the 4 supplier-scoped + dynamic-prefix RPCs (`next_receipt_number`, `next_po_number` frames, `next_return_number`, `next_internal_doc_number`) stay regex-guarded as the canonical pattern for their use cases. Phase 1+2 hardening regex guard is the canonical design for those cases; sequence-based is the canonical design for plain global counters.
+
+**Migrated to SEQUENCE:**
+- `seq_lot_number` START 19 → `next_lot_number` returns `LOT-NNNNNN`
+- `seq_transfer_number` START 2 → `next_transfer_number` returns `TRN-NNNNNN`
+- `seq_box_number` START 2 → `next_box_number` returns `BOX-NNNN`
+- `seq_purchase_order_number` START 300007 → `next_purchase_order_number` returns `PO-NNNNNN`
+
+**Tier C empirical proof (4 cycles, all PASS):** Corrupt-suffix row injected per cycle; 3× sequential RPC calls verified format regex + monotonic + starting value + corrupt-row resistance. Final last_values: 21 / 4 / 4 / 300009 (matches expected `START + 3` for each sequence). All 4 corrupt rows soft-deleted (Iron Rule 3).
+
+**Security advisor:** 0 new ERROR/HIGH. 4 in-scope RPCs surface only the pre-existing `authenticated_security_definer_function_executable` WARN baseline (every SECURITY DEFINER + authenticated callable triggers it).
+
+**TECH_DEBT #14 status:** PARTIAL — Phase 2 closed; 4 of 8 RPCs migrated. Remaining 4 stay regex-guarded as canonical.
+
+**Files:** 8 new migrations under `supabase/migrations/20260518130000..130007_*.sql`. SPEC folder at `docs/specs/M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES/` (SPEC + ACTIVATION_PROMPT + EXECUTION_REPORT + FINDINGS).
+
+**Self-introduced deviation (F-1):** v1 RPC rewrites added a `service_role` JWT bypass branch not authorized by the SPEC. Caught mid-execution before Tier C, reverted via 4 v2 migrations restoring exact 2-line JWT guard. 0 impact on success criteria; codification proposal for executor skill in FINDINGS.md.
+
+**Next:** Awaiting Foreman review.
+
+---
+
+## 2026-05-18 — M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE_PHASE_2 (🟢 CLOSED — defect class closed across all 8 next_*_number RPCs)
+
+**Status:** ✅ Closed. ~30 min execution. 0 findings, 0 deviations.
+
+**Scope:** Extends Phase 1's regex guard `~ '^[0-9]+$'` to the 4 sibling sequential-number RPCs (`next_box_number`, `next_internal_doc_number`, `next_purchase_order_number`, `next_return_number`). After this SPEC, all 8 `next_*_number` RPCs in the project are resilient to non-numeric suffix corruption.
+
+**Commits:**
+- `4daba86` chore(spec): author M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE_PHASE_2 SPEC
+- `40a52c4` fix(db): phase 2 — harden 4 sibling next_*_number RPCs against non-numeric suffix
+- _(this commit)_ chore(spec): close M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE_PHASE_2
+
+**Tier C empirical proof (4 cycles, all PASS):**
+- `next_box_number` → `BOX-0002` ✅
+- `next_internal_doc_number` → `DOC-00028` ✅
+- `next_purchase_order_number` → `PO-300007` ✅
+- `next_return_number` → `RET-9016-0003` ✅
+
+All 4 corrupt-suffix injections soft-deleted (Iron Rule 3). get_advisors clean (0 ERROR/CRITICAL).
+
+**Defect class status:** **CLOSED across all 8 next_*_number RPCs.** Regex-guard pattern is the canonical design for any new sequential-number generator going forward.
+
+**Next:** SKILL_HARVEST_2026_05_18 — codify 10 proposals harvested across today's 5-SPEC arc.
+
+---
+
+## 2026-05-18 — M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE (🟢 CLOSED — cross-module RPC hardening)
+
+**Status:** ✅ Closed. ~30 min execution. 1 INFO (process), 0 defects.
+
+**Scope:** Resolves M1_LENS_GOODS_RECEIPT_REBUILD F-1 HIGH (pre-existing demo data corruption blocking `next_lot_number`). Hardens 4 cross-module sequential-number RPCs (`next_lot_number`, `next_receipt_number`, `next_po_number`, `next_transfer_number`) with regex guard `~ '^[0-9]+$'` before each `MAX(CAST(... AS INT))` step. Non-numeric suffix rows (e.g. demo's seeded `LOT-PO300005-*`) silently filtered out — no data deletion. Placed under Module 1.5 per Daniel's instruction since the RPCs are cross-module infrastructure used by lens-inventory, lens-purchase-order, lens-goods-receipt, frames purchasing, and future lens-transfers.
+
+**Commits:**
+- `d683fa8` chore(spec): author M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE SPEC
+- `d083dd0` fix(db): harden 4 next_*_number RPCs against non-numeric suffix corruption
+- _(this commit)_ chore(spec): close + upgrade SPEC 8 verdict 🟡 → 🟢
+
+**Verified live:** all 4 RPC bodies contain regex pattern + signatures unchanged + 3 corrupt rows still present (filter ignores, no UPDATE). Tier C rerun of SPEC 8's blocked smoke succeeded: `RCP-9016-0001` + 3 numeric-suffix lots created + soft-deleted. get_advisors(security) returned 0 ERROR/CRITICAL.
+
+**Phase 2 recommendation:** `M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE_PHASE_2` (~30 min) extends the regex guard to the 4 sibling RPCs (`next_box_number`, `next_internal_doc_number`, `next_purchase_order_number`, `next_return_number`). Dispatch after Group C or opportunistically.
+
+**Downstream effect:** SPEC 8 (Module 1 lens-goods-receipt) verdict officially upgraded 🟡 → 🟢. Group B = 100% COMPLETE.
+
+---
+
 ## Current Status
+- **Phase:** **M1_5_SHARED_COMPONENTS_PHASE_0 CLOSED 🟢** (2026-05-17, Bounded-Autonomy single-session). SPEC 2 of M1 Lens Mockup-Fidelity Full Rebuild Pipeline. Shipped 8 shared components + 1 tokens file end-to-end with no escalations: (1) `shared/css/tokens.css` (149 lines — mockup palette + source-band + dark + gradient + toggle + progress + wstep tokens); (2) `shared/js/chip-filter-row.js` + `shared/css/chip-filter.css`; (3) `shared/js/stat-card-row.js` + `shared/css/stat-card.css`; (4) `shared/js/group-header-row.js` + extensions to `shared/css/table.css` for `.tb-group-header*` / `.tb-col-permission-gated::before` / `.tb-pagination*`; (5) `shared/js/wizard-step-indicator.js` + `shared/css/wizard-step-indicator.css` (page-level, distinct from modal-wizard.js); (6) `shared/js/side-detail-panel.js` + `shared/css/side-detail.css`; (7) **EXTEND** `shared/js/table-builder.js` (298→349 lines, Iron-Rule-12 safe) + NEW `shared/js/table-builder-extensions.js` (86 lines housing the pagination helpers that would have pushed table-builder.js past 350) for data-table feature (pagination + permission-gated columns + group-header rows); (8) `shared/js/quick-receipt-drawer.js` + `shared/css/quick-receipt.css`; (9) `shared/js/lens-details-drawer.js` + `shared/css/lens-details.css`. Total 9 new JS files + 8 new/extended CSS files. RULE_21_INVESTIGATION.md committed as the SPEC's mandatory first deliverable per §9 — 1 EXTEND verdict (data-table → existing table-builder.js, additive) + 7 NEW verdicts (no replace+migrate, no destructive ops, §7 stayed `None.`). All commits passed pre-commit gates (Iron Rules 12/14/15/18/21/23/31/32). Tier C smoke harness shipped as `shared/tests/M1_5_SPEC2_components-test.html`; runtime VFV deferred to opticup-localhost-tester per SPEC 1's A-2 precedent — 🟡 CLOSED WITH ONE DEFERRED CRITERION pattern available if Tier C visual verification surfaces drift. Pipeline-coordination lock claimed at start, released at close; 0 collisions with parallel SPEC 3 (DB Schema) session.
+- **Branch:** develop
+- **Last updated:** 2026-05-17 evening (M1_5_SHARED_COMPONENTS_PHASE_0 closed).
+
+## Previous — 2026-05-17 late evening — PARALLEL_PIPELINE_COORDINATION (closed 🟢)
+- **Phase:** **PARALLEL_PIPELINE_COORDINATION CLOSED 🟢** (2026-05-17 late evening, Full-Auto Pipeline ~1h wall-clock). Single SPEC per Brief §10 Daniel-locked Decision #1. Direct remediation of SUPERVISOR_SKILL_PHASE_1 F-EXTRA-1 (2026-05-17 cross-Pipeline branch-state incident). Built new `scripts/pipeline-coordination.mjs` (329 lines, ≤ 350 Iron Rule 12 cap) with 5 sub-commands (`claim`/`release`/`check-collision`/`heartbeat`/`cleanup-stale`) over file-system-mediated lock files at `_archive/pipeline-sessions/{ISO_TS}_{SPEC_SLUG}_{PID}.lock`. New `scripts/test-pipeline-coordination.mjs` (228 lines): 6 unit + 2 E2E tests — all 8 PASS across Executor + Reviewer + Tester re-runs (criteria #4 + #8 + #9 verbatim). New folder `_archive/pipeline-sessions/` with path-level `.gitignore` excluding `*.lock` + un-ignoring `.gitkeep`/`stale-cleanup-*.log`/`.gitignore` — verified at runtime that lock files are invisible to `git status`. Shared Block S1 inserted into 5 Pipeline SKILL.md files (executor / reviewer / localhost-tester / strategic / supervisor) +29 lines each — Reviewer R-FINDING-1 (INFO, DISMISS): 3 of 5 skills have per-skill Bootstrap-line phrase customization (intent-preserving deviation from §3a Sameness contract; harvested as P-AUTHOR-1 for future SPEC template tightening). CLAUDE.md §9 sub-section "Parallel Pipeline Coordination" added (+4 lines, far under §5 cap of +25; SPEC criterion #16 absolute cap was pre-existing-violated, handled correctly as D-1 deviation per P-EXEC-2 binding rule from SUPERVISOR_SKILL_PHASE_1). `docs/FILE_STRUCTURE.md` registered 4 new files. 10 commits total (`7dd4a3c..b774eed` + Foreman close), 0 escalations to Daniel, 0 DB ops, 0 main touches, 0 destructive operations (Iron Rule 32 §4 declared `None.` and honored verbatim across all 10 commits via per-commit destructive-ops audit). Baseline smoke 7/7 PASS on demo tenant (4.5s wall-clock). Tier C VFV N/A — no UI surface touched. Pipeline-collision detection is now OPERATIONAL at SPEC closure — the first concurrent Pipeline opened after this SPEC will execute `claim` at bootstrap and `check-collision` before every branch op. The F-EXTRA-1 incident class (silent working-tree migration during parallel merge) cannot recur silently. 4 skill harvests queued (2 author + 2 executor) for next strategic touch. 1 new-SPEC stub queued: `PARALLEL_PIPELINE_COORDINATION_PRE_COMMIT_GATE` (Brief §9 Risks row 4 — pre-commit-time enforcement that first commit of session must have an active lock; future SPEC). See `docs/specs/PARALLEL_PIPELINE_COORDINATION/` for SPEC + EXECUTION_REPORT + FINDINGS + REVIEW + TEST_REPORT + FOREMAN_REVIEW.
+- **Branch:** develop
+- **Last updated:** 2026-05-17 late evening (PARALLEL_PIPELINE_COORDINATION closed).
+
+## Previous — 2026-05-17 evening — SUPERVISOR_SKILL_PHASE_1 (closed 🟢)
+- **Phase:** **SUPERVISOR_SKILL_PHASE_1 CLOSED 🟢** (2026-05-17 evening, Full-Auto Pipeline ~3.5h wall-clock incl. cross-Pipeline incident pause). 1st of 3 SPECs from sealed `SUPERVISOR_SKILL_BRIEF`. Built new `opticup-supervisor` skill (Triage layer between Pipeline and Architect/Daniel) — Core/Adapter split for project portability; Core layer project-agnostic verified (0-leak triple-grep across Executor + Reviewer + Tester). Skill ships in **Shadow Mode** per Brief §11 — both Supervisor and Daniel run on every escalation for a 3-day learning window. 3 Pipeline skills (executor/reviewer/tester) wired with "Pre-Escalation: Supervisor Triage" sub-section. CLAUDE.md §11 describes the layer + Active Mode flip criteria (≥80% match AND no Confidence-5 mismatches after 3 days; Daniel decides). E2E Triage test resolved synthetic main-push escalation at Confidence 5 citing CLAUDE.md §9 #7 verbatim. 9 Pipeline commits `974eba9..d8073eb`. 17/17 §3 criteria GREEN. Iron Rules 12/21/23/31/32 all clean. Smoke 7/7 PASS (5.84s). 0 destructive ops. 4 findings (1 MEDIUM = architect-cowork follow-up on `2026-05-17_decisions_log_for_autonomous_skill.md` → `CROSS.md` ingestion; 2 LOW + 1 INFO dispositioned). 4 skill harvests queued (2 author + 2 executor) for next strategic touch. Phase 2 (Retry + Snapshot) + Phase 3 (Auto-Harvest + Pending-Promotions) queued in OPEN_TASKS as independent ships. **Cross-Pipeline branch-state incident logged as F-EXTRA-1** — parallel M1 Pipeline's `develop → release` merge mid-execution caused Executor's C6 to misroute to release branch; cleanly recovered via cherry-pick after coordination. Future SPEC `M1_5_CONCURRENT_PIPELINE_GIT_STATE_PROTOCOL` queued. See `docs/specs/SUPERVISOR_SKILL_PHASE_1/` for full retrospective.
+- **Branch:** develop
+- **Last updated:** 2026-05-17 evening (SUPERVISOR_SKILL_PHASE_1 closed).
+
+## Previous — 2026-05-17 afternoon — M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2 (closed 🟢)
 - **Phase:** **M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2 CLOSED 🟢** (2026-05-17 afternoon, Full-Auto Pipeline ~50 min wall-clock). Remediation Pipeline for the same-day `M1_5_CAT_SIDEBAR_COMPONENT` close — Daniel observed post-close that the sidebar overlap bug was STILL present on contact-lenses + accessories despite the prior Pipeline reporting 🟢. Root cause: the grid-based structural rule shipped in `M1_5_CAT_SIDEBAR_COMPONENT` (`.cat-sidebar-host { display: grid; grid-template-columns: 1fr 240px; }`) put the sidebar slot on the wrong viewport side in RTL. Tier C VFV (mandatory per the pending entry authored same morning) caught the bug on all 8 sidebar surfaces — not just the 2 Daniel flagged. First C1 hypothesis (swap `grid-template-columns` config order) was **structurally wrong** because grid auto-placement uses DOM child order, not config order — Tester re-VFV showed the bug INVERTED (main-content collapsed to 240px under the sidebar). Daniel chose Option A (drop the grid entirely; `margin-inline-start: var(--cat-sidebar-width, 240px)` on `.main-content` — RTL flips automatically). C2 PASSED VFV 8/8 on re-run with `mainContent.right == sidebar.left` on every surface (exact tile, no overlap, no gap). 6 commits (`0cf78ef..65c671b` + Foreman close), 2 execution attempts (C1 RED + C2 GREEN), 0 DB ops, 0 main touches. **This Pipeline is the first end-to-end validation of the Tier C VFV protocol** — caught a bug 3 consecutive prior Pipelines (`M1_INVENTORY_REDESIGN`, `M1_INVENTORY_UNIFIED_SCREEN`, `M1_5_CAT_SIDEBAR_COMPONENT`) had all shipped past. 2 skill harvests applied in close: P-AUTHOR-1 (CSS hypothesis DOM-state mental rehearsal) → `opticup-strategic` SKILL.md §5.4; P-EXEC-1 (canonical recipe: fixed-sidebar + main-content via `margin-inline-start`) → `opticup-executor` SKILL.md Visual re-skin patterns. Tier C VFV pending entry remains queued for separate Layer 1 Pending Entries Sweep (out-of-scope this close per dispatch). See `docs/specs/M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2/` for full retrospective.
 - **Branch:** develop
 - **Last updated:** 2026-05-17 afternoon (M1_5_CAT_SIDEBAR_OVERLAP_HOTFIX_2 closed).

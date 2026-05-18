@@ -2,7 +2,29 @@
 
 > Single reference document for all files, functions, and globals in the shared/ directory.
 > Updated every commit that adds/changes code in shared/.
-> Last updated: 2026-05-11 (Design System Hybrid Final delivered — 7 files locked in as platform language)
+> Last updated: 2026-05-17 (M1_5_SHARED_COMPONENTS_PHASE_0 — 8 shared components for M1 Lens rebuild + tokens.css)
+
+## 0b. M1 Lens rebuild Phase 0 — Shared Components (2026-05-17, M1_5_SHARED_COMPONENTS_PHASE_0)
+
+Closed 🟢 2026-05-17. 8 new shared components (per Brief §SPEC 2) + 1 tokens file + extensions to table-builder.js for the data-table feature:
+
+| Brief # | Component | JS file | CSS file | Verdict | Globals |
+|---|---|---|---|---|---|
+| 1 | Chip filter row | `shared/js/chip-filter-row.js` (115 lines) | `shared/css/chip-filter.css` (117) | NEW | `ChipFilter.init(container, { chips, activeIds, multiSelect, label, variant, onSelect }) → { setActive, getActive, destroy }` |
+| 2 | Stat-card row | `shared/js/stat-card-row.js` (139) | `shared/css/stat-card.css` (111) | NEW | `StatCardRow.init(container, { cards, activeId, columns, onCardClick }) → { setActive, getActive, updateCard, destroy }` |
+| 3 | Side detail panel | `shared/js/side-detail-panel.js` (166) | `shared/css/side-detail.css` (124) | NEW | `SideDetailPanel.init(container, { title, headerVariant, sections }) → { addSection, removeSection, updateSection, setTitle, destroy }` |
+| 4 | Wizard step indicator (page-level) | `shared/js/wizard-step-indicator.js` (131) | `shared/css/wizard-step-indicator.css` (121) | NEW (distinct from modal-wizard.js) | `WizardSteps.init(container, { steps, activeIndex, onStepClick, allowJumpToCompletedOnly }) → { setActiveIndex, getActiveIndex, destroy }` |
+| 5 | Group-header row | `shared/js/group-header-row.js` (104) | (extension to `shared/css/table.css`) | NEW | `GroupHeaderRow.render({ sourceType, label, count, colSpan, icon }) → HTMLTableRowElement`; also `GroupHeaderRow.toHtml(config) → string` |
+| 6 | Data table | (EXTENSION to existing `shared/js/table-builder.js`, 298→349) + NEW `shared/js/table-builder-extensions.js` (86) | (extension to `shared/css/table.css`) | EXTEND | `TableBuilder.create()` honors NEW config keys: `pagination` `{pageSize, currentPage, onPageChange}` + `columns[].permission` + `data[]._groupHeader:true` rows. New instance methods: `setPage(n)`, `getPage()`. `window.TableBuilderExtensions.renderPagination(wrapper, state)` is the extension helper. |
+| 7 | Quick Receipt drawer | `shared/js/quick-receipt-drawer.js` (275) | `shared/css/quick-receipt.css` (220) | NEW | `QuickReceiptDrawer.init(container, { suppliers, allowNoInvoice, onSubmit, onCancel }) → { open, close, isOpen, stageItem, removeItem, clearStaged, setSuppliers, getMeta, setMeta, destroy }` |
+| 8 | Lens Details drawer | `shared/js/lens-details-drawer.js` (278) | `shared/css/lens-details.css` (210) | NEW | `LensDetailsDrawer.init(container, { variantId, mode, fetchLogs, fetchNotes, onAddNote, onEditNote, onDeleteNote }) → { open, close, isOpen, setMode, setVariant, reload, destroy }` |
+| — | Feature tokens | (none) | `shared/css/tokens.css` (149) | NEW file | CSS custom properties: `--gold-active/-dark/-tint/-line`, `--mockup-*`, `--src-purple/-blue/-amber-*`, `--chip-{draft,sent,partial,received,overdue,cancelled,complete,discrepancy}-bg/-fg`, `--progress-*`, `--dark-*`, `--gradient-header`, `--toggle-*`, `--drawer-width-md/-lg/-z/-shadow`, `--wstep-*` |
+
+Iron Rule 21 honored — 0 replace+migrate verdicts, 0 deletes of existing `shared/` files. SPEC §7 Destructive Operations stayed `None.` end-to-end.
+
+Tier C VFV deferred to opticup-localhost-tester per SPEC 1 A-2 precedent. Component-isolation harness shipped at `shared/tests/M1_5_SPEC2_components-test.html`.
+
+## 0. Design System initiative — Hybrid Final (2026-05-11, locked-in platform language)
 
 ---
 

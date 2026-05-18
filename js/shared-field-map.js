@@ -218,6 +218,7 @@ const FIELD_MAP = {
     'תעודת משלוח התקבלה בתאריך':'delivery_note_received_at',
     'סחורה התקבלה בתאריך':'goods_received_at','קישור מסמך סרוק':'scanned_doc_url',
     'קופסת משלוח (M9)':'shipping_box_id','ברקוד ספק על הקופסה':'shipping_box_supplier_barcode',
+    'אין תעודה':'has_no_invoice',
     'סטטוס':'status','אישר ע"י':'confirmed_by','אושר בתאריך':'confirmed_at','הערות':'notes'
   },
   purchase_receipt_line: {
@@ -261,6 +262,10 @@ const FIELD_MAP = {
     'מצב לפני':'before_state','מצב אחרי':'after_state',
     'הוצע ע"י':'proposed_by','אושר ע"י':'approved_by','אושר בתאריך':'approved_at',
     'סיבת דחייה':'rejection_reason','הערות':'notes'
+  },
+  // ─── M1 Lens — SPEC M1_LENS_DB_SCHEMA_RECEIPTS_NOTES (2026-05-17) ─────
+  lens_variant_notes: {
+    'וריאציה':'variant_id','תוכן':'body','מחבר':'author_id'
   }
 };
 

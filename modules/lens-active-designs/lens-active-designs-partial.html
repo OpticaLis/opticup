@@ -1,22 +1,70 @@
 <!-- lens-active-designs-partial.html — body fragment for inventory.html lens-tab.
-     M1_INVENTORY_UNIFIED_SCREEN SPEC §1.5 — frames-aligned tokens via lens-tabs.css. -->
+     M1_LENS_DESIGNS_SELECTION_REBUILD (2026-05-17): 1:1 mockup rebuild per
+     architecture-brief/mockups/LENS_DESIGNS_SELECTION_MOCKUP.html (Pattern
+     P-AR-16). Mount points for 5 shared components (chip-filter-row,
+     stat-card-row, table-builder + extensions, side-detail-panel,
+     group-header-row); JS populates them at bootstrap time.
 
-<div id="access-gate" style="display:none">
+     Permission gate: lens.designs.manage (screen access). No view-only
+     fallback — users without the key don't see the tab per
+     inventory-shell-lens.js pattern.
+-->
+
+<div id="access-gate-ad" style="display:none">
   <div class="empty-state">אין הרשאה למסך זה (lens.designs.manage).</div>
 </div>
 
-<div id="app" style="display:none">
-  <div class="lens-page-title">&#128208; דגמי עדשות פעילים</div>
+<div id="app-ad" class="lens-ad-page" style="display:none">
 
-  <div class="lens-filter-bar">
-    <label>סוג ייצור:</label>
-    <button class="chip active" data-production-filter="stock" id="filter-stock">&#128230; מלאי קבוע</button>
-    <button class="chip" data-production-filter="custom" id="filter-custom">&#127919; מיוחד הזמנה</button>
-    <label>מותג:</label>
-    <select id="filter-brand"><option value="">— הכל —</option></select>
+  <!-- ============ PAGE HEADER ============ -->
+  <div class="lens-ad-header">
+    <div class="lens-ad-title">
+      <span>&#128208; בחירת סדרות עדשה (קטלוג גלובלי)</span>
+      <span class="badge" id="lens-ad-context-badge">Optic Up &middot; טוען&hellip;</span>
+    </div>
+    <div class="lens-ad-actions">
+      <button type="button" class="btn" data-lens-ad-action="export" title="ייצוא רשימת סדרות ל-Excel">&#128229; ייצוא רשימה</button>
+      <button type="button" class="btn" data-lens-ad-action="refresh-catalog" title="רענן את הקטלוג מספקים">&#128260; רענן מקטלוג ספקים</button>
+      <button type="button" class="btn btn-create-private" data-lens-ad-action="create-private" title="צור סדרה פרטית לבחירתך">&#10133; צור סדרה ידנית</button>
+    </div>
   </div>
 
-  <div class="lens-panel">
-    <div id="designs-container"><div class="empty-state">טוען…</div></div>
+  <!-- ============ STAT CARDS — populated by StatCardRow.init() ============ -->
+  <div id="lens-ad-stats-mount"></div>
+
+  <!-- ============ FILTERS (chip-filter-row mounts) ============ -->
+  <div class="lens-ad-filters">
+    <!-- Row 1: production type (Stock / Custom / Both) -->
+    <div id="lens-ad-prod-filter-mount"></div>
+    <!-- Row 2: status (All / Active for me / Available / Private) -->
+    <div id="lens-ad-status-filter-mount"></div>
+    <!-- Row 3: lens type (single / bifocal / multifocal / progressive) -->
+    <div id="lens-ad-lenstype-filter-mount"></div>
+    <!-- Row 4: brand + supplier (separate rows in mockup; we render brand-only here since supplier is a future facet) -->
+    <div id="lens-ad-brand-filter-mount"></div>
   </div>
+
+  <!-- ============ MAIN: CATALOG TABLE + SIDE PANEL ============ -->
+  <div class="lens-ad-main">
+
+    <!-- CATALOG PANEL — TableBuilder with brand-group-header rows -->
+    <div class="lens-ad-catalog-panel">
+      <div class="lens-ad-catalog-header">
+        <h3 id="lens-ad-catalog-title">קטלוג סדרות עדשה &mdash; לפי מותג</h3>
+      </div>
+      <!-- TableBuilder mounts into this element via containerId -->
+      <div id="lens-ad-designs-table"><div class="empty-state">טוען&hellip;</div></div>
+    </div>
+
+    <!-- SIDE PANEL — SideDetailPanel.init() mounts here when a row is clicked -->
+    <div class="lens-ad-side-panel">
+      <div id="lens-ad-side-detail-mount">
+        <div class="empty-state lens-ad-side-placeholder">
+          &#128205; בחר סדרה מהטבלה לצפייה בפרטים
+        </div>
+      </div>
+    </div>
+
+  </div>
+
 </div>

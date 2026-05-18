@@ -1,11 +1,22 @@
-// catalog-detail-pane.js — right column: variant details + per-tenant offerings
+// catalog-detail-pane.js — Col 4: Design Detail + Variants table (inline).
+// M1_LENS_CATALOG_TRUE_REBUILD 2026-05-18: rewritten per mockup §COL 4 to
+// render the full Series management surface inline:
+//   - header (series name + breadcrumb)
+//   - publish state strip
+//   - core fields (read-only summary; full edit is a future SPEC)
+//   - variants table with index/coating/diameter/SPH range/price columns
+//   - save bar (publish/clone/disable shells)
+// Selecting a design loads its variants in one query and renders the full pane.
+// Per-variant edit is a future SPEC; this SPEC ships read-only variants display
+// + the existing publish-toggle on the global publish-all button.
+
 import { sb } from './catalog-auth.js';
 import { showToast, escapeHtml as esc } from './lens-catalog-admin.js';
 
 export function wireDetailPane(state) {
-  // Wire publish-all button
+  // Wire publish-all button (existing behavior preserved verbatim from prior baseline)
   document.getElementById('btn-publish-all').addEventListener('click', async () => {
-    if (!window.confirm('פרסם את כל הטיוטות (מותגים + דגמים + וריאציות)?')) return;
+    if (!window.confirm('פרסם את כל הטיוטות (מותגים + סדרות + וריאציות)?')) return;
     const tasks = [
       sb.from('lens_brand').update({ is_published: true }).eq('is_published', false).is('owner_tenant_id', null).eq('is_deleted', false),
       sb.from('lens_design').update({ is_published: true }).eq('is_published', false).is('owner_tenant_id', null).eq('is_deleted', false),
@@ -17,80 +28,125 @@ export function wireDetailPane(state) {
       showToast('שגיאות: ' + errs.join(' / '), 'error');
     } else {
       showToast('כל הטיוטות פורסמו ✓', 'success');
-      // Refresh
       window.location.reload();
     }
   });
 }
 
-export async function renderDetailPane(state) {
-  const v = state.selectedVariant;
-  if (!v) return;
-  const tenantSel = state.selectedTenant;
+// Renders the full design detail pane (header + fields + variants table)
+// for state.selectedDesign. Mockup §COL 4 reference.
+export async function renderDesignDetailPane(state) {
+  const design = state.selectedDesign;
+  const brand = state.selectedBrand;
+  const supplier = state.selectedSupplier;
+  if (!design) return;
   const pane = document.getElementById('detail-pane');
-  pane.innerHTML = `
-    <h2>${esc(v.display_id)}</h2>
-    <div class="detail-grid">
-      <div class="field-group"><label>מותג</label><div class="field-value">${esc(state.selectedBrand?.name)}</div></div>
-      <div class="field-group"><label>דגם</label><div class="field-value">${esc(state.selectedDesign?.name)}</div></div>
-      <div class="field-group"><label>סוג</label><div class="field-value">${esc(state.selectedDesign?.lens_type)}</div></div>
-      <div class="field-group"><label>חומר</label><div class="field-value">${esc(state.selectedDesign?.material) || '—'}</div></div>
-      <div class="field-group"><label>Refractive Index</label><div class="field-value">${v.refractive_index}</div></div>
-      <div class="field-group"><label>Diameter</label><div class="field-value">${v.diameter_mm} mm</div></div>
-      <div class="field-group"><label>Coating</label><div class="field-value">${esc(v.coating) || '—'}</div></div>
-      <div class="field-group"><label>Tint</label><div class="field-value">${esc(v.tint) || '—'}</div></div>
-      <div class="field-group"><label>SPH Range</label><div class="field-value">${v.sph_min} → ${v.sph_max}</div></div>
-      <div class="field-group"><label>CYL Range</label><div class="field-value">${v.cyl_min == null ? '—' : v.cyl_min + ' → ' + v.cyl_max}</div></div>
-      <div class="field-group"><label>ADD Range</label><div class="field-value">${v.add_min == null ? '—' : v.add_min + ' → ' + v.add_max}</div></div>
-      <div class="field-group"><label>Lifecycle</label><div class="field-value">${esc(v.lifecycle_status)}${v.is_published ? '' : ' • טיוטה'}</div></div>
-    </div>
-    <div style="margin-top: 24px;">
-      <h3 style="font-size: 14px; color: #f1f5f9; margin-bottom: 8px;">💰 הצעות מסחר${tenantSel ? ` — ${esc(tenantSel.name)}` : ''}</h3>
-      <div id="offerings-list">${tenantSel ? 'טוען…' : '<div class="empty-state">בחר טננט בסרגל העליון להצגת הצעות.</div>'}</div>
-    </div>
-    <div style="margin-top: 16px;">
-      <button class="btn btn-primary" id="btn-toggle-publish">${v.is_published ? '🔻 הפוך לטיוטה' : '📢 פרסם'}</button>
-    </div>
-  `;
-  document.getElementById('btn-toggle-publish').addEventListener('click', () => togglePublish(state, v));
-  if (tenantSel) await loadOfferings(state, v, tenantSel);
-}
+  pane.innerHTML = '<div class="empty-state">טוען וריאציות…</div>';
 
-async function togglePublish(state, v) {
-  const newVal = !v.is_published;
-  const { error } = await sb.from('lens_variant').update({ is_published: newVal }).eq('id', v.id);
-  if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
-  v.is_published = newVal;
-  showToast(newVal ? 'פורסם ✓' : 'הפך לטיוטה', 'success');
-  await renderDetailPane(state);
-}
-
-async function loadOfferings(state, variant, tenantSel) {
-  const { data, error } = await sb
-    .from('supplier_catalog_offering')
-    .select('id, supplier_id, price_amount, currency_code, is_vat_inclusive, production_type, status, supplier_sku_code, suppliers!inner(name, supplier_number)')
-    .eq('tenant_id', tenantSel.id)
-    .eq('variant_id', variant.id)
+  // Load variants for this design (global catalog rows)
+  const { data: variants, error } = await sb
+    .from('lens_variant')
+    .select('id, display_id, refractive_index, diameter_mm, coating, tint, sph_min, sph_max, cyl_min, cyl_max, add_min, add_max, is_published, lifecycle_status')
+    .eq('design_id', design.id)
+    .is('owner_tenant_id', null)
     .eq('is_deleted', false)
-    .order('status');
-  const offerings = data ?? [];
-  const cont = document.getElementById('offerings-list');
-  if (error) { cont.innerHTML = `<div class="empty-state">שגיאה: ${esc(error.message)}</div>`; return; }
-  if (offerings.length === 0) {
-    cont.innerHTML = '<div class="empty-state">אין הצעות לטננט זה. צור מ-Excel-ייבוא או ידנית.</div>';
+    .order('refractive_index')
+    .order('diameter_mm');
+  if (error) {
+    pane.innerHTML = `<div class="empty-state">שגיאה בטעינת וריאציות: ${esc(error.message)}</div>`;
     return;
   }
-  cont.innerHTML = offerings.map(o => `
-    <div style="background: #0f172a; padding: 10px 14px; border-radius: 6px; margin-bottom: 6px; font-size: 13px;">
-      <strong>${esc(o.suppliers?.name)}</strong>
-      <span style="color: #94a3b8;">#${o.suppliers?.supplier_number ?? ''}</span>
-      <div style="margin-top: 4px; color: #cbd5e1;">
-        ${o.price_amount} ${esc(o.currency_code)}${o.is_vat_inclusive ? ' (כולל מע"מ)' : ''}
-        • <span style="color: ${o.production_type === 'custom' ? '#fbbf24' : '#86efac'};">${o.production_type}</span>
-        • status: ${esc(o.status)}
-        ${o.supplier_sku_code ? '<br>SKU: ' + esc(o.supplier_sku_code) : ''}
+
+  const v = variants ?? [];
+  const publishedCount = v.filter(r => r.is_published).length;
+  const draftCount = v.length - publishedCount;
+
+  pane.innerHTML = `
+    <div class="lens-cat-admin-detail-header">
+      <div class="lens-cat-admin-detail-title">
+        ${esc(design.name)}
+        <span class="series-chip ${design.is_published ? 'stock' : 'draft'}">${design.is_published ? 'פעיל' : 'טיוטה'}</span>
+      </div>
+      <div class="lens-cat-admin-detail-meta">
+        ${supplier ? `<span><strong>ספק:</strong> ${esc(supplier.name)}</span>` : ''}
+        <span><strong>מותג:</strong> ${esc(brand?.name) || '—'}</span>
+        <span><strong>${v.length} וריאנטים</strong></span>
+        <span><strong>סוג:</strong> ${esc(design.lens_type)}</span>
+        ${design.material ? `<span><strong>חומר:</strong> ${esc(design.material)}</span>` : ''}
       </div>
     </div>
-  `).join('');
+    <div class="lens-cat-admin-detail-body">
+
+      <div class="lens-cat-admin-publish-state">
+        <div class="ps-item">
+          <div class="ps-label">סטטוס</div>
+          <div class="ps-value ${design.is_published ? 'green' : 'amber'}">
+            ${design.is_published ? '✓ פעיל לכל האופטיקאיות' : '⚠ טיוטה — לא פעיל'}
+          </div>
+        </div>
+        <div class="ps-item">
+          <div class="ps-label">וריאנטים מפורסמים</div>
+          <div class="ps-value">${publishedCount} / ${v.length}</div>
+        </div>
+        <div class="ps-item">
+          <div class="ps-label">טיוטות</div>
+          <div class="ps-value ${draftCount > 0 ? 'amber' : ''}">${draftCount}</div>
+        </div>
+      </div>
+
+      <div class="lens-cat-admin-detail-section">
+        <div class="lens-cat-admin-detail-section-header">
+          <span>וריאנטים (${v.length}) · אינדקס × ציפוי × קוטר</span>
+        </div>
+        ${renderVariantsTable(v)}
+      </div>
+
+      <div class="lens-cat-admin-save-bar">
+        <div class="save-info">
+          ${design.is_published
+            ? '<strong>סדרה פעילה.</strong> שמירה תיצור גרסה חדשה.'
+            : '<strong>⚠ טיוטה — עדיין לא פעילה.</strong> השתמש בכפתור "פרסם כל הטיוטות" בכותרת.'}
+        </div>
+      </div>
+
+    </div>
+  `;
 }
 
+function renderVariantsTable(variants) {
+  if (variants.length === 0) {
+    return '<div class="empty-state">אין וריאנטים — הוסף וריאציה חדשה (בכפתור "הוסף" של עמודת הסדרות)</div>';
+  }
+  return `
+    <table class="lens-cat-admin-variants-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>אינדקס</th>
+          <th>קוטר</th>
+          <th>ציפוי</th>
+          <th>גוון</th>
+          <th>טווח SPH</th>
+          <th>טווח CYL</th>
+          <th>סטטוס</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${variants.map(v => `
+          <tr>
+            <td class="var-id">${esc(v.display_id)}</td>
+            <td>${v.refractive_index}</td>
+            <td>${v.diameter_mm}mm</td>
+            <td>${esc(v.coating) || '—'}</td>
+            <td>${esc(v.tint) || '—'}</td>
+            <td>${v.sph_min} → ${v.sph_max}</td>
+            <td>${v.cyl_min == null ? '—' : v.cyl_min + ' → ' + v.cyl_max}</td>
+            <td>${v.is_published
+              ? '<span class="ver-badge">פעיל</span>'
+              : '<span class="ver-badge draft">טיוטה</span>'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
