@@ -337,6 +337,31 @@ When a module's Architecture Brief is sealed:
 
 - **SKILL_HARVEST_2026_05_18 — 2026-05-18** — Codified 10 SKILL proposals (5 P-STRAT + 5 P-EXEC) harvested across today's 5-SPEC Path X arc (M1 FK Fix + Group B SPECs 6/7/8 + Resilience Phase 1 + Resilience Phase 2). Format per Daniel's brief: rule / why / how-to-apply / empirical evidence (with SPEC source citation). Appended to `.claude/skills/opticup-strategic/SKILL.md` and `.claude/skills/opticup-executor/SKILL.md` under new section `## Patterns from SKILL_HARVEST_2026_05_18`. **Strategic harvest:** §0 path-resolution mockup-citation rule, §0 global-name probe for shared components, §1.5 `next_*_number` suffix-conformance probe, K-RPC Tier C cleanup must enumerate ALL side-effect tables, 🟡→🟢 verdict-upgrade should be written in the resolving SPEC's session. **Executor harvest:** STATE-COMPLETE polling rule, read-component-API-before-mount-call rule, mutate+restore-adjacent-tool-calls rule, `22P02 + next_*_number` triage tree, soft-delete column inventory + `set_config('request.jwt.claims', ...)` pattern for JWT-gated RPCs from MCP. Total wall clock for the 5-SPEC arc + 2 resilience SPECs + SKILL harvest: ~6 hours single Claude Code session, Path X sequential, 0 escalations to Daniel apart from authorization gates between SPEC groups. See `modules/Module 1.5 - Shared Components/docs/specs/SKILL_HARVEST_2026_05_18/` for SPEC + EXECUTION_REPORT + FINDINGS.
 
+## 2026-05-18 — Working Patterns Harvest (6 Architect-Daniel patterns codified after 8-SPEC autonomous day)
+
+**Situation:** 8 SPECs closed clean today in a single Claude Code session (~6h wall-clock, 24 commits). Daniel observed that the patterns we'd developed (same-session continuity, Path X sequential, when to defer to Daniel, when to push through, compaction recipe) were not documented and risked being lost on future session boundaries.
+
+**My recommendation:** Codify 6 patterns into `opticup-architect` SKILL.md and references for next-session inheritance.
+
+**Daniel's response:** Authorized — "אתה מתעד את דרך העבודה שלנו עכשיו? חשוב שהסשן החדש שנפתח ידע בדיוק איך אנחנו עובדים וזה תמיד ישתפר."
+
+**Patterns codified:**
+- **P-WORK-1** — Same-session continuity outperforms session-per-SPEC for sequential Pipelines within same module
+- **P-WORK-2** — Path X (sequential on develop) is the default; Path Y (parallel) needs empirical justification at 5+ SPECs
+- **P-WORK-3** — The over-checkpoint anti-pattern: when Daniel authorizes a dispatch protocol upstream, no per-SPEC re-authorization needed
+- **P-WORK-4** — Daniel-Architect probing ("מה זה אומר?" / "למה?") = structural-flag signal, not clarification request
+- **P-WORK-5** — Compaction protocol: how to bootstrap a new session from DECISIONS_LOG + last 3 FOREMAN_REVIEWs without re-discovering workflow
+- **P-WORK-6** — Architect-Daniel question discipline: never present options without recommendation (per MEMORY `feedback_always_recommend.md`)
+
+**Reason for codification:** Future Cowork sessions and Claude Code sessions inherit context only through DECISIONS_LOG + SKILL.md + auto-memory. Without these patterns documented, each new session re-derives the workflow at 30-60 min cost. The patterns above were paid-for-empirically across today's 8 SPECs and yesterday's 5 Foundation SPECs.
+
+**Lesson (for Architect):** Process-level patterns deserve the same harvest discipline as code-level patterns. The Foreman ran SKILL_HARVEST_2026_05_18 for technical patterns; this entry is its working-patterns counterpart.
+
+**Cross-references:**
+- Full harvest document: `modules/Module 1.5 - Shared Components/architecture-brief/WORKING_PATTERNS_HARVEST_2026_05_18.md`
+- Empirical session: 2026-05-18 morning + afternoon (8 SPECs, 24 commits, 5 hours)
+- Daniel feedback memory: `feedback_always_recommend.md`, `feedback_always_saas_clean.md`, `feedback_finish_the_sequence.md`
+
 ---
 
 *Maintained by `opticup-architect` skill. Bootstrap loads this index file only. Module-detail files loaded on demand when working in that module.*
