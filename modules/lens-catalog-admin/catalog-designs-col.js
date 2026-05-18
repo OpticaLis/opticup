@@ -57,14 +57,17 @@ function renderFilteredDesigns(filtered, state) {
     return;
   }
   list.innerHTML = filtered.map(d => `
-    <div class="list-item" data-id="${d.id}">
-      <div>${esc(d.name)}<div class="item-meta">${d.lens_type}${d.is_published ? '' : ' • טיוטה'}</div></div>
+    <div class="lens-cat-admin-list-item" data-id="${d.id}">
+      <div>
+        <div class="item-title">${esc(d.name)}</div>
+        <div class="item-meta">${esc(d.lens_type)}${d.is_published ? '' : ' • טיוטה'}</div>
+      </div>
     </div>
   `).join('');
-  list.querySelectorAll('.list-item').forEach(el => {
+  list.querySelectorAll('.lens-cat-admin-list-item').forEach(el => {
     el.addEventListener('click', () => {
       const design = state.designs.find(d => d.id === el.dataset.id);
-      list.querySelectorAll('.list-item').forEach(x => x.classList.remove('selected'));
+      list.querySelectorAll('.lens-cat-admin-list-item').forEach(x => x.classList.remove('selected'));
       el.classList.add('selected');
       const fn = window.__catalogOnDesignSelected;
       if (fn) fn(design);

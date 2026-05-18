@@ -1,17 +1,18 @@
-<!-- lens-catalog-admin-partial.html — M1_LENS_CATALOG_ADMIN_REBUILD 2026-05-18.
-     1:1 mockup-fidelity rebuild per architecture-brief/mockups/
-     LENS_PLATFORM_CATALOG_ADMIN_MOCKUP.html — DARK theme.
-     Page-frame CSS in css/lens-catalog-admin-page.css scoped to
-     [data-tab="catalog-admin"]. Internal IDs preserved (#auth-gate, #app,
-     #tenant-select, #brands-list, #designs-list, #variants-list,
-     #detail-pane, etc.) so the lens-catalog-admin.js ES module references
-     them unchanged. Platform-admin Google OAuth flow preserved.
+<!-- lens-catalog-admin-partial.html — M1_LENS_CATALOG_TRUE_REBUILD 2026-05-18.
+     TRUE 1:1 mockup-fidelity per architecture-brief/mockups/
+     LENS_PLATFORM_CATALOG_ADMIN_MOCKUP.html. 4-column dark drill:
+       COL 1: Suppliers      (#suppliers-list)  ← NEW per mockup
+       COL 2: Brands          (#brands-list)    filtered by supplier
+       COL 3: Series          (#designs-list)   filtered by brand
+       COL 4: Detail+Variants (#detail-pane)    inline variants table
 
-     SPEC §5 Deviation note: mockup suggests Suppliers→Brands→Series→Detail
-     col flow. Rebuild preserves the existing Brands→Designs→Variants→Detail
-     flow per SPEC §3 S10 criterion (the existing 4-col drill satisfies all
-     measurable success criteria; adding a Suppliers column would be scope
-     creep). Visual dark theme + 4-col layout match the mockup. -->
+     Page-frame CSS in css/lens-catalog-admin-page.css scoped to
+     [data-tab="catalog-admin"]. Internal IDs preserved where JS depends
+     on them. Variants are NO LONGER a separate column — they live as
+     an inline table inside the detail pane (col 4) per mockup.
+
+     OAuth: localhost-only dev-mode bypass via ?dev=1 (catalog-auth.js
+     M1_LENS_CATALOG_TRUE_REBUILD S18). Production hostnames preserved. -->
 
 <div id="auth-gate" class="lens-cat-admin-auth-gate" style="display:none;padding:40px;text-align:center">
   <h2 id="auth-gate-title" style="color:#f1f5f9">בודק הרשאות…</h2>
@@ -38,93 +39,88 @@
     </div>
   </div>
 
-  <!-- Tenant selector for offerings preview -->
+  <!-- Tenant selector pill (drives Suppliers col scope + offerings preview) -->
   <div class="lens-cat-admin-header" style="padding:10px 18px">
-    <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:#94a3b8">
-      <label for="tenant-select" style="font-weight:600;color:#cbd5e1">טננט (לתצוגת הצעות מסחר):</label>
+    <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:#94a3b8;flex-wrap:wrap">
+      <label for="tenant-select" style="font-weight:600;color:#cbd5e1">טננט (קובע את הספקים):</label>
       <select id="tenant-select"><option value="">— טען טננטים —</option></select>
-      <span>מותגים/דגמים/וריאציות הם פלטפורמה-גלובל; הצעות מסחר פר-טננט.</span>
+      <span>ספקים פר-טננט · מותגים/סדרות/וריאנטים גלובל-פלטפורמה · חלוקת מותגים פר-טננט.</span>
     </div>
   </div>
 
-  <!-- 4-column grid -->
+  <!-- 4-column grid: Suppliers → Brands → Series → Detail+Variants -->
   <div class="lens-cat-admin-grid">
 
-    <!-- Col 1: Brands -->
+    <!-- COL 1: Suppliers (NEW per mockup) -->
+    <div class="lens-cat-admin-col">
+      <div class="lens-cat-admin-col-header">
+        <div class="lens-cat-admin-col-header-top">
+          <h3>🏢 ספקים</h3>
+          <span class="lens-cat-admin-col-count" id="suppliers-count">0</span>
+        </div>
+        <div class="lens-cat-admin-col-context" id="suppliers-context">בחר טננט ←</div>
+      </div>
+      <div class="lens-cat-admin-col-search">
+        <input type="text" id="suppliers-search" placeholder="🔍 חפש ספק…" />
+      </div>
+      <div class="lens-cat-admin-col-body" id="suppliers-list">
+        <div class="empty-state">בחר טננט בסרגל העליון</div>
+      </div>
+      <div class="lens-cat-admin-col-footer">
+        <button class="add-btn" id="btn-add-supplier">➕ ספק חדש</button>
+      </div>
+    </div>
+
+    <!-- COL 2: Brands (filtered by selected supplier) -->
     <div class="lens-cat-admin-col">
       <div class="lens-cat-admin-col-header">
         <div class="lens-cat-admin-col-header-top">
           <h3>🏷 מותגים</h3>
           <span class="lens-cat-admin-col-count" id="brands-count">0</span>
         </div>
+        <div class="lens-cat-admin-col-context" id="brands-context">בחר ספק ←</div>
       </div>
       <div class="lens-cat-admin-col-search">
         <input type="text" id="brands-search" placeholder="🔍 חפש מותג…" />
       </div>
       <div class="lens-cat-admin-col-body" id="brands-list">
-        <div class="empty-state">טוען…</div>
+        <div class="empty-state">בחר ספק ←</div>
       </div>
       <div class="lens-cat-admin-col-footer">
-        <button class="add-btn" id="btn-add-brand">➕ הוסף מותג</button>
+        <button class="add-btn" id="btn-add-brand">➕ מותג חדש</button>
       </div>
     </div>
 
-    <!-- Col 2: Designs (Series) -->
+    <!-- COL 3: Series (was "Designs" — renamed per mockup) -->
     <div class="lens-cat-admin-col">
       <div class="lens-cat-admin-col-header">
         <div class="lens-cat-admin-col-header-top">
-          <h3>📚 דגמים (Series)</h3>
+          <h3>📚 סדרות</h3>
           <span class="lens-cat-admin-col-count" id="designs-count">0</span>
         </div>
         <div class="lens-cat-admin-col-context" id="designs-context">בחר מותג ←</div>
       </div>
       <div class="lens-cat-admin-col-search">
-        <input type="text" id="designs-search" placeholder="🔍 חפש דגם…" disabled />
+        <input type="text" id="designs-search" placeholder="🔍 חפש סדרה…" disabled />
       </div>
       <div class="lens-cat-admin-col-body" id="designs-list">
-        <div class="empty-state">בחר מותג</div>
+        <div class="empty-state">בחר מותג ←</div>
       </div>
       <div class="lens-cat-admin-col-footer">
-        <button class="add-btn" id="btn-add-design" disabled>➕ הוסף דגם</button>
+        <button class="add-btn" id="btn-add-design" disabled>➕ סדרה חדשה</button>
       </div>
     </div>
 
-    <!-- Col 3: Variants -->
-    <div class="lens-cat-admin-col">
-      <div class="lens-cat-admin-col-header">
-        <div class="lens-cat-admin-col-header-top">
-          <h3>🔬 וריאציות</h3>
-          <span class="lens-cat-admin-col-count" id="variants-count">0</span>
-        </div>
-        <div class="lens-cat-admin-col-context" id="variants-context">בחר דגם ←</div>
-      </div>
-      <div class="lens-cat-admin-col-search">
-        <input type="text" id="variants-search" placeholder="🔍 display_id / index…" disabled />
-      </div>
-      <div class="lens-cat-admin-col-body" id="variants-list">
-        <div class="empty-state">בחר דגם</div>
-      </div>
-      <div class="lens-cat-admin-col-footer">
-        <button class="add-btn" id="btn-add-variant" disabled>➕ הוסף וריאציה</button>
-      </div>
-    </div>
-
-    <!-- Col 4: Detail pane -->
-    <div class="lens-cat-admin-col">
-      <div class="lens-cat-admin-col-header">
-        <div class="lens-cat-admin-col-header-top">
-          <h3>📋 פרטים</h3>
-        </div>
-        <div class="lens-cat-admin-col-context" id="detail-context">בחר פריט להצגת פרטים</div>
-      </div>
+    <!-- COL 4: Series Detail + Variants table (inline per mockup §COL 4) -->
+    <div class="lens-cat-admin-col lens-cat-admin-detail-col">
       <div class="lens-cat-admin-detail-pane" id="detail-pane">
-        <div class="empty-state">בחר וריאציה כדי לראות SPH/CYL ranges, coating, tint, הצעות מסחר, ועוד.</div>
+        <div class="empty-state">בחר סדרה כדי לראות פרטים + וריאציות</div>
       </div>
     </div>
   </div>
 
   <input type="file" id="import-file" accept=".xlsx,.xls" style="display:none">
 
-  <!-- Local toast container (preserved from existing impl per stale-comment note) -->
+  <!-- Local toast container (preserved per stale-comment note) -->
   <div id="toast-container"></div>
 </div>
