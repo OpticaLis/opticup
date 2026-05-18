@@ -1,7 +1,45 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-🎉 **M1 LENS 100% COMPLETE** 🎉 — 2026-05-18 (Path X sequential, single Claude Code session). Groups A 🟢 + B 🟢 + C 🟢 + FK Fix 🟢 + Resilience Phase 1+2 🟢 + SKILL Harvest 🟢 + Sequential Numbering Investigation 🟢 + Group C (SPECs 9 🟢 + 10 🟢 + 12 🟢). SPEC 12 closes with new `toggle_active_offerings_array` RPC delivering atomic per-(offering × location) bulk toggle, resolving SPEC 4 F-1 MEDIUM. Tier C verified: 2 per-location rows created atomically + bulk deactivate flips both + cleanup soft-delete. 2 SKILL proposals harvested for future codification (P-AUTHOR-G + P-AUTHOR-H).
+**M1 LENS — REWORK IN PROGRESS** — 2026-05-18 late evening (Path X multi-session). The "100% COMPLETE" declared earlier today was REVERTED after Daniel's live-screen review found SPEC 9 + 10 polish-by-validation outputs missing the Suppliers column + private-catalog rebuild. Correction SPEC `M1_LENS_CATALOG_TRUE_REBUILD` ran Commits 1+2 (TRUE 4-col mockup rebuild + Suppliers col + dev-mode OAuth bypass + orphan delete) — shipped clean. Commits 3+4+5 (private rewrite + Tier C VFV + closure) DEFERRED. Paired SPEC `M1_LENS_CATALOG_SEED_FROM_EXCEL` ABORTED mid-execution after Excel data-quality issues surfaced (glasses + contact-lens duration categories + health-fund pricing all conflated in one source sheet). M1 lens UI surface is mid-rebuild; awaiting new architect Brief.
+
+## 2026-05-18 late evening — M1_LENS_CATALOG_TRUE_REBUILD (🟡 PARTIALLY EXECUTED — Commits 1+2 shipped, Commits 3+4+5 deferred)
+
+**Status:** 🟡 Partially closed clean. Architect-authorized partial close after paired SPEC B aborted.
+
+**Commits shipped:**
+- `a7bfaee` chore(spec): author paired SPECs M1_LENS_CATALOG_TRUE_REBUILD (revised) + M1_LENS_CATALOG_SEED_FROM_EXCEL (new)
+- `434f254` feat(lens-catalog-admin): TRUE mockup rebuild — Suppliers column + brand-filter-by-supplier drill + localhost dev-mode bypass
+- `454491b` chore(lens-catalog-admin): delete catalog-variants-col.js orphan (Rule 21 cleanup)
+- _(this commit)_ chore(spec): close M1_LENS_CATALOG_TRUE_REBUILD partial — EXECUTION_REPORT + FINDINGS + SESSION_CONTEXT update + lock release
+
+**Code shipped (Commits 1+2):**
+- NEW `modules/lens-catalog-admin/catalog-suppliers-col.js` (113 LOC) — Suppliers column (col 1) with tenant-scoped data + brand_count via `supplier_brand_distribution` JOIN
+- REFACTOR `catalog-brands-col.js` — `loadBrandsForSupplier()` filters via M:N link
+- REFACTOR `catalog-detail-pane.js` — `renderDesignDetailPane()` builds header + publish-state + variants table inline per mockup §COL 4
+- REWRITE orchestrator + partial.html for 4-col Suppliers→Brands→Series→Detail+Variants flow
+- EDIT `catalog-auth.js` — localhost-only dev-mode bypass (`?dev=1` + strict hostname equality + console.warn). Production never bypasses (S18 + S19).
+- CSS extension `lens-catalog-admin-page.css` — grid 240/240/280/1fr → 220/220/240/1fr + 150 LOC for inline variants table + publish-state + save-bar + chips
+- DELETE `catalog-variants-col.js` orphan
+- Iron Rule 9 backup at `modules/Module 1 - Inventory Management/backups/2026-05-18_M1_LENS_CATALOG_TRUE_REBUILD/` (gitignored)
+
+**Deferred (Commits 3+4+5):** private catalog rewrite + Tier C VFV (Chrome MCP 6 screenshots + mockup side-by-side classification) + closure docs. Architect re-scoped Path X to start fresh with mockup-faithful screens + corrected seed pipeline before the deferred surface area can be addressed.
+
+**Findings (5):** 3 INFO, 2 LOW. Highlights: F-1 (SPEC 9 cosmetic class-mismatch fixed proactively), F-3 (MODULE_MAP not updated for new catalog-suppliers-col.js), F-5 (deferred S6/S10/S11 criteria need in-line marker on SPEC.md). Full text: `docs/specs/M1_LENS_CATALOG_TRUE_REBUILD/FINDINGS.md`.
+
+**Paired SPEC B status:** ABORTED. See `docs/specs/M1_LENS_CATALOG_SEED_FROM_EXCEL/EXECUTION_REPORT.md` + FINDINGS F-1/F-2/F-3 for the Excel data-quality root cause.
+
+---
+
+## 2026-05-18 (earlier in day) — M1 LENS GROUPS A + B + C declared 100% complete, then PARTIALLY REVERTED
+
+**Status:** ❌ The "100% COMPLETE" declared after Group C closing was based on SPEC 9 + 10 polish-by-validation outputs. Daniel's live review found: SPEC 10 shipped 0 code changes (private catalog identical to pre-rebuild); SPEC 9 omitted the Suppliers column intentionally as "scope creep". This SPEC (`M1_LENS_CATALOG_TRUE_REBUILD`) was authored to correct both. See partial-close entry above.
+
+Original SPECs 9 + 10 + 12 close entries below remain in history for traceability.
+
+---
+
+## 2026-05-18 — M1_LENS_DESIGNS_TOGGLE_PER_LOCATION_SEMANTICS (🟢 CLOSED — Group C SPEC 3 of 3; M1 LENS 100% COMPLETE)
 
 ## 2026-05-18 — M1_LENS_DESIGNS_TOGGLE_PER_LOCATION_SEMANTICS (🟢 CLOSED — Group C SPEC 3 of 3; M1 LENS 100% COMPLETE)
 
