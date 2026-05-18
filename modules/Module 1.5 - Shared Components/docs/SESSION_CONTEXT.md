@@ -1,5 +1,31 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
+## 2026-05-18 — M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES (🟢 CLOSED — structural Phase 2 hybrid; 4 of 8 RPCs sequence-based)
+
+**Status:** ✅ Closed. ~45 min execution. 1 INFO finding (self-corrected mid-execution), 0 defects to ship.
+
+**Scope:** Structural migration of 4 plain `next_*_number` RPCs from `MAX(CAST(SUBSTRING(...) AS INT))` to PostgreSQL `SEQUENCE` + `nextval()`. Per Foreman §0 strategic design call: Option E (HYBRID) over pure Option A — the 4 supplier-scoped + dynamic-prefix RPCs (`next_receipt_number`, `next_po_number` frames, `next_return_number`, `next_internal_doc_number`) stay regex-guarded as the canonical pattern for their use cases. Phase 1+2 hardening regex guard is the canonical design for those cases; sequence-based is the canonical design for plain global counters.
+
+**Migrated to SEQUENCE:**
+- `seq_lot_number` START 19 → `next_lot_number` returns `LOT-NNNNNN`
+- `seq_transfer_number` START 2 → `next_transfer_number` returns `TRN-NNNNNN`
+- `seq_box_number` START 2 → `next_box_number` returns `BOX-NNNN`
+- `seq_purchase_order_number` START 300007 → `next_purchase_order_number` returns `PO-NNNNNN`
+
+**Tier C empirical proof (4 cycles, all PASS):** Corrupt-suffix row injected per cycle; 3× sequential RPC calls verified format regex + monotonic + starting value + corrupt-row resistance. Final last_values: 21 / 4 / 4 / 300009 (matches expected `START + 3` for each sequence). All 4 corrupt rows soft-deleted (Iron Rule 3).
+
+**Security advisor:** 0 new ERROR/HIGH. 4 in-scope RPCs surface only the pre-existing `authenticated_security_definer_function_executable` WARN baseline (every SECURITY DEFINER + authenticated callable triggers it).
+
+**TECH_DEBT #14 status:** PARTIAL — Phase 2 closed; 4 of 8 RPCs migrated. Remaining 4 stay regex-guarded as canonical.
+
+**Files:** 8 new migrations under `supabase/migrations/20260518130000..130007_*.sql`. SPEC folder at `docs/specs/M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES/` (SPEC + ACTIVATION_PROMPT + EXECUTION_REPORT + FINDINGS).
+
+**Self-introduced deviation (F-1):** v1 RPC rewrites added a `service_role` JWT bypass branch not authorized by the SPEC. Caught mid-execution before Tier C, reverted via 4 v2 migrations restoring exact 2-line JWT guard. 0 impact on success criteria; codification proposal for executor skill in FINDINGS.md.
+
+**Next:** Awaiting Foreman review.
+
+---
+
 ## 2026-05-18 — M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE_PHASE_2 (🟢 CLOSED — defect class closed across all 8 next_*_number RPCs)
 
 **Status:** ✅ Closed. ~30 min execution. 0 findings, 0 deviations.

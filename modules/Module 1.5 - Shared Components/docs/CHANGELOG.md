@@ -1,5 +1,30 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-18 — M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES — 4 PG sequences + 4 RPC rewrites (Phase 2 hybrid)
+
+SPEC: `M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES` ([folder](specs/M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES/))
+Parent debt: `TECH_DEBT.md` #14 (TD-SEQ-NUMBERING-STRUCTURAL) → status updated to PARTIAL.
+Parent report: `architecture-brief/SEQUENTIAL_NUMBERING_INVESTIGATION_REPORT.md` (Phase 1 read-only investigation, commit `0c049fb`).
+
+**Path X sequential execution.** ~45 min wall-clock. 20 of 20 §3 success criteria PASS. Tier C empirical proof on all 4 migrated RPCs.
+
+**Strategic call (§0):** Option E (HYBRID) over pure Option A. The 4 plain global-counter RPCs migrate to `SEQUENCE + nextval()`; the 4 supplier-scoped + dynamic-prefix RPCs stay regex-guarded as the canonical pattern for their use cases. Documented rationale: pure global sequences would regress per-(tenant, supplier) counter semantics on `RCP-{supplier}-NNNN` / `PO-{supplier}-NNNN` / `RET-{supplier}-NNNN` and is incompatible with `next_internal_doc_number`'s dynamic prefix.
+
+**3 commits (after `72dfe47` SPEC author):**
+
+- _(this commit batch C2)_ `feat(db): 4 PG SEQUENCEs + rewrite 4 next_*_number RPCs to use nextval()` — 8 migration files under `supabase/migrations/20260518130000..130007_*.sql`. 4 `CREATE SEQUENCE` (lot/transfer/box/purchase_order; START 19/2/2/300007). 4 `CREATE OR REPLACE FUNCTION` rewriting `next_lot_number` / `next_transfer_number` / `next_box_number` / `next_purchase_order_number` to use `nextval()` + `LPAD()` while preserving signatures + JWT guard exactly.
+- _(this commit batch C3)_ `chore(spec): close M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES — Phase 2 hybrid complete; 4 of 8 RPCs sequence-based` — EXECUTION_REPORT.md + FINDINGS.md + this CHANGELOG + SESSION_CONTEXT + TECH_DEBT.md #14 PARTIAL.
+
+**Iron Rules clean.** Rules 31 + 32 verified at every commit. §4 declared 4 `CREATE SEQUENCE` + 4 `CREATE OR REPLACE FUNCTION` as the authorized destructive ops; per-commit destructive-ops audit clean (no unauthorized patterns).
+
+**Tier C verification (4 cycles, all PASS):** Each cycle injected a corrupt-suffix row, set the JWT claim via `set_config('request.jwt.claims', ...)`, called the RPC 3 times, verified format regex + strict monotonic increase + starting value + corrupt-row resistance, then soft-deleted the corrupt row. Final last_values: `seq_lot_number=21`, `seq_transfer_number=4`, `seq_box_number=4`, `seq_purchase_order_number=300009` (all = START + 3 ✅). Sequence-based RPCs confirmed to ignore table contents by design.
+
+**Security advisor:** 0 new ERROR/HIGH. 4 in-scope RPCs surface only `authenticated_security_definer_function_executable` WARN baseline noise (pre-existing on all SECURITY DEFINER + authenticated functions; not a regression).
+
+**Self-introduced deviation (F-1, INFO):** v1 CREATE OR REPLACE FUNCTION migrations accidentally added a `service_role` JWT bypass branch (pattern-matched from BLOCK_A_DEMO_TESTS.sql) not authorized by the SPEC. Caught immediately after applying and before Tier C ran; reverted via 4 v2 migrations restoring the byte-equivalent original 2-line JWT guard. 0 impact on success criteria. Codification proposal queued for `opticup-executor` SKILL.md (FINDINGS.md F-1).
+
+**Architecture impact.** TD-SEQ-NUMBERING-STRUCTURAL moves from 🟡 to PARTIAL — 4 of 8 RPCs now structurally sequence-based; the cannot-break-by-data-corruption property is achieved for those 4 cases. The remaining 4 RPCs retain the Phase 1+2 regex-guard hardening as the canonical pattern. Optional Phase 3 (pure Option A) is OUT OF SCOPE here and deferred indefinitely (would regress per-supplier counter continuity).
+
 ## 2026-05-17 evening — M1_5_SHARED_COMPONENTS_PHASE_0 — 8 shared components + tokens (M1 Lens rebuild Phase 0)
 
 SPEC: `M1_5_SHARED_COMPONENTS_PHASE_0` ([folder](specs/M1_5_SHARED_COMPONENTS_PHASE_0/))

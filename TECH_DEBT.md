@@ -591,21 +591,19 @@ Both are ~1-hour SPECs.
 
 **Source:** `modules/Module 3 - Storefront/docs/specs/M3_DEMO_STOREFRONT_FORMS_DEPLOYMENT/FINDINGS.md` Finding M3-FINDINGS-02 (executor-discovered 2026-05-11).
 
-### #14 — 🟡 Sequential Numbering: structural migration to PostgreSQL SEQUENCEs (TD-SEQ-NUMBERING-STRUCTURAL)
+### #14 — 🟡 Sequential Numbering: structural migration to PostgreSQL SEQUENCEs (TD-SEQ-NUMBERING-STRUCTURAL) — PARTIAL (Phase 2 closed; 4 of 8 RPCs migrated)
 
 **Where:** 8 sequential-number RPCs across the project — `next_lot_number`, `next_receipt_number`, `next_po_number`, `next_transfer_number`, `next_box_number`, `next_internal_doc_number`, `next_purchase_order_number`, `next_return_number`.
 
-**Why it's debt:** All 8 use the pattern `MAX(CAST(SUBSTRING(<col> FROM <offset>) AS INT)) + 1` against the data column itself instead of a PostgreSQL SEQUENCE object with `nextval()`. A single row with a non-numeric suffix (e.g., demo's seeded `LOT-PO300005-1` in `stock_lot`) causes the CAST to throw, the RPC to return NULL, and every subsequent insert through that RPC to fail.
+**Why it's debt:** All 8 originally used the pattern `MAX(CAST(SUBSTRING(<col> FROM <offset>) AS INT)) + 1` against the data column itself instead of a PostgreSQL SEQUENCE object with `nextval()`. A single row with a non-numeric suffix caused the CAST to throw, the RPC to return NULL, and every subsequent insert to fail.
 
-**Why not the structural fix today:** Two resilience SPECs (`M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE` + `_PHASE_2`, both 🟢 closed 2026-05-18) applied a regex guard `WHERE ... ~ '^[0-9]+$'` to filter non-conforming rows before the CAST. This patches the crash but is a tactical guard, not the structural fix. Daniel raised the architectural concern 2026-05-18 evening: "מספור אחיד בסדר עולה שלא יכול להישבר" — a unified numbering system in ascending order that cannot break. PostgreSQL `SEQUENCE` objects via `nextval()` are the canonical answer.
+**Phase 2 status (CLOSED 2026-05-18):** 4 of 8 RPCs structurally migrated to PostgreSQL `SEQUENCE` + `nextval()` via SPEC `M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES` — `next_lot_number`, `next_transfer_number`, `next_box_number`, `next_purchase_order_number` (M1B0 lens). Remaining 4 (`next_receipt_number`, `next_po_number` frames, `next_return_number`, `next_internal_doc_number`) stay regex-guarded as the canonical pattern for their use cases (per-(tenant, supplier) counters + dynamic prefix — incompatible with a single global sequence). See SPEC §0 strategic design call for Option E (HYBRID) over pure Option A.
 
-**Investigation status:** Phase 1 read-only investigation Pipeline ran 2026-05-18. Report at `modules/Module 1.5 - Shared Components/architecture-brief/SEQUENTIAL_NUMBERING_INVESTIGATION_REPORT.md`.
+**Investigation Phase 1:** Read-only investigation Pipeline ran 2026-05-18 (report at `modules/Module 1.5 - Shared Components/architecture-brief/SEQUENTIAL_NUMBERING_INVESTIGATION_REPORT.md`). Phase 1+2 hardening SPECs (`M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE` + `_PHASE_2`) applied the regex guard `WHERE ... ~ '^[0-9]+$'` to all 8 RPCs.
 
-**Planned fix (Phase 2 SPEC, deferred until after M1 lens 100% closes):** Design the unified numbering shape, create sequences with `last_value` seeded from current MAX, rewrite the 8 RPCs to use `nextval()`, update JS consumers if format changes, remove the regex-guard patches (no longer needed). Full Tier C VFV on all 8 RPCs (insert + monotonic + cannot-break-under-corruption).
+**Optional Phase 3 (deferred):** Pure Option A — convert the remaining 4 to global sequences after stakeholder review (would regress per-supplier counter continuity in Prizma data). Not scheduled.
 
-**Effort:** Phase 2 estimate 4-6 hours (one architect-authored SPEC).
-
-**Source:** Today's Path X arc — `M1_LENS_GOODS_RECEIPT_REBUILD/FINDINGS.md F-1 HIGH` discovered the defect class; `M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE` + `_PHASE_2` closed the tactical patch across all 8 RPCs; Daniel raised the structural concern in the same evening.
+**Source:** Path X arc — `M1_LENS_GOODS_RECEIPT_REBUILD/FINDINGS.md F-1 HIGH` discovered the defect class; `M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE` + `_PHASE_2` closed the tactical patch across all 8 RPCs; Phase 2 structural migration (`M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES`) closed the structural fix for 4 of 8 RPCs.
 
 ---
 
