@@ -1,6 +1,9 @@
-// lens-goods-receipt-close.js — assemble JSONB lines + call m1_create_receipt_from_box
-// K2 RPC creates: purchase_receipt + N purchase_receipt_line + N stock_lot + N stock_movement
-// + 1 supplier_debt (via m1_create_supplier_debt_from_receipt — internal). UPDATEs PO line/header.
+// lens-goods-receipt-close.js — assemble JSONB lines + call m1_create_receipt_from_box.
+// K2 RPC (9-arg signature since 2026-05-17) creates: purchase_receipt +
+// N purchase_receipt_line + N stock_lot + N stock_movement, and UPDATEs PO line/header.
+// Per M1_INVENTORY_DEBT_DECOUPLING (2026-05-17): the RPC no longer PERFORMs
+// m1_create_supplier_debt_from_receipt. Debt-creation lives in the supplier-debt
+// module, which pulls from inventory; the inventory module NEVER writes supplier_debt.
 
 (function () {
   'use strict';
@@ -62,10 +65,8 @@
     buttons.forEach(function (b) { b.disabled = true; b.textContent = 'יוצר...'; });
 
     try {
-      // M1_FOUNDATION_CLOSE_CLEANUP_2026_05_17 commit 3: migrated to 9-arg
-      // overload. GR flow always requires a delivery note (see line 12 guard),
-      // so p_has_no_invoice is always FALSE here. The 8-arg signature is
-      // dropped in the same commit; this is the only flow change.
+      // 9-arg signature (M1_FOUNDATION_CLOSE_CLEANUP 2026-05-17). p_has_no_invoice
+      // mirrors the "אין חשבונית עדיין" checkbox in the page header (M1_LENS_GOODS_RECEIPT_REBUILD).
       const { data, error } = await sb.rpc('m1_create_receipt_from_box', {
         p_tenant_id: tid,
         p_supplier_id: supplierId,
@@ -75,12 +76,12 @@
         p_box_supplier_barcode: null,
         p_supplier_number: window.LensGR.supplierRow ? String(window.LensGR.supplierRow.supplier_number || '') || null : null,
         p_confirmed_by: me ? me.id : null,
-        p_has_no_invoice: false,
+        p_has_no_invoice: !!window.LensGR.hasNoInvoice,
       });
       if (error) throw error;
       // K2 returns a UUID directly (RETURNS uuid, not a row).
       const receiptId = typeof data === 'string' ? data : (data && (data.purchase_receipt_id || data.id));
-      if (window.Toast) Toast.success('קבלה נוצרה בהצלחה (' + (receiptId ? String(receiptId).slice(0, 8) : 'OK') + '). מלאי + חוב עודכנו.');
+      if (window.Toast) Toast.success('קבלה נוצרה בהצלחה (' + (receiptId ? String(receiptId).slice(0, 8) : 'OK') + '). מלאי עודכן.');
       const badge = document.getElementById('gr-status-badge');
       if (badge) badge.textContent = 'נסגר ✓';
       if (typeof writeLog === 'function') writeLog('lens.gr.created', null, { receipt_id: receiptId, line_count: allLines.length, manual_count: manualLines.length, supplier_id: supplierId });
