@@ -37,16 +37,20 @@ This SPEC fills the gap discovered in `M1_LENS_CATALOG_TRUE_REBUILD` pre-flight 
 | 9 | עדשות משקפיים | Glasses flag | `1` (2827 rows) |
 | 10 | עדשות מגע | Contact-lens flag | `1` (53 rows) |
 
-### 2.2 Empirical entity counts (verified 2026-05-18)
+### 2.2 Empirical entity counts (verified 2026-05-18; AMENDED 2026-05-18 late evening after dimensional dedup discovery)
 
 | Entity | Raw | After dedup | Notes |
 |---|---|---|---|
 | Suppliers | 9 | 9 | `LEO`, `SHALDAG`, `Steuer`, `בדולח` (2512 rows / 86.5%), `לאומית`, `לאומית ילדים`, `לפידות`, `קופר ויז'ן`, `שמיר` |
-| Brands | 13 | 11 | HOYA + Hoya → HOYA (case-merge); RodenStock + רודנשטוק → RodenStock (semantic-merge, EN canonical) |
-| Variants | 2904 | 2904 | One per Excel row |
-| Offerings | 2904 | 2904 | One per Excel row (supplier→variant) |
-| Brand distribution rows | ? (derive) | ~30+ | Distinct (supplier, brand) tuples; verified during execution |
-| Designs | ? (derive) | ? | Distinct (brand, lens_type) tuples; verified during execution. `lens_type` = `מדף` OR the series name from col 3 |
+| Brands | 13 | **11** | HOYA + Hoya → `Hoya` (canonical matches existing global); RodenStock + רודנשטוק → `Rodenstock` (canonical matches existing global) |
+| Designs | derived | **91** | Distinct (brand, series_name) tuples — `series_name` = `מדף` OR the type-column value verbatim |
+| **Variants** | 2904 Excel rows | **612** | **AMENDED:** Multiple Excel rows share dimensional attributes `(design_id, refractive_index, diameter_mm, coating, tint, owner_tenant_id)`. The lens_variant table enforces UNIQUE NULLS NOT DISTINCT on that tuple — so duplicate Excel rows collapse to 1 variant (which can then have N offerings). Verified empirically: 2904 → 612 after dimensional dedup |
+| **Offerings** | 2904 Excel rows | **617** | **AMENDED:** `supplier_catalog_offering_unique` is (supplier_id, variant_id, tenant_id). Multiple Excel rows for same supplier offering same variant collapse to 1 offering. Verified empirically: 2904 → 617 after (supplier, variant) dedup |
+| Brand distribution rows | derived | **17** | Distinct (supplier, brand) pairs from Excel |
+
+**Why the dedup is correct:** Excel rows represent ORDER-able SKUs (each with its own barcode), but the underlying catalog model is *one variant = one physical product, many barcodes/offerings possible*. The dimensional UNIQUE enforces this. Multiple Excel rows for `(Hoya, אור כחול, 1.6, 65, NULL, Blue Control)` = 1 variant with multiple barcodes/offerings, not 4 different variants.
+
+**Trade-off:** The barcode-level identity (Excel col 0) is captured per OFFERING via `supplier_sku_code`, not on the variant. Offering rows for the same variant share the canonical variant.display_id but carry distinct supplier_sku_code values. This matches the real-world catalog model: HOYA's barcode for variant X may differ from בדולח's barcode for the same variant X.
 
 ### 2.3 Architecture — what's global vs tenant-scoped
 
@@ -79,12 +83,12 @@ Excel has no SPH range data. The schema requires `sph_min` + `sph_max` NOT NULL.
 | S1 | Branch clean post-push | `git status` | clean |
 | S2 | Commits in [3, 5] | `git log` | 3-5 |
 | S3 | 2 new UNIQUE constraints added (DDL) | `\d+ supplier_brand_distribution` + `\d+ supplier_catalog_offering` | both have UNIQUE (supplier_id, brand_id, tenant_id) and (supplier_id, variant_id, tenant_id) respectively |
-| S4 | Global catalog: 11 brands seeded | `SELECT count(*) FROM lens_brand WHERE owner_tenant_id IS NULL AND is_deleted=false` | 11 (post-dedup) |
-| S5 | Global catalog: N designs (where N = distinct (brand, lens_type) tuples from Excel) | `SELECT count(*) FROM lens_design WHERE owner_tenant_id IS NULL` | matches Excel-derived count (logged in EXECUTION_REPORT) |
-| S6 | Global catalog: 2904 variants seeded | `SELECT count(*) FROM lens_variant WHERE owner_tenant_id IS NULL AND is_deleted=false` | 2904 |
-| S7 | Demo tenant: 9 suppliers exist (existing 38 includes these 9 by name; UPSERT by (name, tenant_id) only adds missing) | `SELECT count(DISTINCT name) FROM suppliers WHERE tenant_id='<demo>' AND name IN ('LEO','SHALDAG','Steuer','בדולח','לאומית','לאומית ילדים','לפידות','קופר ויז''ן','שמיר')` | 9 |
-| S8 | Demo tenant: 2904 offerings seeded (one per Excel row) | `SELECT count(*) FROM supplier_catalog_offering WHERE tenant_id='<demo>' AND is_deleted=false` | 2904 |
-| S9 | Demo tenant: distribution rows seeded (distinct (supplier_id, brand_id)) | `SELECT count(*) FROM supplier_brand_distribution WHERE tenant_id='<demo>' AND is_deleted=false` | between 15 and 50 (derived) |
+| S4 | Global catalog: 9 NEW brands added (2 of 11 Excel canonicals already existed pre-seed — `Hoya`, `Rodenstock`) | pre-seed count 16; post-seed `SELECT count(*) FROM lens_brand WHERE owner_tenant_id IS NULL AND is_deleted=false` | 25 (16 + 9 new) ✅ verified 2026-05-18 |
+| S5 | Global catalog: 91 NEW designs added | pre-seed count 54; post-seed `SELECT count(*) FROM lens_design WHERE owner_tenant_id IS NULL` | 145 (54 + 91 new) ✅ verified 2026-05-18 |
+| S6 | Global catalog: 612 NEW variants added (post-dimensional-dedup) | pre-seed count 71; post-seed `SELECT count(*) FROM lens_variant WHERE owner_tenant_id IS NULL AND is_deleted=false` | 683 (71 + 612 new). **AMENDED** from "2904" after dimensional dedup discovery — see §2.2 |
+| S7 | Demo tenant: 9 NEW suppliers added (none of Daniel's Excel suppliers exist on demo today; all 9 are net-new) | pre-seed count 38; post-seed `SELECT count(*) FROM suppliers WHERE tenant_id='<demo>'` | 47 (38 + 9 new) |
+| S8 | Demo tenant: 617 offerings seeded (post-dedup) | `SELECT count(*) FROM supplier_catalog_offering WHERE tenant_id='<demo>' AND is_deleted=false` | 617 (existing 41 unrelated to Excel suppliers may remain; new 617 add for Excel suppliers). **AMENDED** from "2904" after (supplier, variant) dedup. supplier_sku_code preserves Excel barcode per offering. |
+| S9 | Demo tenant: 17 distribution rows seeded (distinct (supplier_id, brand_id) from Excel) | `SELECT count(*) FROM supplier_brand_distribution WHERE tenant_id='<demo>' AND is_deleted=false` | 17 |
 | S10 | Re-runnable: re-execute the entire pipeline → 0 new rows added (proves idempotency) | `count(*) before re-run = count(*) after re-run` for all 6 tables | identical counts |
 | S11 | No NULL violations: all variants have refractive_index + diameter + sph_min + sph_max | `SELECT count(*) FROM lens_variant WHERE owner_tenant_id IS NULL AND (refractive_index IS NULL OR diameter_mm IS NULL OR sph_min IS NULL OR sph_max IS NULL)` | 0 |
 | S12 | display_id collision check: all 2904 variants have unique display_id (global UNIQUE constraint) | seed runs without ON CONFLICT errors on `lens_variant_display_id_key` | 0 errors |
@@ -259,6 +263,66 @@ If Excel parsing produces wrong row count:
 - [ ] get_advisors clean
 - [ ] Paired SPEC A's Pass 2 Tier C can now run (demo data populated)
 - [ ] If Daniel did NOT authorize Prizma: clear note in EXECUTION_REPORT + future op SPEC stubbed in TECH_DEBT
+
+## 14. Resumption State (added 2026-05-18 mid-session pause)
+
+Path X session paused cleanly mid-SPEC-B execution per Daniel's "Choice 2" decision (commit-and-pause). Next session resumes here.
+
+### Demo DB state at pause (verified via Supabase MCP execute_sql)
+
+| Table | Pre-seed | Seeded this session | Total now | Remaining |
+|---|---|---|---|---|
+| `lens_brand` (global, `owner_tenant_id IS NULL`) | 16 | 9 | **25** | 0 — all 11 Excel canonical brands present (2 pre-existed as `Hoya`, `Rodenstock`) ✅ |
+| `lens_design` (global) | 54 | 91 | **145** | 0 — all 91 Excel-derived designs present ✅ |
+| `lens_variant` (global) | 71 | 250 | **321** | **362** (variants_batch_002 + batch_003 — 250 + 112) |
+| `suppliers` (tenant=demo) | 38 | 0 | 38 | **9** (04_suppliers_demo.sql) |
+| `supplier_brand_distribution` (tenant=demo) | 0 | 0 | 0 | **17** (05_distribution_demo.sql) |
+| `supplier_catalog_offering` (tenant=demo, Excel-source) | 41 (pre-existing, unrelated to Excel) | 0 | 41 | **617** (06_offerings_demo_batch_001-003.sql) |
+| 2 UNIQUE constraints on link tables | n/a | 2 | applied ✅ | 0 |
+
+### Idempotency contract
+
+Every SQL file in `tests/seed-sql/` uses `INSERT ... ON CONFLICT DO UPDATE`. Re-running the entire pipeline (including the already-applied 01_brands, 02_designs, 03_variants_batch_001) produces **zero new rows** — only `updated_at` timestamps refresh on existing rows. Next session may safely re-run the full pipeline if uncertain about state.
+
+### Resumption command sequence (next session)
+
+Run in this order via Supabase MCP `execute_sql` (or `apply_migration`):
+
+1. Verify pause state matches above table (counts identical).
+2. Apply `tests/seed-sql/03_variants_batch_002.sql` (250 rows).
+3. Apply `tests/seed-sql/03_variants_batch_003.sql` (112 rows).
+4. Verify variants count = 71 + 612 = 683.
+5. Apply `tests/seed-sql/04_suppliers_demo.sql` (9 rows).
+6. Verify demo suppliers count = 38 + 9 = 47.
+7. Apply `tests/seed-sql/05_distribution_demo.sql` (17 rows).
+8. Verify demo distribution count = 17.
+9. Apply `tests/seed-sql/06_offerings_demo_batch_001.sql` (250 rows).
+10. Apply `tests/seed-sql/06_offerings_demo_batch_002.sql` (250 rows).
+11. Apply `tests/seed-sql/06_offerings_demo_batch_003.sql` (117 rows).
+12. Verify demo offerings count = 41 (pre-existing) + 617 = 658.
+13. Run `get_advisors(security)` — confirm clean.
+14. Run idempotency check: re-apply 01_brands.sql + 02_designs.sql + variants_batch_001.sql → assert 0 row-count delta.
+15. Commit SPEC B EXECUTION_REPORT + FINDINGS.
+16. **STOP — emit "Demo seeded clean. Authorize Prizma seed?" to Daniel + wait.**
+17. If Daniel says go → write Prizma-tenant variant of 04 + 05 + 06 SQL files (search/replace `8d8cfa7e-...-demo` with Prizma tenant UUID) + apply + verify.
+18. If Daniel says wait → SPEC B closes with Prizma deferred.
+
+### Paired SPEC A — also mid-state
+
+After SPEC B closes 🟢 on demo, return to SPEC A:
+
+| Commit | Status | Description |
+|---|---|---|
+| 1 | ✅ shipped (`434f254`) | TRUE mockup rebuild — Suppliers col + dev-mode bypass |
+| 2 | ✅ shipped (`454491b`) | catalog-variants-col.js orphan deleted |
+| **GATE A** | (current pause) | SPEC B demo seed in progress (this resumption) |
+| 3 | pending | Private catalog rewrite (`shared/js/catalog-private-admin.js` + new `shared/css/catalog-private-admin.css` + inventory.html CSS link) |
+| 4 | pending | Tier C VFV — Chrome MCP captures 6 screenshots against real seeded data + mockup side-by-side classification |
+| 5 | pending | Closure — EXECUTION_REPORT + FINDINGS + FOREMAN_REVIEW placeholder + Module 1 SESSION_CONTEXT/CHANGELOG/MODULE_MAP updates |
+
+### Open questions for next session
+
+None. The full plan is captured here + in SPEC.md §3 §6 §7. No new architect decisions required to resume.
 
 ---
 
