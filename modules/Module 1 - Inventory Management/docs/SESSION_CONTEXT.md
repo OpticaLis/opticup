@@ -1,9 +1,42 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-**M1 LENS — STAGE 2A OF 5 SHIPPED (Executor)** — 2026-05-18 evening (Path X). Stage 2A: Platform Catalog Admin mockup-fidelity rebuild. Stage 1 (`70c5a9a`, 2026-05-18) re-skinned the tenant-side `shared/js/catalog-private-admin.js` chrome — closed 🟢 Foreman after Tier C VFV 18/2/0. Stage 2A extends the SEPARATE `modules/lens-catalog-admin/` surface (the Platform Catalog Admin screen, not the tenant `private-catalog` tab) to full mockup fidelity: 2 top-level product-type tabs (glasses/contact_lens), counts badge, 4 proper creation modals replacing `window.prompt()`, mockup-faithful detail pane (version badge + adoption count + 3-button save bar), and 1 additive DB migration adding `lens_design.version`. Awaiting Reviewer + Localhost-Tester + Foreman closure.
+**M1 LENS — STAGE 2A OF 5 CLOSED 🟡 (Foreman)** — 2026-05-18 evening (Path X). Full pipeline completed: Foreman SPEC author → Executor → Reviewer → Localhost-Tester → Foreman closure. Stage 2A ships the Platform Catalog Admin mockup-faithful screen (`modules/lens-catalog-admin/`) — 2 product-type tabs (glasses + contact_lens), 4 proper creation modals (replacing `window.prompt()`), mockup-faithful detail pane (version badge + adoption count + 3-button save bar), `lens_design.version` DB column added + backfilled to 145 designs. **🟡 verdict drivers:** all 34 Executor-measurable §3 criteria + 4 of 6 Tester-measurable VFV criteria PASS; 2 VFV criteria PARTIAL because Tester surfaced pre-existing architectural blocker T-BLOCK-2 (RLS write-policy gap on global lens-catalog tables — no platform-admin bypass for non-service-role JWTs). T-BLOCK-2 is OUT OF SCOPE for Stage 2A (pre-existing, not introduced); escalated to Architect via FOREMAN_REVIEW §7 with 3 architectural options (A: RLS bypass policy / B: SECURITY DEFINER RPCs / C: server-side admin UI). Foreman recommends Option A.
 
-## 2026-05-18 evening — M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A (🟢 EXECUTOR DONE — awaiting Reviewer + Tester)
+## 2026-05-18 evening — M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A (🟡 FOREMAN CLOSED — Stage 2A of 5)
+
+**Status:** 🟡 CLOSED-WITH-FOLLOWUPS. Visual + structural goals 🟢; 1 architectural carry (T-BLOCK-2) escalated to Architect.
+
+**Pipeline run (9 commits total since SPEC commit `bd0fc53`):**
+- Foreman: `bd0fc53` chore(spec): author M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A
+- Executor: `96dcb22` + `4fb4ec3` + `53b597c` + `a9c9790` (4 commits — DB migration + product-type tabs + detail pane + variant/supplier modals + closure retro)
+- Foreman R-M2 hotfix: `c913ea9` fix(catalog-admin): escape UUID + slug in tenant-select (R-M2)
+- Reviewer: `4ccd385` chore(spec): reviewer audit (🟡 PASS-WITH-FOLLOWUPS; 2 new findings R-M1 + R-M2 + 1 R-INFO-1)
+- Tester: `05faa9a` chore(spec): localhost tester Tier C VFV (🔴 FAIL pre-hotfix; 5 findings T-BLOCK-1/2 + T-MED-1 + T-MIN-1 + T-INFRA-1)
+- Foreman Tester-finding hotfix: `a34b09c` fix(catalog-admin): T-BLOCK-1 brand→design click chain + T-MED-1 counts + T-MIN-1 meta
+- Foreman closure: _(this commit)_ chore(spec): Foreman closure M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A — FOREMAN_REVIEW + SESSION_CONTEXT
+
+**Findings disposed (11 total):**
+- RESOLVED in-pipeline (4): R-M2 (escape) → `c913ea9`; T-BLOCK-1 (brand-click cache) + T-MED-1 (counts refresh) + T-MIN-1 (meta defensive) → `a34b09c`.
+- TECH_DEBT carry (5): F-1 display_id RPC, F-2 FIELD_MAP, F-4 lens_type CHECK, R-M1 catalog-detail-pane.js LOC (320/350), R-INFO-1 closeModal namespace.
+- INFO carry (1): F-3 catalog-import.js dead exports — auto-resolves Stage 2B.
+- ESCALATED to Architect (1): T-BLOCK-2 RLS write-policy gap on global lens-catalog tables (CRITICAL architectural, pre-existing). Bundled with T-INFRA-1 in proposed Brief `M1_PLATFORM_CATALOG_RLS_WRITE_BYPASS_BRIEF.md` — Daniel approves option (A/B/C) before SPEC dispatch.
+
+**Effective code shipped (post all hotfixes):**
+- 1 DB migration applied + backfilled (145 lens_design rows, version=1).
+- 3 NEW JS/CSS files in `modules/lens-catalog-admin/` + `css/`.
+- 7 modified files (6 in `modules/lens-catalog-admin/` + `inventory.html` +1 link).
+- ~1300 LOC net added (well over S-NO-POLISH ≥800 floor).
+- 0 BLOCKERs at HEAD. 0 destructive ops.
+- `shared/js/catalog-private-admin.js` + `shared/css/catalog-private-admin.css` byte-identical (Stage 4 boundary respected).
+
+**Next strategic action for Daniel:** Architect to author T-BLOCK-2 Brief (3 options stated in FOREMAN_REVIEW §7). Stage 2B (Excel import dialog) deferred until T-BLOCK-2 resolved.
+
+**5-stage plan status:** Stage 1 🟢, Stage 2A 🟡 (this), Stage 2B/3/4/5 queued.
+
+---
+
+## 2026-05-18 evening — M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A (🟢 EXECUTOR DONE — Reviewer + Tester ran; see Foreman closure block above)
 
 **Status:** 🟢 Executor closed clean. Real code + DB changes shipped (zero-change closure NOT taken). Pipeline still needs Reviewer + Localhost-Tester + Foreman closure.
 
