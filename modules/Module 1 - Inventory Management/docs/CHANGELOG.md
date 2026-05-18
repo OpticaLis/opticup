@@ -6,6 +6,35 @@
 
 ## Lens UI Rebuild — Group B (in progress 2026-05-18)
 
+### SPEC 7 — M1_LENS_ACTIVE_POS_LIST_REBUILD — 2026-05-18 (🟢 CLOSED — Group B SPEC 2 of 3)
+
+**Scope:** Full 1:1 rebuild of `modules/lens-pos-list/` per `architecture-brief/mockups/LENS_ACTIVE_POS_LIST_MOCKUP.html` (509 lines). 5 stat-cards via StatCardRow with OVERDUE as a DERIVED predicate (not a status enum — Step 5.3 trap codified). Source-type ChipFilter row. SideDetailPanel for selected PO. Progress bar per row, overdue row class, footer summary with alerts.
+
+**Pipeline shape:** Single session, ~1.5h. Path X sequential.
+
+**Commits:**
+- `5d96549` chore(spec): author Group B SPECs (6 + 7 + 8)
+- `e2eec53` refactor(lens-pos-list): 1:1 mockup rebuild — 5 stat-cards incl. overdue (derived) + side detail panel
+- _(this commit)_ chore(spec): close M1_LENS_ACTIVE_POS_LIST_REBUILD with retrospective
+
+**Files changed:**
+- NEW `css/lens-pos-list-page.css` (230 lines)
+- NEW `modules/lens-pos-list/lens-pos-list-stats.js` (65 lines) — StatCardRow with 5 cards, overdue derived
+- NEW `modules/lens-pos-list/lens-pos-list-detail.js` (107 lines) — SideDetailPanel for selected PO
+- `modules/lens-pos-list/lens-pos-list-main.js` (55 → 93) — orchestrator + isOverdue + sourceOf
+- `modules/lens-pos-list/lens-pos-list-table.js` (139 → 188) — progress bar + source badge + overdue row + footer
+- `modules/lens-pos-list/lens-pos-list-filters.js` (36 → 79) — ChipFilter source row + supplier select + search + clear
+- `modules/lens-pos-list/lens-pos-list-actions.js` (98 → 97) — mark-sent + cancel + open-detail
+- `modules/lens-pos-list/lens-pos-list-partial.html` (55 → 63) — mount points only
+- `modules/inventory/inventory-shell-lens.js` +2 manifest entries / -9 header comment lines (file cap workaround)
+- `inventory.html` +1 CSS link
+
+**Tier C:** Stat cards verified against live DB (backdate-then-restore for overdue smoke). Side detail panel opens correctly. Filters narrow rows from same loaded array. 3 screenshots. 0 console errors.
+
+**Findings:** 1 LOW (RESOLVED IN-RUN — ChipFilter API mismatch) + 1 INFO (registry file growth, follow-up tech debt).
+
+---
+
 ### SPEC 6 — M1_LENS_PURCHASE_ORDER_REBUILD — 2026-05-18 (🟢 CLOSED — Group B SPEC 1 of 3)
 
 **Scope:** Full 1:1 rebuild of `modules/lens-purchase-order/` per `architecture-brief/mockups/LENS_PURCHASE_ORDER_MOCKUP.html` (387 lines). 4-step wizard via WizardSteps shared component; 3 source-type bands (custom/stock/manual) via GroupHeaderRow. 2-column grid layout with side-panel cards. State-machine driven step transitions. Cancel + mark-sent + back contextually surfaced per step.

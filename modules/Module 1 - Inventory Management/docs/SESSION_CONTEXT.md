@@ -1,7 +1,52 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-M1 Lens Mockup-Fidelity Rebuild — Group A 🟢 + FK Fix 🟢 + Group B SPEC 6 🟢 CLOSED — 2026-05-18 (Path X sequential). SPECs 1+2+3+4a+4.5+4+5+FK_FIX+**6_PO_REBUILD** ALL CLOSED. Purchase Order screen rebuilt 1:1 to mockup with 4-step wizard + 3 source-type bands (custom/stock/manual) via Phase 0 shared components. Tier C verified: PO-300006 created + sent + cancelled + soft-deleted on demo. 1 LOW finding (ABSORBED pre-existing PostgREST join 400 with working fallback). Next: SPEC 7 (Active POs List) dispatch under Path X.
+M1 Lens Mockup-Fidelity Rebuild — Group A 🟢 + FK Fix 🟢 + Group B SPEC 6 🟢 + **SPEC 7 🟢** CLOSED — 2026-05-18 (Path X sequential). SPECs 1+2+3+4a+4.5+4+5+FK_FIX+6_PO+**7_POS_LIST** ALL CLOSED. Active POs List rebuilt 1:1 with 5 stat-cards (overdue is DERIVED predicate per Step 5.3) + ChipFilter source row + SideDetailPanel + progress bar + overdue row class. Tier C verified: backdated PO-300003 → overdue card flipped 0→1→0 (matches DB truth at every step), chip filters narrow rows, side panel opens. 1 LOW (RESOLVED in-run) + 1 INFO (registry file growth — follow-up tech debt). Next: SPEC 8 (Goods Receipt) dispatch.
+
+## 2026-05-18 — M1_LENS_ACTIVE_POS_LIST_REBUILD (🟢 CLOSED — Group B SPEC 7 of 8, 3 SKILL proposals harvested)
+
+**Status:** ✅ Closed. ~1.5h execution. 1 LOW (resolved in-run, ChipFilter API mismatch) + 1 INFO (inventory-shell-lens.js hit 350-line cap on +2 entries; trimmed header comment to fit; follow-up tech debt to decompose registry).
+
+**Commits:**
+- `5d96549` chore(spec): author Group B SPECs (6 + 7 + 8) — covers SPEC 7 authoring
+- `e2eec53` refactor(lens-pos-list): 1:1 mockup rebuild — 5 stat-cards incl. overdue (derived) + side detail panel
+- _(this commit)_ chore(spec): close M1_LENS_ACTIVE_POS_LIST_REBUILD with retrospective
+
+**What shipped:**
+- 5 rewritten JS + 2 NEW (stats + detail) + 1 rewritten partial
+- NEW `css/lens-pos-list-page.css` (230 lines)
+- Manifest `inventory-shell-lens.js` +2 entries (header comment trimmed 9 lines to fit cap)
+- inventory.html +1 CSS link
+- Overdue = DERIVED predicate (status='sent' AND expected_delivery_at < CURRENT_DATE) — Step 5.3 trap codified
+
+**Tier C VFV:**
+- 5 stat cards in mockup order with derived counts ✅
+- Backdate PO-300003 to 5 days ago → overdue card flips 0 → 1, red overdue-row class applied, footer alert "1 הזמנות באיחור" ✅
+- Stat-card filtering: draft→0 / overdue→1 / all→13 ✅
+- Source chip filter: mixed→1 / clear→13 ✅
+- SideDetailPanel opens with PO-300003 title + sections ✅
+- DB restored to original expected_delivery_at ✅
+- Group A + SPEC 6 regression check: clean ✅
+- 0 console errors
+
+**Findings (2 logged):**
+- F-1 LOW (RESOLVED IN-RUN): ChipFilter global name (`ChipFilter`, not `ChipFilterRow`) + API surface (`activeIds:[]` not `activeId`, `onSelect` not `onChipClick`) mismatch — fixed before commit.
+- F-2 INFO: inventory-shell-lens.js hit 350-line hard cap; trimmed header comment; follow-up tech debt to decompose registry before Group C.
+
+**SKILL proposals harvested:**
+- Strategic P-AUTHOR-1: §0 should include global-name probe for shared components
+- Executor P-EXEC-2: "Read shared component API contract BEFORE writing mount call" pattern
+- Executor P-EXEC-3: Pair DB mutate+restore in adjacent tool calls before unrelated navigation
+
+**Group B scoreboard:**
+
+| # | SPEC | Status |
+|---|------|--------|
+| 6 | M1_LENS_PURCHASE_ORDER_REBUILD | 🟢 |
+| 7 | M1_LENS_ACTIVE_POS_LIST_REBUILD | 🟢 |
+| 8 | M1_LENS_GOODS_RECEIPT_REBUILD | ⏳ next |
+
+---
 
 ## 2026-05-18 — M1_LENS_PURCHASE_ORDER_REBUILD (🟢 CLOSED — Group B SPEC 6 of 8, F-EXEC-1 + F-AUTHOR-1 proposals harvested)
 
