@@ -2279,6 +2279,7 @@ await sb.from('inventory').update({ quantity: newQty }).eq('id', id);
 - `css/lens-catalog-admin-page.css` (479 LOC) — base page-frame CSS
 - `css/lens-catalog-admin-tabs-modals.css` (197 LOC, Stage 2A NEW) — tabs strip + counts badge + brand-card + modal overlay
 - `migrations/M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A_lens_design_version.sql` (Stage 2A NEW) — adds `lens_design.version` integer NOT NULL DEFAULT 1
+- `supabase/migrations/20260518230000_m1_platform_catalog_rls_write_bypass.sql` (Stage 2A unblocker NEW, 2026-05-18) — adds `platform_admin_bypass` RLS policy (cmd=ALL, USING+WITH CHECK = `is_platform_super_admin()`) on all 4 global lens-catalog tables (`contact_lens_variant` / `lens_brand` / `lens_design` / `lens_variant`); idempotent (4× DROP POLICY IF EXISTS); closes Stage 2A T-BLOCK-2 escalation; canonical "function-call inside policy clause" pattern (Iron Rule 15 evolution) — first instance in project.
 - `supabase/functions/lens-catalog-import/` (3 files):
   - `index.ts` — request handler + brand/design/variant/offering loop (299 LOC)
   - `validate.ts` — types + per-row validation (59 LOC)
