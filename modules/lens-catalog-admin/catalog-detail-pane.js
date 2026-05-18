@@ -26,7 +26,13 @@ export function wireDetailPane(state) {
 // for state.selectedDesign. Mockup §COL 4 reference.
 export async function renderDesignDetailPane(state) {
   const design = state.selectedDesign;
-  const brand = state.selectedBrand;
+  // T-MIN-1 hotfix (Tester 2026-05-18): fall back to brands[] lookup by design.brand_id
+  // when state.selectedBrand is null (can happen if user arrives at the design via
+  // URL/state path that bypasses an explicit brand-card click).
+  let brand = state.selectedBrand;
+  if (!brand && design?.brand_id) {
+    brand = (state.brands ?? []).find(b => b.id === design.brand_id) ?? null;
+  }
   const supplier = state.selectedSupplier;
   if (!design) return;
   const pane = document.getElementById('detail-pane');

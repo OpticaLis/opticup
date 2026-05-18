@@ -12,6 +12,11 @@ import { showToast, escapeHtml } from './lens-catalog-admin.js';
 import { openModal, validateRequired, closeModal } from './catalog-modal-helpers.js';
 
 export function wireBrandsCol(state, onBrandSelected) {
+  // T-BLOCK-1 hotfix (Tester 2026-05-18): cache callback upfront so the first
+  // loadBrandsForSupplier → renderBrandsList(state, window.__catalogOnBrandSelected ?? null)
+  // resolves to a real function instead of null. Sibling wireSuppliersCol +
+  // wireDesignsCol both do this; wireBrandsCol was inadvertently missing the line.
+  window.__catalogOnBrandSelected = onBrandSelected;
   // Search filter
   document.getElementById('brands-search').addEventListener('input', (e) => {
     const q = e.target.value.trim().toLowerCase();

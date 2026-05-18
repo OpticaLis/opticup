@@ -112,6 +112,9 @@ export async function switchProductTab(nextTab) {
     '<div class="empty-state">בחר סדרה כדי לראות פרטים + וריאציות</div>';
   // Reload brands if a supplier is currently selected (filter re-evaluates)
   if (state.selectedSupplier) await loadBrandsForSupplier(state);
+  // T-MED-1 hotfix (Tester 2026-05-18): refresh counts badge to reflect the
+  // newly-active product_type filter (design+variant counts swap glasses↔contact_lens).
+  await loadCountsBadge();
 }
 
 // ===== Header actions (Stage 2A) ============================================
