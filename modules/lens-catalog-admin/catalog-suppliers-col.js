@@ -1,14 +1,15 @@
 // catalog-suppliers-col.js — Suppliers column (col 1 of the 4-col grid).
 // M1_LENS_CATALOG_TRUE_REBUILD 2026-05-18: New column added per mockup §COL 1.
+// M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A 2026-05-18:
+//   - Replaces window.prompt() with proper modal via catalog-modal-helpers.
 //
 // Suppliers are TENANT-SCOPED (not platform-global), so this column is
 // dependent on the tenant selector at the top of the page. When the user
 // changes the tenant pill, suppliers are re-loaded for that tenant.
-// Click-select drives the downstream brand filter — see catalog-brands-col.js
-// loadBrandsForSupplier().
 
 import { sb } from './catalog-auth.js';
 import { showToast, escapeHtml as esc } from './lens-catalog-admin.js';
+import { openModal, closeModal, validateRequired } from './catalog-modal-helpers.js';
 
 export function wireSuppliersCol(state, onSupplierSelectedFn) {
   // Cache callback for re-render use
@@ -19,26 +20,7 @@ export function wireSuppliersCol(state, onSupplierSelectedFn) {
     renderSuppliersList(state, q);
   });
 
-  document.getElementById('btn-add-supplier').addEventListener('click', async () => {
-    if (!state.selectedTenant) {
-      showToast('בחר טננט בסרגל העליון לפני הוספת ספק', 'error');
-      return;
-    }
-    const name = window.prompt('שם הספק החדש (פר-טננט):');
-    if (!name || !name.trim()) return;
-    const trimmed = name.trim();
-    const { data, error } = await sb
-      .from('suppliers')
-      .insert({ tenant_id: state.selectedTenant.id, name: trimmed, active: true })
-      .select('id, name, active, supplier_number')
-      .single();
-    if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
-    state.suppliers.push({ ...data, brand_count: 0 });
-    state.suppliers.sort((a, b) => a.name.localeCompare(b.name, 'he'));
-    document.getElementById('suppliers-count').textContent = state.suppliers.length;
-    renderSuppliersList(state, '');
-    showToast(`נוסף ספק: ${trimmed}`, 'success');
-  });
+  document.getElementById('btn-add-supplier').addEventListener('click', () => openAddSupplierModal(state));
 }
 
 // Loads suppliers for the currently-selected tenant. Also computes brand_count
@@ -109,5 +91,67 @@ function renderSuppliersList(state, query) {
       const fn = window.__catalogOnSupplierSelected;
       if (fn) fn(supplier);
     });
+  });
+}
+
+// Mockup-faithful create-supplier modal. Supplier rows are tenant-scoped, so
+// state.selectedTenant must be set before opening.
+function openAddSupplierModal(state) {
+  if (!state.selectedTenant) {
+    showToast('בחר טננט בסרגל העליון לפני הוספת ספק', 'error');
+    return;
+  }
+  const bodyHtml = `
+    <div class="lens-catalog-admin-modal-form">
+      <div class="field field-required">
+        <label for="modal-supplier-name">שם הספק</label>
+        <input type="text" id="modal-supplier-name" data-required name="name"
+               placeholder="לפידות בע&quot;מ / בדולח עדשות / ..." autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="modal-supplier-number">מספר ספק (אופציונלי)</label>
+        <input type="number" id="modal-supplier-number" name="supplier_number"
+               step="1" placeholder="1001" />
+      </div>
+      <div class="modal-hint">
+        ספק נשמר לטננט "${esc(state.selectedTenant.name)}" (פר-טננט). שיוך מותגים
+        מתבצע ידנית דרך חלוקת-מותגים (לא נכלל ביצירה הראשונית).
+      </div>
+    </div>
+  `;
+  const modalEl = openModal({
+    title: '➕ ספק חדש',
+    bodyHtml,
+    submitLabel: 'צור ספק',
+    cancelLabel: 'ביטול',
+    onSubmit: async (formEl) => {
+      const v = validateRequired(formEl);
+      if (!v.ok) {
+        showToast('שדות חובה חסרים: ' + v.missing.join(', '), 'error');
+        return false;
+      }
+      const name = formEl.querySelector('#modal-supplier-name').value.trim();
+      const supplierNumRaw = formEl.querySelector('#modal-supplier-number').value.trim();
+      const supplierNum = supplierNumRaw === '' ? null : Number(supplierNumRaw);
+      const payload = {
+        tenant_id: state.selectedTenant.id,
+        name,
+        active: true,
+      };
+      if (supplierNum != null) payload.supplier_number = supplierNum;
+      const { data, error } = await sb
+        .from('suppliers')
+        .insert(payload)
+        .select('id, name, active, supplier_number')
+        .single();
+      if (error) { showToast('שגיאה: ' + error.message, 'error'); return false; }
+      state.suppliers.push({ ...data, brand_count: 0 });
+      state.suppliers.sort((a, b) => a.name.localeCompare(b.name, 'he'));
+      document.getElementById('suppliers-count').textContent = state.suppliers.length;
+      renderSuppliersList(state, '');
+      showToast(`נוסף ספק: ${name}`, 'success');
+      closeModal(modalEl);
+      return true;
+    },
   });
 }
