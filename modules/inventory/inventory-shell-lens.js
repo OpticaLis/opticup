@@ -1,17 +1,9 @@
 // inventory-shell-lens.js — lens tab registry + lazy partial/script loader.
 // Sealed by M1_INVENTORY_UNIFIED_SCREEN SPEC §0.B DG-2 / DG-3 (2026-05-16).
-//
-// Owns: lens tab metadata (perm key, partial URL, script load order),
-// fetching the partial HTML body on first activation, sequential script
-// injection (helpers first, main last) so each module's auto-bootstrap
-// finds its siblings registered, and explicit bootstrap dispatch for the
-// one ES-module entry (catalog-admin).
-//
-// Public API exported as window.InvShellLens:
-//   - tabs: ordered list of tab names
-//   - meta: full registry
-//   - setActive(tabName): activates a section, lazy-loads on first call
-//   - getActive(): current tab name (sessionStorage backed)
+// Owns: lens tab metadata, lazy partial-body fetch, sequential script
+// injection (helpers first / main last), and explicit bootstrap dispatch
+// for the one ES-module entry (catalog-admin). Public API: window.InvShellLens
+// with { tabs, meta, setActive(tabName), getActive() }.
 
 (function () {
   'use strict';
@@ -95,6 +87,8 @@
       partialUrl: 'modules/lens-pos-list/lens-pos-list-partial.html',
       bootstrapGlobal: 'LensPOsList.bootstrap',
       scripts: [
+        'modules/lens-pos-list/lens-pos-list-stats.js',
+        'modules/lens-pos-list/lens-pos-list-detail.js',
         'modules/lens-pos-list/lens-pos-list-table.js',
         'modules/lens-pos-list/lens-pos-list-filters.js',
         'modules/lens-pos-list/lens-pos-list-actions.js',
