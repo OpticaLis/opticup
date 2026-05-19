@@ -31,6 +31,17 @@
       var roasRows = roasRes.data || [];
 
       host.innerHTML = '';
+
+      /* Weekly Brief panel — Deliverable B (M4_WEEKLY_OPTIMIZATION_BRIEF).
+         Rendered at top of dashboard, spans full width. */
+      var briefHost = document.createElement('div');
+      briefHost.id = 'weekly-brief-host';
+      briefHost.className = 'weekly-brief-panel-host';
+      host.appendChild(briefHost);
+      if (typeof window.renderWeeklyBriefPanel === 'function') {
+        window.renderWeeklyBriefPanel(briefHost);
+      }
+
       var grid = document.createElement('div');
       grid.className = 'fhd-grid';
       host.appendChild(grid);

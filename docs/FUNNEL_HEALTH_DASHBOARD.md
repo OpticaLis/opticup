@@ -66,3 +66,47 @@ on both demo and prizma tenants.
 After render, `window.__funnelTrace` contains entries:
 `{ at: ISO8601, mv_query_ms: number, tiles_rendered: number }`.
 Use in Chrome DevTools: `window.__funnelTrace` to verify the dashboard rendered.
+
+---
+
+## Weekly Optimization Brief (Deliverable B — M4_WEEKLY_OPTIMIZATION_BRIEF)
+
+> **Shipped:** 2026-05-19. Runs every Sunday 03:00 UTC (~06:00 IST).
+
+### What It Is
+
+A deterministic weekly analysis panel rendered at the top of the Funnel Health Dashboard.
+Every Sunday morning the `weekly-funnel-brief` Edge Function reads `mv_funnel_health_dashboard`
+for each active tenant, classifies metrics against a 4-week prior average, and persists
+a Hebrew prose brief into `funnel_weekly_briefs`.
+
+### Classifier Logic (v1-deterministic — no AI)
+
+| Delta vs 4-week avg | Classification |
+|---|---|
+| > +5% (higher-is-better) or < -5% (lower-is-better) | Improved |
+| < -5% (higher-is-better) or > +5% (lower-is-better) | Degraded (concern) |
+| Within ±5% | Steady |
+
+First run (no prior history): all metrics show as steady. Baseline builds over 4 weeks.
+
+### Tracked Metrics + Polarity
+
+| Metric | Polarity |
+|---|---|
+| `leads_30d` | higher = better |
+| `lead_attendee_conv_pct` (derived) | higher = better |
+| `attendee_buyer_conv_pct` (derived) | higher = better |
+| `revenue_30d` | higher = better |
+| `unsubs_30d_per_lead_pct` (derived) | lower = better |
+| `failed_send_count` (derived) | lower = better |
+
+### Storage
+
+Table `funnel_weekly_briefs` (1 row per tenant per week, UNIQUE `(tenant_id, week_start)`).
+UPSERT on re-run — safe to re-trigger if a bug fix is needed mid-week.
+
+### IR34 Runtime Trace (Weekly Brief)
+
+`window.__weeklyBriefTrace` — array of `{ at: epoch_ms, rows: N, latest_week: 'YYYY-MM-DD' }`.
+Used by LH-Tester for Chrome MCP verification per Iron Rule 34.
