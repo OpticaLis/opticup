@@ -161,6 +161,49 @@ When the Pipeline returns ready-to-merge state and Daniel decides to merge:
 
 This pattern is in force because branch protection on `opticup/main` and `opticup-storefront/main` rejects direct pushes (`GH013` error). The GitHub PR UI is the only valid path — verified 2026-05-03 per memory `feedback_main_merge_via_pr.md`.
 
+## Brief Authoring Pre-flight (mandatory — added 2026-05-19 from SKILL_IMPROVEMENT_HARVEST_2026_05_19)
+
+Before writing ANY Brief or Activation Prompt, run these three checks. They prevent the patterns that recurred most frequently across the 2026-05-19 SPEC cohort.
+
+### Step 0.7 — Live-State Probe (REQUIRED for any Brief that cites DB-stored values)
+
+If the Brief is about to cite:
+- A **column name** (e.g., `crm_event_attendees.purchase_amount`) — `grep -n "<column>" modules/Module*/docs/db-schema.sql docs/GLOBAL_SCHEMA.sql` FIRST. If the column doesn't exist or has a different name, the Brief is built on a false assumption.
+- A **status value** (e.g., `status='purchased'`) — `SELECT slug FROM crm_statuses WHERE entity_type='<entity>'` via Supabase MCP FIRST. The Brief author often invents status values that the live data doesn't have.
+- An **extension function** (e.g., `uuid_generate_v5`, `gen_random_uuid`, `crypt`, `digest`) — `SELECT n.nspname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE p.proname='<fn>'` FIRST. Supabase moves most extensions to the `extensions` schema; assuming `public.` ships a P0 regression.
+- A **new column** the Brief plans to add — `SELECT column_name FROM information_schema.columns WHERE table_name='<target>' AND column_name='<proposed>'` FIRST. Rule 21: an existing column with semantically-overlapping purpose blocks the Brief's invented column.
+
+Pin the probe results in §0 of the SPEC the Brief feeds, under a "Live-DB Baselines" sub-table referenced by symbolic `BASE_*` constants.
+
+**Source:** Pattern A — 4 occurrences across 2026-05-19 cohort (M4_FB_CAPI_PURCHASE_EVENTS status vocabulary, event_type vs event_name column, M4_PIXEL_VALIDATION_GAP_DASHBOARD column name `l.name` vs `l.full_name`, M4_FB_CAPI_PURCHASE_EVENTS_UUID_FIX schema location `public` vs `extensions`).
+
+### Step 0.8 — Line-Budget Buffer Convention
+
+When a Brief (or the SPEC that derives from it) cites a file-size budget like "≤ 70 lines" for a migration / docs file / new module, write it as: `≤ N lines (±5 buffer for header comments)`.
+
+The Executor accepts overruns up to +5 lines without retroactive amendment. Migration headers and doc-section preambles consistently land 3–5 lines over the strict budget; the buffer prevents post-hoc Foreman dance to re-amend the SPEC.
+
+**Source:** Pattern B — 2 occurrences (M4_FB_CAPI_PURCHASE_EVENTS_UUID_FIX migration 73 vs 70; M4_PIXEL_VALIDATION_GAP_DASHBOARD docs 297 vs 295). Codifies the practice that emerged across both.
+
+### Step 0.9 — User Memory Compliance Check (MANDATORY BEFORE EVERY BRIEF + ACTIVATION PROMPT)
+
+Before sealing ANY Brief or Activation Prompt, read user auto-memory (`/mnt/.auto-memory/MEMORY.md` + the feedback memory files it links to). Check for:
+- **Active language preferences** (response language for Daniel-facing communication).
+- **Active format preferences** (response length, structure).
+- **Explicit "do not" rules**.
+
+The Brief or Activation Prompt **MUST NOT** contradict any such rule.
+
+**SPECIFIC PROHIBITION (THE recurring offender):** NEVER instruct the executing session to "surface a Hebrew one-line status to Daniel" or any variant ("emit Hebrew status", "Hebrew summary at end", "סיכום קצר בעברית"). The closure instruction MUST be:
+
+> "When done, surface a short English status line."
+
+The user-memory rule `feedback_english_only_responses.md` (re-confirmed 3× — 2026-05-12, 2026-05-13, 2026-05-19) takes ABSOLUTE PRECEDENCE over any Pipeline-mechanics preference for Hebrew status lines. Daniel's terminal renders Hebrew reversed; Hebrew status lines arrive broken and force a manual re-ask cycle.
+
+If the user has any other feedback memory about a behavioral preference (response length, language, format) — that memory takes PRECEDENCE over preferred Pipeline conventions.
+
+**Source:** Pattern D — 4 occurrences in 2026-05-19 cohort + 3 Daniel re-asks across 7 days. Highest-frequency proposal of the cohort. Codified here so the offender cannot recur structurally.
+
 ### Brief + Activation Prompt hand-off format (mandatory)
 
 When the Architect writes a Brief, the deliverable to Daniel is:

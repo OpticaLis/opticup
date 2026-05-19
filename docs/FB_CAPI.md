@@ -269,10 +269,50 @@ Rationale (Brief D1): Messaging Architecture v2 says Make = pipe only, zero DB a
 |---|---|
 | `M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF` — storefront UUID gen + hidden field + thank-you pixel eventID | ✅ CLOSED 2026-05-15 |
 | `M3_FUNNEL_PIXEL_BACKWIRE` — pixel-fired EF + storefront POST after `fbq` fires | ✅ CLOSED 2026-05-16 |
-| `M4_FB_CAPI_PURCHASE_EVENTS` — Purchase events via CAPI after ≥200 dispatched Lead events validated | Queued in OPEN_TASKS |
-| `M4_PIXEL_VALIDATION_GAP_DASHBOARD` (P2.2b) — query `crm_capi_dispatch_queue.status` counts joined with `crm_leads.fb_pixel_fired_at` | UNBLOCKED — substrate live as of 2026-05-16 |
+| `M4_FB_CAPI_PURCHASE_EVENTS` — Purchase events via CAPI after ≥200 dispatched Lead events validated | ✅ CLOSED 2026-05-19 |
+| `M4_PIXEL_VALIDATION_GAP_DASHBOARD` (P2.2b) — query `crm_capi_dispatch_queue.status` counts joined with `crm_leads.fb_pixel_fired_at` | ✅ CLOSED 2026-05-19 |
 | Cookie forwarding (`_fbp`, `_fbc`) — requires storefront capture + body field passthrough | Future SPEC |
 
 ---
+
+## 12. Dashboard Surface
+
+**Tile location:** CRM → Messaging Hub → "📊 ביצועי הודעות" sub-tab → top of panel (above performance table).
+**Queries:** Q1 aggregate (30d window, client-side reduce → total/gap/fired counts); Q2 7-day trend (JS-bucketed by day, badge list); Q3 drill-down (crm_leads LEFT JOIN crm_capi_dispatch_queue, gap rows only, LIMIT 100).
+**Drill-down modal:** `Modal.show`, title "פערי פיקסל — לידים מושפעים", columns שם/טלפון/תאריך/סטטוס CAPI/שגיאה. Empty-state: "אין לידים בפער כעת".
+**Gated index `idx_crm_leads_capi_gap_partial`:** DEFERRED — Q1 79.5ms cold / <1ms warm; Q2 0.7ms; Q3 0.69ms at 2026-05-19 volumes. Revisit at multi-tenant scale.
+**Runtime trace:** `window.__pixelGapTrace` — {aggregate, trend, drilldown} each with start_ms/end_ms/row_count.
+*Added by M4_PIXEL_VALIDATION_GAP_DASHBOARD (2026-05-19).*
+
+---
+
+## 13. Event Type Coverage
+
+**Added by:** `M4_FB_CAPI_PURCHASE_EVENTS` (2026-05-19). Extends CAPI from Lead-only to full funnel.
+
+### Event types now dispatched
+
+| Meta event_name | Trigger | DB signal | custom_data |
+|---|---|---|---|
+| `Lead` | Lead created in CRM | INSERT on `crm_leads` (via lead-intake EF) | none |
+| `CompleteRegistration` | Attendee registered to event | AFTER INSERT on `crm_event_attendees` | none |
+| `EventAttended` | Attendee status flips to 'attended' | AFTER UPDATE OF status on `crm_event_attendees` | none |
+| `Purchase` | Purchase amount set (NULL/0 → >0) | AFTER UPDATE OF purchase_amount on `crm_event_attendees` | `{value: N, currency: 'ILS'}` |
+
+### Purchase signal (Daniel Option B — 2026-05-19)
+
+Trigger fires on `purchase_amount` transition from NULL or 0 to > 0. No status check. No payment_status check.
+- Refund direction (>0 → 0): out of scope — trigger does not fire.
+- Typo correction (>0 → different >0): trigger does not fire (old value already > 0).
+- Historical backfill: NOT performed — 84 existing Prizma rows untouched (forward-only).
+- Currency: hardcoded `ILS` for v1. Future: read from `tenants.ui_config.currency`.
+
+### Idempotency guarantee
+
+Unique constraint `crm_capi_dispatch_queue_tenant_lead_event_unique` on `(tenant_id, lead_id, event_name)` ensures each event type is dispatched at most once per lead via `ON CONFLICT DO NOTHING`. CompleteRegistration is dispatched once per lead across all events they register to (not per-registration).
+
+### EF dispatch logic
+
+`fb-capi-dispatch` branches on `event_name`. For `Purchase`: fetches `purchase_amount` from `crm_event_attendees` at dispatch time (tenant-scoped, Iron Rule 22). If attendee row missing or zero → `permanent_error`. For `Lead`, `CompleteRegistration`, `EventAttended`: standard payload (em + ph, no custom_data).
 
 *End of docs/FB_CAPI.md — M4_FB_CAPI_HYBRID_DEDUPLICATION canonical reference.*

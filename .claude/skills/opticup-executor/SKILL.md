@@ -975,6 +975,34 @@ Self-Audit (Rule 21 row) with evidence of the greps you ran. An empty Rule 21
 row with "N/A" when the SPEC added DB objects is itself a finding against
 execution quality.
 
+#### Step 1.5.6 — DB Probe Pre-Flight (added 2026-05-19 from SKILL_IMPROVEMENT_HARVEST_2026_05_19)
+
+For every SPEC that touches DB (DDL, schema change, RPC creation, trigger creation, function modification, even row-level INSERT/UPDATE that depends on a specific column shape), run these probes BEFORE applying the first migration:
+
+1. **Extension presence + schema location.** `SELECT n.nspname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE p.proname='<extension_fn>'` for any function the SPEC will call from an extension (e.g., `uuid_generate_v5`, `uuid_ns_oid`, `digest`, `crypt`). If schema returns `extensions` and the SPEC wrote `public.<fn>` → STOP and escalate. The schema-qualifier mismatch is the M4_FB_CAPI_PURCHASE_EVENTS_UUID_FIX class.
+2. **Function existence + signature.** `SELECT proname, pg_get_function_identity_arguments(oid) FROM pg_proc WHERE proname='<target_fn>'` for any function the SPEC mentions. If the function doesn't exist or its argument list differs → STOP.
+3. **Column existence + data type.** `SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name='<target>' AND column_name IN (<list>)` for every column the SPEC's SQL references. If any column is missing or has a different name (e.g., SPEC says `name`, schema says `full_name`) → STOP.
+4. **Status / enum value existence.** `SELECT slug, COUNT(*) FROM crm_statuses GROUP BY slug` (or equivalent) before any SPEC that filters by a status value. If the value doesn't exist → STOP.
+
+If any probe surfaces a divergence from SPEC assumption → STOP per Bounded Autonomy, write the deviation to EXECUTION_REPORT D-N, escalate. Do NOT silently substitute.
+
+**Source:** Pattern A — 4 occurrences across 2026-05-19 cohort. The Executor-side dual of opticup-architect Step 0.7 (defense-in-depth).
+
+#### Step 1.5.7 — SECURITY DEFINER Function Rehearsal (added 2026-05-19 from SKILL_IMPROVEMENT_HARVEST_2026_05_19)
+
+For every SPEC that CREATES or MODIFIES a function declared `SECURITY DEFINER` (DB trigger functions, RPCs, etc.), rehearse the function inside a `BEGIN; ... ROLLBACK;` block on demo BEFORE the C-commit that ships it.
+
+Procedure:
+1. Apply the migration to demo via MCP `apply_migration` OR via a `DO $$ ... $$` block inside a transaction.
+2. Execute the function (e.g., INSERT/UPDATE the row that fires the trigger).
+3. Verify: no privilege errors, no schema-qualification errors, no missing-function errors, no SECURITY DEFINER `SET search_path` mismatches.
+4. `ROLLBACK;` — the rehearsal leaves zero DB state changes.
+5. Capture the rehearsal trace (SQL + result) in EXECUTION_REPORT §2 (DB-probe-and-rehearsal section).
+
+If the rehearsal raises any error → STOP, escalate. The function is broken; shipping it would create the M4_FB_CAPI_PURCHASE_EVENTS class P0 regression.
+
+**Source:** Pattern C — 2 occurrences across 2026-05-19 cohort + the upstream P0 regression that needed M4_FB_CAPI_PURCHASE_EVENTS_UUID_FIX. The check would have caught it 30 seconds before the migration shipped.
+
 ### Step 2 — Execute under Bounded Autonomy
 Follow the Execution Loop (above). Match → continue. Mismatch → STOP.
 

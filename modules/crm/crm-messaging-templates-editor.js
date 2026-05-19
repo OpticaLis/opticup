@@ -24,6 +24,7 @@
     if (!main) return;
     var g = baseSlug ? ctx.findLogicalByBase(baseSlug) : null;
     _editorState = g ? ctx.cloneState(g) : ctx.newLogicalDraft();
+    _editorState._lintOverrideAcknowledged = false;
     ctx.setActiveBase(g ? g.baseSlug : null);
     var slugField = _editorState.isNew  // editable on new (Hebrew names → empty); read-only on edit
       ? '<input type="text" id="tpl-slug" value="' + escapeHtml(_editorState.baseSlug || '') + '" placeholder="slug (אנגלית, ייגזר משם אם ריק)" class="' + ctx.CLS_INPUT + ' w-64 text-xs font-mono" dir="ltr">'
@@ -92,6 +93,41 @@
     var emptyCh2 = _ctx.CHANNELS.filter(function (c) { return _editorState.channels[c].exists && !((_editorState.channels[c].body || '').trim()); })[0];
     if (emptyCh2) { _ctx.toast('error', 'תוכן חסר בערוץ ' + _ctx.CHANNEL_LABELS[emptyCh2]); return; }
 
+    // ── Layer D lint — M4_TEMPLATE_VALIDATION_UI_LINT (2026-05-19) ──────────
+    // Runs AFTER name/channel/slug/empty-body guards but BEFORE building ops[].
+    if (window.CrmTemplateLint && !_editorState._lintOverrideAcknowledged) {
+      var paymentLinkKeys = (window.OpticupConfig && OpticupConfig.tenant && OpticupConfig.tenant.payment_links)
+        ? Object.keys(OpticupConfig.tenant.payment_links) : [];
+      var lintErrors = { unknownPlaceholders: [], typos: [], paymentUrlErrors: [] };
+      _ctx.CHANNELS.forEach(function (ch) {
+        var cs = _editorState.channels[ch];
+        if (!cs.exists) return;
+        var r = window.CrmTemplateLint.validate(cs.body || '', cs.subject || null,
+          { paymentLinkKeys: paymentLinkKeys });
+        Array.prototype.push.apply(lintErrors.unknownPlaceholders, r.unknownPlaceholders);
+        Array.prototype.push.apply(lintErrors.typos, r.typos);
+        Array.prototype.push.apply(lintErrors.paymentUrlErrors, r.paymentUrlErrors);
+      });
+      // Trace for Iron Rule 34 verification (D-AUTH-8).
+      window.__lintTrace = window.__lintTrace || [];
+      window.__lintTrace.push({ at: Date.now(), result: lintErrors });
+      // HARD-BLOCK: typos or broken payment_url keys.
+      if (lintErrors.typos.length > 0 || lintErrors.paymentUrlErrors.length > 0) {
+        renderLintBanner(lintErrors, 'hard');
+        _ctx.toast('error', 'בעיות באימות placeholders — תקן לפני שמירה');
+        return;
+      }
+      // SOFT-BLOCK: genuinely-new unknowns — require override checkbox.
+      if (lintErrors.unknownPlaceholders.length > 0) {
+        renderLintBanner(lintErrors, 'soft');
+        return; // banner sets _lintOverrideAcknowledged when checkbox is checked
+      }
+      // CLEAN — clear any stale banner and proceed.
+      var stale = document.getElementById('tpl-lint-banner');
+      if (stale) stale.remove();
+    }
+    // ── End Layer D lint ──────────────────────────────────────────────────────
+
     var showAutoEl = document.getElementById('tpl-show-auto');
     var showAuto = showAutoEl ? !!showAutoEl.checked : (_editorState.showInAutomations !== false);
     _editorState.showInAutomations = showAuto;
@@ -127,6 +163,44 @@
       _ctx.renderSidebar();
       open(baseSlug, _ctx);
     } catch (e) { _ctx.toast('error', 'שמירה נכשלה: ' + (e.message || String(e))); }
+  }
+
+  // renderLintBanner — Layer D UI feedback helper (M4_TEMPLATE_VALIDATION_UI_LINT).
+  // mode='hard' → red bg, Save stays disabled (no override).
+  // mode='soft' → amber bg, override checkbox enables re-save.
+  function renderLintBanner(errors, mode) {
+    var existing = document.getElementById('tpl-lint-banner');
+    if (existing) existing.remove();
+    var isHard = mode === 'hard';
+    var lines = [];
+    errors.typos.forEach(function (t) {
+      lines.push('❌ שגיאת הקלדה: <code>%' + escapeHtml(t.name) + '%</code> — כוונת <code>%' + escapeHtml(t.suggestion) + '%</code>?');
+    });
+    errors.paymentUrlErrors.forEach(function (p) {
+      lines.push('❌ <code>%' + escapeHtml(p.name) + '%</code> — לדייר אין מפתח payment_links.' + escapeHtml(p.missingKey));
+    });
+    errors.unknownPlaceholders.forEach(function (u) {
+      lines.push('⚠️ Placeholder לא מוכר: <code>%' + escapeHtml(u.name) + '%</code>');
+    });
+    var overridePart = isHard ? '' :
+      '<label class="flex items-center gap-2 mt-2 cursor-pointer">' +
+        '<input type="checkbox" id="tpl-lint-override">' +
+        '<span class="text-sm">אני מאשר — placeholder חדש; יידרש SPEC ארכיטקט להוסיף לרזולבר</span>' +
+      '</label>';
+    var div = document.createElement('div');
+    div.id = 'tpl-lint-banner';
+    div.className = 'rounded-lg p-3 mb-2 text-sm ' + (isHard ? 'bg-red-50 border border-red-200 text-red-800' : 'bg-amber-50 border border-amber-200 text-amber-800');
+    div.innerHTML = '<div class="font-semibold mb-1">' + (isHard ? 'שגיאות placeholder — חסום שמירה' : 'Placeholders לא מוכרים') + '</div>' +
+      '<ul class="list-disc list-inside space-y-0.5">' + lines.map(function (l) { return '<li>' + l + '</li>'; }).join('') + '</ul>' +
+      overridePart;
+    var footer = document.querySelector('#tpl-editor .flex.gap-2.justify-end');
+    if (footer) footer.parentNode.insertBefore(div, footer);
+    if (!isHard) {
+      var cb = document.getElementById('tpl-lint-override');
+      if (cb) cb.addEventListener('change', function () {
+        _editorState._lintOverrideAcknowledged = !!cb.checked;
+      });
+    }
   }
 
   async function deleteLogicalTemplate() {

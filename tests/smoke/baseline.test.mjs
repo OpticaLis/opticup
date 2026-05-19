@@ -152,6 +152,25 @@ test('7. No 5xx on critical pages (HEAD only)', async () => {
   if (failures.length) throw new Error(failures.join(', '));
 });
 
+// ─── Test 8: Layer D lint module loaded in crm.html ──────────────────
+// Criterion 14 — M4_TEMPLATE_VALIDATION_UI_LINT (2026-05-19).
+// Approach: readFileSync on crm.html (served as static file) and grep for
+// the lint module script tag + key symbol. No JSDOM mount needed — the
+// assertion is structural (lint module is declared in the page) not runtime.
+test('8. Layer D lint module declared in crm.html (M4_TEMPLATE_VALIDATION_UI_LINT)', async () => {
+  const crmHtml = readFileSync(join(process.cwd(), 'crm.html'), 'utf8');
+  if (!crmHtml.includes('crm-template-lint.js')) {
+    throw new Error('crm-template-lint.js script tag not found in crm.html');
+  }
+  const lintJs = readFileSync(join(process.cwd(), 'modules/crm/crm-template-lint.js'), 'utf8');
+  if (!lintJs.includes('validateTemplateBodyPlaceholders') && !lintJs.includes('window.CrmTemplateLint')) {
+    throw new Error('CrmTemplateLint global not exposed in crm-template-lint.js');
+  }
+  if (!lintJs.includes('KNOWN_PLACEHOLDERS')) {
+    throw new Error('KNOWN_PLACEHOLDERS not found in crm-template-lint.js');
+  }
+});
+
 // ─── Cleanup: delete test lead ──────────────────────────────────────
 async function cleanup() {
   if (!createdLeadId || !authToken) return;
