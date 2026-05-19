@@ -270,8 +270,19 @@ Rationale (Brief D1): Messaging Architecture v2 says Make = pipe only, zero DB a
 | `M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF` — storefront UUID gen + hidden field + thank-you pixel eventID | ✅ CLOSED 2026-05-15 |
 | `M3_FUNNEL_PIXEL_BACKWIRE` — pixel-fired EF + storefront POST after `fbq` fires | ✅ CLOSED 2026-05-16 |
 | `M4_FB_CAPI_PURCHASE_EVENTS` — Purchase events via CAPI after ≥200 dispatched Lead events validated | Queued in OPEN_TASKS |
-| `M4_PIXEL_VALIDATION_GAP_DASHBOARD` (P2.2b) — query `crm_capi_dispatch_queue.status` counts joined with `crm_leads.fb_pixel_fired_at` | UNBLOCKED — substrate live as of 2026-05-16 |
+| `M4_PIXEL_VALIDATION_GAP_DASHBOARD` (P2.2b) — query `crm_capi_dispatch_queue.status` counts joined with `crm_leads.fb_pixel_fired_at` | ✅ CLOSED 2026-05-19 |
 | Cookie forwarding (`_fbp`, `_fbc`) — requires storefront capture + body field passthrough | Future SPEC |
+
+---
+
+## 12. Dashboard Surface
+
+**Tile location:** CRM → Messaging Hub → "📊 ביצועי הודעות" sub-tab → top of panel (above performance table).
+**Queries:** Q1 aggregate (30d window, client-side reduce → total/gap/fired counts); Q2 7-day trend (JS-bucketed by day, badge list); Q3 drill-down (crm_leads LEFT JOIN crm_capi_dispatch_queue, gap rows only, LIMIT 100).
+**Drill-down modal:** `Modal.show`, title "פערי פיקסל — לידים מושפעים", columns שם/טלפון/תאריך/סטטוס CAPI/שגיאה. Empty-state: "אין לידים בפער כעת".
+**Gated index `idx_crm_leads_capi_gap_partial`:** DEFERRED — Q1 79.5ms cold / <1ms warm; Q2 0.7ms; Q3 0.69ms at 2026-05-19 volumes. Revisit at multi-tenant scale.
+**Runtime trace:** `window.__pixelGapTrace` — {aggregate, trend, drilldown} each with start_ms/end_ms/row_count.
+*Added by M4_PIXEL_VALIDATION_GAP_DASHBOARD (2026-05-19).*
 
 ---
 

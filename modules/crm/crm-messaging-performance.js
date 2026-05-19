@@ -25,6 +25,7 @@
     if (!host) return;
     host.innerHTML =
       '<div>' +
+        '<div id="pixel-gap-tile-wrap" class="mb-4"></div>' +
         '<h4 class="text-base font-bold text-slate-800 mb-1">📊 ביצועי הודעות</h4>' +
         '<p class="text-xs text-slate-500 mb-3">' +
           'נתונים מצטברים לפי אירוע + תבנית + ערוץ. הקלקה על כותרת עמודה — מיון.' +
@@ -43,6 +44,13 @@
           escapeHtml(e.message || String(e)) + '</div>';
       }
     }
+    // Embed pixel gap tile above performance table (M4_PIXEL_VALIDATION_GAP_DASHBOARD)
+    try {
+      var gapHost = document.getElementById('pixel-gap-tile-wrap');
+      if (gapHost && typeof window.renderPixelGapTile === 'function') {
+        window.renderPixelGapTile(gapHost);
+      }
+    } catch (e) { console.warn('pixel gap tile load failed:', e); }
   }
   window.renderMessagingPerformance = renderMessagingPerformance;
 
