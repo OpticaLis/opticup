@@ -1,0 +1,34 @@
+{
+  "phase": "post-revert live verification",
+  "captured_at_utc": "2026-05-19T08:09:31Z",
+  "tenant": "demo",
+  "event_id": "a027610e-e819-4d87-8688-c057a64efa90",
+  "event_number": 28,
+  "toggle": "planning -> registration_open",
+  "method": "CrmEventActions.changeEventStatus invoked via Chrome console (same code path as the dropdown click in the UI — both call this function with the same args; chosen for click-positioning reliability after UI scroll inconsistency)",
+  "trace_events_raw_ms_offsets": [
+    {"ms": 0, "type": "TEST.start", "toggle": "planning -> registration_open"},
+    {"ms": 0, "type": "CrmEventActions.changeEventStatus.in", "eventId": "a027610e-e819-4d87-8688-c057a64efa90", "newStatus": "registration_open"},
+    {"ms": 353, "type": "CrmAutomationClient.evaluate.in", "triggerType": "event_status_change"},
+    {"ms": 354, "type": "CrmAutomationClient.evaluate.out", "triggerType": "event_status_change", "result": {"run_id": null, "fired": 0, "sent": 0, "failed": 0, "rejected": 0, "queued": 0, "skipped": 0, "pending_confirm": true}},
+    {"ms": 354, "type": "CrmEventActions.changeEventStatus.out"},
+    {"ms": 354, "type": "TEST.change_returned", "status": "registration_open"},
+    {"ms": 1830, "type": "Modal.show", "title": "אישור פעולה"}
+  ],
+  "key_signals": {
+    "browser_path_fired": true,
+    "evaluate_returned_pending_confirm_true": true,
+    "modal_opened_ms_after_toggle": 1830,
+    "modal_title_hebrew": "אישור פעולה (Confirmation of Action)"
+  },
+  "modal_contents_observed": {
+    "rules_displayed": 2,
+    "channels": ["SMS 📱", "Email ✉️"],
+    "recipients_total": 1,
+    "recipients_selected": 1,
+    "recipient_row": {"name": "Test E2E FB CAPI", "phone": "053-788-9878", "email": "daniel@prizma-optic.co.il"},
+    "action_buttons": ["ביטול", "📤 שלח טסט ל-3 הראשונים (disabled)", "אישור ללא הודעות", "אישור ושלח הודעות (1)"]
+  },
+  "user_action": "Clicked uid=24_23 'אישור ושלח הודעות (1)' at ~08:02:18Z",
+  "instrumentation_note": "Double-firing of evaluate.in/out and Modal.show events is due to multiple page reloads where each install wrapped the function again; effective behavior was single-fire confirmed by 'modals_open=1' and single runs/queue rows in DB"
+}

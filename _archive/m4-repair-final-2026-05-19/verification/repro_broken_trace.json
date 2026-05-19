@@ -1,0 +1,21 @@
+{
+  "phase": "pre-repair reproduction",
+  "captured_at_utc": "2026-05-19T07:51Z",
+  "tenant": "demo",
+  "event_id": "a027610e-e819-4d87-8688-c057a64efa90",
+  "event_number": 28,
+  "toggle": "planning -> registration_open",
+  "method": "CrmEventActions.changeEventStatus(eventId, 'registration_open') invoked directly via Chrome console (bypasses dropdown UI but exercises exact same browser code path)",
+  "trace_events": [
+    {"ms": 0, "type": "TEST.start"},
+    {"ms": 0, "type": "CrmEventActions.changeEventStatus.in", "newStatus": "registration_open"},
+    {"ms": 294, "type": "CrmEventActions.changeEventStatus.out", "result_status": "registration_open"},
+    {"ms": 294, "type": "TEST.changeEventStatus.return"}
+  ],
+  "modal_show_events": 0,
+  "browser_evaluate_events": 0,
+  "modal_visible_in_dom": false,
+  "open_modal_count": 0,
+  "conclusion": "BUG CONFIRMED. Browser path removed by SPEC 5 commit 8d9a365. DB UPDATE succeeded but NO modal opened and NO CrmAutomationClient.evaluate() fired. With consume_status_change_events cron also unscheduled, the entire status-change → message pipeline is broken on localhost/main.",
+  "foreman_decision": "Path A — Rollback. Reasons: (1) Daniel needs Prizma working tomorrow (2026-05-20); (2) Path A is ~30-45 min per Brief vs Path B 2-4hr+ with architectural risk; (3) preserves all working SPECs 1-4 + regression fix, reverts only the harmful SPEC 5; (4) customers getting duplicate messages is acceptable for one event vs customers getting NO messages. Path B (proper modal-via-rule_match_probe + approval-signaled queue dispatch) is a future SPEC for when Daniel can verify step-by-step."
+}

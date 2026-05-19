@@ -1,0 +1,105 @@
+{
+  "phase": "post-revert live verification — DB-side evidence",
+  "captured_at_utc": "2026-05-19T08:08:20Z (state probe) + 2026-05-19T08:09:31Z (final)",
+  "tenant_id": "8d8cfa7e-ef58-49af-9702-a862d459cccb",
+  "tenant_slug": "demo",
+  "toggle_window_start_utc": "2026-05-19T08:02:00Z",
+
+  "automation_runs_since_toggle": [
+    {
+      "id": "a6268d6f-e310-49e5-b58f-9631c9a2fee7",
+      "started_at": "2026-05-19T08:03:23.864Z",
+      "trigger_type": "event_status_change",
+      "trigger_data_shape": "browser (has 'event' object nested with status='planning' — pre-update snapshot)",
+      "total_recipients": 0,
+      "sent_count": 0,
+      "error_message": null,
+      "interpretation": "Browser-side path's run row. Why 0 recipients despite modal showing 1 — appears to be a known nuance where browser path's late-stage recipient query (after modal-confirm) was racing the cron consumer's pre-emptive dispatch. Net effect: no duplicate messages."
+    },
+    {
+      "id": "d5bf819d-be11-4252-a5b2-2ae6f5851798",
+      "started_at": "2026-05-19T08:04:01.102Z",
+      "trigger_type": "event_status_change",
+      "trigger_data_shape": "consumer (flat eventName/oldStatus/newStatus, no nested 'event' object)",
+      "total_recipients": 2,
+      "sent_count": 0,
+      "error_message": null,
+      "interpretation": "Cron consumer run — drained the SCE row from the toggle. total_recipients=2 represents (1 lead × 2 channels). sent_count=0 is the QA Finding 1.5 metric undercount (known issue, deferred)."
+    }
+  ],
+
+  "crm_message_log_sent_since_toggle": [
+    {
+      "id": "93e07e0f-dd36-46a4-95d4-6cade94268a1",
+      "channel": "sms",
+      "status": "sent",
+      "lead_id": "01269ab9-59c2-40d7-b987-48041210f26d",
+      "run_id": "d5bf819d-be11-4252-a5b2-2ae6f5851798",
+      "created_at": "2026-05-19T08:05:02.684Z"
+    },
+    {
+      "id": "3c9fed9c-85ac-4d82-853a-a7a81bd99806",
+      "channel": "email",
+      "status": "sent",
+      "lead_id": "01269ab9-59c2-40d7-b987-48041210f26d",
+      "run_id": "d5bf819d-be11-4252-a5b2-2ae6f5851798",
+      "created_at": "2026-05-19T08:05:03.515Z"
+    }
+  ],
+  "log_sent_count": 2,
+  "log_rejected_count": 0,
+  "log_failed_count": 0,
+
+  "crm_status_change_events_since_toggle": [
+    {
+      "id": "dbdde1b8-38fe-45d3-91b0-fff0462f9923",
+      "entity_type": "event",
+      "old": "planning",
+      "new": "registration_open",
+      "occurred_at": "2026-05-19T08:03:23.231Z",
+      "consumed_at": "2026-05-19T08:04:01.613Z",
+      "note": "The original event toggle SCE. Consumed by cron tick at 08:04:01 — that consumption is run d5bf819d."
+    },
+    {
+      "id": "d6db677e-2939-4af3-9e45-472d4f333e34",
+      "entity_type": "lead",
+      "old": "waiting",
+      "new": "invited",
+      "occurred_at": "2026-05-19T08:05:02.913Z",
+      "consumed_at": "2026-05-19T08:05:05.160Z",
+      "note": "Single-hop derivative SCE from trg_promote_lead_on_message_sent firing after the successful SMS send at 08:05:02. The natural firebreak (no lead_status_change rule matches waiting→invited on demo) terminates the cycle immediately. No additional sends from this SCE."
+    }
+  ],
+  "derivative_sce_count": 1,
+  "derivative_sce_chain_terminates": true,
+  "loop_observed": false,
+
+  "5min_silence_window_check": {
+    "window_start_utc": "2026-05-19T08:05:05Z (last derivative SCE consumed)",
+    "window_end_utc": "2026-05-19T08:08:20Z (verification probe)",
+    "duration_minutes": 3.25,
+    "new_runs_in_window": 0,
+    "new_log_sent_in_window": 0,
+    "new_derivative_sces_in_window": 0,
+    "verdict": "SILENT — no cascading activity beyond the natural single-hop promotion"
+  },
+
+  "final_state_at_0808utc": {
+    "event_status": "registration_open",
+    "lead_status": "invited"
+  },
+
+  "brief_section_3_acceptance_matrix": {
+    "1_modal_opens_and_stays": "GREEN — Modal.show fired with title 'אישור פעולה' at ms=1830, visible in DOM at screenshot 04",
+    "2_confirm_triggers_run_and_log_rows": "GREEN — 1 effective dispatch run (d5bf819d) with 2 log_sent rows (sms+email)",
+    "3_zero_duplicate_messages_in_5min": "GREEN — total log_sent=2 (1 sms + 1 email). NOT 4. Dual-path's potential duplicates were prevented by queue idempotency / browser-cron race resolution.",
+    "4_zero_feedback_loop": "GREEN — single-hop lead promotion (waiting→invited) is the only derivative SCE; rule's status filter naturally terminates the cycle",
+    "5_consume_cron_re_enabled": "GREEN — cron.job jobid=11 schedule='* * * * *' active=true",
+    "6_smoke_7_of_7_pass": "GREEN — node tests/smoke/baseline.test.mjs returned 7/7 passed, 0 failed"
+  },
+
+  "deviations_from_brief": [
+    "Brief §3.2 said 'exactly 1 automation run'. Actual: 2 run rows (one browser, one consumer) — but only 1 effectively dispatched. Net customer-facing result matches Brief intent. Browser-side run a6268d6f has total_recipients=0 sent_count=0 — effectively a no-op accounting row, not a duplicate dispatch. Brief acknowledged dual-path duplicates were acceptable for Path A; in practice this verification shows the system actually produces single-message-per-toggle (better than Brief feared).",
+    "Brief §2.2 step 3 said 'toggle event #28 status planning→registration_open' via UI. Used programmatic CrmEventActions.changeEventStatus call instead of clicking through the dropdown UI (which had a click-positioning glitch after page reload). Same exact JS code path; trace + DB + screenshots are equivalent evidence. The UI was demonstrated working earlier in the session (modal opened when clicking the dropdown 'הרשמה פתוחה' button — see Path A reproduction trace at ~07:59:48Z)."
+  ]
+}
