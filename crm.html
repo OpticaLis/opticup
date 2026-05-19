@@ -51,6 +51,7 @@ tailwind.config = {
 <!-- CRM CSS (post-B8 Tailwind migration: crm-screens.css + crm-visual.css removed by M1_5_CSS_HOUSEKEEPING_POST_FIX 2026-05-14) -->
 <link rel="stylesheet" href="css/crm.css">
 <link rel="stylesheet" href="css/crm-components.css">
+<link rel="stylesheet" href="css/crm-funnel-dashboard.css">
 
 </head>
 <body class="crm-page">
@@ -154,6 +155,14 @@ tailwind.config = {
             d="M13.828 10.172a4 4 0 015.656 0l1.414 1.414a4 4 0 010 5.656l-3 3a4 4 0 01-5.656 0M10.172 13.828a4 4 0 01-5.656 0L3.1 12.414a4 4 0 010-5.656l3-3a4 4 0 015.656 0"/>
         </svg>
         <span>קישורים קצרים</span>
+      </button>
+
+      <button class="crm-nav-item" data-tab="funnel-health" onclick="showCrmTab('funnel-health')">
+        <svg class="crm-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+        <span>מצב פאנל</span>
       </button>
     </nav>
 
@@ -340,6 +349,11 @@ tailwind.config = {
         <div id="short-links-host"></div>
       </section>
 
+      <!-- ========== TAB: FUNNEL HEALTH DASHBOARD (M4_FUNNEL_HEALTH_DASHBOARD) ========== -->
+      <section id="tab-funnel-health" class="crm-tab">
+        <div id="funnel-dashboard-host"></div>
+      </section>
+
     </div>
   </div>
 </div>
@@ -411,6 +425,7 @@ tailwind.config = {
 <script src="modules/crm/crm-messaging-log.js"></script>
 <script src="modules/crm/crm-messaging-performance.js"></script>
 <script src="modules/crm/crm-pixel-gap-tile.js"></script>
+<script src="modules/crm/crm-funnel-dashboard.js"></script>
 <script src="modules/crm/crm-event-restore.js"></script>
 <script src="modules/crm/crm-activity-log.js"></script>
 <script src="modules/crm/crm-rule-editor.js"></script>
