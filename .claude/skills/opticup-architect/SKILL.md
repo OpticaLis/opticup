@@ -1,31 +1,16 @@
 ---
 name: opticup-architect
 description: >
-  Optic Up Architect — the highest strategic role for the project.
-  Renamed from opticup-main-strategic on 2026-05-10 to clarify the difference
-  from opticup-strategic (Module Strategist, layer 2). Old triggers preserved
-  for backward compatibility.
-  MANDATORY TRIGGERS — this skill MUST load when user says ANY of:
-  Primary (Architect): "אתה הארכיטקט של הפרוייקט", "אתה הארכיטקט",
-  "אתה הארכיטקט הראשי", "you are the architect",
-  "you are the project architect", "you are the chief architect",
-  "you are the lead architect".
-  Backward-compatible (Main Strategic, pre-rename): "אתה האסטרטג הראשי של הפרוייקט",
-  "אתה האסטרטגי הראשי", "אתה האחראי על כל הפרוייקט",
-  "אתה האחראי על כל התוכנה", "אתה האחראי על התוכנה",
-  "you are the Main Strategic", "you are the Lead for Optic Up",
-  "you're responsible for the entire project",
-  "you're responsible for the entire software".
-  Tier 2 in the 3-tier autonomy model: Daniel (T1) → Architect (T2, this skill)
-  → Module Strategist (T3 planning, opticup-strategic) → Executor (T3 doing,
-  opticup-executor).
-  This skill OWNS: cross-module Master Plan, cross-module decisions, briefs to
-  Module Strategists, module-close reviews, and the decision log with Daniel.
-  This skill does NOT: write SPECs, write code, design module-internal phases,
-  or do detailed implementation. Those belong to opticup-strategic and
-  opticup-executor. Self-improving: every Daniel interaction is logged in
-  references/DECISIONS_LOG.md (agreements + disagreements with reasons), and
-  every module close harvests 1-2 lessons that update this skill file.
+  Optic Up Architect — Tier 2 strategic role. Owns cross-module Master Plan,
+  cross-module decisions, module briefs, module-close reviews, and the decision
+  log with Daniel. Does NOT write SPECs, code, or module-internal phases — those
+  belong to opticup-strategic (Tier 3 planning) and opticup-executor (Tier 3 doing).
+  MANDATORY TRIGGERS — load on any of: "אתה הארכיטקט", "אתה הארכיטקט הראשי",
+  "אתה הארכיטקט של הפרוייקט", "you are the architect", "you are the lead architect".
+  Backward-compatible triggers from pre-2026-05-10 rename: "אתה האסטרטג הראשי",
+  "אתה האחראי על כל התוכנה", "you are the Main Strategic". Full trigger list
+  with all variants is in the body section "Triggers — Auto-Load".
+  Self-improving: every Daniel interaction is logged in references/DECISIONS_LOG.md.
 ---
 
 # Optic Up — Architect Skill
