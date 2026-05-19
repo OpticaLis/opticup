@@ -1,22 +1,12 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// ============================================================
-// fb-capi-dispatch — Edge Function for Facebook CAPI dispatch
-// Module 4 CRM — Phase 2 P2.1 (M4_FB_CAPI_HYBRID_DEDUPLICATION)
-// 2026-05-15
-// ============================================================
-// Called by pg_cron job 'fb_capi_dispatch_consumer' (every minute)
-// with dispatch_mode='cron'. Claims queued/retriable rows from
-// crm_capi_dispatch_queue, enriches with crm_leads data (hashing
-// em + ph server-side), and dispatches to Meta Conversions API.
-//
-// Token: storefront_config.analytics->>'fb_capi_token' (per D-AUTH-1).
-// No token → status='skipped_no_token' (per D-AUTH-3).
-// No email AND no phone → status='no_match' (per D-AUTH-7).
-// PII: email/phone hashed server-side; plaintext NOT stored in queue.
-// Iron Rule 22: tenant_id filter on every .from() query.
-// ============================================================
+// fb-capi-dispatch — Facebook CAPI dispatch Edge Function (M4 CRM)
+// P2.1 (M4_FB_CAPI_HYBRID_DEDUPLICATION 2026-05-15) + P2.2 (M4_FB_CAPI_PURCHASE_EVENTS 2026-05-19)
+// pg_cron 'fb_capi_dispatch_consumer' calls with dispatch_mode='cron'.
+// Events: Lead | CompleteRegistration | EventAttended | Purchase (Purchase adds custom_data value+currency).
+// Token: storefront_config.analytics->>'fb_capi_token'. No token → skipped_no_token.
+// Iron Rule 22: tenant_id filter on every .from() query. PII hashed server-side.
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -166,12 +156,34 @@ async function processQueueRow(
     userData["ph"] = await sha256Hex(phoneDigits);
   }
 
-  // Step 6: Build event payload (no PII — only hashed values stored)
+  // Step 6a: Purchase — fetch purchase_amount at dispatch time (D-AUTH-9, IR22)
+  let purchaseCustomData: { value: number; currency: string } | null = null;
+  if (eventName === "Purchase") {
+    const { data: attendee, error: attendeeErr } = await db
+      .from("crm_event_attendees")
+      .select("purchase_amount")
+      .eq("lead_id", leadId)
+      .eq("tenant_id", tenantId)
+      .gt("purchase_amount", 0)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (attendeeErr || !attendee || !attendee.purchase_amount) {
+      await updateQueueRow(db, queueId, tenantId, "permanent_error", retries,
+        "attendee_not_found_or_zero_amount: no matching crm_event_attendees row with purchase_amount>0", null);
+      return;
+    }
+    // D-AUTH-6: ILS hardcoded v1; D-AUTH-9: raw numeric, no rounding
+    purchaseCustomData = { value: Number(attendee.purchase_amount), currency: "ILS" };
+  }
+
+  // Step 6b: Build event payload (no PII — only hashed values stored)
   const eventPayload = {
     em: userData["em"] ?? null,
     ph: userData["ph"] ?? null,
     event_name: eventName,
     event_id: eventId ?? undefined,
+    ...(purchaseCustomData ? { custom_data: purchaseCustomData } : {}),
   };
 
   // Step 7: Dispatch to Meta CAPI
@@ -184,6 +196,7 @@ async function processQueueRow(
         action_source: "website",
         event_id: eventId ?? undefined,
         user_data: userData,
+        ...(purchaseCustomData ? { custom_data: purchaseCustomData } : {}),
       },
     ],
   };
