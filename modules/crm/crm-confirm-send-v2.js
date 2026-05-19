@@ -70,9 +70,8 @@
     var excludedCount = _state.excluded.size + _state.testSent.size;
     var remaining = total - excludedCount;
     if (approveBtn) {
-      approveBtn.textContent = _state.testSent.size > 0
-        ? 'שלח לשאר (' + remaining + ')'
-        : 'אישור ושלח הודעות (' + remaining + ')';
+      approveBtn.textContent = _state.testSent.size > 0 ? 'שלח לשאר (' + remaining + ')' : 'אישור ושלח הודעות (' + remaining + ')';
+      approveBtn.disabled = remaining <= 0; // M4_MODAL_DESELECTION_RESTORE_2026_05_19
     }
     if (testBtn) testBtn.disabled = pickFirst3().length < 3;
     if (countEl) countEl.outerHTML = R().renderCountLine(_state); // simple replace

@@ -34,6 +34,19 @@ type QueueRow = {
   originated_by_rule_id: string | null;
 };
 
+// M4_MODAL_DESELECTION_RESTORE_2026_05_19: extract operator overrides from the
+// SCE payload set by update_event_status_with_overrides RPC + SCE-producer
+// trigger. Returns the arrays (or null) for consumeStatusChangeEvents to pass
+// as top-level excludeLeadIds / recipientSubset inputs to evaluate().
+function payloadOverrides(payload: Record<string, unknown>): { exclude: string[]; subset: string[] } {
+  const ex = payload.exclude_lead_ids;
+  const sb = payload.recipient_subset;
+  return {
+    exclude: Array.isArray(ex) ? ex.filter((x): x is string => typeof x === "string") : [],
+    subset:  Array.isArray(sb) ? sb.filter((x): x is string => typeof x === "string") : [],
+  };
+}
+
 function buildTriggerDataForEntity(e: QueueRow): Record<string, unknown> | null {
   const payload = (e.payload && typeof e.payload === "object") ? e.payload : {};
   const base = {
@@ -130,9 +143,14 @@ export async function consumeStatusChangeEvents(
         processed++;
         continue;
       }
+      // M4_MODAL_DESELECTION_RESTORE_2026_05_19: thread operator overrides
+      // from SCE payload (set by update_event_status_with_overrides RPC).
+      const ov = payloadOverrides((e.payload && typeof e.payload === "object") ? e.payload : {});
       const r = await evaluate(db, {
         tenantId, triggerType, triggerData,
         mode: "dispatch", planItems: null, dispatchMessages: true,
+        excludeLeadIds: ov.exclude,
+        recipientSubset: ov.subset,
         anonKey, sendMessageUrl,
       });
       if (r.fired > 0) evaluated++;

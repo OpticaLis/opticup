@@ -100,6 +100,25 @@ When set on a rule, after the primary action completes the engine UPDATEs all re
 
 Common values: `warmed`, `invited`, `confirmed`. Any value in `crm_statuses` (or implicit Tier-2 set) is acceptable.
 
+### 2.6 SCE payload — operator dispatch overrides (M4_MODAL_DESELECTION_RESTORE, 2026-05-19)
+
+When a status change is committed via the V2 modal-confirm flow with operator deselections (or test-send subset), the `crm_status_change_events.payload` jsonb carries two optional keys that the consumer reads and threads into `evaluate()`'s top-level `excludeLeadIds` / `recipientSubset` inputs:
+
+| payload key | type | semantics |
+|---|---|---|
+| `exclude_lead_ids` | `string[]` (uuid) | Lead IDs the operator UNCHECKED in the V2 modal. Engine drops these from the plan. |
+| `recipient_subset` | `string[]` (uuid) | Lead IDs the operator restricted dispatch to (e.g., "send test to first 3"). When non-empty, engine sends ONLY to these. |
+
+Both keys are absent when the operator confirms without deselections OR when the status change happens silently (no modal — e.g., `auto_promote_lead_status` path).
+
+**Wire (DB-side):** `update_event_status_with_overrides(p_tenant_id, p_event_id, p_new_status, p_exclude_lead_ids, p_recipient_subset)` RPC sets transaction-local `m4.dispatch_exclude_lead_ids` + `m4.dispatch_recipient_subset` session vars, then UPDATEs `crm_events.status`. The 3 SCE-producer triggers (event/lead/attendee) read these vars via `current_setting(..., true)` and merge into payload.
+
+**Wire (browser):** `CrmConfirmSendV2` collects deselections into `_state.excluded + _state.testSent`. On modal confirm, `ctx.excludeLeadIds` + `ctx.recipientSubset` flow through `CrmAutomationClient.probeAndCommit` → `commitCallback(meta)` → `changeEventStatus`'s commit closure routes through `update_event_status_with_overrides` RPC when either array is non-empty (direct UPDATE otherwise).
+
+**Campaign Overseer impact:** zero. This contract is invisible to template authoring. Documented here so future contributors don't accidentally remove the bridge.
+
+---
+
 ### 2.5 auto_promote_lead_status — explicit promotion opt-in (M4_AUTO_PROMOTE_GOVERNANCE, 2026-05-19)
 
 When set on a rule, after a message in `crm_message_queue` flips to `status='sent'` for an event-bound row referencing this rule via `run_id`, the `promote_lead_on_message_sent` DB trigger promotes the recipient lead from `waiting` → `<auto_promote_lead_status value>`. Captures `m4.originated_by_rule_id` via `set_config` so the resulting lead-side SCE row carries `originated_by_rule_id` (Layer 3 self-loop guard mechanism).

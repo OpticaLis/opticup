@@ -222,11 +222,17 @@
       CrmConfirmSendV2.showAsync(previewPromise, async function (choice, ctx) {
         if (!choice || !choice.dispatch) { settle({ committed: false, mode: 'no_notify_choice' }); return { sent: 0, failed: 0, rejected: 0 }; }
         try {
-          var data = await commitCallback({ mode: 'confirmed', preview: (ctx && ctx.previewResponse) || null });
+          // M4_MODAL_DESELECTION_RESTORE_2026_05_19: forward operator overrides
+          // (V2 modal's _state.excluded + _state.testSent) to the commitCallback
+          // so changeEventStatus/changeLeadStatus can route through the wrapper
+          // RPC that sets m4.dispatch_exclude_lead_ids + m4.dispatch_recipient_subset.
+          var excludeLeadIds = (ctx && Array.isArray(ctx.excludeLeadIds)) ? ctx.excludeLeadIds : [];
+          var recipientSubset = (ctx && Array.isArray(ctx.recipientSubset)) ? ctx.recipientSubset : [];
+          var data = await commitCallback({ mode: 'confirmed', preview: (ctx && ctx.previewResponse) || null, excludeLeadIds: excludeLeadIds, recipientSubset: recipientSubset });
           var runId = ctx && ctx.previewResponse && ctx.previewResponse.run_id;
           settle({ committed: true, mode: 'confirmed', data: data });
-          // Report 'queued' loosely — actual queue insertion happens via cron consumer ~30-60s later.
-          var count = (ctx && ctx.previewResponse && ctx.previewResponse.recipients_by_lead && ctx.previewResponse.recipients_by_lead.length) || 0;
+          var planned = (ctx && ctx.previewResponse && ctx.previewResponse.recipients_by_lead && ctx.previewResponse.recipients_by_lead.length) || 0;
+          var count = Math.max(0, planned - excludeLeadIds.length);
           return { run_id: runId, queued: count, sent: 0, failed: 0, rejected: 0 };
         } catch (e) {
           settle({ committed: false, mode: 'commit_failed', error: e });

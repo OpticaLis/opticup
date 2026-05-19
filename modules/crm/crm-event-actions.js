@@ -223,15 +223,28 @@
     var oldStatus = evRes.data && evRes.data.status;
     if (oldStatus === newStatus) return { id: eventId, status: newStatus };
 
-    var commit = async function (/* meta */) {
-      var upd = await sb.from('crm_events')
-        .update({ status: newStatus })
-        .eq('id', eventId).eq('tenant_id', tenantId)
-        .select('id, status').single();
-      if (upd.error) throw new Error('event status update failed: ' + upd.error.message);
+    var commit = async function (meta) {
+      // M4_MODAL_DESELECTION_RESTORE_2026_05_19: if the modal-confirm carried
+      // operator overrides (deselected recipients or test-send subset), route
+      // the UPDATE through update_event_status_with_overrides RPC so the
+      // SCE-producer trigger captures the overrides into payload. Silent path
+      // (no excludes) keeps the direct UPDATE — zero behavior change.
+      var excludes = (meta && Array.isArray(meta.excludeLeadIds)) ? meta.excludeLeadIds : [];
+      var subset = (meta && Array.isArray(meta.recipientSubset)) ? meta.recipientSubset : [];
+      if (excludes.length > 0 || subset.length > 0) {
+        var rpcRes = await sb.rpc('update_event_status_with_overrides', {
+          p_tenant_id: tenantId, p_event_id: eventId, p_new_status: newStatus,
+          p_exclude_lead_ids: excludes, p_recipient_subset: subset
+        });
+        if (rpcRes.error) throw new Error('event status RPC failed: ' + rpcRes.error.message);
+      } else {
+        var upd = await sb.from('crm_events').update({ status: newStatus })
+          .eq('id', eventId).eq('tenant_id', tenantId).select('id, status').single();
+        if (upd.error) throw new Error('event status update failed: ' + upd.error.message);
+      }
       try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.event.status_change', entity_type: 'crm_events', entity_id: eventId, details: { from: oldStatus, to: newStatus, name: evRes.data && evRes.data.name } }); } catch (_) {}
       if (window.CrmPaymentAutomation) CrmPaymentAutomation.markUnpaidForCompletedEvent(eventId, oldStatus, newStatus).catch(function (e) { console.error('CrmPaymentAutomation.markUnpaid:', e); });
-      return upd.data;
+      return { id: eventId, status: newStatus };
     };
 
     if (!window.CrmAutomationClient || typeof CrmAutomationClient.probeAndCommit !== 'function') {
