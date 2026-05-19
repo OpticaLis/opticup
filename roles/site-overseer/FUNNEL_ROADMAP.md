@@ -159,7 +159,7 @@ On 2026-05-14, three wrong diagnoses in a row about event #24's funnel drop reve
 | # | SPEC | Layer | Estimated | Status |
 |---|---|---|---|---|
 | P2.1 | M4_FB_CAPI_HYBRID_DEDUPLICATION | 9 | 6-8 hrs | ✅ CLOSED 2026-05-15 — commit range `51bc874..` — ERP-side CAPI substrate shipped. `fb-capi-dispatch` EF + `crm_capi_dispatch_queue` table + pg_cron consumer + `lead-intake` v26. Advanced matching (em+ph). Storefront dedup handoff deferred to `M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF`. Make scenario 8542928 retired. Demo runs `skipped_no_token` (D-AUTH-3). See `docs/FB_CAPI.md`. |
-| P2.2 | M3_PIXEL_VALIDATION_GAP_REPORTING | 9 | 2-3 hrs | UNBLOCKED — back-wire LIVE 2026-05-16 via `M3_FUNNEL_PIXEL_BACKWIRE` (pixel-fired EF stamps `crm_leads.fb_pixel_fired_at`). Dashboard SPEC stub `M4_PIXEL_VALIDATION_GAP_DASHBOARD` queued in OPEN_TASKS. |
+| P2.2 | M4_PIXEL_VALIDATION_GAP_DASHBOARD | 9 | 2-3 hrs | ✅ CLOSED 2026-05-19 — commit range `d28dfd7..` — dashboard tile + drill-down modal in Messaging Hub "📊 ביצועי הודעות" sub-tab. 3 SELECT queries (aggregate / 7-day trend / drill-down) on `crm_leads` + `crm_capi_dispatch_queue`. Iron Rule 34 triplet captured (screenshot + `window.__pixelGapTrace` + DB-query evidence). Partial index deferred per D4 gate (all medians < 100ms); revisit at scale milestone. Iron Rule 32 declared None; held. **FUNNEL Phase 2 ✅ COMPLETE** (P2.1 + P2.2 + P2.3 all closed). |
 | P2.3 | M4_TEMPLATE_VALIDATION_UNIFIED | 6 | 2-3 hrs | ✅ CLOSED 2026-05-14 |
 
 ---
