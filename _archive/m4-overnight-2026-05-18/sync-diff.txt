@@ -1,0 +1,80 @@
+
+=== crm_message_templates ===
+  inserts:    1   (prizma rows missing in demo)
+  updates:    7   (same key, content differs)
+  deletes:    0   (demo rows not in prizma, not in allowlist)
+  preserved:  6 (demo-only rows on allowlist — kept)
+  unchanged:  25
+    Inserts: check_in_attendee_sms_he
+    Updates: event_invite_new_email_he, event_registration_open_email_he, event_coupon_delivery_sms_he, event_registration_confirmation_email_he, event_coupon_delivery_email_he, event_registration_open_sms_he, event_invite_new_sms_he
+    Preserved: check_in_event_sms_he, check_in_event_email_he, qa_redesign_test_email_he, qa_redesign_test_sms_he, qa_round1_test_template_sms_he, qa_round1_test_template_email_he
+
+=== crm_automation_rules ===
+  inserts:    0   (prizma rows missing in demo)
+  updates:    1   (same key, content differs)
+  deletes:    0   (demo rows not in prizma, not in allowlist)
+  preserved:  6 (demo-only rows on allowlist — kept)
+  unchanged:  16
+    Updates: צ'ק אין לאירוע
+    Preserved: QA TEST RULE — qa_redesign_test, qa_redesign_test_rule_events, qa_round1_test_rule_tier2, qa_round1_test_rule_events, qa_round1_test_rule_attendees, qa_round1_test_rule_incoming
+
+=== crm_statuses ===
+  inserts:    0   (prizma rows missing in demo)
+  updates:    0   (same key, content differs)
+  deletes:    0   (demo rows not in prizma, not in allowlist)
+  preserved:  0 (demo-only rows on allowlist — kept)
+  unchanged:  34
+
+=== crm_field_visibility ===
+  inserts:    0   (prizma rows missing in demo)
+  updates:    0   (same key, content differs)
+  deletes:    0   (demo rows not in prizma, not in allowlist)
+  preserved:  0 (demo-only rows on allowlist — kept)
+  unchanged:  8
+
+=== crm_tags ===
+  inserts:    0   (prizma rows missing in demo)
+  updates:    0   (same key, content differs)
+  deletes:    0   (demo rows not in prizma, not in allowlist)
+  preserved:  0 (demo-only rows on allowlist — kept)
+  unchanged:  1
+
+=== crm_message_templates ===
+  inserts:    1   (prizma rows missing in demo)
+  updates:    7   (same key, content differs)
+  deletes:    0   (demo rows not in prizma, not in allowlist)
+  preserved:  6 (demo-only rows on allowlist — kept)
+  unchanged:  25
+    Inserts: check_in_attendee_sms_he
+    Updates: event_invite_new_email_he, event_registration_open_email_he, event_coupon_delivery_sms_he, event_registration_confirmation_email_he, event_coupon_delivery_email_he, event_registration_open_sms_he, event_invite_new_sms_he
+    Preserved: check_in_event_sms_he, check_in_event_email_he, qa_redesign_test_email_he, qa_redesign_test_sms_he, qa_round1_test_template_sms_he, qa_round1_test_template_email_he
+
+=== crm_automation_rules ===
+  inserts:    0   (prizma rows missing in demo)
+  updates:    1   (same key, content differs)
+  deletes:    0   (demo rows not in prizma, not in allowlist)
+  preserved:  6 (demo-only rows on allowlist — kept)
+  unchanged:  16
+    Updates: צ'ק אין לאירוע
+    Preserved: QA TEST RULE — qa_redesign_test, qa_redesign_test_rule_events, qa_round1_test_rule_tier2, qa_round1_test_rule_events, qa_round1_test_rule_attendees, qa_round1_test_rule_incoming
+
+=== crm_statuses ===
+  inserts:    0   (prizma rows missing in demo)
+  updates:    0   (same key, content differs)
+  deletes:    0   (demo rows not in prizma, not in allowlist)
+  preserved:  0 (demo-only rows on allowlist — kept)
+  unchanged:  34
+
+=== crm_field_visibility ===
+  inserts:    0   (prizma rows missing in demo)
+  updates:    0   (same key, content differs)
+  deletes:    0   (demo rows not in prizma, not in allowlist)
+  preserved:  0 (demo-only rows on allowlist — kept)
+  unchanged:  8
+
+=== crm_tags ===
+  inserts:    0   (prizma rows missing in demo)
+  updates:    0   (same key, content differs)
+  deletes:    0   (demo rows not in prizma, not in allowlist)
+  preserved:  0 (demo-only rows on allowlist — kept)
+  unchanged:  1
