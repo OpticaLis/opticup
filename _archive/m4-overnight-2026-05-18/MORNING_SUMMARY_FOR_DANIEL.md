@@ -1,6 +1,40 @@
 # Morning Summary — M4 Overnight Repair (2026-05-19)
 
-**Status:** 🟡 PARTIAL — SPEC 1 closed clean; SPECs 2-4 not attempted; chain stopped at clean boundary.
+**Status:** 🟢 COMPLETE — all 4 SPECs (1 + 2 + 3 + 4) closed across two sessions (overnight + morning continuation). Both CRITICAL QA findings (1.1 modal flash + 1.2 silent message drop) resolved. Demo-Prizma parity discipline live. EF resolver gap closed via shared module. Below is the original overnight-stop summary; an updated final status follows in §"Update 2026-05-19 morning — continuation chain closed".
+
+---
+
+## Update 2026-05-19 morning — continuation chain closed
+
+After the overnight stop (SPEC 1 only), Daniel ran a continuation chain in the morning that closed SPECs 2 + 3 + 4. Final state:
+
+| SPEC | Status | Commits | What it did |
+|------|--------|---------|-------------|
+| 1. `M4_CONFIG_SYNC_INFRASTRUCTURE` | 🟢 | `0f50d86` + `7209624` | Sync scripts + Iron Rule 33 + allowlist + Sentinel mission 11 doc |
+| 2. `M4_CONFIG_PARITY_RUN_1` | 🟢 | `b8ee740` + `eb2f123` | First parity run on demo: 1 INSERT + 8 UPDATES + 12 PRESERVED. Demo now byte-parity with Prizma config. |
+| 3. `M4_AUTOMATION_TEMPLATE_VARIABLE_RESOLVER_FIX` | 🟢 | `1281b71` + `e9eaeec` | Closed the resolver gap. New `_shared/event-variables.ts`. Both EFs redeployed (automation-engine v17, send-message v27). Demo verification: same scenario that yesterday produced `unsubstituted_placeholder: ...` now produces `status='sent'`. |
+| 4. `M4_STATUS_CHANGE_MODAL_GATE_FIX` (scoped) | 🟢 | `1a79116` + `6db9af1` | Modal-flash bug closed. `suppressEmptyModal` opt on V2 modal + caller pass-through for 3 status-change types. Chrome MCP verified. Atomic-gate piece (Finding 1.3) deferred to follow-up `M4_STATUS_CHANGE_ATOMIC_GATE`. |
+
+User-facing impact summary:
+- **Customer messages now deliver for event-status changes on demo + Prizma.** (Finding 1.2 closed by SPEC 3.)
+- **The "אישור פעולה" modal no longer flashes** on every status change. (Finding 1.1 closed by SPEC 4.)
+- **Demo is now a true testbed for Prizma.** (SPEC 1 + SPEC 2 + Iron Rule 33.)
+
+Follow-up SPECs (recommended but deferred):
+- `M4_STATUS_CHANGE_ATOMIC_GATE` — atomic gate (status commit inside modal callback) + rule_match_probe EF mode optimization. Closes QA Finding 1.3.
+- `M4_DUAL_PATH_DEPRECATION_PHASE_1` — already deferred per master prompt.
+- `M4_CONFIG_SYNC_SCRIPT_REGRESSION_TEST` — F-1 from SPEC 1's FINDINGS.
+- `SENTINEL_MISSION_11_IMPL` — implement the mission 11 scanner doc'd in `docs/guardian/sentinel/mission-11-config-parity.md`.
+- `M4_AUTOMATION_RUNS_METRIC_AUDIT` — Priority 5 from QA (sent_count undercount).
+- `M4_EVENT_FORMAT_HELPER_CONSOLIDATION` — F-5 from SPEC 3 (event_date / event_time format divergence between EFs).
+
+The total wall-clock for the continuation chain: ~40 minutes from lock-claim to lock-release. SPEC 2 (~5 min), SPEC 3 (~25 min including EF deploy + demo verification), SPEC 4 (~15 min including Chrome MCP smoke).
+
+(Original overnight-stop summary below for reference.)
+
+---
+
+**Original status:** 🟡 PARTIAL — SPEC 1 closed clean; SPECs 2-4 not attempted; chain stopped at clean boundary.
 
 ---
 
