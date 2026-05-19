@@ -1,45 +1,6 @@
 # Morning Summary — M4 Overnight Repair (2026-05-19)
 
-**Status:** 🟢 COMPLETE — 5 SPECs + 1 regression fix closed across overnight + morning + afternoon sessions. Both CRITICAL QA findings (1.1 modal flash + 1.2 silent message drop) resolved + Finding 1.4 (dual-path duplicate sends) resolved. Demo-Prizma parity discipline live. EF resolver gap closed via shared module. Below is the original overnight-stop summary; an updated final status follows in §"Update 2026-05-19 morning — continuation chain closed" and a final closure section "Final closure 2026-05-19/20".
-
----
-
-## Final closure 2026-05-19/20
-
-After SPECs 1–4 and the `M4_ENQUEUE_REGRESSION_FIX` hot-fix, Daniel authorized one final SPEC (`M4_DUAL_PATH_DEPRECATION_PHASE_1`) for the overnight 2026-05-19→20 to deliver his stated criterion: "Daniel will open a Prizma event tomorrow [2026-05-20] and receive exactly one message per recipient per status change — no duplicates, no loop." That SPEC closed 🟢 on `develop` commit `8d9a365`.
-
-**SPEC 5 results:**
-- **Latency benchmark:** 5 toggles on demo event #28, P50=38.34s, **P95=50.63s** (acceptance <65s ✅).
-- **V-EXTRA-1 (single-event verification):** 1 run + exactly 2 `crm_message_log status='sent'` rows (sms + email). NOT 4. ✅
-- **V-EXTRA-2 (loop verification):** only 1 derivative `crm_status_change_events` row across the entire benchmark window — the single-hop lead `waiting→invited` from `trg_promote_lead_on_message_sent`. No cascading loop. The rule's `lead.status='waiting'` recipient filter is the natural firebreak. **No loop guard implemented** — none was needed.
-- **Brief deviation, documented openly:** Brief §2.2 listed 3 callsites for removal. Brief §5 Risk 2 mandated probing each before removal. The probe found that 2 of 3 are true dual-path (`event_status_change` + `lead_status_change`) and 1 is single-path (`attendee_moved` — no DB trigger covers the `moved` event class; 2 active rules would have been silently disabled). Kept the single-path callsite untouched. Recorded in `modules/Module 4 - CRM/docs/specs/M4_DUAL_PATH_DEPRECATION_PHASE_1/FINDINGS.md` F-1.
-- **EF deploys:** none. JS-only edits in browser layer.
-- **Post-edit reproduction:** 1 toggle on event #28 produced exactly 1 run (`f8d039b6`, recipients=2) + 2 log_sent rows + 1 harmless single-hop derivative SCE. Consume latency 32.7s.
-- **Regression smoke test:** `tests/smoke/dual-path-deprecation-test.mjs` PASS post-commit.
-
-**Full status across the M4 chain:**
-
-| SPEC | Status | Commit | Customer-visible impact |
-|---|---|---|---|
-| 1. `M4_CONFIG_SYNC_INFRASTRUCTURE` | 🟢 | `0f50d86` + `7209624` | Demo-Prizma parity discipline. |
-| 2. `M4_CONFIG_PARITY_RUN_1` | 🟢 | `b8ee740` + `eb2f123` | Demo byte-parity with Prizma config. |
-| 3. `M4_AUTOMATION_TEMPLATE_VARIABLE_RESOLVER_FIX` | 🟢 | `1281b71` + `e9eaeec` | Silent message drop closed. AE v17 + send-message v27 deployed. |
-| 4. `M4_STATUS_CHANGE_MODAL_GATE_FIX` | 🟢 | `1a79116` + `6db9af1` | Modal flash closed. |
-| (hot-fix) `M4_ENQUEUE_REGRESSION_FIX` | 🟢 | `1909450` | Enqueue regression closed (partial-unique-index per-run + dispatch.ts hardening + UI date col). |
-| 5. `M4_DUAL_PATH_DEPRECATION_PHASE_1` | 🟢 | `8d9a365` | Duplicate-message symptom retired. One message per recipient per status change. |
-
-**M4 is stable for the Prizma event on 2026-05-20.** Status changes produce exactly one message per recipient per channel, no duplicates, no cascading loop. The browser fire-and-forget pattern for status-change triggers is structurally retired.
-
-Rollback tag for SPEC 5 (if anything regresses tomorrow): `pre-m4-dual-path-deprecation-2026-05-19` (commit `f749ff2`). Rollback time ~30s, no EF redeploy needed.
-
-Pending follow-up SPECs (none block the Prizma event):
-- `M4_ATTENDEE_MOVED_DUAL_PATH_INVESTIGATION` — should the `attendee.moved` rule class become dual-path-ready via a new DB trigger?
-- `M4_LEAD_INTAKE_DUAL_PATH_INVESTIGATION` — same question for `lead.created`.
-- `M4_RULE_AUTHOR_CYCLE_VALIDATION` — convert the rule-author firebreak discipline into a hard guard in the rule editor.
-- `M4_AUTOMATION_RUNS_METRIC_AUDIT` — fix `crm_automation_runs.sent_count` undercount (QA Priority 5).
-- `M4_STATUS_CHANGE_ATOMIC_GATE` — atomic gate piece deferred from SPEC 4.
-
----
+**Status:** 🟢 COMPLETE — all 4 SPECs (1 + 2 + 3 + 4) closed across two sessions (overnight + morning continuation). Both CRITICAL QA findings (1.1 modal flash + 1.2 silent message drop) resolved. Demo-Prizma parity discipline live. EF resolver gap closed via shared module. Below is the original overnight-stop summary; an updated final status follows in §"Update 2026-05-19 morning — continuation chain closed".
 
 ---
 

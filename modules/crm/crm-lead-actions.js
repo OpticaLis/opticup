@@ -6,10 +6,7 @@
 
   function getTid() { return (typeof getTenantId === 'function') ? getTenantId() : null; }
 
-  // M4_DUAL_PATH_DEPRECATION_PHASE_1 (2026-05-19): lead_status_change browser
-  // dispatch removed. trg_lead_status_change_event + automation-engine consumer
-  // is the sole driver. lead_intake (line below in createManualLead) is single-path
-  // and stays — no DB trigger covers lead.created.
+  function fireLeadStatusAutomation(leadId, newStatus, oldStatus) { if (window.CrmAutomationClient && CrmAutomationClient.evaluate) CrmAutomationClient.evaluate('lead_status_change', { leadId: leadId, newStatus: newStatus, oldStatus: oldStatus }); }
 
   function statusLabel(slug) {
     var _info = (CrmHelpers && CrmHelpers.getStatusInfo) ? CrmHelpers.getStatusInfo('lead', slug) : null;
@@ -47,6 +44,8 @@
     if (noteIns.error) throw new Error('status note insert failed: ' + noteIns.error.message);
 
     try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.status_change', entity_type: 'crm_leads', entity_id: leadId, details: { from: oldStatus, to: newStatus, from_label: statusLabel(oldStatus), to_label: statusLabel(newStatus) } }); } catch (_) {}
+
+    fireLeadStatusAutomation(leadId, newStatus, oldStatus);
 
     if (!opts.silent && window.Toast) Toast.success('סטטוס עודכן: ' + statusLabel(newStatus));
     return { id: leadId, status: newStatus, noteContent: content };
@@ -242,6 +241,7 @@
       content: 'הועבר ל-Tier 2 (אושר)'
     });
     if (noteIns.error) throw new Error('transfer note failed: ' + noteIns.error.message);
+    fireLeadStatusAutomation(leadId, 'waiting', oldStatus);
     return { id: leadId, status: 'waiting' };
   }
 
