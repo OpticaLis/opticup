@@ -84,3 +84,6 @@ Thumbs.db
 # Per-session QA artifacts at module root level (NOT inside SPEC folders — those are intentional)
 modules/*/go-live/_qa_*.json
 modules/*/go-live/qa-*.mjs
+
+# M1 Lens catalog work-in-progress Excel (Daniel actively editing)
+tests/קטלוג-עדשות-18.5.26.xls
