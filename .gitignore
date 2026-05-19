@@ -59,6 +59,9 @@ docs/guardian/*/
 !docs/guardian/lighthouse-reports/
 !docs/guardian/lighthouse-reports/**
 !docs/guardian/GUARDIAN_ALERTS.md
+# Sentinel mission protocol docs are tracked (auto-write outputs are not — see ALERTS dir above)
+!docs/guardian/sentinel/
+!docs/guardian/sentinel/**
 
 # Cowork session prompt artifacts — per-session, transient
 outputs/

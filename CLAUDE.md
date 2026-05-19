@@ -247,6 +247,17 @@ If the SPEC declares `None.` it implicitly forbids ALL the operations above for 
 
 **Rationale:** SPECs run end-to-end under Full-Auto Pipeline mode (see `modules/Module 1.5 - Shared Components/docs/specs/M1_5_FULL_AUTO_PIPELINE/SPEC.md`). Once human-in-the-loop is removed from each commit, the cost of a silent destructive op rises sharply. The gate is the only thing standing between an autonomous chain and an irreversible deletion.
 
+### Iron Rule 33 — M4 config changes must flow demo-first
+
+Any change to `crm_message_templates`, `crm_automation_rules`, `crm_statuses`, `crm_field_visibility`, `crm_tags` MUST be applied to demo first, tested on demo, then promoted to Prizma via `scripts/promote-config-to-prizma.mjs`. Direct edits to Prizma's M4 config tables are FORBIDDEN. Bypass requires Daniel's explicit go-ahead in chat — never a flag.
+
+**Enforcement:**
+- **Pre-emptive (daily):** Sentinel Mission 11 (`docs/guardian/sentinel/mission-11-config-parity.md`) audits demo vs Prizma config-row counts + sample-hash drift; alerts in `docs/guardian/GUARDIAN_ALERTS.md` when Prizma has rows not in demo or shared slugs have body-hash mismatch, with a 24h grace window for legitimate mid-SPEC divergence.
+- **Per-SPEC reminder:** Any SPEC touching M4 config must declare the demo-first sequence in its §3 Steps. Reviewer enforces.
+- **Tooling:** `scripts/sync-prizma-config-to-demo.mjs` (Prizma → demo direction) + `scripts/promote-config-to-prizma.mjs` (demo → Prizma, single-row, audit-logged) + `scripts/checks/demo-config-allowlist.json` (rows legitimately demo-only).
+
+**Rationale:** demo is THE testbed for Prizma. Drift between them defeats the purpose of having a testbed. Established by `M4_CONFIG_SYNC_INFRASTRUCTURE` (2026-05-19) after `DEMO_PARITY_REPLICATION` (2026-05-11) drift was measured by the M4 QA investigation (2026-05-18): 7 templates diverged, 6 demo-only, 1 Prizma-only.
+
 ### Cross-repo: Iron Rules 24–30 (Storefront-Scoped)
 
 Rules **1–23 above are the canonical source for all ERP, Studio, and Platform Admin work in this repo.** They apply everywhere inside `opticalis/opticup`.

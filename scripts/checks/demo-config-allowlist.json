@@ -1,0 +1,29 @@
+{
+  "_comment": "Demo-only config rows authorized to keep during sync-prizma-config-to-demo runs. See SPEC M4_CONFIG_SYNC_INFRASTRUCTURE §2.4 + Iron Rule 33.",
+  "_key_format": {
+    "crm_message_templates": "slug",
+    "crm_automation_rules": "name",
+    "crm_statuses": "entity_type::slug",
+    "crm_field_visibility": "role_id::entity_type::field_key",
+    "crm_tags": "name"
+  },
+  "crm_message_templates": [
+    "check_in_event_email_he",
+    "check_in_event_sms_he",
+    "qa_redesign_test_email_he",
+    "qa_redesign_test_sms_he",
+    "qa_round1_test_template_email_he",
+    "qa_round1_test_template_sms_he"
+  ],
+  "crm_automation_rules": [
+    "QA TEST RULE — qa_redesign_test",
+    "qa_redesign_test_rule_events",
+    "qa_round1_test_rule_attendees",
+    "qa_round1_test_rule_events",
+    "qa_round1_test_rule_incoming",
+    "qa_round1_test_rule_tier2"
+  ],
+  "crm_statuses": [],
+  "crm_field_visibility": [],
+  "crm_tags": []
+}
