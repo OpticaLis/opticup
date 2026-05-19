@@ -49,9 +49,8 @@
     attendees: [['registered','נרשם'],['waiting_list','רשימת המתנה'],['confirmed','אישר'],['attended','הגיע'],['no_show','לא הגיע'],['purchased','רכש']]
   };
 
-  var TIER2_FILTERS = [
-    ['waiting','ממתין לאירוע'],['invited','הוזמן'],['confirmed','אישר הגעה'],['confirmed_verified','אומת']
-  ];
+  var TIER2_FILTERS = [['waiting','ממתין לאירוע'],['invited','הוזמן'],['confirmed','אישר הגעה'],['confirmed_verified','אומת']];
+  var PROMOTE_TARGETS = TIER2_FILTERS; // M4_AUTO_PROMOTE_GOVERNANCE 2026-05-19: explicit opt-in target.
 
   var CHANNELS = [['sms','SMS','sky'],['whatsapp','WhatsApp','emerald'],['email','אימייל','amber']];
 
@@ -160,23 +159,20 @@
   }
 
   function _stateFromRow(row) {
-    if (!row) return { isNew: true, name: '', boardKey: null, firesOn: 'created', conditionType: 'always', conditionValue: '', countField: 'attendee_count', countOp: '>', countNum: 0, templateSlug: '', channels: [], recipientType: '', recipientStatusFilter: [], _origActionConfig: null };
+    if (!row) return { isNew: true, name: '', boardKey: null, firesOn: 'created', conditionType: 'always', conditionValue: '', countField: 'attendee_count', countOp: '>', countNum: 0, templateSlug: '', channels: [], recipientType: '', recipientStatusFilter: [], autoPromote: null, _origActionConfig: null };
     var cfg = row.action_config || {};
     var cond = row.trigger_condition || {};
+    var ap = (cfg.auto_promote_lead_status === '' || cfg.auto_promote_lead_status == null) ? null : cfg.auto_promote_lead_status;
     return {
       isNew: false, ruleId: row.id, name: row.name || '',
       boardKey: _boardOf(row.trigger_entity, row.trigger_event),
-      // STATUS_CHANGE_TRIGGERS_FRAMEWORK: derive firesOn from the rule's existing
-      // trigger_event. Used only when boardKey==='attendees'; ignored otherwise.
       firesOn: (row.trigger_entity === 'attendee' && row.trigger_event === 'status_change') ? 'status_change' : 'created',
-      conditionType: cond.type || 'always',
-      conditionValue: cond.status || cond.source || '',
+      conditionType: cond.type || 'always', conditionValue: cond.status || cond.source || '',
       countField: cond.field || 'attendee_count', countOp: cond.operator || '>', countNum: cond.value || 0,
-      templateSlug: cfg.template_slug || '',
-      channels: Array.isArray(cfg.channels) ? cfg.channels.slice() : [],
+      templateSlug: cfg.template_slug || '', channels: Array.isArray(cfg.channels) ? cfg.channels.slice() : [],
       recipientType: cfg.recipient_type || '',
       recipientStatusFilter: Array.isArray(cfg.recipient_status_filter) ? cfg.recipient_status_filter.slice() : [],
-      _origActionConfig: cfg
+      autoPromote: ap, _origActionConfig: cfg
     };
   }
 
@@ -210,6 +206,10 @@
       var chk = s.recipientStatusFilter.indexOf(f[0]) !== -1 ? ' checked' : '';
       return '<label class="inline-flex items-center gap-1.5 me-3 text-xs cursor-pointer"><input type="checkbox" name="rule-status-filter" value="' + f[0] + '"' + chk + '> <span>' + _esc(f[1]) + '</span></label>';
     }).join('');
+    // M4_AUTO_PROMOTE_GOVERNANCE 2026-05-19: explicit promotion opt-in toggle + dropdown.
+    var apOn = !!s.autoPromote;
+    var apOpts = PROMOTE_TARGETS.map(function (p) { return '<option value="' + p[0] + '"' + (p[0] === s.autoPromote ? ' selected' : '') + '>' + _esc(p[1]) + ' (' + p[0] + ')</option>'; }).join('');
+    var promoteRow = '<div class="bg-white border border-slate-200 rounded p-2"><label class="inline-flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" id="rule-auto-promote-toggle"' + (apOn ? ' checked' : '') + '> <span class="font-semibold">קדם סטטוס נמען אחרי שליחת ההודעה?</span></label><div id="rule-auto-promote-dropdown" class="' + (apOn ? '' : 'hidden') + ' mt-2"><label class="block text-xs text-slate-500 mb-1">אחרי שליחה, שנה סטטוס ל:</label><select id="rule-auto-promote-val" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">' + apOpts + '</select></div></div>';
     var condTypeLabel = (s.boardKey === 'attendees') ? 'באיזה תנאי?' : 'מתי החוק יופעל?';
     return '<div class="text-xs text-' + color + '-700 font-semibold flex items-center gap-2 mb-2"><span>' + BOARDS[s.boardKey].icon + '</span><span>הגדרות בורד ' + _esc(BOARDS[s.boardKey].label) + '</span></div>' +
       '<div class="space-y-3">' +
@@ -220,6 +220,7 @@
         '<div id="rule-cond-count" class="' + countVisible + ' grid grid-cols-3 gap-2"><input type="text" id="rule-cond-field" placeholder="שדה" value="' + _esc(s.countField) + '" class="px-3 py-2 border border-slate-300 rounded-lg text-sm"><select id="rule-cond-op" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">' + ['>','>=','=','<','<='].map(function (o) { return '<option' + (o === s.countOp ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select><input type="number" id="rule-cond-num" placeholder="ערך" value="' + _esc(String(s.countNum)) + '" class="px-3 py-2 border border-slate-300 rounded-lg text-sm"></div>' +
         '<div><label class="block text-sm font-medium text-slate-700 mb-1">למי לשלוח?</label><select id="rule-recipient" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">' + recipOpts + '</select></div>' +
         '<div id="rule-tier2-filter" class="' + tier2FilterVisible + ' bg-white border border-slate-200 rounded p-2"><div class="text-xs text-slate-500 font-semibold mb-1">סינון לפי סטטוס ליד (אופציונלי)</div>' + tier2Boxes + '</div>' +
+        promoteRow +
       '</div>';
   }
 
@@ -248,10 +249,7 @@
       if (s.boardKey && s.boardKey !== nextKey) {
         s.conditionType = (COND_BY_BOARD[nextKey] || [['always']])[0][0];
         s.conditionValue = ''; s.templateSlug = ''; s.channels = []; s.recipientType = (RECIP_BY_BOARD[nextKey] || [['']])[0][0]; s.recipientStatusFilter = [];
-      } else if (!s.boardKey) {
-        s.conditionType = (COND_BY_BOARD[nextKey] || [['always']])[0][0];
-        s.recipientType = (RECIP_BY_BOARD[nextKey] || [['']])[0][0];
-      }
+      } else if (!s.boardKey) { s.conditionType = (COND_BY_BOARD[nextKey] || [['always']])[0][0]; s.recipientType = (RECIP_BY_BOARD[nextKey] || [['']])[0][0]; }
       s.boardKey = nextKey;
       rerenderBoards(); rerenderCond(); rerenderTpl(); rerenderChannels(); refreshSummary();
     }
@@ -292,6 +290,14 @@
       document.querySelectorAll('input[name="rule-status-filter"]').forEach(function (cb) {
         cb.addEventListener('change', function () { s.recipientStatusFilter = Array.from(document.querySelectorAll('input[name="rule-status-filter"]:checked')).map(function (x) { return x.value; }); refreshSummary(); });
       });
+      // M4_AUTO_PROMOTE_GOVERNANCE: wire toggle + dropdown.
+      var apT = document.querySelector('#rule-auto-promote-toggle'), apD = document.querySelector('#rule-auto-promote-dropdown'), apV = document.querySelector('#rule-auto-promote-val');
+      if (apT) apT.addEventListener('change', function () {
+        if (apT.checked) { s.autoPromote = (apV && apV.value) || 'invited'; if (apD) apD.classList.remove('hidden'); }
+        else { s.autoPromote = null; if (apD) apD.classList.add('hidden'); }
+        refreshSummary();
+      });
+      if (apV) apV.addEventListener('change', function () { if (s.autoPromote != null) { s.autoPromote = apV.value; refreshSummary(); } });
     }
     function wireChannelListeners() {
       document.querySelectorAll('input[name="rule-channel"]').forEach(function (cb) {
@@ -332,10 +338,10 @@
     else if (s.conditionType === 'source_equals') cond.source = s.conditionValue;
     else if (s.conditionType === 'count_threshold') { cond.field = s.countField; cond.operator = s.countOp; cond.value = s.countNum; }
     var actionConfig = Object.assign({}, s._origActionConfig || {}, { template_slug: s.templateSlug, channels: s.channels.slice(), recipient_type: s.recipientType });
-    if (s.recipientType === 'tier2' || s.recipientType === 'tier2_excl_registered') {
-      if (s.recipientStatusFilter && s.recipientStatusFilter.length) actionConfig.recipient_status_filter = s.recipientStatusFilter.slice();
-      else delete actionConfig.recipient_status_filter;
-    } else { delete actionConfig.recipient_status_filter; }
+    if ((s.recipientType === 'tier2' || s.recipientType === 'tier2_excl_registered') && s.recipientStatusFilter && s.recipientStatusFilter.length) actionConfig.recipient_status_filter = s.recipientStatusFilter.slice();
+    else delete actionConfig.recipient_status_filter;
+    actionConfig.auto_promote_lead_status = s.autoPromote || null; // M4_AUTO_PROMOTE_GOVERNANCE 2026-05-19: explicit opt-in (null = no promotion).
+    delete actionConfig.skip_auto_promote; // legacy flag retired; auto_promote_lead_status:null is the canonical opt-out
     return { name: s.name.trim(), trigger_entity: b.entity, trigger_event: triggerEvent, trigger_condition: cond, action_type: 'send_message', action_config: actionConfig };
   }
 

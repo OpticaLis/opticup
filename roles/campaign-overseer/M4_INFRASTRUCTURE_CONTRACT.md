@@ -100,6 +100,23 @@ When set on a rule, after the primary action completes the engine UPDATEs all re
 
 Common values: `warmed`, `invited`, `confirmed`. Any value in `crm_statuses` (or implicit Tier-2 set) is acceptable.
 
+### 2.5 auto_promote_lead_status — explicit promotion opt-in (M4_AUTO_PROMOTE_GOVERNANCE, 2026-05-19)
+
+When set on a rule, after a message in `crm_message_queue` flips to `status='sent'` for an event-bound row referencing this rule via `run_id`, the `promote_lead_on_message_sent` DB trigger promotes the recipient lead from `waiting` → `<auto_promote_lead_status value>`. Captures `m4.originated_by_rule_id` via `set_config` so the resulting lead-side SCE row carries `originated_by_rule_id` (Layer 3 self-loop guard mechanism).
+
+**Values:**
+- `null` (or key absent) → **no promotion**. The default for any rule where the recipient is already in the funnel (`trigger_lead`, `attendees*`).
+- `'invited'` → promote `waiting` → `invited`. Default for invitation-flow recipient_types (`tier2`, `tier2_excl_registered`, `leads_by_status`).
+- `'confirmed'` / `'confirmed_verified'` → advanced flows. Any value in the Tier-2 status set is accepted.
+
+**UI:** Rule editor has a toggle "קדם סטטוס נמען אחרי שליחת ההודעה?" with a dropdown of statuses, shown only when toggle is checked. The toggle's state is saved as `null` (off) or the selected status (on).
+
+**Safety constraint:** the trigger ONLY promotes leads currently in `waiting`. Never overwrites `invited`/`confirmed`/etc. Operator action wins over auto-promotion.
+
+**Legacy `skip_auto_promote: true`:** still honored by the trigger for back-compat. `auto_promote_lead_status: null` is the canonical opt-out from 2026-05-19 onward. New rules saved through the UI will NOT write `skip_auto_promote`.
+
+**Rule of thumb:** if you're authoring a new rule and you want lead status to change after the message sends → check the toggle and pick a status. If you don't want any status change → leave toggle off. There is no implicit promotion behavior.
+
 ---
 
 ## 3. Trigger Type Contract

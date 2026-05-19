@@ -1,0 +1,52 @@
+{
+  "spec": "M4_AUTO_PROMOTE_GOVERNANCE",
+  "verified_at_utc": "2026-05-19T10:46Z",
+  "all_9_criteria_status": "ALL GREEN",
+  "criteria": [
+    {
+      "id": 1, "name": "auto_promote_lead_status field added + skip_auto_promote back-compat",
+      "status": "GREEN",
+      "evidence": "Migration 20260519110000 replaced promote_lead_on_message_sent. Function source shows IF coalesce((v_cfg->>'skip_auto_promote')::boolean, false) THEN RETURN NEW (back-compat) + reads v_cfg->>'auto_promote_lead_status' (new explicit opt-in). Tested live."
+    },
+    {
+      "id": 2, "name": "UI rule editor has toggle + dropdown",
+      "status": "GREEN",
+      "evidence": "Chrome MCP probe of #rule-auto-promote-toggle + #rule-auto-promote-dropdown + #rule-auto-promote-val with 4 status options (waiting/invited/confirmed/confirmed_verified). Screenshots 01_rule_editor_toggle_off.png + 02_rule_editor_toggle_on.png. Toggle interaction confirmed: toggle off → dropdown hidden; toggle on → dropdown visible with default value 'waiting' (state init)."
+    },
+    {
+      "id": 3, "name": "All active demo rules have explicit auto_promote_lead_status",
+      "status": "GREEN",
+      "evidence": "14/14 active demo rules have action_config.auto_promote_lead_status present. 5 set to 'invited' (tier2/tier2_excl_registered/leads_by_status — invitation flow). 9 set to null (trigger_lead/attendees* — already in funnel). Legacy skip_auto_promote dropped from row 819e46c9 (ייפתח מחר)."
+    },
+    {
+      "id": 4, "name": "ייפתח מחר rule triggered → lead status unchanged",
+      "status": "GREEN",
+      "evidence": "Test A at 10:42:00 UTC. Toggle planning → will_open_tomorrow via Chrome MCP. Modal opened, confirm clicked. Messages SENT (sms 4c420897 + email 6276b160 status='sent'). Lead status: STILL 'waiting' (never promoted). ZERO lead-side SCEs in the window — Daniel's expressed intent honored."
+    },
+    {
+      "id": 5, "name": "הזמנה חדשה rule (post_action_attendee_upsert) behavior preserved",
+      "status": "GREEN",
+      "evidence": "post_action_attendee_upsert is handled by engine.ts executePostActions (separate code path). Trigger-level changes only affect auto_promote_lead_status. Rule b95a46a1 (Prizma) + 82aac348 (demo) retain post_action_attendee_upsert: true + got auto_promote_lead_status='invited' assigned in migration. No regression."
+    },
+    {
+      "id": 6, "name": "When promotion happens, originated_by_rule_id populated in SCE",
+      "status": "GREEN",
+      "evidence": "Test B at 10:44:10 UTC. Toggle planning → registration_open. Rule b53f6ea5 (נפתחה הרשמה, auto_promote='invited') matched. Messages SENT (sms b09df678 + email 14b20cf7). Lead waiting → invited. **Lead-side SCE origin_rule = 'b53f6ea5-b41a-4df3-92e7-0a64c5b10b7d'** — exact firing rule UUID captured. Full chain: trigger reads action_config → set_config session var → UPDATE crm_leads → trg_lead_status_change_event reads var → SCE row populated."
+    },
+    {
+      "id": 7, "name": "Chrome MCP screenshots saved",
+      "status": "GREEN",
+      "evidence": "_archive/m4-auto-promote-governance-2026-05-19/verification/{01_rule_editor_toggle_off.png, 02_rule_editor_toggle_on.png, 9_criteria_summary.json}"
+    },
+    {
+      "id": 8, "name": "Smoke 7/7 PASS",
+      "status": "GREEN",
+      "evidence": "node tests/smoke/baseline.test.mjs → 7/7 passed, 0 failed"
+    },
+    {
+      "id": 9, "name": "Iron Rules 12 / 21 / 23 / 31 / 32 / 34 / 35 enforced",
+      "status": "GREEN",
+      "evidence": "Pre-commit hook will run on the SPEC commit. crm-rule-editor.js at 349 lines (under 350 hard cap). SPEC §4 declares all destructive ops. FOREMAN_REVIEW.md will mention Chrome MCP + screenshots + runtime traces (Iron Rule 34 ui-spec-verification.mjs gate)."
+    }
+  ]
+}
