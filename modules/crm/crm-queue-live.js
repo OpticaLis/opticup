@@ -23,7 +23,15 @@
 
   function fmt(dt) {
     if (!dt) return '—';
-    try { return new Date(dt).toLocaleTimeString('he-IL'); } catch (_) { return String(dt); }
+    try {
+      // M4_ENQUEUE_REGRESSION_FIX §3.9 (2026-05-19): show DD/MM HH:MM:SS so
+      // operators can disambiguate queue rows from different days. Time-only
+      // collapses "yesterday 16:07" and "today 16:07" into a confusing pair.
+      var d = new Date(dt);
+      var dateStr = d.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' });
+      var timeStr = d.toLocaleTimeString('he-IL');
+      return dateStr + ' ' + timeStr;
+    } catch (_) { return String(dt); }
   }
   function statusBadge(status) {
     var cls = 'bg-slate-100 text-slate-700';

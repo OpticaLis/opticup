@@ -1,0 +1,14 @@
+{
+  "id": "3e6d4c55-4b7e-4826-a758-00ed6ee705b7",
+  "slug": "automation-engine",
+  "version": 16,
+  "name": "automation-engine",
+  "status": "ACTIVE",
+  "entrypoint_path": "/tmp/user_fn_tsxrrxzmdxaenlvocyit_3e6d4c55-4b7e-4826-a758-00ed6ee705b7_16/source/supabase/functions/automation-engine/index.ts",
+  "import_map_path": "/tmp/user_fn_tsxrrxzmdxaenlvocyit_3e6d4c55-4b7e-4826-a758-00ed6ee705b7_16/source/supabase/functions/automation-engine/deno.json",
+  "import_map": true,
+  "verify_jwt": true,
+  "created_at": 1777790140285,
+  "updated_at": 1778784684219,
+  "ezbr_sha256": "7d275fed8e38e5ed7d69d4a7ecb5026b4258746058f2a82ffd1272a93d5cbf86"
+}

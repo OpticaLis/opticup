@@ -317,7 +317,18 @@ scripts/
 ├── install-service.js          — install as Windows Service
 ├── uninstall-service.js        — uninstall from Windows Services
 ├── pipeline-coordination.mjs   — Parallel Pipeline session-lock protocol (added 2026-05-17)
-└── test-pipeline-coordination.mjs — regression + E2E tests for pipeline-coordination
+├── test-pipeline-coordination.mjs — regression + E2E tests for pipeline-coordination
+├── sync-prizma-config-to-demo.mjs — M4 config sync Prizma → demo (Iron Rule 33; added 2026-05-19 via M4_CONFIG_SYNC_INFRASTRUCTURE)
+├── promote-config-to-prizma.mjs   — M4 config promote single row demo → Prizma + audit (Iron Rule 33; added 2026-05-19)
+└── checks/
+    └── demo-config-allowlist.json — rows legitimately demo-only, preserved during sync (Iron Rule 33; added 2026-05-19)
+```
+
+## docs/guardian/sentinel/ (Sentinel mission protocol docs)
+
+```
+docs/guardian/sentinel/
+└── mission-11-config-parity.md  — M4 demo↔Prizma config drift watchdog protocol (Iron Rule 33; added 2026-05-19). Mission script is a separate follow-up SPEC.
 ```
 
 ## watcher-deploy/

@@ -209,18 +209,11 @@
     return (info && info.label) || slug || '';
   }
 
-  // P8: hardcoded dispatch replaced by rule evaluation. Rules live in
-  // crm_automation_rules (trigger_entity='event', trigger_event='status_change').
-  // Seed demo defaults at go-live/seed-automation-rules-demo.sql.
-  async function dispatchEventStatusMessages(eventId, newStatus, event) {
-    if (!window.CrmAutomationClient || typeof CrmAutomationClient.evaluate !== 'function') return;
-    return CrmAutomationClient.evaluate('event_status_change', {
-      eventId: eventId,
-      newStatus: newStatus,
-      event: event
-    });
-  }
-
+  // M4_DUAL_PATH_DEPRECATION_PHASE_1 (2026-05-19): event_status_change
+  // dispatch is now the consumer's sole responsibility. trg_event_status_change_event
+  // writes to crm_status_change_events; pg_cron drains every 30s; automation-engine
+  // EF evaluates rules and queues messages. Modal-UX rule_match_probe mode still
+  // available via CrmAutomationClient.evaluate(..., { mode: 'rule_match_probe' }).
   async function changeEventStatus(eventId, newStatus) {
     var tenantId = CrmHelpers.tid();
     var evRes = await sb.from('crm_events')
@@ -235,8 +228,6 @@
       .single();
     if (upd.error) throw new Error('event status update failed: ' + upd.error.message);
     try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.event.status_change', entity_type: 'crm_events', entity_id: eventId, details: { from: oldStatus, to: newStatus, name: evRes.data && evRes.data.name } }); } catch (_) {}
-    // Fire-and-forget — upd.data returned, dispatch in background (P5.5)
-    if (!evRes.error && evRes.data) dispatchEventStatusMessages(eventId, newStatus, evRes.data);
     if (window.CrmPaymentAutomation) CrmPaymentAutomation.markUnpaidForCompletedEvent(eventId, oldStatus, newStatus).catch(function (e) { console.error('CrmPaymentAutomation.markUnpaid:', e); });
     return upd.data;
   }

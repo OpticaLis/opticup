@@ -61,6 +61,16 @@
         trigger_data: triggerData || {},
         mode: 'dispatch_preview'
       });
+      // SPEC 4 (M4_STATUS_CHANGE_MODAL_GATE_FIX, 2026-05-19): status-change
+      // triggers should NOT show the loading modal then flash-close when
+      // recipients come back empty. Those callers (event/lead/attendee status
+      // changes) already issue their own "סטטוס עודכן" success toast — a
+      // dispatch modal makes sense only when there are actually recipients to
+      // confirm. The broadcast wizard + other explicit dispatch flows still
+      // benefit from the loading-spinner UX (suppressEmptyModal=false).
+      var isStatusChange = triggerType === 'event_status_change'
+        || triggerType === 'lead_status_change'
+        || triggerType === 'attendee_status_change';
       CrmConfirmSendV2.showAsync(previewPromise, async function (choice, ctx) {
         var dispatchRes = await callEf({
           tenant_id: _tid,
@@ -79,7 +89,7 @@
           return choice && choice.dispatch ? { sent: 0, failed: 0, rejected: 0 } : { sent: 0, failed: 0, rejected: 0 };
         }
         return dispatchRes;
-      });
+      }, { suppressEmptyModal: isStatusChange });
       // Caller doesn't await dispatch — modal handles it. Return placeholder.
       var pendingShape = { run_id: null, fired: 0, sent: 0, failed: 0, rejected: 0, queued: 0, skipped: 0, pending_confirm: true };
       return pendingShape;

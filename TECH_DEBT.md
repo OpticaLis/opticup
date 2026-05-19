@@ -7,6 +7,74 @@
 
 ## Active Debt
 
+### #M1_LENS_CATALOG_GLASSES_VS_CONTACTS_SPLIT — 🔴 Catalog mixes two product domains (blocks any re-seed)
+
+**Where:** `tests/קטלוג-עדשות-18.5.26.xls` (Excel source), `lens_brand` / `lens_design` / `lens_variant` global tables, `contact_lens_*` tables (already exist per M1_CONTACT_LENSES_ACCESSORIES).
+
+**What:** Prizma's authoritative catalog Excel intermixes eyeglass-lens variants (2,827 rows) with contact-lens variants (53 rows) under the same `חברה` ("company/brand") column. Worse: contact-lens **duration categories** (`יומיות` = daily / `חודשיות` = monthly / `שנתיות` = annual) are listed as if they were brands, when in fact they are wear-duration groupings.
+
+The SPEC B parser canonicalized all `חברה` values into `lens_brand` rows, creating fake brand entities for the duration categories. When multiple suppliers all stock e.g. "daily lenses," the multi-supplier offering rows for those fake brands created an apparent M:N that conflicted with the `supplier_brand_distribution_active_unique` partial index — caused SPEC B to abort.
+
+Real model: glasses + contact lenses are separate product domains. Contact lenses have a different catalog axis (brand × duration × power × …) and already have their own dedicated tables (`contact_lens_design` / `contact_lens_variant`) and operational screen.
+
+**Why it's debt (🔴):** SPEC B aborted mid-execution 2026-05-18. The global catalog (25 brands / 145 designs / 683 variants) now contains misclassified entries — `יומיות` / `חודשיות` / `שנתיות` should never have been added as brands. Any future re-seed attempt that uses the same Excel without pre-processing will hit the same wall. M1 contact-lens operational tab is unblocked separately (no shared catalog dependency), but the Prizma seed for *both* glasses and CL is stuck until this is resolved.
+
+**Planned fix:** Single dedicated SPEC (~3-4h). Steps: (1) curate the existing global catalog — soft-delete or re-classify the 3 misclassified "brands" + flag any other taxonomy issues Daniel finds; (2) write a new parser SPEC that splits Excel into two intermediate files (glasses-only + contact-lens-only) with explicit column mapping per product domain; (3) glasses path re-uses `lens_*` tables; (4) contact-lens path targets the existing `contact_lens_*` tables with the proper axis (brand × duration × …). Each path gets its own UPSERT seed scripts + idempotency contract.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_CATALOG_SEED_FROM_EXCEL/FINDINGS.md` F-1 (HIGH), authored 2026-05-18 during SPEC B abort.
+
+---
+
+### #M1_HEALTH_FUNDS_AS_PRICING_AGREEMENTS — 🔴 Health funds miscategorized as suppliers (architectural)
+
+**Where:** `tests/קטלוג-עדשות-18.5.26.xls` (Excel source), `suppliers` table, and a not-yet-existing pricing-agreements data layer.
+
+**What:** Excel column `ספק` ("supplier") contains 7 real supplier entities (`LEO`, `SHALDAG`, `Steuer`, `בדולח`, `לפידות`, `קופר ויז'ן`, `שמיר`) alongside 2 **Israeli national health funds** (קופות חולים): `לאומית` (Leumit) + `לאומית ילדים` (Leumit children's wing).
+
+Health funds are not suppliers — they are **customer organizations with negotiated bulk pricing agreements**. The Excel rows where `ספק=לאומית` represent variants where Leumit fund members get a special price; the actual physical supplier is still the upstream optical-lens distributor. Modeling קופות in `public.suppliers` is semantically wrong and breaks the multi-tenant SaaS model (every tenant will have different health-fund agreements with different pricing).
+
+The current schema has no surface for "customer organization × variant × negotiated price" — neither M5 customers nor M1 catalog covers this.
+
+**Why it's debt (🔴):** Blocks any clean re-seed of the Prizma catalog. Also blocks the M5 customer-card flow when a customer presents a health-fund card (today there's no way to look up "what's Leumit's price for this variant"). This is a real day-1 operational gap, not a polish item.
+
+**Planned fix:** New architectural SPEC (~6-8h, requires Architect + Daniel design conversation first). Likely outcome: introduce `customer_organization` table (Leumit / Maccabi / Clalit / Meuchedet at minimum, + tenant-specific institutions) and `customer_pricing_agreement(customer_organization_id, variant_id_or_design_id, tenant_id, price_override, is_active)`. Variants stay stocked by the real supplier; pricing tier is a separate read-path at point-of-sale.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_CATALOG_SEED_FROM_EXCEL/FINDINGS.md` F-2 (HIGH), authored 2026-05-18 during SPEC B abort.
+
+---
+
+### #M1_EXCEL_CATALOG_NORMALIZATION_OWNERSHIP — 🟡 Pre-seed Excel cleanup — who does it and how
+
+**Where:** `tests/קטלוג-עדשות-18.5.26.xls` (715 KB, 2,904 data rows), and any future re-import pipeline.
+
+**What:** Before the Prizma catalog can be cleanly seeded, the Excel needs five separate cleanups: (1) row-level split into glasses-rows vs contact-lens-rows (per F-1); (2) row-level split of supplier-rows vs health-fund-rows (per F-2); (3) duration-category re-classification (`יומיות`/`חודשיות`/`שנתיות` as a new attribute on contact-lens design, NOT a brand); (4) brand normalization (`HOYA`/`Hoya` → canonical, `RodenStock`/`רודנשטוק` → canonical); (5) data-quality sweep (trim whitespace, parse `index` numeric prefix, fill blank diameters, etc.).
+
+This work needs an owner. Two viable paths: (a) **Daniel manually curates** the Excel into 2-3 cleaner files using Excel's filter/sort UI — slow but produces the authoritative source-of-truth that Daniel personally signs off on; (b) **Architect dispatches a normalization SPEC** that builds a Python script to programmatically split + classify + dedupe, with Daniel reviewing the output rather than the input. Path (a) is 1-2 hours of Daniel's time; Path (b) is 4-6 hours of Pipeline time but produces a re-runnable artifact.
+
+**Why it's debt (🟡):** Blocks both #M1_LENS_CATALOG_GLASSES_VS_CONTACTS_SPLIT and #M1_HEALTH_FUNDS_AS_PRICING_AGREEMENTS. Without clean Excel, no clean seed.
+
+**Planned fix:** Architect-Daniel decision on path (a) vs (b) at next strategic touch. Decision then drives the SPEC scope (or no-SPEC if Daniel chooses to curate manually).
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_CATALOG_SEED_FROM_EXCEL/FINDINGS.md` F-1 + F-2, 2026-05-18.
+
+---
+
+### #M1_CONTACT_LENSES_PHASE_DECISION — 🟡 Where does contact-lens catalog seeding live — M1 follow-up or future module
+
+**Where:** Module 1 expansion roadmap, M1_CONTACT_LENSES_ACCESSORIES SPEC continuation, vs a potential standalone "M1.6 — Contact-Lens Catalog" SPEC family.
+
+**What:** M1_CONTACT_LENSES_ACCESSORIES (closed 2026-05-16) shipped the operational tables + minimal UI for contact-lens inventory, but the Prizma seed for CL catalog is now blocked behind F-1 + F-2 above. Strategic question: does the actual catalog seeding (brand × duration × power matrix × supplier offerings × pricing) stay inside Module 1 as a follow-up phase, or does it earn its own module ID because the data model (duration as primary axis + pricing tiers) is materially different from eyeglass lenses?
+
+Arguments for keeping inside M1: the operational tables already exist there, the supplier model is shared, the staff workflow is parallel (receipt / stock count / sell). Arguments for splitting: the catalog axis is different enough that the seed pipeline + Settings UI + per-tier pricing engine could become as large as the original M1 Lens phase.
+
+**Why it's debt (🟡):** Not actionable today (blocked by Excel cleanup), but the answer determines who writes the next Brief — Module 1 Strategist continues, or Architect writes a fresh module brief.
+
+**Planned fix:** Architect decision at next strategic touch after #M1_EXCEL_CATALOG_NORMALIZATION_OWNERSHIP is resolved. Default lean: keep inside M1 as Phase 2 (lower coordination overhead, shared operational tables) — flip to standalone module only if the pricing-tier complexity demands it.
+
+**Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_CATALOG_SEED_FROM_EXCEL/FINDINGS.md` F-1 follow-up implications, 2026-05-18.
+
+---
+
 ### #M1_LENS_PERMISSIONS_TEMPLATE_AUTO_REPLICATION — 🟡 permissions_template global table + auto-replication trigger
 
 **Where:** `permissions` + `role_permissions` tables (currently tenant-scoped with per-tenant duplicate rows), `tenants` lifecycle (no auto-replication on tenant create).

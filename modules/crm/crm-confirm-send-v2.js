@@ -301,8 +301,28 @@
     _saveSession();
   }
 
-  // Brief §3.8 — open modal in 'loading' state first; hydrate on promise resolve.
-  async function showAsync(previewPromise, onChoice) {
+  // showAsync(previewPromise, onChoice, opts?) — opts.suppressEmptyModal=true
+  // awaits preview first + opens modal only when recipients > 0 (silent skip
+  // when empty). Closes QA Finding 1.1 (modal flash on status changes). Legacy
+  // path (no flag) keeps loading-spinner UX for broadcast wizard + manual flows.
+  async function showAsync(previewPromise, onChoice, opts) {
+    if (opts && opts.suppressEmptyModal) {
+      var pv2;
+      try { pv2 = await previewPromise; }
+      catch (e) {
+        console.error('CrmConfirmSendV2 showAsync — preview failed:', e);
+        if (window.Toast) Toast.error('כשל בטעינת תצוגה מקדימה.');
+        return;
+      }
+      if (!pv2 || !Array.isArray(pv2.recipients_by_lead) || !pv2.recipients_by_lead.length) return;
+      _ensureState(pv2, onChoice);
+      _modal = _openModalShell(onChoice);
+      if (!_modal) return;
+      wireBodyEvents(_modal.el);
+      _attachHandlers(_modal, { get: function () { return pv2; } }, onChoice);
+      _saveSession();
+      return;
+    }
     _ensureState(null, onChoice);
     _modal = _openModalShell(onChoice);
     if (!_modal) return;
