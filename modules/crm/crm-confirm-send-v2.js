@@ -9,48 +9,12 @@
   var _state = null;
   var _modal = null;
   var _opts = null; // {onCancel, hideCommitWithoutNotify, suppressEmptyModal}
-  var STORE_KEY = 'crm_confirm_send_selection_v1';
-  var STORE_TTL_MS = 6 * 60 * 60 * 1000;
+
+  // M4_MODAL_DEFAULT_ALL_CHECKED_2026_05_19: sessionStorage save/load/restore
+  // helpers removed. Each modal open starts with all recipients checked
+  // (empty _state.excluded). Per-session UX only; no cross-session state.
 
   function R() { return window.__CcsV2Render || {}; }
-
-  function _saveSession() {
-    if (!_state || _state.phase !== 'loaded' || typeof sessionStorage === 'undefined') return;
-    try {
-      var rules = (_state.previewResponse && _state.previewResponse.rules) || [];
-      var ruleKey = rules.length ? rules[0].rule_id : null;
-      if (!ruleKey) return;
-      var entry = {
-        ruleKey: ruleKey,
-        excluded: Array.from(_state.excluded),
-        chip: _state.chip || 'all',
-        search: _state.search || '',
-        ts: Date.now(),
-      };
-      sessionStorage.setItem(STORE_KEY, JSON.stringify(entry));
-    } catch (_) {}
-  }
-
-  function _loadSession(previewResponse) {
-    if (typeof sessionStorage === 'undefined') return null;
-    try {
-      var raw = sessionStorage.getItem(STORE_KEY);
-      if (!raw) return null;
-      var entry = JSON.parse(raw);
-      if (!entry || !entry.ts || (Date.now() - entry.ts) > STORE_TTL_MS) {
-        sessionStorage.removeItem(STORE_KEY); return null;
-      }
-      var rules = (previewResponse && previewResponse.rules) || [];
-      var ruleKey = rules.length ? rules[0].rule_id : null;
-      if (entry.ruleKey !== ruleKey) return null;
-      return entry;
-    } catch (_) { return null; }
-  }
-
-  function _clearSession() {
-    if (typeof sessionStorage === 'undefined') return;
-    try { sessionStorage.removeItem(STORE_KEY); } catch (_) {}
-  }
 
   function pickFirst3() {
     if (!_state) return [];
@@ -84,7 +48,6 @@
     host.innerHTML = R().renderBody(_state);
     refreshFooterLabels(modalEl);
     wireBodyEvents(modalEl);
-    _saveSession();
   }
 
   function wireBodyEvents(modalEl) {
@@ -121,7 +84,6 @@
         if (e.target.checked) _state.excluded.delete(lid);
         else _state.excluded.add(lid);
         refreshFooterLabels(modalEl);
-        _saveSession();
       });
     });
     // Expand toggle (per-row body preview)
@@ -135,31 +97,33 @@
         rerender(modalEl);
       });
     });
-    // Restore quick-undo (Brief §3.1) — clears the restored exclusions so all
-    // recipients are re-selected without forcing the operator to tick each box.
-    var undoBtn = modalEl.querySelector('[data-ccsv2-undo-restore="1"]');
-    if (undoBtn) {
-      undoBtn.addEventListener('click', function () {
-        if (!_state) return;
-        _state.excluded = new Set();
-        _state.restored = false;
-        rerender(modalEl);
-      });
-    }
+    // M4_MODAL_DEFAULT_ALL_CHECKED_2026_05_19: bulk select-all / clear-all.
+    var selAllBtn = modalEl.querySelector('[data-ccsv2-select-all="1"]');
+    if (selAllBtn) selAllBtn.addEventListener('click', function () {
+      if (!_state) return;
+      _state.excluded = new Set();
+      rerender(modalEl);
+    });
+    var clrAllBtn = modalEl.querySelector('[data-ccsv2-clear-all="1"]');
+    if (clrAllBtn) clrAllBtn.addEventListener('click', function () {
+      if (!_state) return;
+      _state.excluded = new Set(_state.recipients.map(function (r) { return r.lead_id; }));
+      rerender(modalEl);
+    });
   }
 
   function _ensureState(previewResponse, onChoice) {
-    var restored = _loadSession(previewResponse);
+    // M4_MODAL_DEFAULT_ALL_CHECKED_2026_05_19: always start with empty excluded
+    // (= all checked). Each modal open is fresh; no cross-session persistence.
     _state = {
       previewResponse: previewResponse,
       recipients: (previewResponse && previewResponse.recipients_by_lead) ? previewResponse.recipients_by_lead.slice() : [],
-      excluded: new Set(restored ? restored.excluded : []),
+      excluded: new Set(),
       expanded: new Set(),
       testSent: new Set(),
-      chip: restored ? (restored.chip || 'all') : 'all',
-      search: restored ? (restored.search || '') : '',
+      chip: 'all',
+      search: '',
       phase: previewResponse ? 'loaded' : 'loading',
-      restored: !!restored,
       onChoice: onChoice,
     };
   }
@@ -197,7 +161,6 @@
         catch (e) { console.error('CrmConfirmSendV2 onChoice threw:', e); r = null; }
       }
       if (typeof modal.close === 'function') modal.close();
-      _clearSession();
       var queuedCount = (r && typeof r.queued === 'number') ? r.queued : 0;
       var dispatchRunId = (r && r.run_id) || null;
       if (choice.dispatch && dispatchRunId && queuedCount > 0 && window.CrmBroadcastCancel) {
@@ -260,28 +223,13 @@
   }
 
   function _hydrate(modal, previewResponse) {
+    // M4_MODAL_DEFAULT_ALL_CHECKED_2026_05_19: empty excluded stays empty
+    // (all checked default). No session-restore step here anymore.
     _state.previewResponse = previewResponse;
     _state.recipients = (previewResponse && previewResponse.recipients_by_lead)
       ? previewResponse.recipients_by_lead.slice() : [];
     _state.phase = 'loaded';
-    // showAsync path enters _ensureState with previewResponse=null, so the
-    // initial _loadSession could not match a rule key. Retry now that rules
-    // are known — this is the load-on-open wire for M4-V2-SESSION-RESTORE-01.
-    if (!_state.restored) {
-      var late = _loadSession(previewResponse);
-      if (late) {
-        _state.excluded = new Set(late.excluded);
-        _state.chip = late.chip || 'all';
-        _state.search = late.search || '';
-        _state.restored = true;
-      }
-    }
-    // Reconcile restored excluded set with new recipient list (drop stale ids
-    // silently — Brief §3.1 stale-lead reconciliation).
-    var validIds = new Set(_state.recipients.map(function (r) { return r.lead_id; }));
-    Array.from(_state.excluded).forEach(function (id) { if (!validIds.has(id)) _state.excluded.delete(id); });
     rerender(modal.el);
-    // Footer needs re-render too (button enables based on count).
     var footerEl = modal.el.querySelector('.modal-footer');
     if (footerEl) {
       footerEl.innerHTML = R().renderFooter(_state);
@@ -300,7 +248,6 @@
     if (!_modal) return;
     wireBodyEvents(_modal.el);
     _attachHandlers(_modal, { get: function () { return previewResponse; } }, onChoice);
-    _saveSession();
   }
 
   // showAsync(previewPromise, onChoice, opts?). opts.suppressEmptyModal/onCancel/hideCommitWithoutNotify.
@@ -320,7 +267,6 @@
       if (!_modal) return;
       wireBodyEvents(_modal.el);
       _attachHandlers(_modal, { get: function () { return pv2; } }, onChoice);
-      _saveSession();
       return;
     }
     _ensureState(null, onChoice);
