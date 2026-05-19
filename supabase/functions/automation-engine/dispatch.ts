@@ -57,12 +57,41 @@ export async function dispatchPlanDirect(
 
   let queued = 0;
   let failed = 0;
+  // M4_ENQUEUE_REGRESSION_FIX (2026-05-19): when an INSERT chunk fails, write
+  // a row-per-item to crm_message_log with status='failed' + the DB error
+  // surfaced as error_message. Before this fix, queue insert failures (notably
+  // the partial-unique-index `uq_crm_message_queue_idem` violation) were caught
+  // here but only console.error'd — invisible to operators reading
+  // crm_message_log or crm_automation_runs. The whole "total_recipients=2 but
+  // 0 queue / 0 log" silent-loss pattern came from this.
   for (let i = 0; i < rows.length; i += QUEUE_INSERT_CHUNK) {
     const chunk = rows.slice(i, i + QUEUE_INSERT_CHUNK);
     const res = await db.from("crm_message_queue").insert(chunk);
     if (res.error) {
-      console.error(`automation-engine queue insert chunk ${i}: ${res.error.message}`);
+      const errMsg = res.error.message || "queue_insert_failed";
+      console.error(`automation-engine queue insert chunk ${i}: ${errMsg}`);
       failed += chunk.length;
+      // Per-row visibility: each failed plan item becomes a log row that
+      // operators can find via the messages-log UI. Iron Rule 22 defense-in-
+      // depth: explicit tenant_id on every insert.
+      try {
+        const logRows = chunk.map((r) => ({
+          tenant_id: r.tenant_id,
+          lead_id:   r.lead_id,
+          event_id:  r.event_id ?? null,
+          run_id:    r.run_id ?? null,
+          channel:   r.channel,
+          content:   "",
+          status:    "failed",
+          error_message: `queue_insert_failed: ${errMsg}`,
+        }));
+        const logRes = await db.from("crm_message_log").insert(logRows);
+        if (logRes.error) {
+          console.error(`automation-engine queue insert log-row failure: ${logRes.error.message}`);
+        }
+      } catch (logErr) {
+        console.error(`automation-engine queue insert log-row threw: ${(logErr as Error).message}`);
+      }
     } else {
       queued += chunk.length;
     }
