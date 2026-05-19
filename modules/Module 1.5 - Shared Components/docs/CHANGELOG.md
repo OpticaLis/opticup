@@ -1,5 +1,36 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
+## 2026-05-18 night — M1_5_PLATFORM_ADMIN_AUTH_STORAGEKEY_ISOLATION — 1-line storageKey patch (producer-side fix for Stage 2A T-INFRA-1)
+
+SPEC: `M1_5_PLATFORM_ADMIN_AUTH_STORAGEKEY_ISOLATION` ([folder](specs/M1_5_PLATFORM_ADMIN_AUTH_STORAGEKEY_ISOLATION/))
+Parent: corrects false-positive verdict of prior `M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE` SPEC (which shipped the consumer-side bridge correctly but the producer-side `admin-auth.js` wrote to the wrong storageKey in production).
+
+**Path X sequential execution.** ~5 min wall-clock. 16 of 16 Executor-measurable §3 success criteria PASS.
+
+**Patch shape:** ONE line of `modules/admin-platform/admin-auth.js` changes — line 7 — adding the option-bag `{ auth: { storageKey: 'optic_admin_auth' } }` as the third arg to `supabase.createClient`. File grows by zero LOC (single-line form). Args 1+2 (URL + anon key) byte-identical to pre-patch.
+
+**2 commits (after `4cb62a7` SPEC author):**
+
+- `6cfb92f` fix(admin-auth): isolate adminSb session under storageKey 'optic_admin_auth' (closes Stage 2A T-INFRA-1 producer side) — 1 file changed, 1 insertion(+), 1 deletion(-).
+- _(this commit)_ chore(spec): close M1_5_PLATFORM_ADMIN_AUTH_STORAGEKEY_ISOLATION with retrospective — EXECUTION_REPORT.md + FINDINGS.md + this CHANGELOG + Module 1.5 SESSION_CONTEXT + Module 1 SESSION_CONTEXT correction.
+
+**Convergence achieved:** after this patch, three files agree on the canonical platform-admin storage namespace `optic_admin_auth`:
+- `modules/admin-platform/admin-auth.js:7` (NEW — this SPEC)
+- `modules/lens-catalog-admin/catalog-auth.js:10` (existing)
+- `modules/inventory/inventory-shell-lens.js:301` (bridge — shipped in prior SPEC)
+
+Iron Rule 21 cross-reference check (per SPEC §11): 0 collisions / 0 new symbols introduced — the new literal is the convergence point, not a duplicate.
+
+**Iron Rules clean.** Rules 7, 12, 21, 31, 32 verified at every commit. §Destructive Operations declared `None.` — destructive-ops audit clean.
+
+**Scope-clean.** ZERO changes to admin.html, js/shared.js, js/auth-service.js, modules/lens-catalog-admin/catalog-auth.js, modules/inventory/inventory-shell-lens.js, or any other JS/HTML file outside `admin-auth.js`.
+
+**One-time deployment cost.** Daniel must re-log into admin.html once after this deploys (existing session stored in default-key localStorage will not migrate to `optic_admin_auth`). Documented in SPEC §0.3 and EXECUTION_REPORT.
+
+**Pre-execution snapshot tag:** `pre-M1-5-storagekey-isolation-20260518-1931` (pointing at `4cb62a7`).
+
+**Next:** Reviewer audit → Localhost-Tester (REAL Chrome MCP flow, 4 cases per SPEC §3 S-VFV-*; NO synthetic `auth.setSession()` injection — that's the recipe that produced the prior false positive) → Foreman closure.
+
 ## 2026-05-18 — M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES — 4 PG sequences + 4 RPC rewrites (Phase 2 hybrid)
 
 SPEC: `M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES` ([folder](specs/M1_5_SEQUENTIAL_NUMBERING_MIGRATE_TO_PG_SEQUENCES/))

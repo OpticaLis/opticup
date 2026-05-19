@@ -4,7 +4,7 @@
 const ADMIN_SUPABASE_URL = 'https://tsxrrxzmdxaenlvocyit.supabase.co';
 const ADMIN_SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeHJyeHptZHhhZW5sdm9jeWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjIxNzIsImV4cCI6MjA4ODUzODE3Mn0.7Z_lrqHctUqm1offIvZxA17wCI4kRopFWgL1jCDJ9ZU';
 
-const adminSb = supabase.createClient(ADMIN_SUPABASE_URL, ADMIN_SUPABASE_ANON);
+const adminSb = supabase.createClient(ADMIN_SUPABASE_URL, ADMIN_SUPABASE_ANON, { auth: { storageKey: 'optic_admin_auth' } });
 
 let _currentAdmin = null;
 

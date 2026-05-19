@@ -142,6 +142,7 @@
 | 78 | stock-count-filters.js | modules/stock-count/stock-count-filters.js | 253 | Pre-count filter screen: brand/product-type filter selection before starting a new stock count, builds filter_criteria JSONB for stock_counts.filter_criteria column |
 
 | 79 | watcher-deploy/ | watcher-deploy/ | 8 files | Standalone deployment package: sync-watcher.js, sync-export.js, install-service.js (with --export-dir), uninstall-service.js, setup.bat (Hebrew interactive installer), uninstall.bat, package.json, README.txt (Hebrew UTF-8 BOM). Designed for USB/Dropbox copy to Windows machines without Git/IDE |
+| 80 | catalog-private-admin.css | shared/css/catalog-private-admin.css | 346 | Page-scope re-skin for CatalogPrivateAdmin component; toggles dark (sub-tab "global", LENS_PLATFORM_CATALOG_ADMIN_MOCKUP palette) ↔ light (sub-tab "private", LENS_INVENTORY_MOCKUP Hybrid-Navy palette) chrome via `[data-catalog-theme="dark"\|"light"]` selectors. JS plumbing in shared/js/catalog-private-admin.js writes `dataset.catalogTheme` on buildShell + switchSubtab. No `:root` mutation. Added 2026-05-18 by M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1. |
 
 **Total: ~113 JS files across 14 module folders + 10 global files + 9 shared/js files + watcher-deploy/ (8-file standalone package), ~23,900 lines** (includes scripts/sync-watcher.js + sync-export.js)
 
@@ -2265,14 +2266,20 @@ await sb.from('inventory').update({ quantity: newQty }).eq('id', id);
 
 **New files (lens-specific):**
 - `lens-catalog-admin.html` (root, 254 LOC) — Platform Catalog Admin entry
-- `modules/lens-catalog-admin/*.js` (7 files, 40-184 LOC each):
-  - `lens-catalog-admin.js` — entry, state, callbacks
-  - `catalog-auth.js` — auth gate via is_platform_super_admin RPC
-  - `catalog-brands-col.js` — brands column + add
-  - `catalog-designs-col.js` — designs column + add
-  - `catalog-variants-col.js` — variants column + add (calls next_lens_variant_display_id)
-  - `catalog-detail-pane.js` — variant detail + per-tenant offerings + publish toggle
-  - `catalog-import.js` — xlsx → JSON → lens-catalog-import EF
+- `modules/lens-catalog-admin/*.js` (8 files):
+  - `lens-catalog-admin.js` (244 LOC) — entry, state, callbacks, switchProductTab, counts badge (Stage 2A)
+  - `catalog-auth.js` (53 LOC) — auth gate via is_platform_super_admin RPC + localhost dev bypass
+  - `catalog-suppliers-col.js` (157 LOC) — Suppliers column (col 1) + modal create
+  - `catalog-brands-col.js` (170 LOC) — Brands column (col 2) + product_type-aware count + modal create + zero-series hint
+  - `catalog-designs-col.js` (161 LOC) — Series column (col 3) + product_type filter + modal create with lens_type option swap
+  - `catalog-detail-pane.js` (317 LOC) — Detail pane (col 4): version badge + adoption count + series fields editor + variants table schema swap + save bar with version increment
+  - `catalog-modal-helpers.js` (160 LOC, Stage 2A NEW) — openModal / closeModal / wireModal / validateRequired / focusFirstInput
+  - `catalog-variant-modal.js` (226 LOC, Stage 2A NEW) — single-variant create modal with schema swap per product_type
+  - `catalog-import.js` (125 LOC) — xlsx → JSON → lens-catalog-import EF (button disabled in Stage 2A, deferred to Stage 2B)
+- `css/lens-catalog-admin-page.css` (479 LOC) — base page-frame CSS
+- `css/lens-catalog-admin-tabs-modals.css` (197 LOC, Stage 2A NEW) — tabs strip + counts badge + brand-card + modal overlay
+- `migrations/M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A_lens_design_version.sql` (Stage 2A NEW) — adds `lens_design.version` integer NOT NULL DEFAULT 1
+- `supabase/migrations/20260518230000_m1_platform_catalog_rls_write_bypass.sql` (Stage 2A unblocker NEW, 2026-05-18) — adds `platform_admin_bypass` RLS policy (cmd=ALL, USING+WITH CHECK = `is_platform_super_admin()`) on all 4 global lens-catalog tables (`contact_lens_variant` / `lens_brand` / `lens_design` / `lens_variant`); idempotent (4× DROP POLICY IF EXISTS); closes Stage 2A T-BLOCK-2 escalation; canonical "function-call inside policy clause" pattern (Iron Rule 15 evolution) — first instance in project.
 - `supabase/functions/lens-catalog-import/` (3 files):
   - `index.ts` — request handler + brand/design/variant/offering loop (299 LOC)
   - `validate.ts` — types + per-row validation (59 LOC)

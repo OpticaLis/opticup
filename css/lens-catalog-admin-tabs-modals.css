@@ -1,0 +1,197 @@
+/* lens-catalog-admin-tabs-modals.css — page-scope CSS for
+   M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A (2026-05-18).
+
+   Sections:
+     L~20-65:  Top-level product-type tabs strip
+     L~67-90:  Counts badge (header)
+     L~92-140: Brand-card (col 2) + zero-series hint + quick-import disabled button
+     L~142-170: Save-bar actions + disabled-button tooltip
+     L~172-215: Detail-pane sub-toggle + field-grid (mockup §line 564-590)
+     L~217-330: 4 creation modal overlays (body-level scope)
+     L~332-345: Animations
+
+   Scope: page-scoped to .lens-tab-section[data-tab="catalog-admin"] except modals,
+   which overlay the viewport and carry the .lens-catalog-admin-modal- prefix
+   (Iron Rule 21 — no collision risk). NO :root mutation.
+
+   Palette: matches lens-catalog-admin-page.css (slate-900/800/700, accent-blue/green/purple).
+*/
+
+/* ===== L20-65: TOP-LEVEL PRODUCT-TYPE TABS STRIP ===== */
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-product-tabs {
+  display: flex; gap: 6px; background: #1e293b; border-radius: 8px;
+  padding: 6px; border: 1px solid #334155;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-product-tab {
+  flex: 0 0 auto; padding: 8px 18px; border: 1px solid transparent;
+  background: transparent; color: #94a3b8; border-radius: 6px;
+  cursor: pointer; font-size: 13px; font-weight: 600;
+  font-family: inherit; transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-product-tab:hover {
+  background: #334155; color: #e2e8f0;
+}
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-product-tab.active {
+  background: #1e3a8a; color: #fff; border-color: #1e40af;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-product-tab:focus-visible {
+  outline: 2px solid #60a5fa; outline-offset: 2px;
+}
+
+/* ===== L67-90: COUNTS BADGE (header) ===== */
+.lens-tab-section[data-tab="catalog-admin"] #catalog-counts-badge {
+  display: inline-block; margin-inline-start: 8px; font-size: 11px;
+  background: #1e3a8a; color: #dbeafe; padding: 3px 10px;
+  border-radius: 10px; font-weight: normal; white-space: nowrap;
+}
+
+/* ===== L92-140: BRAND-CARD (col 2) — Stage 2A enrichment ===== */
+.lens-tab-section[data-tab="catalog-admin"] .brand-card.lens-cat-admin-brand-card {
+  padding: 11px 14px; border-bottom: 1px solid #334155; cursor: pointer;
+  transition: background 0.1s; display: block;
+}
+.lens-tab-section[data-tab="catalog-admin"] .brand-card.lens-cat-admin-brand-card:hover { background: #334155; }
+.lens-tab-section[data-tab="catalog-admin"] .brand-card.lens-cat-admin-brand-card.selected,
+.lens-tab-section[data-tab="catalog-admin"] .brand-card.lens-cat-admin-brand-card.active {
+  background: #1e3a8a; border-right: 3px solid #60a5fa; padding-right: 11px;
+}
+.lens-tab-section[data-tab="catalog-admin"] .brand-card .brand-top {
+  display: flex; justify-content: space-between; align-items: center;
+}
+.lens-tab-section[data-tab="catalog-admin"] .brand-card .brand-name {
+  font-size: 13px; color: #f1f5f9; font-weight: 600;
+}
+.lens-tab-section[data-tab="catalog-admin"] .brand-card.active .brand-name,
+.lens-tab-section[data-tab="catalog-admin"] .brand-card.selected .brand-name {
+  color: #fff; font-weight: 700;
+}
+.lens-tab-section[data-tab="catalog-admin"] .brand-card .brand-stats {
+  font-size: 11px; color: #94a3b8; margin-top: 4px;
+}
+.lens-tab-section[data-tab="catalog-admin"] .brand-card .no-series-hint { color: #fcd34d; font-weight: 600; }
+.lens-tab-section[data-tab="catalog-admin"] .brand-card .quick-import {
+  margin-top: 6px; padding: 4px 8px; background: #4c1d95; border: 1px solid #6d28d9;
+  color: #ddd6fe; border-radius: 4px; cursor: pointer;
+  font-size: 10px; font-weight: 700; width: 100%; font-family: inherit;
+}
+.lens-tab-section[data-tab="catalog-admin"] .brand-card .quick-import:hover:not(:disabled) { background: #5b21b6; }
+.lens-tab-section[data-tab="catalog-admin"] .brand-card .quick-import:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ===== L142-170: SAVE-BAR ACTIONS + DISABLED-BUTTON TOOLTIP ===== */
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-save-bar .save-actions {
+  display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end;
+}
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-save-bar .btn-disable { color: #fca5a5; }
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-save-bar .btn-disable:hover { color: #fecaca; }
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-page button[disabled][title] {
+  opacity: 0.45; cursor: not-allowed;
+}
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-detail-title .ver-badge { margin-inline-start: 6px; }
+
+/* ===== L172-215: DETAIL-PANE SUB-TOGGLE + FIELD-GRID + EDIT-COL BTN ===== */
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-variants-table .small-action {
+  padding: 5px 10px; border: 1px solid #475569; background: #0f172a;
+  color: #94a3b8; border-radius: 4px; cursor: pointer;
+  font-size: 11px; font-weight: 500; font-family: inherit;
+}
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-variants-table .small-action:hover {
+  color: #60a5fa; border-color: #60a5fa;
+}
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-toggle-group {
+  display: flex; gap: 6px; padding: 4px; background: #0f172a;
+  border-radius: 6px; border: 1px solid #475569;
+}
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-toggle-btn {
+  flex: 1; padding: 6px 12px; border: none; background: transparent;
+  color: #94a3b8; border-radius: 4px; cursor: pointer;
+  font-size: 12px; font-weight: 600; font-family: inherit;
+}
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-toggle-btn.active.stock { background: #1e3a8a; color: #fff; }
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-toggle-btn.active.custom { background: #78350f; color: #fde68a; }
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-toggle-btn[disabled] { cursor: not-allowed; opacity: 0.6; }
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-field-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;
+}
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-field {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-field.field-required label::after {
+  content: " *"; color: #f87171;
+}
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-field input:disabled,
+.lens-tab-section[data-tab="catalog-admin"] .lens-cat-admin-field textarea:disabled {
+  opacity: 0.55; cursor: not-allowed;
+}
+
+/* ===== L217-330: 4 CREATION MODAL OVERLAYS (body-level scope) ===== */
+.lens-catalog-admin-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10000;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  animation: lens-cat-admin-fade-in 0.15s ease-out; direction: rtl;
+}
+.lens-catalog-admin-modal-overlay.closing { opacity: 0; transition: opacity 0.12s ease-in; }
+.lens-catalog-admin-modal-card {
+  background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+  max-width: 520px; width: 100%; max-height: 85vh; overflow-y: auto;
+  color: #e2e8f0; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  display: flex; flex-direction: column;
+}
+.lens-catalog-admin-modal-header {
+  padding: 14px 18px; border-bottom: 1px solid #334155; background: #0f172a;
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+}
+.lens-catalog-admin-modal-title { font-size: 16px; font-weight: 700; color: #f1f5f9; margin: 0; }
+.lens-catalog-admin-modal-close {
+  background: transparent; border: none; color: #94a3b8; font-size: 22px;
+  cursor: pointer; padding: 0 6px; font-family: inherit; line-height: 1;
+}
+.lens-catalog-admin-modal-close:hover { color: #f87171; }
+.lens-catalog-admin-modal-body {
+  padding: 18px; display: flex; flex-direction: column; gap: 12px;
+}
+.lens-catalog-admin-modal-form { display: flex; flex-direction: column; gap: 12px; }
+.lens-catalog-admin-modal-form .field { display: flex; flex-direction: column; gap: 4px; }
+.lens-catalog-admin-modal-form .field label { font-size: 11px; color: #94a3b8; font-weight: 600; }
+.lens-catalog-admin-modal-form .field.field-required label::after { content: " *"; color: #f87171; }
+.lens-catalog-admin-modal-form .field input,
+.lens-catalog-admin-modal-form .field select,
+.lens-catalog-admin-modal-form .field textarea {
+  padding: 8px 10px; border: 1px solid #475569; background: #0f172a;
+  color: #e2e8f0; border-radius: 5px; font-size: 13px; font-family: inherit;
+}
+.lens-catalog-admin-modal-form .field input:focus,
+.lens-catalog-admin-modal-form .field select:focus,
+.lens-catalog-admin-modal-form .field textarea:focus {
+  outline: none; border-color: #1e3a8a;
+  box-shadow: 0 0 0 2px rgba(30,58,138,0.3);
+}
+.lens-catalog-admin-modal-form .field input.invalid,
+.lens-catalog-admin-modal-form .field select.invalid { border-color: #f87171; }
+.lens-catalog-admin-modal-form .modal-hint {
+  font-size: 11px; color: #94a3b8; background: #0f172a;
+  border-radius: 6px; padding: 8px 10px; border: 1px solid #334155;
+}
+.lens-catalog-admin-modal-form .field-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.lens-catalog-admin-modal-footer {
+  padding: 12px 18px; border-top: 1px solid #334155; background: #0f172a;
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+.lens-catalog-admin-modal-footer .btn {
+  padding: 8px 14px; border: 1px solid #475569; background: #334155;
+  color: #e2e8f0; border-radius: 6px; cursor: pointer;
+  font-size: 13px; font-weight: 500; font-family: inherit;
+}
+.lens-catalog-admin-modal-footer .btn:hover { background: #475569; }
+.lens-catalog-admin-modal-footer .btn-primary {
+  background: #1e3a8a; color: #fff; border-color: #1e3a8a;
+}
+.lens-catalog-admin-modal-footer .btn-primary:hover { background: #1e40af; }
+.lens-catalog-admin-modal-footer .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ===== L332-345: ANIMATIONS ===== */
+@keyframes lens-cat-admin-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

@@ -1,9 +1,204 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-**M1 LENS — REWORK IN PROGRESS** — 2026-05-18 late evening (Path X multi-session). The "100% COMPLETE" declared earlier today was REVERTED after Daniel's live-screen review found SPEC 9 + 10 polish-by-validation outputs missing the Suppliers column + private-catalog rebuild. Correction SPEC `M1_LENS_CATALOG_TRUE_REBUILD` ran Commits 1+2 (TRUE 4-col mockup rebuild + Suppliers col + dev-mode OAuth bypass + orphan delete) — shipped clean. Commits 3+4+5 (private rewrite + Tier C VFV + closure) DEFERRED. Paired SPEC `M1_LENS_CATALOG_SEED_FROM_EXCEL` ABORTED mid-execution after Excel data-quality issues surfaced (glasses + contact-lens duration categories + health-fund pricing all conflated in one source sheet). M1 lens UI surface is mid-rebuild; awaiting new architect Brief.
+**M1 LENS — STAGE 2A T-INFRA-1 CORRECTED (true producer-side fix shipped via Module 1.5)** — 2026-05-18 night. The prior SESSION_BRIDGE SPEC's "🟢 4/4 PASS" verdict was a FALSE POSITIVE. Real-flow correction shipped via `M1_5_PLATFORM_ADMIN_AUTH_STORAGEKEY_ISOLATION` (Module 1.5 owns the cross-cutting auth-isolation infrastructure). See "2026-05-18 night — FALSE-POSITIVE CORRECTION" entry below.
+
+## 2026-05-18 night — FALSE-POSITIVE CORRECTION on prior M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE verdict
+
+**The prior verdict (🟢 4/4 PASS) was a FALSE POSITIVE.** The bridge code I shipped inside `gatePlatformAdminTabs()` (reading from `localStorage` key `optic_admin_auth`) was correct — but admin.html's actual login in `modules/admin-platform/admin-auth.js:7` was writing to the DEFAULT Supabase storageKey (no override), NOT to `optic_admin_auth`. The Tester's Approach 1 verification used synthetic `auth.setSession()` to plant a session directly into `optic_admin_auth` — a state production never reaches. Daniel surfaced the actual broken state via real screenshot.
+
+**Producer-side fix shipped via Module 1.5:** `M1_5_PLATFORM_ADMIN_AUTH_STORAGEKEY_ISOLATION` — 1-line patch to `modules/admin-platform/admin-auth.js:7` adding `{ auth: { storageKey: 'optic_admin_auth' } }` as the third arg to `supabase.createClient`. See `modules/Module 1.5 - Shared Components/docs/specs/M1_5_PLATFORM_ADMIN_AUTH_STORAGEKEY_ISOLATION/` for full SPEC + retrospective. Commit `6cfb92f`.
+
+**Effect:** Daniel logs into admin.html → session stored under `optic_admin_auth` (NOT default key) → PIN-auth on inventory.html no longer evicts admin session → bridge (already shipped) finds the session → "🔧 קטלוג מערכת" button surfaces in lens-nav → clicking opens Stage 2A 4-column platform admin screen. Real end-to-end flow via REAL Chrome MCP, NO synthetic injection.
+
+**One-time deployment cost:** Daniel must re-log into admin.html ONCE post-deployment (existing session in default key doesn't migrate).
+
+**Stage 2A status (revised):** 🟢 effective verdict NOT YET CONFIRMED for T-INFRA-1 — pending Tester real-flow verification of the storageKey patch. The prior bridge-side close stands (bridge code correct); the producer-side fix now ships. Once Tester Tier C VFV PASSES with REAL Chrome MCP flow (NO `auth.setSession()` planting), Stage 2A T-INFRA-1 is genuinely closed.
+
+**Class of defect (for SKILL learning loop):** SPEC author confused two similarly-named files (`modules/lens-catalog-admin/catalog-auth.js` vs `modules/admin-platform/admin-auth.js`) based on filename pattern + the `optic_admin_auth` storageKey string. A 60-second `grep -n "src=" admin.html | grep auth` would have shown admin.html loads `admin-platform/admin-auth.js`, NOT `catalog-auth.js`. Lesson codified in P-AUTHOR-1 of the new SPEC: for ANY auth-flow SPEC, the author MUST enumerate ACTUAL loaded JS files via `grep "<script src=" <entry-page>.html` before inferring from filenames or storageKey strings.
+
+---
+
+## 2026-05-18 night — M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE (🟢 FOREMAN CLOSED — BRIDGE CODE CORRECT, but verdict's T-INFRA-1 close was premature; producer-side fix shipped 2026-05-18 night via M1_5_PLATFORM_ADMIN_AUTH_STORAGEKEY_ISOLATION)
+
+> **CORRECTION (2026-05-18 night):** the "4/4 PASS" verdict below was a false positive. See "FALSE-POSITIVE CORRECTION" section above. Bridge code itself remains valid; the producer-side admin-auth.js fix shipped via Module 1.5 SPEC `M1_5_PLATFORM_ADMIN_AUTH_STORAGEKEY_ISOLATION` completes the chain.
+
+## 2026-05-18 night — M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE (🟢 FOREMAN CLOSED — Stage 2A T-INFRA-1 carry)
+
+**Status:** 🟢 CLOSED. 0 BLOCKER, 0 HIGH, 0 MEDIUM, 0 LOW code findings. 3 process/tooling observations → 3 SKILL improvement proposals (P-AUTHOR-1 + P-AUTHOR-2 + P-EXEC-1 + P-EXEC-2).
+
+**Pipeline run (5 commits since SPEC commit `e19e3ab`):**
+- Foreman: `e19e3ab` chore(spec): author M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE
+- Executor: `fc24e6c` fix(inventory-shell): bridge admin.html session into platform-admin gate RPC (T-INFRA-1)
+- Executor close-retro: `37956f2` chore(spec): close M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE with retrospective
+- Reviewer: `fc4ca8d` chore(spec): reviewer audit (🟡 PASS-WITH-FOLLOWUPS, 0 new findings, full agreement with Executor)
+- Tester: `483fea3` chore(spec): localhost tester Tier C VFV (🟢 GREEN, 4/4 PASS, Approach 1 real Daniel session)
+- Foreman closure: _(this commit)_ chore(spec): Foreman closure M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE
+
+**Findings (3 process/tooling):** all dispositioned as SKILL improvement proposals; 0 code defects.
+
+**Stage 2A all-carries resolved (effective 🟢):**
+- T-BLOCK-2 (RLS write gap) → `M1_PLATFORM_CATALOG_RLS_WRITE_BYPASS` 🟡 (effective 🟢)
+- T-INFRA-1 (admin session bridge) → THIS SPEC 🟢
+- T-BLOCK-1 + T-MED-1 + T-MIN-1 (in-flight Executor defects) → Foreman hotfix `a34b09c` in Stage 2A run
+
+**5-stage plan:** Stage 1 🟢 / Stage 2A 🟢 effective / **Session Bridge 🟢** (this) / Stage 2B unblocked + ready for Architect Brief / Stages 3/4/5 queued.
+
+**Strategic next:** Architect authors Stage 2B Brief (Excel import dialog). Queued NEW_SPEC `M1_5_IRON_RULE_32_HOOK_SQL_PATTERN_AUTHORIZATION` to close the hook auth-parser gap (independent infrastructure work).
+
+---
+
+## 2026-05-18 night — M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE (🟢 EXECUTOR — superseded by Foreman closure above)
+
+## 2026-05-18 night — M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE (Executor 🟢 closed — awaiting Reviewer + Tester + Foreman closure)
+
+**Status:** Executor pass shipped (production patch + retrospective). Reviewer + Localhost-Tester + Foreman closure queued.
+
+**Pipeline run (commits since SPEC commit `e19e3ab`):**
+- Foreman: `e19e3ab` chore(spec): author M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE
+- Executor: `fc24e6c` fix(inventory-shell): bridge admin.html session into platform-admin gate RPC (T-INFRA-1)
+- Executor: this commit (chore-spec closure: EXECUTION_REPORT + FINDINGS + SESSION_CONTEXT + CHANGELOG)
+- Reviewer: queued
+- Tester: queued (3 VFV cases — admin visible / tenant hidden / anon hidden)
+- Foreman: queued
+
+**Patch shipped:** 7 added lines + 1 deleted line in `modules/inventory/inventory-shell-lens.js` (function `gatePlatformAdminTabs`, lines 294-313 → 294-319). Net: 4 comment lines + 1 `var rpcClient = sb;` + 1 try/catch line + 1 modification of LHS from `sb.rpc(...)` to `rpcClient.rpc(...)`. File LOC 343 → 349. Existing `.then()` / `.catch()` body byte-identical.
+
+**T-INFRA-1 effective status:** RESOLVED at code layer. Tier C VFV pending Tester. With RLS unblocker already shipped + this bridge, Stage 2A's button is now visible AND its creation modals submit successfully end-to-end.
+
+**Findings (0):** No findings surfaced during execution. SPEC §3 row 7 (S-STORAGEKEY-REF "exactly 1") was logged as a minor SPEC-internal inconsistency with the §8 patch skeleton (skeleton contains 2 occurrences: 1 comment + 1 code) — see EXECUTION_REPORT §5.
+
+**5-stage plan:** Stage 1 🟢 / Stage 2A 🟡→🟢 effective (T-BLOCK-2 + T-INFRA-1 both resolved post this SPEC) / RLS Unblocker 🟡 / **Session Bridge 🟡** (this) / Stage 2B queued (now unblocked).
+
+---
+
+## 2026-05-18 night — M1_PLATFORM_CATALOG_RLS_WRITE_BYPASS (🟡 FOREMAN CLOSED — Stage 2A unblocker)
+
+**Status:** 🟡 CLOSED-WITH-FOLLOWUPS. DB target state achieved + verified; Stage 2A T-BLOCK-2 carry RESOLVED. 1 architectural NEW_SPEC queued for Iron Rule 32 hook gap.
+
+**Pipeline run (commits since SPEC commit `6ce37cf`):**
+- Foreman: `6ce37cf` chore(spec): author M1_PLATFORM_CATALOG_RLS_WRITE_BYPASS
+- Executor: (DB migration applied; commit blocked by Iron Rule 32 hook architectural gap → escalation file written)
+- Foreman: Daniel-authorized `--no-verify` bypass; Commit 1 (feat-db) + Commit 2 (chore-spec closure) commits land under bypass.
+- Reviewer: REVIEWER_REPORT.md
+- Tester: TEST_REPORT.md (8 cases: 4 positive + 4 negative)
+- Foreman: closure (this commit)
+
+**DB shipped:** 4 new `platform_admin_bypass` policies (cmd=ALL, qual + with_check = `is_platform_super_admin()`) on the 4 global lens-catalog tables. All 12 existing policies untouched. Migration file at `supabase/migrations/20260518230000_m1_platform_catalog_rls_write_bypass.sql` (37 LOC).
+
+**Findings (3):**
+- F-1 HIGH (architectural, NEW) — Iron Rule 32 hook lacks SQL-pattern authorization parsing → NEW_SPEC `M1_5_IRON_RULE_32_HOOK_SQL_PATTERN_AUTHORIZATION` queued.
+- F-PRE-1 INFO (carry from §0.4) — `contact_lens_variant.public_view.cmd='ALL'` vs siblings' `cmd='SELECT'` pre-existing drift → TECH_DEBT.
+- F-2 LOW (already-tracked) — hook comment-awareness gap → bundled into F-1's NEW_SPEC.
+
+**Stage 2A effective status update:** Stage 2A's 🟡 verdict was driven by T-BLOCK-2 (RLS write gap). This SPEC ships that fix. Stage 2A's 4 creation modals now operate end-to-end at the DB layer. Stage 2A retrospective status remains 🟡 in its own SPEC folder for historical record; Stage 2B (Excel import) is now unblocked to start.
+
+**5-stage plan:** Stage 1 🟢 / Stage 2A 🟡 (effective 🟢 post this SPEC) / **RLS Unblocker 🟡** (this) / Stage 2B/3/4/5 queued.
+
+---
+
+## 2026-05-18 evening — M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A (🟡 FOREMAN CLOSED — Stage 2A of 5; T-BLOCK-2 resolved by RLS unblocker above)
+
+## 2026-05-18 evening — M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A (🟡 FOREMAN CLOSED — Stage 2A of 5)
+
+**Status:** 🟡 CLOSED-WITH-FOLLOWUPS. Visual + structural goals 🟢; 1 architectural carry (T-BLOCK-2) escalated to Architect.
+
+**Pipeline run (9 commits total since SPEC commit `bd0fc53`):**
+- Foreman: `bd0fc53` chore(spec): author M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A
+- Executor: `96dcb22` + `4fb4ec3` + `53b597c` + `a9c9790` (4 commits — DB migration + product-type tabs + detail pane + variant/supplier modals + closure retro)
+- Foreman R-M2 hotfix: `c913ea9` fix(catalog-admin): escape UUID + slug in tenant-select (R-M2)
+- Reviewer: `4ccd385` chore(spec): reviewer audit (🟡 PASS-WITH-FOLLOWUPS; 2 new findings R-M1 + R-M2 + 1 R-INFO-1)
+- Tester: `05faa9a` chore(spec): localhost tester Tier C VFV (🔴 FAIL pre-hotfix; 5 findings T-BLOCK-1/2 + T-MED-1 + T-MIN-1 + T-INFRA-1)
+- Foreman Tester-finding hotfix: `a34b09c` fix(catalog-admin): T-BLOCK-1 brand→design click chain + T-MED-1 counts + T-MIN-1 meta
+- Foreman closure: _(this commit)_ chore(spec): Foreman closure M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A — FOREMAN_REVIEW + SESSION_CONTEXT
+
+**Findings disposed (11 total):**
+- RESOLVED in-pipeline (4): R-M2 (escape) → `c913ea9`; T-BLOCK-1 (brand-click cache) + T-MED-1 (counts refresh) + T-MIN-1 (meta defensive) → `a34b09c`.
+- TECH_DEBT carry (5): F-1 display_id RPC, F-2 FIELD_MAP, F-4 lens_type CHECK, R-M1 catalog-detail-pane.js LOC (320/350), R-INFO-1 closeModal namespace.
+- INFO carry (1): F-3 catalog-import.js dead exports — auto-resolves Stage 2B.
+- ESCALATED to Architect (1): T-BLOCK-2 RLS write-policy gap on global lens-catalog tables (CRITICAL architectural, pre-existing). Bundled with T-INFRA-1 in proposed Brief `M1_PLATFORM_CATALOG_RLS_WRITE_BYPASS_BRIEF.md` — Daniel approves option (A/B/C) before SPEC dispatch.
+
+**Effective code shipped (post all hotfixes):**
+- 1 DB migration applied + backfilled (145 lens_design rows, version=1).
+- 3 NEW JS/CSS files in `modules/lens-catalog-admin/` + `css/`.
+- 7 modified files (6 in `modules/lens-catalog-admin/` + `inventory.html` +1 link).
+- ~1300 LOC net added (well over S-NO-POLISH ≥800 floor).
+- 0 BLOCKERs at HEAD. 0 destructive ops.
+- `shared/js/catalog-private-admin.js` + `shared/css/catalog-private-admin.css` byte-identical (Stage 4 boundary respected).
+
+**Next strategic action for Daniel:** Architect to author T-BLOCK-2 Brief (3 options stated in FOREMAN_REVIEW §7). Stage 2B (Excel import dialog) deferred until T-BLOCK-2 resolved.
+
+**5-stage plan status:** Stage 1 🟢, Stage 2A 🟡 (this), Stage 2B/3/4/5 queued.
+
+---
+
+## 2026-05-18 evening — M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A (🟢 EXECUTOR DONE — Reviewer + Tester ran; see Foreman closure block above)
+
+**Status:** 🟢 Executor closed clean. Real code + DB changes shipped (zero-change closure NOT taken). Pipeline still needs Reviewer + Localhost-Tester + Foreman closure.
+
+**Commits shipped:**
+- `96dcb22` feat(db): add lens_design.version column for series-level versioning
+- `4fb4ec3` feat(catalog-admin): product-type tabs (glasses + contact_lens) + product_type-aware drill
+- `53b597c` feat(catalog-admin): mockup-faithful detail pane + variant modal + supplier modal
+- _(this commit)_ chore(spec): close M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A with retrospective
+
+**DB shipped:**
+- `ALTER TABLE public.lens_design ADD COLUMN version integer NOT NULL DEFAULT 1` — backfilled to 1 on all 145 existing global designs (86 glasses + 34 contact_lens + 25 accessory). Migration file: `migrations/M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A_lens_design_version.sql`.
+
+**Code shipped (in `modules/lens-catalog-admin/`):**
+- NEW `catalog-modal-helpers.js` (160 LOC) — openModal / closeModal / wireModal / validateRequired / focusFirstInput. Single modal-helpers module shared by all 4 creation modals.
+- NEW `catalog-variant-modal.js` (226 LOC) — openVariantModal(state, onCreated?) branches on activeProductTab → glasses form (lens_variant: display_id/refractive_index/diameter_mm/sph_min/max required) or contact form (contact_lens_variant: display_id/base_curve/sph/wearing_schedule required). Inserts as global rows (owner_tenant_id: null).
+- NEW `css/lens-catalog-admin-tabs-modals.css` (197 LOC) — tabs strip + counts badge + brand-card chrome + modal overlay. Page-scoped to `[data-tab="catalog-admin"]` except modal classes which carry the `lens-catalog-admin-modal-` prefix.
+- MODIFY `lens-catalog-admin.js` (169→244 LOC) — state.activeProductTab + switchProductTab() (URL ?ptab= hydration) + counts badge loader + header actions wiring.
+- MODIFY `lens-catalog-admin-partial.html` (126→143 LOC) — product-tabs strip ABOVE the 4-col grid; mockup-faithful header (title + counts badge + 4 buttons: 3 disabled with tooltip "זמין בשלב 2ב" + 1 active "➕ ספק חדש"); zero-series hint markup support.
+- MODIFY `catalog-designs-col.js` (77→161 LOC) — filters by `product_type = state.activeProductTab`; new `loadDesignsForBrand(state)` exported; lens_type select options swap per tab; modal replaces 3× window.prompt() flow.
+- MODIFY `catalog-brands-col.js` (111→170 LOC) — design_count per brand for the active product_type (re-evaluates on tab switch); zero-series hint render; per-brand quick-import button rendered DISABLED with tooltip; modal replaces window.prompt.
+- MODIFY `catalog-suppliers-col.js` (113→157 LOC) — modal replaces window.prompt; optional supplier_number field.
+- MODIFY `catalog-detail-pane.js` (152→317 LOC) — version badge in title ('v{N} · פעיל' / 'v{N} · טיוטה'); adoption count strip from tenant_active_offerings → supplier_catalog_offering join; series core fields editable (name + lens_type select + sub-toggle visual-only + description DISABLED); variants table schema swap per product_type; save bar wired (💾 שמור גרסה FULLY WIRED via atomic .update incrementing version; 📋 שכפל + 🗑 השבת placeholder toasts).
+- MODIFY `inventory.html` — 1 new `<link>` for the new CSS file after line 49.
+- UNCHANGED `catalog-auth.js` (53 LOC), `catalog-import.js` (125 LOC), `css/lens-catalog-admin-page.css` (479 LOC).
+- Backup: `modules/Module 1 - Inventory Management/backups/2026-05-18_M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A/` (13 files; gitignored).
+- Pre-execution git tag: `pre-M1-stage2a-platform-admin-20260518-1910`.
+
+**§3 criteria status:** 34/34 executor-measurable criteria pass (including S-MIGRATION-APPLIED + S-MIGRATION-BACKFILL = 145 rows). 6 deferred to Localhost-Tester (S-VFV-GLASSES-TAB, S-VFV-CONTACTS-TAB, S-VFV-EMPTY-STATE, S-VFV-POPULATED, S-VFV-CREATION-FLOWS, S-VFV-NO-CONSOLE).
+
+**Findings:** See `docs/specs/M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A/FINDINGS.md`.
+
+**Awaiting:** Reviewer audit + Localhost-Tester Tier C VFV (6 snapshots + DB row verification per modal) + Foreman closure + FOREMAN_REVIEW.md.
+
+---
+
+## 2026-05-18 evening — M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1 (🟢 FOREMAN CLOSED — Stage 1 of 5)
+
+**Status:** 🟢 Closed. Foreman closure 2026-05-18 with Tier C VFV 18/2/0. Stage 1 (tenant-side dark/light re-skin) shipped; Stage 2A extends the Platform Catalog Admin SEPARATE surface (see above).
+
+## 2026-05-18 evening — M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1 (🟢 EXECUTOR DONE — awaiting Reviewer + Tester)
+
+**Status:** 🟢 Executor closed clean. Real CSS + JS edits shipped (zero-change closure NOT taken). Pipeline still needs Reviewer + Localhost-Tester + Foreman closure.
+
+**Commits shipped:**
+- `70c5a9a` feat(catalog-private-admin): mockup-faithful dark/light re-skin via [data-catalog-theme]
+- _(this commit)_ chore(spec): close M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1 with retrospective (EXECUTION_REPORT + FINDINGS + SESSION_CONTEXT + CHANGELOG)
+
+**Code shipped (Commit 1):**
+- NEW `shared/css/catalog-private-admin.css` (346 LOC) — base shell + `[data-catalog-theme="dark"]` block (slate-900 from LENS_PLATFORM_CATALOG_ADMIN_MOCKUP) + `[data-catalog-theme="light"]` block (Hybrid-Navy from LENS_INVENTORY_MOCKUP). 36 distinct hex literals in dark + 18 in light; rgba(30,58,138,0.3) focus-ring honored.
+- MODIFY `shared/js/catalog-private-admin.js` (339→344 LOC, +5 / under +11 budget / under 350 hard cap) — `buildShell` initializes `dataset.catalogTheme = 'dark'` matching `init()`'s initial sub-tab 'global'; `switchSubtab` writes `dataset.catalogTheme = sub === 'private' ? 'light' : 'dark'`.
+- MODIFY `inventory.html` (28→29 stylesheet links) — one `<link rel="stylesheet" href="shared/css/catalog-private-admin.css">` after `cat-sidebar.css`.
+- MODIFY `MODULE_MAP.md` — row 80 added for the new CSS file.
+- No `:root` mutation in `shared/css/styles.css`. No edits to `modules/lens-catalog-admin/**`. No DB / RPC / schema work.
+- Pre-execution git tag: `pre-M1-stage1-mockup-fidelity-20260518-1740`. Iron Rule 9 backup not triggered (4 files, +5 JS LOC — under both thresholds).
+
+**§3 criteria status (14 measurable):** 14 / 14 executor-measurable criteria pass; 2 deferred to Localhost-Tester (S-LOCALHOST-VFV, S-NO-CONSOLE). Iron Rule 31 + Iron Rule 32 gates exit 0. Verify --staged exit 0 with one soft-target warning (JS 345 lines vs 300 target — well under 350 hard cap, accepted by gate).
+
+**Findings (1 INFO):** F-1 — `docs/FILE_STRUCTURE.md` not updated for new CSS file; recommended path (a) TECH_DEBT entry for Integration-Ceremony batch update.
+
+**Awaiting:** Reviewer audit of commit `70c5a9a` for Iron Rule 12/21 + selector→emitted-class match + color-form completeness. Localhost-Tester Tier C VFV (4 screenshots + TEST_REPORT.md). Foreman closure + FOREMAN_REVIEW.md.
+
+---
 
 ## 2026-05-18 late evening — M1_LENS_CATALOG_TRUE_REBUILD (🟡 PARTIALLY EXECUTED — Commits 1+2 shipped, Commits 3+4+5 deferred)
+
+**Note:** Stage 1 above (M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1) restarts the deferred Commit-3-style private-catalog work under no-polish-by-validation discipline. This partial-close entry remains for historical traceability.
 
 **Status:** 🟡 Partially closed clean. Architect-authorized partial close after paired SPEC B aborted.
 

@@ -219,3 +219,74 @@ The skill MUST NOT autonomously decide:
 ### Decision H — Applied pending-entries deletion is not Iron Rule 32 destructive
 Sweep-and-delete is the documented end-state per opticup-architect SKILL "Cowork File-Write Capability Map" + "Sweep Layer 1" protocol. Deletion without per-instance SPEC + `--no-verify` acceptable. Codify in Iron Rule 32 documentation as standing exception.
 
+
+---
+
+## 2026-05-18 — Stage 1 close-out + Stage 2A authoring: 3 architect mistakes Daniel caught
+
+**Context:** After M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1 closed 🟢 with Tier C VFV 18/2/0, Daniel reviewed the live screen and found 3 separate architect-level errors that the Pipeline's Tier C VFV could not catch — all three were architectural-intent mistakes, not visual-fidelity mistakes.
+
+**Mistake 1: Built the wrong screen architecture.** Brief told Module Strategist to put BOTH tabs (global + my-catalog) inside one screen, served to both admin and tenant users. Daniel's actual intent was always: TWO separate screens. `lens-catalog-admin` = Optic Up team only, single-purpose master maintenance. The tenant inventory screen shows a different view with two sub-tabs (global-readonly + my-catalog-editable) — but tenants never see the master-admin screen. Daniel had said this clearly in `LENS_PLATFORM_CATALOG_ADMIN_MOCKUP.html` (banner: "PLATFORM ADMIN — Optic Up Team Only") and I missed the implication when authoring the Brief. **Lesson:** when a mockup file's banner names its audience explicitly, that's a hard architectural constraint, not flavor text. Read mockup banners as locked-decisions equivalent to a sealed Brief paragraph.
+
+**Mistake 2: Skipped reading the mockup in full before writing the Brief.** Brief was written based on the mockup's first ~30 lines (theme + columns). The actual mockup had 671 lines including a full 4th column (series detail + variants table + versioning + publish-state + adoption count). Stage 1 shipped only 3 columns and the right-pane was empty — Daniel's verdict: "this is much more serious in the mockup than what was built." **Lesson:** any Brief for a mockup-faithful rebuild MUST be preceded by a complete read of the mockup file (full `Read` with no `limit` if file ≤ 700 lines, or full sequential `Read` calls if larger). The Brief's §3 Scope IN must enumerate every capability the mockup exposes — sections, sub-sections, action buttons, status badges, version controls, adoption indicators. Self-check before sealing any mockup-fidelity Brief: "have I read every region of the mockup file, or just the header and the first column?"
+
+**Mistake 3: Tried to lump contact lenses + glasses under "category" field on the same table.** Proposed (as a "feature improvement") adding a `category` enum (Single Vision / Multifocal / Photochromic / Daily / Monthly / etc.) on `lens_design` so both contact lenses and glasses lenses live in one table. Daniel corrected: contact lenses have entirely different field sets (Base Curve, Diameter, Duration) vs glasses (SPH/CYL/Index/Coating). They are already separate tables (`lens_*` and `contact_lens_*`) by deliberate design. **Lesson:** before proposing to merge two entities under a discriminator field, run Pattern P21 (entity-boundary pressure test) explicitly: list the fields of each, count the overlap. If overlap < 30%, two tables. The lens-vs-contact-lens case is the textbook "different products that happen to share a customer-facing umbrella" — they belong in different schemas. Codify in opticup-architect SKILL.md: when Daniel says "we have separate tables for X and Y," the answer is never "let's add a discriminator" — the answer is "two tabs in the UI, two schemas in the DB."
+
+**Pattern emerging from all 3:** the Pipeline's Tier C VFV verifies visual fidelity against a mockup, but cannot verify architectural intent. When the Architect's Brief itself misreads intent, the Pipeline ships a mockup-faithful copy of the wrong architecture. Mitigation going forward:
+
+1. **Mockup file full-read is mandatory** before authoring any mockup-fidelity Brief. Bullet enumeration of every capability in Brief §3.
+2. **Audience banners in mockups are hard constraints**. Brief §5 Locked Decisions must include an "Audience" row for each screen if mockups specify it.
+3. **Visual review by Daniel comes BEFORE the next stage starts**, not after. After every Stage closes 🟢, send the URL + one-question prompt: "פתח את X. נראה כמו שאתה אישרת? נשארנו עם משהו לתקן?" Skip the next stage's authoring until the answer is yes.
+4. **Entity-boundary pressure test (P21) for every Brief** that touches multiple-product modules (lens / contact-lens / accessory / frame).
+
+These 4 mitigations apply to the upcoming `M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A_BRIEF` immediately.
+
+---
+
+## 2026-05-18 — Same-session continuation beats new-session bootstrap (Daniel correction)
+
+**Situation:** After Stage 2A closed 🟡 with the T-BLOCK-2 RLS escalation, I wrote the unblocker Brief and reflexively told Daniel "paste into a fresh Claude Code chat." Daniel asked why a fresh chat and not the existing one — pointing out that previous lessons already established same-session continuation as superior, and asking why this wasn't already reflected in the skill.
+
+**My recommendation when corrected:** Continue in the existing Claude Code session. Reason: the Claude Code session has 1M-token context window, the previous SPEC's full state (Foreman role, T-BLOCK-2 discovery, FOREMAN_REVIEW.md authoring) is already loaded as recent context, lock was released cleanly, no architectural reason to discard that context. Pipeline-coordination's lock system handles concurrency, not session-freshness.
+
+**Daniel's response:** Agreed. He then pointed out this lesson should already have been codified.
+
+**Reason for the gap:** the architect SKILL.md (this file's parent) was written before Full-Auto Pipeline introduced same-chat skill chaining (Foreman → Executor → Reviewer → Localhost-Tester → Foreman closure all in one Claude Code chat). The "new chat per Brief" rule was correct in the previous architecture where Claude Code chats were single-skill and each role-switch required a fresh session. With the current Pipeline architecture, role-switch is in-chat via Skill tool, and the 1M context window comfortably holds 5+ SPEC cycles. The rule is stale. I knew this empirically (recent Pipelines have run 9-13 commits in one chat without context degradation) but didn't reflect it back into the protocol.
+
+**Codified lesson — default to same-session continuation:**
+
+1. After any SPEC closes (🟢 or 🟡), if a follow-up SPEC is queued in the next 1-2 hours AND the existing Claude Code chat shows healthy state (Pipeline released locks, lender summary printed, no error trail), default to continuing the same chat with a new Activation Prompt.
+2. Open a fresh Claude Code chat only when: (a) the existing chat shows context-window strain (slow responses, truncation, repetition), (b) the new SPEC is in a different module with completely unrelated context, (c) Daniel explicitly says "open a fresh chat," (d) more than ~24h elapsed since the previous SPEC closed (context staleness, branch drift).
+3. The default Activation-Prompt-delivery hand-off is "paste this into your active Claude Code chat." Only if conditions (a)-(d) apply does the Architect say "open a fresh Claude Code chat."
+
+**Mitigation for ME (next time):** when I catch myself writing "paste into a fresh Claude Code chat," ask explicitly: is there an existing chat at healthy state? If yes, override the default with same-session continuation. Make the override visible in the Hebrew status line: "הדבק לסשן הקיים — הקונטקסט שם משרת אותנו."
+
+
+---
+
+## 2026-05-18 — End-of-session: M1 Lens Catalog Stages 1 + 2A + 3 unblockers shipped end-to-end
+
+**Context:** Single Cowork architect session over 2026-05-18 evening/night closed FOUR SPECs through Full-Auto Pipeline (same Claude Code chat continuation per the new "same-session continuation" rule logged earlier today):
+
+1. `M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1` — 🟢 (3 commits, Tier C VFV 18/2/0)
+2. `M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A` — 🟡 (9 commits; 2 carry findings: T-BLOCK-2 RLS gap, T-INFRA-1 session-routing)
+3. `M1_PLATFORM_CATALOG_RLS_WRITE_BYPASS` — 🟡 (5 commits; resolves T-BLOCK-2; 1 carry: Iron Rule 32 hook gap requiring `--no-verify` go-ahead)
+4. `M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE` — 🟢 (5 commits, false-positive 4/4 PASS caught by Daniel)
+5. `M1_5_PLATFORM_ADMIN_AUTH_STORAGEKEY_ISOLATION` — 🟢 (5 commits, REAL Tier C VFV 4/4)
+
+Net effect: Stage 2A is now 🟢 GREEN end-to-end. Daniel can log into `admin.html`, navigate to `inventory.html?t=demo`, click "🔧 קטלוג מערכת", and reach the full 4-column Platform Catalog Admin screen with submits succeeding (RLS bypass live).
+
+**Three architect mistakes from this session, all corrected mid-flow:**
+
+- **Mistake 1 (logged earlier today):** Stage 1 Brief misframed architecture (combined-screen vs two-screens). Daniel caught via visual review.
+- **Mistake 2 (logged earlier today):** Stage 1 Brief was written from partial mockup read (~30 lines). Daniel caught the missing 4th column.
+- **Mistake 3 (new):** SESSION_BRIDGE Brief identified the wrong auth file (`catalog-auth.js` vs the actual `admin-platform/admin-auth.js`). The bridge was correct code but read from an always-empty namespace. Foreman echoed the Brief without verification; Tester used synthetic `auth.setSession()` injection that hid the gap; pipeline reported 4/4 PASS. Daniel caught it via real visual test on his browser. The Brief's "DO NOT touch admin.html or admin-auth.js" rule was the error — it fenced off the actual fix-point.
+
+**Codified lesson — P-AUTHOR-1 (new, from Mistake 3):** ANY frontend auth/session SPEC must include in its pre-flight: `grep '<script src=' <entry-page>.html` to enumerate THE ACTUAL files loaded by that page. The SPEC's claim "file X is the auth handler for page Y" must be verified by file-load inspection, not filename-pattern inference. The Brief author (me) inferred from `lens-catalog-admin/catalog-auth.js` that it serves admin.html — wrong; it serves the catalog-admin partial loaded later. Always grep entry-page scripts before sealing scope.
+
+**Codified lesson — P-AUTHOR-2 (new, from Mistake 3):** Tier C VFV instructions must FORBID synthetic session injection by default (`auth.setSession()`, mocked localStorage, direct RPC with service_role). The Tester MUST drive the real entry-page form via Chrome MCP `fill_form` + click, then verify state propagation downstream. Synthetic injection plants a state the real user flow never reaches — produces false-positive PASS reports. SPECs that touch auth/session/storage explicitly require real-flow Tier C.
+
+**End-of-session bug captured for next session (NOT yet resolved):** The Stage 2A admin screen shows a tenant-dropdown selector at the top — Daniel pointed out this is semantically inverted. The admin defines global suppliers/brands/series, then assigns which tenants receive access (default = all tenants). The current dropdown implies "show me what tenant X sees" which is backwards. To be addressed in a future Stage 2A.5 SPEC or rolled into Stage 2B scope. Logged for Architect attention on next session resume.
+
+**147 commits pending merge to main at end of session.**
+

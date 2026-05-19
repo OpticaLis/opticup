@@ -4,6 +4,116 @@
 
 ---
 
+## Stage 2A finishing-touch — Inventory-Shell Platform-Admin Session Bridge 🟡 (Executor closed, awaiting Reviewer + Tester + Foreman) (2026-05-18 night)
+
+### M1_INVENTORY_SHELL_PLATFORM_ADMIN_SESSION_BRIDGE — 2026-05-18 night
+
+**Scope:** Closes Stage 2A's T-INFRA-1 carry. Tight 6-line patch inside `gatePlatformAdminTabs()` in `modules/inventory/inventory-shell-lens.js`. Routes the `is_platform_super_admin` RPC through a transient Supabase client constructed with `storageKey: 'optic_admin_auth'` so it reads admin.html's session (Google-OAuth JWT) instead of the PIN-tenant session under the default storageKey. Function-scoped (no `window.*` promotion per S-TRANSIENT-SCOPE). `autoRefreshToken: false` avoids background-refresh contention with admin.html's primary client. Try/catch fail-safe: any constructor error → fall back to default `sb` → RPC runs as anon → returns false → button stays hidden.
+
+**DB shipped:** Zero. No DB changes.
+
+**Code shipped:** `modules/inventory/inventory-shell-lens.js` 343 → 349 LOC (+7 added / -1 deleted in `git diff` — net +6 lines + 1 modified char (`sb.rpc` → `rpcClient.rpc`)). Existing `.then()` / `.catch()` body inside the gate function is byte-identical to pre-patch.
+
+**🟡 verdict driver:** Executor pass only — Reviewer + Tester + Foreman closure pending.
+
+**Findings (0):** No findings surfaced during execution. Minor SPEC-internal §3 ↔ §8 inconsistency noted in EXECUTION_REPORT §5 (Executor proposal for SPEC author).
+
+**5-stage plan:** Stage 1 🟢 / Stage 2A 🟡→🟢 effective (T-BLOCK-2 + T-INFRA-1 both resolved post this SPEC) / RLS Unblocker 🟡 / **Session Bridge 🟡** (this) / Stage 2B queued (now functionally unblocked).
+
+---
+
+## Stage 2A unblocker — Platform Catalog RLS Write Bypass 🟡 CLOSED-WITH-FOLLOWUPS (2026-05-18 night)
+
+### M1_PLATFORM_CATALOG_RLS_WRITE_BYPASS — 2026-05-18 night
+
+**Scope:** Resolves Stage 2A's T-BLOCK-2 architectural carry. Adds a new RLS policy `platform_admin_bypass` (FOR ALL, USING + WITH CHECK both calling `public.is_platform_super_admin()`) on each of 4 global lens-catalog tables: `lens_brand`, `lens_design`, `lens_variant`, `contact_lens_variant`. Pattern is canonical "function-call inside policy clause" — first instance in project; becomes precedent for future similar admin-bypass needs (M11/M13/M14). Net effect: Stage 2A's 4 creation modals can now submit successfully (DB layer unblocked).
+
+**DB shipped:** Single migration `supabase/migrations/20260518230000_m1_platform_catalog_rls_write_bypass.sql` (37 LOC). 4 DROP POLICY IF EXISTS + 4 CREATE POLICY blocks. Idempotent. Applied via Supabase MCP `apply_migration`; 4 new rows in `pg_policies` verified post-apply; 12 existing policies byte-identical.
+
+**Code shipped:** Zero JS/CSS/HTML changes (SPEC §3 S-NO-CLIENT-CHANGES). Only the migration file + `MODULE_MAP.md` row.
+
+**🟡 verdict drivers:**
+- DB migration ✅ applied + verified. All 4 new policies present (cmd=ALL, qual + with_check = `is_platform_super_admin()`).
+- Iron Rule 32 hook architectural gap surfaced: `destructive-ops-declared.mjs` flags every `DROP POLICY` keyword (in active SQL + comments) but the auth-parser only consumes file-deletion authorization, not SQL-pattern authorization. Daniel granted explicit one-time `--no-verify` chat go-ahead per Iron Rule 32 protocol (the only authorized bypass path).
+- Tier C VFV: 8 cases — 4 positive (platform admin INSERT to each global table → succeeds) + 4 negative (tenant manager INSERT global row → 403). Verified via SET LOCAL request.jwt.claims + Supabase MCP execute_sql.
+
+**Findings (3):**
+- F-1 HIGH (architectural) — Iron Rule 32 hook lacks SQL-pattern authorization parsing. NEW_SPEC `M1_5_IRON_RULE_32_HOOK_SQL_PATTERN_AUTHORIZATION` queued (bundles F-2 comment-awareness).
+- F-PRE-1 INFO — `contact_lens_variant.public_view.cmd='ALL'` vs siblings' `cmd='SELECT'` pre-existing drift. TECH_DEBT bundled with Stage 2A leftover cleanup.
+- F-2 LOW — already-tracked hook comment-awareness gap. Bundled into F-1's NEW_SPEC.
+
+**5-stage plan progresses:** Stage 1 🟢 / Stage 2A 🟡→🟢 (effective, T-BLOCK-2 resolved by this SPEC) / **Stage 2A unblocker 🟡** (this) / Stage 2B queued.
+
+---
+
+## Lens Rebuild — Stage 2A of 5 (Platform Catalog Admin Mockup Fidelity) 🟢 EXECUTOR CLOSED (2026-05-18)
+
+### M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A — 2026-05-18 (🟢 EXECUTOR CLOSED — awaiting Reviewer + Tester)
+
+**Scope:** Mockup-faithful rebuild of the **Platform Catalog Admin** screen (`modules/lens-catalog-admin/`, gated by `is_platform_super_admin` RPC). Stage 2A of architect's 5-stage M1 lens-catalog rebuild plan. Does NOT touch `shared/js/catalog-private-admin.js` (Stage 1's tenant-side surface — that's Stage 4 scope). Stage 2A adds: 2 top-level product-type tabs (glasses / contact_lens) that filter brands + series + variants schema; 4 creation modals replacing `window.prompt()` calls; mockup-faithful detail pane (version badge + adoption count + 3-button save bar); 1 additive DB migration adding `lens_design.version`. Excel import wiring deferred to Stage 2B (buttons rendered DISABLED with tooltip "זמין בשלב 2ב").
+
+**Commits:**
+- `96dcb22` feat(db): add lens_design.version column for series-level versioning
+- `4fb4ec3` feat(catalog-admin): product-type tabs (glasses + contact_lens) + product_type-aware drill
+- `53b597c` feat(catalog-admin): mockup-faithful detail pane + variant modal + supplier modal
+- _(this commit)_ chore(spec): close M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A with retrospective
+
+**Files changed:**
+- DB MIGRATION `migrations/M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A_lens_design_version.sql` — ALTER TABLE lens_design ADD COLUMN version integer NOT NULL DEFAULT 1; applied via Supabase MCP. Backfilled to 1 on all 145 existing global designs.
+- NEW `modules/lens-catalog-admin/catalog-modal-helpers.js` (160 LOC) — shared modal helpers (openModal / closeModal / wireModal / validateRequired / focusFirstInput).
+- NEW `modules/lens-catalog-admin/catalog-variant-modal.js` (226 LOC) — single-variant create modal with schema swap per product_type.
+- NEW `css/lens-catalog-admin-tabs-modals.css` (197 LOC) — tabs strip + counts badge + brand-card chrome + modal overlay styles.
+- MODIFY `modules/lens-catalog-admin/lens-catalog-admin.js` (169→244 LOC) — state.activeProductTab + switchProductTab + URL ?ptab= hydration + counts badge loader.
+- MODIFY `modules/lens-catalog-admin/lens-catalog-admin-partial.html` (126→143 LOC) — product-tabs strip + mockup header + 3 disabled buttons + zero-series hint markup.
+- MODIFY `modules/lens-catalog-admin/catalog-designs-col.js` (77→161 LOC) — product_type filter + new `loadDesignsForBrand` export + modal replaces 3 window.prompt() flow.
+- MODIFY `modules/lens-catalog-admin/catalog-brands-col.js` (111→170 LOC) — product_type-aware design_count + zero-series hint + per-brand disabled quick-import button + modal replaces window.prompt.
+- MODIFY `modules/lens-catalog-admin/catalog-suppliers-col.js` (113→157 LOC) — modal replaces window.prompt + optional supplier_number field.
+- MODIFY `modules/lens-catalog-admin/catalog-detail-pane.js` (152→317 LOC) — version badge + adoption count + series fields editor + variants table schema swap + save bar with version-increment save handler.
+- MODIFY `inventory.html` — 1 new `<link>` for the new CSS file (line 50).
+- Backup: `modules/Module 1 - Inventory Management/backups/2026-05-18_M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A/` (13 files; gitignored). Pre-execution git tag: `pre-M1-stage2a-platform-admin-20260518-1910`.
+
+**Verified:**
+- §3 criteria 34/34 executor-measurable pass; 6 deferred to Localhost-Tester (S-VFV-*).
+- Iron Rule 31 integrity gate exit 0; Iron Rule 32 destructive-ops gate exit 0.
+- All JS files ≤350 LOC (max 317 in catalog-detail-pane.js).
+- New CSS file 197 LOC (within SPEC §3 180-350 range).
+- `shared/js/catalog-private-admin.js` + `shared/css/catalog-private-admin.css` byte-identical (S-PRIVATE-CATALOG-UNTOUCHED).
+- 0 `window.prompt(` calls remaining in `modules/lens-catalog-admin/*.js`.
+- `lens_design.version` exists with NOT NULL DEFAULT 1; 145 rows backfilled.
+
+**Findings:** See `docs/specs/M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A/FINDINGS.md`.
+
+---
+
+## Lens Rebuild — Stage 1 of 5 (Mockup Fidelity, Visual Re-Skin) 🟢 EXECUTOR CLOSED (2026-05-18)
+
+### M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1 — 2026-05-18 (🟢 EXECUTOR CLOSED — awaiting Reviewer + Localhost-Tester)
+
+**Scope:** Re-skin the shared `CatalogPrivateAdmin` component so its two sub-tabs render two mockup-faithful chromes via page-scope CSS, scoped by `[data-catalog-theme="dark"|"light"]`. Stage 1 of architect's 5-stage M1 lens-catalog rebuild plan. Visual fidelity only — no data, no schema, no RPC, no logic.
+
+**Commits:**
+- `70c5a9a` feat(catalog-private-admin): mockup-faithful dark/light re-skin via [data-catalog-theme]
+- _(this commit)_ chore(spec): close M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1 with retrospective
+
+**Files changed:**
+- NEW `shared/css/catalog-private-admin.css` (346 LOC) — DARK block from LENS_PLATFORM_CATALOG_ADMIN_MOCKUP (#0f172a / #1e293b / #334155 / #1e3a8a + rgba(30,58,138,0.3) focus-ring), LIGHT block from LENS_INVENTORY_MOCKUP (#f5f6fa / #c9a555 / #b8954a / #34495e Hybrid-Navy palette).
+- MODIFY `shared/js/catalog-private-admin.js` (339 → 344 LOC, +5 under +11 budget) — `dataset.catalogTheme` plumbing in `buildShell` + `switchSubtab`.
+- MODIFY `inventory.html` — one `<link>` after `cat-sidebar.css` + 2-line comment (28→29 stylesheet links).
+- MODIFY `MODULE_MAP.md` — row 80 for new CSS file.
+- Backup: NOT triggered (4 files / +5 JS LOC). Pre-execution git tag: `pre-M1-stage1-mockup-fidelity-20260518-1740`.
+
+**Verified:**
+- §3 criteria 14/14 executor-measurable pass; 2 deferred to Localhost-Tester (S-LOCALHOST-VFV + S-NO-CONSOLE).
+- Iron Rule 31 integrity gate exit 0; Iron Rule 32 destructive-ops gate exit 0 on Commit 1.
+- No `:root` mutation in `shared/css/styles.css` (Brief D3 honored).
+- No edits to `modules/lens-catalog-admin/**` (out-of-scope per §7).
+
+**Findings:** 1 INFO — F-1: `docs/FILE_STRUCTURE.md` not updated for new CSS file (per CLAUDE.md §10 Integration Ceremony cadence). Foreman to decide TECH_DEBT entry vs append-to-closure-commit vs dismiss.
+
+**Awaiting:** Reviewer commit audit + Localhost-Tester Tier C VFV (4+ screenshots + TEST_REPORT.md) + Foreman FOREMAN_REVIEW.md closure.
+
+---
+
 ## Lens UI Rebuild — Group B 🟢 100% COMPLETE (2026-05-18)
 
 ### M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE (Module 1.5) — 2026-05-18 (🟢 CLOSED — resolves SPEC 8 F-1)
