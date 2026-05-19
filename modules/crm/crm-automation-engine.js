@@ -26,22 +26,19 @@
   function tid() { return (typeof getTenantId === 'function') ? getTenantId() : null; }
 
   // Map of client-side trigger types → {entity, event} columns in crm_automation_rules.
-  // attendee_moved (Rung 2 / 2026-04-28): fired by Rung 3's manual-move RPC.
-  // Inert pre-Rung-3 — rule rows for "manual move notification" sit in DB but
-  // never fire until the move dialog wires up.
-  // attendee_status_change (STATUS_CHANGE_TRIGGERS_FRAMEWORK / 2026-05-12):
-  // fired by DB trigger trg_attendee_status_change_event → crm_status_change_events
-  // queue → automation-engine EF consumer (pg_cron). Browser code never invokes
-  // this trigger type directly; the entry exists so the rule editor can save
-  // rules with trigger_event='status_change' and the dispatch lifecycle is
-  // exclusively server-side.
-  // M4_STATUS_TRIGGER_FRAMEWORK_EXTENSION (2026-05-14): lead_status_change AND
-  // event_status_change ALSO route through the queue now (DB triggers
-  // trg_lead_status_change_event + trg_event_status_change_event). The legacy
-  // in-process dispatch (crm-lead-actions.js, crm-event-actions.js direct
-  // CrmAutomationClient.evaluate calls) still runs in parallel — both paths
-  // are active intentionally; the queue path is a decoupled bus for monitoring
-  // and future-rule wiring.
+  // M4_DUAL_PATH_DEPRECATION_PHASE_1 (2026-05-19): for status-change triggers
+  // (event_status_change, lead_status_change, attendee_status_change), the
+  // consumer is the SOLE automation driver. Browser dispatch was removed from
+  // crm-event-actions.js + crm-lead-actions.js. The browser path remains
+  // available here only as UX-mode rule_match_probe (a pure read used by the
+  // confirmation modal to count would-be recipients without writing anything).
+  // Single-path triggers (no DB trigger covers them) still dispatch from the
+  // browser: lead_intake (crm-lead-actions.js createManualLead), event_registration
+  // (crm-event-register.js), attendee_moved (crm-attendee-move.js).
+  // DB triggers that drive the consumer:
+  //   trg_event_status_change_event    on crm_events
+  //   trg_lead_status_change_event     on crm_leads
+  //   trg_attendee_status_change_event on crm_event_attendees
   var TRIGGER_TYPES = {
     event_status_change:     { entity: 'event',    event: 'status_change' },
     event_registration:      { entity: 'attendee', event: 'created'       },

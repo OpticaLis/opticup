@@ -1,0 +1,13 @@
+# Heartbeat — M4_DUAL_PATH_DEPRECATION_PHASE_1 (2026-05-19)
+
+| Timestamp (UTC) | Phase | Status | Notes |
+|-----------------|-------|--------|-------|
+| 2026-05-19T06:56Z | Pre-flight | 🟢 BEGIN | Brief + Activation read. git log -20 confirms 5 prior M4 SPECs closed (`0f50d86` `2329b02` `3093683` `2be033f` `1909450`). Pre-conditions met. |
+| 2026-05-19T06:57Z | Pre-flight | 🟢 DONE | Smoke 7/7 ✅. Lock claimed: `_archive/pipeline-sessions/2026-05-19T06-56-13-288Z_M4_DUAL_PATH_DEPRECATION_PHASE_1_dual-path-2026-05-19.lock`. Rollback tag `pre-m4-dual-path-deprecation-2026-05-19` created + pushed to origin. EF snapshots copied to `_archive/m4-dual-path-deprecation-2026-05-19/ef-snapshots/{automation-engine-pre,send-message-pre,_shared-pre}/`. Entering latency benchmark phase. |
+| 2026-05-19T07:08Z | Latency benchmark §2.1 | 🟢 GREEN | 5 toggles on event #28, spacing 95–172s. Samples: [38.34, 18.32, 26.60, 39.74, 53.36] s. **P50=38.34s, P95=50.63s** (acceptance <65s ✅). V-EXTRA-1 (T1): 1 run, 2 log_sent (sms+email) ✅. V-EXTRA-2: 1 derivative lead-sce (single-hop via `trg_promote_lead_on_message_sent`), terminates harmlessly — rule's waiting-only filter is natural firebreak. **No loop guard needed.** Full data: `_archive/m4-dual-path-deprecation-2026-05-19/latency-benchmark.json`. Proceeding to SPEC author + code edits. |
+| 2026-05-19T07:15Z | SPEC + code edits | 🟢 DONE | SPEC.md authored (`modules/Module 4 - CRM/docs/specs/M4_DUAL_PATH_DEPRECATION_PHASE_1/SPEC.md`). Brief §5 Risk 2 survey: only 2 of 3 callsites are true dual-path. Edits: (a) `crm-event-actions.js` — removed `dispatchEventStatusMessages` + caller; (b) `crm-lead-actions.js` — removed `fireLeadStatusAutomation` + 2 callers; (c) `crm-automation-engine.js` — header comment updated. Kept (single-path): `crm-lead-actions.js:144` (lead_intake), `crm-attendee-move.js:108–122` (attendee_moved), `crm-event-register.js:109–110` (event_registration). Node --check ✅. Line counts: 296/344/344 all under 350. Regression smoke test authored: `tests/smoke/dual-path-deprecation-test.mjs`. |
+| 2026-05-19T07:21Z | Post-edit reproduction | 🟢 GREEN | Reset event #28 → planning + lead 01269ab9 → waiting. Toggled planning→reg_open at 07:19:30. Result: **1 run** (`f8d039b6`, recipients=2), **2 log_sent** (sms+email to lead 01269ab9). Consume latency 32.7s. trigger_data has no `triggered_by_browser` flag → consumer shape ✅. V-EXTRA-2: 1 derivative lead-sce (waiting→invited single-hop, no rule matches → terminates). Brief §3 criteria 2/3/4 ALL GREEN post-edit. Proceeding to commit + smoke 7/7 + retros. |
+
+---
+
+*Updates appended every ~20 min as phases progress.*
