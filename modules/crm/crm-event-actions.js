@@ -209,36 +209,38 @@
     return (info && info.label) || slug || '';
   }
 
-  // P8: hardcoded dispatch replaced by rule evaluation. Rules live in
-  // crm_automation_rules (trigger_entity='event', trigger_event='status_change').
-  // Seed demo defaults at go-live/seed-automation-rules-demo.sql.
-  async function dispatchEventStatusMessages(eventId, newStatus, event) {
-    if (!window.CrmAutomationClient || typeof CrmAutomationClient.evaluate !== 'function') return;
-    return CrmAutomationClient.evaluate('event_status_change', {
-      eventId: eventId,
-      newStatus: newStatus,
-      event: event
-    });
-  }
-
+  // M4_DUAL_PATH_CLEAN_FIX_2026_05_19 Layer 1: probe→modal→commit. Probe runs first
+  // (dispatch_preview, zero writes). If no recipients → silent UPDATE + Toast.
+  // If recipients ≥1 → modal opens, user confirms or cancels. Only on confirm
+  // do we run the UPDATE — DB trigger then fires SCE, cron consumer dispatches.
+  // No browser-side EF dispatch call.
   async function changeEventStatus(eventId, newStatus) {
     var tenantId = CrmHelpers.tid();
     var evRes = await sb.from('crm_events')
       .select('name, event_date, start_time, location_address, status')
       .eq('id', eventId).eq('tenant_id', tenantId).single();
+    if (evRes.error) throw new Error('event load failed: ' + evRes.error.message);
     var oldStatus = evRes.data && evRes.data.status;
-    var upd = await sb.from('crm_events')
-      .update({ status: newStatus })
-      .eq('id', eventId)
-      .eq('tenant_id', tenantId)
-      .select('id, status')
-      .single();
-    if (upd.error) throw new Error('event status update failed: ' + upd.error.message);
-    try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.event.status_change', entity_type: 'crm_events', entity_id: eventId, details: { from: oldStatus, to: newStatus, name: evRes.data && evRes.data.name } }); } catch (_) {}
-    // Fire-and-forget — upd.data returned, dispatch in background (P5.5)
-    if (!evRes.error && evRes.data) dispatchEventStatusMessages(eventId, newStatus, evRes.data);
-    if (window.CrmPaymentAutomation) CrmPaymentAutomation.markUnpaidForCompletedEvent(eventId, oldStatus, newStatus).catch(function (e) { console.error('CrmPaymentAutomation.markUnpaid:', e); });
-    return upd.data;
+    if (oldStatus === newStatus) return { id: eventId, status: newStatus };
+
+    var commit = async function (/* meta */) {
+      var upd = await sb.from('crm_events')
+        .update({ status: newStatus })
+        .eq('id', eventId).eq('tenant_id', tenantId)
+        .select('id, status').single();
+      if (upd.error) throw new Error('event status update failed: ' + upd.error.message);
+      try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.event.status_change', entity_type: 'crm_events', entity_id: eventId, details: { from: oldStatus, to: newStatus, name: evRes.data && evRes.data.name } }); } catch (_) {}
+      if (window.CrmPaymentAutomation) CrmPaymentAutomation.markUnpaidForCompletedEvent(eventId, oldStatus, newStatus).catch(function (e) { console.error('CrmPaymentAutomation.markUnpaid:', e); });
+      return upd.data;
+    };
+
+    if (!window.CrmAutomationClient || typeof CrmAutomationClient.probeAndCommit !== 'function') {
+      // No probe helper: commit directly (legacy fallback).
+      return await commit({});
+    }
+    var triggerData = { eventId: eventId, newStatus: newStatus, event: evRes.data };
+    var result = await CrmAutomationClient.probeAndCommit('event_status_change', triggerData, commit, { silentToast: 'סטטוס עודכן' });
+    return (result && result.data) || (result && result.committed ? { id: eventId, status: newStatus } : null);
   }
 
   function closeEventStatusDropdown() {

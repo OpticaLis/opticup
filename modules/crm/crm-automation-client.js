@@ -177,5 +177,68 @@
     return dispatchRes;
   }
 
-  window.CrmAutomationClient = { evaluate: evaluate };
+  // M4_DUAL_PATH_CLEAN_FIX_2026_05_19 Layer 1: probe-then-commit helper for
+  // status-change callers (event/lead/attendee). Flow:
+  //   1. POST mode='dispatch_preview' (zero writes) to probe recipients.
+  //   2. recipients_by_lead empty → run commitCallback silently, toast, done.
+  //   3. recipients_by_lead ≥1 → open V2 modal (suppressEmptyModal+hideCommitWithoutNotify).
+  //      - User confirms → commitCallback runs (status UPDATE → DB trigger → SCE
+  //        → cron consumer dispatches; ONE path). Returns {committed:true, mode:'confirmed'}.
+  //      - User cancels → commitCallback NOT called. Returns {committed:false, mode:'cancelled'}.
+  // No browser-side dispatch call. Cron consumer is the sole writer of crm_message_log.
+  async function probeAndCommit(triggerType, triggerData, commitCallback, opts) {
+    opts = opts || {};
+    var tid = (typeof getTenantId === 'function') ? getTenantId() : null;
+    if (!tid || !triggerType || typeof commitCallback !== 'function') {
+      // No tenant or invalid args: commit directly without modal — safer than blocking the operator.
+      try { var d0 = await commitCallback({ mode: 'no_tenant_fallback' }); return { committed: true, mode: 'no_tenant_fallback', data: d0 }; }
+      catch (e0) { return { committed: false, mode: 'commit_failed', error: e0 }; }
+    }
+    var previewPromise = callEf({
+      tenant_id: tid, trigger_type: triggerType, trigger_data: triggerData || {},
+      mode: 'dispatch_preview'
+    });
+    if (!window.CrmConfirmSendV2 || typeof CrmConfirmSendV2.showAsync !== 'function') {
+      // No modal lib: commit silently (legacy fallback).
+      try { var d1 = await commitCallback({ mode: 'no_modal_fallback' }); return { committed: true, mode: 'no_modal_fallback', data: d1 }; }
+      catch (e1) { return { committed: false, mode: 'commit_failed', error: e1 }; }
+    }
+    return await new Promise(function (resolve) {
+      var resolved = false;
+      var settle = function (v) { if (!resolved) { resolved = true; resolve(v); } };
+      // Track preview directly so we can commit silently before the modal would open
+      previewPromise.then(async function (preview) {
+        if (preview && Array.isArray(preview.recipients_by_lead) && preview.recipients_by_lead.length) return; // modal path handles it
+        try {
+          var data = await commitCallback({ mode: 'silent', preview: preview });
+          if (window.Toast && !opts.suppressSilentToast) Toast.success(opts.silentToast || 'סטטוס עודכן');
+          settle({ committed: true, mode: 'silent', data: data });
+        } catch (e) { settle({ committed: false, mode: 'commit_failed', error: e }); }
+      }).catch(async function (e) {
+        console.warn('probeAndCommit preview failed:', e && e.message);
+        try { var d = await commitCallback({ mode: 'silent_after_probe_error' }); settle({ committed: true, mode: 'silent_after_probe_error', data: d }); }
+        catch (e2) { settle({ committed: false, mode: 'commit_failed', error: e2 }); }
+      });
+      CrmConfirmSendV2.showAsync(previewPromise, async function (choice, ctx) {
+        if (!choice || !choice.dispatch) { settle({ committed: false, mode: 'no_notify_choice' }); return { sent: 0, failed: 0, rejected: 0 }; }
+        try {
+          var data = await commitCallback({ mode: 'confirmed', preview: (ctx && ctx.previewResponse) || null });
+          var runId = ctx && ctx.previewResponse && ctx.previewResponse.run_id;
+          settle({ committed: true, mode: 'confirmed', data: data });
+          // Report 'queued' loosely — actual queue insertion happens via cron consumer ~30-60s later.
+          var count = (ctx && ctx.previewResponse && ctx.previewResponse.recipients_by_lead && ctx.previewResponse.recipients_by_lead.length) || 0;
+          return { run_id: runId, queued: count, sent: 0, failed: 0, rejected: 0 };
+        } catch (e) {
+          settle({ committed: false, mode: 'commit_failed', error: e });
+          return { sent: 0, failed: 0, rejected: 0 };
+        }
+      }, {
+        suppressEmptyModal: true,
+        hideCommitWithoutNotify: opts.hideCommitWithoutNotify !== false,
+        onCancel: function () { settle({ committed: false, mode: 'cancelled' }); }
+      });
+    });
+  }
+
+  window.CrmAutomationClient = { evaluate: evaluate, probeAndCommit: probeAndCommit };
 })();

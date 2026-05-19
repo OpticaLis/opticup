@@ -1,18 +1,16 @@
 /* crm-confirm-send-v2.js — Controller for CrmConfirmSendV2 modal.
    M4_DRY_RUN_PREVIEW_AND_DISPATCH Phases 3-7 (2026-05-14).
-   Owns _state + event wiring; delegates rendering to __CcsV2Render.
-   API:
-     CrmConfirmSendV2.show(previewResponse, onChoice)           // sync open
-     CrmConfirmSendV2.showAsync(previewPromise, onChoice, opts) // open with
-       loading state; resolves on EF return. opts = { ruleId: <hint-for-restore> }
+   M4_DUAL_PATH_CLEAN_FIX_2026_05_19 Layer 1: +opts.onCancel +opts.hideCommitWithoutNotify.
+   API: show(preview, onChoice, opts?) / showAsync(previewPromise, onChoice, opts?).
    Load AFTER crm-confirm-send-v2-render.js + modal-builder.js + toast.js. */
 (function () {
   'use strict';
 
   var _state = null;
   var _modal = null;
+  var _opts = null; // {onCancel, hideCommitWithoutNotify, suppressEmptyModal}
   var STORE_KEY = 'crm_confirm_send_selection_v1';
-  var STORE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+  var STORE_TTL_MS = 6 * 60 * 60 * 1000;
 
   function R() { return window.__CcsV2Render || {}; }
 
@@ -252,10 +250,14 @@
     });
     if (testBtn) testBtn.addEventListener('click', handleTestSend);
     if (cancelBtn) cancelBtn.addEventListener('click', function () {
-      _state = null;
-      _modal = null;
+      var cb = (_opts && typeof _opts.onCancel === 'function') ? _opts.onCancel : null;
+      _state = null; _modal = null; _opts = null;
       if (typeof modal.close === 'function') modal.close();
+      if (cb) { try { cb(); } catch (e) { console.warn('CrmConfirmSendV2 onCancel threw:', e); } }
     });
+    if (_opts && _opts.hideCommitWithoutNotify && confirmNoNotifyBtn) {
+      confirmNoNotifyBtn.parentNode && confirmNoNotifyBtn.parentNode.removeChild(confirmNoNotifyBtn);
+    }
   }
 
   function _hydrate(modal, previewResponse) {
@@ -288,11 +290,12 @@
     }
   }
 
-  async function show(previewResponse, onChoice) {
+  async function show(previewResponse, onChoice, opts) {
     if (!previewResponse || !Array.isArray(previewResponse.recipients_by_lead)) {
       if (window.Toast) Toast.warning('אין נמענים — ההודעה לא תישלח.');
       return;
     }
+    _opts = opts || null;
     _ensureState(previewResponse, onChoice);
     _modal = _openModalShell(onChoice);
     if (!_modal) return;
@@ -301,11 +304,9 @@
     _saveSession();
   }
 
-  // showAsync(previewPromise, onChoice, opts?) — opts.suppressEmptyModal=true
-  // awaits preview first + opens modal only when recipients > 0 (silent skip
-  // when empty). Closes QA Finding 1.1 (modal flash on status changes). Legacy
-  // path (no flag) keeps loading-spinner UX for broadcast wizard + manual flows.
+  // showAsync(previewPromise, onChoice, opts?). opts.suppressEmptyModal/onCancel/hideCommitWithoutNotify.
   async function showAsync(previewPromise, onChoice, opts) {
+    _opts = opts || null;
     if (opts && opts.suppressEmptyModal) {
       var pv2;
       try { pv2 = await previewPromise; }
@@ -332,13 +333,13 @@
       console.error('CrmConfirmSendV2 showAsync — preview failed:', e);
       if (_modal && typeof _modal.close === 'function') _modal.close();
       if (window.Toast) Toast.error('כשל בטעינת תצוגה מקדימה.');
-      _state = null; _modal = null;
+      _state = null; _modal = null; _opts = null;
       return;
     }
     if (!pv || !Array.isArray(pv.recipients_by_lead) || !pv.recipients_by_lead.length) {
       if (_modal && typeof _modal.close === 'function') _modal.close();
       if (window.Toast) Toast.warning('אין נמענים — ההודעה לא תישלח.');
-      _state = null; _modal = null;
+      _state = null; _modal = null; _opts = null;
       return;
     }
     _hydrate(_modal, pv);

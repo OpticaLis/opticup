@@ -3,6 +3,24 @@
 > **Purpose:** the live state file the Campaign Overseer reads at session start and updates after every meaningful action.
 > **Update discipline:** state-as-you-go. Replace, don't append. Cleanup when ≥150 lines.
 > **Authority:** lower than `CAMPAIGN_OVERSEER_SKILL.md` (the constitution). If they conflict, skill wins.
+
+## ⚠️ READ BEFORE ANY M4 CHANGE — M4_DUAL_PATH_CLEAN_FIX_2026_05_19
+
+**Required reading (in order):**
+1. `roles/campaign-overseer/M4_INFRASTRUCTURE_CONTRACT.md` — variable contract + action contract + status-change architecture + authority boundary. The canonical pre-flight reference for any M4 template/rule edit.
+2. `docs/CRM_RULE_CHAINING.md` — how post-action chains work + the Layer 3 self-loop guard.
+3. `CLAUDE.md` §6 — Iron Rules 33 (demo-first), 34 (live verification), 35 (Campaign Overseer authority boundary).
+
+**Iron Rule 35 — Authority boundary (added 2026-05-19):**
+
+You MAY edit: template body wording (only with documented placeholders), rule trigger_condition on existing trigger types, broadcast schedules, audience filters, active/inactive flags.
+
+You MUST NOT edit: new `%var_name%` placeholders, new trigger types, new action types, EF code, DB triggers, migrations. → Open an Architect SPEC request.
+
+**Why this exists:** the 2026-05-18→19 M4 repair cascade (5 SPECs + 1 emergency rollback) was triggered by 3 placeholders added to Prizma templates on 2026-04-28 without the resolver being extended. Mission 14 (Sentinel) now audits this daily.
+
+---
+
 > **Last meaningful update:** 2026-05-04 late night extended — **SIX SPECs CLOSED + 10+ commits + 4 PRs merged to main.** Marathon evening session: (1) QUICK_REGISTER_QR_FLOW ✅ Rungs 1-3 + 3 Hotfixes; (2) DELETE_EMPTY_EVENT ✅ REC-009; (3) ACTIVITY_LOG_DEDUPLICATION_DELETE_EVENT ✅ F1 fix; (4) RESTORE_DELETED_EVENT_UI ✅ REC-010 (Approach B after Foreman scope-correction); (5) POST_4_LEADS_PAGINATION_BUMP ✅ (200→1000); (6) PHONE_SEARCH_PARTIAL_FIX ✅ (Daniel-reported regression — 0-prefix partial-format phone search now works). Plus Module 36 cleanup in Make scenario 8464122. 2 FOREMAN_REVIEWs written (QUICK_REGISTER + DELETE_EMPTY_EVENT). Self-Review #1 written + Daniel-approved → L-005 binding rules added (Rule A live-flow check, Rule B REC class-tagging). MASTER_ROADMAP + Module 4 SESSION_CONTEXT both refreshed. Open follow-ups: 4 FOREMAN_REVIEWs still pending (ACTIVITY_LOG_DEDUP, RESTORE_DELETED_EVENT_UI, POST_4_LEADS_PAGINATION_BUMP, PHONE_SEARCH_PARTIAL_FIX); incoming-tab.js partial-phone-search bug (same pattern as PHONE_SEARCH_PARTIAL_FIX, logged as INFO).
 
 **Rung 3 closure note (Make scenario 8464122):** branch `"ברקוד רישום לאירוע - רישום מהיר"` updated successfully via **manual Make UI** (not Make MCP — see FINDINGS.md F3 for tooling constraint). 3 surgical edits applied:

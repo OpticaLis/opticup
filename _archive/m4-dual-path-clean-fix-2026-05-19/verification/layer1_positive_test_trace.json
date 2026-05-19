@@ -1,0 +1,66 @@
+{
+  "phase": "Layer 1 positive verification (Brief §4 criteria 1-6)",
+  "captured_at_utc": "2026-05-19T09:14Z",
+  "test_setup": {
+    "tenant": "demo (8d8cfa7e-ef58-49af-9702-a862d459cccb)",
+    "event_id": "a027610e-e819-4d87-8688-c057a64efa90",
+    "event_number": 28,
+    "lead_id": "01269ab9-59c2-40d7-b987-48041210f26d",
+    "test_start_utc": "2026-05-19T09:08:30Z"
+  },
+  "ui_actions": [
+    "Reload localhost:3000/crm.html?t=demo",
+    "Navigate to events tab",
+    "Click event #28 status cell (uid=26_24) → opens event detail panel",
+    "Click 'שנה סטטוס' button (uid=27_6) → opens status dropdown",
+    "Click 'הרשמה פתוחה' (uid=28_1) → invokes changeEventStatus → probeAndCommit",
+    "Modal 'אישור פעולה' opens hydrated with 1 recipient (Test E2E FB CAPI / 053-788-9878 / daniel@prizma-optic.co.il)",
+    "Modal footer shows exactly 3 buttons: 'ביטול' + '📤 שלח טסט ל-3 הראשונים' (disabled) + 'אישור ושלח הודעות (1)'",
+    "Confirmed: 'אישור ללא הודעות' button is ABSENT (stripped by hideCommitWithoutNotify opt)",
+    "Click 'אישור ושלח הודעות (1)' (uid=29_22)"
+  ],
+  "console_trace": [
+    {"ms": 0, "type": "Modal.show", "title": "אירוע #28 — אירוע המותגים מאי 26 - TEST2 (event-detail panel)"},
+    {"ms": 32636, "type": "probeAndCommit.in", "triggerType": "event_status_change"},
+    {"ms": 35060, "type": "Modal.show", "title": "אישור פעולה"},
+    {"ms": 95143, "type": "Modal.close", "title": "אישור פעולה"},
+    {"ms": 95145, "type": "probeAndCommit.out", "committed": true, "mode": "confirmed"}
+  ],
+  "key_signals": {
+    "probe_returned_recipients": true,
+    "modal_opened_with_recipient_count": 1,
+    "hideCommitWithoutNotify_works": true,
+    "no_no_notify_button_in_modal": true,
+    "commit_deferred_until_confirm": true,
+    "single_run_created_post_confirm": true,
+    "single_path_dispatch": "CONSUMER-shape only — browser made ZERO dispatch calls",
+    "dual_path_eliminated": true
+  },
+  "db_evidence": {
+    "criterion_1_toggle_event_28": "PASS — Click sequence verified by trace",
+    "criterion_2_modal_opens": "PASS — Modal.show fired ms=35060, screenshot 04_modal_open_layer1.png",
+    "criterion_3_recipient_list_ge_1": "PASS — 1 recipient (Daniel) shown",
+    "criterion_4_user_clicks_confirm": "PASS — Modal.close fired ms=95143 (60s user-think time), screenshot 05_modal_confirm_clicked.png",
+    "criterion_5_one_run_two_log_sent": {
+      "PASS": true,
+      "run": {"id": "b554d7fd-21a5-4313-905a-3a11de5ff9d2", "trigger_type": "event_status_change", "started_at": "2026-05-19T09:09:01.472Z", "total_recipients": 2, "shape": "CONSUMER (correct)"},
+      "log_sent_count": 2,
+      "log_rows": [
+        {"id": "42081ebc-a3b9-47ad-a09b-d2c274cb76ad", "channel": "email", "status": "sent", "lead_id": "01269ab9", "run_id": "b554d7fd", "created_at": "2026-05-19T09:10:03.746Z"},
+        {"id": "6d0de27b-5894-49ad-8a2a-f2e70975678f", "channel": "sms",   "status": "sent", "lead_id": "01269ab9", "run_id": "b554d7fd", "created_at": "2026-05-19T09:10:03.788Z"}
+      ],
+      "browser_path_runs": 0,
+      "consumer_latency_seconds": 16
+    },
+    "criterion_6_zero_additional_runs_5min": {
+      "PASS": true,
+      "total_runs_in_5min_window": 1,
+      "total_log_sent_in_5min_window": 2,
+      "total_sce_in_5min_window": 2,
+      "sce_breakdown": [
+        {"entity": "event", "old": "planning", "new": "registration_open", "occurred": "2026-05-19T09:08:45Z", "origin_rule": null, "note": "the original toggle"},
+        {"entity": "lead", "old": "waiting", "new": "invited", "occurred": "2026-05-19T09:10:04Z", "origin_rule": null, "note": "single-hop promotion via trg_promote_lead_on_message_sent (a different mechanism than Layer 3 self-loop guard; the natural firebreak via rule's recipient_status_filter=['waiting'] prevents re-fire)"}
+      ]
+    }
+  }
+}

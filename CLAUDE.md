@@ -258,6 +258,48 @@ Any change to `crm_message_templates`, `crm_automation_rules`, `crm_statuses`, `
 
 **Rationale:** demo is THE testbed for Prizma. Drift between them defeats the purpose of having a testbed. Established by `M4_CONFIG_SYNC_INFRASTRUCTURE` (2026-05-19) after `DEMO_PARITY_REPLICATION` (2026-05-11) drift was measured by the M4 QA investigation (2026-05-18): 7 templates diverged, 6 demo-only, 1 Prizma-only.
 
+### Iron Rule 34 — UI-touching SPECs require live verification
+
+Any SPEC that modifies JavaScript in `modules/crm/`, `modules/admin/`, `modules/inventory/`, `modules/lens-catalog-admin/`, `modules/storefront/`, or any `.js`/`.html` file consumed by a browser MUST close with Chrome MCP evidence:
+(a) screenshot of the affected UI flow in working state,
+(b) `window.__modalTrace` or equivalent runtime trace showing the expected events fire in the expected order,
+(c) DB-query evidence that the runtime trace produced the expected DB writes.
+
+SQL-only verification is necessary but not sufficient. Without all three artifacts attached to FOREMAN_REVIEW.md, the SPEC is not closed. Bypass requires Daniel's explicit in-chat go-ahead (never a flag, never `--no-verify`).
+
+**Enforcement layers:**
+- **Pre-commit prevention:** `scripts/checks/ui-spec-verification.mjs` runs as part of `verify.mjs --staged`. When a commit stages BOTH a UI `.js`/`.html` file AND a `FOREMAN_REVIEW.md` inside a `docs/specs/*/` folder, the FOREMAN_REVIEW.md must contain text matching `Chrome MCP`, `screenshot`, AND `window.__modalTrace`/runtime-trace. Failure → exit 1, blocks commit. Self-test: `node scripts/checks/ui-spec-verification.mjs --test`.
+- **Daily detection:** Sentinel Mission 13 (`docs/guardian/sentinel/mission-13-ui-spec-verification.md`) audits closed SPECs in the last 7 days that touched UI files. Flags any without Chrome evidence in FOREMAN_REVIEW; alerts via `docs/guardian/GUARDIAN_ALERTS.md`.
+- **Session-start reminder:** Pipeline skills (`opticup-executor`, `opticup-strategic`, `opticup-localhost-tester`) reference this rule in their closure checklists.
+
+**Rationale:** Established by `M4_DUAL_PATH_CLEAN_FIX_2026_05_19` (2026-05-19) after the prior morning's `M4_DUAL_PATH_DEPRECATION_PHASE_1` (commit `8d9a365`) was merged to main without Chrome MCP verification. Removed JS that opened the confirmation modal; SQL probes saw runs being created but never opened a browser to see the modal flash-disappear. Daniel observed the regression live in production. Same root cause would have been caught in 2 minutes if Chrome MCP had been mandatory at closure.
+
+### Iron Rule 35 — Campaign Overseer authority boundary
+
+The Campaign Overseer role owns operational M4 configuration but NOT M4 infrastructure. Specifically:
+
+**MAY edit (Campaign Overseer authority):**
+- Template body wording in `crm_message_templates` (subject, body, formatting) using **only** placeholders already declared in `roles/campaign-overseer/M4_INFRASTRUCTURE_CONTRACT.md` §"Variable Contract".
+- Rule trigger conditions on **existing** trigger types (e.g., adjusting `status_equals` value in an existing `event_status_change` rule).
+- Broadcast schedules and audience filter criteria in `crm_broadcasts`.
+- Active/inactive flags on existing rules and templates.
+
+**MUST NOT edit (Architect SPEC required):**
+- Add new template variables (any new `%var_name%` placeholder).
+- Add new `trigger_type` slugs or new `crm_trigger_type_registry` entries.
+- Add new `action_type` values.
+- Modify EF code (`supabase/functions/automation-engine/**`, `send-message`, `dispatch-queue`, etc.).
+- Modify DB triggers or migration files.
+- Modify the SCE-producer functions (`event_status_change_event_fn`, `lead_status_change_event_fn`, `attendee_status_change_event_fn`).
+
+Bypass requires Daniel's explicit in-chat authorization.
+
+**Enforcement:**
+- **Daily diff:** Sentinel Mission 14 (`docs/guardian/sentinel/mission-14-campaign-overseer-authority.md`) audits the last 24h of `crm_message_templates` + `crm_automation_rules` mutations on both demo and Prizma. Flags any new `%var_name%` placeholders not in the documented variable contract, or any new `action_type` values not in the action contract. Alerts via `docs/guardian/GUARDIAN_ALERTS.md`.
+- **Authoring discipline:** Campaign Overseer's `roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` points at the infrastructure contract and lists the not-allowed edits explicitly.
+
+**Rationale:** Established by `M4_DUAL_PATH_CLEAN_FIX_2026_05_19` (2026-05-19) after the 3 missing template variables (`event_day_of_week`, `event_deposit_amount`, `event_max_attendees`) that triggered the entire 2026-05-18→19 repair cascade had been added by the Campaign Overseer on 2026-04-28 without the resolver being extended. Authority boundary makes the failure mode prevention structural.
+
 ### Cross-repo: Iron Rules 24–30 (Storefront-Scoped)
 
 Rules **1–23 above are the canonical source for all ERP, Studio, and Platform Admin work in this repo.** They apply everywhere inside `opticalis/opticup`.

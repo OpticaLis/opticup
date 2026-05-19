@@ -28,11 +28,21 @@ type QueueRow = {
   old_status: string | null;
   new_status: string;
   payload: Record<string, unknown> | null;
+  // M4_DUAL_PATH_CLEAN_FIX_2026_05_19 Layer 3: when populated, this SCE was
+  // caused by a rule's post_action. Passed to evaluate() as triggerData._origin_rule_id
+  // so engine can filter out the originating rule (architectural self-loop guard).
+  originated_by_rule_id: string | null;
 };
 
 function buildTriggerDataForEntity(e: QueueRow): Record<string, unknown> | null {
   const payload = (e.payload && typeof e.payload === "object") ? e.payload : {};
-  const base = { oldStatus: e.old_status, newStatus: e.new_status, status: e.new_status };
+  const base = {
+    oldStatus: e.old_status,
+    newStatus: e.new_status,
+    status: e.new_status,
+    // Layer 3 self-loop guard signal — engine.ts filters rules by this.
+    _origin_rule_id: e.originated_by_rule_id,
+  };
   if (e.entity_type === "attendee") {
     return {
       ...base,
@@ -74,7 +84,7 @@ export async function consumeStatusChangeEvents(
   const cap = Math.min(Math.max(limit || 100, 1), 500);
 
   const claimRes = await db.from("crm_status_change_events")
-    .select("id, entity_type, entity_id, old_status, new_status, payload")
+    .select("id, entity_type, entity_id, old_status, new_status, payload, originated_by_rule_id")
     .eq("tenant_id", tenantId)
     .is("consumed_at", null)
     .order("occurred_at", { ascending: true })

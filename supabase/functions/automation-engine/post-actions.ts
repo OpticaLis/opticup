@@ -16,6 +16,13 @@ interface Rule {
 // Per-rule bulk: rule.action_config.post_action_status_update applied to all
 // resolved recipient leads. Idempotent; no demotion guard (rule owns
 // lifecycle). Fail-open: a DB error logs but does not block further rules.
+//
+// M4_DUAL_PATH_CLEAN_FIX_2026_05_19 Layer 3: calls update_lead_status_with_origin
+// RPC instead of direct UPDATE. The RPC sets m4.originated_by_rule_id transaction-
+// local before UPDATE so trg_lead_status_change_event captures the originating
+// rule UUID into crm_status_change_events.originated_by_rule_id. Consumer reads
+// that column and prevents the same rule from re-firing on its own derivative SCE
+// within 1 hour (architectural self-loop guard).
 export async function executePostActions(
   db: Db, tenantId: string, rule: Rule, resolvedLeadIds: string[],
 ): Promise<{ updated: number }> {
@@ -24,17 +31,17 @@ export async function executePostActions(
   if (!target || typeof target !== "string") return { updated: 0 };
   if (!Array.isArray(resolvedLeadIds) || !resolvedLeadIds.length) return { updated: 0 };
 
-  // 2026-05-12 — chunk .in("id", ids) to keep PostgREST URL under ~8KB cap.
-  // Same fix as promoteWaitingLeadsToInvited.
+  // 2026-05-12 — chunk to keep PostgREST request body under cap.
   const CHUNK = 200;
   let updated = 0;
   for (let i = 0; i < resolvedLeadIds.length; i += CHUNK) {
     const slice = resolvedLeadIds.slice(i, i + CHUNK);
-    const res = await db.from("crm_leads")
-      .update({ status: target, updated_at: new Date().toISOString() })
-      .eq("tenant_id", tenantId)
-      .in("id", slice)
-      .select("id, status");
+    const res = await db.rpc("update_lead_status_with_origin", {
+      p_tenant_id: tenantId,
+      p_lead_ids: slice,
+      p_new_status: target,
+      p_origin_rule_id: rule.id,
+    });
     if (res.error) {
       console.error(`automation-engine executePostActions chunk ${i}:`, res.error);
       continue;
