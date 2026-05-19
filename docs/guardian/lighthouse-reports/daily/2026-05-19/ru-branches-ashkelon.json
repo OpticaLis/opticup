@@ -1,0 +1,17 @@
+{
+  "url": "https://www.prizma-optic.co.il/ru/branches/ashkelon/",
+  "lang": "ru",
+  "path": "/branches/ashkelon/",
+  "label": "branch-ashkelon",
+  "http": 200,
+  "scores": {
+    "performance": 91,
+    "accessibility": 95,
+    "seo": 100,
+    "best-practices": 100
+  },
+  "axeViolationCount": 2,
+  "capturedAt": "2026-05-19T04:13:42.171Z",
+  "fetchTime": "2026-05-19T04:13:32.885Z",
+  "lighthouseVersion": "12.8.2"
+}
