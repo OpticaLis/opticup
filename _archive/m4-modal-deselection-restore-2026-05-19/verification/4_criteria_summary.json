@@ -1,0 +1,41 @@
+{
+  "spec": "M4_MODAL_DESELECTION_RESTORE",
+  "verified_at_utc": "2026-05-19T11:42Z",
+  "all_4_criteria_status": "ALL GREEN",
+  "criteria": [
+    {
+      "id": 1, "name": "Select 1 of 3 → only 1 lead receives messages",
+      "status": "GREEN",
+      "evidence": "Test 1 at 11:34:34 UTC. Modal showed 3 recipients (cb6b343e, 01269ab9, 67e3d6fe). Deselected 2 (kept cb6b343e). Confirmed. Screenshot 01_modal_1of3_selected.png. DB: SCE payload.exclude_lead_ids = ['01269ab9', '67e3d6fe']. Logs: only cb6b343e received (1 sms sent + 1 email rejected — rejection is pre-existing template/validation issue, NOT this SPEC). Zero messages to 01269ab9 or 67e3d6fe.",
+      "screenshot": "_archive/m4-modal-deselection-restore-2026-05-19/verification/01_modal_1of3_selected.png"
+    },
+    {
+      "id": 2, "name": "Select 2 of 3 → 2 leads receive",
+      "status": "GREEN",
+      "evidence": "Test 2 at 11:38:00 UTC. Modal showed 3 recipients. Deselected cb6b343e only (kept 01269ab9 + 67e3d6fe). Confirmed. Screenshot 02_modal_2of3_selected.png. DB: SCE payload.exclude_lead_ids = ['cb6b343e']. Run total_recipients=4 (2 leads × 2 channels). distinct_lead_count from logs = 2 (01269ab9 + 67e3d6fe). cb6b343e NOT in log results.",
+      "screenshot": "_archive/m4-modal-deselection-restore-2026-05-19/verification/02_modal_2of3_selected.png"
+    },
+    {
+      "id": 3, "name": "Select 0 → button disabled, cannot confirm",
+      "status": "GREEN",
+      "evidence": "Test 3 at 11:41 UTC. Modal showed 3 recipients. Unchecked all 3. Probed approveBtn: text='אישור ושלח הודעות (0)', disabled=true. Clicked anyway → modal_still_open_after_click=true (click had no effect). Screenshot 03_modal_0_selected_disabled.png.",
+      "screenshot": "_archive/m4-modal-deselection-restore-2026-05-19/verification/03_modal_0_selected_disabled.png"
+    },
+    {
+      "id": 4, "name": "Chrome MCP screenshots saved (Iron Rule 34)",
+      "status": "GREEN",
+      "evidence": "Three screenshots + this JSON in _archive/m4-modal-deselection-restore-2026-05-19/verification/."
+    }
+  ],
+  "always_on": {
+    "smoke_7_of_7": "GREEN — node tests/smoke/baseline.test.mjs returned 7/7 passed",
+    "iron_rules": "Iron Rules 12 / 21 / 23 / 31 / 32 enforced via pre-commit. Iron Rule 34 self-validated by FOREMAN_REVIEW.md containing Chrome MCP + screenshot + window.__modalTrace-equivalent runtime trace refs. Iron Rule 35: M4_INFRASTRUCTURE_CONTRACT.md updated with payload schema additions."
+  },
+  "the_wire_works": {
+    "browser": "V2 modal _state.excluded → ctx.excludeLeadIds → probeAndCommit forwards to commitCallback meta",
+    "rpc": "update_event_status_with_overrides(p_tenant_id, p_event_id, p_new_status, p_exclude_lead_ids, p_recipient_subset) — set_config + UPDATE in one transaction",
+    "trigger": "event_status_change_event_fn reads m4.dispatch_exclude_lead_ids + m4.dispatch_recipient_subset session vars, merges into payload",
+    "consumer": "buildTriggerDataForEntity / payloadOverrides extracts payload.exclude_lead_ids + payload.recipient_subset, passes to evaluate() as top-level excludeLeadIds / recipientSubset",
+    "engine": "engine.ts already has excludeSet/includeSet filtering (M4_DRY_RUN_PREVIEW, 2026-05-14) — pre-existing infrastructure that just needed the bridge"
+  }
+}

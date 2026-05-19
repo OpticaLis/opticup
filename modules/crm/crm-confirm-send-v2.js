@@ -1,58 +1,20 @@
 /* crm-confirm-send-v2.js — Controller for CrmConfirmSendV2 modal.
    M4_DRY_RUN_PREVIEW_AND_DISPATCH Phases 3-7 (2026-05-14).
-   Owns _state + event wiring; delegates rendering to __CcsV2Render.
-   API:
-     CrmConfirmSendV2.show(previewResponse, onChoice)           // sync open
-     CrmConfirmSendV2.showAsync(previewPromise, onChoice, opts) // open with
-       loading state; resolves on EF return. opts = { ruleId: <hint-for-restore> }
+   M4_DUAL_PATH_CLEAN_FIX_2026_05_19 Layer 1: +opts.onCancel +opts.hideCommitWithoutNotify.
+   API: show(preview, onChoice, opts?) / showAsync(previewPromise, onChoice, opts?).
    Load AFTER crm-confirm-send-v2-render.js + modal-builder.js + toast.js. */
 (function () {
   'use strict';
 
   var _state = null;
   var _modal = null;
-  var STORE_KEY = 'crm_confirm_send_selection_v1';
-  var STORE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+  var _opts = null; // {onCancel, hideCommitWithoutNotify, suppressEmptyModal}
+
+  // M4_MODAL_DEFAULT_ALL_CHECKED_2026_05_19: sessionStorage save/load/restore
+  // helpers removed. Each modal open starts with all recipients checked
+  // (empty _state.excluded). Per-session UX only; no cross-session state.
 
   function R() { return window.__CcsV2Render || {}; }
-
-  function _saveSession() {
-    if (!_state || _state.phase !== 'loaded' || typeof sessionStorage === 'undefined') return;
-    try {
-      var rules = (_state.previewResponse && _state.previewResponse.rules) || [];
-      var ruleKey = rules.length ? rules[0].rule_id : null;
-      if (!ruleKey) return;
-      var entry = {
-        ruleKey: ruleKey,
-        excluded: Array.from(_state.excluded),
-        chip: _state.chip || 'all',
-        search: _state.search || '',
-        ts: Date.now(),
-      };
-      sessionStorage.setItem(STORE_KEY, JSON.stringify(entry));
-    } catch (_) {}
-  }
-
-  function _loadSession(previewResponse) {
-    if (typeof sessionStorage === 'undefined') return null;
-    try {
-      var raw = sessionStorage.getItem(STORE_KEY);
-      if (!raw) return null;
-      var entry = JSON.parse(raw);
-      if (!entry || !entry.ts || (Date.now() - entry.ts) > STORE_TTL_MS) {
-        sessionStorage.removeItem(STORE_KEY); return null;
-      }
-      var rules = (previewResponse && previewResponse.rules) || [];
-      var ruleKey = rules.length ? rules[0].rule_id : null;
-      if (entry.ruleKey !== ruleKey) return null;
-      return entry;
-    } catch (_) { return null; }
-  }
-
-  function _clearSession() {
-    if (typeof sessionStorage === 'undefined') return;
-    try { sessionStorage.removeItem(STORE_KEY); } catch (_) {}
-  }
 
   function pickFirst3() {
     if (!_state) return [];
@@ -72,9 +34,8 @@
     var excludedCount = _state.excluded.size + _state.testSent.size;
     var remaining = total - excludedCount;
     if (approveBtn) {
-      approveBtn.textContent = _state.testSent.size > 0
-        ? 'שלח לשאר (' + remaining + ')'
-        : 'אישור ושלח הודעות (' + remaining + ')';
+      approveBtn.textContent = _state.testSent.size > 0 ? 'שלח לשאר (' + remaining + ')' : 'אישור ושלח הודעות (' + remaining + ')';
+      approveBtn.disabled = remaining <= 0; // M4_MODAL_DESELECTION_RESTORE_2026_05_19
     }
     if (testBtn) testBtn.disabled = pickFirst3().length < 3;
     if (countEl) countEl.outerHTML = R().renderCountLine(_state); // simple replace
@@ -87,7 +48,6 @@
     host.innerHTML = R().renderBody(_state);
     refreshFooterLabels(modalEl);
     wireBodyEvents(modalEl);
-    _saveSession();
   }
 
   function wireBodyEvents(modalEl) {
@@ -124,7 +84,6 @@
         if (e.target.checked) _state.excluded.delete(lid);
         else _state.excluded.add(lid);
         refreshFooterLabels(modalEl);
-        _saveSession();
       });
     });
     // Expand toggle (per-row body preview)
@@ -138,31 +97,33 @@
         rerender(modalEl);
       });
     });
-    // Restore quick-undo (Brief §3.1) — clears the restored exclusions so all
-    // recipients are re-selected without forcing the operator to tick each box.
-    var undoBtn = modalEl.querySelector('[data-ccsv2-undo-restore="1"]');
-    if (undoBtn) {
-      undoBtn.addEventListener('click', function () {
-        if (!_state) return;
-        _state.excluded = new Set();
-        _state.restored = false;
-        rerender(modalEl);
-      });
-    }
+    // M4_MODAL_DEFAULT_ALL_CHECKED_2026_05_19: bulk select-all / clear-all.
+    var selAllBtn = modalEl.querySelector('[data-ccsv2-select-all="1"]');
+    if (selAllBtn) selAllBtn.addEventListener('click', function () {
+      if (!_state) return;
+      _state.excluded = new Set();
+      rerender(modalEl);
+    });
+    var clrAllBtn = modalEl.querySelector('[data-ccsv2-clear-all="1"]');
+    if (clrAllBtn) clrAllBtn.addEventListener('click', function () {
+      if (!_state) return;
+      _state.excluded = new Set(_state.recipients.map(function (r) { return r.lead_id; }));
+      rerender(modalEl);
+    });
   }
 
   function _ensureState(previewResponse, onChoice) {
-    var restored = _loadSession(previewResponse);
+    // M4_MODAL_DEFAULT_ALL_CHECKED_2026_05_19: always start with empty excluded
+    // (= all checked). Each modal open is fresh; no cross-session persistence.
     _state = {
       previewResponse: previewResponse,
       recipients: (previewResponse && previewResponse.recipients_by_lead) ? previewResponse.recipients_by_lead.slice() : [],
-      excluded: new Set(restored ? restored.excluded : []),
+      excluded: new Set(),
       expanded: new Set(),
       testSent: new Set(),
-      chip: restored ? (restored.chip || 'all') : 'all',
-      search: restored ? (restored.search || '') : '',
+      chip: 'all',
+      search: '',
       phase: previewResponse ? 'loaded' : 'loading',
-      restored: !!restored,
       onChoice: onChoice,
     };
   }
@@ -200,7 +161,6 @@
         catch (e) { console.error('CrmConfirmSendV2 onChoice threw:', e); r = null; }
       }
       if (typeof modal.close === 'function') modal.close();
-      _clearSession();
       var queuedCount = (r && typeof r.queued === 'number') ? r.queued : 0;
       var dispatchRunId = (r && r.run_id) || null;
       if (choice.dispatch && dispatchRunId && queuedCount > 0 && window.CrmBroadcastCancel) {
@@ -252,35 +212,24 @@
     });
     if (testBtn) testBtn.addEventListener('click', handleTestSend);
     if (cancelBtn) cancelBtn.addEventListener('click', function () {
-      _state = null;
-      _modal = null;
+      var cb = (_opts && typeof _opts.onCancel === 'function') ? _opts.onCancel : null;
+      _state = null; _modal = null; _opts = null;
       if (typeof modal.close === 'function') modal.close();
+      if (cb) { try { cb(); } catch (e) { console.warn('CrmConfirmSendV2 onCancel threw:', e); } }
     });
+    if (_opts && _opts.hideCommitWithoutNotify && confirmNoNotifyBtn) {
+      confirmNoNotifyBtn.parentNode && confirmNoNotifyBtn.parentNode.removeChild(confirmNoNotifyBtn);
+    }
   }
 
   function _hydrate(modal, previewResponse) {
+    // M4_MODAL_DEFAULT_ALL_CHECKED_2026_05_19: empty excluded stays empty
+    // (all checked default). No session-restore step here anymore.
     _state.previewResponse = previewResponse;
     _state.recipients = (previewResponse && previewResponse.recipients_by_lead)
       ? previewResponse.recipients_by_lead.slice() : [];
     _state.phase = 'loaded';
-    // showAsync path enters _ensureState with previewResponse=null, so the
-    // initial _loadSession could not match a rule key. Retry now that rules
-    // are known — this is the load-on-open wire for M4-V2-SESSION-RESTORE-01.
-    if (!_state.restored) {
-      var late = _loadSession(previewResponse);
-      if (late) {
-        _state.excluded = new Set(late.excluded);
-        _state.chip = late.chip || 'all';
-        _state.search = late.search || '';
-        _state.restored = true;
-      }
-    }
-    // Reconcile restored excluded set with new recipient list (drop stale ids
-    // silently — Brief §3.1 stale-lead reconciliation).
-    var validIds = new Set(_state.recipients.map(function (r) { return r.lead_id; }));
-    Array.from(_state.excluded).forEach(function (id) { if (!validIds.has(id)) _state.excluded.delete(id); });
     rerender(modal.el);
-    // Footer needs re-render too (button enables based on count).
     var footerEl = modal.el.querySelector('.modal-footer');
     if (footerEl) {
       footerEl.innerHTML = R().renderFooter(_state);
@@ -288,24 +237,22 @@
     }
   }
 
-  async function show(previewResponse, onChoice) {
+  async function show(previewResponse, onChoice, opts) {
     if (!previewResponse || !Array.isArray(previewResponse.recipients_by_lead)) {
       if (window.Toast) Toast.warning('אין נמענים — ההודעה לא תישלח.');
       return;
     }
+    _opts = opts || null;
     _ensureState(previewResponse, onChoice);
     _modal = _openModalShell(onChoice);
     if (!_modal) return;
     wireBodyEvents(_modal.el);
     _attachHandlers(_modal, { get: function () { return previewResponse; } }, onChoice);
-    _saveSession();
   }
 
-  // showAsync(previewPromise, onChoice, opts?) — opts.suppressEmptyModal=true
-  // awaits preview first + opens modal only when recipients > 0 (silent skip
-  // when empty). Closes QA Finding 1.1 (modal flash on status changes). Legacy
-  // path (no flag) keeps loading-spinner UX for broadcast wizard + manual flows.
+  // showAsync(previewPromise, onChoice, opts?). opts.suppressEmptyModal/onCancel/hideCommitWithoutNotify.
   async function showAsync(previewPromise, onChoice, opts) {
+    _opts = opts || null;
     if (opts && opts.suppressEmptyModal) {
       var pv2;
       try { pv2 = await previewPromise; }
@@ -320,7 +267,6 @@
       if (!_modal) return;
       wireBodyEvents(_modal.el);
       _attachHandlers(_modal, { get: function () { return pv2; } }, onChoice);
-      _saveSession();
       return;
     }
     _ensureState(null, onChoice);
@@ -332,13 +278,13 @@
       console.error('CrmConfirmSendV2 showAsync — preview failed:', e);
       if (_modal && typeof _modal.close === 'function') _modal.close();
       if (window.Toast) Toast.error('כשל בטעינת תצוגה מקדימה.');
-      _state = null; _modal = null;
+      _state = null; _modal = null; _opts = null;
       return;
     }
     if (!pv || !Array.isArray(pv.recipients_by_lead) || !pv.recipients_by_lead.length) {
       if (_modal && typeof _modal.close === 'function') _modal.close();
       if (window.Toast) Toast.warning('אין נמענים — ההודעה לא תישלח.');
-      _state = null; _modal = null;
+      _state = null; _modal = null; _opts = null;
       return;
     }
     _hydrate(_modal, pv);

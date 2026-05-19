@@ -6,8 +6,6 @@
 
   function getTid() { return (typeof getTenantId === 'function') ? getTenantId() : null; }
 
-  function fireLeadStatusAutomation(leadId, newStatus, oldStatus) { if (window.CrmAutomationClient && CrmAutomationClient.evaluate) CrmAutomationClient.evaluate('lead_status_change', { leadId: leadId, newStatus: newStatus, oldStatus: oldStatus }); }
-
   function statusLabel(slug) {
     var _info = (CrmHelpers && CrmHelpers.getStatusInfo) ? CrmHelpers.getStatusInfo('lead', slug) : null;
     return (_info && _info.label) || slug || '';
@@ -24,31 +22,32 @@
 
   // ---- Core writes ----
 
+  // M4_DUAL_PATH_CLEAN_FIX_2026_05_19 Layer 1: probe→modal→commit. Same pattern
+  // as changeEventStatus. Only the UPDATE fires the DB trigger; cron consumer
+  // is the sole dispatcher.
   async function changeLeadStatus(leadId, newStatus, oldStatus, opts) {
     opts = opts || {};
     var tenantId = getTid();
-    var upd = await sb.from('crm_leads')
-      .update({ status: newStatus, updated_at: new Date().toISOString() })
-      .eq('id', leadId)
-      .eq('tenant_id', tenantId)
-      .select('id')
-      .single();
-    if (upd.error) throw new Error('status update failed: ' + upd.error.message);
-
     var content = 'סטטוס שונה מ-' + statusLabel(oldStatus) + ' ל-' + statusLabel(newStatus);
-    var noteIns = await sb.from('crm_lead_notes').insert({
-      tenant_id: tenantId,
-      lead_id: leadId,
-      content: content
-    });
-    if (noteIns.error) throw new Error('status note insert failed: ' + noteIns.error.message);
 
-    try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.status_change', entity_type: 'crm_leads', entity_id: leadId, details: { from: oldStatus, to: newStatus, from_label: statusLabel(oldStatus), to_label: statusLabel(newStatus) } }); } catch (_) {}
+    var commit = async function (/* meta */) {
+      var upd = await sb.from('crm_leads')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', leadId).eq('tenant_id', tenantId).select('id').single();
+      if (upd.error) throw new Error('status update failed: ' + upd.error.message);
+      var noteIns = await sb.from('crm_lead_notes').insert({ tenant_id: tenantId, lead_id: leadId, content: content });
+      if (noteIns.error) throw new Error('status note insert failed: ' + noteIns.error.message);
+      try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.status_change', entity_type: 'crm_leads', entity_id: leadId, details: { from: oldStatus, to: newStatus, from_label: statusLabel(oldStatus), to_label: statusLabel(newStatus) } }); } catch (_) {}
+      if (!opts.silent && window.Toast) Toast.success('סטטוס עודכן: ' + statusLabel(newStatus));
+      return { id: leadId, status: newStatus, noteContent: content };
+    };
 
-    fireLeadStatusAutomation(leadId, newStatus, oldStatus);
-
-    if (!opts.silent && window.Toast) Toast.success('סטטוס עודכן: ' + statusLabel(newStatus));
-    return { id: leadId, status: newStatus, noteContent: content };
+    if (opts.silent || !window.CrmAutomationClient || typeof CrmAutomationClient.probeAndCommit !== 'function') {
+      return await commit({}); // bulk path stays direct (no modal noise for batch updates)
+    }
+    var triggerData = { leadId: leadId, newStatus: newStatus, oldStatus: oldStatus };
+    var result = await CrmAutomationClient.probeAndCommit('lead_status_change', triggerData, commit, { silentToast: 'סטטוס עודכן: ' + statusLabel(newStatus), suppressSilentToast: true });
+    return (result && result.data) || (result && result.committed ? { id: leadId, status: newStatus, noteContent: content } : null);
   }
 
   async function bulkChangeStatus(leadIds, newStatus) {
@@ -241,7 +240,9 @@
       content: 'הועבר ל-Tier 2 (אושר)'
     });
     if (noteIns.error) throw new Error('transfer note failed: ' + noteIns.error.message);
-    fireLeadStatusAutomation(leadId, 'waiting', oldStatus);
+    // M4_DUAL_PATH_CLEAN_FIX_2026_05_19 Layer 1: the lead-status UPDATE above
+    // already fired trg_lead_status_change_event; cron consumer dispatches via
+    // automation-engine. No browser-side evaluate call here.
     return { id: leadId, status: 'waiting' };
   }
 

@@ -150,9 +150,17 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
     return ZERO;
   }
 
-  const rules = (res.data || []).filter((r: { trigger_condition: unknown }) =>
-    evaluateCondition(r.trigger_condition, triggerData)
-  );
+  // M4_DUAL_PATH_CLEAN_FIX_2026_05_19 Layer 3: self-loop guard. If this SCE was
+  // caused by a rule's post_action, filter that rule out of the matching set so
+  // it cannot re-fire on its own derivative status change within the 1-hour
+  // window that the consumer enforces by reading recent SCE rows. Cross-rule
+  // chains remain allowed (rule A → status change → rule B fires is OK).
+  const originRuleId = (typeof triggerData._origin_rule_id === "string" && triggerData._origin_rule_id) ? triggerData._origin_rule_id : null;
+  const rules = (res.data || [])
+    .filter((r: { id: string; trigger_condition: unknown }) => {
+      if (originRuleId && r.id === originRuleId) return false;
+      return evaluateCondition(r.trigger_condition, triggerData);
+    });
   if (!rules.length) return ZERO;
 
   // Run row written upfront (parity with browser engine line 251). Patched

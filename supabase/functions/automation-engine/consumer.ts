@@ -28,11 +28,34 @@ type QueueRow = {
   old_status: string | null;
   new_status: string;
   payload: Record<string, unknown> | null;
+  // M4_DUAL_PATH_CLEAN_FIX_2026_05_19 Layer 3: when populated, this SCE was
+  // caused by a rule's post_action. Passed to evaluate() as triggerData._origin_rule_id
+  // so engine can filter out the originating rule (architectural self-loop guard).
+  originated_by_rule_id: string | null;
 };
+
+// M4_MODAL_DESELECTION_RESTORE_2026_05_19: extract operator overrides from the
+// SCE payload set by update_event_status_with_overrides RPC + SCE-producer
+// trigger. Returns the arrays (or null) for consumeStatusChangeEvents to pass
+// as top-level excludeLeadIds / recipientSubset inputs to evaluate().
+function payloadOverrides(payload: Record<string, unknown>): { exclude: string[]; subset: string[] } {
+  const ex = payload.exclude_lead_ids;
+  const sb = payload.recipient_subset;
+  return {
+    exclude: Array.isArray(ex) ? ex.filter((x): x is string => typeof x === "string") : [],
+    subset:  Array.isArray(sb) ? sb.filter((x): x is string => typeof x === "string") : [],
+  };
+}
 
 function buildTriggerDataForEntity(e: QueueRow): Record<string, unknown> | null {
   const payload = (e.payload && typeof e.payload === "object") ? e.payload : {};
-  const base = { oldStatus: e.old_status, newStatus: e.new_status, status: e.new_status };
+  const base = {
+    oldStatus: e.old_status,
+    newStatus: e.new_status,
+    status: e.new_status,
+    // Layer 3 self-loop guard signal — engine.ts filters rules by this.
+    _origin_rule_id: e.originated_by_rule_id,
+  };
   if (e.entity_type === "attendee") {
     return {
       ...base,
@@ -74,7 +97,7 @@ export async function consumeStatusChangeEvents(
   const cap = Math.min(Math.max(limit || 100, 1), 500);
 
   const claimRes = await db.from("crm_status_change_events")
-    .select("id, entity_type, entity_id, old_status, new_status, payload")
+    .select("id, entity_type, entity_id, old_status, new_status, payload, originated_by_rule_id")
     .eq("tenant_id", tenantId)
     .is("consumed_at", null)
     .order("occurred_at", { ascending: true })
@@ -120,9 +143,14 @@ export async function consumeStatusChangeEvents(
         processed++;
         continue;
       }
+      // M4_MODAL_DESELECTION_RESTORE_2026_05_19: thread operator overrides
+      // from SCE payload (set by update_event_status_with_overrides RPC).
+      const ov = payloadOverrides((e.payload && typeof e.payload === "object") ? e.payload : {});
       const r = await evaluate(db, {
         tenantId, triggerType, triggerData,
         mode: "dispatch", planItems: null, dispatchMessages: true,
+        excludeLeadIds: ov.exclude,
+        recipientSubset: ov.subset,
         anonKey, sendMessageUrl,
       });
       if (r.fired > 0) evaluated++;

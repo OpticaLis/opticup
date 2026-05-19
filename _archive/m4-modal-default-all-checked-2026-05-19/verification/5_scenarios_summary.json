@@ -1,0 +1,48 @@
+{
+  "spec": "M4_MODAL_DEFAULT_ALL_CHECKED",
+  "verified_at_utc": "2026-05-19T11:55Z",
+  "all_5_scenarios_status": "ALL GREEN",
+  "scenarios": [
+    {
+      "id": 1, "name": "Default = all 3 checked + no banner + bulk buttons present",
+      "status": "GREEN",
+      "evidence": "Chrome MCP probe: recipient_count=3, all_checked=true, button_text='אישור ושלח הודעות (3)', button_disabled=false, select_all_btn_exists=true, clear_all_btn_exists=true, restored_banner_absent=true. Screenshot 01_default_all_checked.png."
+    },
+    {
+      "id": 2, "name": "Click 'נקה הכל' → 0 checked + button disabled",
+      "status": "GREEN",
+      "evidence": "After click: all_unchecked=true, button_text='אישור ושלח הודעות (0)', button_disabled=true. Screenshot 02_clear_all_disabled.png."
+    },
+    {
+      "id": 3, "name": "From cleared state, click 'סמן הכל' → 3 checked",
+      "status": "GREEN",
+      "evidence": "After click: all_checked=true, button_text='אישור ושלח הודעות (3)', button_disabled=false. Screenshot 03_select_all_restored.png."
+    },
+    {
+      "id": 4, "name": "Manually deselect 2 → button '(1)'",
+      "status": "GREEN",
+      "evidence": "Programmatic clicks on first 2 checkboxes: checked_count=1, button_text='אישור ושלח הודעות (1)', button_disabled=false."
+    },
+    {
+      "id": 5, "name": "Close + reopen → all 3 checked again, no session persistence",
+      "status": "GREEN",
+      "evidence": "Cancel clicked, modal closed. Reopened via same code path: recipient_count=3, all_checked=true, button_text='אישור ושלח הודעות (3)', restored_banner_absent=true, sessionStorage_empty=true. Screenshot 04_reopen_default_again.png."
+    }
+  ],
+  "always_on": {
+    "smoke_7_of_7": "GREEN",
+    "iron_rule_12_file_size": "GREEN — crm-confirm-send-v2.js: 294 lines (was 348), crm-confirm-send-v2-render.js: 261 lines (was 259, +2 for renderBulkActions). Both under 350 cap.",
+    "iron_rule_34": "GREEN — FOREMAN_REVIEW.md mentions Chrome MCP + 4 screenshots + window.__modalTrace-equivalent DOM probes; pre-commit ui-spec-verification.mjs gate will validate."
+  },
+  "net_code_change": {
+    "session_storage_helpers_removed": ["_saveSession", "_loadSession", "_clearSession", "STORE_KEY", "STORE_TTL_MS"],
+    "session_storage_callsites_removed": 5,
+    "restored_banner_function_removed": "renderRestoredNotice (~14 lines)",
+    "undo_restore_wire_removed": "undoBtn block in wireBodyEvents (~10 lines)",
+    "_state_restored_field_removed": true,
+    "_state_excluded_default": "empty Set (all checked)",
+    "new_bulk_actions": ["סמן הכל (data-ccsv2-select-all)", "נקה הכל (data-ccsv2-clear-all)"],
+    "v2_js_net_lines_change": -54,
+    "render_js_net_lines_change": "+2 (renderBulkActions ~13 lines added, renderRestoredNotice ~14 lines removed, invocation 1 line removed)"
+  }
+}
