@@ -16,28 +16,20 @@ import {
   buildRegistrationUrl,
   buildUnsubscribeUrl,
 } from "./url-builders.ts";
-
-const HEBREW_DOW = [
-  "יום ראשון",  // Sunday
-  "יום שני",    // Monday
-  "יום שלישי",  // Tuesday
-  "יום רביעי",  // Wednesday
-  "יום חמישי",  // Thursday
-  "יום שישי",   // Friday
-  "שבת",        // Saturday
-];
-
-/**
- * Compute Hebrew weekday for an event_date stored as PostgreSQL `date`
- * (no time component). Parses the YMD parts manually and builds a UTC
- * midnight Date so getUTCDay() returns the calendar weekday regardless
- * of the runtime's local timezone.
- */
-export function hebrewDayOfWeek(eventDateIsoYmd: string): string {
-  const [yearStr, monthStr, dayStr] = eventDateIsoYmd.split("-");
-  const d = new Date(Date.UTC(parseInt(yearStr, 10), parseInt(monthStr, 10) - 1, parseInt(dayStr, 10)));
-  return HEBREW_DOW[d.getUTCDay()];
-}
+// M4_AUTOMATION_TEMPLATE_VARIABLE_RESOLVER_FIX (2026-05-19, SPEC 3) extracted
+// these helpers to _shared so automation-engine's pre-enqueue composer uses
+// the same formatters. Re-exported here for backward compatibility with any
+// in-process callers that imported from this module.
+export {
+  hebrewDayOfWeek,
+  formatDepositAmount,
+  formatMaxAttendees,
+} from "../_shared/event-variables.ts";
+import {
+  hebrewDayOfWeek as _hebrewDayOfWeek,
+  formatDepositAmount as _formatDepositAmount,
+  formatMaxAttendees as _formatMaxAttendees,
+} from "../_shared/event-variables.ts";
 
 /**
  * Inject event-derived variables AND lookup payment_url for the event's fee.
@@ -105,13 +97,13 @@ export async function injectEventVariables(
   if (vars.event_location == null) vars.event_location = ev.location_address || "";
 
   if (vars.event_max_attendees == null) {
-    vars.event_max_attendees = ev.max_capacity;
+    vars.event_max_attendees = _formatMaxAttendees(ev.max_capacity);
   }
   if (vars.event_deposit_amount == null) {
-    vars.event_deposit_amount = Math.round(Number(ev.booking_fee));
+    vars.event_deposit_amount = _formatDepositAmount(ev.booking_fee);
   }
   if (vars.event_day_of_week == null && ev.event_date) {
-    vars.event_day_of_week = hebrewDayOfWeek(ev.event_date);
+    vars.event_day_of_week = _hebrewDayOfWeek(ev.event_date);
   }
   // P33 Fix A — closes P32-001 (%coupon_code% literal reached customer in
   // event_coupon_delivery_email_he). P31 declared coupon_code was auto-filled

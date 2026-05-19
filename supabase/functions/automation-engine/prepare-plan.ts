@@ -10,6 +10,14 @@ import { prepareQueueSend } from "./queue-send.ts";
 // substitution) never reach crm_message_queue. Closes KNOWLEDGE_MAP Layer 6
 // gap; replicates send-message's at-dispatch fail-CLOSED gate at plan-time.
 import { validateTemplateOutput, type ValidationResult } from "../_shared/template-validation.ts";
+// M4_AUTOMATION_TEMPLATE_VARIABLE_RESOLVER_FIX (2026-05-19, SPEC 3): close the
+// pre-enqueue rejection gap by populating event_day_of_week, event_deposit_amount,
+// event_max_attendees from the same helpers send-message uses at dispatch time.
+import {
+  hebrewDayOfWeek,
+  formatDepositAmount,
+  formatMaxAttendees,
+} from "../_shared/event-variables.ts";
 
 export interface PreparedPlan {
   items: unknown[];
@@ -62,20 +70,36 @@ async function buildVariables(
     lead_id: lead.id || "",
     unsubscribe_url: "[קישור הסרה — יצורף אוטומטית]",
   };
-  // deno-lint-ignore no-explicit-any
-  let evt = (triggerData as any).event;
+  // SPEC 3 (2026-05-19): always fetch the full event row when eventId is
+  // provided, even if the browser path pre-loaded a truncated `event` object.
+  // The browser pre-load (shape B trigger_data, from crm-event-actions.js) has
+  // 5 columns; we need 7 to populate event_day_of_week + event_deposit_amount
+  // + event_max_attendees correctly. The extra SELECT (single row by primary
+  // key) is negligible and eliminates silent bad-substitution bugs that would
+  // otherwise pass validation as empty strings.
   const eventId = (typeof triggerData.eventId === "string") ? triggerData.eventId : null;
-  if (!evt && eventId) {
+  // deno-lint-ignore no-explicit-any
+  let evt: any = null;
+  if (eventId) {
     const r = await db.from("crm_events")
-      .select("name, event_date, start_time, location_address, registration_form_url")
+      .select("name, event_date, start_time, location_address, registration_form_url, max_capacity, booking_fee")
       .eq("id", eventId).eq("tenant_id", tenantId).single();
     if (!r.error) evt = r.data;
   }
+  // If no eventId but caller pre-loaded a partial event (legacy callers with
+  // no DB roundtrip available), fall back to the partial object — event-context
+  // vars will be empty for missing columns, safer than dropping the whole run.
+  if (!evt) evt = (triggerData as any).event;
   if (evt) {
     vars.event_name = evt.name || "";
     vars.event_date = formatDate(evt.event_date) || "";
     vars.event_time = evt.start_time || "";
     vars.event_location = evt.location_address || "";
+    // SPEC 3: the 3 keys that were unresolved pre-fix. Shared helpers handle
+    // NULL/non-numeric gracefully (return "" rather than "NaN" / "null").
+    vars.event_day_of_week    = evt.event_date ? hebrewDayOfWeek(evt.event_date) : "";
+    vars.event_deposit_amount = formatDepositAmount(evt.booking_fee);
+    vars.event_max_attendees  = formatMaxAttendees(evt.max_capacity);
     const regUrl = evt.registration_form_url || "";
     const isLegacyUrl = regUrl.indexOf("r.html") !== -1 || regUrl.indexOf("app.opticalis") !== -1;
     if (regUrl && !isLegacyUrl) {
