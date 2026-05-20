@@ -77,10 +77,12 @@
           '<div class="flex gap-1">' + dateChips + '</div>' +
         '</div>' +
         '<div class="w-px h-5 bg-slate-300"></div>' +
-        /* Link type */
-        '<div class="flex items-center gap-1.5">' +
-          '<span class="text-xs text-slate-500 font-medium">סוג:</span>' +
-          '<select id="sl-link-type-select" class="text-xs rounded border border-slate-300 px-2 py-1 bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500">' +
+        /* Link type — semantic: filters the drill-down per-link list,
+           NOT the broadcasts aggregation (broadcasts roll up all link types
+           into one row per broadcast). Tooltip clarifies for the user. */
+        '<div class="flex items-center gap-1.5" title="משפיע על פירוט הקישורים (לחיצה על שורת שידור)">' +
+          '<span class="text-xs text-slate-500 font-medium">סוג קישור:</span>' +
+          '<select id="sl-link-type-select" class="text-xs rounded border border-slate-300 px-2 py-1 bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500" title="משפיע על פירוט הקישורים (לחיצה על שורת שידור)">' +
             typeOptsHtml +
           '</select>' +
         '</div>' +
