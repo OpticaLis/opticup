@@ -29,7 +29,8 @@ Advance the marketing-funnel surface without a browser — every deliverable pro
 This SPEC declares the following destructive operations and NOTHING else:
 
 1. **W1.2 — DELETE** the consumed `_archive/architect-pending-entries/STOREFRONT_PUBLIC_DATA_LAYER_2026_05_15.md` (single file, after the DECISIONS_LOG entry is appended). NOTE during execution: pending-entries directory was empty (only `.gitkeep`); no file deletion actually happened.
-2. **W2.2 — UPDATE** 3 stale broadcasts on Prizma's `crm_broadcasts` from `status='queued'` → `status='cancelled'`, scoped by explicit broadcast IDs + tenant_id.
+2. **W2.2 — UPDATE** 3 stale broadcasts on Prizma's `crm_broadcasts` from `status='queued'` → `status='cancelled'`, scoped by explicit broadcast IDs + tenant_id. Snapshot at `W2_2_BROADCAST_SNAPSHOT.json`.
+3. **W2.3 — Recurring DELETE** via pg_cron `crm_message_queue_cleanup` (daily at 04:00 UTC). Each tick runs `DELETE FROM public.crm_message_queue WHERE status='sent' AND created_at < now() - interval '90 days'`. The cron job registration itself is a one-time write; the DELETE it executes runs forever after. Today's first run will affect 0 rows (oldest sent row is 8 days old). Long-term, the job keeps the queue as a 90-day rolling window.
 
 All other destructive operations (additional file deletes, mass renames, `git rebase`, `git reset --hard`, `DROP TABLE/COLUMN/POLICY`, mass `DELETE FROM`, CLAUDE.md/SKILL.md non-append edits, any `main`-branch modification) are FORBIDDEN. If the Executor encounters a need mid-run → STOP, write an escalation file, halt that wave.
 
