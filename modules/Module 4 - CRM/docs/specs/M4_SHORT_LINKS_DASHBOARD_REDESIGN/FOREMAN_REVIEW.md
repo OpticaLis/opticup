@@ -290,4 +290,88 @@ The fix's query shape is now structurally sound. Smoke 8/8 PASS post-fix.
 
 ---
 
-*End of FOREMAN_REVIEW (POST-REGRESSION-AMENDED, STILL PENDING-IR34-RE-VERIFY). Awaiting Daniel's second Chrome MCP pass on the fixed broadcasts-table to flip verdict 🟡 → 🟢.*
+## 12. Second Post-DH-1 Regression + Foreman Amendment-2 (2026-05-20)
+
+### 12.1 Regression discovered by Daniel's second Chrome verification
+
+Daniel's re-test of commit `d8b9cca` on Prizma found the broadcasts-table now loaded WITHOUT a 400 error, BUT the per-broadcast metrics were silently wrong:
+
+| Broadcast | clicks total | unique leads | unsubscribes | CTR% | unsub% |
+|---|---|---|---|---|---|
+| מחר אירוע מאי 2026 | 425 ✅ | **0 ❌** | **0 ❌** | 36.0% ✅ | **0.0% ❌** |
+
+Drill-down also returned empty for the same broadcast ("אין נתוני קישורים לשידור זה") despite 425 clicks being present in the click table.
+
+My own live SQL probe at §11.5 had shown the correct numbers: 425 clicks / 233 unique leads / 425 unsubscribes / 36.0% CTR / 36.0% unsub-rate. So the data is in the DB. The browser queries were broken.
+
+### 12.2 Root cause — PostgREST default 1000-row response limit
+
+Prizma has **8,194 live short_links**. The `.select('id, link_type, lead_id').eq('tenant_id', tid).gt('expires_at', now)` query in `broadcasts-table.js` was silently truncated to 1,000 rows by PostgREST's default response-row limit. The 179 unsubscribe links generated for yesterday's main SMS broadcast (created ~12-18 hours before this verification) were not in the 1,000 returned rows → `linkInfoById[c.short_link_id]` returned undefined for those clicks → the `if (info)` guard skipped both `info.lead_id` and `info.link_type === 'unsubscribe'` → metrics silently dropped to zero.
+
+The `clicks` query was unaffected because Prizma has only ~473 clicks, well under the limit. So `total_clicks=425` was correct (all click rows present), but the per-click link-type lookup failed.
+
+Drill-down had the identical bug shape: fetched 425 clicks for the broadcast (works), then fetched all 8,194 tenant short_links (truncated to 1,000), then `if (!byLink[l.id])` membership filter rejected ALL of the broadcast's 179 unsubscribe links because none of them were in the 1,000 returned → 0 drill-down rows.
+
+Why demo would have appeared to work: demo has only 805 live short_links — under the limit — so the bug was invisible on the test tenant. Prizma is where it lit up.
+
+### 12.3 Why §11.5 SQL probe didn't catch it
+
+My §11.5 verification ran service-role SQL via the Supabase MCP `execute_sql` tool — which bypasses PostgREST entirely. The raw SQL CTE did the JOIN server-side and returned the correct 425 / 233 / 425 numbers. But that probe did NOT exercise the PostgREST translation path. The bug lived in the PostgREST layer, not the SQL.
+
+**Critical gap-finding for next time:** when verifying a fix that touches a Supabase JS query, run BOTH (a) raw SQL via service-role to confirm data semantics + (b) the actual PostgREST query (curl through `/rest/v1/<table>?...` or run the JS code) to confirm transport-layer behavior. The two layers can disagree.
+
+### 12.4 Fix (commit `c3e4dae`, 2026-05-20)
+
+Both `broadcasts-table.js` and `drilldown.js` rewritten to use **PostgREST embedded JOIN via FK**:
+
+- FK confirmed: `short_link_clicks_short_link_id_fkey FOREIGN KEY (short_link_id) REFERENCES short_links(id) ON DELETE CASCADE`.
+- Single query per component (was 2).
+- Returned cardinality = click count for the scope, not link count. Prizma's busiest case: ~425 rows. Well under any limit.
+
+**broadcasts-table.js new query:**
+```javascript
+sb.from('short_link_clicks')
+  .select('broadcast_id, short_link_id, short_links!inner(link_type, lead_id)')
+  .eq('tenant_id', tid)
+  .not('broadcast_id', 'is', null);
+```
+Each click row carries its link's `link_type` + `lead_id` in `c.short_links` payload.
+
+**drilldown.js new query:**
+```javascript
+sb.from('short_link_clicks')
+  .select('short_link_id, clicked_at, short_links!inner(id, code, target_url, link_type, lead_id, expires_at)')
+  .eq('tenant_id', tid)
+  .eq('broadcast_id', broadcastId);
+```
+Each click row carries the link's full metadata for drill-down rendering. `expires_at` filter moved client-side (cheap — only the bounded click set).
+
+**template-static-card.js audited but unchanged:** its 2 queries return ≤ 6 + ~473 rows respectively — safely under the limit. No fix needed.
+
+### 12.5 Additional Author-Skill Proposal — P-AUTHOR-4
+
+**P-AUTHOR-4 — PostgREST default 1000-row limit is a per-query failure class; SPEC §0 MUST estimate result-row cardinality for every `.select(...)` and choose a query shape accordingly**
+
+- **Where:** `.claude/skills/opticup-strategic/SKILL.md` — §"Step 5.3 Runtime Semantics Rehearsal" — add as 5.3b alongside the existing PostgREST URL-size limit guidance.
+- **Change:** *"**Response-row cardinality probe (added 2026-05-20 from M4_SHORT_LINKS_DASHBOARD_REDESIGN P-AUTHOR-4).** For every new Supabase JS `.select(...)` the SPEC introduces, the Foreman MUST estimate the worst-case row count returned. If the estimate > 1000 for any production tenant (live-probe BOTH demo AND the biggest production tenant, never extrapolate from demo alone), the SPEC §0 MUST commit to one of three patterns: (a) PostgREST embedded JOIN via FK from the smaller-cardinality side, (b) explicit `.range()` pagination, or (c) RPC-with-server-side-aggregation. Silently relying on the default 1000-row truncation is a critical bug class — it manifests as wrong numbers in production, not as errors, so it survives code review + smoke + non-prod testing."*
+- **Rationale:** Today's regression cycle had 3 stages: F-LEAD-ID (column doesn't exist on the table — would have errored, easy to find), F-POSTGREST-1000 (PostgREST silent-truncation — wrong numbers, hard to find without probing the biggest tenant). The lesson Daniel hammered: **production-tenant probes are non-negotiable for any data SPEC, no matter how innocuous the query looks**. Demo (805 live links) was permanently safe; Prizma (8,194) was permanently broken. Codifying the "probe biggest-tenant cardinality" step prevents the next instance of this.
+
+### 12.6 Additional Executor-Skill Proposal — P-EXEC-4
+
+**P-EXEC-4 — When writing a `.select(...).eq('tenant_id', tid)` against a table the SPEC's tenant may have >1000 rows in, prefer embedded-JOIN to standalone fetch**
+
+- **Where:** `.claude/skills/opticup-executor/SKILL.md` — §"Step 1.5 DB Pre-Flight Check" — add as a sub-pattern alongside P-EXEC-3.
+- **Change:** *"**Embed-vs-standalone heuristic (added 2026-05-20 from M4_SHORT_LINKS_DASHBOARD_REDESIGN P-EXEC-4).** When the SPEC requires aggregating across a parent-child table pair (e.g., clicks × links, attendees × events, lines × orders), Executor SHOULD probe both tables' tenant-scoped row counts at pre-flight time. If the child-side count is small but parent-side is > 1000, switch from the 2-query pattern (fetch parent + fetch child + JS join) to PostgREST FK embedded JOIN (`child_table!inner(...)`). The embed returns rows = child cardinality. This pattern is required when the parent-table tenant cardinality exceeds 1000 on ANY tenant the SPEC will run on."*
+- **Rationale:** The Executor (Sonnet) implementing this SPEC chose the natural 2-query + JS-lookup pattern, which is idiomatic but silently breaks on large parents. Codifying the embed-vs-standalone choice early avoids the regression.
+
+### 12.7 Status post-amendment-2
+
+- Commit `c3e4dae` (embed-JOIN fix on broadcasts-table + drilldown) pushed to develop.
+- Commit `<this one>` (FOREMAN_REVIEW amendment-2) pending.
+- IR34 §10 verdict still **PENDING DH-1 third pass** — Daniel re-verifies on the embed-JOIN code.
+- Total Pipeline commits now: 11 (was 9 + 1 UI fix + 1 docs amendment-2).
+- Expected post-fix browser numbers (per §11.5 SQL probe): broadcast `מחר אירוע מאי 2026` → 425 clicks / 233 unique leads / 425 unsubs / 36.0% CTR / 36.0% unsub. Drill-down should show ≥ 1 row (the unsubscribe link with 425 clicks; possibly + a registration link with 0 clicks not counted in drill-down because we only show clicked links).
+
+---
+
+*End of FOREMAN_REVIEW (POST-REGRESSION-AMENDED-TWICE, STILL PENDING-IR34-RE-VERIFY-3). Awaiting Daniel's third Chrome MCP pass to flip verdict 🟡 → 🟢.*
