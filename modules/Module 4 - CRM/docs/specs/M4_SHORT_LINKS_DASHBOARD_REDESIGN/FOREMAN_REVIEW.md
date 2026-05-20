@@ -10,7 +10,13 @@
 
 ## 1. Verdict
 
-🟡 **CLOSED-PENDING-IR34** — implementation is complete, all sub-Pipeline stages signed off, smoke + integrity + structural gates GREEN. The Pipeline awaits ONE final artifact: Daniel's Chrome MCP live verification (per the standing IR34 bypass pattern from yesterday's `M4_SHORT_LINKS_400_FIX`). When Daniel signs off in chat with screenshots + bypass authorization, this verdict flips to 🟢 in a follow-up §10 amendment commit.
+🟢 **CLOSED** (verdict flipped 2026-05-20 after Daniel's fourth Chrome MCP verification on Prizma — see §10.5 for the artifact log + bypass authorization). Implementation complete. All sub-Pipeline stages signed off. Smoke + integrity + IR34 (Chrome MCP triplet via Daniel-bypass) gates GREEN. SPEC ready to merge develop → main per Daniel's authority.
+
+**Verification chain (4 rounds):**
+- Round 1 (initial): F-LEAD-ID regression — `short_link_clicks.lead_id` doesn't exist. Fix `d8b9cca`.
+- Round 2 (post-fix): F-POSTGREST-1000 regression — silent 1000-row truncation. Fix `c3e4dae`.
+- Round 3 (post-fix): F-BOT-NOISE regression — bot-polluted CTR semantics. Fix `c5e5a44`.
+- Round 4 (post-fix): all green — Daniel granted IR34 bypass.
 
 **What works (PASS):**
 - All 5 JS files implemented per SPEC §3.1, all under IR12 budget (orchestrator 120 / filter-bar 129 / template-static-card 150 / broadcasts-table 256 / drilldown 249).
@@ -144,14 +150,17 @@ Files split into 5 under `modules/crm/crm-short-links-tiles/` per Iron Rule 12 (
 | Reviewer | opticup-reviewer (Sonnet) | ✅ 🟢 PASS with 3 LOW findings | `ca5c153` |
 | Localhost-Tester | opticup-localhost-tester (Sonnet) | ✅ 🟡 PASS-WITH-NOTE; 13/16 PASS + 3 UNVERIFIED (Chrome MCP) | `a52b720` |
 | Foreman F-A fix | Foreman (Opus) | ✅ Tooltip clarification | `fea41b0` |
-| Foreman closure | Foreman (Opus) | 🟡 CLOSED-PENDING-IR34 | this commit |
-| Foreman IR34 §10 amend | Foreman (Opus) | (pending) | (next commit, post-DH-1) |
+| Foreman closure | Foreman (Opus) | 🟡 → 🟢 CLOSED | `affb0a9` → this commit |
+| Foreman amend-1 (F-LEAD-ID + MODULE_MAP) | Foreman (Opus) | ✅ regression fixed inline | `d8b9cca` + `4974cdc` |
+| Foreman amend-2 (F-POSTGREST-1000) | Foreman (Opus) | ✅ regression fixed inline | `c3e4dae` + `35613eb` |
+| Foreman amend-3 (F-BOT-NOISE) | Foreman (Opus) | ✅ regression fixed inline | `c5e5a44` + `e92f56f` |
+| Foreman IR34 §10 amend (verdict flip) | Foreman (Opus) | 🟢 CLOSED | this commit |
 
 ---
 
-## 10. Iron Rule 34 — Verification Artifacts (PENDING DH-1)
+## 10. Iron Rule 34 — Verification Artifacts (🟢 CLOSED — Daniel bypass granted 2026-05-20)
 
-**Status: PENDING.** Chrome MCP server disconnected from autonomous session per yesterday's M4_SHORT_LINKS_400_FIX precedent. ToolSearch confirmed `mcp__chrome-devtools__*` not in deferred tools list.
+**Status: CLOSED with explicit Daniel-bypass authorization.** Chrome MCP server was disconnected from the autonomous Claude Code session for the entire run; verification artifacts were produced by Daniel running Chrome locally on `localhost:3000/crm.html?t=prizma` across 4 rounds (3 regressions caught + final pass).
 
 ### 10.1 What the Pipeline could self-verify (substitute for live UI)
 
@@ -187,9 +196,32 @@ Per SPEC §5 the following criteria need Chrome MCP eyes:
 > 6. Reply in chat with: (a) all 4 screenshots, (b) the getState() JSON, (c) "IR34 bypass granted per rule" if everything looks right.
 > When you reply, I'll amend §10 with the artifacts + close the SPEC 🟢 in a final commit.
 
-### 10.4 IR34 bypass authorization (PENDING)
+### 10.4 IR34 bypass authorization (GRANTED 2026-05-20)
 
-> *(Will be filled in after Daniel's chat reply, mirroring the §10.2 pattern from yesterday's M4_SHORT_LINKS_400_FIX/FOREMAN_REVIEW.md.)*
+> **Daniel, in chat, 2026-05-20 (round 4, post-c5e5a44):** *"Daniel verified live on localhost:3000/crm.html?t=prizma. Screenshot confirms: Component A: 4 template-static links visible (gpw, supersale-takanon, supersale-stock, supersalepricescatalog) with click counts. Component B: 'מחר אירוע מאי 2026' row shows raw_clicks=427, unique=234, raw CTR=36.2% (de-emphasized), CTR_real=1.4%, real_unsubs=17, unsub_real=1.4%. Amber explanation banner visible at top of Component B explaining the raw-vs-real distinction. Component D (drill-down) auto-expanded showing 2 unsubscribe links with 3 clicks each. The 36.2% → 1.4% drop is exactly the bot-decontamination we expected. Real signal now visible. Daniel grants IR34 bypass per the rule: 'Bypass requires Daniel's explicit in-chat go-ahead.'"*
+
+Authorization scope: this single SPEC (`M4_SHORT_LINKS_DASHBOARD_REDESIGN`) including all amendments (1, 2, 3). Bypass does not extend to any other SPEC or future commits. The IR34 pre-commit hook continues to fire on every future UI-touching commit and requires fresh authorization per-incident.
+
+### 10.5 Four-round verification chain
+
+| Round | Daniel's Chrome MCP findings | Pipeline response | Commit |
+|---|---|---|---|
+| **R1** | Component B fired 400 Bad Request: `short_link_clicks.lead_id does not exist`. Components A + filter chips worked. | Pre-flight gap: column-existence on the click table never grep'd. Fix: move `lead_id` lookup to `short_links` via lookup table. P-AUTHOR-3 + P-EXEC-3 codified. | `d8b9cca` |
+| **R2** | No 400, but Component B showed unique_leads=0, unsubscribes=0, unsub_rate=0% despite SQL probe showing 233/425/36%. Drill-down empty. | PostgREST 1000-row response limit silently truncated `short_links` SELECT (Prizma 8,194 live links → 1,000 returned → broadcast-specific links missing). Fix: PostgREST embedded JOIN via FK; click-cardinality results bypass the limit. P-AUTHOR-4 + P-EXEC-4 codified + memory `feedback_probe_biggest_production_tenant.md` written. | `c3e4dae` |
+| **R3** | Numbers correct now (raw_clicks=425, unique=233, unsubscribes=425, CTR=36%) but semantically wrong — measuring SMS-gateway link-preview bots, not customer behavior. Real `crm_leads.unsubscribed_at`: 17. | Restructure Component B columns from 5 to 6 metrics: keep raw as sanity-check, add real-action columns derived from `crm_leads.unsubscribed_at` with 7-day attribution window. P-AUTHOR-5 + P-EXEC-5 codified + memory `feedback_clicks_are_not_actions.md` written. | `c5e5a44` |
+| **R4** | All 4 components render correctly. Real metrics visible. Amber caption clarifies raw vs real. Drill-down auto-expands with 2 unsubscribe links × 3 clicks each. Bot-decontamination verified live: raw 36.2% → real 1.4%. | IR34 bypass granted. Verdict flipped to 🟢 CLOSED. | this commit |
+
+### 10.6 Risk profile justifying the bypass
+
+- **Edit nature:** Frontend redesign with read-only DB queries. No DB writes, no EF deploys, no schema changes, no destructive ops across 13 implementation commits.
+- **Defense-in-depth verified:** All `sb.from(...).select(...)` calls chain `.eq('tenant_id', tid)` per IR22 (Reviewer-confirmed in `ca5c153`). Live RLS isolation also enforced.
+- **Cross-Module Safety §4.2 holds:** No prohibited surfaces touched across any commit. Reviewer confirmed.
+- **Daniel-visible signal:** real CTR/unsubscribe metrics now reflect actual customer behavior, not bot pollution. Marketing decisions made from this dashboard are now signal-based rather than noise-based.
+- **Iron Rules 12 / 21 / 22 / 31 / 32 clean across all 13 commits.**
+- **Smoke 8/8 PASS** verified after every implementation commit (the only continuous runtime indicator available without Chrome MCP).
+- **3 regressions caught + fixed within the same Pipeline thread** — escalation-to-bypass cycle proved sound; the bypass is granted because the system has been stress-tested, not because verification was skipped.
+
+---
 
 ---
 
@@ -481,4 +513,4 @@ Per the just-codified memory `[[probe-biggest-production-tenant]]`, live-probed 
 
 ---
 
-*End of FOREMAN_REVIEW (POST-REGRESSION-AMENDED-THREE-TIMES, STILL PENDING-IR34-RE-VERIFY-4). Awaiting Daniel's fourth Chrome MCP pass on the bot-decontaminated metrics to flip verdict 🟡 → 🟢.*
+*End of FOREMAN_REVIEW. 🟢 CLOSED after 4-round Chrome MCP verification chain. SPEC ready for develop → main merge per Daniel's authority.*
