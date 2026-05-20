@@ -14,6 +14,11 @@
   var _elBroadcasts     = null;
   var _elDrilldown      = null;
 
+  /* Date-window snapshot — used by _onFilterChange to decide between full
+     DB reload (date changed) vs client-side re-filter (only toggle/type changed).
+     Set during _renderBroadcasts() so the first filter change has a baseline. */
+  var _lastDateWindow = null;
+
   /* Main entry point — called by crm-init.js / crm-bootstrap.js. */
   async function loadCrmShortLinksStats(host) {
     if (!host) return;
@@ -53,9 +58,18 @@
 
   /* Called whenever any filter chip changes. */
   function _onFilterChange(state) {
-    /* Date change → full reload (new DB query needed). */
-    /* Toggle / link-type change → client-side re-filter only. */
-    CrmShortLinksBroadcastsTable.applyFilter(state);
+    var dateChanged = !_lastDateWindow ||
+      state.days       !== _lastDateWindow.days ||
+      state.customFrom !== _lastDateWindow.customFrom ||
+      state.customTo   !== _lastDateWindow.customTo;
+
+    if (dateChanged) {
+      /* Date change → full reload (new DB query needed). */
+      _renderBroadcasts();
+    } else {
+      /* Toggle / link-type change → client-side re-filter only. */
+      CrmShortLinksBroadcastsTable.applyFilter(state);
+    }
   }
 
   async function _renderTemplateStatic() {
@@ -71,6 +85,13 @@
 
   async function _renderBroadcasts() {
     var state = CrmShortLinksFilterBar.getState();
+    /* Snapshot the date window we're about to query so _onFilterChange can
+       compare against it on the next chip click. */
+    _lastDateWindow = {
+      days:       state.days,
+      customFrom: state.customFrom,
+      customTo:   state.customTo
+    };
     try {
       await CrmShortLinksBroadcastsTable.render(
         _elBroadcasts,
