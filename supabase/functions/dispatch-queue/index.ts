@@ -60,7 +60,7 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST" && req.method !== "GET") return jsonResp({ ok: false, error: "method_not_allowed" }, 405);
 
-  const batchSize = 60;
+  const batchSize = 15; // 2026-05-20: hotfix M4_SMS_RATE_LIMIT_HOTFIX — reduced from 60 to halve cron-tick overlap (was 4 concurrent invocations causing Supabase per-trace rate-limit on send-message).
   const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
