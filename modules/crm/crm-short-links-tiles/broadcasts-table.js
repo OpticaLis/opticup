@@ -1,10 +1,13 @@
 /* =============================================================================
-   broadcasts-table.js — Component B: Broadcast aggregation table (primary view).
-   One row per broadcast in date range. Columns: שידור, תאריך, ערוץ, נשלחו,
-   קליקים, ייחודיים, CTR%, הסרות, הסרה%.
-   Sortable by date desc default. Row click → triggers Component D drill-down.
-   Part of M4_SHORT_LINKS_DASHBOARD_REDESIGN (2026-05-20).
-   Exports window.CrmShortLinksBroadcastsTable.
+   broadcasts-table.js — Component B: Broadcast aggregation table.
+   Columns: שידור / תאריך / ערוץ / נשלחו / קליקים גולמיים / ייחודיים שלחצו /
+            CTR גולמי % / CTR אמיתי % / הסרות אמיתיות / הסרה אמיתית %.
+   Row click → Component D drill-down. M4_SHORT_LINKS_DASHBOARD_REDESIGN 2026-05-20.
+   F-BOT-NOISE amendment-3 same day: SMS-gateway preview bots inflate raw clicks
+   ~95% in the first 6 min after send. Real metrics (crm_leads.unsubscribed_at
+   within 7d of broadcast) are the marketing signal; raw stays as sanity check
+   with explicit "כולל בוטים" labeling. v1 = unsubscribes only; future can add
+   registrations + purchases to ctr_real. Exports window.CrmShortLinksBroadcastsTable.
    ============================================================================= */
 (function () {
   'use strict';
@@ -47,6 +50,14 @@
           '<span class="text-sm font-semibold text-slate-700">שידורים — סטטיסטיקת קישורים</span>' +
           '<span id="sl-broadcasts-count" class="text-xs text-slate-400"></span>' +
         '</div>' +
+        /* Explanatory caption (F-BOT-NOISE amendment 2026-05-20): users see the
+           raw numbers AND the real numbers side-by-side; this caption tells them
+           which to trust for marketing decisions. */
+        '<div class="px-4 py-2 border-b border-slate-100 bg-amber-50 text-xs text-slate-600">' +
+          '<span class="font-semibold text-amber-800">שים לב:</span> ' +
+          'המספרים הגולמיים כוללים בוטים שסורקים קישורי SMS (התראות, אבטחה, תצוגה מקדימה). ' +
+          'ה-CTR האמיתי נמדד לפי פעולות שלקוחות ביצעו בפועל (כרגע: הסרה; בעתיד: גם הרשמה ורכישה).' +
+        '</div>' +
         '<div class="overflow-x-auto">' +
           '<div id="sl-broadcasts-inner" class="text-center text-slate-400 py-8 text-sm">טוען נתוני שידורים...</div>' +
         '</div>' +
@@ -74,6 +85,11 @@
     _renderRows(parent.parentElement);
   }
 
+  function _isoToMs(iso) {
+    var d = new Date(iso);
+    return d.getTime();
+  }
+
   async function _loadData(filterState) {
     var tid = getTenantId();
     if (!tid) return [];
@@ -90,21 +106,12 @@
     var broadcasts = bRes.data || [];
     if (!broadcasts.length) return [];
 
-    // Fetch clicks with their link metadata embedded via PostgREST FK relationship
-    // (short_link_clicks.short_link_id → short_links.id).
-    //
-    // NOTE (M4_SHORT_LINKS_DASHBOARD_REDESIGN amendment-2 2026-05-20, F-POSTGREST-1000):
-    // The prior linkInfoById approach silently broke on Prizma — it fetched the
-    // short_links table with `.select(...).eq('tenant_id', tid).gt('expires_at', now)`
-    // but PostgREST defaults to a 1000-row response limit. Prizma has 8,194 live
-    // short_links, so the lookup was missing 7,194 link records. The 179 unsubscribe
-    // links for last-day broadcasts weren't in the first 1000 rows returned →
-    // unique_leads = 0, unsubscribes = 0, despite the SQL aggregate showing 233 & 425.
-    //
-    // The embedded JOIN sidesteps this: returned cardinality = click count (~473 on
-    // Prizma, ~15 on demo), well under any limit. PostgREST joins to short_links
-    // server-side via the FK; each click row carries its link's link_type + lead_id
-    // in `short_links` payload (foreign-table embed, syntax `!inner` requires match).
+    // F-POSTGREST-1000 amendment-2: clicks embed link metadata via FK
+    // (short_link_clicks.short_link_id → short_links.id) instead of fetching
+    // the full short_links table separately. PostgREST defaults to a 1000-row
+    // response limit; Prizma has 8,194 live short_links — a direct fetch
+    // silently truncated to 1000 → broadcast-specific links missing → zero
+    // metrics. Embed returns rows = click count (~473 Prizma), never link count.
     var clicksRes = await sb.from('short_link_clicks')
       .select('broadcast_id, short_link_id, short_links!inner(link_type, lead_id)')
       .eq('tenant_id', tid)
@@ -112,34 +119,92 @@
     if (clicksRes.error) throw new Error(clicksRes.error.message);
     var clicks = clicksRes.data || [];
 
-    // Aggregate per broadcast_id. Each `c.short_links` is the FK-joined link record.
+    // Aggregate raw clicks per broadcast_id (bot-polluted but useful as sanity check).
+    // Each `c.short_links` is the FK-joined link record.
     var byBroadcast = {};
     clicks.forEach(function (c) {
       var slot = byBroadcast[c.broadcast_id] || (byBroadcast[c.broadcast_id] = {
-        total: 0, leadSet: {}, unsubscribes: 0
+        rawClicks: 0, uniqueClickerSet: {}
       });
-      slot.total += 1;
+      slot.rawClicks += 1;
       var lnk = c.short_links;
-      if (lnk) {
-        if (lnk.lead_id) slot.leadSet[lnk.lead_id] = true;
-        if (lnk.link_type === 'unsubscribe') slot.unsubscribes += 1;
-      }
+      if (lnk && lnk.lead_id) slot.uniqueClickerSet[lnk.lead_id] = true;
+    });
+
+    // F-BOT-NOISE amendment-3: real-unsubscribe signal. Bots inflate raw_clicks
+    // ~95% in the first 6 min after send (Prizma 2026-05-20: 267 of 425 clicks
+    // were bots, 17 real unsubs attributed within 7d). Approach: fetch leads
+    // with recent unsubscribed_at (small set — Prizma all-time = 54), fetch
+    // their short_links broadcast attribution, JS-attribute to a broadcast if
+    // lead has a short_link for it AND unsubscribed_at ∈ [bcast.created_at, +7d].
+    var unsubsRes = await sb.from('crm_leads')
+      .select('id, unsubscribed_at')
+      .eq('tenant_id', tid)
+      .not('unsubscribed_at', 'is', null)
+      .gte('unsubscribed_at', dateFrom.toISOString());
+    if (unsubsRes.error) throw new Error(unsubsRes.error.message);
+    var unsubs = unsubsRes.data || [];
+
+    /* Lead-id → broadcast-id set lookup. Only fetched when there are unsubs to
+       attribute. URL ceiling check: max ~54 lead UUIDs × 36 chars = ~2KB, well
+       under the 16KB PostgREST limit. */
+    var pairsByLead = {};
+    if (unsubs.length) {
+      var unsubLeadIds = unsubs.map(function (u) { return u.id; });
+      var pairsRes = await sb.from('short_links')
+        .select('lead_id, broadcast_id')
+        .eq('tenant_id', tid)
+        .in('lead_id', unsubLeadIds)
+        .not('broadcast_id', 'is', null);
+      if (pairsRes.error) throw new Error(pairsRes.error.message);
+      (pairsRes.data || []).forEach(function (p) {
+        if (!pairsByLead[p.lead_id]) pairsByLead[p.lead_id] = {};
+        pairsByLead[p.lead_id][p.broadcast_id] = true;
+      });
+    }
+
+    /* unsubAtByLead: lead_id → unsubscribed_at-ms timestamp. */
+    var unsubAtByLead = {};
+    unsubs.forEach(function (u) { unsubAtByLead[u.id] = _isoToMs(u.unsubscribed_at); });
+
+    var WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+    /* Per-broadcast real-unsub count: leads who unsubscribed within 7d AND were
+       attributed to this broadcast (had a short_link tied to it). */
+    var realUnsubsByBroadcast = {};
+    broadcasts.forEach(function (b) {
+      var bStartMs = _isoToMs(b.created_at);
+      var bEndMs   = bStartMs + WINDOW_MS;
+      var count = 0;
+      Object.keys(unsubAtByLead).forEach(function (leadId) {
+        var ts = unsubAtByLead[leadId];
+        if (ts < bStartMs || ts >= bEndMs) return;
+        var bMap = pairsByLead[leadId];
+        if (bMap && bMap[b.id]) count += 1;
+      });
+      realUnsubsByBroadcast[b.id] = count;
     });
 
     return broadcasts.map(function (b) {
-      var agg  = byBroadcast[b.id] || { total: 0, leadSet: {}, unsubscribes: 0 };
+      var agg  = byBroadcast[b.id] || { rawClicks: 0, uniqueClickerSet: {} };
       var sent = b.total_sent || 0;
+      var realUnsubs = realUnsubsByBroadcast[b.id] || 0;
+      /* real_actions: v1 ships unsubscribe-only. Future amendment can add
+         registrations (via crm_event_attendees attribution) + purchases
+         (crm_event_attendees.purchase_amount > 0). */
+      var realActions = realUnsubs;
       return {
-        id:           b.id,
-        name:         b.name || '—',
-        channel:      CHANNEL_LABELS[b.channel] || b.channel || '—',
-        created_at:   b.created_at,
-        total_sent:   sent,
-        total_clicks: agg.total,
-        unique_leads: Object.keys(agg.leadSet).length,
-        ctr:          pct(agg.total, sent),
-        unsubscribes: agg.unsubscribes,
-        unsub_pct:    pct(agg.unsubscribes, sent)
+        id:               b.id,
+        name:             b.name || '—',
+        channel:          CHANNEL_LABELS[b.channel] || b.channel || '—',
+        created_at:       b.created_at,
+        total_sent:       sent,
+        raw_clicks:       agg.rawClicks,
+        unique_clickers:  Object.keys(agg.uniqueClickerSet).length,
+        ctr_raw:          pct(agg.rawClicks, sent),
+        ctr_real:         pct(realActions, sent),
+        real_unsubs:      realUnsubs,
+        unsub_real_pct:   pct(realUnsubs, sent)
       };
     });
   }
@@ -151,7 +216,7 @@
 
     var state = _filterState || {};
     var visible = _allRows.filter(function (r) {
-      if (state.onlyWithClicks && r.total_clicks === 0) return false;
+      if (state.onlyWithClicks && r.raw_clicks === 0) return false;
       return true;
     });
 
@@ -170,36 +235,49 @@
       return;
     }
 
+    /* Column classes: raw metrics use de-emphasized slate-500; real metrics
+       use slate-800 + bold to draw the eye to the signal-bearing column. */
+    var CLS_TH_RAW   = CLS_TH_NUM + ' text-slate-500';
+    var CLS_TH_REAL  = CLS_TH_NUM;
+    var CLS_TD_RAW   = CLS_TD_NUM + ' text-slate-500';
+    var CLS_TD_REAL  = CLS_TD_NUM + ' font-semibold';
+    var TIP_RAW      = 'כולל בוטים שסורקים את הקישור (תצוגה מקדימה / אבטחה) — אינדיקטור גס בלבד';
+    var TIP_REAL     = 'נמדד לפי פעולות בפועל של נמענים (כרגע: הסרה תוך 7 ימים מהשליחה)';
+
     var cols = [
-      { key: 'name',         cls: CLS_TH,     label: 'שידור' },
-      { key: 'created_at',   cls: CLS_TH,     label: 'תאריך' },
-      { key: 'channel',      cls: CLS_TH,     label: 'ערוץ' },
-      { key: 'total_sent',   cls: CLS_TH_NUM, label: 'נשלחו' },
-      { key: 'total_clicks', cls: CLS_TH_NUM, label: 'קליקים' },
-      { key: 'unique_leads', cls: CLS_TH_NUM, label: 'ייחודיים' },
-      { key: 'ctr',          cls: CLS_TH_NUM, label: 'CTR%' },
-      { key: 'unsubscribes', cls: CLS_TH_NUM, label: 'הסרות' },
-      { key: 'unsub_pct',    cls: CLS_TH_NUM, label: 'הסרה%' }
+      { key: 'name',            cls: CLS_TH,       label: 'שידור',           title: '' },
+      { key: 'created_at',      cls: CLS_TH,       label: 'תאריך',           title: '' },
+      { key: 'channel',         cls: CLS_TH,       label: 'ערוץ',            title: '' },
+      { key: 'total_sent',      cls: CLS_TH_NUM,   label: 'נשלחו',           title: '' },
+      { key: 'raw_clicks',      cls: CLS_TH_RAW,   label: 'קליקים גולמיים',  title: TIP_RAW },
+      { key: 'unique_clickers', cls: CLS_TH_RAW,   label: 'ייחודיים שלחצו',  title: TIP_RAW },
+      { key: 'ctr_raw',         cls: CLS_TH_RAW,   label: 'CTR גולמי %',     title: TIP_RAW },
+      { key: 'ctr_real',        cls: CLS_TH_REAL,  label: 'CTR אמיתי %',     title: TIP_REAL },
+      { key: 'real_unsubs',     cls: CLS_TH_REAL,  label: 'הסרות אמיתיות',   title: TIP_REAL },
+      { key: 'unsub_real_pct',  cls: CLS_TH_REAL,  label: 'הסרה אמיתית %',   title: TIP_REAL }
     ];
 
     var thead = cols.map(function (c) {
       var arrow = (_sortKey === c.key) ? (_sortDir === 'asc' ? ' ▲' : ' ▼') : '';
-      return '<th class="' + c.cls + '" data-sort="' + c.key + '">' + escapeHtml(c.label) + arrow + '</th>';
+      var titleAttr = c.title ? ' title="' + escapeAttr(c.title) + '"' : '';
+      return '<th class="' + c.cls + '" data-sort="' + c.key + '"' + titleAttr + '>' + escapeHtml(c.label) + arrow + '</th>';
     }).join('');
 
     var tbody = sorted.map(function (r) {
-      var ctrCls = parseFloat(r.ctr) > 5 ? ' text-emerald-700 font-semibold' : '';
-      var unsubCls = parseFloat(r.unsub_pct) > 2 ? ' text-rose-600 font-semibold' : '';
+      /* Color emphasis on the REAL metrics only; raw stays de-emphasized. */
+      var ctrRealCls   = parseFloat(r.ctr_real) > 2  ? ' text-emerald-700' : '';
+      var unsubRealCls = parseFloat(r.unsub_real_pct) > 2 ? ' text-rose-600' : '';
       return '<tr class="hover:bg-blue-50 cursor-pointer transition-colors" data-broadcast-id="' + escapeAttr(r.id) + '" data-broadcast-name="' + escapeAttr(r.name) + '">' +
         '<td class="' + CLS_TD + ' max-w-xs truncate font-medium">' + escapeHtml(r.name) + '</td>' +
         '<td class="' + CLS_TD + '">' + escapeHtml(formatDate(r.created_at)) + '</td>' +
         '<td class="' + CLS_TD + '">' + escapeHtml(r.channel) + '</td>' +
         '<td class="' + CLS_TD_NUM + '">' + r.total_sent + '</td>' +
-        '<td class="' + CLS_TD_NUM + ' font-semibold">' + r.total_clicks + '</td>' +
-        '<td class="' + CLS_TD_NUM + '">' + r.unique_leads + '</td>' +
-        '<td class="' + CLS_TD_NUM + ctrCls + '">' + r.ctr + '</td>' +
-        '<td class="' + CLS_TD_NUM + '">' + r.unsubscribes + '</td>' +
-        '<td class="' + CLS_TD_NUM + unsubCls + '">' + r.unsub_pct + '</td>' +
+        '<td class="' + CLS_TD_RAW + '" title="' + escapeAttr(TIP_RAW) + '">' + r.raw_clicks + '</td>' +
+        '<td class="' + CLS_TD_RAW + '" title="' + escapeAttr(TIP_RAW) + '">' + r.unique_clickers + '</td>' +
+        '<td class="' + CLS_TD_RAW + '" title="' + escapeAttr(TIP_RAW) + '">' + r.ctr_raw + '</td>' +
+        '<td class="' + CLS_TD_REAL + ctrRealCls + '" title="' + escapeAttr(TIP_REAL) + '">' + r.ctr_real + '</td>' +
+        '<td class="' + CLS_TD_REAL + '" title="' + escapeAttr(TIP_REAL) + '">' + r.real_unsubs + '</td>' +
+        '<td class="' + CLS_TD_REAL + unsubRealCls + '" title="' + escapeAttr(TIP_REAL) + '">' + r.unsub_real_pct + '</td>' +
       '</tr>';
     }).join('');
 
