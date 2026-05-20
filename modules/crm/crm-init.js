@@ -30,6 +30,10 @@
       var slHost = document.getElementById('short-links-host');
       if (slHost) loadCrmShortLinksStats(slHost);
     }
+    if (name === 'funnel-health' && typeof window.renderFunnelDashboard === 'function') {
+      var fhHost = document.getElementById('funnel-dashboard-host');
+      if (fhHost) window.renderFunnelDashboard(fhHost);
+    }
   }
   window.showCrmTab = showCrmTab;
 

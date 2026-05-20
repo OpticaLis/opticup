@@ -1,0 +1,174 @@
+/* =============================================================================
+   crm-funnel-dashboard.css — Funnel Health Dashboard styles
+   14-tile grid: 4 cols → 2 cols tablet → 1 col mobile. RTL Hebrew. IR27.
+   Source: M4_FUNNEL_HEALTH_DASHBOARD (2026-05-19). Phase 2.5 Deliverable A.
+   ============================================================================= */
+
+/* ── GRID LAYOUT ─────────────────────────────────────────────────────────── */
+.fhd-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  padding: 1rem 0;
+  direction: rtl;
+}
+
+@media (max-width: 1024px) {
+  .fhd-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .fhd-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── TILE CARD ───────────────────────────────────────────────────────────── */
+.fhd-tile {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px 0 rgba(0,0,0,.06), 0 1px 2px -1px rgba(0,0,0,.04);
+  transition: box-shadow .15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 120px;
+}
+
+.fhd-tile:hover {
+  box-shadow: 0 4px 12px 0 rgba(30,58,138,.1);
+}
+
+/* Wide tile for pixel-gap (spans 2 cols on ≥ md) */
+.fhd-tile-wide {
+  grid-column: span 2;
+}
+@media (max-width: 640px) {
+  .fhd-tile-wide { grid-column: span 1; }
+}
+
+/* ── TILE HEADER ─────────────────────────────────────────────────────────── */
+.fhd-tile-title {
+  font-size: .8125rem;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  border-bottom: 1px solid #f1f5f9;
+  padding-block-end: .375rem;
+}
+
+/* ── TILE BODY ───────────────────────────────────────────────────────────── */
+.fhd-tile-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+}
+
+/* ── STATS ───────────────────────────────────────────────────────────────── */
+.fhd-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .125rem;
+}
+.fhd-stat-num {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  line-height: 1;
+}
+.fhd-stat-label {
+  font-size: .75rem;
+  color: #94a3b8;
+}
+.fhd-delta {
+  font-size: .8125rem;
+  font-weight: 600;
+  align-self: center;
+}
+.fhd-up { color: #16a34a; }
+.fhd-dn { color: #dc2626; }
+
+/* ── ROWS (source mix, broadcasts, etc.) ─────────────────────────────────── */
+.fhd-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .2rem .25rem;
+  border-radius: .25rem;
+  font-size: .8125rem;
+  color: #334155;
+}
+.fhd-row:nth-child(odd) { background: #f8fafc; }
+.fhd-row b { color: #1e3a8a; font-weight: 700; }
+.fhd-row small { color: #64748b; font-size: .7rem; }
+
+/* ── EMPTY STATE ─────────────────────────────────────────────────────────── */
+.fhd-empty {
+  font-size: .8125rem;
+  color: #94a3b8;
+  text-align: center;
+  padding: .75rem 0;
+}
+
+/* ── DRILL-DOWN BUTTON ───────────────────────────────────────────────────── */
+.fhd-drill {
+  align-self: flex-end;
+  margin-block-start: auto;
+  padding: .25rem .625rem;
+  font-size: .75rem;
+  font-weight: 500;
+  color: #4f46e5;
+  background: transparent;
+  border: 1px solid #e0e7ff;
+  border-radius: .375rem;
+  cursor: pointer;
+  transition: background .1s ease, color .1s ease;
+}
+.fhd-drill:hover {
+  background: #eef2ff;
+  color: #3730a3;
+}
+
+/* ── SPARKLINE BAR CHART ─────────────────────────────────────────────────── */
+.fhd-spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 64px;
+  padding-block-start: .25rem;
+}
+.fhd-spark-bar {
+  flex: 1;
+  min-width: 4px;
+  background: #6366f1;
+  border-radius: 2px 2px 0 0;
+  opacity: .75;
+  transition: opacity .1s ease;
+}
+.fhd-spark-bar:hover { opacity: 1; }
+
+/* ── LOADING / ERROR ─────────────────────────────────────────────────────── */
+.fhd-loading, .fhd-error {
+  text-align: center;
+  padding: 2rem;
+  font-size: .9375rem;
+  color: #64748b;
+  border-radius: .75rem;
+  background: #f8fafc;
+}
+.fhd-error { color: #dc2626; background: #fef2f2; }
+
+/* ── FOOTER ──────────────────────────────────────────────────────────────── */
+.fhd-footer {
+  margin-block-start: .75rem;
+  font-size: .75rem;
+  color: #94a3b8;
+  text-align: center;
+}
