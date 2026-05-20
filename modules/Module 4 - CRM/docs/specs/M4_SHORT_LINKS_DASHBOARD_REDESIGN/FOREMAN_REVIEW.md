@@ -193,4 +193,101 @@ Per SPEC §5 the following criteria need Chrome MCP eyes:
 
 ---
 
-*End of FOREMAN_REVIEW (PENDING-IR34). Awaiting Daniel Chrome MCP verification (DH-1) to flip verdict 🟡 → 🟢.*
+## 11. Post-DH-1 Regression + Foreman Amendment (2026-05-20)
+
+### 11.1 Regression discovered by Daniel's Chrome verification
+
+Daniel ran Chrome verification on `localhost:3000/crm.html?t=prizma` and surfaced a 400 Bad Request in Component B (broadcasts-table). Console error:
+
+```
+broadcasts-table load failed: Error: column short_link_clicks.lead_id does not exist
+   at _loadData (broadcasts-table.js:104:32)
+   at async Object.render (broadcasts-table.js:56:18)
+   at async _renderBroadcasts (crm-short-links-stats.js:96:7)
+```
+
+**What worked in the same verification pass:**
+- Template-static card (Component A): ✅ rendered 4 Prizma links (gpw, supersale-takanon, supersale-stock, supersalepricescatalog).
+- Date chips: ✅ work.
+- Smart filter "only with clicks": ✅ works.
+- Drill-down: not testable (broadcasts-table failure short-circuits the row-click trigger).
+- `JSON.stringify(CrmShortLinksFilterBar.getState())`: returned `{"onlyWithClicks":true,"days":30,"customFrom":null,"customTo":null,"linkTypeFilter":"all"}` — filter-bar state machine works correctly.
+
+### 11.2 Root cause
+
+Schema reality (verified by post-failure probe):
+
+| Table | Columns containing `lead_id`? |
+|---|---|
+| `short_link_clicks` | **NO** — has `short_link_id`, `tenant_id`, `clicked_at`, `ip_hash`, `user_agent`, `referer`, `created_at`, `broadcast_id`. That's it. |
+| `short_links` | **YES** — has `id`, `tenant_id`, `code`, `target_url`, `link_type`, `lead_id`, `event_id`, `expires_at`, `click_count`, `created_at`, `message_log_id`, `broadcast_id`. |
+
+Per-recipient short links carry `lead_id` at link-creation time, not at click-recording time. To compute the unique-click-leads metric, the JS must JOIN clicks → short_links via `short_link_id` and use the link's `lead_id`.
+
+The Executor wrote `.select('short_link_id, broadcast_id, lead_id')` against `short_link_clicks` and then `c.lead_id` in the aggregation — both were against the wrong table. This compiled fine on the Executor's side because Supabase JS just builds a URL; the 400 only fires at runtime when PostgREST parses the SELECT.
+
+### 11.3 Pre-flight gap analysis
+
+Foreman ran 4 pre-flight probes at SPEC-author time:
+1. ✅ `link_type` enum distribution (caught §8 stop-trigger).
+2. ✅ `crm_broadcasts` column schema (caught all column existence).
+3. ✅ `short_link_clicks` count + broadcast_id distribution.
+4. ✅ Perf probe via EXPLAIN ANALYZE (caught D7 ceiling).
+
+What was missing:
+- ❌ `short_link_clicks` column schema — the click count probe assumed column existence; never grep'd `information_schema.columns` to confirm.
+- ❌ `short_links.lead_id` existence — assumed from "per-recipient" semantic; partially verified by ad-hoc `column_name IN (...)` query after pre-flight #3 but `short_link_clicks.lead_id` was never checked.
+
+The Executor's Step 1.5 DB Pre-Flight (per `opticup-executor` SKILL.md) was supposed to catch column-existence issues, but Sonnet didn't probe schema before authoring the SELECT — relied on the SPEC's category mapping and the Brief's metric description ("unique-click leads").
+
+### 11.4 Fix (commit `d8b9cca`, 2026-05-20)
+
+**broadcasts-table.js (3 changes):**
+- Drop `lead_id` from `short_link_clicks` SELECT.
+- Add `lead_id` to `short_links` SELECT (alongside `link_type`).
+- Rename `linkTypeById` → `linkInfoById` holding `{ link_type, lead_id }`. Per-click aggregator looks up `info.lead_id` and `info.link_type` via the lookup table.
+
+**drilldown.js (1 change):**
+- Drop `lead_id` from `short_link_clicks` SELECT. (It was dead-code — drill-down only computes `total_clicks` + `last_clicked` per link.)
+
+### 11.5 Live verification of the fix
+
+Foreman ran the fixed query shape directly against Prizma DB (CTE form, same JOIN structure as the JS aggregator). Result for the 4 Prizma broadcasts in the last 30 days:
+
+| Broadcast | Sent | Clicks | Unique leads | Unsubs | CTR% | Unsub% |
+|---|---|---|---|---|---|---|
+| מחר אירוע מאי 2026 | 1,179 | 425 | 233 | 425 | 36.0 | 36.0 |
+| טסט | 0 | 0 | 0 | 0 | 0 | 0 |
+| תזכורת לאירוע מאי 26 | 0 | 0 | 0 | 0 | 0 | 0 |
+| קדם אירוע סופרסייל 24 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+Real-world signal: 100% of click traffic on yesterday's main SMS broadcast is unsubscribe-link clicks (CTR% === Unsub% = 36.0%). That's a Daniel-eyes-only operational observation, not a bug — accurate reflection of recipient behavior.
+
+The fix's query shape is now structurally sound. Smoke 8/8 PASS post-fix.
+
+### 11.6 Additional Author-Skill Proposal — P-AUTHOR-3
+
+**P-AUTHOR-3 — Column-existence probe is mandatory for any SPEC whose §0 includes a JOIN, SELECT-with-projection, or `c.<col>` reference**
+
+- **Where:** `.claude/skills/opticup-strategic/SKILL.md` — §"Step 5.3 Runtime Semantics Rehearsal" — add as 5.3a.
+- **Change:** *"**Column-existence probe (added 2026-05-20 from M4_SHORT_LINKS_DASHBOARD_REDESIGN P-AUTHOR-3).** When SPEC §0 rehearses a query that references a column from a table that isn't the same table the SPEC owns, the Foreman MUST grep `information_schema.columns` for that table and confirm every projected column exists. This is mechanical, takes 30 seconds per table, and catches the entire class of 'JS query builds fine but PostgREST returns 400 at runtime' bugs. The §0.3 Schema Verification step is necessary but not sufficient — it must also enumerate `\\d <table>` for every table the SPEC reads from, not just the table containing the SPEC's primary keys."*
+- **Rationale:** Today's regression cost Daniel 1 round of live verification + 1 amendment cycle. A 30-second pre-flight grep for `SELECT column_name FROM information_schema.columns WHERE table_name='short_link_clicks'` would have surfaced the missing `lead_id` BEFORE the Executor ever wrote the broken SELECT. Codifying this as a hard step in §5.3 prevents the entire class.
+
+### 11.7 Additional Executor-Skill Proposal — P-EXEC-3
+
+**P-EXEC-3 — Before writing any `.select('col1, col2, col3')` against a table, the Executor MUST list the table's columns**
+
+- **Where:** `.claude/skills/opticup-executor/SKILL.md` — §"Step 1.5 DB Pre-Flight Check" — add column-projection sub-bullet.
+- **Change:** *"**SELECT-projection probe (added 2026-05-20 from M4_SHORT_LINKS_DASHBOARD_REDESIGN P-EXEC-3).** Before writing any new `sb.from('<table>').select('<projection>')` call, the Executor MUST query `\\d <table>` (or `information_schema.columns`) and confirm every column in the projection exists. The Supabase JS client builds the URL synchronously without DB validation — a typo or wrong-table column name only surfaces at runtime as a PostgREST 400. The probe is 1 MCP call, takes < 5 seconds, and catches the entire class. The Foreman's §0 SHOULD enumerate the columns the Executor needs (P-AUTHOR-3), but the Executor MUST verify even if the Foreman didn't."*
+- **Rationale:** Today's Executor never grep'd `short_link_clicks` columns; trusted the SPEC's metric description and assumed `lead_id` lived there because per-recipient links carry it. Same root cause as P-AUTHOR-3, different layer.
+
+### 11.8 Status post-amendment
+
+- Commit `d8b9cca` (UI fix) pushed to develop.
+- Commit `<this one>` (FOREMAN_REVIEW amendment) pending.
+- IR34 §10 verdict still **PENDING DH-1 re-verification** — Daniel must re-run Chrome verification on the fixed code before flipping 🟡 → 🟢.
+- Total Pipeline commits now: 9 (was 7 + 1 UI fix + 1 docs amendment).
+
+---
+
+*End of FOREMAN_REVIEW (POST-REGRESSION-AMENDED, STILL PENDING-IR34-RE-VERIFY). Awaiting Daniel's second Chrome MCP pass on the fixed broadcasts-table to flip verdict 🟡 → 🟢.*
