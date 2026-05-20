@@ -374,4 +374,111 @@ Each click row carries the link's full metadata for drill-down rendering. `expir
 
 ---
 
-*End of FOREMAN_REVIEW (POST-REGRESSION-AMENDED-TWICE, STILL PENDING-IR34-RE-VERIFY-3). Awaiting Daniel's third Chrome MCP pass to flip verdict 🟡 → 🟢.*
+## 13. Third Post-DH-1 Regression + Foreman Amendment-3 — F-BOT-NOISE (2026-05-20)
+
+### 13.1 Regression discovered by Daniel's third Chrome verification
+
+Daniel re-tested commit `c3e4dae` on Prizma. The embed-JOIN fix delivered the correct raw numbers — `raw_clicks=425`, `unique_leads=233`, `unsubscribes=425` — matching my §11.5 SQL probe exactly. But Daniel rejected the verdict on a different axis: **the numbers were correct measurements of the wrong thing**.
+
+Daniel's evidence:
+- 267 clicks in the first 6 minutes after send (timing: 08:18→21, 08:19→48, 08:20→52, 08:21→56, 08:22→58, 08:23→32, then 1-3/min). Bot signature, not human marketing response.
+- `crm_leads.unsubscribed_at` actually populated (i.e., recipients who went through with the unsubscribe POST handler) in the last 7 days across ALL Prizma broadcasts: **20**.
+- "CTR 36% / unsub 36%" displayed in the browser was 96% SMS-gateway link-preview bots (anti-phishing scanners, message-preview fetchers, URL warming).
+
+The marketing signal Daniel needs is "what % of customers actually responded", not "what % of HTTP GETs to the short-link came in". These are different things and the prior dashboard conflated them.
+
+### 13.2 Root cause — measuring the wrong event
+
+Clicks are not actions. An HTTP GET to `/r/abc123` happens for many reasons:
+- A human read the SMS and tapped the link (the signal we want).
+- The carrier's URL-preview service fetched the link to generate a card.
+- An anti-phishing service scanned the link before delivery.
+- A spam classifier or AV product fetched the URL.
+- The recipient's keyboard/SMS app pre-warmed the link for faster open.
+
+All of these write a row to `short_link_clicks`. Only the first is a marketing signal. The bot:human ratio scales with audience size, peaks in the first 6 minutes, and on Prizma's 1,179-recipient broadcast was ~25:1.
+
+Authoritative business-state lives in `crm_leads.unsubscribed_at` — that column is only set when the unsubscribe form's POST handler confirms the action server-side, which bots virtually never complete. Reading the *state field* instead of the *click event* gives the real-action signal.
+
+### 13.3 Why §11.5 SQL probe didn't catch it (lesson recurs)
+
+My §11.5 SQL probe computed `clicks_on_unsubscribe_link` and reported 425, matching the JS-aggregator's eventual output. The probe verified the QUERY was correct — but the underlying METRIC was wrong. Two-layer verification (raw SQL + PostgREST) catches transport bugs but not semantic bugs.
+
+**New lesson on top of §12.3:** "Probe both layers" is necessary but not sufficient. Probes must also be evaluated against **what Daniel actually wants to know**. The Brief's metric description (Component 1 "Unique-click leads" + "Unsubscribe rate%") was operationally vague — it didn't specify "human unique-click leads" vs "any HTTP-GET unique-clickers". Without that disambiguation, the executor + reviewer + tester + Foreman all built the wrong thing correctly.
+
+### 13.4 Fix (commit `c5e5a44`, 2026-05-20)
+
+Component B columns restructured from 5 metrics to 6 (with 1 retained as "unique clickers" rather than dropped):
+
+**Removed (bot-polluted, displayed as if they were marketing signal):**
+- `unsubscribes` = COUNT(clicks on link_type='unsubscribe').
+- `ctr` = clicks / sent.
+- `unsub_pct` = clicks_on_unsubscribe / sent.
+
+**Renamed (kept but de-emphasized as sanity-check indicators):**
+- `total_clicks` → `raw_clicks` (label: "קליקים גולמיים", de-emphasized text-slate-500, tooltip "כולל בוטים").
+- `unique_leads` → `unique_clickers` (label: "ייחודיים שלחצו").
+- `ctr` → `ctr_raw` (label: "CTR גולמי %").
+
+**Added (real-action metrics, displayed as the marketing signal):**
+- `ctr_real` = real_actions / sent. v1 ships `real_actions = real_unsubs`; future amendments add registrations + purchases.
+- `real_unsubs` (label: "הסרות אמיתיות") = COUNT(DISTINCT lead) where `lead.unsubscribed_at ∈ [b.created_at, +7d]` AND lead has a short_link tied to broadcast b. Computed via 2 new queries — Q3 fetches recent-unsub leads, Q4 fetches their short_links attribution pairs.
+- `unsub_real_pct` (label: "הסרה אמיתית %") = real_unsubs / sent.
+
+**UI emphasis:** raw columns in `text-slate-500`, real columns in `font-semibold`. Hover tooltips on every metric column. Amber-background explanatory caption between section title and table.
+
+**Performance:** Q3 returns 20-54 rows on Prizma (well under PostgREST 1000-row limit). Q4 returns ~50-200 rows (filtered by `.in('lead_id', unsub_lead_ids)`, also safe). Both bypass the F-POSTGREST-1000 trap by construction (cardinality bounded by unsubscribe count, not link count).
+
+### 13.5 Live verification of the fix
+
+Per the just-codified memory `[[probe-biggest-production-tenant]]`, live-probed BOTH layers BEFORE committing:
+
+**Layer 1 — raw SQL (service-role MCP):**
+| Broadcast | sent | raw_clicks | real_unsubs |
+|---|---|---|---|
+| מחר אירוע מאי 2026 | 1,179 | 427 | **17** |
+| טסט | 0 | 0 | 0 |
+| תזכורת לאירוע מאי 26 | 0 | 0 | 0 |
+| קדם אירוע סופרסייל 24 | 0 | 0 | 0 |
+
+**Layer 2 — PostgREST transport:** the 2 new queries (`crm_leads.unsubscribed_at` not-null fetch + `short_links.lead_id IN [...]` fetch) both have cardinality structurally below the 1000-row limit. The previously-failed pattern was 8,194-row `short_links` SELECT; the new pattern is ≤54-row `crm_leads` SELECT + ≤200-row `short_links` SELECT.
+
+**Expected browser numbers post-fix for the main Prizma broadcast:**
+
+| Column | Value | Display style |
+|---|---|---|
+| נשלחו | 1,179 | normal |
+| קליקים גולמיים | 427 | slate-500 (de-emphasized) |
+| ייחודיים שלחצו | 233 | slate-500 |
+| CTR גולמי % | 36.2% | slate-500 |
+| **CTR אמיתי %** | **1.4%** | **bold** |
+| **הסרות אמיתיות** | **17** | **bold** |
+| **הסרה אמיתית %** | **1.4%** | **bold red** (>2% trigger color applied if >2%; 1.4% stays bold without color) |
+
+### 13.6 Additional Author-Skill Proposal — P-AUTHOR-5
+
+**P-AUTHOR-5 — Disambiguate "click" vs "action" at SPEC-author time for every metric**
+
+- **Where:** `.claude/skills/opticup-strategic/SKILL.md` — §"Step 5.3 Runtime Semantics Rehearsal" — add as 5.3c.
+- **Change:** *"**Click-vs-action disambiguation (added 2026-05-20 from M4_SHORT_LINKS_DASHBOARD_REDESIGN P-AUTHOR-5).** When a SPEC introduces a metric phrased as `<action>_count` or `<conversion>%` (e.g., 'unsubscribe rate', 'CTR', 'purchase rate'), the §0 Pre-Authoring Reality Check MUST explicitly state whether the metric is sourced from (a) the click event log, or (b) the resulting business-state row. Click events fire for ANY HTTP GET — including from anti-phishing bots, SMS-gateway link-preview fetchers, AV scanners, and keyboard prewarmers — and a single human-intended click can produce dozens of bot clicks. Business-state rows (`unsubscribed_at`, `attendee.purchase_amount`, `lead.converted_at`) only flip when a server-side action handler runs to completion, which bots virtually never do. Default = business-state-row source. Click-source metrics ALWAYS get a 'raw' / 'gross' qualifier in the column label + tooltip + caption + de-emphasized visual styling. NEVER ship a click-derived 'conversion' metric without that qualifier."*
+- **Rationale:** This SPEC shipped 'CTR%' and 'unsubscribe rate%' as click-derived metrics. The metric names suggested "customer behavior" but the values measured "any-HTTP-GET behavior" — 95% of which was bots. Daniel caught it on prod with live evidence. Codifying the rule prevents the next SPEC's same mistake.
+
+### 13.7 Additional Executor-Skill Proposal — P-EXEC-5
+
+**P-EXEC-5 — When implementing a "conversion rate" or "action count" metric, first grep for a business-state column and prefer it over the click event**
+
+- **Where:** `.claude/skills/opticup-executor/SKILL.md` — §"Step 1.5 DB Pre-Flight Check" — add as a sub-pattern.
+- **Change:** *"**Business-state vs event-log preference (added 2026-05-20 from M4_SHORT_LINKS_DASHBOARD_REDESIGN P-EXEC-5).** When implementing a metric of shape 'X took action Y' or 'rate of Y per X', the Executor MUST grep the relevant module's tables for a state column that flips when Y completes server-side (e.g., `unsubscribed_at`, `purchased_at`, `verified_at`, `converted_at`). If such a column exists, the metric MUST be sourced from it rather than from the click-event log. If the Foreman's SPEC explicitly names a click-derived source, the Executor MUST flag this as a HIGH finding before commit — Foreman likely missed the business-state alternative."*
+- **Rationale:** The Executor implementing this SPEC followed the Brief's metric description literally: 'Unsubscribe count = clicks on link_type=unsubscribe AND target contains /unsubscribe'. Had they grep'd `crm_leads` schema for `unsubscrib`, they would have found `unsubscribed_at` immediately. The defensive habit of preferring state columns is cheap to acquire and prevents this entire class.
+
+### 13.8 Status post-amendment-3
+
+- Commit `c5e5a44` (UI fix: bot-decontaminated metrics) pushed to develop.
+- This docs amendment commit pending.
+- IR34 §10 verdict still **PENDING DH-1 fourth pass** — Daniel re-verifies on amendment-3 code.
+- Total Pipeline commits now: 13 (was 11 + 1 UI fix + 1 docs amendment).
+- Expected post-fix browser numbers documented in §13.5 above. CTR אמיתי % should drop from 36.2% to **1.4%** — the actual marketing signal for that broadcast.
+
+---
+
+*End of FOREMAN_REVIEW (POST-REGRESSION-AMENDED-THREE-TIMES, STILL PENDING-IR34-RE-VERIFY-4). Awaiting Daniel's fourth Chrome MCP pass on the bot-decontaminated metrics to flip verdict 🟡 → 🟢.*

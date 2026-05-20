@@ -182,6 +182,43 @@ var TEMPLATE_STATIC_TYPES = ['template_static'];
 
 Filter chip "Link type" options: `All` (no filter) / `Per-recipient` (link_type IN PER_RECIPIENT_TYPES) / `Template-static` (link_type IN TEMPLATE_STATIC_TYPES).
 
+### 3.4 Real-vs-raw metric separation (added F-BOT-NOISE amendment-3, 2026-05-20)
+
+Daniel's live verification on Prizma surfaced that SMS-gateway link-preview bots (anti-phishing scanners, URL warming, message-preview fetchers) fire ~95% of clicks in the first 6 minutes after each broadcast send. Click-based metrics (count(*), DISTINCT lead_id, COUNT(link_type='unsubscribe')) all measure bot behavior more than human behavior on broadcasts to large audiences. Component B was misleading even on accurate data.
+
+The fix: Component B exposes TWO columns per concept, raw vs real:
+
+| Column | Source | Bot-polluted? | Use |
+|---|---|---|---|
+| `raw_clicks` | `COUNT(short_link_clicks)` | YES | Sanity check that sends fired |
+| `unique_clickers` | `COUNT(DISTINCT short_links.lead_id)` via clicks | YES | Sanity check |
+| `ctr_raw` | `raw_clicks / total_sent` | YES | Sanity check |
+| `ctr_real` | `real_actions / total_sent` | NO | Marketing signal |
+| `real_unsubs` | `COUNT(DISTINCT lead) WHERE lead.unsubscribed_at IN [b.created_at, +7d] AND lead has short_link for b` | NO | Marketing signal |
+| `unsub_real_pct` | `real_unsubs / total_sent` | NO | Marketing signal |
+
+**v1 scope:** `real_actions = real_unsubs`. So `ctr_real === unsub_real_pct` in v1. They diverge in v2 when registrations + purchases get added.
+
+**Attribution window:** 7 days from `broadcast.created_at`. A lead unsubscribing more than 7d after a broadcast is unlikely to have been triggered by it (empirical heuristic; tunable in a future SPEC if Daniel finds it wrong).
+
+**Why NOT count `link_type='unsubscribe'` clicks as "real unsubs":** because bot fetchers click the unsubscribe link too. The authoritative business-state signal lives in `crm_leads.unsubscribed_at` — that field is only set when the unsubscribe action is server-side confirmed via the unsubscribe page's POST handler, which bots typically do not complete.
+
+**Visual emphasis:** raw columns rendered in `text-slate-500` (de-emphasized); real columns in `font-semibold` (signal-bearing). An amber-background explanatory caption sits between the section title and the table, reading: *"שים לב: המספרים הגולמיים כוללים בוטים שסורקים קישורי SMS (התראות, אבטחה, תצוגה מקדימה). ה-CTR האמיתי נמדד לפי פעולות שלקוחות ביצעו בפועל (כרגע: הסרה; בעתיד: גם הרשמה ורכישה)."*
+
+**Live numbers measured at SPEC-author time (Prizma broadcast `מחר אירוע מאי 2026`):**
+
+| Metric | Value |
+|---|---|
+| total_sent | 1,179 |
+| raw_clicks | 427 |
+| unique_clickers | 233 |
+| ctr_raw | 36.2% |
+| **real_unsubs** | **17** |
+| **ctr_real** | **1.4%** |
+| **unsub_real_pct** | **1.4%** |
+
+Bot pollution: ~96% of click traffic.
+
 ---
 
 ## 4. Cross-Module Safety Audit (mirrored from Brief §4)
