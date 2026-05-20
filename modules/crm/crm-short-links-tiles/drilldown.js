@@ -111,8 +111,13 @@
 
     // Fetch clicks scoped to this broadcast_id (single equality — no URL ceiling risk).
     // Defense-in-depth: explicit tenant_id even though RLS enforces it.
+    // NOTE (M4_SHORT_LINKS_DASHBOARD_REDESIGN amendment 2026-05-20): short_link_clicks
+    // does NOT have a lead_id column — lead_id lives on short_links (per-recipient
+    // links carry it at creation time). This drill-down aggregates click count + last
+    // click per link; lead_id is not needed here. If a future feature wants per-lead
+    // attribution, JOIN via the short_links lookup below.
     var clicksRes = await sb.from('short_link_clicks')
-      .select('short_link_id, clicked_at, lead_id')
+      .select('short_link_id, clicked_at')
       .eq('tenant_id', tid)
       .eq('broadcast_id', broadcastId);
     if (clicksRes.error) throw new Error(clicksRes.error.message);

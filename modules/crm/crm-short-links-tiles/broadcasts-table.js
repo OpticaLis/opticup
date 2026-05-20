@@ -92,12 +92,16 @@
 
     // Fetch ALL tenant clicks once (inverted pattern — avoids IN-clause URL ceiling).
     // Index idx_short_link_clicks_tenant_broadcast_clicked covers this.
+    // NOTE (M4_SHORT_LINKS_DASHBOARD_REDESIGN amendment 2026-05-20): short_link_clicks
+    // does NOT have a lead_id column — lead_id lives on short_links (per-recipient
+    // links carry it at creation time). The unique-click-leads metric is computed by
+    // joining clicks → short_links via short_link_id, using the link's lead_id.
     var [clicksRes, linksRes] = await Promise.all([
       sb.from('short_link_clicks')
-        .select('short_link_id, broadcast_id, lead_id')
+        .select('short_link_id, broadcast_id')
         .eq('tenant_id', tid),
       sb.from('short_links')
-        .select('id, link_type')
+        .select('id, link_type, lead_id')
         .eq('tenant_id', tid)
         .gt('expires_at', new Date().toISOString())
     ]);
@@ -107,9 +111,10 @@
     var clicks = clicksRes.data || [];
     var links  = linksRes.data  || [];
 
-    // Build lookup: link_id → link_type (for unsubscribe detection)
-    var linkTypeById = {};
-    links.forEach(function (l) { linkTypeById[l.id] = l.link_type; });
+    // Build lookup: link_id → { link_type, lead_id } for unsubscribe detection +
+    // unique-lead aggregation.
+    var linkInfoById = {};
+    links.forEach(function (l) { linkInfoById[l.id] = { link_type: l.link_type, lead_id: l.lead_id }; });
 
     // Aggregate per broadcast_id
     var byBroadcast = {};
@@ -119,9 +124,11 @@
         total: 0, leadSet: {}, unsubscribes: 0
       });
       slot.total += 1;
-      if (c.lead_id) slot.leadSet[c.lead_id] = true;
-      var lt = linkTypeById[c.short_link_id] || '';
-      if (lt === 'unsubscribe') slot.unsubscribes += 1;
+      var info = linkInfoById[c.short_link_id];
+      if (info) {
+        if (info.lead_id) slot.leadSet[info.lead_id] = true;
+        if (info.link_type === 'unsubscribe') slot.unsubscribes += 1;
+      }
     });
 
     return broadcasts.map(function (b) {
