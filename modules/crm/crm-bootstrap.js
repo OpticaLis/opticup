@@ -15,7 +15,9 @@
     'campaigns':    { title: 'קמפיינים', subtitle: 'ביצועי קמפיינים ויחס יחידה' },
     'messaging':    { title: 'מרכז הודעות', subtitle: 'תבניות, אוטומציה ושליחה ידנית' },
     'event-day':    { title: 'יום אירוע', subtitle: 'צ׳ק-אין, נוכחות וניהול' },
-    'activity-log': { title: 'לוג פעילות', subtitle: 'היסטוריית פעולות במערכת' }
+    'activity-log': { title: 'לוג פעילות', subtitle: 'היסטוריית פעולות במערכת' },
+    'short-links':  { title: 'קישורים קצרים', subtitle: 'סטטיסטיקות קליקים על קישורי SMS' },
+    'funnel-health':{ title: 'מצב פאנל', subtitle: 'דשבורד בריאות פאנל הקמפיין' }
   };
 
   // --- Wrap original showCrmTab to also update header + sidebar ---
@@ -54,6 +56,14 @@
     if (name === 'queue-live' && typeof renderQueueLive === 'function') {
       var qHost = document.getElementById('queue-live-host');
       if (qHost) renderQueueLive(qHost);
+    }
+    if (name === 'short-links' && typeof loadCrmShortLinksStats === 'function') {
+      var slHost = document.getElementById('short-links-host');
+      if (slHost) loadCrmShortLinksStats(slHost);
+    }
+    if (name === 'funnel-health' && typeof window.renderFunnelDashboard === 'function') {
+      var fhHost = document.getElementById('funnel-dashboard-host');
+      if (fhHost) window.renderFunnelDashboard(fhHost);
     }
   };
 
