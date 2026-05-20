@@ -28,7 +28,7 @@ Advance the marketing-funnel surface without a browser — every deliverable pro
 
 This SPEC declares the following destructive operations and NOTHING else:
 
-1. **W1.2 — DELETE** the consumed `_archive/architect-pending-entries/STOREFRONT_PUBLIC_DATA_LAYER_2026_05_15.md` (single file, after the DECISIONS_LOG entry is appended).
+1. **W1.2 — DELETE** the consumed `_archive/architect-pending-entries/STOREFRONT_PUBLIC_DATA_LAYER_2026_05_15.md` (single file, after the DECISIONS_LOG entry is appended). NOTE during execution: pending-entries directory was empty (only `.gitkeep`); no file deletion actually happened.
 2. **W2.2 — UPDATE** 3 stale broadcasts on Prizma's `crm_broadcasts` from `status='queued'` → `status='cancelled'`, scoped by explicit broadcast IDs + tenant_id.
 
 All other destructive operations (additional file deletes, mass renames, `git rebase`, `git reset --hard`, `DROP TABLE/COLUMN/POLICY`, mass `DELETE FROM`, CLAUDE.md/SKILL.md non-append edits, any `main`-branch modification) are FORBIDDEN. If the Executor encounters a need mid-run → STOP, write an escalation file, halt that wave.
