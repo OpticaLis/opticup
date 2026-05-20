@@ -90,44 +90,39 @@
     var broadcasts = bRes.data || [];
     if (!broadcasts.length) return [];
 
-    // Fetch ALL tenant clicks once (inverted pattern — avoids IN-clause URL ceiling).
-    // Index idx_short_link_clicks_tenant_broadcast_clicked covers this.
-    // NOTE (M4_SHORT_LINKS_DASHBOARD_REDESIGN amendment 2026-05-20): short_link_clicks
-    // does NOT have a lead_id column — lead_id lives on short_links (per-recipient
-    // links carry it at creation time). The unique-click-leads metric is computed by
-    // joining clicks → short_links via short_link_id, using the link's lead_id.
-    var [clicksRes, linksRes] = await Promise.all([
-      sb.from('short_link_clicks')
-        .select('short_link_id, broadcast_id')
-        .eq('tenant_id', tid),
-      sb.from('short_links')
-        .select('id, link_type, lead_id')
-        .eq('tenant_id', tid)
-        .gt('expires_at', new Date().toISOString())
-    ]);
+    // Fetch clicks with their link metadata embedded via PostgREST FK relationship
+    // (short_link_clicks.short_link_id → short_links.id).
+    //
+    // NOTE (M4_SHORT_LINKS_DASHBOARD_REDESIGN amendment-2 2026-05-20, F-POSTGREST-1000):
+    // The prior linkInfoById approach silently broke on Prizma — it fetched the
+    // short_links table with `.select(...).eq('tenant_id', tid).gt('expires_at', now)`
+    // but PostgREST defaults to a 1000-row response limit. Prizma has 8,194 live
+    // short_links, so the lookup was missing 7,194 link records. The 179 unsubscribe
+    // links for last-day broadcasts weren't in the first 1000 rows returned →
+    // unique_leads = 0, unsubscribes = 0, despite the SQL aggregate showing 233 & 425.
+    //
+    // The embedded JOIN sidesteps this: returned cardinality = click count (~473 on
+    // Prizma, ~15 on demo), well under any limit. PostgREST joins to short_links
+    // server-side via the FK; each click row carries its link's link_type + lead_id
+    // in `short_links` payload (foreign-table embed, syntax `!inner` requires match).
+    var clicksRes = await sb.from('short_link_clicks')
+      .select('broadcast_id, short_link_id, short_links!inner(link_type, lead_id)')
+      .eq('tenant_id', tid)
+      .not('broadcast_id', 'is', null);
     if (clicksRes.error) throw new Error(clicksRes.error.message);
-    if (linksRes.error) throw new Error(linksRes.error.message);
-
     var clicks = clicksRes.data || [];
-    var links  = linksRes.data  || [];
 
-    // Build lookup: link_id → { link_type, lead_id } for unsubscribe detection +
-    // unique-lead aggregation.
-    var linkInfoById = {};
-    links.forEach(function (l) { linkInfoById[l.id] = { link_type: l.link_type, lead_id: l.lead_id }; });
-
-    // Aggregate per broadcast_id
+    // Aggregate per broadcast_id. Each `c.short_links` is the FK-joined link record.
     var byBroadcast = {};
     clicks.forEach(function (c) {
-      if (!c.broadcast_id) return; // template_static or legacy — not counted here
       var slot = byBroadcast[c.broadcast_id] || (byBroadcast[c.broadcast_id] = {
         total: 0, leadSet: {}, unsubscribes: 0
       });
       slot.total += 1;
-      var info = linkInfoById[c.short_link_id];
-      if (info) {
-        if (info.lead_id) slot.leadSet[info.lead_id] = true;
-        if (info.link_type === 'unsubscribe') slot.unsubscribes += 1;
+      var lnk = c.short_links;
+      if (lnk) {
+        if (lnk.lead_id) slot.leadSet[lnk.lead_id] = true;
+        if (lnk.link_type === 'unsubscribe') slot.unsubscribes += 1;
       }
     });
 

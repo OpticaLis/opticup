@@ -109,72 +109,68 @@
     var tid = getTenantId();
     if (!tid) return [];
 
-    // Fetch clicks scoped to this broadcast_id (single equality — no URL ceiling risk).
-    // Defense-in-depth: explicit tenant_id even though RLS enforces it.
-    // NOTE (M4_SHORT_LINKS_DASHBOARD_REDESIGN amendment 2026-05-20): short_link_clicks
-    // does NOT have a lead_id column — lead_id lives on short_links (per-recipient
-    // links carry it at creation time). This drill-down aggregates click count + last
-    // click per link; lead_id is not needed here. If a future feature wants per-lead
-    // attribution, JOIN via the short_links lookup below.
+    // Fetch clicks scoped to this broadcast_id with link metadata embedded via FK
+    // relationship (short_link_clicks.short_link_id → short_links.id).
+    //
+    // NOTE (M4_SHORT_LINKS_DASHBOARD_REDESIGN amendment-2 2026-05-20, F-POSTGREST-1000):
+    // The prior two-query pattern (fetch clicks → fetch all tenant short_links →
+    // filter by membership in byLink) silently broke on Prizma. PostgREST's default
+    // 1000-row response limit truncated short_links to 1000 of 8,194 live rows, so
+    // most broadcast-scoped links never appeared in the second response → byLink
+    // membership check rejected everything → drill-down rendered "אין נתוני קישורים".
+    //
+    // The embedded JOIN sidesteps this: returned cardinality = click count for THIS
+    // broadcast (~425 on the main Prizma broadcast), well under any limit. The link's
+    // code/target_url/link_type/expires_at travel inline with each click row.
     var clicksRes = await sb.from('short_link_clicks')
-      .select('short_link_id, clicked_at')
+      .select('short_link_id, clicked_at, short_links!inner(id, code, target_url, link_type, lead_id, expires_at)')
       .eq('tenant_id', tid)
       .eq('broadcast_id', broadcastId);
     if (clicksRes.error) throw new Error(clicksRes.error.message);
     var clicks = clicksRes.data || [];
 
-    // Build link_id → agg map
-    var byLink = {};
-    clicks.forEach(function (c) {
-      var slot = byLink[c.short_link_id] || (byLink[c.short_link_id] = { total: 0, last: null });
-      slot.total += 1;
-      if (!slot.last || c.clicked_at > slot.last) slot.last = c.clicked_at;
-    });
-
-    var linkIds = Object.keys(byLink);
-    if (!linkIds.length) {
+    if (!clicks.length) {
       _cache[cacheKey] = { ts: Date.now(), rows: [] };
       return [];
     }
 
-    // Fetch the actual link metadata for those IDs.
-    // INVERTED PATTERN is not needed here because we already have a small-cardinality
-    // click set (broadcast-scoped) → the link IDs list is at most ~tens, not thousands.
-    // However, to be safe we still avoid IN-clause by fetching all tenant links + filtering JS-side.
-    var linksRes = await sb.from('short_links')
-      .select('id, code, target_url, link_type')
-      .eq('tenant_id', tid)
-      .gt('expires_at', new Date().toISOString());
-    if (linksRes.error) throw new Error(linksRes.error.message);
-    var links = linksRes.data || [];
-
-    // JS-filter to just the clicked links + apply category filter
     var perTypes  = CrmShortLinksFilterBar.getPERTypes();
     var statTypes = CrmShortLinksFilterBar.getTemplateTypes();
+    var nowIso    = new Date().toISOString();
 
-    var rows = links
-      .filter(function (l) {
-        if (!byLink[l.id]) return false; // no clicks for this link in this broadcast
-        if (typeFilter === 'per_recipient'   && perTypes.indexOf(l.link_type) === -1)  return false;
-        if (typeFilter === 'template_static' && statTypes.indexOf(l.link_type) === -1) return false;
-        return true;
-      })
-      .map(function (l) {
-        var agg   = byLink[l.id];
-        var trunc = (l.target_url || '').length > 60
-          ? l.target_url.slice(0, 57) + '…'
-          : (l.target_url || '');
-        return {
-          id:           l.id,
-          code:         l.code,
-          link_type:    l.link_type || 'other',
-          link_type_label: LINK_TYPE_LABELS[l.link_type] || l.link_type || '—',
-          target_url:   l.target_url || '',
-          target_trunc: trunc,
-          total_clicks: agg.total,
-          last_clicked: agg.last
-        };
-      });
+    // Group by link, carry link metadata from the embed payload. Apply category +
+    // expiry filters client-side (cheap — only ~425 rows even on the busiest Prizma
+    // broadcast). Expiry filter mirrors the prior server-side `expires_at > now()` —
+    // expired-link clicks are silently dropped (same semantic as the prior code).
+    var byLink = {};
+    clicks.forEach(function (c) {
+      var lnk = c.short_links;
+      if (!lnk) return;
+      if (lnk.expires_at && lnk.expires_at < nowIso) return;
+      if (typeFilter === 'per_recipient'   && perTypes.indexOf(lnk.link_type) === -1)  return;
+      if (typeFilter === 'template_static' && statTypes.indexOf(lnk.link_type) === -1) return;
+      var slot = byLink[lnk.id] || (byLink[lnk.id] = { total: 0, last: null, link: lnk });
+      slot.total += 1;
+      if (!slot.last || c.clicked_at > slot.last) slot.last = c.clicked_at;
+    });
+
+    var rows = Object.keys(byLink).map(function (linkId) {
+      var slot = byLink[linkId];
+      var l = slot.link;
+      var trunc = (l.target_url || '').length > 60
+        ? l.target_url.slice(0, 57) + '…'
+        : (l.target_url || '');
+      return {
+        id:              l.id,
+        code:            l.code,
+        link_type:       l.link_type || 'other',
+        link_type_label: LINK_TYPE_LABELS[l.link_type] || l.link_type || '—',
+        target_url:      l.target_url || '',
+        target_trunc:    trunc,
+        total_clicks:    slot.total,
+        last_clicked:    slot.last
+      };
+    });
 
     _cache[cacheKey] = { ts: Date.now(), rows: rows };
     return rows;
