@@ -67,11 +67,16 @@
 
     // Aggregate clicks per link from short_link_clicks (the authoritative
     // ledger — short_links.click_count is a denormalized counter).
-    var linkIds = links.map(function (l) { return l.id; });
+    // INVERTED QUERY (M4_SHORT_LINKS_400_FIX, 2026-05-20): fetch ALL clicks
+    // for the tenant in a single query, then JS-map to live links downstream.
+    // Reason: PostgREST rejects URLs > ~16KB; .in('short_link_id', [7K UUIDs])
+    // produced ~260KB URL → 400. Click cardinality is tiny vs link cardinality,
+    // so this is strictly faster + scale-proof. Index idx_short_link_clicks_
+    // tenant_id_clicked_at covers it. Clicks on expired links are silently
+    // dropped by the byLink[l.id] lookup below — same UI semantic as before.
     var clicksRes = await sb.from('short_link_clicks')
       .select('short_link_id, clicked_at, broadcast_id')
-      .eq('tenant_id', tid)
-      .in('short_link_id', linkIds);
+      .eq('tenant_id', tid);
     if (clicksRes.error) { _rows = []; throw new Error(clicksRes.error.message); }
     var clicks = clicksRes.data || [];
 
