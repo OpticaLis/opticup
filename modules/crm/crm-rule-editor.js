@@ -1,6 +1,4 @@
-/* crm-rule-editor.js — board-led rule editor for Automation Rules screen
-   (CRM_UX_REDESIGN_AUTOMATION). Public API: window.CrmRuleEditor.{open,
-   _boardOf, _summaryFor, BOARDS}. Consumed by crm-messaging-rules.js. */
+/* crm-rule-editor.js — board-led rule editor (CRM_UX_REDESIGN_AUTOMATION). API: window.CrmRuleEditor.{open,_boardOf,_summaryFor,BOARDS}. */
 (function () {
   'use strict';
 

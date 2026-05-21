@@ -1,8 +1,4 @@
-/* crm-confirm-send-v2.js — Controller for CrmConfirmSendV2 modal.
-   M4_DRY_RUN_PREVIEW_AND_DISPATCH Phases 3-7 (2026-05-14).
-   M4_DUAL_PATH_CLEAN_FIX_2026_05_19 Layer 1: +opts.onCancel +opts.hideCommitWithoutNotify.
-   API: show(preview, onChoice, opts?) / showAsync(previewPromise, onChoice, opts?).
-   Load AFTER crm-confirm-send-v2-render.js + modal-builder.js + toast.js. */
+/* crm-confirm-send-v2.js — CrmConfirmSendV2 modal controller. API: show(preview,onChoice,opts?) / showAsync. Load AFTER render + modal-builder + toast. */
 (function () {
   'use strict';
 

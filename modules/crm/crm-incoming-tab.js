@@ -1,9 +1,4 @@
-/* =============================================================================
-   crm-incoming-tab.js — Incoming Leads (Tier 1) tab
-   Fetches leads with Tier 1 statuses (new, invalid_phone, too_far, no_answer, callback)
-   Renders table with name, phone, email, status, date, source, UTMs.
-   Status filter + search functionality.
-   ============================================================================= */
+/* crm-incoming-tab.js — Incoming Leads (Tier 1) tab. Status filter + search. */
 (function () {
   'use strict';
 

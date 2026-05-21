@@ -1,5 +1,4 @@
-/* crm-lead-modals.js — CRM lead UI flows (modals + dropdowns). Load AFTER
-   crm-lead-actions.js. No DB writes — all writes go through CrmLeadActions. */
+/* crm-lead-modals.js — lead UI flows (modals + dropdowns). Load AFTER crm-lead-actions.js. No DB writes — all go through CrmLeadActions. */
 (function () {
   'use strict';
 

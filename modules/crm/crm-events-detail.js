@@ -1,8 +1,4 @@
-/* =============================================================================
-   crm-events-detail.js — Event detail modal (B8 Tailwind rewrite — FINAL-03)
-   Gradient header, capacity bar, KPI cards (from charts.js), 3 sub-tabs,
-   grouped attendee list. Funnel + analytics live in crm-events-detail-charts.js.
-   ============================================================================= */
+/* crm-events-detail.js — Event detail modal. Funnel/analytics in crm-events-detail-charts.js. */
 (function () {
   'use strict';
 
