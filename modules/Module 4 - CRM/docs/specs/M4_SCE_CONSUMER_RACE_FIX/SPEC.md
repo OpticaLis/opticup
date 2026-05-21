@@ -4,7 +4,7 @@
 > **Authored by:** opticup-strategic (Foreman)
 > **Authored on:** 2026-05-21
 > **Module:** 4 — CRM
-> **Predecessor:** `M4_DISPATCH_PREVIEW_SUMMARY_MODE` (SPEC A; must land first)
+> **Predecessor:** `M4_DISPATCH_PREVIEW_LAZY_ROWS` (SPEC A; must land first; renamed from M4_DISPATCH_PREVIEW_SUMMARY_MODE 2026-05-21 rev 2)
 > **Series:** Second of 3 — followed by `M4_QUEUE_INSERT_ON_CONFLICT` (C).
 > **Pipeline mode:** Full-Auto with Chrome MCP live verification at closure on demo under injected load.
 > **Priority:** HIGHEST per the INCIDENT_REPORT §3.1 priority ordering — but sequenced second because SPEC A's operator-brake gives single-operator safety even without B.

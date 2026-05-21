@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // scripts/cleanup-demo-load-test-leads.mjs
-// SPEC: modules/Module 4 - CRM/docs/specs/M4_DISPATCH_PREVIEW_SUMMARY_MODE/SPEC.md §13
+// SPEC: modules/Module 4 - CRM/docs/specs/M4_DISPATCH_PREVIEW_LAZY_ROWS/SPEC.md §13
+//       (renamed from M4_DISPATCH_PREVIEW_SUMMARY_MODE 2026-05-21 rev 2; sentinel name unchanged)
 //
 // Deletes the synthetic load-test leads inserted by inject-demo-load-test-leads.mjs.
 // Tenant-scoped DELETE on the sentinel predicate (utm_campaign). Demo-only.

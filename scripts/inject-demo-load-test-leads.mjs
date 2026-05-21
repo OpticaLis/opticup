@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // scripts/inject-demo-load-test-leads.mjs
-// SPEC: modules/Module 4 - CRM/docs/specs/M4_DISPATCH_PREVIEW_SUMMARY_MODE/SPEC.md §10
+// SPEC: modules/Module 4 - CRM/docs/specs/M4_DISPATCH_PREVIEW_LAZY_ROWS/SPEC.md §10
+//       (renamed from M4_DISPATCH_PREVIEW_SUMMARY_MODE 2026-05-21 rev 2; sentinel name unchanged)
 //
 // Injects 1,200 synthetic load-test leads into the DEMO tenant ONLY.
 //   - phone format `05000NNNNN` (10 digits, Israeli mobile syntax, NOT in any

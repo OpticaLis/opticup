@@ -4,7 +4,7 @@
 > **Authored by:** opticup-strategic (Foreman)
 > **Authored on:** 2026-05-21
 > **Module:** 4 — CRM
-> **Predecessors:** `M4_DISPATCH_PREVIEW_SUMMARY_MODE` (A) + `M4_SCE_CONSUMER_RACE_FIX` (B).
+> **Predecessors:** `M4_DISPATCH_PREVIEW_LAZY_ROWS` (A; renamed from M4_DISPATCH_PREVIEW_SUMMARY_MODE 2026-05-21 rev 2) + `M4_SCE_CONSUMER_RACE_FIX` (B).
 > **Series:** Third of 3.
 > **Pipeline mode:** Full-Auto with Chrome MCP live verification at closure on demo under injected load.
 > **Tenant scope:** demo only.
