@@ -174,6 +174,35 @@
 
 ---
 
+## N. PostgREST query patterns (added 2026-05-20 from `M4_SHORT_LINKS_400_FIX` P-AUTHOR-2 + `M4_SHORT_LINKS_DASHBOARD_REDESIGN` P-AUTHOR-4)
+
+PostgREST (the REST layer Supabase exposes) has two well-known soft-limits the project has tripped over multiple times. Codifying them here so the fourth occurrence doesn't burn another hour:
+
+### N.1 URL-size limit — `.in('id', [list of N UUIDs])`
+
+PostgREST builds queries into the URL. The default URL-size limit lands somewhere around **16 KB** in production (the exact ceiling varies by deployment, but assume 16 KB to be safe). A 36-char UUID plus the `%2C` separator costs ~40 bytes per item. Empirically the limit fires around **~200 UUIDs per `.in()` call**.
+
+**Symptoms:** request returns 400 Bad Request, `URL too long` in the error body. The 1001st item silently dropped is even worse — no error, just incomplete results.
+
+**Patterns to use:**
+- **Chunked fetch.** When a `.in('id', [list])` needs N > 200 items, fetch in chunks of 200 and merge in JS. Reference: `crm-messaging-broadcast-queue.js` `fetchLeadRows` (200/chunk) + `crm-queue-live.js` `fetchLeadsForRows` (200/chunk).
+- **Server-side join.** If the parent set is itself a SELECT (`crm_message_queue WHERE status='queued'`), use a PostgREST embedded join `crm_message_queue.select('*, crm_leads(...)')` so the join happens server-side and no `.in()` payload is needed.
+
+### N.2 Response-row 1000-row default cap
+
+PostgREST's default response cap is **1000 rows**. A `.select(...)` against a table with more than 1000 matching rows returns 1000 — silently, no error, no Range-header warning unless you opt in.
+
+**Symptoms:** "the count looks low," "broadcast-specific rows are missing," "the dashboard says X but the SQL probe says 10X."
+
+**Patterns to use:**
+- **Embedded JOIN for parent-child fetches.** When fetching parents + their children, use PostgREST's embed: `tableA.select('*, tableB(*)')`. The embed runs the child query as a subquery scoped to the returned parent IDs, which bypasses the 1000-row cap on the child side. Reference: `crm-short-links-tiles/drilldown.js` after `M4_SHORT_LINKS_DASHBOARD_REDESIGN` amendment-2.
+- **Explicit `.range(0, N)` + chunked pagination.** When embed isn't viable (e.g., the child set is independent and you need it sorted), iterate with explicit ranges.
+- **Server-side aggregate.** When the metric is "count" or "sum" only, write a SECURITY DEFINER RPC or a materialized view rather than fetching individual rows through PostgREST.
+
+**Cardinality estimate is mandatory** for every `.select(...)` against `crm_message_log` (Prizma ~6K), `short_links` (Prizma ~8K), `crm_event_attendees` (Prizma ~230), `crm_leads` (Prizma ~1300). Estimate in the SPEC §0; verify with `SELECT count(*) FROM <table> WHERE tenant_id=<prizma>`.
+
+---
+
 ## How to Add a New Convention
 
 1. **First check if it already exists.** Read through this file and Ctrl+F. Per Rule 21, don't add a second way to do something that already has a convention.

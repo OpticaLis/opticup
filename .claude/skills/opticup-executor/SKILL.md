@@ -1003,6 +1003,51 @@ If the rehearsal raises any error → STOP, escalate. The function is broken; sh
 
 **Source:** Pattern C — 2 occurrences across 2026-05-19 cohort + the upstream P0 regression that needed M4_FB_CAPI_PURCHASE_EVENTS_UUID_FIX. The check would have caught it 30 seconds before the migration shipped.
 
+#### Step 1.5.8 — SELECT-projection / embed-vs-standalone / business-state vs event-log (added 2026-05-20 from `M4_SHORT_LINKS_DASHBOARD_REDESIGN` P-EXEC-3/4/5)
+
+Three Executor-side probes layered onto Step 1.5 for any SPEC that writes a `.select(...)` against a public table:
+
+1. **§1.5.8a — SELECT-projection probe (P-EXEC-3).** Before writing any `sb.from('<table>').select('col1, col2, col3')`, RUN the column-existence probe (§1.5.6 #3) and explicitly verify EACH projected column. The audit-side rule (opticup-strategic §5.4c) does this at SPEC-author time; this is the Executor-side dual when a SPEC references a JOIN/projection. Today's regression: SPEC said `short_link_clicks.lead_id` — column didn't exist; cost Daniel 1 Chrome round.
+
+2. **§1.5.8b — Embed-vs-standalone heuristic for parent-child queries (P-EXEC-4).** When writing a `.select(...)` against a table that may have >1000 rows in the SPEC's tenant scope (Prizma `short_links` ≈ 8200; Prizma `crm_message_log` ≈ 6000; …), prefer PostgREST embedded-JOIN (`crm_message_queue!log_id(...)`) over standalone fetch + JS-side lookup. The embed pushes the child query into a subquery scoped to the parent's IDs, which bypasses the 1000-row response limit on the child side. The natural 2-query pattern (fetch parents → fetch children with `.in('id', [...])`) silently truncates at the 1000th child. Cardinality estimate goes in EXECUTION_REPORT §2.
+
+3. **§1.5.8c — Business-state vs event-log preference for metrics (P-EXEC-5).** Before implementing any "conversion rate", "action count", "rate%", or "unique customer N" metric, grep `crm_leads`, `crm_event_attendees`, `crm_message_log`, and `cms_leads` for a column matching the verb in the metric name (`unsubscribed_at` for unsubscribe rate, `purchase_amount` for purchase count, `acknowledged_at` for handled rate, …). If a business-state column exists, SOURCE THE METRIC FROM IT, not from a click/event log. Click logs measure HTTP-GETs, ~95% of which are SMS-gateway bots within the first 6 min after send. If forced to use clicks (no state column exists), label the metric "raw" in EXECUTION_REPORT and surface the bot-decontamination caveat. See memory `feedback_clicks_are_not_actions`.
+
+**Source:** P-EXEC-3/4/5 from `M4_SHORT_LINKS_DASHBOARD_REDESIGN/FOREMAN_REVIEW.md` (3 amendment rounds cost ~6h of Daniel's live Chrome time on 2026-05-20). Each probe is a 30-second pre-flight that prevents the entire amendment cycle.
+
+#### Step 4.1 — Two-grep verification + intent-vs-implementation gap (added 2026-05-20 from `M4_SHORT_LINKS_400_FIX` P-EXEC-1 + `M4_SHORT_LINKS_DASHBOARD_REDESIGN` P-EXEC-1)
+
+Two Verify-phase rules added to §"Step 4: Verify":
+
+- **§4.1a — Two-grep verification for "remove + preserve" edits (P-EXEC-1 from 400_FIX).** When a fix's net effect is "remove constraint X but keep constraint Y," run BOTH greps after edit: (i) negative — `grep -c "X" <file>` returns 0; (ii) positive — `grep -c "Y" <file>` returns ≥ the original count. The two-sided verification catches the case where both got dropped (silent tenant-isolation break if Y was `.eq('tenant_id', tid)`). One-sided verification (only checking X is gone) hides the regression.
+
+- **§4.1b — Intent-comment vs implementation gap is a HIGH finding (P-EXEC-1 from REDESIGN).** When a Foreman-authored comment in the SPEC (or in code added by the SPEC) PROMISES behavior the actual code doesn't deliver — that's a HIGH finding, fix before commit. Do NOT mark it as "documented intent" or "future work" in EXECUTION_REPORT; the comment will mislead future readers, and the gap will surface as a SPEC re-open. Today: F-2 in REDESIGN was flagged in EXECUTION_REPORT but committed anyway → triggered amendment-1.
+
+#### Step 4.2 — Anchor comments citing SPEC slug (added 2026-05-20 from `M4_SHORT_LINKS_400_FIX` P-EXEC-2)
+
+The default "no comments unless WHY is non-obvious" rule has ONE exception: when an edit creates a code shape that LOOKS LIKE A BUG to a fresh reader (inverted patterns, missing-`.in()`-clauses for chunking reasons, unusual idempotency keys), add a SHORT anchor comment of the form:
+
+```
+// <SPEC_SLUG>: <one-line WHY>. <one-line how-to-verify-it-is-correct>.
+```
+
+Examples:
+- `// M4_SHORT_LINKS_400_FIX: PostgREST URL caps at ~16KB; chunking via index on (tenant_id, status, broadcast_id) instead of .in('id', [...]).`
+- `// M4_NIGHT_RUN_2026_05_20 W1.1: run_id=NULL avoids uq_crm_message_queue_idem clash on the original sent row.`
+
+Naming the SPEC + the constraint that motivated the pattern makes the code self-documenting. Without it, future readers either revert it ("looks like a bug — let me fix the missing IN clause") or duplicate the discovery work. Cost a 7-line comment block vs ~30 min of future rediscovery.
+
+#### Step 4.3 — Narrow-exception accounting in EXECUTION_REPORT (added 2026-05-20 from `M4_SHORT_LINKS_DASHBOARD_REDESIGN` P-EXEC-2)
+
+When the SPEC §4.1 grants a narrow exception to touch an out-of-scope file (e.g., "crm.html: ≤ 4 new `<script>` tags after line 447"), the EXECUTION_REPORT MUST include a table listing each addition: file, line range, exact text added. This makes the Reviewer's §4 enforcement audit a 30-second grep instead of a multi-minute diff inspection.
+
+| File | Line range | Exact text added |
+|---|---|---|
+| `crm.html` | 425a | `<script src="modules/crm/crm-messaging-resend.js"></script>` |
+| … | … | … |
+
+Pre-answers the Reviewer's "is this addition within the §4.1 exception envelope?" question.
+
 ### Step 2 — Execute under Bounded Autonomy
 Follow the Execution Loop (above). Match → continue. Mismatch → STOP.
 

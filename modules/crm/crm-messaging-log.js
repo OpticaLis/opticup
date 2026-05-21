@@ -35,15 +35,20 @@
   var _logRows = [];
   var _logPage = 1;
   var _expandedId = null;
+  var _busyResend = false;
 
   async function renderMessagingLog(host) {
     if (!host) return;
     host.innerHTML =
       '<div>' +
         '<h4 class="text-base font-bold text-slate-800 mb-3">היסטוריה</h4>' +
-        '<div class="flex flex-wrap gap-2 mb-3">' +
+        '<div class="flex flex-wrap gap-2 mb-3 items-center">' +
           '<select id="log-channel" class="' + CLS_INPUT + ' max-w-[180px]"><option value="">כל הערוצים</option><option value="sms">SMS</option><option value="whatsapp">WhatsApp</option><option value="email">אימייל</option></select>' +
-          '<select id="log-status" class="' + CLS_INPUT + ' max-w-[180px]"><option value="">כל הסטטוסים</option><option value="sent">נשלח</option><option value="delivered">הגיע</option><option value="read">נקרא</option><option value="failed">נכשל</option><option value="pending_review">ממתין לאישור</option></select>' +
+          '<select id="log-status" class="' + CLS_INPUT + ' max-w-[180px]"><option value="">כל הסטטוסים</option><option value="sent">נשלח</option><option value="delivered">הגיע</option><option value="read">נקרא</option><option value="failed">נכשל</option><option value="rejected">נדחה</option><option value="pending_review">ממתין לאישור</option></select>' +
+          // M4_NIGHT_RUN_2026_05_20 W1.1: bulk resend trigger — visible only when
+          // there are failed/rejected rows loaded. Click → confirmation modal
+          // that splits resendable vs blocked counts.
+          '<button type="button" id="log-bulk-resend" class="hidden px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition">שלח שוב הכל</button>' +
         '</div>' +
         '<div id="log-table" class="bg-white rounded-lg border border-slate-200 overflow-hidden"></div>' +
         '<div id="log-pagination" class="flex items-center gap-2 mt-3"></div>' +
@@ -52,6 +57,8 @@
       var el = host.querySelector('#' + id);
       if (el) el.addEventListener('change', function () { _logPage = 1; _expandedId = null; loadLog().then(renderLogTable); });
     });
+    var bulkBtn = host.querySelector('#log-bulk-resend');
+    if (bulkBtn) bulkBtn.addEventListener('click', function () { bulkResendVisibleFailed(); });
     await loadLog();
     renderLogTable();
   }
@@ -63,9 +70,12 @@
     var ch = (document.getElementById('log-channel') || {}).value || '';
     var st = (document.getElementById('log-status')  || {}).value || '';
     // P8: JOIN crm_leads (full_name, phone) + crm_message_templates (name, slug) via FK.
+    // M4_NIGHT_RUN_2026_05_20 W1.1: also pull event_id, broadcast_id, template_id,
+    // run_id (for resend payload) + crm_leads.language + crm_message_templates
+    // .channel/.language (for base-slug derivation).
     var q = sb.from('crm_message_log').select(
-      'id, lead_id, channel, content, status, error_message, created_at, ' +
-      'crm_leads(full_name, phone), crm_message_templates(name, slug)'
+      'id, lead_id, event_id, broadcast_id, channel, content, status, error_message, created_at, template_id, run_id, ' +
+      'crm_leads(full_name, phone, language), crm_message_templates(name, slug, channel, language)'
     );
     if (tid) q = q.eq('tenant_id', tid);
     if (ch) q = q.eq('channel', ch);
@@ -78,6 +88,13 @@
   function renderLogTable() {
     var wrap = document.getElementById('log-table');
     if (!wrap) return;
+    // M4_NIGHT_RUN_2026_05_20 W1.1: show/hide the bulk-resend button based on
+    // whether any failed/rejected rows are loaded.
+    var bulkBtn = document.getElementById('log-bulk-resend');
+    if (bulkBtn) {
+      var hasFailed = _logRows.some(function (r) { return r.status === 'failed' || r.status === 'rejected'; });
+      bulkBtn.classList.toggle('hidden', !hasFailed);
+    }
     if (!_logRows.length) { wrap.innerHTML = '<div class="text-center text-slate-400 py-8">אין הודעות</div>'; return; }
     var start = (_logPage - 1) * PAGE_SIZE;
     var rows = _logRows.slice(start, start + PAGE_SIZE);
@@ -121,6 +138,13 @@
         resendPendingReview(b.getAttribute('data-log-resend'));
       });
     });
+    // M4_NIGHT_RUN_2026_05_20 W1.1: failed-row resend wiring.
+    wrap.querySelectorAll('[data-log-failresend]').forEach(function (b) {
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        resendFailedFromLog(b.getAttribute('data-log-failresend'));
+      });
+    });
     renderLogPagination();
   }
 
@@ -136,14 +160,61 @@
     // P20: pending_review rows expose a "שלח מחדש" button that opens the send dialog
     // pre-filled with the preserved body; on successful send, the original row is
     // marked 'superseded' so the log preserves the audit trail.
-    var resendBtn = (r.status === 'pending_review')
-      ? '<div class="mt-3"><button type="button" data-log-resend="' + escapeHtml(r.id) + '" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg transition">שלח מחדש</button></div>'
-      : '';
+    var resendBtn = '';
+    if (r.status === 'pending_review') {
+      resendBtn = '<div class="mt-3"><button type="button" data-log-resend="' + escapeHtml(r.id) + '" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg transition">שלח מחדש</button></div>';
+    } else if ((r.status === 'failed' || r.status === 'rejected') && window.CrmResend) {
+      // M4_NIGHT_RUN_2026_05_20 W1.1: classification-gated resend for failed rows.
+      // Resendable → enabled green button. Non-resendable → disabled grey button
+      // with the reason rendered as a hint line. INSERT goes through the queue
+      // (never synchronous) and writes a crm_audit_log entry.
+      var cls = CrmResend.classifyResend(r.error_message);
+      if (cls === 'resendable') {
+        resendBtn = '<div class="mt-3"><button type="button" data-log-failresend="' + escapeHtml(r.id) + '" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition">שלח שוב</button></div>';
+      } else {
+        var reason = CrmResend.reasonLabel(cls);
+        resendBtn = '<div class="mt-3"><button type="button" disabled title="' + escapeHtml(reason) + '" class="px-3 py-1.5 bg-slate-200 text-slate-500 text-xs font-semibold rounded-lg cursor-not-allowed">שלח שוב — לא זמין</button>' +
+          '<div class="text-xs text-slate-500 mt-1">' + escapeHtml(reason) + '</div></div>';
+      }
+    }
     return '<tr><td colspan="7" class="bg-slate-50 px-6 py-4 border-b border-slate-200">' +
       '<div class="text-sm font-semibold text-slate-700 mb-1">תוכן מלא:</div>' +
       '<pre class="whitespace-pre-wrap text-sm text-slate-800 bg-white border border-slate-200 rounded p-3 max-h-64 overflow-auto">' + escapeHtml(r.content || '') + '</pre>' +
       err + meta + resendBtn +
     '</td></tr>';
+  }
+
+  // M4_NIGHT_RUN_2026_05_20 W1.1: thin wrappers that delegate to CrmResend so
+  // both this view and crm-queue-live.js share one classifier + audit shape.
+  async function resendFailedFromLog(logId) {
+    if (_busyResend || !window.CrmResend) return;
+    var row = null;
+    for (var i = 0; i < _logRows.length; i++) { if (_logRows[i].id === logId) { row = _logRows[i]; break; } }
+    if (!row) return;
+    var tenantId = (typeof getTenantId === 'function') ? getTenantId() : null;
+    if (!tenantId) return;
+    _busyResend = true;
+    var res = await CrmResend.resendOne(tenantId, { kind: 'log_row', row: row }, 'log_view');
+    _busyResend = false;
+    if (!res.ok) { if (window.Toast) Toast.error(res.error || 'שגיאה'); return; }
+    if (window.Toast) Toast.success('ההודעה הוחזרה לתור');
+    _expandedId = null;
+    await loadLog();
+    renderLogTable();
+  }
+
+  async function bulkResendVisibleFailed() {
+    if (_busyResend || !window.CrmResend) return;
+    var tenantId = (typeof getTenantId === 'function') ? getTenantId() : null;
+    if (!tenantId) return;
+    var sources = _logRows
+      .filter(function (r) { return r.status === 'failed' || r.status === 'rejected'; })
+      .map(function (r) { return { kind: 'log_row', row: r }; });
+    CrmResend.bulkResend(tenantId, sources, 'log_view_bulk', async function () {
+      _expandedId = null;
+      await loadLog();
+      renderLogTable();
+    });
   }
 
   // P20: resend flow — opens a pre-filled quick-send dialog, then marks the old

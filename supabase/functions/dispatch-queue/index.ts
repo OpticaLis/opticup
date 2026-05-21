@@ -14,6 +14,63 @@ const ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeHJyeHptZHhhZW5sdm9jeWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjIxNzIsImV4cCI6MjA4ODUzODE3Mn0.7Z_lrqHctUqm1offIvZxA17wCI4kRopFWgL1jCDJ9ZU";
 const SEND_MESSAGE_URL = `${SUPABASE_URL}/functions/v1/send-message`;
 
+// M4_NIGHT_RUN_2026_05_20 W2.1 — advisory-lock infrastructure.
+// LOCK_HOLD_MS is the upper bound on a single tick's wall-clock. If a tick
+// dies mid-flight without releasing the lock, the next tick after this window
+// will reclaim it. Pick > worst-case tick duration but < cron interval.
+const LOCK_HOLD_MS = 90_000;       // 90s — comfortably > 15-row tick, < 1-min cron tick
+const MAX_RETRIES = 5;             // exponential backoff caps here
+const BASE_RETRY_DELAY_MS = 60_000; // 1 min; next retry at +1m, +2m, +4m, +8m, +16m, then permanent fail
+
+// Try to acquire the dispatch lock by atomically claiming row id=1.
+// Returns the random "locked_by" token if claimed, null if another tick holds it.
+async function tryAcquireDispatchLock(db: any): Promise<string | null> {
+  const token = crypto.randomUUID();
+  const lockUntil = new Date(Date.now() + LOCK_HOLD_MS).toISOString();
+  const nowIso = new Date().toISOString();
+  const res = await db.from("m4_dispatch_lock")
+    .update({ locked_until: lockUntil, locked_by: token })
+    .eq("id", 1)
+    .or(`locked_until.is.null,locked_until.lt.${nowIso}`)
+    .select("id");
+  if (res.error) {
+    console.error("dispatch lock acquire failed:", res.error.message);
+    return null;
+  }
+  if (!res.data || res.data.length === 0) return null;
+  return token;
+}
+
+async function releaseDispatchLock(db: any, token: string): Promise<void> {
+  // Only release if we still hold the lock (defensive — if our hold-ms passed
+  // and another tick reclaimed, we leave their lock alone).
+  await db.from("m4_dispatch_lock")
+    .update({ locked_until: null, locked_by: null })
+    .eq("id", 1).eq("locked_by", token);
+}
+
+// Classify a dispatch failure as transient (retry-eligible) or permanent.
+// Mirrors the client-side CrmResend.classifyResend categories.
+function isTransientError(errorText: string, httpStatus?: number): boolean {
+  const msg = (errorText || "").toLowerCase();
+  if (httpStatus && httpStatus >= 500 && httpStatus < 600) return true;
+  if (msg.startsWith("make_webhook_5")) return true;
+  if (msg.startsWith("make_webhook_4")) return true; // 4xx from Make is often transient (timeout, throttle)
+  if (msg.includes("timeout")) return true;
+  if (msg.includes("rate_limit")) return true;
+  if (msg.includes("rate_limited")) return true;
+  if (msg.includes("network")) return true;
+  if (msg.includes("econnreset")) return true;
+  if (msg.startsWith("exception:")) return true; // network exceptions caught in dispatchOne
+  return false;
+}
+
+function nextRetryAt(retries: number): string {
+  // Exponential backoff: 1m, 2m, 4m, 8m, 16m (then permanently fail at retries=5).
+  const delayMs = BASE_RETRY_DELAY_MS * Math.pow(2, Math.min(retries, MAX_RETRIES));
+  return new Date(Date.now() + delayMs).toISOString();
+}
+
 // C001 (2026-05-03) — allowlist layer 2 (defense in depth). Same lookup as
 // send-message; mirrors the layer-1 fail-closed semantics. tenants.test_mode_sms_allowlist
 // is the single source of truth for both layers.
@@ -60,10 +117,26 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST" && req.method !== "GET") return jsonResp({ ok: false, error: "method_not_allowed" }, 405);
 
-  const batchSize = 15; // 2026-05-20: hotfix M4_SMS_RATE_LIMIT_HOTFIX — reduced from 60 to halve cron-tick overlap (was 4 concurrent invocations causing Supabase per-trace rate-limit on send-message).
+  const batchSize = 15; // 2026-05-20: hotfix M4_SMS_RATE_LIMIT_HOTFIX — reduced from 60 to halve cron-tick overlap (was 4 concurrent invocations causing Supabase per-trace rate-limit on send-message). M4_NIGHT_RUN_2026_05_20 W2.1 keeps this band-aid as belt-and-suspenders with the new advisory lock; structural fix is the lock.
   const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+
+  // M4_NIGHT_RUN_2026_05_20 W2.1 — advisory lock: serialize concurrent cron
+  // ticks so at most ONE dispatch-queue invocation processes the queue at a
+  // time. Eliminates the 4×-overlap rate-limit bug class.
+  const lockToken = await tryAcquireDispatchLock(db);
+  if (!lockToken) {
+    return jsonResp({ ok: true, processed: 0, skipped: "lock_held" });
+  }
+  try {
+    return await runDispatchTick(db, batchSize);
+  } finally {
+    await releaseDispatchLock(db, lockToken).catch((e) => console.error("lock release failed:", (e as Error).message));
+  }
+});
+
+async function runDispatchTick(db: any, batchSize: number): Promise<Response> {
 
   // Reaper (P29): mark crm_automation_runs.status='running' rows older than
   // 1h as 'aborted'. The CrmConfirmSend modal has no abandonment recovery —
@@ -173,7 +246,7 @@ Deno.serve(async (req: Request) => {
   }
 
   return jsonResp({ ok: true, processed: claimedIds.size, sent, failed, rejected });
-});
+}
 
 // Per-row dispatch helper. Returns 'sent' | 'failed' | 'rejected' for the
 // caller's aggregation. Allowlist layer 2 + send-message POST + queue row
@@ -225,15 +298,47 @@ async function dispatchOne(db: any, r: any): Promise<"sent" | "failed" | "reject
         .eq("id", r.id);
       return "rejected";
     } else {
+      // M4_NIGHT_RUN_2026_05_20 W2.1: retry-with-backoff for transient errors.
+      // Permanent errors flip to status='failed' as before. Transient errors
+      // re-queue with scheduled_at = now() + exponential backoff, up to MAX_RETRIES.
+      const errText = String(d.error || res.status);
+      const currentRetries = (r.retries || 0);
+      if (isTransientError(errText, res.status) && currentRetries < MAX_RETRIES) {
+        await db.from("crm_message_queue")
+          .update({
+            status: "queued",
+            scheduled_at: nextRetryAt(currentRetries),
+            error_message: errText + " (retry " + (currentRetries + 1) + "/" + MAX_RETRIES + ")",
+            retries: currentRetries + 1,
+          })
+          .eq("id", r.id);
+        return "failed"; // counted as failed for this tick; the row will retry on a future tick
+      }
       await db.from("crm_message_queue")
-        .update({ status: "failed", processed_at: new Date().toISOString(), error_message: String(d.error || res.status), retries: (r.retries || 0) + 1 })
+        .update({ status: "failed", processed_at: new Date().toISOString(), error_message: errText, retries: currentRetries + 1 })
         .eq("id", r.id);
       return "failed";
     }
   } catch (e) {
     console.error("dispatchOne exception:", (e as Error).message || e);
+    // M4_NIGHT_RUN_2026_05_20 W2.1 (F-M08-1 hint): the catch block previously
+    // didn't increment `retries` — now it does, AND treats network exceptions
+    // as transient (retry with backoff up to MAX_RETRIES).
+    const msg = (e as Error).message || "?";
+    const currentRetries = (r.retries || 0);
+    if (isTransientError("exception: " + msg) && currentRetries < MAX_RETRIES) {
+      await db.from("crm_message_queue")
+        .update({
+          status: "queued",
+          scheduled_at: nextRetryAt(currentRetries),
+          error_message: "exception: " + msg + " (retry " + (currentRetries + 1) + "/" + MAX_RETRIES + ")",
+          retries: currentRetries + 1,
+        })
+        .eq("id", r.id);
+      return "failed";
+    }
     await db.from("crm_message_queue")
-      .update({ status: "failed", processed_at: new Date().toISOString(), error_message: "exception: " + ((e as Error).message || "?") })
+      .update({ status: "failed", processed_at: new Date().toISOString(), error_message: "exception: " + msg, retries: currentRetries + 1 })
       .eq("id", r.id);
     return "failed";
   }
