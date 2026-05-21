@@ -270,11 +270,17 @@
   }
 
   function _hydrate(modal, previewResponse) {
-    // M4_MODAL_DEFAULT_ALL_CHECKED_2026_05_19: empty excluded stays empty
-    // (all checked default). No session-restore step here anymore.
+    // M4_DISPATCH_PREVIEW_LAZY_ROWS (2026-05-21): refresh triggerType +
+    // triggerData from the resolved preview (probeAndCommit stashed them on
+    // __triggerType / __triggerData). _ensureState was called with null
+    // previewResponse for the loading screen, so those fields started null
+    // and must be replayed here for previewRecipientBody to work on per-row
+    // expand.
     _state.previewResponse = previewResponse;
     _state.recipients = (previewResponse && previewResponse.recipients_by_lead)
       ? previewResponse.recipients_by_lead.slice() : [];
+    _state.triggerType = previewResponse && previewResponse.__triggerType;
+    _state.triggerData = (previewResponse && previewResponse.__triggerData) || {};
     _state.phase = 'loaded';
     rerender(modal.el);
     var footerEl = modal.el.querySelector('.modal-footer');
