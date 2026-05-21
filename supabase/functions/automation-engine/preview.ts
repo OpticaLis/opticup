@@ -35,6 +35,9 @@ export interface PreviewInput {
   triggerData: Record<string, unknown>;
 }
 
+// M4_DISPATCH_PREVIEW_LAZY_ROWS (2026-05-21): the lazy per-row body fetch lives
+// in preview-recipient-body.ts to keep this file under Iron Rule 12's cap.
+
 interface PlanItem {
   rule_name?: string;
   template_slug?: string | null;
@@ -48,15 +51,19 @@ interface PlanItem {
   language?: string;
 }
 
+// M4_DISPATCH_PREVIEW_LAZY_ROWS (2026-05-21): message bodies fields kept on the
+// shape for backward-compat with any caller that reads them, but the default
+// path populates them as null. Bodies are composed on demand via
+// previewRecipientBody (per-row click in the modal). last_message_sent_at /
+// last_template_slug fields REMOVED — the prior fetchLastMessages helper
+// SELECTed crm_message_log.template_slug which does not exist (drift fix).
 interface RecipientView {
   lead_id: string;
   full_name: string;
   phone: string;
   email: string;
-  message_body_sms: string | null;
-  message_body_email: string | null;
-  last_message_sent_at: string | null;
-  last_template_slug: string | null;
+  message_body_sms: string | null;     // null in lazy default; populated only via preview_recipient_body
+  message_body_email: string | null;   // null in lazy default; populated only via preview_recipient_body
   created_at: string | null;
   prior_active_attendee_count: number;
   attended_event_count: number;
@@ -67,14 +74,18 @@ export interface PreviewResult {
   fired: number;
   queued: number;
   skipped: number;
-  rules: Array<{ rule_id: string; rule_name: string; template_slug: string | null; channels: string[] }>;
+  rules: Array<{ rule_id: string; rule_name: string; template_slug: string | null; channels: string[]; recipient_count: number }>;
   channels: string[];
   recipients_by_lead: RecipientView[];
+  // M4_DISPATCH_PREVIEW_LAZY_ROWS new shape fields:
+  recipient_count_total: number;
+  recipient_count_by_channel: Record<string, number>;
 }
 
 const ZERO: PreviewResult = {
   run_id: null, fired: 0, queued: 0, skipped: 0,
   rules: [], channels: [], recipients_by_lead: [],
+  recipient_count_total: 0, recipient_count_by_channel: {},
 };
 
 // In-process pagination helper — mirrors the recipients.ts paginate() so we
@@ -112,28 +123,13 @@ async function fetchLeadMeta(
   return m;
 }
 
-async function fetchLastMessages(
-  db: Db, tenantId: string, leadIds: string[],
-): Promise<Map<string, { last_message_sent_at: string; last_template_slug: string | null }>> {
-  const m = new Map<string, { last_message_sent_at: string; last_template_slug: string | null }>();
-  if (!leadIds.length) return m;
-  const CHUNK = 200;
-  for (let i = 0; i < leadIds.length; i += CHUNK) {
-    const slice = leadIds.slice(i, i + CHUNK);
-    // Fetch all sent rows for this chunk's leads, sorted newest-first,
-    // dedupe in JS (PostgREST has no DISTINCT ON).
-    const rows = await paginatedSelect<{ lead_id: string; created_at: string; template_slug: string | null }>(() =>
-      db.from("crm_message_log").select("lead_id, created_at, template_slug")
-        .eq("tenant_id", tenantId).in("lead_id", slice).eq("status", "sent")
-        .order("created_at", { ascending: false }));
-    for (const r of rows) {
-      if (!m.has(r.lead_id)) {
-        m.set(r.lead_id, { last_message_sent_at: r.created_at, last_template_slug: r.template_slug });
-      }
-    }
-  }
-  return m;
-}
+// M4_DISPATCH_PREVIEW_LAZY_ROWS (2026-05-21): fetchLastMessages DELETED.
+// The SELECT against crm_message_log.template_slug referenced a column that
+// does not exist on the live DB (only template_id does). The catch at line
+// ~268 swallowed the error to console.warn, leaving last_message_sent_at /
+// last_template_slug always null. The "Last message" decoration in the modal
+// was decorative-only (not used in any decision) — deleted entirely with the
+// drift. See INCIDENT_REPORT §0 "background DB error".
 
 async function fetchAttendeeAggregates(
   db: Db, tenantId: string, leadIds: string[],
@@ -185,21 +181,28 @@ export async function previewDispatch(
   const eventId = (typeof triggerData.eventId === "string") ? triggerData.eventId : null;
   const runId = await createRun(db, tenantId, rules, triggerType, triggerData, eventId);
 
-  // Per-rule plan preparation in evaluate mode — no side effects.
+  // M4_DISPATCH_PREVIEW_LAZY_ROWS (2026-05-21): per-rule plan preparation with
+  // skipBodyComposition=true (the lazy default). prepareRulePlan returns items
+  // with composedBody=null but full lead identity + channel — enough to drive
+  // the modal's recipient list, filter chips, and per-channel counts. The
+  // per-row body comes from previewRecipientBody (separate EF call).
   const tplCache = new Map<string, unknown>();
   const allItems: PlanItem[] = [];
   let skipped = 0;
   let totalQueued = 0;
   const channelsSet = new Set<string>();
-  const ruleSummaries: Array<{ rule_id: string; rule_name: string; template_slug: string | null; channels: string[] }> = [];
+  const ruleSummaries: Array<{ rule_id: string; rule_name: string; template_slug: string | null; channels: string[]; recipient_count: number }> = [];
   for (const rule of rules) {
     try {
-      const p = await prepareRulePlan(db, tenantId, rule, triggerData, tplCache, runId, "evaluate");
+      const p = await prepareRulePlan(db, tenantId, rule, triggerData, tplCache, runId, "evaluate",
+        { skipBodyComposition: true });
       const ruleChannels = new Set<string>();
+      const ruleLeadIds = new Set<string>();
       (p.items || []).forEach((it) => {
         const pi = it as PlanItem;
         allItems.push(pi);
         if (pi.channel) { channelsSet.add(pi.channel); ruleChannels.add(pi.channel); }
+        if (pi.lead_id) ruleLeadIds.add(pi.lead_id);
       });
       skipped += p.skipped || 0;
       totalQueued += p.queued || 0;
@@ -208,6 +211,7 @@ export async function previewDispatch(
         rule_id: rule.id, rule_name: rule.name || "",
         template_slug: cfg.template_slug || null,
         channels: Array.from(ruleChannels),
+        recipient_count: ruleLeadIds.size,
       });
     } catch (e) {
       console.error("preview prepareRulePlan:", (e as Error).message);
@@ -218,8 +222,12 @@ export async function previewDispatch(
   // Stamp run_id on items (parity with engine.ts evaluate path).
   if (runId) allItems.forEach((it) => { (it as unknown as Record<string, unknown>).run_id = runId; });
 
-  // Group plan items by lead_id (Brief §3.1 — recipient-first shape).
+  // M4_DISPATCH_PREVIEW_LAZY_ROWS (2026-05-21): group plan items by lead_id.
+  // Bodies are intentionally NULL — populated on demand via previewRecipientBody.
+  // Channel-presence flags drive the modal's per-row expand UI (so it knows
+  // which channels to fetch when the row is clicked).
   const byLead = new Map<string, RecipientView>();
+  const byChannelCount: Record<string, number> = {};
   for (const it of allItems) {
     if (!it.lead_id) continue;
     let r = byLead.get(it.lead_id);
@@ -231,23 +239,19 @@ export async function previewDispatch(
         email: it.recipient?.email || "",
         message_body_sms: null,
         message_body_email: null,
-        last_message_sent_at: null,
-        last_template_slug: null,
         created_at: null,
         prior_active_attendee_count: 0,
         attended_event_count: 0,
       };
       byLead.set(it.lead_id, r);
     }
-    if (it.channel === "sms"  && r.message_body_sms   == null) r.message_body_sms   = it.composedBody || "";
-    if (it.channel === "email" && r.message_body_email == null) r.message_body_email = it.composedBody || "";
+    if (it.channel) byChannelCount[it.channel] = (byChannelCount[it.channel] || 0) + 1;
   }
 
   const leadIds = Array.from(byLead.keys());
 
-  // Enrichment queries — 3 batched lookups. Run sequentially (rather than
-  // Promise.all) so a transient PostgREST hiccup on one doesn't poison the
-  // others; total latency is acceptable at ~3 round-trips for typical payloads.
+  // M4_DISPATCH_PREVIEW_LAZY_ROWS: enrichment queries kept (drive chip filters)
+  // but fetchLastMessages DELETED (template_slug drift; was decorative-only).
   try {
     const meta = await fetchLeadMeta(db, tenantId, leadIds);
     meta.forEach((v, k) => {
@@ -255,17 +259,6 @@ export async function previewDispatch(
       if (r) r.created_at = v.created_at;
     });
   } catch (e) { console.warn("preview fetchLeadMeta:", (e as Error).message); }
-
-  try {
-    const last = await fetchLastMessages(db, tenantId, leadIds);
-    last.forEach((v, k) => {
-      const r = byLead.get(k);
-      if (r) {
-        r.last_message_sent_at = v.last_message_sent_at;
-        r.last_template_slug = v.last_template_slug;
-      }
-    });
-  } catch (e) { console.warn("preview fetchLastMessages:", (e as Error).message); }
 
   try {
     const agg = await fetchAttendeeAggregates(db, tenantId, leadIds);
@@ -294,5 +287,8 @@ export async function previewDispatch(
     rules: ruleSummaries,
     channels: Array.from(channelsSet),
     recipients_by_lead: recipients,
+    recipient_count_total: recipients.length,
+    recipient_count_by_channel: byChannelCount,
   };
 }
+

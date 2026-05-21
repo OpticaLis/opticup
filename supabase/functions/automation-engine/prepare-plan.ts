@@ -139,11 +139,24 @@ function substituteVars(text: string, vars: Record<string, string>): string {
   return out;
 }
 
+// M4_DISPATCH_PREVIEW_LAZY_ROWS (2026-05-21): optional opts for the lazy preview
+// path. skipBodyComposition stops the inner template-substitution + validation
+// loop (items return with composedBody=null). leadIdFilter narrows to a single
+// lead. channelFilter narrows to a single channel. All three are no-ops when
+// undefined — existing callers (engine.ts evaluate/dispatch) get the prior
+// behavior with zero changes.
+export interface PrepareRulePlanOpts {
+  skipBodyComposition?: boolean;
+  leadIdFilter?: string;
+  channelFilter?: string;
+}
+
 export async function prepareRulePlan(
   db: Db, tenantId: string,
   rule: Rule, triggerData: Record<string, unknown>,
   tplCache: Map<string, unknown>, runId: string | null,
   mode: "evaluate" | "dispatch" = "dispatch",
+  opts: PrepareRulePlanOpts = {},
 ): Promise<PreparedPlan> {
   const cfg = rule.action_config || {};
 
@@ -188,6 +201,11 @@ export async function prepareRulePlan(
     console.error("automation-engine prepareRulePlan recipients:", (e as Error).message);
     return { items: [], skipped: 0, resolvedLeadIds: [], queued: 0 };
   }
+  // M4_DISPATCH_PREVIEW_LAZY_ROWS: narrow to a single lead when leadIdFilter set
+  // (for previewRecipientBody's per-row build path).
+  if (opts.leadIdFilter) {
+    leads = leads.filter((l) => l.id === opts.leadIdFilter);
+  }
   const resolvedLeadIds = leads.map((l) => l.id);
   if (!leads.length) return { items: [], skipped: 0, resolvedLeadIds, queued: 0 };
   if (!tplBase) {
@@ -203,10 +221,37 @@ export async function prepareRulePlan(
   const failedMissing = new Set<string>();
   let firstPaymentError: string | null = null;
   for (const lead of leads) {
-    const vars = await buildVariables(db, tenantId, triggerData, lead);
+    // M4_DISPATCH_PREVIEW_LAZY_ROWS: skip the expensive buildVariables call too
+    // when bodies aren't being composed — buildVariables hits the event row
+    // for every lead via fetchTemplate's parent context. Empty vars are fine
+    // when composedBody stays null.
+    const vars = opts.skipBodyComposition
+      ? {} as Record<string, string>
+      : await buildVariables(db, tenantId, triggerData, lead);
     for (const ch of channels) {
       if (ch === "email" && !lead.email) continue;
       if (ch === "sms"   && !lead.phone) continue;
+      // M4_DISPATCH_PREVIEW_LAZY_ROWS: narrow to a single channel when channelFilter set.
+      if (opts.channelFilter && ch !== opts.channelFilter) continue;
+      // M4_DISPATCH_PREVIEW_LAZY_ROWS: in skipBodyComposition mode, push the
+      // recipient row with composedBody=null + no template fetch + no validation.
+      // The modal calls previewRecipientBody per-row click to materialize the body.
+      if (opts.skipBodyComposition) {
+        items.push({
+          rule_name: rule.name || "",
+          template_slug: tplBase,
+          template_id: null,
+          channel: ch,
+          recipient: { name: lead.full_name || "", phone: lead.phone || "", email: lead.email || "" },
+          variables: {},
+          composedBody: null,
+          lead_id: lead.id,
+          event_id: eventId,
+          language,
+          skip_auto_promote: hasPostAction || cfg.skip_auto_promote === true,
+        });
+        continue;
+      }
       const tpl = await fetchTemplate(db, tenantId, tplCache, tplBase, ch, language);
       const composedBody = tpl
         ? substituteVars(tpl.body, vars)

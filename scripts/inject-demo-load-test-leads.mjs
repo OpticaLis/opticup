@@ -16,7 +16,7 @@
 // Even if dispatch fires by accident, every recipient fails allowlist → zero real sends.
 
 import { TENANT_DEMO, loadCredentials } from './lib/m4-config-common.mjs';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.44.0';
+import { createClient } from '@supabase/supabase-js';
 
 const SENTINEL = 'M4_DISPATCH_PREVIEW_LOAD_TEST_2026_05_21';
 const TARGET_COUNT = 1200;
@@ -31,7 +31,7 @@ async function main() {
   }
 
   const creds = loadCredentials();
-  const sb = createClient(creds.url, creds.serviceRoleKey, { auth: { persistSession: false } });
+  const sb = createClient(creds.url, creds.key, { auth: { persistSession: false } });
 
   const pre = await sb.from('crm_leads').select('id', { count: 'exact', head: true })
     .eq('tenant_id', TENANT_DEMO).eq('utm_campaign', SENTINEL);
