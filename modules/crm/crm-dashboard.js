@@ -78,21 +78,20 @@
     var leadsCountQ = sb.from('crm_leads').select('id', { count: 'exact', head: true }).eq('is_deleted', false);
     if (tid) leadsCountQ = leadsCountQ.eq('tenant_id', tid);
 
-    var returningQ = sb.from('v_crm_lead_event_history').select('lead_id', { count: 'exact', head: true }).eq('is_returning_customer', true);
+    // SPEC 3 (2026-05-21): MV + RPC bypass PostgREST db-max-rows=1000.
+    var returningQ = sb.from('mv_crm_lead_event_history').select('lead_id', { count: 'exact', head: true }).eq('is_returning_customer', true);
     if (tid) returningQ = returningQ.eq('tenant_id', tid);
-
-    var statusDistQ = sb.from('crm_leads').select('status').eq('is_deleted', false);
-    if (tid) statusDistQ = statusDistQ.eq('tenant_id', tid);
-
+    var statusDistQ = sb.rpc('crm_dashboard_status_counts', { p_tenant_id: tid });
     var r = await Promise.all([evQ, leadsCountQ, returningQ, statusDistQ]);
     if (r[0].error) throw new Error('event_stats: ' + r[0].error.message);
     if (r[1].error) throw new Error('leads_count: ' + r[1].error.message);
     if (r[2].error) throw new Error('returning: ' + r[2].error.message);
     if (r[3].error) throw new Error('status_dist: ' + r[3].error.message);
-
     var eventStats = r[0].data || [];
     var statusCounts = {};
-    (r[3].data || []).forEach(function (x) { statusCounts[x.status || 'unknown'] = (statusCounts[x.status || 'unknown'] || 0) + 1; });
+    (Array.isArray(r[3].data) ? r[3].data : []).forEach(function (x) {
+      statusCounts[x.status || 'unknown'] = (x.count || 0);
+    });
     var completedByDate = eventStats.filter(function (e) { return (e.total_revenue || 0) > 0; })
       .sort(function (a, b) { return String(b.event_date || '').localeCompare(String(a.event_date || '')); });
     return {

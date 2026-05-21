@@ -107,51 +107,14 @@ async function paginatedSelect<T>(
   return out;
 }
 
-async function fetchLeadMeta(
-  db: Db, tenantId: string, leadIds: string[],
-): Promise<Map<string, { created_at: string | null }>> {
-  const m = new Map<string, { created_at: string | null }>();
-  if (!leadIds.length) return m;
-  const CHUNK = 200;
-  for (let i = 0; i < leadIds.length; i += CHUNK) {
-    const slice = leadIds.slice(i, i + CHUNK);
-    const rows = await paginatedSelect<{ id: string; created_at: string | null }>(() =>
-      db.from("crm_leads").select("id, created_at")
-        .eq("tenant_id", tenantId).in("id", slice));
-    rows.forEach((r) => m.set(r.id, { created_at: r.created_at }));
-  }
-  return m;
-}
-
 // M4_DISPATCH_PREVIEW_LAZY_ROWS (2026-05-21): fetchLastMessages DELETED.
-// The SELECT against crm_message_log.template_slug referenced a column that
-// does not exist on the live DB (only template_id does). The catch at line
-// ~268 swallowed the error to console.warn, leaving last_message_sent_at /
-// last_template_slug always null. The "Last message" decoration in the modal
-// was decorative-only (not used in any decision) — deleted entirely with the
-// drift. See INCIDENT_REPORT §0 "background DB error".
-
-async function fetchAttendeeAggregates(
-  db: Db, tenantId: string, leadIds: string[],
-): Promise<Map<string, { prior_active_attendee_count: number; attended_event_count: number }>> {
-  const m = new Map<string, { prior_active_attendee_count: number; attended_event_count: number }>();
-  if (!leadIds.length) return m;
-  const ACTIVE = new Set(["registered", "confirmed", "attended", "purchased", "no_show"]);
-  const CHUNK = 200;
-  for (let i = 0; i < leadIds.length; i += CHUNK) {
-    const slice = leadIds.slice(i, i + CHUNK);
-    const rows = await paginatedSelect<{ lead_id: string; status: string }>(() =>
-      db.from("crm_event_attendees").select("lead_id, status")
-        .eq("tenant_id", tenantId).in("lead_id", slice).eq("is_deleted", false));
-    for (const r of rows) {
-      const existing = m.get(r.lead_id) || { prior_active_attendee_count: 0, attended_event_count: 0 };
-      if (ACTIVE.has(r.status)) existing.prior_active_attendee_count += 1;
-      if (r.status === "attended") existing.attended_event_count += 1;
-      m.set(r.lead_id, existing);
-    }
-  }
-  return m;
-}
+// M4_DISPATCH_PREVIEW_ENRICHMENT_AGGREGATE_FIX (Sprint 1 SPEC 2, 2026-05-21):
+// fetchLeadMeta DELETED — `created_at` now rides on resolveRecipients SELECT
+// directly + flows through prepareRulePlan's recipient.created_at. Saves
+// ~89s at 84K leads (was 445 chunked PostgREST roundtrips × ~200ms each).
+// fetchAttendeeAggregates DELETED — replaced by RPC call
+// crm_attendee_aggregates_for_leads which returns all aggregates in ONE
+// server-side GROUP BY query.
 
 // Main entry. Reuses engine.ts TRIGGER_TYPES + evaluateCondition + the existing
 // prepareRulePlan(..., 'evaluate') to avoid drift between preview and dispatch.
@@ -239,7 +202,10 @@ export async function previewDispatch(
         email: it.recipient?.email || "",
         message_body_sms: null,
         message_body_email: null,
-        created_at: null,
+        // M4_DISPATCH_PREVIEW_ENRICHMENT_AGGREGATE_FIX: created_at now rides on
+        // the recipient object from resolveRecipients (no second SELECT loop).
+        // deno-lint-ignore no-explicit-any
+        created_at: (it.recipient as any)?.created_at || null,
         prior_active_attendee_count: 0,
         attended_event_count: 0,
       };
@@ -250,26 +216,27 @@ export async function previewDispatch(
 
   const leadIds = Array.from(byLead.keys());
 
-  // M4_DISPATCH_PREVIEW_LAZY_ROWS: enrichment queries kept (drive chip filters)
-  // but fetchLastMessages DELETED (template_slug drift; was decorative-only).
+  // M4_DISPATCH_PREVIEW_ENRICHMENT_AGGREGATE_FIX (Sprint 1 SPEC 2):
+  // Replaces the chunked PostgREST fetchAttendeeAggregates loop (445 round-trips
+  // at 84K leads) with a single SQL aggregate via the new RPC. Same shape, one
+  // server-side GROUP BY.
   try {
-    const meta = await fetchLeadMeta(db, tenantId, leadIds);
-    meta.forEach((v, k) => {
-      const r = byLead.get(k);
-      if (r) r.created_at = v.created_at;
+    const aggsRes = await db.rpc("crm_attendee_aggregates_for_leads", {
+      p_tenant_id: tenantId,
+      p_lead_ids: leadIds,
     });
-  } catch (e) { console.warn("preview fetchLeadMeta:", (e as Error).message); }
-
-  try {
-    const agg = await fetchAttendeeAggregates(db, tenantId, leadIds);
-    agg.forEach((v, k) => {
-      const r = byLead.get(k);
-      if (r) {
-        r.prior_active_attendee_count = v.prior_active_attendee_count;
-        r.attended_event_count = v.attended_event_count;
+    if (!aggsRes.error && Array.isArray(aggsRes.data)) {
+      for (const row of aggsRes.data as Array<{ lead_id: string; prior_active_attendee_count: number; attended_event_count: number }>) {
+        const r = byLead.get(row.lead_id);
+        if (r) {
+          r.prior_active_attendee_count = row.prior_active_attendee_count;
+          r.attended_event_count = row.attended_event_count;
+        }
       }
-    });
-  } catch (e) { console.warn("preview fetchAttendeeAggregates:", (e as Error).message); }
+    } else if (aggsRes.error) {
+      console.warn("preview crm_attendee_aggregates_for_leads:", aggsRes.error.message);
+    }
+  } catch (e) { console.warn("preview attendee aggregates RPC:", (e as Error).message); }
 
   // Sort by full_name ASC (alphabetical) so the "first 3" test-send subset is
   // deterministic without client-side sorting (Brief §3.6 stable subset).
