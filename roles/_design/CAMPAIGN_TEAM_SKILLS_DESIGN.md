@@ -1,9 +1,9 @@
 # Campaign Team Skills Design
 ## 6-Role Architecture for Optic Up Autonomous Marketing Operations
 
-**Authored by:** opticup-localhost-tester (Mission 10)  
-**Date:** 2026-05-20  
-**Status:** DESIGN ONLY — no skill files created. A separate SPEC tomorrow will implement.  
+**Authored by:** opticup-localhost-tester (Mission 10)
+**Date:** 2026-05-20
+**Status:** **Phase 1 IMPLEMENTED 2026-05-21** via `M4_CAMPAIGN_TEAM_SKILLS_SETUP` SPEC. Phase 1 shipped 4 skills (with the Campaign Lead manager layer added per Daniel's request — not in the original 6-role design): `opticup-campaign-lead`, `opticup-campaign-performance-analyst`, `opticup-campaign-copywriter`, `opticup-campaign-retrospective`. Phase 2 (QA-pre-flight, Audience Manager, Scheduler) remains deferred per §6 below. See `modules/Module 4 - CRM/docs/specs/M4_CAMPAIGN_TEAM_SKILLS_SETUP/SPEC.md` for the implementation record and `modules/Module 4 - CRM/architecture-brief/M4_CAMPAIGN_TEAM_SKILLS_SETUP_BRIEF.md` for the Phase 1 scope.
 **References read:** `roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md`, `roles/campaign-overseer/M4_INFRASTRUCTURE_CONTRACT.md`, `roles/site-overseer/SITE_OVERSEER_HANDOFF.md`, `roles/site-overseer/FUNNEL_ROADMAP.md`, `.claude/skills/opticup-campaign-overseer/SKILL.md` (inferred via loading context)
 
 ---
