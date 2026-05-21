@@ -61,7 +61,7 @@ async function main() {
         email: `m4_load_test_${padded}@demo.opticalis.test`,
         status: 'waiting',
         utm_campaign: SENTINEL,
-        utm_source: 'm4_dispatch_preview_summary_mode_spec',
+        utm_source: 'm4_dispatch_preview_lazy_rows_spec',
         is_deleted: false,
         language: 'he',
       });
