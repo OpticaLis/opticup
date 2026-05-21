@@ -2,6 +2,8 @@
 // Port of modules/crm/crm-automation-recipient-resolvers.js (7 recipient_types).
 // Service-role DB; explicit tenant_id filter on every query (Iron Rule 22).
 
+import { unwrapJsonbArray } from "./rpc-shape-util.ts";
+
 export interface Lead {
   id: string;
   full_name?: string;
@@ -78,11 +80,9 @@ export async function resolveRecipients(
       return [];
     }
     const statusList = hasFilter ? cfg.recipient_status_filter : TIER2_STATUSES;
-    // M4_MESSAGE_PERFORMANCE_RPC_AND_DATE_COLUMNS (Sprint 2 Item 1, 2026-05-21):
-    // The jsonb-scalar RPC pattern (proven in the dashboard fix + message-perf
-    // screen) bypasses PostgREST db-max-rows=1000. Deno's supabase-js may
-    // surface jsonb returns as parsed array, parsed object, or JSON string
-    // depending on PostgREST version — handle all three shapes defensively.
+    // M4_JSONB_RPC_SHARED_HELPER (Sprint 3 Item 1): shape-fallback codified
+    // in rpc-shape-util.unwrapJsonbArray. Belt+suspenders paginate fallback if
+    // RPC returns empty (caught a real Sprint-1 silent failure).
     let leads: Lead[] = [];
     const rpcRes = await db.rpc("crm_resolve_tier2_leads_jsonb", {
       p_tenant_id: tenantId,
@@ -91,22 +91,8 @@ export async function resolveRecipients(
     if (rpcRes.error) {
       console.warn("automation-engine resolveRecipients tier2 RPC error, falling back to paginate:", rpcRes.error.message);
     } else {
-      const d = rpcRes.data;
-      if (Array.isArray(d)) {
-        leads = d as Lead[];
-      } else if (typeof d === "string") {
-        try { const parsed = JSON.parse(d); if (Array.isArray(parsed)) leads = parsed; } catch (_e) { /* ignore */ }
-      } else if (d && typeof d === "object") {
-        // Some PostgREST shapes wrap the jsonb under a key like the function name
-        const keys = Object.keys(d as Record<string, unknown>);
-        for (const k of keys) {
-          const v = (d as Record<string, unknown>)[k];
-          if (Array.isArray(v)) { leads = v as Lead[]; break; }
-        }
-      }
-      console.log("[m4-tier2-rpc] data typeof=", typeof d, " isArray=", Array.isArray(d), " leads.length=", leads.length);
+      leads = unwrapJsonbArray<Lead>(rpcRes.data);
     }
-    // Belt+suspenders fallback to paginated SELECT if RPC returned nothing
     if (!leads.length) {
       console.warn("[m4-tier2-rpc] RPC returned 0 leads — falling back to paginate");
       leads = await paginate<Lead>(() =>
