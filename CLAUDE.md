@@ -509,6 +509,7 @@ git push origin v{module}.{phase}
 5. Module's `db-schema.sql` — verify current
 6. **Merge module's MODULE_MAP into `docs/GLOBAL_MAP.md`** (add only, never overwrite)
 7. **Merge module's db-schema.sql into `docs/GLOBAL_SCHEMA.sql`** (add only, never overwrite)
+8. **Campaign KB freshness check (added 2026-05-21 by `CAMPAIGN_KB_BUILD` SPEC).** Did this SPEC affect any campaign KB file under `roles/campaign-overseer/knowledge/` (MAP or KB_MODULE_4 / KB_MESSAGING / KB_STOREFRONT / KB_STRATEGY / KB_FUNNEL_CAPI)? If yes — update the matching KB(s) in the SAME merge so the KB stays a synthesis of current truth. Triggers include: new M4 SPEC closure, new template/rule/broadcast, new placeholder/trigger_type/action_type, new campaign page or pixel point, new locked strategy decision. The MAP itself updates when the routing table needs a new task row or a KB file is added/split. Never ad-hoc inside a campaign session — KB edits flow through SPEC closure for review.
 
 ### Cross-Module Rules
 - **Contracts:** modules communicate ONLY through contract functions. Never access another module's tables directly.

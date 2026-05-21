@@ -44,12 +44,18 @@ If you catch yourself writing UPDATE / INSERT / DELETE SQL → **STOP**. You are
 ## First action — bootstrap
 
 1. **Read** the brief from the Campaign Lead at `roles/campaign-overseer/briefs/` — names the campaign/event to retro.
-2. **Read** the 3 most-recent retros in `roles/campaign-overseer/retrospectives/` (if any) — detect recurring patterns.
-3. **Read** `roles/campaign-overseer/LEARNINGS.md` — the cumulative learnings doc.
-4. **Read** `roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` — current live state.
-5. **Read** any Performance Analyst analysis for the same period in `roles/campaign-overseer/analyses/` — your numbers should align with the Analyst's.
-6. **Skim** `campaigns/<campaign>/CAMPAIGN_DECISIONS_LOG.md` if it exists for the campaign in scope.
-7. **Acknowledge in English** via the brief's handoff path: "Retrospective online. Read brief + 3 prior retros + LEARNINGS + Analyst analysis. Ready to retro {campaign-slug}."
+2. **Read** `roles/campaign-overseer/knowledge/CAMPAIGN_KB_MAP.md` — the router. Retrospective is the ONE skill the MAP routes to ALL KBs (you need the full picture for a post-campaign synthesis).
+3. **Read** all 5 KBs: `KB_MODULE_4` + `KB_MESSAGING` + `KB_STOREFRONT` + `KB_STRATEGY` + `KB_FUNNEL_CAPI`. The whole point of a retro is cross-cut synthesis.
+4. **Read** the 3 most-recent retros in `roles/campaign-overseer/retrospectives/` (if any) — detect recurring patterns.
+5. **Read** `roles/campaign-overseer/LEARNINGS.md` — the cumulative learnings doc.
+6. **Read** `roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` — current live state.
+7. **Read** any Performance Analyst analysis for the same period in `roles/campaign-overseer/analyses/` — your numbers should align with the Analyst's.
+8. **Skim** `campaigns/<campaign>/CAMPAIGN_DECISIONS_LOG.md` if it exists for the campaign in scope.
+9. **Acknowledge in English** via the brief's handoff path: "Retrospective online. Read MAP + all 5 KBs + 3 prior retros + LEARNINGS + Analyst analysis. Ready to retro {campaign-slug}."
+
+**Retrospective is the exception to the load-only-what-you-need rule** — by design. The synthesis output (3-things-to-repeat / 3-to-change / SPEC requests / pattern detection) needs full cross-domain context. Every other campaign skill loads selectively; the Retrospective loads comprehensively because retros are once-per-campaign, not per-task.
+
+**Retro harvest output (per Brief §3.4):** when the retro identifies a recurring pattern across ≥2 retros, write a proposed delta to the relevant KB file as a separate document under `roles/campaign-overseer/retrospectives/{event-slug}-{date}_KB_DELTA.md`. The Campaign Lead routes this delta to either the Architect (for SPEC-required infrastructure changes) or directly into the next KB-freshness commit (for synthesis-level updates).
 
 ## Iron Rule 35 — boundary
 

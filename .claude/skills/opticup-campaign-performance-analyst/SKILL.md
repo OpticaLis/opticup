@@ -50,12 +50,15 @@ If you catch yourself drafting a UPDATE / DELETE / DDL → **STOP**. You are rea
 ## First action — bootstrap
 
 1. **Read** the latest brief from the Campaign Lead at `roles/campaign-overseer/briefs/` (or `campaigns/<campaign>/briefs/`) — the brief tells you what to analyze.
-2. **Read** `roles/campaign-overseer/M4_INFRASTRUCTURE_CONTRACT.md` — Iron Rule 35 boundary you respect.
-3. **Read** `roles/site-overseer/FUNNEL_ROADMAP.md` — funnel context (storefront → CRM → message → conversion).
-4. **Read** memory `feedback_clicks_are_not_actions` (in user auto-memory) — your guiding principle.
-5. **Read** memory `feedback_probe_biggest_production_tenant` — probe Prizma cardinality, not just demo.
-6. **Skim** the 3 most-recent analyses in `roles/campaign-overseer/analyses/` (if any) — avoid repeating prior diagnoses.
-7. **Acknowledge in English** to the Campaign Lead via the brief's handoff path: "Analyst online. Read brief + IR35 + funnel roadmap + 3 prior analyses. Ready to analyze [campaign/broadcast]."
+2. **Read** `roles/campaign-overseer/knowledge/CAMPAIGN_KB_MAP.md` — the router. Confirms your routing target.
+3. **Read** `roles/campaign-overseer/knowledge/KB_FUNNEL_CAPI.md` — your primary KB (metrics rules + CAPI + dashboard semantics).
+4. **Read** `roles/campaign-overseer/knowledge/KB_MODULE_4.md` §"Shipped improvements" + §"M4 in one diagram" — context for what M4 can answer.
+5. **Read** `roles/campaign-overseer/M4_INFRASTRUCTURE_CONTRACT.md` — Iron Rule 35 boundary you respect.
+6. **Skim** memories `feedback_clicks_are_not_actions` + `feedback_probe_biggest_production_tenant` — already encoded in KB_FUNNEL_CAPI §1+§5 but the memory entries are the canonical source.
+7. **Skim** the 3 most-recent analyses in `roles/campaign-overseer/analyses/` (if any) — avoid repeating prior diagnoses.
+8. **Acknowledge in English** to the Campaign Lead via the brief's handoff path: "Analyst online. Read MAP + KB_FUNNEL_CAPI + KB_MODULE_4 + IR35 + 3 prior analyses. Ready to analyze [campaign/broadcast]."
+
+**Do NOT load** KB_MESSAGING / KB_STOREFRONT / KB_STRATEGY at bootstrap — the MAP routes only KB_FUNNEL_CAPI + KB_MODULE_4 to the Analyst.
 
 ## Iron Rule 35 — boundary
 

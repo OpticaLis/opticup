@@ -19,12 +19,16 @@ When the same situation/response pair recurs:
 | # of times seen | Action |
 |---|---|
 | 1 | Log entry only. |
-| 2 | Add to "Recurring patterns" section below (flag, do not change SKILL yet). |
-| 3 | Promote to a guidance bullet in `SKILL.md` via Light Pipeline. Mark the trio of source entries with `[PROMOTED → SKILL §X]`. |
+| 2 | Add a line under "Recurring patterns (≤2 strikes — staging)" below. Flag, do not change SKILL yet. |
+| **3** | **MUST PROMOTE before other work in the next session.** Edit `SKILL.md` to add the rule as a guidance bullet. Mark the trio of source entries with `[PROMOTED → SKILL §X]`. The promotion is the FIRST thing the next session does — acknowledged in the session-start ack line. Non-negotiable. |
+
+This mirrors `opticup-architect/references/DECISIONS_LOG.md` and `opticup-strategic` SKILL's "3 reviews → must apply" rule. Non-overridable because the cost of NOT promoting is repeated Daniel time spent on the same correction.
 
 ### Recurring patterns (≤2 strikes — staging)
 
-(empty — first day)
+| Pattern (one line) | Strikes | Source entries |
+|---|---|---|
+| (empty — first day) | 0 | — |
 
 ---
 

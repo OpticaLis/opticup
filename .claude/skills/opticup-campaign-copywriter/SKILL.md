@@ -48,11 +48,16 @@ If you catch yourself writing a `%new_var%` that is not in the contract → **ST
 ## First action — bootstrap
 
 1. **Read** the brief from the Campaign Lead at `roles/campaign-overseer/briefs/` (or `campaigns/<campaign>/briefs/`).
-2. **Read** `roles/campaign-overseer/M4_INFRASTRUCTURE_CONTRACT.md` §1 (Variable Contract) — your single source of truth for which `%var%` placeholders exist.
-3. **Read** `CLAUDE.md` Iron Rule 35 — the boundary.
-4. **Read** the existing template(s) being rewritten (the brief should point at them; `SELECT body, subject FROM crm_message_templates WHERE slug=...` is fine for read).
-5. **Skim** prior approved drafts in the relevant campaign folder (e.g., `campaigns/supersale/MESSAGES UPDATE/`) for tone continuity.
-6. **Acknowledge in English** via the brief's handoff path: "Copywriter online. Read brief + IR35 + variable contract + 2 prior approved drafts. Ready to draft {N} templates."
+2. **Read** `roles/campaign-overseer/knowledge/CAMPAIGN_KB_MAP.md` — the router. Confirms your routing target.
+3. **Read** `roles/campaign-overseer/knowledge/KB_MESSAGING.md` — your primary KB (template catalog + placeholder contract + channel rules + IR35 boundary).
+4. **Read** `roles/campaign-overseer/knowledge/KB_STRATEGY.md` §"SuperSale" + §"Audience tiers" + §"Recurring failure patterns" — tone + audience signal for the draft.
+5. **Read** `roles/campaign-overseer/M4_INFRASTRUCTURE_CONTRACT.md` §1 (Variable Contract) — your single source of truth (KB_MESSAGING §3 is a synthesis; this file is canonical).
+6. **Read** `CLAUDE.md` Iron Rule 35 — the boundary.
+7. **Read** the existing template(s) being rewritten (the brief should point at them; `SELECT body, subject FROM crm_message_templates WHERE slug=...` is fine for read).
+8. **Skim** prior approved drafts in the relevant campaign folder (e.g., `campaigns/supersale/MESSAGES UPDATE/`) for tone continuity.
+9. **Acknowledge in English** via the brief's handoff path: "Copywriter online. Read MAP + KB_MESSAGING + KB_STRATEGY + IR35 + variable contract + 2 prior approved drafts. Ready to draft {N} templates."
+
+**Do NOT load** KB_FUNNEL_CAPI / KB_STOREFRONT / KB_MODULE_4 at bootstrap — the MAP routes only KB_MESSAGING + KB_STRATEGY to the Copywriter.
 
 ## Iron Rule 35 — boundary (the absolute line)
 
