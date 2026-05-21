@@ -208,6 +208,7 @@
       var settle = function (v) { if (!resolved) { resolved = true; resolve(v); } };
       // Track preview directly so we can commit silently before the modal would open
       previewPromise.then(async function (preview) {
+        try { window.__statusChangeTrace = window.__statusChangeTrace || []; window.__statusChangeTrace.push({step:'probeAndCommit:listenerA:previewSeen', recipientsLen: preview && Array.isArray(preview.recipients_by_lead) ? preview.recipients_by_lead.length : 'no-array', previewKeys: preview ? Object.keys(preview) : null, t:Date.now()}); } catch (_) {}
         if (preview && Array.isArray(preview.recipients_by_lead) && preview.recipients_by_lead.length) return; // modal path handles it
         try {
           var data = await commitCallback({ mode: 'silent', preview: preview });
@@ -220,6 +221,7 @@
         catch (e2) { settle({ committed: false, mode: 'commit_failed', error: e2 }); }
       });
       CrmConfirmSendV2.showAsync(previewPromise, async function (choice, ctx) {
+        try { window.__statusChangeTrace.push({step:'probeAndCommit:onChoice:called', choice:choice, hasCtx:!!ctx, t:Date.now()}); } catch (_) {}
         if (!choice || !choice.dispatch) { settle({ committed: false, mode: 'no_notify_choice' }); return { sent: 0, failed: 0, rejected: 0 }; }
         try {
           // M4_MODAL_DESELECTION_RESTORE_2026_05_19: forward operator overrides

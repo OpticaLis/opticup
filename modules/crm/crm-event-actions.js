@@ -215,6 +215,7 @@
   // do we run the UPDATE — DB trigger then fires SCE, cron consumer dispatches.
   // No browser-side EF dispatch call.
   async function changeEventStatus(eventId, newStatus) {
+    try { window.__statusChangeTrace = window.__statusChangeTrace || []; window.__statusChangeTrace.push({step:'changeEventStatus:enter', eventId:eventId, newStatus:newStatus, t:Date.now()}); } catch (_) {}
     var tenantId = CrmHelpers.tid();
     var evRes = await sb.from('crm_events')
       .select('name, event_date, start_time, location_address, status')
@@ -252,7 +253,9 @@
       return await commit({});
     }
     var triggerData = { eventId: eventId, newStatus: newStatus, event: evRes.data };
+    try { window.__statusChangeTrace.push({step:'changeEventStatus:beforeProbeAndCommit', oldStatus:oldStatus, t:Date.now()}); } catch (_) {}
     var result = await CrmAutomationClient.probeAndCommit('event_status_change', triggerData, commit, { silentToast: 'סטטוס עודכן' });
+    try { window.__statusChangeTrace.push({step:'changeEventStatus:afterProbeAndCommit', result:result ? { committed: result.committed, mode: result.mode, hasError: !!result.error, errorMsg: result.error && result.error.message } : null, t:Date.now()}); } catch (_) {}
     return (result && result.data) || (result && result.committed ? { id: eventId, status: newStatus } : null);
   }
 
