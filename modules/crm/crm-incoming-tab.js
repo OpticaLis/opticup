@@ -174,7 +174,14 @@
       wrap.innerHTML = '<div class="text-center text-slate-400 py-8">אין לידים נכנסים</div>';
       return;
     }
-    var html = '<table class="' + CLS_TABLE + '"><thead><tr>' +
+    // SPEC 3 (2026-05-21): bulk-select bar + checkbox col.
+    var html =
+      '<div id="crm-incoming-bulk-bar" class="hidden bg-emerald-50 border-b border-emerald-200 px-3 py-2 flex items-center justify-between gap-3">' +
+        '<div class="text-sm text-emerald-900"><span id="crm-incoming-bulk-count" class="font-bold">0</span> לידים נבחרו</div>' +
+        '<button id="crm-incoming-bulk-approve" type="button" class="px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-semibold hover:bg-emerald-700">אשר למצב רשום ✓</button>' +
+      '</div>' +
+      '<table class="' + CLS_TABLE + '"><thead><tr>' +
+      '<th class="' + CLS_TH + ' w-8"><input type="checkbox" id="crm-incoming-select-all" class="crm-bulk-cb"></th>' +
       '<th class="' + CLS_TH + '">שם</th>' +
       '<th class="' + CLS_TH + '">טלפון</th>' +
       '<th class="' + CLS_TH + '">אימייל</th>' +
@@ -189,6 +196,7 @@
       var rowClass = idx % 2 === 0 ? CLS_ROW_ODD : CLS_ROW_EVEN;
       var statusInfo = CrmHelpers.getStatusInfo('lead', r.status);
       html += '<tr class="' + rowClass + '" data-lead-id="' + escapeHtml(r.id) + '">' +
+        '<td class="' + CLS_TD + '"><input type="checkbox" class="crm-bulk-cb crm-bulk-row-cb" data-bulk-lead-id="' + escapeHtml(r.id) + '"></td>' +
         '<td class="' + CLS_TD + '">' + escapeHtml(r.full_name || '') + '</td>' +
         '<td class="' + CLS_TD + '">' + escapeHtml(CrmHelpers.formatPhone(r.phone) || '') + '</td>' +
         '<td class="' + CLS_TD + '">' + escapeHtml(r.email || '') + '</td>' +
@@ -206,6 +214,11 @@
     html += '</tbody></table>';
     wrap.innerHTML = html;
     wireIncomingRowActions(wrap);
+    if (window.CrmLeadsBulkActions && CrmLeadsBulkActions.wireBulkSelectUI) {
+      CrmLeadsBulkActions.wireBulkSelectUI(wrap, function () {
+        reloadCrmIncomingTab();
+        if (typeof window.reloadCrmLeadsTab === 'function') window.reloadCrmLeadsTab();
+      }); }
   }
 
   function wireIncomingRowActions(wrap) {
