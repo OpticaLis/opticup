@@ -391,4 +391,33 @@ When a module's Architecture Brief is sealed:
 
 ---
 
+### 2026-05-20 · M4_NIGHT_RUN W1.2 — Skill harvest (16 proposals + 5 session patterns)
+
+**Situation:** End of 2026-05-20. Three SPECs closed that day each ended with multiple skill-improvement proposals: `M4_SHORT_LINKS_400_FIX` (2 author + 2 executor), `M4_SMS_RATE_LIMIT_HOTFIX_2026_05_20` (2 author), `M4_SHORT_LINKS_DASHBOARD_REDESIGN` (5 author + 5 executor across 3 amendment rounds). Pre-night audit Mission 02 verified all 16 confirmed NOT-yet-applied (Iron Rule 21 satisfied). The night-run brief authorized doc-only Light Pipeline harvest as Wave 1 W1.2.
+
+**My recommendation (as Foreman + Executor in night-run mode):** apply all 16 as one bundle to the targeted anchor sections, condensed for readability:
+- `opticup-strategic/SKILL.md` §5.4 gained 6 sub-bullets (§5.4a-f): enum-distribution probe, brief data-drift table, column-existence probe, PostgREST 1000-row cardinality probe, click-vs-action disambiguation, destructive-DML snapshot mandate.
+- `opticup-strategic/SKILL.md` §"SPEC Authoring Protocol" intro block gained 2 SPEC-shape patterns: diagnosis-driven SPECs + P0 hotfix Light Pipeline shape.
+- `opticup-executor/SKILL.md` §"Step 1.5 DB Pre-Flight" gained §1.5.8 (3 sub-bullets: SELECT-projection / embed-vs-standalone / business-state vs event-log).
+- `opticup-executor/SKILL.md` §"Step 4: Verify" gained §4.1 (two-grep verify + intent-comment gap), §4.2 (anchor comments with SPEC slug), §4.3 (narrow-exception accounting in EXECUTION_REPORT).
+- `docs/CONVENTIONS.md` gained new section N (PostgREST query patterns) with N.1 URL-size + N.2 1000-row cap.
+
+**Daniel's response:** Pre-approved via the night-run brief (W1.2 is in scope).
+
+**Lessons codified (the 5 session patterns):**
+- **Pattern A (cardinality matters):** every PostgREST `.select()` against a public table needs an explicit cardinality estimate at SPEC-author time. Affects 2 strategic rules (§5.4d) + 1 executor rule (§1.5.8b) + 1 conventions section (N.2).
+- **Pattern B (state column beats event log):** business-state columns exist on most M4 tables. Use them, not the event/click log, for metrics that name customer behavior. Affects 1 strategic rule (§5.4e) + 1 executor rule (§1.5.8c) + 2 saved memories (`feedback_clicks_are_not_actions`, `feedback_probe_biggest_production_tenant`).
+- **Pattern C (column existence at every join boundary):** affects 1 strategic rule (§5.4c) + 1 executor rule (§1.5.8a).
+- **Pattern D (Brief drift acknowledgment):** affects 1 strategic rule (§5.4b).
+- **Pattern E (anchor comments + narrow-exception accounting at execution time):** affects 2 executor rules (§4.2 + §4.3).
+
+**Pending entry consumption:** `_archive/architect-pending-entries/` was found empty (only `.gitkeep`). No entry to consume.
+
+**Cross-references:**
+- Source SPECs: `modules/Module 4 - CRM/docs/specs/M4_SHORT_LINKS_400_FIX/FOREMAN_REVIEW.md`, `M4_SMS_RATE_LIMIT_HOTFIX_2026_05_20/FOREMAN_REVIEW.md`, `M4_SHORT_LINKS_DASHBOARD_REDESIGN/FOREMAN_REVIEW.md`.
+- Pre-flight audit: `_archive/pre-night-audit-2026-05-20/MISSION_02.md` (lists all 16 proposals + verified not-yet-applied).
+- Brief: `modules/Module 4 - CRM/architecture-brief/M4_NIGHT_RUN_2026_05_20_BRIEF.md` §3 W1.2.
+
+---
+
 *Maintained by `opticup-architect` skill. Bootstrap loads this index file only. Module-detail files loaded on demand when working in that module.*

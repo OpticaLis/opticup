@@ -103,8 +103,10 @@
 
     // Fire counts + rows in parallel — independent queries.
     var countsP = countByStatus(tenantId);
+    // M4_NIGHT_RUN_2026_05_20 W1.1: SELECT broadcast_id + language so resend
+    // payloads can rebuild the queue row faithfully through CrmResend.
     var rowsRes = await sb.from('crm_message_queue')
-      .select('id, lead_id, event_id, channel, template_slug, status, retries, scheduled_at, created_at, processed_at, error_message')
+      .select('id, lead_id, event_id, broadcast_id, channel, template_slug, language, status, retries, scheduled_at, created_at, processed_at, error_message')
       .eq('tenant_id', tenantId)
       .neq('status', 'sent')
       .order('created_at', { ascending: false })
@@ -124,7 +126,12 @@
       '<span class="text-emerald-700">✓ ' + counts.sent60 + ' נשלחו בשעה האחרונה</span>' +
       '<span class="text-rose-700">✗ ' + counts.failed + ' כשל</span>' +
       '<span class="text-slate-500">⊘ ' + counts.rejected + ' נדחה</span>' +
-      (failRejected > 0 ? '<button type="button" id="queue-purge-btn" class="ms-auto px-3 py-1.5 text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-semibold rounded-md">🗑 נקה נכשלים ונדחים (' + failRejected + ')</button>' : '') +
+      // M4_NIGHT_RUN_2026_05_20 W1.1: bulk-resend appears alongside purge when
+      // failed/rejected rows exist. Goes through CrmResend.bulkResend so the
+      // confirmation modal + classification + audit log are shared with the
+      // messaging-log view.
+      (failRejected > 0 ? '<button type="button" id="queue-bulk-resend" class="ms-auto px-3 py-1.5 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-semibold rounded-md">↻ שלח שוב כושלים</button>' : '') +
+      (failRejected > 0 ? '<button type="button" id="queue-purge-btn" class="px-3 py-1.5 text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-semibold rounded-md">🗑 נקה נכשלים ונדחים (' + failRejected + ')</button>' : '') +
       '</div>';
 
     if (!rows.length) { host.innerHTML = header + '<div class="text-center text-slate-400 py-8">התור ריק — אין הודעות ממתינות</div>'; return; }
@@ -144,8 +151,22 @@
       '<th class="' + CLS_TH + '">ניסיונות</th>' +
       '<th class="' + CLS_TH + '">עובד ב</th>' +
       '<th class="' + CLS_TH + '">שגיאה</th>' +
+      '<th class="' + CLS_TH + '">פעולה</th>' +
       '</tr></thead><tbody>';
     rows.forEach(function (r) {
+      // M4_NIGHT_RUN_2026_05_20 W1.1: per-row resend action for failed/rejected
+      // rows. Class-gated by CrmResend.classifyResend so template_error +
+      // recipient_blocked render disabled with a tooltip explaining why.
+      var actionCell = '<span class="text-slate-300">—</span>';
+      if ((r.status === 'failed' || r.status === 'rejected') && window.CrmResend) {
+        var cls = CrmResend.classifyResend(r.error_message);
+        if (cls === 'resendable') {
+          actionCell = '<button type="button" data-q-resend="' + escapeHtml(r.id) + '" class="px-2 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-semibold rounded">↻ שלח שוב</button>';
+        } else {
+          var reason = CrmResend.reasonLabel(cls);
+          actionCell = '<button type="button" disabled title="' + escapeHtml(reason) + '" class="px-2 py-1 text-xs bg-slate-100 text-slate-400 border border-slate-200 font-semibold rounded cursor-not-allowed">חסום</button>';
+        }
+      }
       html += '<tr>' +
         '<td class="' + CLS_TD + ' text-xs">' + escapeHtml(fmt(r.created_at)) + '</td>' +
         '<td class="' + CLS_TD + '">' + recipientCell(r, leadsMap) + '</td>' +
@@ -155,10 +176,35 @@
         '<td class="' + CLS_TD + ' tabular-nums">' + (r.retries || 0) + '</td>' +
         '<td class="' + CLS_TD + ' text-xs">' + escapeHtml(fmt(r.processed_at)) + '</td>' +
         '<td class="' + CLS_TD + ' text-xs text-rose-600">' + escapeHtml(r.error_message || '') + '</td>' +
+        '<td class="' + CLS_TD + '">' + actionCell + '</td>' +
       '</tr>';
     });
     html += '</tbody></table></div>';
     host.innerHTML = html;
+
+    // M4_NIGHT_RUN_2026_05_20 W1.1: bulk-resend wiring.
+    var bulkResendBtn = document.getElementById('queue-bulk-resend');
+    if (bulkResendBtn && window.CrmResend) {
+      bulkResendBtn.addEventListener('click', function () {
+        var sources = rows
+          .filter(function (rr) { return rr.status === 'failed' || rr.status === 'rejected'; })
+          .map(function (rr) { return { kind: 'queue_row', row: rr }; });
+        CrmResend.bulkResend(tenantId, sources, 'queue_view_bulk', function () { load(host); });
+      });
+    }
+    // M4_NIGHT_RUN_2026_05_20 W1.1: per-row resend wiring.
+    host.querySelectorAll('[data-q-resend]').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        var id = b.getAttribute('data-q-resend');
+        var src = null;
+        for (var i = 0; i < rows.length; i++) { if (rows[i].id === id) { src = rows[i]; break; } }
+        if (!src || !window.CrmResend) return;
+        var res = await CrmResend.resendOne(tenantId, { kind: 'queue_row', row: src }, 'queue_view');
+        if (!res.ok) { if (window.Toast) Toast.error(res.error || 'שגיאה'); return; }
+        if (window.Toast) Toast.success('ההודעה הוחזרה לתור');
+        load(host);
+      });
+    });
 
     var purgeBtn = document.getElementById('queue-purge-btn');
     if (purgeBtn) {

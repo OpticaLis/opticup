@@ -1,0 +1,72 @@
+{
+  "captured_at": "2026-05-20T18:55:00Z",
+  "spec": "M4_NIGHT_RUN_2026_05_20",
+  "wave": "W2.2",
+  "tenant": "prizma",
+  "tenant_id": "6ad0781b-37f0-47a9-92e3-be9ed1477e1c",
+  "purpose": "Pre-UPDATE snapshot of the 3 stale crm_broadcasts rows being cancelled by W2.2. Source of truth for rollback if needed.",
+  "rows": [
+    {
+      "id": "abb415e7-f0d3-4f0f-abcc-3d880d054ab6",
+      "name": "קדם אירוע סופרסייל 24",
+      "channel": "sms",
+      "status": "queued",
+      "total_recipients": 1170,
+      "total_sent": 0,
+      "total_failed": 0,
+      "created_at": "2026-05-12T13:08:19.537416Z",
+      "employee_id": "cbaf6ed8-0c18-4cf8-afbd-cd04155f7bac",
+      "filter_criteria": {
+        "board": "registered",
+        "events": [],
+        "source": null,
+        "language": null,
+        "statuses": ["waiting"],
+        "openEventsOnly": false
+      },
+      "age_days_at_capture": 8
+    },
+    {
+      "id": "ab7341c9-7851-493c-bf0b-b426b5359e08",
+      "name": "תזכורת לאירוע מאי 26",
+      "channel": "sms",
+      "status": "queued",
+      "total_recipients": 1135,
+      "total_sent": 0,
+      "total_failed": 0,
+      "created_at": "2026-05-13T06:12:18.344951Z",
+      "employee_id": "cbaf6ed8-0c18-4cf8-afbd-cd04155f7bac",
+      "filter_criteria": {
+        "board": "registered",
+        "events": [],
+        "source": null,
+        "language": null,
+        "statuses": ["waiting", "invited"],
+        "openEventsOnly": false
+      },
+      "age_days_at_capture": 7
+    },
+    {
+      "id": "702d34f0-dd04-4ad5-a087-35e9a9b3f218",
+      "name": "טסט",
+      "channel": "sms",
+      "status": "queued",
+      "total_recipients": 1,
+      "total_sent": 0,
+      "total_failed": 0,
+      "created_at": "2026-05-13T07:37:34.145039Z",
+      "employee_id": "cbaf6ed8-0c18-4cf8-afbd-cd04155f7bac",
+      "filter_criteria": {
+        "board": "registered",
+        "events": [],
+        "source": null,
+        "event_id": "a7c9f174-a099-48b7-88bb-e4d0fa6236e2",
+        "language": null,
+        "statuses": ["waitlist"],
+        "openEventsOnly": false
+      },
+      "age_days_at_capture": 7
+    }
+  ],
+  "rollback_sql": "-- Restore by running:\n-- UPDATE crm_broadcasts SET status='queued' WHERE tenant_id='6ad0781b-37f0-47a9-92e3-be9ed1477e1c' AND id IN ('abb415e7-f0d3-4f0f-abcc-3d880d054ab6','ab7341c9-7851-493c-bf0b-b426b5359e08','702d34f0-dd04-4ad5-a087-35e9a9b3f218');"
+}
