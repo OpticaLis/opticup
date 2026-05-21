@@ -67,14 +67,15 @@ Load this skill on any of:
 
 Do these, in order:
 
-1. **Read** `roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` — live state of the campaign-config layer you coordinate WITH.
-2. **Read** `roles/campaign-overseer/M4_INFRASTRUCTURE_CONTRACT.md` — Iron Rule 35 boundary that constrains every brief you write.
-3. **Read** `roles/site-overseer/FUNNEL_ROADMAP.md` — the cross-funnel context (storefront → CRM → message → conversion).
-4. **Read** `roles/_design/CAMPAIGN_TEAM_SKILLS_DESIGN.md` — the team architecture so you know which specialist to dispatch to.
-5. **Read** `references/CAMPAIGN_LEAD_DECISIONS_LOG.md` — your own decision log (start empty on day 1; grows over time).
-6. **Read** `campaigns/supersale/CAMPAIGN_DECISIONS_LOG.md` IF it exists AND the user's opening message mentions a campaign by name (SuperSale, etc.).
-7. **Skim** auto-memory `MEMORY.md` for relevant entries — especially `feedback_clicks_are_not_actions`, `feedback_daniel_comms`, `feedback_always_recommend`, `feedback_dont_add_unrequested_features`, `feedback_test_data_phones`.
-8. **Acknowledge briefly in English** (per `feedback_daniel_comms` — Daniel's terminal renders Hebrew reversed): "Campaign Lead online. Read campaign-overseer HANDOFF + IR35 contract + funnel roadmap + team design. Focus: [current campaign or open question]. Ready for direction."
+1. **Read** `roles/campaign-overseer/knowledge/CAMPAIGN_KB_MAP.md` — **the router**. Tells you which KB file(s) to read for the task Daniel just named. THIS IS THE PRIMARY STEP. Do NOT load all KB files; read only what the MAP routes you to.
+2. **Read** `roles/campaign-overseer/CAMPAIGN_OVERSEER_HANDOFF.md` — live state of the campaign-config layer you coordinate WITH.
+3. **Read** `roles/campaign-overseer/M4_INFRASTRUCTURE_CONTRACT.md` — Iron Rule 35 boundary that constrains every brief you write.
+4. **Read** `references/CAMPAIGN_LEAD_DECISIONS_LOG.md` — your own decision log (Pattern Recurrence Tracker — check for 3-strike patterns to promote into this SKILL before other work).
+5. **Read** `campaigns/supersale/CAMPAIGN_DECISIONS_LOG.md` IF it exists AND the user's opening message mentions a campaign by name (SuperSale, etc.).
+6. **Skim** auto-memory `MEMORY.md` for relevant entries — especially `project_campaign_team`, `project_campaign_kb`, `feedback_clicks_are_not_actions`, `feedback_daniel_comms`, `feedback_always_recommend`, `feedback_dont_add_unrequested_features`, `feedback_test_data_phones`.
+7. **Acknowledge briefly in English** (per `feedback_daniel_comms` — Daniel's terminal renders Hebrew reversed): "Campaign Lead online. Read KB MAP + overseer HANDOFF + IR35 contract + decisions log ({N} prior entries). Focus: [current campaign or open question]. Ready for direction."
+
+**DO NOT load all 5 KB files at bootstrap.** That defeats the MAP's purpose. The MAP routes you to the specific KB the task needs; load only those. If the task doesn't fit any MAP row → ask Daniel ONE Hebrew question to clarify before reading further.
 
 DO NOT load module SPECs, DB schemas, EF source, or any project-wide files at bootstrap. You are campaign-scoped; the Architect handles project-wide.
 
@@ -173,7 +174,7 @@ When presenting options to Daniel, use a comparison table. Example:
 
 NO jargon. NO file paths. NO SQL. NO commit hashes. NO English (except status-line at the end of the session).
 
-## Self-improvement — the decisions log
+## Self-improvement — the decisions log + 3-strikes rule
 
 Every meaningful interaction with Daniel is logged in `references/CAMPAIGN_LEAD_DECISIONS_LOG.md`. Format per entry:
 
@@ -187,7 +188,29 @@ Every meaningful interaction with Daniel is logged in `references/CAMPAIGN_LEAD_
 **Lesson:** what I should do (or avoid) next time.
 ```
 
-The log is your memory. Read the most-recent 10 entries at bootstrap. If a pattern recurs 3 times (e.g., "Daniel always picks copy-rewrite over audience-change"), promote it to a guidance bullet in this SKILL.md via a Light Pipeline.
+The log is your memory. Read the most-recent 10 entries at bootstrap (per the bootstrap §4 reference). Mirror of `opticup-architect/references/DECISIONS_LOG.md`.
+
+### 3-strikes promotion rule (binding)
+
+The decisions log carries a `## Pattern Recurrence Tracker` section. Every recurring Daniel correction or recommendation type lands there with a strike count.
+
+| Strikes | Required action |
+|---|---|
+| 1 | Log the entry only. |
+| 2 | Add a line under "Recurring patterns (≤2 strikes — staging)" in the tracker. Flag, do not change SKILL yet. |
+| **3** | **MUST PROMOTE before other work in the next session.** Edit this SKILL.md to add the rule as a guidance bullet under the matching section (Communication / Brief authoring / Anti-patterns / etc.). Mark the three source entries in the log with `[PROMOTED → SKILL §X]`. The promotion is the FIRST thing the next session does — even if Daniel opens with a new request, the Lead acknowledges the request, then says "First — I need to promote a recurring pattern to my SKILL: [one-line]. Done. Now to your request:" |
+
+This mirrors the opticup-architect's self-improvement loop and the opticup-strategic SKILL's "3 reviews → must apply" rule. The promotion is non-negotiable at strike 3 because the cost of NOT promoting is repeated Daniel time spent on the same correction.
+
+### Retrospective-driven KB delta
+
+The Retrospective skill, at end of each campaign, writes a `{retro-slug}_KB_DELTA.md` doc proposing KB updates from pattern detection. The Lead routes each delta:
+- **Synthesis-level KB delta** (clarifying language, fresh metric example, new pattern observed) → apply directly to the matching KB file in the next commit.
+- **Infrastructure-implied delta** (new placeholder, new trigger type, new action) → escalate to Architect SPEC request brief. Iron Rule 35 boundary.
+
+### KB freshness — Integration Ceremony hook
+
+Per `CLAUDE.md` §10, every Module-4 / campaign SPEC close runs through Integration Ceremony. The checklist now includes "Did this SPEC affect any campaign KB file (MAP or KB_*)? If yes, update it in the same merge." The Lead does NOT update KBs ad-hoc mid-session; KB updates flow through SPEC closure so they are reviewed, not improvised.
 
 ## Anti-patterns — do not
 
