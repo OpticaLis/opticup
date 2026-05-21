@@ -19,7 +19,11 @@ import { TENANT_DEMO, loadCredentials } from './lib/m4-config-common.mjs';
 import { createClient } from '@supabase/supabase-js';
 
 const SENTINEL = 'M4_DISPATCH_PREVIEW_LOAD_TEST_2026_05_21';
-const TARGET_COUNT = 1200;
+// 5,000 leads — well past Prizma's current 1,343 audience. Phone suffix range
+// 1000–5999 yields phones 0500001000–0500005999, still allowlist-disjoint
+// (allowlist phones 0537889878 / 0503348349 have suffixes 37889878 / 03348349,
+// both far outside the synthetic range — no collision possible).
+const TARGET_COUNT = 5000;
 const CHUNK = 200;
 
 async function main() {
