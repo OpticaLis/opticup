@@ -78,17 +78,42 @@ export async function resolveRecipients(
       return [];
     }
     const statusList = hasFilter ? cfg.recipient_status_filter : TIER2_STATUSES;
-    // M4_DISPATCH_PREVIEW_ENRICHMENT_AGGREGATE_FIX (Sprint 1 SPEC 2, 2026-05-21):
-    // created_at added to SELECT so preview.ts doesn't need a second loop
-    // (fetchLeadMeta — DELETED). Saves ~89s at 84K. Pagination stays at 1000/page;
-    // sub-<10s target requires bypassing PostgREST db-max-rows=1000 — deferred
-    // to a Sprint-2 follow-up that finds the right RPC shape (the _jsonb experiment
-    // returned the right value server-side but supabase-js inside the EF received
-    // length 0; needs further investigation).
-    let leads = await paginate<Lead>(() =>
-      db.from("crm_leads").select("id, full_name, phone, email, created_at")
-        .eq("tenant_id", tenantId).eq("is_deleted", false).is("unsubscribed_at", null)
-        .in("status", statusList));
+    // M4_MESSAGE_PERFORMANCE_RPC_AND_DATE_COLUMNS (Sprint 2 Item 1, 2026-05-21):
+    // The jsonb-scalar RPC pattern (proven in the dashboard fix + message-perf
+    // screen) bypasses PostgREST db-max-rows=1000. Deno's supabase-js may
+    // surface jsonb returns as parsed array, parsed object, or JSON string
+    // depending on PostgREST version — handle all three shapes defensively.
+    let leads: Lead[] = [];
+    const rpcRes = await db.rpc("crm_resolve_tier2_leads_jsonb", {
+      p_tenant_id: tenantId,
+      p_status_list: statusList,
+    });
+    if (rpcRes.error) {
+      console.warn("automation-engine resolveRecipients tier2 RPC error, falling back to paginate:", rpcRes.error.message);
+    } else {
+      const d = rpcRes.data;
+      if (Array.isArray(d)) {
+        leads = d as Lead[];
+      } else if (typeof d === "string") {
+        try { const parsed = JSON.parse(d); if (Array.isArray(parsed)) leads = parsed; } catch (_e) { /* ignore */ }
+      } else if (d && typeof d === "object") {
+        // Some PostgREST shapes wrap the jsonb under a key like the function name
+        const keys = Object.keys(d as Record<string, unknown>);
+        for (const k of keys) {
+          const v = (d as Record<string, unknown>)[k];
+          if (Array.isArray(v)) { leads = v as Lead[]; break; }
+        }
+      }
+      console.log("[m4-tier2-rpc] data typeof=", typeof d, " isArray=", Array.isArray(d), " leads.length=", leads.length);
+    }
+    // Belt+suspenders fallback to paginated SELECT if RPC returned nothing
+    if (!leads.length) {
+      console.warn("[m4-tier2-rpc] RPC returned 0 leads — falling back to paginate");
+      leads = await paginate<Lead>(() =>
+        db.from("crm_leads").select("id, full_name, phone, email, created_at")
+          .eq("tenant_id", tenantId).eq("is_deleted", false).is("unsubscribed_at", null)
+          .in("status", statusList));
+    }
     if (recipientType === "tier2_excl_registered" && eventId) {
       const xData = await paginate<{ lead_id: string | null }>(() =>
         db.from("crm_event_attendees").select("lead_id")
