@@ -9,6 +9,10 @@ export interface Lead {
   email?: string;
   unsubscribed_at?: string | null;
   is_deleted?: boolean;
+  // M4_DISPATCH_PREVIEW_ENRICHMENT_AGGREGATE_FIX (2026-05-21, Sprint 1 SPEC 2):
+  // include created_at directly in resolveRecipients results so preview.ts
+  // doesn't need a second chunked SELECT loop (fetchLeadMeta). Saves ~89s at 84K.
+  created_at?: string | null;
 }
 
 // deno-lint-ignore no-explicit-any
@@ -23,6 +27,13 @@ const TIER2_STATUSES = ["waiting", "invited", "confirmed", "confirmed_verified"]
 //
 // Helper rebuilds the query each page via a factory so .range() is set on
 // a fresh PostgrestFilterBuilder. Same contract as the browser-side fix.
+// M4_DISPATCH_PREVIEW_ENRICHMENT_AGGREGATE_FIX (Sprint 1 SPEC 2, 2026-05-21):
+// Attempted to bump pageSize 1000 → 5000 but Supabase PostgREST has db-max-rows=1000
+// enforced for SELECT calls — the larger range silently truncates to 1000 and the
+// `data.length < pageSize` early-exit fires falsely, returning only 1000 of 84K leads.
+// Kept at 1000 for correctness. A future Sprint can replace paginate() with a
+// SECURITY DEFINER RPC that bypasses the PostgREST row cap (one round-trip total
+// instead of 84). See SPEC 2 EXECUTION_REPORT for the trace.
 async function paginate<T>(buildQuery: () => any, pageSize = 1000): Promise<T[]> {
   const out: T[] = [];
   let from = 0;
@@ -53,7 +64,7 @@ export async function resolveRecipients(
   if (recipientType === "trigger_lead") {
     if (!leadId) return [];
     const r = await db.from("crm_leads")
-      .select("id, full_name, phone, email, unsubscribed_at, is_deleted")
+      .select("id, full_name, phone, email, unsubscribed_at, is_deleted, created_at")
       .eq("tenant_id", tenantId).eq("id", leadId).single();
     if (r.error || !r.data) return [];
     if (r.data.unsubscribed_at || r.data.is_deleted) return [];
@@ -67,8 +78,15 @@ export async function resolveRecipients(
       return [];
     }
     const statusList = hasFilter ? cfg.recipient_status_filter : TIER2_STATUSES;
+    // M4_DISPATCH_PREVIEW_ENRICHMENT_AGGREGATE_FIX (Sprint 1 SPEC 2, 2026-05-21):
+    // created_at added to SELECT so preview.ts doesn't need a second loop
+    // (fetchLeadMeta — DELETED). Saves ~89s at 84K. Pagination stays at 1000/page;
+    // sub-<10s target requires bypassing PostgREST db-max-rows=1000 — deferred
+    // to a Sprint-2 follow-up that finds the right RPC shape (the _jsonb experiment
+    // returned the right value server-side but supabase-js inside the EF received
+    // length 0; needs further investigation).
     let leads = await paginate<Lead>(() =>
-      db.from("crm_leads").select("id, full_name, phone, email")
+      db.from("crm_leads").select("id, full_name, phone, email, created_at")
         .eq("tenant_id", tenantId).eq("is_deleted", false).is("unsubscribed_at", null)
         .in("status", statusList));
     if (recipientType === "tier2_excl_registered" && eventId) {
@@ -166,7 +184,7 @@ async function fetchLeadsByIds(db: Db, tenantId: string, leadIds: string[]): Pro
     const slice = leadIds.slice(i, i + CHUNK);
     const page = await paginate<Lead>(() =>
       db.from("crm_leads")
-        .select("id, full_name, phone, email, unsubscribed_at, is_deleted")
+        .select("id, full_name, phone, email, unsubscribed_at, is_deleted, created_at")
         .eq("tenant_id", tenantId)
         .in("id", slice));
     page.forEach((l) => { if (!l.unsubscribed_at && !l.is_deleted) out.push(l); });
