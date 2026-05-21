@@ -62,6 +62,13 @@ function formatDate(ymd: string | null | undefined): string {
 async function buildVariables(
   db: Db, tenantId: string,
   triggerData: Record<string, unknown>, lead: Lead,
+  // M4_SCE_CONSUMER_RACE_FIX (2026-05-21): optional pre-loaded event row.
+  // The eventId is identical for every lead in an event-status-change trigger,
+  // so the caller (prepareRulePlan) loads the event ONCE and passes it here.
+  // Avoids N×SELECT-by-id at scale (was 5,000 round-trips on the 5K-lead
+  // race verification; now 1).
+  // deno-lint-ignore no-explicit-any
+  cachedEvent?: any,
 ): Promise<Record<string, string>> {
   const vars: Record<string, string> = {
     name: lead.full_name || "",
@@ -70,17 +77,10 @@ async function buildVariables(
     lead_id: lead.id || "",
     unsubscribe_url: "[קישור הסרה — יצורף אוטומטית]",
   };
-  // SPEC 3 (2026-05-19): always fetch the full event row when eventId is
-  // provided, even if the browser path pre-loaded a truncated `event` object.
-  // The browser pre-load (shape B trigger_data, from crm-event-actions.js) has
-  // 5 columns; we need 7 to populate event_day_of_week + event_deposit_amount
-  // + event_max_attendees correctly. The extra SELECT (single row by primary
-  // key) is negligible and eliminates silent bad-substitution bugs that would
-  // otherwise pass validation as empty strings.
   const eventId = (typeof triggerData.eventId === "string") ? triggerData.eventId : null;
   // deno-lint-ignore no-explicit-any
-  let evt: any = null;
-  if (eventId) {
+  let evt: any = cachedEvent || null;
+  if (!evt && eventId) {
     const r = await db.from("crm_events")
       .select("name, event_date, start_time, location_address, registration_form_url, max_capacity, booking_fee")
       .eq("id", eventId).eq("tenant_id", tenantId).single();
@@ -214,6 +214,21 @@ export async function prepareRulePlan(
 
   const items: unknown[] = [];
   const eventId = (typeof triggerData.eventId === "string") ? triggerData.eventId : null;
+
+  // M4_SCE_CONSUMER_RACE_FIX (2026-05-21): pre-load the event row ONCE per
+  // prepareRulePlan invocation (the eventId is identical for every lead in an
+  // event-status-change trigger). Replaces per-lead SELECT inside
+  // buildVariables. At 5,000 leads × 2 channels the prior shape did 5,000
+  // SELECT-by-id round-trips inside the EF, blowing past the function timeout.
+  // deno-lint-ignore no-explicit-any
+  let cachedEvent: any = null;
+  if (!opts.skipBodyComposition && eventId) {
+    const r = await db.from("crm_events")
+      .select("name, event_date, start_time, location_address, registration_form_url, max_capacity, booking_fee")
+      .eq("id", eventId).eq("tenant_id", tenantId).single();
+    if (!r.error) cachedEvent = r.data;
+  }
+
   // M4_TEMPLATE_VALIDATION_UNIFIED: per-rule accumulators for pre-enqueue
   // validation failures. We rejection-log to crm_message_log AND surface the
   // missing-placeholder set on the rule's last_error column (via engine.ts).
@@ -227,7 +242,7 @@ export async function prepareRulePlan(
     // when composedBody stays null.
     const vars = opts.skipBodyComposition
       ? {} as Record<string, string>
-      : await buildVariables(db, tenantId, triggerData, lead);
+      : await buildVariables(db, tenantId, triggerData, lead, cachedEvent);
     for (const ch of channels) {
       if (ch === "email" && !lead.email) continue;
       if (ch === "sms"   && !lead.phone) continue;
