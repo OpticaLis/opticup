@@ -261,21 +261,12 @@
         if (window.Toast) Toast.error('כשל בטעינת תצוגה מקדימה.');
         return;
       }
-      try { window.__statusChangeTrace = window.__statusChangeTrace || []; window.__statusChangeTrace.push({step:'showAsync:previewResolved', hasPv2:!!pv2, isArray: pv2 ? Array.isArray(pv2.recipients_by_lead) : null, recipientsLen: pv2 && Array.isArray(pv2.recipients_by_lead) ? pv2.recipients_by_lead.length : null, t:Date.now()}); } catch (_) {}
       if (!pv2 || !Array.isArray(pv2.recipients_by_lead) || !pv2.recipients_by_lead.length) return;
-      try { window.__statusChangeTrace.push({step:'showAsync:openingModal', recipientsLen: pv2.recipients_by_lead.length, t:Date.now()}); } catch (_) {}
-      try {
-        _ensureState(pv2, onChoice);
-        _modal = _openModalShell(onChoice);
-        if (!_modal) { try { window.__statusChangeTrace.push({step:'showAsync:openModalShellReturnedNull', t:Date.now()}); } catch (_) {} return; }
-        try { window.__statusChangeTrace.push({step:'showAsync:modalShellOpened', modalHasEl:!!(_modal && _modal.el), t:Date.now()}); } catch (_) {}
-        wireBodyEvents(_modal.el);
-        _attachHandlers(_modal, { get: function () { return pv2; } }, onChoice);
-        try { window.__statusChangeTrace.push({step:'showAsync:handlersAttached', t:Date.now()}); } catch (_) {}
-      } catch (renderErr) {
-        try { window.__statusChangeTrace.push({step:'showAsync:renderThrew', error: renderErr && renderErr.message, stack: renderErr && renderErr.stack, t:Date.now()}); } catch (_) {}
-        throw renderErr;
-      }
+      _ensureState(pv2, onChoice);
+      _modal = _openModalShell(onChoice);
+      if (!_modal) return;
+      wireBodyEvents(_modal.el);
+      _attachHandlers(_modal, { get: function () { return pv2; } }, onChoice);
       return;
     }
     _ensureState(null, onChoice);
