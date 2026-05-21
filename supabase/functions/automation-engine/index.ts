@@ -2,6 +2,7 @@ import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { evaluate, consumeStatusChangeEvents } from "./engine.ts";
 import { previewDispatch } from "./preview.ts";
+import { previewRecipientBody } from "./preview-recipient-body.ts";
 
 // ============================================================
 // automation-engine — server-side rule evaluation Edge Function
@@ -69,8 +70,14 @@ Deno.serve(async (req: Request) => {
   // mode for the pg_cron consumer path. Requires tenant_id only; no trigger_type.
   // M4_DRY_RUN_PREVIEW (2026-05-14): "dispatch_preview" mode for the
   // operator-facing CrmConfirmSend v2 modal — recipient-grouped JSON, ZERO writes.
+  // M4_DISPATCH_PREVIEW_LAZY_ROWS (2026-05-21): "preview_recipient_body" mode
+  // resolves the personalized message body for ONE (lead, channel) — fired by
+  // the modal on per-row expand click. The default dispatch_preview path no
+  // longer composes bodies up front; this mode is how the modal materializes
+  // them on demand.
   const mode = (body.mode === "evaluate" || body.mode === "dispatch"
-                || body.mode === "consume_status_events" || body.mode === "dispatch_preview")
+                || body.mode === "consume_status_events" || body.mode === "dispatch_preview"
+                || body.mode === "preview_recipient_body")
     ? body.mode
     : "dispatch";
 
@@ -101,6 +108,35 @@ Deno.serve(async (req: Request) => {
     } catch (e) {
       console.error("automation-engine preview exception:", (e as Error).message || e);
       return errorResponse("preview failed", 500);
+    }
+  }
+
+  // M4_DISPATCH_PREVIEW_LAZY_ROWS (2026-05-21): per-recipient body fetch.
+  // Returns ONE composed body for one (lead, channel) — drives the modal's
+  // per-row expand UI. No writes.
+  if (mode === "preview_recipient_body") {
+    if (!tenantId) return errorResponse("Missing tenant_id", 400);
+    const triggerTypeRb = typeof body.trigger_type === "string" ? body.trigger_type : null;
+    if (!triggerTypeRb) return errorResponse("Missing trigger_type", 400);
+    if (!VALID_TRIGGER_TYPES.has(triggerTypeRb)) {
+      return errorResponse(`Unknown trigger_type: ${triggerTypeRb}`, 400);
+    }
+    const leadId = typeof body.lead_id === "string" ? body.lead_id : null;
+    const channel = typeof body.channel === "string" ? body.channel : null;
+    if (!leadId) return errorResponse("Missing lead_id", 400);
+    if (!channel) return errorResponse("Missing channel", 400);
+    const triggerDataRb = (body.trigger_data && typeof body.trigger_data === "object")
+      ? body.trigger_data as Record<string, unknown>
+      : {};
+    try {
+      const result = await previewRecipientBody(db, {
+        tenantId, triggerType: triggerTypeRb, triggerData: triggerDataRb,
+        leadId, channel,
+      });
+      return jsonResponse(result, 200);
+    } catch (e) {
+      console.error("automation-engine preview_recipient_body exception:", (e as Error).message || e);
+      return errorResponse("preview_recipient_body failed", 500);
     }
   }
 

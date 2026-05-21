@@ -96,12 +96,15 @@ export async function consumeStatusChangeEvents(
 ): Promise<{ processed: number; evaluated: number; errors: number }> {
   const cap = Math.min(Math.max(limit || 100, 1), 500);
 
-  const claimRes = await db.from("crm_status_change_events")
-    .select("id, entity_type, entity_id, old_status, new_status, payload, originated_by_rule_id")
-    .eq("tenant_id", tenantId)
-    .is("consumed_at", null)
-    .order("occurred_at", { ascending: true })
-    .limit(cap);
+  // M4_SCE_CONSUMER_RACE_FIX (2026-05-21): atomic FOR UPDATE SKIP LOCKED claim
+  // via SECURITY DEFINER RPC. Replaces the racy SELECT-then-UPDATE pattern
+  // that allowed concurrent cron ticks to read + enqueue the same row N times.
+  // The RPC sets claimed_at=now() and returns the now-claimed rows; concurrent
+  // callers SKIP LOCKED past them. Stale claims (>5 min) become re-claimable.
+  const claimRes = await db.rpc("claim_unconsumed_status_change_events", {
+    p_tenant_id: tenantId,
+    p_limit: cap,
+  });
   if (claimRes.error) {
     console.error("consumeStatusChangeEvents claim:", claimRes.error);
     return { processed: 0, evaluated: 0, errors: 1 };

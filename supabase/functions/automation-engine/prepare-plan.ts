@@ -62,6 +62,13 @@ function formatDate(ymd: string | null | undefined): string {
 async function buildVariables(
   db: Db, tenantId: string,
   triggerData: Record<string, unknown>, lead: Lead,
+  // M4_SCE_CONSUMER_RACE_FIX (2026-05-21): optional pre-loaded event row.
+  // The eventId is identical for every lead in an event-status-change trigger,
+  // so the caller (prepareRulePlan) loads the event ONCE and passes it here.
+  // Avoids N×SELECT-by-id at scale (was 5,000 round-trips on the 5K-lead
+  // race verification; now 1).
+  // deno-lint-ignore no-explicit-any
+  cachedEvent?: any,
 ): Promise<Record<string, string>> {
   const vars: Record<string, string> = {
     name: lead.full_name || "",
@@ -70,17 +77,10 @@ async function buildVariables(
     lead_id: lead.id || "",
     unsubscribe_url: "[קישור הסרה — יצורף אוטומטית]",
   };
-  // SPEC 3 (2026-05-19): always fetch the full event row when eventId is
-  // provided, even if the browser path pre-loaded a truncated `event` object.
-  // The browser pre-load (shape B trigger_data, from crm-event-actions.js) has
-  // 5 columns; we need 7 to populate event_day_of_week + event_deposit_amount
-  // + event_max_attendees correctly. The extra SELECT (single row by primary
-  // key) is negligible and eliminates silent bad-substitution bugs that would
-  // otherwise pass validation as empty strings.
   const eventId = (typeof triggerData.eventId === "string") ? triggerData.eventId : null;
   // deno-lint-ignore no-explicit-any
-  let evt: any = null;
-  if (eventId) {
+  let evt: any = cachedEvent || null;
+  if (!evt && eventId) {
     const r = await db.from("crm_events")
       .select("name, event_date, start_time, location_address, registration_form_url, max_capacity, booking_fee")
       .eq("id", eventId).eq("tenant_id", tenantId).single();
@@ -139,11 +139,24 @@ function substituteVars(text: string, vars: Record<string, string>): string {
   return out;
 }
 
+// M4_DISPATCH_PREVIEW_LAZY_ROWS (2026-05-21): optional opts for the lazy preview
+// path. skipBodyComposition stops the inner template-substitution + validation
+// loop (items return with composedBody=null). leadIdFilter narrows to a single
+// lead. channelFilter narrows to a single channel. All three are no-ops when
+// undefined — existing callers (engine.ts evaluate/dispatch) get the prior
+// behavior with zero changes.
+export interface PrepareRulePlanOpts {
+  skipBodyComposition?: boolean;
+  leadIdFilter?: string;
+  channelFilter?: string;
+}
+
 export async function prepareRulePlan(
   db: Db, tenantId: string,
   rule: Rule, triggerData: Record<string, unknown>,
   tplCache: Map<string, unknown>, runId: string | null,
   mode: "evaluate" | "dispatch" = "dispatch",
+  opts: PrepareRulePlanOpts = {},
 ): Promise<PreparedPlan> {
   const cfg = rule.action_config || {};
 
@@ -188,6 +201,11 @@ export async function prepareRulePlan(
     console.error("automation-engine prepareRulePlan recipients:", (e as Error).message);
     return { items: [], skipped: 0, resolvedLeadIds: [], queued: 0 };
   }
+  // M4_DISPATCH_PREVIEW_LAZY_ROWS: narrow to a single lead when leadIdFilter set
+  // (for previewRecipientBody's per-row build path).
+  if (opts.leadIdFilter) {
+    leads = leads.filter((l) => l.id === opts.leadIdFilter);
+  }
   const resolvedLeadIds = leads.map((l) => l.id);
   if (!leads.length) return { items: [], skipped: 0, resolvedLeadIds, queued: 0 };
   if (!tplBase) {
@@ -196,6 +214,21 @@ export async function prepareRulePlan(
 
   const items: unknown[] = [];
   const eventId = (typeof triggerData.eventId === "string") ? triggerData.eventId : null;
+
+  // M4_SCE_CONSUMER_RACE_FIX (2026-05-21): pre-load the event row ONCE per
+  // prepareRulePlan invocation (the eventId is identical for every lead in an
+  // event-status-change trigger). Replaces per-lead SELECT inside
+  // buildVariables. At 5,000 leads × 2 channels the prior shape did 5,000
+  // SELECT-by-id round-trips inside the EF, blowing past the function timeout.
+  // deno-lint-ignore no-explicit-any
+  let cachedEvent: any = null;
+  if (!opts.skipBodyComposition && eventId) {
+    const r = await db.from("crm_events")
+      .select("name, event_date, start_time, location_address, registration_form_url, max_capacity, booking_fee")
+      .eq("id", eventId).eq("tenant_id", tenantId).single();
+    if (!r.error) cachedEvent = r.data;
+  }
+
   // M4_TEMPLATE_VALIDATION_UNIFIED: per-rule accumulators for pre-enqueue
   // validation failures. We rejection-log to crm_message_log AND surface the
   // missing-placeholder set on the rule's last_error column (via engine.ts).
@@ -203,10 +236,37 @@ export async function prepareRulePlan(
   const failedMissing = new Set<string>();
   let firstPaymentError: string | null = null;
   for (const lead of leads) {
-    const vars = await buildVariables(db, tenantId, triggerData, lead);
+    // M4_DISPATCH_PREVIEW_LAZY_ROWS: skip the expensive buildVariables call too
+    // when bodies aren't being composed — buildVariables hits the event row
+    // for every lead via fetchTemplate's parent context. Empty vars are fine
+    // when composedBody stays null.
+    const vars = opts.skipBodyComposition
+      ? {} as Record<string, string>
+      : await buildVariables(db, tenantId, triggerData, lead, cachedEvent);
     for (const ch of channels) {
       if (ch === "email" && !lead.email) continue;
       if (ch === "sms"   && !lead.phone) continue;
+      // M4_DISPATCH_PREVIEW_LAZY_ROWS: narrow to a single channel when channelFilter set.
+      if (opts.channelFilter && ch !== opts.channelFilter) continue;
+      // M4_DISPATCH_PREVIEW_LAZY_ROWS: in skipBodyComposition mode, push the
+      // recipient row with composedBody=null + no template fetch + no validation.
+      // The modal calls previewRecipientBody per-row click to materialize the body.
+      if (opts.skipBodyComposition) {
+        items.push({
+          rule_name: rule.name || "",
+          template_slug: tplBase,
+          template_id: null,
+          channel: ch,
+          recipient: { name: lead.full_name || "", phone: lead.phone || "", email: lead.email || "" },
+          variables: {},
+          composedBody: null,
+          lead_id: lead.id,
+          event_id: eventId,
+          language,
+          skip_auto_promote: hasPostAction || cfg.skip_auto_promote === true,
+        });
+        continue;
+      }
       const tpl = await fetchTemplate(db, tenantId, tplCache, tplBase, ch, language);
       const composedBody = tpl
         ? substituteVars(tpl.body, vars)

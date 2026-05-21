@@ -66,36 +66,52 @@
 
   // ---------- atomic renderers ----------
 
-  function renderHistoryLine(r) {
-    // Brief §3.10 — last-message-sent indicator inside the body-expand panel.
-    if (!r.last_message_sent_at) {
-      return '<div class="text-xs text-slate-400 mb-1">📩 אין הודעות קודמות לנמען זה.</div>';
+  // M4_DISPATCH_PREVIEW_LAZY_ROWS (2026-05-21): per-channel body cell. Reads
+  // _state.recipientBodies / .recipientBodyErrors / .recipientBodyLoading
+  // (populated by _fetchBodiesForLead in the controller). Four visible states:
+  //   - loading:    spinner placeholder while EF call is in flight
+  //   - error:      retry button (click → controller clears error + re-fetches)
+  //   - loaded:     <pre> with the composed body
+  //   - not-applicable: no phone/email for this channel → "אין תוכן" message
+  function renderBodyCellForChannel(state, r, ch) {
+    var lid = r.lead_id || '';
+    var hasContact = (ch === 'sms') ? !!r.phone : (ch === 'email' ? !!r.email : false);
+    if (!hasContact) {
+      return '<div class="text-xs text-slate-400 py-1">אין כתובת ' + escapeHtml(channelLabel(ch)) + '.</div>';
     }
-    return '<div class="text-xs text-slate-500 mb-1">📩 הודעה אחרונה: <strong>' + escapeHtml(fmtDate(r.last_message_sent_at)) + '</strong>' +
-      (r.last_template_slug ? ' — <span class="font-mono">' + escapeHtml(r.last_template_slug) + '</span>' : '') +
-      '</div>';
+    var bodyMap   = (state && state.recipientBodies && state.recipientBodies[lid])      || {};
+    var errMap    = (state && state.recipientBodyErrors && state.recipientBodyErrors[lid]) || {};
+    var loadMap   = (state && state.recipientBodyLoading && state.recipientBodyLoading[lid]) || {};
+    var body  = bodyMap[ch];
+    var err   = errMap[ch];
+    var load  = loadMap[ch];
+    var ltr   = ch === 'email' ? ' style="direction:ltr"' : '';
+    var icon  = channelIcon(ch);
+    var label = channelLabel(ch);
+    var headerLine = '<div class="text-xs text-slate-500 mb-1">' + icon + ' ' + escapeHtml(label) + '</div>';
+    var inner;
+    if (load) {
+      inner = '<div class="text-xs text-slate-400 py-2">⏳ טוען תצוגה מקדימה…</div>';
+    } else if (err) {
+      inner = '<button type="button" data-ccsv2-retry-body="1" data-ccsv2-lead-id="' + escapeHtml(lid) + '" data-ccsv2-channel="' + escapeHtml(ch) + '" class="text-xs text-rose-600 underline hover:text-rose-700">⚠️ כשל בטעינה. לחץ לנסיון נוסף.</button>';
+    } else if (body) {
+      inner = '<pre class="whitespace-pre-wrap text-sm text-slate-800 bg-slate-50 border border-slate-100 rounded p-2 max-h-48 overflow-auto"' + ltr + '>' + escapeHtml(body) + '</pre>';
+    } else {
+      // Not requested yet — controller fires fetch on expand. This state should
+      // only flash briefly between expand click and first render.
+      inner = '<div class="text-xs text-slate-400 py-2">…</div>';
+    }
+    return '<div class="border border-slate-200 rounded-lg p-2 bg-white mb-2">' + headerLine + inner + '</div>';
   }
 
-  function renderExpandedBody(r) {
-    var historyLine = renderHistoryLine(r);
-    var smsBlock = '';
-    if (r.message_body_sms && r.message_body_sms.length) {
-      smsBlock =
-        '<div class="border border-slate-200 rounded-lg p-2 bg-white mb-2">' +
-          '<div class="text-xs text-slate-500 mb-1">📱 ' + escapeHtml(channelLabel('sms')) + '</div>' +
-          '<pre class="whitespace-pre-wrap text-sm text-slate-800 bg-slate-50 border border-slate-100 rounded p-2 max-h-48 overflow-auto">' + escapeHtml(r.message_body_sms) + '</pre>' +
-        '</div>';
+  function renderExpandedBody(r, state) {
+    var pv = state && state.previewResponse;
+    var channels = (pv && Array.isArray(pv.channels)) ? pv.channels : [];
+    if (!channels.length) {
+      return '<div class="text-center text-slate-400 py-2">אין ערוצים פעילים לחוק זה.</div>';
     }
-    var emailBlock = '';
-    if (r.message_body_email && r.message_body_email.length) {
-      emailBlock =
-        '<div class="border border-slate-200 rounded-lg p-2 bg-white mb-2">' +
-          '<div class="text-xs text-slate-500 mb-1">✉️ ' + escapeHtml(channelLabel('email')) + ' (HTML source)</div>' +
-          '<pre class="whitespace-pre-wrap text-xs text-slate-800 bg-slate-50 border border-slate-100 rounded p-2 max-h-48 overflow-auto" style="direction:ltr">' + escapeHtml(r.message_body_email) + '</pre>' +
-        '</div>';
-    }
-    if (!smsBlock && !emailBlock) return historyLine + '<div class="text-center text-slate-400 py-2">אין תוכן הודעה לנמען זה.</div>';
-    return historyLine + smsBlock + emailBlock;
+    var blocks = channels.map(function (c) { return renderBodyCellForChannel(state, r, c); }).join('');
+    return blocks;
   }
 
   function renderRecipientRow(r, state) {
@@ -116,7 +132,7 @@
     if (!expanded) return mainRow;
     var expandRow =
       '<tr class="bg-slate-50" data-ccsv2-expand-row="1" data-ccsv2-lead-id="' + escapeHtml(leadId) + '">' +
-        '<td colspan="4" class="px-3 py-2">' + renderExpandedBody(r) + '</td>' +
+        '<td colspan="4" class="px-3 py-2">' + renderExpandedBody(r, state) + '</td>' +
       '</tr>';
     return mainRow + expandRow;
   }

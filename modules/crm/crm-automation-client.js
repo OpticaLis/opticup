@@ -177,74 +177,124 @@
     return dispatchRes;
   }
 
-  // M4_DUAL_PATH_CLEAN_FIX_2026_05_19 Layer 1: probe-then-commit helper for
-  // status-change callers (event/lead/attendee). Flow:
-  //   1. POST mode='dispatch_preview' (zero writes) to probe recipients.
-  //   2. recipients_by_lead empty → run commitCallback silently, toast, done.
-  //   3. recipients_by_lead ≥1 → open V2 modal (suppressEmptyModal+hideCommitWithoutNotify).
-  //      - User confirms → commitCallback runs (status UPDATE → DB trigger → SCE
-  //        → cron consumer dispatches; ONE path). Returns {committed:true, mode:'confirmed'}.
-  //      - User cancels → commitCallback NOT called. Returns {committed:false, mode:'cancelled'}.
-  // No browser-side dispatch call. Cron consumer is the sole writer of crm_message_log.
+  // M4_DISPATCH_PREVIEW_LAZY_ROWS (2026-05-21): probeAndCommit rewritten as
+  // SEQUENTIAL await — no parallel listeners on the same promise. The prior
+  // pattern (one .then() that silent-committed on recipients=0/error, plus a
+  // CrmConfirmSendV2.showAsync on the same promise) caused yesterday's P0:
+  // a 26 MB / 76 s preview hung the modal listener; the .then listener fired
+  // on the synthetic "Fix D" timeout; silent commit dispatched 165 messages
+  // before halt. Sequential flow eliminates the race entirely.
+  //
+  // Flow:
+  //   1. await callEf({mode:'dispatch_preview'}).
+  //   2. EF returns metadata-only (lazy default — no body composition).
+  //      Body fields are null on every recipient. Modal materializes them on
+  //      per-row expand via CrmAutomationClient.previewRecipientBody.
+  //   3. If preview is null/errored → error toast, status unchanged. NO commit.
+  //   4. If recipient_count_total === 0 → silent commit + Toast (ONLY remaining
+  //      silent path — benign no-rules-fire transitions like → completed).
+  //   5. If recipient_count_total > 0 → mandatory modal. Operator MUST click
+  //      "אישור ושלח" for commit to fire. Cancel/close → no commit.
   async function probeAndCommit(triggerType, triggerData, commitCallback, opts) {
     opts = opts || {};
     var tid = (typeof getTenantId === 'function') ? getTenantId() : null;
     if (!tid || !triggerType || typeof commitCallback !== 'function') {
-      // No tenant or invalid args: commit directly without modal — safer than blocking the operator.
+      // No tenant or invalid args: legitimate fallback (rare; rules can't fire without tenant).
       try { var d0 = await commitCallback({ mode: 'no_tenant_fallback' }); return { committed: true, mode: 'no_tenant_fallback', data: d0 }; }
       catch (e0) { return { committed: false, mode: 'commit_failed', error: e0 }; }
     }
-    var previewPromise = callEf({
-      tenant_id: tid, trigger_type: triggerType, trigger_data: triggerData || {},
-      mode: 'dispatch_preview'
-    });
     if (!window.CrmConfirmSendV2 || typeof CrmConfirmSendV2.showAsync !== 'function') {
-      // No modal lib: commit silently (legacy fallback).
-      try { var d1 = await commitCallback({ mode: 'no_modal_fallback' }); return { committed: true, mode: 'no_modal_fallback', data: d1 }; }
-      catch (e1) { return { committed: false, mode: 'commit_failed', error: e1 }; }
+      // M4_DISPATCH_PREVIEW_LAZY_ROWS: modal lib missing → REFUSE to commit
+      // (was silent-commit pre-fix; flipped to fail-safe per Iron Rule 34 spirit).
+      if (window.Toast) Toast.error('שגיאה: שלב אישור לא נטען. רענן את הדף ונסה שוב.');
+      return { committed: false, mode: 'no_modal_refused' };
     }
+
+    // Sequential await. NO race. NO concurrent listeners.
+    var preview;
+    try {
+      preview = await callEf({
+        tenant_id: tid, trigger_type: triggerType, trigger_data: triggerData || {},
+        mode: 'dispatch_preview'
+      });
+    } catch (e) {
+      if (window.Toast) Toast.error('כשל בטעינת תצוגה מקדימה. נסה שוב.');
+      return { committed: false, mode: 'preview_failed', error: e };
+    }
+    if (!preview) {
+      if (window.Toast) Toast.error('כשל בטעינת תצוגה מקדימה. נסה שוב.');
+      return { committed: false, mode: 'preview_null' };
+    }
+
+    // M4_DISPATCH_PREVIEW_LAZY_ROWS: prefer new explicit recipient_count_total
+    // field; fall back to legacy recipients_by_lead.length for forward compat
+    // (e.g. if EF rolled back to v21 the client still works).
+    var total = (typeof preview.recipient_count_total === 'number')
+      ? preview.recipient_count_total
+      : (Array.isArray(preview.recipients_by_lead) ? preview.recipients_by_lead.length : 0);
+
+    if (total === 0) {
+      // ONLY remaining silent-commit path: zero rules fired for this transition.
+      try {
+        var d1 = await commitCallback({ mode: 'silent_zero_recipients', preview: preview });
+        if (window.Toast && !opts.suppressSilentToast) Toast.success(opts.silentToast || 'סטטוס עודכן');
+        return { committed: true, mode: 'silent_zero_recipients', data: d1 };
+      } catch (e1) {
+        return { committed: false, mode: 'commit_failed', error: e1 };
+      }
+    }
+
+    // recipients > 0 → modal MANDATORY. Operator confirm is the only commit path.
     return await new Promise(function (resolve) {
       var resolved = false;
       var settle = function (v) { if (!resolved) { resolved = true; resolve(v); } };
-      // Track preview directly so we can commit silently before the modal would open
-      previewPromise.then(async function (preview) {
-        if (preview && Array.isArray(preview.recipients_by_lead) && preview.recipients_by_lead.length) return; // modal path handles it
+      // M4_DISPATCH_PREVIEW_LAZY_ROWS: stash triggerType + triggerData on the
+      // preview object so the modal can pass them back through
+      // CrmAutomationClient.previewRecipientBody on per-row expand click.
+      preview.__triggerType = triggerType;
+      preview.__triggerData = triggerData || {};
+      CrmConfirmSendV2.showAsync(Promise.resolve(preview), async function (choice, ctx) {
+        if (!choice || !choice.dispatch) {
+          settle({ committed: false, mode: 'no_notify_choice' });
+          return { sent: 0, failed: 0, rejected: 0 };
+        }
         try {
-          var data = await commitCallback({ mode: 'silent', preview: preview });
-          if (window.Toast && !opts.suppressSilentToast) Toast.success(opts.silentToast || 'סטטוס עודכן');
-          settle({ committed: true, mode: 'silent', data: data });
-        } catch (e) { settle({ committed: false, mode: 'commit_failed', error: e }); }
-      }).catch(async function (e) {
-        console.warn('probeAndCommit preview failed:', e && e.message);
-        try { var d = await commitCallback({ mode: 'silent_after_probe_error' }); settle({ committed: true, mode: 'silent_after_probe_error', data: d }); }
-        catch (e2) { settle({ committed: false, mode: 'commit_failed', error: e2 }); }
-      });
-      CrmConfirmSendV2.showAsync(previewPromise, async function (choice, ctx) {
-        if (!choice || !choice.dispatch) { settle({ committed: false, mode: 'no_notify_choice' }); return { sent: 0, failed: 0, rejected: 0 }; }
-        try {
-          // M4_MODAL_DESELECTION_RESTORE_2026_05_19: forward operator overrides
-          // (V2 modal's _state.excluded + _state.testSent) to the commitCallback
-          // so changeEventStatus/changeLeadStatus can route through the wrapper
-          // RPC that sets m4.dispatch_exclude_lead_ids + m4.dispatch_recipient_subset.
           var excludeLeadIds = (ctx && Array.isArray(ctx.excludeLeadIds)) ? ctx.excludeLeadIds : [];
           var recipientSubset = (ctx && Array.isArray(ctx.recipientSubset)) ? ctx.recipientSubset : [];
-          var data = await commitCallback({ mode: 'confirmed', preview: (ctx && ctx.previewResponse) || null, excludeLeadIds: excludeLeadIds, recipientSubset: recipientSubset });
-          var runId = ctx && ctx.previewResponse && ctx.previewResponse.run_id;
+          var data = await commitCallback({
+            mode: 'confirmed', preview: (ctx && ctx.previewResponse) || preview,
+            excludeLeadIds: excludeLeadIds, recipientSubset: recipientSubset
+          });
           settle({ committed: true, mode: 'confirmed', data: data });
-          var planned = (ctx && ctx.previewResponse && ctx.previewResponse.recipients_by_lead && ctx.previewResponse.recipients_by_lead.length) || 0;
-          var count = Math.max(0, planned - excludeLeadIds.length);
-          return { run_id: runId, queued: count, sent: 0, failed: 0, rejected: 0 };
+          var count = Math.max(0, total - excludeLeadIds.length);
+          return { run_id: preview.run_id, queued: count, sent: 0, failed: 0, rejected: 0 };
         } catch (e) {
           settle({ committed: false, mode: 'commit_failed', error: e });
           return { sent: 0, failed: 0, rejected: 0 };
         }
       }, {
-        suppressEmptyModal: true,
+        suppressEmptyModal: false,
         hideCommitWithoutNotify: opts.hideCommitWithoutNotify !== false,
         onCancel: function () { settle({ committed: false, mode: 'cancelled' }); }
       });
     });
   }
 
-  window.CrmAutomationClient = { evaluate: evaluate, probeAndCommit: probeAndCommit };
+  // M4_DISPATCH_PREVIEW_LAZY_ROWS (2026-05-21): per-recipient body fetch.
+  // Modal calls this on per-row expand click to materialize the personalized
+  // message body for ONE (lead, channel). Returns null on tenant-missing.
+  async function previewRecipientBody(triggerType, triggerData, leadId, channel) {
+    var tid = (typeof getTenantId === 'function') ? getTenantId() : null;
+    if (!tid || !triggerType || !leadId || !channel) return null;
+    return await callEf({
+      tenant_id: tid,
+      trigger_type: triggerType,
+      trigger_data: triggerData || {},
+      mode: 'preview_recipient_body',
+      lead_id: leadId,
+      channel: channel
+    });
+  }
+
+  window.CrmAutomationClient = { evaluate: evaluate, probeAndCommit: probeAndCommit, previewRecipientBody: previewRecipientBody };
 })();

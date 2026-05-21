@@ -87,43 +87,18 @@ export async function prepareQueueSend(
   });
   if (!rows.length) return { queued: 0, leadIds };
 
-  // Manual idempotency: SELECT existing rows for the unique tuple in active
-  // statuses, then INSERT only rows whose (lead_id, channel) is not present.
-  // Cannot use upsert(..., onConflict) because uq_crm_message_queue_idem is a
-  // PARTIAL unique index (WHERE event_id IS NOT NULL AND template_slug IS NOT NULL
-  // AND status IN queued/processing/sent), and PostgREST/supabase-js does not
-  // emit the matching WHERE clause in the ON CONFLICT statement, so Postgres
-  // raises "no unique or exclusion constraint matching the ON CONFLICT
-  // specification" (verified in postgres logs 2026-05-03 during Rung 1
-  // verification). Cron runs once daily so SELECT-then-INSERT race is
-  // negligible. Note: the browser engine in crm-automation-queue-send.js has
-  // the same latent bug — never queued anything historically; out of scope
-  // for Rung 1 (Rung 2 routes browser through this EF anyway).
-  const existing = await db.from("crm_message_queue")
-    .select("lead_id, channel")
-    .eq("tenant_id", tenantId)
-    .eq("event_id", eventId)
-    .eq("template_slug", tplBase)
-    .in("lead_id", leadIds)
-    .in("channel", channels)
-    .in("status", ["queued", "processing", "sent"]);
-  if (existing.error) {
-    console.error("automation-engine queue_send idem-select:", existing.error);
-    return { queued: 0, leadIds };
-  }
-  const dupKey = (lid: string, ch: string) => `${lid}|${ch}`;
-  const existingSet = new Set<string>(
-    (existing.data || []).map((r: { lead_id: string; channel: string }) => dupKey(r.lead_id, r.channel)),
-  );
-  const newRows = rows.filter((r) =>
-    !existingSet.has(dupKey(r.lead_id as string, r.channel as string))
-  );
-  if (!newRows.length) return { queued: 0, leadIds };
-
-  const insRes = await db.from("crm_message_queue").insert(newRows).select("id");
+  // M4_QUEUE_INSERT_ON_CONFLICT (2026-05-21): atomic enqueue via RPC.
+  // Replaces the prior client-side SELECT-existing-then-INSERT-new pattern
+  // which was non-atomic (two concurrent runs could both see "no existing"
+  // and both insert). The RPC's INSERT ... ON CONFLICT DO NOTHING (matching
+  // the partial unique index uq_crm_message_queue_idem) silently no-ops
+  // duplicates. supabase-js can't emit the partial WHERE on its own; the
+  // RPC bridges that gap. See enqueue_crm_messages_idempotent migration.
+  const insRes = await db.rpc("enqueue_crm_messages_idempotent", { p_rows: rows });
   if (insRes.error) {
     console.error("automation-engine queue_send insert:", insRes.error);
     return { queued: 0, leadIds };
   }
-  return { queued: (insRes.data || []).length, leadIds };
+  const inserted = (insRes.data && typeof insRes.data.inserted === "number") ? insRes.data.inserted : 0;
+  return { queued: inserted, leadIds };
 }

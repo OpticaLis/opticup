@@ -57,18 +57,25 @@ export async function dispatchPlanDirect(
 
   let queued = 0;
   let failed = 0;
-  // M4_ENQUEUE_REGRESSION_FIX (2026-05-19): when an INSERT chunk fails, write
-  // a row-per-item to crm_message_log with status='failed' + the DB error
-  // surfaced as error_message. Before this fix, queue insert failures (notably
-  // the partial-unique-index `uq_crm_message_queue_idem` violation) were caught
-  // here but only console.error'd — invisible to operators reading
-  // crm_message_log or crm_automation_runs. The whole "total_recipients=2 but
-  // 0 queue / 0 log" silent-loss pattern came from this.
+  // M4_QUEUE_INSERT_ON_CONFLICT (2026-05-21): route every chunk through the
+  // SECURITY DEFINER RPC enqueue_crm_messages_idempotent, which wraps raw
+  // INSERT ... ON CONFLICT (tenant_id, run_id, lead_id, template_slug, channel)
+  // WHERE (...) DO NOTHING. supabase-js cannot emit the partial WHERE in a
+  // .upsert() so this is the only way to silently no-op duplicate enqueue
+  // attempts. The RPC returns {inserted, conflicted, errors} so we can
+  // distinguish dup-skip (success) from real errors.
+  //
+  // Pre-fix: bare .insert(chunk) raised "duplicate key" errors on every race
+  // collision against uq_crm_message_queue_idem. The 800 failed log rows we
+  // observed during SPEC A's load test were exactly this pattern.
   for (let i = 0; i < rows.length; i += QUEUE_INSERT_CHUNK) {
     const chunk = rows.slice(i, i + QUEUE_INSERT_CHUNK);
-    const res = await db.from("crm_message_queue").insert(chunk);
-    if (res.error) {
-      const errMsg = res.error.message || "queue_insert_failed";
+    const res = await db.rpc("enqueue_crm_messages_idempotent", { p_rows: chunk });
+    const data = (res && res.data) || null;
+    const insertedInChunk = data && typeof data.inserted === "number" ? data.inserted : 0;
+    const erroredInChunk  = data && typeof data.errors  === "number" ? data.errors  : 0;
+    if (res.error || erroredInChunk > 0) {
+      const errMsg = (res.error && res.error.message) || (data && data.error_message) || "queue_insert_failed";
       console.error(`automation-engine queue insert chunk ${i}: ${errMsg}`);
       failed += chunk.length;
       // Per-row visibility: each failed plan item becomes a log row that
@@ -93,7 +100,10 @@ export async function dispatchPlanDirect(
         console.error(`automation-engine queue insert log-row threw: ${(logErr as Error).message}`);
       }
     } else {
-      queued += chunk.length;
+      // M4_QUEUE_INSERT_ON_CONFLICT: count actual inserts (excludes silently-
+      // dropped duplicates). `conflicted` in data tracks dup-skips separately
+      // for FINDINGS / observability if a caller wants them.
+      queued += insertedInChunk;
     }
   }
 

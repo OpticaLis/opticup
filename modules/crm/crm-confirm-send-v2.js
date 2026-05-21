@@ -86,15 +86,23 @@
         refreshFooterLabels(modalEl);
       });
     });
-    // Expand toggle (per-row body preview)
+    // M4_DISPATCH_PREVIEW_LAZY_ROWS: lazy-fetch body on first expand + retry on error.
     modalEl.querySelectorAll('[data-ccsv2-expand="1"]').forEach(function (cell) {
       cell.addEventListener('click', function (e) {
         if (!_state) return;
         var lid = e.currentTarget.getAttribute('data-ccsv2-lead-id');
         if (!lid) return;
-        if (_state.expanded.has(lid)) _state.expanded.delete(lid);
-        else _state.expanded.add(lid);
-        rerender(modalEl);
+        if (_state.expanded.has(lid)) { _state.expanded.delete(lid); rerender(modalEl); return; }
+        _state.expanded.add(lid); rerender(modalEl); _fetchBodiesForLead(lid, modalEl);
+      });
+    });
+    modalEl.querySelectorAll('[data-ccsv2-retry-body="1"]').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        if (!_state) return;
+        var lid = e.currentTarget.getAttribute('data-ccsv2-lead-id');
+        if (!lid) return;
+        if (_state.recipientBodyErrors[lid]) delete _state.recipientBodyErrors[lid];
+        rerender(modalEl); _fetchBodiesForLead(lid, modalEl);
       });
     });
     // M4_MODAL_DEFAULT_ALL_CHECKED_2026_05_19: bulk select-all / clear-all.
@@ -112,9 +120,45 @@
     });
   }
 
+  // M4_DISPATCH_PREVIEW_LAZY_ROWS (2026-05-21): lazy per-(lead, channel) body fetch.
+  // Cached in _state.recipientBodies for the modal lifetime; independent error
+  // state per channel so one failing channel doesn't poison the other.
+  async function _fetchBodiesForLead(lid, modalEl) {
+    if (!_state || !lid || !window.CrmAutomationClient) return;
+    if (typeof CrmAutomationClient.previewRecipientBody !== 'function') return;
+    var pv = _state.previewResponse;
+    var channels = (pv && Array.isArray(pv.channels)) ? pv.channels : [];
+    var rcpt = _state.recipients.find(function (r) { return r.lead_id === lid; });
+    _state.recipientBodies[lid]       = _state.recipientBodies[lid]       || {};
+    _state.recipientBodyErrors[lid]   = _state.recipientBodyErrors[lid]   || {};
+    _state.recipientBodyLoading[lid]  = _state.recipientBodyLoading[lid]  || {};
+    for (var i = 0; i < channels.length; i++) {
+      var c = channels[i];
+      if (c === 'email' && (!rcpt || !rcpt.email)) continue;
+      if (c === 'sms'   && (!rcpt || !rcpt.phone)) continue;
+      if (_state.recipientBodies[lid][c] || _state.recipientBodyLoading[lid][c]) continue;
+      _state.recipientBodyLoading[lid][c] = true;
+      rerender(modalEl);
+      try {
+        var resp = await CrmAutomationClient.previewRecipientBody(_state.triggerType, _state.triggerData, lid, c);
+        if (!_state) return;
+        if (resp && resp.composed_body) _state.recipientBodies[lid][c] = resp.composed_body;
+        else _state.recipientBodyErrors[lid][c] = (resp && resp.error) || 'unknown_error';
+      } catch (err) {
+        if (!_state) return;
+        _state.recipientBodyErrors[lid][c] = (err && err.message) || 'network_error';
+      } finally {
+        if (_state && _state.recipientBodyLoading[lid]) _state.recipientBodyLoading[lid][c] = false;
+      }
+      rerender(modalEl);
+    }
+  }
+
   function _ensureState(previewResponse, onChoice) {
-    // M4_MODAL_DEFAULT_ALL_CHECKED_2026_05_19: always start with empty excluded
-    // (= all checked). Each modal open is fresh; no cross-session persistence.
+    // M4_MODAL_DEFAULT_ALL_CHECKED_2026_05_19: start with empty excluded.
+    // M4_DISPATCH_PREVIEW_LAZY_ROWS (2026-05-21): triggerType + triggerData
+    // copied from previewResponse stash (set by probeAndCommit); 3 per-(lead,
+    // channel) maps for the lazy body cache.
     _state = {
       previewResponse: previewResponse,
       recipients: (previewResponse && previewResponse.recipients_by_lead) ? previewResponse.recipients_by_lead.slice() : [],
@@ -125,6 +169,9 @@
       search: '',
       phase: previewResponse ? 'loaded' : 'loading',
       onChoice: onChoice,
+      triggerType: previewResponse && previewResponse.__triggerType,
+      triggerData: (previewResponse && previewResponse.__triggerData) || {},
+      recipientBodies: {}, recipientBodyErrors: {}, recipientBodyLoading: {}, // lazy body cache per (lead, channel)
     };
   }
 
@@ -223,11 +270,17 @@
   }
 
   function _hydrate(modal, previewResponse) {
-    // M4_MODAL_DEFAULT_ALL_CHECKED_2026_05_19: empty excluded stays empty
-    // (all checked default). No session-restore step here anymore.
+    // M4_DISPATCH_PREVIEW_LAZY_ROWS (2026-05-21): refresh triggerType +
+    // triggerData from the resolved preview (probeAndCommit stashed them on
+    // __triggerType / __triggerData). _ensureState was called with null
+    // previewResponse for the loading screen, so those fields started null
+    // and must be replayed here for previewRecipientBody to work on per-row
+    // expand.
     _state.previewResponse = previewResponse;
     _state.recipients = (previewResponse && previewResponse.recipients_by_lead)
       ? previewResponse.recipients_by_lead.slice() : [];
+    _state.triggerType = previewResponse && previewResponse.__triggerType;
+    _state.triggerData = (previewResponse && previewResponse.__triggerData) || {};
     _state.phase = 'loaded';
     rerender(modal.el);
     var footerEl = modal.el.querySelector('.modal-footer');
