@@ -113,9 +113,10 @@
       sumRevenue += Number(r.total_revenue || 0);
     });
     var avgCAC = sumBuyers > 0 ? Math.round(sumSpend / sumBuyers) : 0;
+    var avgCPL = sumLeads > 0 ? Math.round(sumSpend / sumLeads) : 0;
 
     var html = '<tr class="bg-' + color + '-50 border-b border-' + color + '-200">' +
-      '<td colspan="8" class="px-3 py-2 text-sm font-bold text-' + color + '-800">' +
+      '<td colspan="9" class="px-3 py-2 text-sm font-bold text-' + color + '-800">' +
         label + ' <span class="text-' + color + '-600 font-normal">(' + rows.length + ')</span>' +
       '</td></tr>';
 
@@ -123,6 +124,13 @@
       var d = decision(r);
       var cac = Number(r.cac);
       var cacStr = isFinite(cac) && cac > 0 ? money(cac) : '—';
+      // M4_CAMPAIGNS_COST_PER_LEAD_COLUMN (Sprint 2 Item 2): per-row CPL = spend / leads.
+      var cpl = Number(r.cpl);
+      if (!isFinite(cpl) || cpl <= 0) {
+        var leadsN = Number(r.leads_num) || 0;
+        cpl = leadsN > 0 ? Math.round(Number(r.total_spend || 0) / leadsN) : 0;
+      }
+      var cplStr = cpl > 0 ? money(cpl) : '—';
       html += '<tr class="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" data-campaign-id="' + (r.campaign_id || '') + '">' +
         '<td class="px-3 py-2 max-w-[280px] truncate" title="' + escapeHtml(r.name || '') + '">' +
           '<div class="text-sm font-medium text-slate-800 truncate">' + escapeHtml(r.name || '(ללא שם)') + '</div>' +
@@ -131,6 +139,7 @@
         '<td class="px-3 py-2">' + statusPill(r.status) + '</td>' +
         '<td class="px-3 py-2 text-end" style="direction:ltr;">' + money(r.total_spend) + '</td>' +
         '<td class="px-3 py-2 text-end">' + fmt(r.leads_num) + '</td>' +
+        '<td class="px-3 py-2 text-end font-semibold" style="direction:ltr;">' + cplStr + '</td>' +
         '<td class="px-3 py-2 text-end">' + fmt(r.buyers_num) + '</td>' +
         '<td class="px-3 py-2 text-end" style="direction:ltr;">' + money(r.total_revenue) + '</td>' +
         '<td class="px-3 py-2 text-end font-bold" style="direction:ltr;">' + cacStr + '</td>' +
@@ -143,6 +152,7 @@
       '<td></td>' +
       '<td class="px-3 py-2 text-end" style="direction:ltr;">' + money(sumSpend) + '</td>' +
       '<td class="px-3 py-2 text-end">' + fmt(sumLeads) + '</td>' +
+      '<td class="px-3 py-2 text-end" style="direction:ltr;">' + (sumLeads > 0 ? money(avgCPL) : '—') + '</td>' +
       '<td class="px-3 py-2 text-end">' + fmt(sumBuyers) + '</td>' +
       '<td class="px-3 py-2 text-end" style="direction:ltr;">' + money(sumRevenue) + '</td>' +
       '<td class="px-3 py-2 text-end" style="direction:ltr;">' + (sumBuyers > 0 ? money(avgCAC) : '—') + '</td>' +
@@ -170,6 +180,7 @@
           '<th class="px-3 py-2.5 text-start font-semibold text-slate-700">סטטוס</th>' +
           '<th class="px-3 py-2.5 text-end font-semibold text-slate-700">ספנד</th>' +
           '<th class="px-3 py-2.5 text-end font-semibold text-slate-700">לידים</th>' +
+          '<th class="px-3 py-2.5 text-end font-semibold text-slate-700" title="עלות לליד = ספנד / לידים">CPL</th>' +
           '<th class="px-3 py-2.5 text-end font-semibold text-slate-700">קונים</th>' +
           '<th class="px-3 py-2.5 text-end font-semibold text-slate-700">הכנסות</th>' +
           '<th class="px-3 py-2.5 text-end font-semibold text-slate-700">CAC</th>' +
