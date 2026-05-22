@@ -197,6 +197,34 @@ Three-layer architecture: Global Catalog (platform-owned, `owner_tenant_id` NULL
 
 ---
 
+## Module 5 — Customers (Phase A+B sealed 2026-05-22)
+
+| T constant | Table | Key columns | Notes |
+|---|---|---|---|
+| `T.CUSTOMERS` | `customers` | id (PK), tenant_id, customer_number, first_name, last_name, full_name, id_number, phone, email, lifecycle_stage, household_id, health_fund_id, home_branch_id (FK→tenant_location), language_code, 4 consent booleans, source, utm_*×6, is_deleted, deleted_at | Extended legacy stub. 42 cols. Canonical RLS. Tenant-scoped UNIQUE on customer_number/phone/id_number. |
+| `T.HOUSEHOLDS` | `households` | id, tenant_id, primary_customer_id (FK→customers), status, is_deleted | Skeleton for M13 family pooling. |
+| `T.HEALTH_FUNDS` | `health_funds` | id, tenant_id, name, code, is_active, sort_order | Config per-tenant (P19). UNIQUE(code, tenant_id). |
+| `T.TENANT_LANGUAGES` | `tenant_languages` | id, tenant_id, language_code (ISO), is_active, is_default, sort_order | Config per-tenant (P19). One-default-per-tenant partial UNIQUE. |
+| `T.CUSTOMER_NOTES` | `customer_notes` | id, tenant_id, customer_id, note_type (business/medical_q/diagnostics), content, created_by | Notes — NEVER exposed via v_customer_for_messaging. |
+| `T.CUSTOMER_DOCUMENTS` | `customer_documents` | id, tenant_id, customer_id, category, file_path (Storage), original_name, uploaded_by | Storage path: {tenant_id}/{customer_id}/{document_id}.{ext}. |
+| `T.TENANT_SETTINGS` | `tenant_settings` | id, tenant_id, customer_list_preferences (jsonb) | UNIQUE(tenant_id). |
+| `T.TENANT_NUMBER_COUNTERS` | `tenant_number_counters` | (tenant_id, entity_kind) PK, last_value, updated_at | Shared infra: per-tenant per-entity atomic sequence storage. M5 + M6 + future modules. |
+
+Module 5 also extends `tenants` (+tenant_code) and `tenant_location` (+deactivated_at).
+
+## Module 6 — Prescriptions / Eye Exams (Phase A+B sealed 2026-05-22)
+
+| T constant | Table | Key columns | Notes |
+|---|---|---|---|
+| `T.EYE_EXAMS` | `eye_exams` | id, tenant_id, customer_id (FK), exam_date, optometrist_id, status (enum), outcome, exam_type, reason, branch_id (FK→tenant_location) | State machine Pattern 9. |
+| `T.PRESCRIPTIONS_GLASSES` | `prescriptions_glasses` | id, tenant_id, customer_id (FK), exam_id, prescription_type_id (FK), prescription_number, status (draft/committed/superseded/expired/cancelled), source, health_fund_id, valid_from, expires_at, optometrist_id, refraction_method, recommended_lens_type, recommended_lens_material, committed_at | State machine. Tenant-scoped UNIQUE on prescription_number. |
+| `T.PRESCRIPTION_GLASSES_EYES` | `prescription_glasses_eyes` | id, prescription_id (FK ON DELETE CASCADE), tenant_id, eye (R/L), sphere, cyl, axis, add_power, prism, prism_base, va_*, pd_*, k_*, axial_length_mm, read_add/bif_add/mul_add/int_add | Pattern 11. UNIQUE(prescription_id, eye). |
+| `T.PRESCRIPTIONS_CONTACTS` | `prescriptions_contacts` | id, tenant_id, customer_id, exam_id, prescription_type_id, prescription_number, status, source, cl_lens_type, cl_replacement_period, cl_wear_schedule, manufacturer_id (FK→lens_manufacturers), model_name, cl_material, water_content_pct, dk_l_value, cl_tint, health_fund_id, committed_at | CL-specific fields. State machine. |
+| `T.PRESCRIPTION_CONTACTS_EYES` | `prescription_contacts_eyes` | id, prescription_id (FK CASCADE), tenant_id, eye, power (not sphere), cyl, axis, add_power, bc_mm, dia_mm, va_*, k_*, over_refraction_power, va_over_refraction, lens_catalog_id (FK to M1 deferred) | Pattern 11. UNIQUE(prescription_id, eye). |
+| `T.PRESCRIPTION_TYPES` | `prescription_types` | id, tenant_id, code, name_he, name_en, applies_to (glasses/contacts/both), triggers_recall, allows_order, is_health_fund_related, is_default, is_active, sort_order | Config per-tenant + capability flags (P19). UNIQUE(code, tenant_id). Seed: 8 default types per tenant. |
+| `T.LENS_MANUFACTURERS` | `lens_manufacturers` | id, tenant_id, code, name, country, is_active, sort_order | Config per-tenant (P19). UNIQUE(code, tenant_id). Seed: 5 default. |
+| `T.PRESCRIPTION_RECALL_AXES` | `prescription_recall_axes` | id, tenant_id, prescription_id, prescription_kind (glasses/contacts), axis_kind (next_exam/health_fund_validity/prescription_validity/fit_check/glasses_delivery), due_at, is_enabled, triggered_at | Multi-axis recall storage. Partial index WHERE is_enabled AND triggered_at IS NULL. |
+
 ## Key Globals (from `js/shared.js`)
 
 - `sb` — Supabase client (NOT `supabase` — that's a reserved name)

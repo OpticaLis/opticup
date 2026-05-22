@@ -808,5 +808,94 @@ CREATE OR REPLACE VIEW v_storefront_brands AS
 --     NOT directly from ai_content.
 
 -- ═══════════════════════════════════════════════════════════════
+-- Module 5 — Customers (sealed Phase A+B 2026-05-22)
+-- Detailed DDL: modules/Module 5 - Customers/docs/db-schema.sql
+-- ═══════════════════════════════════════════════════════════════
+
+-- Extensions on existing tables (additive):
+--   ALTER TABLE tenants       ADD COLUMN tenant_code text NOT NULL UNIQUE
+--      Backfilled: prizma='01', demo='02'.
+--   ALTER TABLE tenant_location ADD COLUMN deactivated_at timestamptz NULL
+--   ALTER TABLE customers     RENAME branch_id → home_branch_id;
+--      + 26 new columns (first_name, last_name, customer_number, lifecycle_stage,
+--        household_id, health_fund_id, language_code, gender, profession,
+--        dominant_eye, 4 consent booleans, source, utm_*×6, first_interaction_at,
+--        consent_form_signed_at, is_deleted, deleted_at, updated_by).
+--      Total post-ALTER: 42 columns. Canonical 2-policy RLS preserved.
+
+-- New enums (4): customer_lifecycle_stage, household_status, customer_note_type,
+--   customer_document_category.
+
+-- New tables (8):
+--   households, health_funds, tenant_languages, customer_notes, customer_documents,
+--   tenant_settings, tenant_number_counters, (and customers extended above).
+-- All RLS canonical 2-policy. All FK columns indexed. Tenant-scoped UNIQUE on
+-- (customer_number, tenant_id) WHERE not NULL; (phone, tenant_id) WHERE NOT NULL
+-- AND is_deleted=false; (id_number, tenant_id) WHERE NOT NULL AND is_deleted=false;
+-- (code, tenant_id) on health_funds; (language_code, tenant_id) on tenant_languages.
+
+-- Seed: tenant_languages 8 rows (he default, ru, en active, es inactive — per tenant);
+--   health_funds 10 rows (Leumit, Maccabi, Clalit, Clalit Platinum, Meuhedet — per tenant).
+
+-- Views (7 customer-data, all security_invoker=on):
+--   v_customer_for_exam, _for_order, _for_payment, _full, _for_messaging,
+--   _for_loyalty, _for_appointment.
+
+-- RPCs (8 functions, all SECURITY DEFINER + search_path SET + Block A header):
+--   create_customer, merge_customers, assign_to_household,
+--   delete_last_unused_customer (Iron Rule 32), update_customer_display_preferences,
+--   allocate_tenant_number (shared infra),
+--   compute_lifecycle_stage_on_order (deferred trigger — M7 wires),
+--   compute_lifecycle_dormant_sweep (deferred stub — M7 adds body).
+-- REVOKE EXECUTE FROM anon, PUBLIC + GRANT EXECUTE TO authenticated, service_role.
+
+-- ═══════════════════════════════════════════════════════════════
+-- Module 6 — Prescriptions / Eye Exams (sealed Phase A+B 2026-05-22)
+-- Detailed DDL: modules/Module 6 - Prescriptions/docs/db-schema.sql
+-- ═══════════════════════════════════════════════════════════════
+
+-- New enums (19):
+--   exam_status, exam_outcome, exam_type, prescription_status, prescription_source,
+--   prescription_exam_reason, prescription_treatment, prescription_refraction_method,
+--   glasses_lens_type, glasses_lens_material, prism_base, eye_side,
+--   cl_lens_type, cl_replacement_period, cl_wear_schedule, cl_material, cl_tint,
+--   recall_axis_kind, prescription_kind.
+
+-- New tables (8):
+--   eye_exams, prescriptions_glasses, prescription_glasses_eyes (Pattern 11),
+--   prescriptions_contacts, prescription_contacts_eyes (Pattern 11),
+--   prescription_types (config P19, capability flags), lens_manufacturers (config P19),
+--   prescription_recall_axes.
+-- All RLS canonical 2-policy. Tenant-scoped UNIQUE: (prescription_number, tenant_id)
+-- WHERE not NULL on both prescription tables; (code, tenant_id) on prescription_types
+-- and lens_manufacturers; (prescription_id, eye) on both eye tables.
+-- ON DELETE CASCADE from parent prescription to child eyes.
+
+-- Seed: prescription_types 16 rows (8 default types per tenant: for_distance,
+--   for_reading, for_computer, progressive, bifocal, multifocal_cl, for_sunglasses,
+--   health_fund); lens_manufacturers 10 rows (acuvue, air_optix, proclear, biofinity,
+--   dailies — per tenant).
+
+-- Views (9 — all security_invoker=on):
+--   v_exam_for_customer, v_exam_for_doctor,
+--   v_prescription_glasses_for_order, v_prescription_contacts_for_order,
+--   v_recall_due (window-fn 1-row-per-prescription),
+--   v_prescription_history_for_customer (UNION glasses+contacts),
+--   v_customer_prescriptions_summary (cross-contract — M5 customer card consumes),
+--   v_prescription_full_for_editor, v_prescriptions_list_for_customer (UNION).
+
+-- RPCs (7, all SECURITY DEFINER + search_path + Block A):
+--   create_exam, create_prescription_draft (M5↔M6 entry-point),
+--   commit_prescription (atomic; calls allocate_tenant_number for prescription_number;
+--     fires compute_recall_due_dates), cancel_draft_prescription (Iron Rule 32 — no
+--     counter touch on draft cancel), supersede_prescription, compute_recall_due_dates
+--     (multi-axis: 4 for glasses, 5 for contacts including fit_check),
+--     clone_prescription.
+-- REVOKE EXECUTE FROM anon, PUBLIC + GRANT EXECUTE TO authenticated, service_role.
+
+-- Re-uses M5 infrastructure: tenant_number_counters + allocate_tenant_number(p_tenant_id,
+-- 'prescription'). Iron Rule 11 + 32 both preserved across modules.
+
+-- ═══════════════════════════════════════════════════════════════
 -- End of GLOBAL_SCHEMA.sql
 -- ═══════════════════════════════════════════════════════════════

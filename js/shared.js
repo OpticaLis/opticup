@@ -73,6 +73,24 @@ const T = {
   // Governance (tenant-scoped):
   SUPPLIER_PERMS: 'supplier_permissions',
   CHANGE_APPROVAL: 'change_approval_log',
+  // ─── M5 Customers Phase A+B (2026-05-22) ─────────────────────
+  CUSTOMERS: 'customers',
+  HOUSEHOLDS: 'households',
+  HEALTH_FUNDS: 'health_funds',
+  TENANT_LANGUAGES: 'tenant_languages',
+  CUSTOMER_NOTES: 'customer_notes',
+  CUSTOMER_DOCUMENTS: 'customer_documents',
+  TENANT_SETTINGS: 'tenant_settings',
+  TENANT_NUMBER_COUNTERS: 'tenant_number_counters',
+  // ─── M6 Prescriptions Phase A+B (2026-05-22) ─────────────────
+  EYE_EXAMS: 'eye_exams',
+  PRESCRIPTIONS_GLASSES: 'prescriptions_glasses',
+  PRESCRIPTION_GLASSES_EYES: 'prescription_glasses_eyes',
+  PRESCRIPTIONS_CONTACTS: 'prescriptions_contacts',
+  PRESCRIPTION_CONTACTS_EYES: 'prescription_contacts_eyes',
+  PRESCRIPTION_TYPES: 'prescription_types',
+  LENS_MANUFACTURERS: 'lens_manufacturers',
+  PRESCRIPTION_RECALL_AXES: 'prescription_recall_axes',
 };
 
 // Tenant slug — set synchronously from URL/sessionStorage for immediate availability.

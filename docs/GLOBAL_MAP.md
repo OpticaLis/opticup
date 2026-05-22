@@ -342,6 +342,45 @@ preamble checklist, pending Step 9 rewrite).
 
 ---
 
+## Module 5 — Customers (Phase A+B sealed 2026-05-22)
+
+**Tables owned:** customers (extended legacy), households, health_funds, tenant_languages, customer_notes, customer_documents, tenant_settings, tenant_number_counters. Also extends `tenants` (+tenant_code) + `tenant_location` (+deactivated_at).
+
+**Cross-module surfaces:**
+- 7 customer Views: `v_customer_for_exam`, `_for_order`, `_for_payment`, `_full`, `_for_messaging`, `_for_loyalty`, `_for_appointment`. All `security_invoker=on`.
+- 5 customer RPCs: `create_customer`, `merge_customers`, `assign_to_household`, `delete_last_unused_customer` (Iron Rule 32), `update_customer_display_preferences`.
+- 1 shared infrastructure RPC: `allocate_tenant_number(p_tenant_id, p_entity_kind)` — atomic per-tenant per-entity-kind sequence. Used by M5 ('customer'), M6 ('prescription'), future modules.
+- 2 deferred trigger functions: `compute_lifecycle_stage_on_order` (built, not wired — M7 attaches), `compute_lifecycle_dormant_sweep` (stub, not scheduled).
+
+**Iron Rule 32 contract:** `delete_last_unused_customer` enforces the sequential-number cancellation rule. Customer can only be hard-deleted if customer_number=MAX(customer_number) for tenant AND zero incoming FKs. Counter decremented atomically.
+
+**Customer Number composite display:** `tenant_code + branch_code (=tenant_location.short_code) + customer_number(5-zero-padded)`. Tenant_code seed: prizma='01', demo='02'.
+
+**SECURITY-FINDING #1 partial update (2026-05-22):** Original 2026-04 finding listed customers, prescriptions, sales, work_orders as having `anon_all_*` policies + missing tenant_id. As of 2026-05-22 probe: all 4 tables now have the canonical 2-policy (`service_bypass` + `tenant_isolation` JWT-claim); no anon_all leftover policies. tenant_id columns exist on all 4. The finding can be re-scoped or closed in the next SECURITY_HOTFIX sweep. M5_SCHEMA SPEC (folder `modules/Module 5 - Customers/docs/specs/M5_SCHEMA/`) confirmed this state at chain start; the customers extension preserved canonical RLS throughout.
+
+## Module 6 — Prescriptions / Eye Exams (Phase A+B sealed 2026-05-22)
+
+**Tables owned:** eye_exams, prescriptions_glasses + child eyes (Pattern 11), prescriptions_contacts + child eyes (Pattern 11), prescription_types (config P19), lens_manufacturers (config P19), prescription_recall_axes.
+
+**Cross-module surfaces:**
+- 9 views: `v_exam_for_customer`, `v_exam_for_doctor`, `v_prescription_glasses_for_order`, `v_prescription_contacts_for_order`, `v_recall_due` (window-fn 1-per-prescription), `v_prescription_history_for_customer` (UNION), **`v_customer_prescriptions_summary`** (cross-contract — M6 owns, M5 customer card consumes), `v_prescription_full_for_editor`, `v_prescriptions_list_for_customer` (UNION).
+- 7 RPCs: `create_exam`, **`create_prescription_draft`** (M5↔M6 entry-point), `commit_prescription` (atomic + prescription_number via shared `allocate_tenant_number`), `cancel_draft_prescription` (Iron Rule 32 — counter UNCHANGED), `supersede_prescription`, `compute_recall_due_dates` (multi-axis), `clone_prescription`.
+
+**Patterns implemented:**
+- Pattern 9 (state-machine via enum + status_changed_at/by audit).
+- Pattern 10 (Fact-vs-Rule): M6 emits `v_recall_due` (fact); M12 future will own `recall_rules` (rule).
+- Pattern 11 (two-rows-for-symmetric-pair): R/L eyes in child tables with UNIQUE(prescription_id, eye).
+
+**Re-uses M5 infrastructure:** `allocate_tenant_number(p_tenant_id, 'prescription')` — same `tenant_number_counters` table, different entity_kind. Iron Rule 11 + 32 both preserved across modules without duplicating the counter.
+
+**Discipline notes (M5 + M6):**
+- All M5 + M6 RPCs use the canonical Block A header from `.claude/skills/opticup-strategic/references/JWT_VALIDATION_HEADER.sql`. No hand-rolled JWT checks.
+- All RPCs: REVOKE EXECUTE FROM anon, PUBLIC + GRANT EXECUTE TO authenticated, service_role.
+- Smoke (M5: 9/9; M6: 9/9; cross-contract: 5/5) all PASS on demo. Advisors clean (0 new HIGH/ERROR; WARN matches project pattern `authenticated_security_definer_function_executable`).
+- No Prizma row writes during build+smoke. DDL applied to both tenants; data only on demo.
+
+---
+
 *End of GLOBAL_MAP.md. Detailed function-level contracts live in per-module
 MODULE_MAP.md files. The prior 919-line version (with function-level detail
 for all ERP code) is backed up under
