@@ -80,10 +80,7 @@ interface QueueRow {
   retries: number;
 }
 
-interface LeadRow {
-  email: string | null;
-  phone: string | null;
-}
+interface LeadRow { email: string | null; phone: string | null; unsubscribed_at: string | null; status: string | null; }
 
 interface StorefrontConfig {
   analytics: Record<string, unknown>;
@@ -95,13 +92,10 @@ async function processQueueRow(
 ): Promise<void> {
   const { id: queueId, tenant_id: tenantId, lead_id: leadId, event_id: eventId, event_name: eventName, retries } = row;
 
-  // Step 1: Fetch lead data (Iron Rule 22: tenant_id filter)
+  // Step 1: Fetch lead (IR22 tenant_id filter). M4_FB_CAPI_SUPPRESSION_GATE 2026-05-22: also +unsubscribed_at +status.
   const { data: lead, error: leadErr } = await db
-    .from("crm_leads")
-    .select("email, phone")
-    .eq("id", leadId)
-    .eq("tenant_id", tenantId)
-    .single() as { data: LeadRow | null; error: unknown };
+    .from("crm_leads").select("email, phone, unsubscribed_at, status")
+    .eq("id", leadId).eq("tenant_id", tenantId).single() as { data: LeadRow | null; error: unknown };
 
   if (leadErr || !lead) {
     await updateQueueRow(db, queueId, tenantId, "permanent_error", retries,
@@ -119,6 +113,12 @@ async function processQueueRow(
       "no_match: no email and no phone on lead", null);
     return;
   }
+
+  // Step 2.5 — Suppression gate (M4_FB_CAPI_SUPPRESSION_GATE 2026-05-22). GDPR Art.7(3) blocks PII to Meta on the natural person. Mirrors send-message 2-layer.
+  const gateSkip = async (r: string, d: string) => { console.log(`[fb-capi-gate] skip queue=${queueId} reason=${r}`); await updateQueueRow(db, queueId, tenantId, "skipped_suppressed", retries, d, null); };
+  if (lead.unsubscribed_at != null || lead.status === "unsubscribed") { await gateSkip("lead_unsubscribed", "lead_unsubscribed: lead.unsubscribed_at OR status='unsubscribed'"); return; }
+  const sup = await db.rpc("crm_check_contact_suppressed", { p_tenant_id: tenantId, p_email: emailNorm, p_phone: phoneNorm });
+  if (sup.data === true) { await gateSkip("contact_suppressed", "contact_suppressed: crm_suppressions match on email_norm or phone_norm"); return; }
 
   // Step 3: Fetch CAPI token from storefront_config.analytics (D-AUTH-1)
   const { data: config, error: configErr } = await db

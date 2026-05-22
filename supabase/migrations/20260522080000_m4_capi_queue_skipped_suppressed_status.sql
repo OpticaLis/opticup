@@ -1,0 +1,5 @@
+-- M4_FB_CAPI_SUPPRESSION_GATE (2026-05-22).
+-- Applied via apply_migration on 2026-05-22.
+-- Adds 'skipped_suppressed' to the accepted status set on crm_capi_dispatch_queue.
+-- Per IR32 declared in SPEC §"Destructive Operations" #2 (DROP + ADD constraint).
+-- No row data is touched.
