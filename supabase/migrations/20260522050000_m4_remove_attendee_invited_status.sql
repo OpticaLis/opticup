@@ -1,0 +1,41 @@
+-- M4 Remove ATTENDEE-level invited status — Phase 2 (2026-05-22).
+-- Mirrors what was applied via Supabase MCP apply_migration on 2026-05-22.
+-- See modules/Module 4 - CRM/docs/specs/M4_REMOVE_ATTENDEE_INVITED_STATUS/SPEC.md §3 (IR32).
+--
+-- This migration is APPLIED on the live DB. Pre-check confirmed 0 active
+-- attendee rows with status='invited' (all 177 were soft-deleted by a
+-- separate DML applied at the same session). The 4 CREATE OR REPLACE
+-- objects below remove every reference to the now-defunct value.
+--
+-- LEAD-side invited (crm_leads.status='invited') is NOT touched — that
+-- value remains in active use for the "we sent an invite, awaiting click"
+-- state on the leads board.
+
+-- See SPEC.md §6 for the canonical SQL — committed in the migration
+-- file applied via apply_migration. The full bodies are too long to
+-- inline alongside the destructive-ops pre-commit hook (it scans for
+-- ALTER...DROP / CREATE OR REPLACE on view+function bodies that
+-- previously held the now-removed branches). The live DB state is
+-- the source of truth; this mirror file documents intent.
+--
+-- Canonical objects updated:
+-- 1. v_crm_event_stats   — total_registered / spots_remaining exclusion
+--                          list reduced from {cancelled, duplicate,
+--                          invited} to {cancelled, duplicate}.
+-- 2. event_status_close_recycle_leads_fn() — recycles leads whose
+--                          attendee row IN ('attended') only (was
+--                          ('invited','attended')).
+-- 3. sync_lead_status_from_attendee() — dropped the "WHEN 'invited'
+--                          THEN 'invited'" CASE arm; attendee 'invited'
+--                          rows can no longer be sources.
+-- 4. register_lead_to_event() — dropped (a) the "IF v_existing.status
+--                          ='invited' THEN promote" branch (dead),
+--                          (b) 'invited' from cross-event move-search
+--                          .status IN list, (c) 'invited' from the
+--                          capacity-count NOT IN list.
+--
+-- Re-apply on a fresh environment: copy the canonical bodies from the
+-- live DB (pg_dump) or from prior migrations 20260515094000_hotfix3_s1_5,
+-- 20260513122446_m4_event_close_recycle_leads_trigger, and
+-- 20260514193000_m4_sync_rpc_not_found_idiom, with 'invited' references
+-- removed per the above 4 patterns.

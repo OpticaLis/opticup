@@ -145,13 +145,13 @@ export async function resolveRecipients(
   if (recipientType === "cross_event_active_waitlist") {
     // Rule 2.4: invite the active waitlist of OTHER open events to a newly-
     // opened parallel event. Filter: attendee status 'waiting_list' or
-    // 'invited' on a different event whose own status is registration_open
-    // or waiting_list.
+    // M4_REMOVE_ATTENDEE_INVITED_STATUS (2026-05-22 Phase 2): 'invited' removed
+    // from attendee.status; cross-event waitlist now scans 'waiting_list' only.
     type AttRow = { event_id: string; lead_id: string; status: string };
     const attData = await paginate<AttRow>(() =>
       db.from("crm_event_attendees").select("event_id, lead_id, status")
         .eq("tenant_id", tenantId)
-        .in("status", ["waiting_list", "invited"])
+        .in("status", ["waiting_list"])
         .eq("is_deleted", false));
     const rows = attData.filter((r) => r.event_id !== eventId);
     if (!rows.length) return [];
