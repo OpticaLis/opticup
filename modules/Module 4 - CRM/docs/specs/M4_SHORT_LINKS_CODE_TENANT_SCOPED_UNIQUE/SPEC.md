@@ -1,7 +1,7 @@
 # SPEC — M4_SHORT_LINKS_CODE_TENANT_SCOPED_UNIQUE
 
 > **Authored:** 2026-05-21 — Sprint 3 Item 6 of 6.
-> **Status:** 🟡 **AUTHORED ONLY — EXECUTION DEFERRED.** Supabase intermittent connectivity outage during this Sprint prevented the mandatory cross-tenant collision pre-check, which is the first gate per Daniel's instruction: "if any [collisions] exist, surface them and STOP before changing the constraint".
+> **Status:** 🟢 **APPLIED + VERIFIED 2026-05-22.** Authored Sprint 3 (deferred due to Supabase outage). Re-tested post-outage 2026-05-22: pre-check returned 0 cross-tenant collisions; migration applied; DO-block sanity tests confirmed cross-tenant duplicate codes accepted + intra-tenant duplicates still blocked with `unique_violation`.
 
 ## 0. Goal
 Close the long-pending IR18 debt: `short_links_code_unique` is currently a GLOBAL UNIQUE constraint on `code` (across all tenants). IR18 requires every UNIQUE constraint to include `tenant_id`. Migrate to `UNIQUE (tenant_id, code)`.
@@ -20,11 +20,24 @@ Close the long-pending IR18 debt: `short_links_code_unique` is currently a GLOBA
 - The migration file is authored + committed (with pre-check + sanity tests inline) but NOT applied. Daniel re-runs when Supabase is stable.
 
 ## 3. Destructive Operations
-1. DDL: `ALTER TABLE short_links DROP CONSTRAINT short_links_code_unique` — destructive (drops a constraint).
-2. DDL: `CREATE UNIQUE INDEX short_links_tenant_code_unique ON short_links (tenant_id, code)` — additive but interacts with #1.
-3. Both wrapped in a single transaction so a failure rolls back to the global constraint.
 
-**Pre-check is non-negotiable.** The migration file's header documents the exact pre-check query that must return 0 rows before apply.
+**AUTHORIZED — applied 2026-05-22 after successful pre-check (0 rows).**
+
+1. **DDL:** `ALTER TABLE public.short_links DROP CONSTRAINT IF EXISTS short_links_code_unique` (destructive — drops the global UNIQUE constraint that backed the same-named UNIQUE INDEX). Authorized by this SPEC.
+2. **DDL:** `DROP INDEX IF EXISTS public.short_links_code_unique` — belt-and-suspenders safety in case the constraint had a different shape on a fresh environment.
+3. **DDL:** `CREATE UNIQUE INDEX short_links_tenant_code_unique ON short_links (tenant_id, code)` — additive replacement, completes the transaction atomically with #1+#2.
+4. Both #1 and #3 inside a single `BEGIN; COMMIT;` block so a failure rolls back to the global constraint.
+
+**Pre-check was non-negotiable + ran successfully:**
+```sql
+SELECT code, count(DISTINCT tenant_id) FROM short_links
+ GROUP BY code HAVING count(DISTINCT tenant_id) > 1;
+-- 2026-05-22 result: 0 rows. Safe to apply.
+```
+
+NO Prizma data writes during the apply itself (constraint-shape change only). The sanity-test DO block inserted 1 Prizma `short_links` row to validate cross-tenant duplicate code acceptance + deleted it within the same block (net 0).
+
+Daniel's 10K test leads (`utm_campaign='M4_DANIEL_MANUAL_TEST_2026_05_21'` on `crm_leads`): completely unaffected — different table.
 
 ## 4. Out of scope
 - Tightening the code-generation collision check to also include tenant_id (current check is overly strict post-migration but safe; future SPEC `M4_SHORT_LINKS_CODE_GEN_TENANT_SCOPED_CHECK`).
