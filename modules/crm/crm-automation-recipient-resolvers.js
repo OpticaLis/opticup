@@ -27,6 +27,23 @@
 (function () {
   'use strict';
 
+  // M4_SUPPRESSION_LIST (2026-05-22): contact-level filter applied at every
+  // return boundary. Belt+suspenders with the per-lead unsubscribed_at gate.
+  async function _filterSuppressed(tenantId, leads) {
+    if (!leads || !leads.length) return leads;
+    var sup = await sb.from('crm_suppressions').select('email_norm, phone_norm').eq('tenant_id', tenantId);
+    if (sup.error || !sup.data || !sup.data.length) return leads;
+    var emails = new Set(); var phones = new Set();
+    sup.data.forEach(function (s) { if (s.email_norm) emails.add(s.email_norm); if (s.phone_norm) phones.add(s.phone_norm); });
+    return leads.filter(function (l) {
+      var e = (l && l.email ? l.email : '').trim().toLowerCase();
+      var p = (l && l.phone ? l.phone : '').trim();
+      if (e && emails.has(e)) return false;
+      if (p && phones.has(p)) return false;
+      return true;
+    });
+  }
+
   async function resolveRecipients(recipientType, tenantId, triggerData, actionConfig) {
     var tier2 = window.TIER2_STATUSES || ['waiting','invited','confirmed','confirmed_verified'];
     var cfg = actionConfig || {};
@@ -40,7 +57,7 @@
         .eq('tenant_id', tenantId).eq('id', leadId).single();
       if (leadRes.error || !leadRes.data) return [];
       if (leadRes.data.unsubscribed_at || leadRes.data.is_deleted) return [];
-      return [leadRes.data];
+      return _filterSuppressed(tenantId, [leadRes.data]);
     }
 
     if (recipientType === 'tier2' || recipientType === 'tier2_excl_registered' || recipientType === 'leads_by_status') {
@@ -70,7 +87,7 @@
         excludeRows.forEach(function (r) { if (r.lead_id) excluded[r.lead_id] = true; });
         leads = leads.filter(function (l) { return !excluded[l.id]; });
       }
-      return leads;
+      return _filterSuppressed(tenantId, leads);
     }
 
     if (recipientType === 'attendees' || recipientType === 'attendees_waiting' || recipientType === 'attendees_all_statuses') {
@@ -89,9 +106,9 @@
           return q;
         });
       } catch (e) { throw new Error('recipients attendees: ' + e.message); }
-      return aRows
+      return _filterSuppressed(tenantId, aRows
         .map(function (r) { return r.crm_leads; })
-        .filter(function (l) { return l && !l.unsubscribed_at && !l.is_deleted; });
+        .filter(function (l) { return l && !l.unsubscribed_at && !l.is_deleted; }));
     }
 
     if (recipientType === 'attendees_with_active_coupon') {
@@ -111,9 +128,9 @@
             .eq('coupon_sent', true).neq('status', 'cancelled');
         });
       } catch (e) { throw new Error('recipients attendees_with_active_coupon: ' + e.message); }
-      return cRows
+      return _filterSuppressed(tenantId, cRows
         .map(function (r) { return r.crm_leads; })
-        .filter(function (l) { return l && !l.unsubscribed_at && !l.is_deleted; });
+        .filter(function (l) { return l && !l.unsubscribed_at && !l.is_deleted; }));
     }
 
     if (recipientType === 'cross_event_active_waitlist') {
@@ -156,7 +173,7 @@
         seen[lead.id] = true;
         leadsOut.push(lead);
       });
-      return leadsOut;
+      return _filterSuppressed(tenantId, leadsOut);
     }
 
     console.warn('CrmAutomation: unknown recipient_type', recipientType);

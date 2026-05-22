@@ -15,7 +15,9 @@ export async function injectLeadVariables(
   leadId: string,
   tenantId: string,
   vars: Record<string, unknown>,
-): Promise<{ unsubscribed_at: string | null; status: string | null } | null> {
+): Promise<
+  { unsubscribed_at: string | null; status: string | null; email: string | null; phone: string | null } | null
+> {
   if (!leadId || !tenantId) return null;
 
   const { data: lead, error } = await db
@@ -43,5 +45,7 @@ export async function injectLeadVariables(
   return {
     unsubscribed_at: lead.unsubscribed_at ?? null,
     status: lead.status ?? null,
+    email: lead.email ?? null,
+    phone: lead.phone ?? null,
   };
 }

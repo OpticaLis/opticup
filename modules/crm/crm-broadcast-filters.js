@@ -221,9 +221,9 @@
         : boardStatuses(board);
     }
 
-    return await paginateQuery(function () {
+    var rows = await paginateQuery(function () {
       var q = sb.from('crm_leads')
-        .select('id, full_name, phone, status, source, language')
+        .select('id, full_name, phone, email, status, source, language')
         .eq('is_deleted', false).is('unsubscribed_at', null);
       if (tid) q = q.eq('tenant_id', tid);
       if (idFilter) q = q.in('id', idFilter);
@@ -231,6 +231,19 @@
       if (state.language) q = q.eq('language', state.language);
       if (state.source)   q = q.eq('source', state.source);
       return q;
+    });
+    // M4_SUPPRESSION_LIST (2026-05-22): exclude contacts in suppression list (email OR phone match, tenant-scoped).
+    if (!rows.length) return rows;
+    var supRes = await sb.from('crm_suppressions').select('email_norm, phone_norm').eq('tenant_id', tid);
+    if (supRes.error || !supRes.data || !supRes.data.length) return rows;
+    var supEmails = new Set(); var supPhones = new Set();
+    supRes.data.forEach(function (s) { if (s.email_norm) supEmails.add(s.email_norm); if (s.phone_norm) supPhones.add(s.phone_norm); });
+    return rows.filter(function (l) {
+      var e = (l.email || '').trim().toLowerCase();
+      var p = (l.phone || '').trim();
+      if (e && supEmails.has(e)) return false;
+      if (p && supPhones.has(p)) return false;
+      return true;
     });
   }
 

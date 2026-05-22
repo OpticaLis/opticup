@@ -246,15 +246,17 @@
     return { id: leadId, status: 'waiting' };
   }
 
+  // M4_SUPPRESSION_LIST (2026-05-22): resubscribe now uses atomic RPC that ALSO
+  // clears contact-level suppression (email + phone) + reverts lead status.
   async function resubscribeLead(lead) {
     var tenantId = (typeof getTenantId === 'function') ? getTenantId() : null;
     if (!tenantId || !lead || !lead.id) throw new Error('missing context');
-    var res = await sb.from('crm_leads')
-      .update({ unsubscribed_at: null, updated_at: new Date().toISOString() })
-      .eq('id', lead.id).eq('tenant_id', tenantId);
+    var res = await sb.rpc('crm_resubscribe_contact', { p_tenant_id: tenantId, p_lead_id: lead.id });
     if (res.error) throw new Error(res.error.message);
-    try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.resubscribed', entity_type: 'crm_leads', entity_id: lead.id, details: { lead_name: lead.full_name } }); } catch (_) {}
-    if (window.Toast) Toast.success('הליד הוחזר לדיוור');
+    var data = res.data || {};
+    if (!data.ok) throw new Error(data.error || 'resubscribe failed');
+    try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.resubscribed', entity_type: 'crm_leads', entity_id: lead.id, details: { lead_name: lead.full_name, suppression_rows_deleted: data.suppression_rows_deleted, lead_status_after: data.lead_status_after } }); } catch (_) {}
+    if (window.Toast) Toast.success('הליד הוחזר לדיוור (' + (data.suppression_rows_deleted || 0) + ' רשומות חסימה הוסרו)');
     return true;
   }
 
@@ -262,9 +264,11 @@
     var btn = host && host.querySelector('[data-action="resubscribe"]');
     if (!btn) return;
     btn.addEventListener('click', function () {
+      if (!window.confirm('להחזיר את ' + (lead.full_name || 'הליד') + ' לדיוור?\nהפעולה תסיר את האימייל והטלפון מרשימת החסימה ותפעיל מחדש שליחת הודעות.')) return;
       btn.disabled = true;
       resubscribeLead(lead).then(function () {
         lead.unsubscribed_at = null;
+        if (lead.status === 'unsubscribed') lead.status = 'waiting';
         if (typeof onDone === 'function') onDone();
       }, function (err) {
         btn.disabled = false;
@@ -319,7 +323,7 @@
 
   function wireDetailsButtons(host, lead, refresh) {
     if (!host || !lead) return;
-    if (lead.unsubscribed_at) wireResubscribeButton(host, lead, refresh);
+    if (lead.unsubscribed_at || lead.status === 'unsubscribed') wireResubscribeButton(host, lead, refresh);
     if (!lead.terms_approved) wireApproveTermsButton(host, lead, function () {
       refresh && refresh();
       if (typeof window.reloadCrmIncomingTab === 'function') window.reloadCrmIncomingTab();

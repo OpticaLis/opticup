@@ -1,0 +1,8 @@
+-- M4 Tenant-scoped contact suppression list — Phase 2 (2026-05-22).
+-- Mirrors what was applied via apply_migration on 2026-05-22.
+-- See modules/Module 4 - CRM/docs/specs/M4_SUPPRESSION_LIST/SPEC.md §3 (IR32).
+--
+-- Pure additive (new table + 2 indexes + 2 policies + 1 trigger + 3 RPCs).
+-- The canonical SQL bodies live on the live DB and in SPEC.md.
+-- Re-apply on a fresh environment: copy live function bodies via pg_dump
+-- or re-derive from SPEC.md §3.

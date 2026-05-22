@@ -207,7 +207,7 @@
       row('עיר', lead.city || '—') +
       row('מקור', lead.source || '—') +
       row('תנאים', lead.terms_approved ? '✅ אושרו' : '—', (window.CrmLeadActions && CrmLeadActions.termsApproveButtonHtml) ? CrmLeadActions.termsApproveButtonHtml(lead) : '') +
-      row('שיווק', lead.marketing_consent ? '✅ מאושר' : (lead.unsubscribed_at ? '❌ הוסר' : '—'), lead.unsubscribed_at ? ' <button type="button" data-action="resubscribe" class="ms-2 px-2 py-0.5 rounded bg-indigo-500 text-white text-xs font-semibold hover:bg-indigo-600">החזר לדיוור</button>' : '') +
+      row('שיווק', lead.marketing_consent ? '✅ מאושר' : ((lead.unsubscribed_at || lead.status === 'unsubscribed') ? '❌ הוסר' : '—'), (lead.unsubscribed_at || lead.status === 'unsubscribed') ? ' <button type="button" data-action="resubscribe" class="ms-2 px-2 py-0.5 rounded bg-indigo-500 text-white text-xs font-semibold hover:bg-indigo-600">החזר לדיוור</button>' : '') +
       row('נוצר', CrmHelpers.formatDateTime(lead.created_at)) +
       row('עודכן', CrmHelpers.formatDateTime(lead.updated_at)) +
       '</div>';
