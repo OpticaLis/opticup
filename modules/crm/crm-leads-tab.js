@@ -316,7 +316,8 @@
       if (ack && window.CrmFailedMessagesModal) { e.stopPropagation(); e.preventDefault(); CrmFailedMessagesModal.ackLead(ack.getAttribute('data-ack-lead'), parseInt(ack.getAttribute('data-ack-count') || '0', 10)); return; }
       var b = e.target.closest('[data-move-lead]'); if (!b || !window.CrmAttendeeMove) return; e.stopPropagation();
       // NOT migrated to DB.* in M4_RAW_SB_WRAPPER_PHASE_1: uses .maybeSingle(), wrapper has no equivalent. Phase 2 follow-up.
-      var r = await sb.from('crm_event_attendees').select('id').eq('tenant_id', getTenantId()).eq('lead_id', b.getAttribute('data-move-lead')).in('status', ['waiting_list','invited','registered']).eq('is_deleted', false).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      // M4_REMOVE_ATTENDEE_INVITED_STATUS (2026-05-22 Phase 2): 'invited' removed from attendee.status.
+      var r = await sb.from('crm_event_attendees').select('id').eq('tenant_id', getTenantId()).eq('lead_id', b.getAttribute('data-move-lead')).in('status', ['waiting_list','registered']).eq('is_deleted', false).order('created_at', { ascending: false }).limit(1).maybeSingle();
       if (r.error || !r.data) { if (window.Toast) Toast.warning('אין רישום פעיל ללקוח זה'); return; }
       CrmAttendeeMove.open(r.data.id, { onAfter: function () { renderLeadsTable(); } });
     });

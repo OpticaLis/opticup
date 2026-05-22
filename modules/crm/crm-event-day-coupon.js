@@ -20,9 +20,11 @@
     'registration_open', 'invite_new', 'waiting_list',
     '2_3d_before', 'event_day', 'invite_waiting_list'
   ];
+  // M4_REMOVE_ATTENDEE_INVITED_STATUS (2026-05-22 Phase 2): 'invited' removed.
+  // Attendee-level invited no longer exists; lead-level invited is unrelated.
   var COUPON_ALLOWED_ATTENDEE_STATUSES = [
     'registered', 'quick_registration', 'manual_registration',
-    'confirmed', 'attended', 'invited'
+    'confirmed', 'attended'
   ];
 
   function couponToast(t, m) { if (window.Toast && Toast[t]) Toast[t](m); else if (window.Toast && Toast.show) Toast.show(m); }

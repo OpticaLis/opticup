@@ -118,16 +118,15 @@
 
     if (recipientType === 'cross_event_active_waitlist') {
       // Rule 2.4 (P5_V2): invite the active waitlist of OTHER open events to a
-      // newly-opened parallel event. Filters: attendee status 'waiting_list' or
-      // 'invited' on a different event whose own status is
-      // registration_open / waiting_list (canonical crm_statuses.event slugs).
+      // newly-opened parallel event. M4_REMOVE_ATTENDEE_INVITED_STATUS
+      // (2026-05-22 Phase 2): 'invited' removed; scans 'waiting_list' only.
       var attRows;
       try {
         attRows = await paginateQuery(function () {
           return sb.from('crm_event_attendees')
             .select('event_id, lead_id, status, crm_leads(id, full_name, phone, email, unsubscribed_at, is_deleted)')
             .eq('tenant_id', tenantId)
-            .in('status', ['waiting_list', 'invited'])
+            .in('status', ['waiting_list'])
             .eq('is_deleted', false);
         });
       } catch (e) { throw new Error('recipients cross_event: ' + e.message); }
