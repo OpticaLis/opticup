@@ -122,7 +122,7 @@ Canonical reference: `docs/CRM_RULE_CHAINING.md`.
 
 ## 8. Channel rules
 
-**SMS (Make webhook):** 160-char soft limit per segment. Hard cap effectively 320 chars (multi-segment cost). 1-second throttle in `dispatch-queue` (~60/min). Templates use placeholders to fit; avoid bare URLs (gateway bots fire ~95% of clicks within 6 min — `feedback_clicks_are_not_actions`).
+**SMS (Make webhook):** 160-char soft limit per segment. Hard cap effectively 320 chars (multi-segment cost). 1-second throttle in `dispatch-queue` (~60/min). Templates use placeholders to fit; avoid bare URLs (gateway bots fire ~95% of clicks within 6 min — `feedback_clicks_are_not_actions`). **Above 320 chars (post-substitution worst-case) → switch the message to Email or WhatsApp.** SMS cost scales per segment and some gateways 404 on >5-part Hebrew messages (lesson from P5_V2 cutover 2026-04-29). For length-vs-channel decision tree see [`PLAYBOOK_MESSAGING`](PLAYBOOK_MESSAGING.md) §2.
 
 **Email (Make webhook → SMTP):** separate `subject` + `body`. HTML supported. No length cap. 0.5-second throttle.
 
