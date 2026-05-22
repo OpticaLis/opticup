@@ -138,18 +138,16 @@ Deno.serve(async (req: Request) => {
   // immediately below.
   const supRow = await injectLeadVariables(db, leadId, tenantId, variables);
 
-  // --- Suppression gate (M4_UNSUB_SUPPRESSION_CRIT) ---
-  // CAN-SPAM equivalent: respect `unsubscribed_at` on every dispatch. The
-  // unsubscribe EF sets both `unsubscribed_at` and `status='unsubscribed'`
-  // in one UPDATE; either condition suppresses (defense in depth — Iron Rule 22).
-  if (supRow && (supRow.unsubscribed_at != null || supRow.status === "unsubscribed")) {
-    await db.from("crm_message_log").insert({
-      tenant_id: tenantId, lead_id: leadId, event_id: eventId, run_id: runId,
-      broadcast_id: broadcastId,
-      template_id: null, channel, content: "",
-      status: "rejected", error_message: "lead_unsubscribed",
-    });
-    return jsonResponse({ ok: false, error: "lead_unsubscribed" }, 200);
+  // Suppression: Layer 1 per-lead (M4_UNSUB_SUPPRESSION_CRIT — CAN-SPAM, IR22) +
+  // Layer 2 contact (M4_SUPPRESSION_LIST 2026-05-22 — blocks NEW lead with prior opt-out's email/phone).
+  async function rejectLog(err: string) {
+    await db.from("crm_message_log").insert({ tenant_id: tenantId, lead_id: leadId, event_id: eventId, run_id: runId, broadcast_id: broadcastId, template_id: null, channel, content: "", status: "rejected", error_message: err });
+    return jsonResponse({ ok: false, error: err }, 200);
+  }
+  if (supRow && (supRow.unsubscribed_at != null || supRow.status === "unsubscribed")) return rejectLog("lead_unsubscribed");
+  if (supRow && (supRow.email || supRow.phone)) {
+    const sc = await db.rpc("crm_check_contact_suppressed", { p_tenant_id: tenantId, p_email: supRow.email ?? null, p_phone: supRow.phone ?? null });
+    if (sc.data === true) return rejectLog("contact_suppressed");
   }
 
   // --- Inject auto URLs (unsubscribe + registration) and event-derived vars ---

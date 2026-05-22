@@ -22,6 +22,29 @@ type Db = any;
 
 const TIER2_STATUSES = ["waiting", "invited", "confirmed", "confirmed_verified"];
 
+// M4_SUPPRESSION_LIST (2026-05-22): contact-level filter applied at every
+// recipient-resolver return boundary. Removes leads whose email OR phone is
+// in crm_suppressions (tenant-scoped). Belt+suspenders with per-lead
+// unsubscribed_at gate — defense-in-depth IR22.
+async function filterSuppressedContacts(db: Db, tenantId: string, leads: Lead[]): Promise<Lead[]> {
+  if (!leads.length) return leads;
+  const emails = Array.from(new Set(leads.map((l) => (l.email || "").trim().toLowerCase()).filter(Boolean)));
+  const phones = Array.from(new Set(leads.map((l) => (l.phone || "").trim()).filter(Boolean)));
+  if (!emails.length && !phones.length) return leads;
+  const supSet = await paginate<{ email_norm: string | null; phone_norm: string | null }>(() =>
+    db.from("crm_suppressions").select("email_norm, phone_norm").eq("tenant_id", tenantId));
+  if (!supSet.length) return leads;
+  const supEmails = new Set(supSet.map((s) => s.email_norm).filter(Boolean));
+  const supPhones = new Set(supSet.map((s) => s.phone_norm).filter(Boolean));
+  return leads.filter((l) => {
+    const e = (l.email || "").trim().toLowerCase();
+    const p = (l.phone || "").trim();
+    if (e && supEmails.has(e)) return false;
+    if (p && supPhones.has(p)) return false;
+    return true;
+  });
+}
+
 // 2026-05-12 PAGINATE_QUERY_RANGE_REBUILD — PostgREST caps every response at
 // 1000 rows. Browser code goes through paginateQuery in js/supabase-ops.js;
 // the EF previously did NOT paginate at all, silently capping every
@@ -70,7 +93,7 @@ export async function resolveRecipients(
       .eq("tenant_id", tenantId).eq("id", leadId).single();
     if (r.error || !r.data) return [];
     if (r.data.unsubscribed_at || r.data.is_deleted) return [];
-    return [r.data];
+    return filterSuppressedContacts(db, tenantId, [r.data]);
   }
 
   if (recipientType === "tier2" || recipientType === "tier2_excl_registered" || recipientType === "leads_by_status") {
@@ -108,7 +131,7 @@ export async function resolveRecipients(
       xData.forEach((r) => { if (r.lead_id) excluded.add(r.lead_id); });
       leads = leads.filter((l) => !excluded.has(l.id));
     }
-    return leads;
+    return filterSuppressedContacts(db, tenantId, leads);
   }
 
   if (recipientType === "attendees" || recipientType === "attendees_waiting" || recipientType === "attendees_all_statuses") {
@@ -200,5 +223,5 @@ async function fetchLeadsByIds(db: Db, tenantId: string, leadIds: string[]): Pro
         .in("id", slice));
     page.forEach((l) => { if (!l.unsubscribed_at && !l.is_deleted) out.push(l); });
   }
-  return out;
+  return filterSuppressedContacts(db, tenantId, out);
 }

@@ -209,6 +209,40 @@ Deno.serve(async (req: Request) => {
     // branding is optional — ignore failures
   }
 
+  // M4_SUPPRESSION_LIST (2026-05-22): upsert contact-level suppression FIRST so
+  // source='unsubscribe_ef' is recorded. The status='unsubscribed' UPDATE below
+  // fires trg_lead_status_unsubscribed_to_suppression_fn which ALSO inserts
+  // (source='in_app_status_change') but ON CONFLICT DO NOTHING — so EF source
+  // wins for the unsubscribe-link path, trigger covers all other paths.
+  try {
+    const leadRow = await db
+      .from("crm_leads")
+      .select("email, phone")
+      .eq("id", parsed.leadId)
+      .eq("tenant_id", parsed.tenantId)
+      .maybeSingle();
+    if (leadRow.data) {
+      const emailNorm = (leadRow.data.email || "").trim().toLowerCase() || null;
+      const phoneNorm = (leadRow.data.phone || "").trim() || null;
+      if (emailNorm) {
+        await db.from("crm_suppressions").upsert(
+          { tenant_id: parsed.tenantId, email_norm: emailNorm, phone_norm: null,
+            reason: "user_unsubscribed", source: "unsubscribe_ef", source_lead_id: parsed.leadId },
+          { onConflict: "tenant_id,email_norm", ignoreDuplicates: true },
+        );
+      }
+      if (phoneNorm) {
+        await db.from("crm_suppressions").upsert(
+          { tenant_id: parsed.tenantId, email_norm: null, phone_norm: phoneNorm,
+            reason: "user_unsubscribed", source: "unsubscribe_ef", source_lead_id: parsed.leadId },
+          { onConflict: "tenant_id,phone_norm", ignoreDuplicates: true },
+        );
+      }
+    }
+  } catch (e) {
+    console.warn("unsubscribe: suppression upsert best-effort failed:", (e as Error).message);
+  }
+
   const { data, error } = await db
     .from("crm_leads")
     .update({
