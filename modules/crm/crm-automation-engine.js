@@ -1,15 +1,4 @@
-/* =============================================================================
-   crm-automation-engine.js — Rule evaluation engine (P8, 2026-04-22)
-   Table:   crm_automation_rules (trigger_entity, trigger_event, trigger_condition,
-            action_type='send_message', action_config)
-   Replaces the hardcoded EVENT_STATUS_DISPATCH map (crm-event-actions.js, P5.5) and
-   the inline registration dispatch (crm-event-register.js, P5.5) with rule-driven
-   evaluation. Called from:
-     - crm-event-actions.js        — trigger: event_status_change
-     - crm-event-register.js       — trigger: event_registration
-     - crm-leads (future)          — trigger: lead_status_change / lead_intake (UI)
-   NOTE: lead-intake Edge Function still dispatches server-side independently (out
-   of scope per P8 SPEC §7).
+/* crm-automation-engine.js — Rule evaluation engine (P8). Table: crm_automation_rules. Called from crm-event-actions, crm-event-register. Lead-intake EF dispatches independently.
    Exports window.CrmAutomation:
      evaluate(triggerType, triggerData) — loads matching rules, evaluates conditions,
        resolves recipients, builds a sendPlan. P20: when CrmConfirmSend is loaded

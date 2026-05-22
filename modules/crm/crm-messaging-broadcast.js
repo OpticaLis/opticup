@@ -1,8 +1,4 @@
-/* =============================================================================
-   crm-messaging-broadcast.js — Broadcast wizard (B8 Tailwind — FINAL-04, P8 split)
-   Tables: crm_broadcasts, crm_message_log, crm_leads, crm_events
-   Log rendering extracted to crm-messaging-log.js (P8, Rule 12 split, 2026-04-22).
-   ============================================================================= */
+/* crm-messaging-broadcast.js — Broadcast wizard (B8 Tailwind FINAL-04, P8 split). Log rendering in crm-messaging-log.js. */
 (function () {
   'use strict';
 

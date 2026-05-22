@@ -16,32 +16,35 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  // M4_LEADS_BULK_RPC (Sprint 3 Item 4, 2026-05-21): atomic server-side
+  // RPC replaces the sequential per-lead client loop. Single transaction:
+  // status UPDATE + notes INSERT happen together; partial failure rolls
+  // back the entire batch. Terms-gate behavior preserved.
   async function bulkApproveToTier2(leadIds) {
-    if (!window.CrmLeadActions || typeof CrmLeadActions.transferLeadToTier2 !== 'function') {
-      throw new Error('CrmLeadActions.transferLeadToTier2 not available');
-    }
+    var tid = (typeof getTenantId === 'function') ? getTenantId() : null;
+    if (!tid) throw new Error('no tenant context');
     var stats = { ok: 0, blocked_no_terms: 0, errors: [] };
-    for (var i = 0; i < leadIds.length; i++) {
-      var id = leadIds[i];
-      try {
-        var res = await CrmLeadActions.transferLeadToTier2(id);
-        if (res && res.blocked) {
-          stats.blocked_no_terms += 1;
-        } else if (res && res.id) {
-          stats.ok += 1;
-          try {
-            if (window.ActivityLog) ActivityLog.write({
-              action: 'crm.lead.move_to_registered_bulk',
-              entity_type: 'crm_leads',
-              entity_id: id,
-              details: { batch_size: leadIds.length }
-            });
-          } catch (_) {}
-        } else {
-          stats.errors.push({ id: id, msg: 'unknown response shape' });
-        }
-      } catch (err) {
-        stats.errors.push({ id: id, msg: (err && err.message) || String(err) });
+    if (!leadIds || !leadIds.length) return stats;
+    var rpc = await sb.rpc('crm_bulk_approve_leads_to_tier2', { p_tenant_id: tid, p_lead_ids: leadIds });
+    if (rpc.error) {
+      stats.errors.push({ id: null, msg: rpc.error.message || String(rpc.error) });
+      return stats;
+    }
+    var d = rpc.data || {};
+    stats.ok = Number(d.promoted) || 0;
+    stats.blocked_no_terms = Number(d.blocked_no_terms) || 0;
+    // ActivityLog per promoted lead (preserves audit trail per-row).
+    var promotedIds = Array.isArray(d.promoted_ids) ? d.promoted_ids : [];
+    if (window.ActivityLog) {
+      for (var i = 0; i < promotedIds.length; i++) {
+        try {
+          ActivityLog.write({
+            action: 'crm.lead.move_to_registered_bulk',
+            entity_type: 'crm_leads',
+            entity_id: promotedIds[i],
+            details: { batch_size: leadIds.length, source: 'bulk_rpc' }
+          });
+        } catch (_) {}
       }
     }
     return stats;
