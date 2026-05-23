@@ -31,7 +31,19 @@
     docs_scan:            'OCR pipeline SPEC',
     // Header action buttons
     call_action:          'tel: handler (M-future telephony)',
-    whatsapp_action:      'wa.me handler (M-future telephony)'
+    whatsapp_action:      'wa.me handler (M-future telephony)',
+    // Phase E — Customer List + Create-Mode (2026-05-23)
+    customer_list_advanced_search: 'advanced search modal (Phase E follow-up)',
+    customer_list_export:          'Excel export (Phase E follow-up)',
+    customer_list_barcode_scan:    'barcode scanner (M-future hardware)',
+    loyalty_tier:                  'M13 Loyalty (tiers / Gold / Platinum)',
+    sidebar_kds:                   'M9 Lab KDS',
+    sidebar_reports:               'M11 Reports',
+    sidebar_inventory:             'M1 inventory link (already exists; cross-module nav)',
+    sidebar_comms:                 'M12 Communications / WhatsApp',
+    sidebar_appointments:          'M14 Appointments',
+    sidebar_birthday_filter:       'birthday filter (needs cron + filter view — Phase F)',
+    sidebar_loyalty:               'M13 Loyalty members list'
   };
 
   /**

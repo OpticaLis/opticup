@@ -53,10 +53,13 @@
     state.customerId = cid;
 
     if (!cid) {
-      document.getElementById('cust-empty-state').style.display = 'block';
-      document.getElementById('cust-lede-status').textContent = '';
-      trace('boot_empty_state');
-      return;
+      // No customer_id → LIST MODE (Phase E). Reuse the same entrypoint.
+      // customer-list.js exposes window.mountCustomerList() — it expects the
+      // tenant + auth boot below to have already run, so we fall through to
+      // run loadSession() first + then dispatch to the list mounter.
+      trace('boot_list_mode_pending');
+    } else {
+      trace('boot_card_mode', { customer_id: cid });
     }
 
     // Tenant must already be resolved by shared.js auto-resolveTenant.
@@ -89,6 +92,23 @@
       } catch (e) {
         trace('auth_session_failed', { error: String(e) });
       }
+    }
+
+    // List-mode branch: no customer_id → hand off to customer-list.js after auth is up.
+    if (!cid) {
+      document.getElementById('cust-lede-status').style.display = 'none';
+      var emptyState = document.getElementById('cust-empty-state');
+      if (emptyState) emptyState.style.display = 'none';
+      if (typeof window.mountCustomerList === 'function') {
+        trace('list_mount_dispatch');
+        window.mountCustomerList();
+      } else {
+        // Fallback if list module didn't load — show the old empty-state.
+        if (emptyState) emptyState.style.display = 'block';
+        document.getElementById('cust-lede-status').textContent = '';
+        trace('boot_list_module_missing');
+      }
+      return;
     }
 
     try {

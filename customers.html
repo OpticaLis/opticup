@@ -48,6 +48,9 @@
       <div class="cust-tabs"  id="cust-tabs"  ><!-- populated by customer-card.js --></div>
       <div class="cust-content" id="cust-content"><!-- populated per-tab --></div>
     </div>
+
+    <!-- List shell — populated by customer-list.js when no customer_id in URL (Phase E) -->
+    <div id="cust-list-root"></div>
   </main>
 
   <!-- Modal + toast + loading containers (consumed by Modal.*, Toast.*, showLoading) -->
@@ -91,6 +94,13 @@
   <script src="modules/customers/customer-card-tab-prescriptions.js"></script>
   <script src="modules/customers/customer-card-tab-orders.js"></script>
   <script src="modules/customers/customer-card-tab-docs.js"></script>
+
+  <!-- ─── M5 Customer List + Create-Mode (Phase E) — loaded before customer-card.js so list mount is available ─── -->
+  <script src="modules/customers/customer-list-filters.js"></script>
+  <script src="modules/customers/customer-list-sidebar.js"></script>
+  <script src="modules/customers/customer-list.js"></script>
+  <script src="modules/customers/customer-create.js"></script>
+
   <script src="modules/customers/customer-card.js"></script>
 
 </body>
