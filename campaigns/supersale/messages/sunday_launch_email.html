@@ -4,20 +4,20 @@
   ═══════════════════════════════════════════════════════════════════
   Authored 2026-05-22 for Events-Ops preview. NOT inserted into CRM, NOT sent.
   Companion to the already-approved Sunday SMS. Drives the reader to the
-  /supersale-launch/ landing page and to reserve a spot via WhatsApp.
+  /supersale-launch/ landing page (catalog + prices) and to the personal
+  registration link for spot reservation.
 
-  Variables in use (CRM substitution syntax - no new tokens introduced):
+  Variables in use (CRM substitution syntax - approved tokens only):
     %name%               = lead's first name
     %event_name%         = event name
     %event_date%         = event date (DD/MM/YYYY)
     %event_day_of_week%  = e.g., "יום שישי" (dynamic)
     %event_time%         = e.g., "10:00 - 18:00"
+    %registration_url%   = per-lead personal registration link
     %unsubscribe_url%    = per-recipient unsubscribe URL
 
-  Static URLs (hardcoded per brief - not per-lead):
-    Landing  → https://prizma-optic.co.il/supersale-launch/
-    WhatsApp → https://wa.me/972533645404 (prefilled reserve message)
-    Takanon  → https://prizma-optic.co.il/supersale-takanon/
+  Static URLs (hardcoded - not per-lead):
+    Landing → https://prizma-optic.co.il/supersale-launch/
 
   Design canon: matches event_registration_open_email_he (dark elegant header,
   single gold #c9a555 family, Rubik/Heebo, RTL, mobile-responsive table layout,
@@ -185,7 +185,7 @@
                       אקסטרא לנרשמים מראש
                     </p>
                     <p style="margin:0; color:#dddddd; font-size:14px; line-height:1.65;">
-                      מי שמשריין מקום מראש מקבל <strong style="color:#ffffff;">הטבת אקסטרא של ₪50 הנחה</strong> על משקפי בית אופנה פרימיום, בנוסף לכל הטבות האירוע. הקופון האישי נשמר על שמכם ומחכה בקופה.
+                      מי שמשריין מקום מראש נהנה מ<strong style="color:#ffffff;">הטבות נוספות בשווי מאות שקלים</strong>, מעבר למחירי האירוע - על מגוון מהמותגים המשתתפים. הקופון האישי נשמר על שמכם ומחכה בקופה.
                     </p>
                   </td>
                 </tr>
@@ -202,12 +202,12 @@
                 </tr>
               </table>
 
-              <!-- WhatsApp secondary CTA -->
+              <!-- Secondary CTA - personal registration link -->
               <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 14px;">
                 <tr>
                   <td align="center">
-                    <a href="https://wa.me/972533645404?text=%D7%94%D7%99%D7%99%2C%20%D7%90%D7%A0%D7%99%20%D7%A8%D7%95%D7%A6%D7%94%20%D7%9C%D7%A9%D7%A8%D7%99%D7%99%D7%9F%20%D7%9E%D7%A7%D7%95%D7%9D%20%D7%9C%D7%90%D7%99%D7%A8%D7%95%D7%A2%20%D7%94%D7%A9%D7%A7%D7%AA%20%D7%94%D7%A7%D7%95%D7%9C%D7%A7%D7%A6%D7%99%D7%95%D7%AA%20%D7%91%D7%99%D7%95%D7%9D%20%D7%A9%D7%99%D7%A9%D7%99%2029.5%20%D7%91%D7%A1%D7%A0%D7%99%D7%A3%20%D7%90%D7%A9%D7%A7%D7%9C%D7%95%D7%9F.%20%5B%D7%94%D7%92%D7%A2%D7%AA%D7%99%20%D7%9E%D7%94%D7%9E%D7%99%D7%99%D7%9C%5D" class="mobile-btn" style="display:inline-block; padding:13px 28px; background-color:transparent; color:#c9a555; border: 1.5px solid #c9a555; font-family:'Rubik','Segoe UI',sans-serif; font-size:14px; font-weight:700; text-decoration:none; border-radius:9999px; letter-spacing:0.3px;">
-                      לשריון מקום בוואטסאפ
+                    <a href="%registration_url%" class="mobile-btn" style="display:inline-block; padding:13px 28px; background-color:transparent; color:#c9a555; border: 1.5px solid #c9a555; font-family:'Rubik','Segoe UI',sans-serif; font-size:14px; font-weight:700; text-decoration:none; border-radius:9999px; letter-spacing:0.3px;">
+                      לשריון מקום באירוע
                     </a>
                   </td>
                 </tr>
