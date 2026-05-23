@@ -970,5 +970,42 @@ CREATE OR REPLACE VIEW v_storefront_brands AS
 -- ZCreditAdapter) OUT OF SCOPE. Phase C SPEC with NDA + sandbox + Daniel-in-loop.
 
 -- ═══════════════════════════════════════════════════════════════
+-- NIGHT_RUN 2026-05-23 — 3 tracks
+-- ═══════════════════════════════════════════════════════════════
+--
+-- Track 1 (Module 1.5 — M5_M8_CROSS_CONTRACT_FIXES):
+--   11 migrations additive: lifecycle trigger attach (compute_lifecycle_stage_on_order
+--   on payments WHEN paid+amount≥1), sub_orders.rx_snapshot_jsonb column,
+--   add_sub_order snapshot population, emit_first_payment_event_fn WHEN gate +
+--   exception-trap dedup, mark_check_returned race-safe predicate, partial
+--   uniques on payment_events_queue (order_id WHERE first_payment, payment_id
+--   WHERE check_returned), 3 FK indexes on payment_events_queue (tenant_id,
+--   order_id, customer_id), 2 CHECK constraints (payments.amount>0,
+--   sub_order_items.quantity>0), 4 missing FK indexes (eye_exams.branch_id,
+--   prescriptions_glasses.health_fund_id, prescriptions_contacts.health_fund_id,
+--   sub_orders.repair_origin_order_id). Smoke 7/7 PASS.
+--
+-- Track 2 (Module 5 — M5_LEADS_MIGRATION):
+--   ALTER TYPE customer_lifecycle_stage ADD VALUE 'lead'.
+--   ALTER customers ADD COLUMN source_crm_lead_id uuid REFERENCES crm_leads(id)
+--     + partial UNIQUE (source_crm_lead_id, tenant_id) WHERE NOT NULL.
+--   New RPC migrate_crm_leads_to_customers(p_tenant_id) — service_role-only,
+--   idempotent, phone-dedup LINK-or-INSERT.
+--   Demo 4 active leads + Prizma 1,296 active leads migrated. crm_leads UNCHANGED.
+--
+-- Track 3 (Module 9 — M9_SCHEMA):
+--   12 migrations: 8 enums (lab_job_status, lab_flow, shipping_box_direction,
+--   shipping_box_type, shipping_box_status, quality_status, compensation_status,
+--   lab_event_kind), 10 new tables (lab_jobs + lab_categories + lab_compensation_tiers
+--   + lab_notes + shipping_boxes + shipping_box_items + lab_damage_reasons
+--   + lab_couriers + lab_supplier_thresholds + lab_events_queue with Pattern P22
+--   day-1 idempotency: 3 partial-unique indexes on compensation_threshold per
+--   lab_job + compensation_approved per lab_job + box_overdue per shipping_box).
+--   9 RPCs + 1 helper fn (compute_lab_clock_color_fn) + 2 views (v_m9_status_log
+--   over activity_log per Iron Rule 21 + v_lab_queue_full).
+--   Seeds: 14 lab_categories + 10 lab_damage_reasons + 2 lab_couriers across
+--   both tenants. Smoke 10/10 PASS. 0 Prizma row writes on data tables.
+
+-- ═══════════════════════════════════════════════════════════════
 -- End of GLOBAL_SCHEMA.sql
 -- ═══════════════════════════════════════════════════════════════

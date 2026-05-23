@@ -245,6 +245,40 @@ Module 5 also extends `tenants` (+tenant_code) and `tenant_location` (+deactivat
 | `T.PAYMENT_ADAPTERS` | `payment_adapters` | **global** | id, name, display_name, version, auth_method, credentials_schema_jsonb, supported_capabilities_array, supported_settlement_modes_array, is_active, requires_nda | service-write/public-read; 3 manifest rows (SKELETON ONLY, no integration code) |
 | `T.PAYMENT_EVENTS_QUEUE` | `payment_events_queue` | per-tenant | id, tenant_id, payment_id, order_id, customer_id, event_kind (enum), event_payload jsonb, emitted_at, consumed_at, consumed_by | Pattern P22 durable event queue; M8 emits, M7+M4 listen |
 
+## Track 1 cross-contract additions (Module 1.5 — 2026-05-23)
+
+| Object | Type | Notes |
+|---|---|---|
+| `customers.lifecycle_stage` trigger source = `payments` | trigger attached | `trg_advance_lifecycle_on_paid_payment` WHEN paid+amount≥1 → advances prospect→active |
+| `sub_orders.rx_snapshot_jsonb` | column | populated by add_sub_order at link-time; immune to source M6 mutations |
+| `payment_events_queue` partial uniques | indexes | (order_id) WHERE first_payment + (payment_id) WHERE check_returned — Pattern P22 idempotency |
+| `payment_events_queue` FK indexes | indexes | tenant_id + order_id + customer_id |
+| `payments.amount > 0` + `sub_order_items.quantity > 0` | CHECK | defense-in-depth |
+| 4 unindexed FKs | indexes | eye_exams.branch_id, prx_glasses/contacts.health_fund_id, sub_orders.repair_origin_order_id |
+
+## Track 2 leads migration (Module 5 — 2026-05-23)
+
+| Object | Type | Notes |
+|---|---|---|
+| `customer_lifecycle_stage='lead'` | enum value | added to existing {prospect, active, dormant} |
+| `customers.source_crm_lead_id` | column | uuid REFERENCES crm_leads(id); partial UNIQUE (source_crm_lead_id, tenant_id); future M4-cutover seam |
+| `migrate_crm_leads_to_customers(p_tenant_id)` | RPC | service_role-only, idempotent, phone-dedup |
+
+## Module 9 — Lab/KDS (Phase A+B sealed 2026-05-23)
+
+| T constant | Table | Key columns | Notes |
+|---|---|---|---|
+| `T.LAB_JOBS` | `lab_jobs` | id, tenant_id, sub_order_id (UNIQUE), order_id, customer_id, category_id, lab_flow, status (state-machine), 5 flow-timestamp pairs, clock_paused_at/reason, compensation_status, re_do_count | 1:1 with sub_order |
+| `T.LAB_CATEGORIES` | `lab_categories` | id, tenant_id, slug, name_he/en/ru, default_lab_flow, 3 processing thresholds (yellow/red/compensation), 2 pickup thresholds (yellow/red) | config P19; seed 7 per tenant |
+| `T.LAB_COMPENSATION_TIERS` | `lab_compensation_tiers` | per-(category × tier) with compensation_amount_ils + compensation_type | future Settings SPEC plumbs per-tenant max_addition |
+| `T.LAB_NOTES` | `lab_notes` | per lab_job thread | — |
+| `T.SHIPPING_BOXES` | `shipping_boxes` | id, tenant_id, direction (outgoing/incoming), box_type (9 values), courier_id, courier_barcode, supplier_barcode | unified shipping infra; replaces M1 shipments |
+| `T.SHIPPING_BOX_ITEMS` | `shipping_box_items` | lab_job_id, quality_status, damage_reason_id, linked_outgoing/_incoming polymorphic refs | M:N support via linked_* |
+| `T.LAB_DAMAGE_REASONS` | `lab_damage_reasons` | config | 5 seed per tenant |
+| `T.LAB_COURIERS` | `lab_couriers` | config | 1 seed per tenant (Katz/כץ) |
+| `T.LAB_SUPPLIER_THRESHOLDS` | `lab_supplier_thresholds` | per-supplier expected_return_days | future Settings SPEC populates |
+| `T.LAB_EVENTS_QUEUE` | `lab_events_queue` | Pattern P22 + day-1 idempotency | 3 partial-unique indexes |
+
 ## Key Globals (from `js/shared.js`)
 
 - `sb` — Supabase client (NOT `supabase` — that's a reserved name)

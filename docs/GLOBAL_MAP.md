@@ -422,6 +422,55 @@ preamble checklist, pending Step 9 rewrite).
 
 ---
 
+---
+
+## 2026-05-23 NIGHT_RUN chain — 3 tracks closed 🟢
+
+### Track 1 — M5_M8_CROSS_CONTRACT_FIXES (Module 1.5)
+
+8 findings closed across M5/M6/M7/M8:
+- **F-A-1 lifecycle trigger wired** — `trg_advance_lifecycle_on_paid_payment` on payments AFTER INSERT OR UPDATE OF status WHEN paid+amount≥1 → calls `compute_lifecycle_stage_on_order()` → advances `customers.lifecycle_stage` prospect→active. Closes M5 §1.1 + §8 #50 contract.
+- **F-A-2 invariant documented** in M7 db-schema.sql header: orders.status quote→active flows ONLY via Pattern P21 (recompute_order_status_fn aggregator over sub_orders); first payment alone does NOT advance orders.
+- **F-B-1 prescription value snapshot** — `sub_orders.rx_snapshot_jsonb` populated by `add_sub_order` at link-time. Order history immune to source M6 mutations.
+- **F-B-2 first-payment gate** — trigger WHEN `NEW.status='paid' AND NEW.amount >= 1`.
+- **F-D1+F-D2 partial-unique idempotency on payment_events_queue** — `(order_id) WHERE first_payment` + `(payment_id) WHERE check_returned`. Trigger fns wrap INSERT in BEGIN/EXCEPTION WHEN unique_violation THEN NULL/END. Pattern P22 hardening codified.
+- **F-C3 mark_check_returned race-safe** — UPDATE adds `WHERE status='in_bank'` predicate; raises 40001 on row_count=0.
+- **F-F1 payment_events_queue indexes** — tenant_id + order_id + customer_id.
+- **F-C2 CHECK constraints** — payments.amount > 0 + sub_order_items.quantity > 0.
+- **F-F2 4 unindexed FKs** — eye_exams.branch_id, prx_glasses/contacts.health_fund_id, sub_orders.repair_origin_order_id.
+
+Smoke 7/7 PASS. Pattern P22 now codified for inheritance (M9 inherited from day-1).
+
+### Track 2 — M5_LEADS_MIGRATION (Module 5)
+
+`crm_leads → customers` additive seam:
+- New enum value `customer_lifecycle_stage='lead'`.
+- New column `customers.source_crm_lead_id uuid REFERENCES crm_leads(id)` + partial UNIQUE.
+- New RPC `migrate_crm_leads_to_customers(p_tenant_id)` — service_role-only, idempotent, phone-dedup.
+- Demo: 4 active leads → 4 lead-lifecycle customers (after T2-S2 link test).
+- **Prizma: 1,296 active leads → 1,296 lead-lifecycle customers.**
+- crm_leads UNCHANGED (28 demo / 1354 prizma totals). 9 crm_leads FK tables intact. M4 production keeps writing crm_leads.
+- Future M4-cutover SPEC uses `source_crm_lead_id` as seam to re-point the 9 FK tables.
+
+### Track 3 — M9_SCHEMA (Module 9)
+
+10 new tables + 8 enums + 9 RPCs + 1 helper fn + 2 views:
+- `lab_jobs` (state-machine, 1:1 sub_order), `lab_categories` (config P19), `lab_compensation_tiers`, `lab_notes`, `shipping_boxes` (unified outbound/inbound 9 box_types), `shipping_box_items`, `lab_damage_reasons` (config), `lab_couriers` (config), `lab_supplier_thresholds`, `lab_events_queue` (Pattern P22 with day-1 idempotency — 3 partial-unique indexes inherited from Track 1).
+- 9 RPCs all SECURITY DEFINER + Block A + REVOKE anon + GRANT authenticated+service_role. `compute_lab_clock_color_fn` service_role-only.
+- 2 views: `v_m9_status_log` (over activity_log per Iron Rule 21) + `v_lab_queue_full` (M9-owned KDS surface).
+- Smoke 10/10 (8 functional + 2 cross-contract). 0 Prizma row writes on data tables; config seeds (14 lab_categories + 10 lab_damage_reasons + 2 lab_couriers) applied to both tenants per Brief.
+
+**Deferred (separate SPECs):** M1 lens-extension blocker, M7 sub_orders.lab_flow column, M12 templates delivery, M13 loyalty_grant_credit_compensation, production pg_cron schedule.
+
+### Pattern catalog (current)
+
+- **P19** — config-table-per-tenant (vs enum)
+- **P21** — parent-status aggregation trigger (M7 first instance — `recompute_order_status_fn`)
+- **P22** — durable event queue with day-1 partial-unique idempotency (M8 first; codified Track 1; inherited M9)
+- **Pattern: documented-invariant** (F-A-2) — when multiple mechanisms could implement a transition, pick one and document the invariant in the owning module's db-schema header
+
+---
+
 *End of GLOBAL_MAP.md. Detailed function-level contracts live in per-module
 MODULE_MAP.md files. The prior 919-line version (with function-level detail
 for all ERP code) is backed up under
