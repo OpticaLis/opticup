@@ -1,6 +1,6 @@
 # Module 5 — Customers — Session Context
 
-**Last updated:** 2026-05-23 Phase E closed 🟢 (M5 screen layer complete) · Visual-Fidelity Gate applied 2026-05-23 (variable-scope fix landed in css/customers.css).
+**Last updated:** 2026-05-23 M5 polish (phone_secondary + per-tenant list columns) closed 🟢 · Phase E + Visual-Fidelity Gate completed earlier in the day.
 **Status:** 🟢 Phase A+B (Schema + RPCs) CLOSED · 🟢 M5_LEADS_MIGRATION CLOSED · 🟢 Phase D (UI Customer Card) CLOSED (incl. CLOSURE_SPEC) · 🟢 **Phase E (UI Customer List + Create-Mode) CLOSED** — Sketch 2 Split Workspace + dedup-safe create on the same `customers.html` entrypoint; Iron Rule 34 closure complete. **M5 screen layer is now complete.** Phase C (OpticPlus 5,028-customer historical import) deferred to cutover.
 
 ## Current state

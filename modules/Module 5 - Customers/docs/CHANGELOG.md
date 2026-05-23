@@ -1,5 +1,34 @@
 # Module 5 — Customers — Changelog
 
+## M5 Polish — phone_secondary + per-tenant list columns — closed 2026-05-23 🟢
+
+Two SaaS-clean improvements from Daniel's live review of the now-styled card + list (post-VISUAL_FIDELITY_GATE):
+
+**Item A — Secondary phone on the card:**
+- Additive migration: `ALTER TABLE customers ADD COLUMN phone_secondary text` (43 cols now).
+- `v_customer_full` recreated to expose the new column (appended at end of SELECT due to Postgres view-recreate constraint — F-POL-1).
+- Card Contact block now renders 3 rows: נייד / **טלפון-עבודה** / אימייל (mockup parity restored).
+- Edit-mode PIN-gating symmetric with primary phone.
+- FIELD_MAP entry added: `'טלפון-עבודה':'phone_secondary'`.
+
+**Item B — Per-tenant configurable list columns:**
+- New `modules/customers/customer-list-columns.js` (158L) — column registry (11 wired + 4 future "בקרוב") + picker modal + load/save.
+- "⚙ עמודות" button added to the list toolbar.
+- Storage: REUSED existing `tenant_settings.customer_list_preferences` jsonb (Iron Rule 21) + existing `update_customer_display_preferences` RPC.
+- jsonb shape: `{ "list_columns": [<col_id>, …] }` — order = display order, presence = visibility.
+- Default columns for a new tenant: `["name", "phone", "city", "health_fund"]`.
+- Future columns (last_exam_date / last_order_date / club_tier / age) pre-wired in the picker as disabled "בקרוב" — light up automatically when M6/M7/M13 ship (foundation-first pattern P19).
+- customer-list.js refactored to data-driven rendering: `--cust-col-count` CSS custom prop sets grid auto-sizing; renderCell switch per column.
+
+**Iron Rule 34 closure** (Visual-Fidelity Gate — installed earlier in the day):
+- Card Contact block: 1:1 match for 3 of 4 mockup rows; row 4 ("אחר") remains SCHEMA-BLOCKED (existing TECH_DEBT, partially shrunk by this SPEC).
+- List: picker + persistence + future-column "בקרוב" discipline all verified. DB delta proves tenant_settings persistence across reload.
+- 3 JPEG screenshots sent to Daniel via SendUserFile.
+
+**No M5 schema change beyond the single column. No Prizma writes. No merge to main.**
+
+---
+
 ## Visual-Fidelity Gate applied (M5 card + list) — 2026-05-23
 
 Root cause behind the M5 Phase D + E "paperwork-PASS" fidelity evidence: `css/customers.css` referenced Hybrid+Navy tokens (`--bg-page`, `--accent`, `--border-subtle`, `--text-primary`, etc.) — copied from the mockup — but never declared them anywhere. `shared/css/variables.css` uses a different production naming convention (`--color-primary`, `--color-success`). All `var(--*)` resolved to empty string → card looked unstyled. Caught by the Architect (2nd strike after M1 lens) → blocking gate created (`modules/Module 1.5 - Shared Components/docs/specs/VISUAL_FIDELITY_GATE/`).
