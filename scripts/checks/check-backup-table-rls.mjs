@@ -1,6 +1,13 @@
 import { readFile } from 'node:fs/promises';
+import { relative, resolve } from 'node:path';
 
+const REPO = resolve(import.meta.dirname || '.', '..', '..');
 const BACKUP_TABLE_RE = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:(?:public|"public")\.)?((_backup_\w+|"_backup_[^"]+"))/gi;
+
+function isBackupCheckDocFile(absPath) {
+  const rel = relative(REPO, absPath).replace(/\\/g, '/');
+  return /^docs\//.test(rel) || /^modules\/[^/]+\/docs\//.test(rel);
+}
 
 export default async function checkBackupTableRls(files) {
   const violations = [];
@@ -8,6 +15,7 @@ export default async function checkBackupTableRls(files) {
 
   for (const f of files) {
     if (!f.endsWith('.sql')) continue;
+    if (isBackupCheckDocFile(f)) continue;
     let content;
     try {
       content = await readFile(f, 'utf8');

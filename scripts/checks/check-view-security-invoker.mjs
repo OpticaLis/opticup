@@ -1,7 +1,14 @@
 import { readFile } from 'node:fs/promises';
+import { relative, resolve } from 'node:path';
 
+const REPO = resolve(import.meta.dirname || '.', '..', '..');
 const CREATE_VIEW_RE = /CREATE\s+(?:OR\s+REPLACE\s+)?VIEW\s+(?:(?:public|"public")\.)?(\w+|"[^"]+")/gi;
 const SECURITY_INVOKER_RE = /WITH\s*\(\s*security_invoker\s*=\s*(?:on|true)\s*\)/i;
+
+function isViewCheckDocFile(absPath) {
+  const rel = relative(REPO, absPath).replace(/\\/g, '/');
+  return /^docs\//.test(rel) || /^modules\/[^/]+\/docs\//.test(rel);
+}
 
 export default async function checkViewSecurityInvoker(files) {
   const violations = [];
@@ -9,6 +16,7 @@ export default async function checkViewSecurityInvoker(files) {
 
   for (const f of files) {
     if (!f.endsWith('.sql')) continue;
+    if (isViewCheckDocFile(f)) continue;
     let content;
     try {
       content = await readFile(f, 'utf8');

@@ -454,3 +454,34 @@ ALTER TABLE public.crm_leads
 --   Successful dispatch → status='sent' + meta_response logged.
 --   Retry: failed rows with retries < 3 re-claimed on next cron tick.
 --   permanent_error: non-retryable HTTP errors from Meta API.
+
+-- ============================================================
+-- SUPPRESSION LIST (added 2026-05-22 by SUPPRESSION_LIST_PHASE_1+2)
+-- ============================================================
+-- crm_suppressions — GDPR opt-out gate queried on every message dispatch.
+-- Columns: id (uuid PK), tenant_id (uuid NOT NULL), email_norm (text),
+--   phone_norm (text), reason (text NOT NULL), source (text NOT NULL),
+--   source_lead_id (uuid), created_at (timestamptz NOT NULL DEFAULT now()).
+-- RLS: enabled (canonical two-policy: service_bypass + tenant_isolation).
+-- Indexes: idx_crm_suppressions_tenant_email (tenant_id, email_norm WHERE NOT NULL),
+--          idx_crm_suppressions_tenant_phone (tenant_id, phone_norm WHERE NOT NULL).
+-- RPC: crm_check_contact_suppressed(p_tenant_id, p_email, p_phone) → boolean
+--   SECURITY DEFINER + Block A (3-role guard, hardened 2026-05-24).
+-- Trigger: trg_lead_status_unsubscribed_to_suppression_fn — auto-inserts
+--   suppression row when crm_leads.status → 'unsubscribed'.
+
+-- ============================================================
+-- DISPATCH LOCK (added 2026-05-22)
+-- ============================================================
+-- m4_dispatch_lock — single-row advisory lock for dispatch-queue single-writer.
+-- Columns: id (smallint PK), locked_until (timestamptz), locked_by (text),
+--   owner_tenant_id (uuid).
+-- RLS: enabled. Service-role-only access (no client grants).
+
+-- ============================================================
+-- MATERIALIZED VIEW: mv_crm_lead_event_history
+-- ============================================================
+-- Pre-computed lead × event attendance + purchase aggregates.
+-- Sources from v_crm_lead_event_history (view on crm_leads + crm_event_attendees + crm_events).
+-- Columns: lead_id, tenant_id, full_name, phone, total_events_attended,
+--   total_purchases, is_returning_customer, last_attended_date, event_history (jsonb).
