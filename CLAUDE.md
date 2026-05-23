@@ -18,6 +18,7 @@
 - `MASTER_ROADMAP.md` — cross-module roadmap + decisions log
 - `OPEN_TASKS.md` — current open work across all roles (read FIRST in every session — answers "what's open?" / "מה פתוח?")
 - `TECH_DEBT.md` — living debt register
+- `PATH_TO_LIVE.md` — checkbox roadmap of remaining work to reach live (module-by-module screen + cutover list)
 - `docs/` — canonical reference files (GLOBAL_MAP, GLOBAL_SCHEMA, FILE_STRUCTURE, CONVENTIONS, etc.)
 - `modules/` — per-module documentation + per-feature implementation (per the **One Home Per Module** rule, every module — Brief / SPECs / Code / Production — lives here regardless of life stage; established by `MODULES_HOME_UNIFICATION` SPEC, 2026-05-09)
 - `roles/` — operational role artifacts (Campaign Overseer, Site Overseer, etc.). Roles are NOT modules; each subfolder is one role with its own handoff + decisions log + learnings.

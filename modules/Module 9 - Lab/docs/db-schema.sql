@@ -9,7 +9,7 @@
 --   shipping_box_status, quality_status, compensation_status, lab_event_kind
 
 -- 10 new tables — all RLS canonical 2-policy:
---   lab_jobs (35 cols; UNIQUE(sub_order_id); FK customer/order/sub_order/category/branch)
+--   lab_jobs (35 cols; UNIQUE(sub_order_id, tenant_id) — tenant-scoped per Rule 18; FK customer/order/sub_order/category/branch)
 --   lab_categories (per-tenant config P19; thresholds in minutes; default_lab_flow)
 --   lab_compensation_tiers (per-(category × tier); cap derives from manager_max_addition)
 --   lab_notes (per-job comments)

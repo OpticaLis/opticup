@@ -539,4 +539,38 @@ New events-operations decisions continue from REC-013. The consolidated skill op
 
 ---
 
+## SESSION HANDOFF — SuperSale "אירוע השקת קולקציות" launch campaign (2026-05-22)
+
+**Status: launch landing page LIVE on production. Three tasks remain before Sunday's send.**
+
+### The campaign (context)
+- Open event: **"אירוע המותגים - מאי 2026"**, id `2e39e884-9811-4b6c-88d0-0699f85ce1b3`, status `registration_open`, **Friday 29.5**, Ashkelon branch, 50 cap, ₪50 booking fee.
+- The problem driving everything: **funnel gap**. ~18 attendees registered vs **1,137 leads invited-and-not-registered** (708 `waiting` + 429 `invited` + 24 `confirmed`). The campaign's job is to convert those 1,137 with a Sunday→Monday push.
+- Concept (Daniel-approved): position 29.5 as an **"אירוע השקת קולקציות"** (collections launch event), driven by a dedicated landing page.
+
+### DONE this session
+1. **Landing page LIVE:** `https://prizma-optic.co.il/supersale-launch/` (storefront route `src/pages/supersale-launch/index.astro` + `src/data/supersale-launch.json` + `src/components/SupersaleLaunchCard.astro`). Merged to main via PR #28 (prod deploy `feaae0c`). 4 build rounds (commits 5d6b047 → e35ac6b → 7a9e9a4 → 36e3ba3 → merge).
+   - 3 tabs: **בתי אופנה נבחרים** / **קולקציות יוקרה** / **שאלות ותשובות**. Each product tab has a **שמש/ראייה** sub-toggle.
+   - Fashion: 56 sun (Prada/MiuMiu/Tiffany/Versace/Ray-Ban, prices 890/690/400, struck = final+100 round-up-50) + 56 reading (15 brands incl Gucci/Dior/Saint Laurent/Etnia/Mykita/Porsche/Swarovski, NO price, badge "1+1 על מותגים נבחרים").
+   - Luxury: 32 sun + 32 reading (John Dalia/Cazal/KameManNen/Matsuda/Fred, NO price, badge "הטבות אירוע בלעדיות"). Subtitles GENERIC (no brand names listed).
+   - Lightbox (2-angle nav), hover-swap, brand-spread, all images via `/api/image/` same-origin proxy.
+   - CTA = **WhatsApp only** → `wa.me/972533645404` (053-364-5404) with prefilled msg ending tag `[הגעתי מעמוד ההשקה]` so branch staff identify source + send the personal reg link manually (per-lead short links r/CODE; no single reg URL).
+   - Price label = **"מחיר אירוע"** (NOT "השקה" — future clearance sales). Event-name title kept.
+   - Legal pledge (vetted): "קונים באירוע עם מנגנון התחייבות למחיר הזול בישראל - מצאתם את אותו הדגם בזול יותר ברשת אחרת בישראל? הראו לנו תוך 14 ימים מהקנייה ותקבלו את ההפרש!" + "בכפוף לתקנון" link. (Consumer-protection: absolute "cheapest" claim is unsafe; mechanism+takanon-link framing is defensible. Ties to takanon §5 14-day guarantee.)
+   - FAQ: coupon-only realization, limited coupons sent ≤48h after final reservation, hundreds-of-shekels extra benefits for pre-registered only, walk-in allowed (free-coupon basis, no extra benefits — framed to push registration), 1+1 reading + lens benefits (single-vision + multifocal).
+2. **Price update 790→890** applied to ALL live supersale pages (`/supersale/`, `supersale`, `/successfulsupersale/` [= the THANK-YOU page, not historical], `/supersalepricescatalog/`) in he/en/ru — campaign_price + headline text. Backup table `_backup_supersale_pages_20260522` (12 rows). Verified 0 remaining 790; 0 original_price=790 touched.
+
+### REMAINING (do next, recommended order)
+1. **Flip 708 leads `waiting`→`invited`** on Prizma (Daniel: "they were all invited, automation bug fixed"). MUST verify demo-first that no automation fires on the flip — there IS an active rule "שינוי סטטוס ליד: ברוך הבא לרשומים" on lead status_change → `waiting`, but it reacts to entering `waiting`, not leaving it; still confirm no rule fires on entering `invited`. Back up the 708 ids+status first.
+2. **Build 3 panel messages** (Sun/Mon/Tue waves) pointing to /supersale-launch/, to drive the 1,137. Sun = big launch (SMS+email), Mon eve = urgency ("X spots left"), Tue = WhatsApp last call. Demo-first, visual preview, IR35 (no new placeholders).
+3. **Measurement loop:** business-state metrics (not clicks — bots), define before/after so we learn what worked; log result here.
+
+### Key facts for any new session
+- Prizma tenant `6ad0781b-37f0-47a9-92e3-be9ed1477e1c`; demo `8d8cfa7e-ef58-49af-9702-a862d459cccb`. Test phones ONLY 0537889878 / 0503348349.
+- WhatsApp branch number: **053-364-5404** (972533645404).
+- Storefront prices live in `storefront_pages.blocks` JSONB (NOT in src). Inventory final price = `sell_price * (1 - sell_discount)`; `sell_discount`=0.40 fraction.
+- Schema gotchas hit this session: `crm_message_templates.slug` (not template_slug); `crm_automation_rules` uses `trigger_entity`+`trigger_event`; inventory split sun/eye via `product_type` ('sunglasses'/'eyeglasses').
+
+---
+
 *End of EVENTS_OPS_DECISIONS_LOG.md. Migrated from `roles/campaign-overseer/DECISIONS_LOG.md` + `CAMPAIGN_OVERSEER_HANDOFF.md` on 2026-05-22. Both source files deleted in the same commit after the migration was verified entry-by-entry.*

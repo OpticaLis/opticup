@@ -19,7 +19,8 @@
     "category_2_sources_of_truth": [
       "MASTER_ROADMAP.md",
       "OPEN_TASKS.md",
-      "TECH_DEBT.md"
+      "TECH_DEBT.md",
+      "PATH_TO_LIVE.md"
     ],
     "category_3_html_entrypoints": [
       "index.html",

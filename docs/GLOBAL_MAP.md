@@ -378,7 +378,23 @@ preamble checklist, pending Step 9 rewrite).
 
 **Iron Rule 21 discipline anchor:** every blurred / deferred UI element uses the same `showComingSoon` handler + the same `COMING_SOON_LABEL` string + a registered entry in `COMING_SOON_REGISTRY` documenting the future module that will light it up. No scattered placeholder strings anywhere on the card.
 
-**Scope OUT (Phase E / follow-ups):** customer LIST view, create-mode, full Tab 2 body (M6 follow-up), Tab 5 delete + scan, badge data wiring (VIP/חבר-מועדון/Subscription/Queue), Tab 4 M7 UI, `customer_documents` column expansion (size_bytes/mime_type/description).
+**Scope OUT (Phase E / follow-ups):** ~~customer LIST view, create-mode~~ (✅ shipped Phase E 2026-05-23), full Tab 2 body (M6 follow-up), Tab 5 delete + scan, badge data wiring (VIP/חבר-מועדון/Subscription/Queue), Tab 4 M7 UI, `customer_documents` column expansion (size_bytes/mime_type/description).
+
+### Module 5 — Customer List + Create-Mode UI (Phase E sealed 2026-05-23)
+
+**Entrypoint:** `customers.html` (existing — reused from Phase D). URL routing: `?customer_id=<uuid>` → card mode (Phase D); bare `?t=<slug>` → list mode (Phase E).
+
+**Page JS (4 files under `modules/customers/`):**
+- `customer-list.js` (271L) — list-mode boot + state + parallel fetch (`v_customer_for_exam` + `v_customer_full` lifecycle/phone join + `tenant_location`) + row render + search debounce 400ms + pill filter + row-click → card.
+- `customer-list-sidebar.js` (91L) — Sketch 2 sidebar: 3 groups (quick-actions / customers / module-links) + tenant_location footer.
+- `customer-list-filters.js` (104L) — `normalizePhoneQuery(q)` (strip non-digits + leading 0 for E.164 suffix match) + `CUSTOMER_LIST_PILLS` registry (10 pills: 3 wired / 7 coming-soon) + `applyListSearch` + `applyListPillFilter`.
+- `customer-create.js` (162L) — create-modal form + `DB.rpc('create_customer', {p_tenant_id, p_payload})` + dedup-hit UX (created=false → existing-customer surface with "פתח כרטיס" button).
+
+**Wired vs blurred:** 3 wired sidebar customer filters (all/leads-as-active/leads) + 3 wired top filter pills (all/active/leads) + everything else routes through `showComingSoon(featureId)`. 11 new registry keys added to the existing `COMING_SOON_REGISTRY` (additive only).
+
+**Dedup contract on create:** `create_customer` RPC returns `{ customer_id, customer_number, created: bool, reason: 'new'|'id_number_exists'|'phone_exists' }`. The UI inspects `created`: true → Toast + 600ms redirect to new card; false → existing-customer surface (no silent duplicate). Submit-time phone normalization (`0XXXXXXXXX → +972XXXXXXXXX`) so the RPC's phone-exists branch matches stored E.164.
+
+**Phone-search gotcha resolved:** demo (and Prizma) phones stored as +972 E.164. The `normalizePhoneQuery` helper enables natural search by local format (`050-3348349` → suffix `503348349` ILIKE).
 
 ## Module 6 — Prescriptions / Eye Exams (Phase A+B sealed 2026-05-22)
 

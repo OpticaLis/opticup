@@ -1,5 +1,24 @@
 # Module 5 — Customers — Changelog
 
+## Phase E — UI Customer List + Create-Mode — closed 2026-05-23 🟢 (M5 screen layer complete)
+
+Sketch 2 Split Workspace (sidebar + main table) on the existing `customers.html` entrypoint — no new root entrypoint, reuses Phase D's routing (`?customer_id=` = card; bare = list). 4 new page JS files under `modules/customers/` totaling 628 lines (all ≤300/350 cap): customer-list.js (271L) / customer-list-sidebar.js (91L) / customer-list-filters.js (104L) / customer-create.js (162L). Plus +100L additive CSS selectors + 1-line list-mode routing branch in customer-card.js + 11 additive coming-soon registry entries.
+
+**Wiring:** list reads `v_customer_for_exam` (composite display + health_fund_name) merged with `v_customer_full` (lifecycle + phone + email + city + id_number). Search bar: name (ILIKE) + id_number (substring) + phone (normalized client-side via `normalizePhoneQuery`: strip non-digits + leading 0 → ILIKE suffix against the +972 E.164 storage). 3 wired lifecycle filter pills (all/active/leads) + 7 blurred coming-soon (queue today / pickup / lab / repairs / tasks / loyalty / open debt). 3 wired sidebar customer filters + 9 blurred coming-soon (quick actions + module links).
+
+**Create-mode:** modal form (first_name + last_name required, optional phone/id_number/email/city/language) wired to `DB.rpc('create_customer', {p_tenant_id, p_payload})`. Submit-time phone normalization (`0XXXXXXXXX → +972XXXXXXXXX`) so the RPC's phone-exists dedup catches it. Inspects `{created, reason}` response: `created=true` → Toast + 600ms-delay redirect to new card; `created=false` (reason=phone_exists/id_number_exists) → existing-customer surface with "פתח כרטיס" button (no silent duplicate).
+
+**Iron Rule 34 closure:** 4 JPEG screenshots (list_default / list_filtered_leads / create_modal_open / create_dedup_hit) + runtime traces for both create paths (created=true happy path with 21-numbered new row; created=false dedup-hit with 0-row delta) + DB-write evidence (pre=20→post=21→cleanup=20; dedup-hit pre=20→post=20).
+
+**Commits:**
+- `d423940` docs(m5e): seal M5_UI_CUSTOMER_LIST SPEC
+- `e7e18b0` feat(m5e): customer list (Split Workspace) + create-mode (dedup-safe)
+- (this commit) docs(m5e): close Phase E — retros + M5 docs + PATH_TO_LIVE tick + Reviewer + Foreman
+
+**Sealed under:** `modules/Module 5 - Customers/docs/specs/M5_UI_CUSTOMER_LIST/`. M5 screen layer COMPLETE.
+
+---
+
 ## Phase D — UI Customer Card — closed 2026-05-23 🟢 (code) · awaiting Foreman closure
 
 First UI screen built on the M5-M9 schema spine. New ERP entrypoint `customers.html` + 8 page JS files under `modules/customers/` + `css/customers.css` + `customer-docs` storage bucket + 4 RLS policies. Tabs: 1 Details (col-3+col-2 + medical sub-tabs + queue blurred + bottom flags), 2 Vision (stub per D-T2; M6 follow-up), 3 Prescriptions (v_customer_prescriptions_summary + create_prescription_draft RPC), 4 Orders (M7 orders summary + CTAs → coming-soon), 5 Docs (customer_documents list + drag/drop upload).

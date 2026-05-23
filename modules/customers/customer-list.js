@@ -10,13 +10,13 @@
   var PAGE_SIZE = 50;
 
   var state = {
-    rows: [],              // current page rows from v_customer_for_exam
-    lifecycleById: {},     // map id → lifecycle_stage (from v_customer_full)
+    rows: [],              // current page — merged v_customer_for_exam + v_customer_full
+    lifecycleById: {},     // map id → lifecycle_stage
     activePillId: 'all',
     searchQuery: '',
     page: 0,
     totalCount: null,
-    countsByPill: {},      // computed after fetch
+    countsByPill: {},
     branches: []
   };
 
@@ -221,9 +221,9 @@
         silent: true
       }),
       DB.select('v_customer_full', null, {
-        columns: 'id,lifecycle_stage,is_deleted',
+        columns: 'id,lifecycle_stage,phone,email,city,id_number,is_deleted',
         rawFilters: function (q) { return q.eq('is_deleted', false); },
-        limit: PAGE_SIZE * 4,    // pull enough lifecycle rows to map onto our page
+        limit: PAGE_SIZE * 4,    // pull enough rows to map phone+lifecycle onto our page
         silent: true
       }),
       DB.select('tenant_location', null, {
@@ -236,9 +236,23 @@
     if (exam.error)    throw exam.error;
     if (full.error)    throw full.error;
 
-    state.rows = exam.data || [];
-    state.lifecycleById = {};
-    (full.data || []).forEach(function (r) { state.lifecycleById[r.id] = r.lifecycle_stage; });
+    // Merge: v_customer_for_exam provides composite display + health_fund_name + age source;
+    // v_customer_full supplies phone/email/city/id_number/lifecycle_stage (v_customer_for_exam
+    // does NOT expose phone — F-LIST-PHONE-VIEW finding).
+    var fullById = {};
+    (full.data || []).forEach(function (r) {
+      fullById[r.id] = r;
+      state.lifecycleById[r.id] = r.lifecycle_stage;
+    });
+    state.rows = (exam.data || []).map(function (e) {
+      var f = fullById[e.id] || {};
+      return Object.assign({}, e, {
+        phone: f.phone || null,
+        email: f.email || null,
+        city: f.city || null,
+        id_number: f.id_number || null
+      });
+    });
     state.branches = branches.data || [];
     state.countsByPill = computeCountsByPill(state.rows);
     state.totalCount = state.rows.length; // demo only; Prizma would use a count query
