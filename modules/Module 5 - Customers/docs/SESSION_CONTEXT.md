@@ -1,7 +1,7 @@
 # Module 5 — Customers — Session Context
 
-**Last updated:** 2026-05-22 overnight chain close.
-**Status:** 🟢 Phase A+B (Schema + RPCs) CLOSED. Phases C (migration), D (UI customer card), E (UI customer list) deferred.
+**Last updated:** 2026-05-23 Phase D code-complete.
+**Status:** 🟢 Phase A+B (Schema + RPCs) CLOSED · 🟢 M5_LEADS_MIGRATION CLOSED · ✅ Phase D (UI Customer Card) **code-complete; awaiting Foreman closure**. Phase C (OpticPlus migration), Phase E (UI customer list + create-mode) deferred.
 
 ## Current state
 
@@ -33,13 +33,39 @@
 - `docs/db-schema.sql` — DDL snapshot of M5-owned tables
 - `docs/CHANGELOG.md` — phase history
 
+## Phase D state (added 2026-05-23)
+
+**New ERP entrypoint:** `customers.html` at repo root (registered in root-allowlist + CLAUDE.md §0.5). URL: `customers.html?t=<slug>&customer_id=<uuid>`.
+
+**New page JS (8 files):** under `modules/customers/`. Architecture anchors:
+- `customer-card.js` — boot + `M5Card` global + `__cardTrace` (Iron Rule 34 surface).
+- `customer-card-coming-soon.js` — Iron Rule 21 anchor: ONE `showComingSoon(featureId)` + ONE `COMING_SOON_LABEL` + ONE `COMING_SOON_REGISTRY`. Every deferred UI element routes through this.
+- 5 tab files: details, vision (stub), prescriptions, orders, docs.
+
+**New storage:** private `customer-docs` bucket + 4 tenant-gated RLS policies (path: `{tenant_id}/{customer_id}/{document_id}.{ext}`).
+
+**Wired surfaces (verified live):**
+- Tab 1 header: `v_customer_for_exam` (composite display).
+- Tab 1 body: `v_customer_full` + `customer_notes`.
+- Tab 1 edit-mode: per-field 500ms-debounced auto-save via `DB.update('customers', id, patch)`. PIN-gated for phone/email/id_number/consents.
+- Tab 1 wired badges: Inactive ↔ `lifecycle_stage='dormant'`; Locked ↔ `is_deleted` (design finding F-T5-DESIGN — see FINDINGS.md).
+- Tab 3: `v_customer_prescriptions_summary` (M6) + `create_prescription_draft(tenant, customer, kind)` RPC.
+- Tab 4: `orders` + `sub_orders!sub_orders_order_id_fkey(count)` (M7).
+- Tab 5: `customer_documents` + `sb.storage.from('customer-docs').upload(...)`.
+
+**Chrome MCP smoke results (T1-T11):** 7 PASS + 2 design findings + 2 partial. See `docs/specs/M5_UI_CUSTOMER_CARD/TEST_REPORT.md`.
+
 ## What's next
 
-Out of overnight scope, requires Daniel-in-loop:
+Out of Phase D scope, requires Daniel-in-loop:
 
-1. **M5_MIGRATION SPEC** — import 5,028 OpticPlus customers + 1,158 `crm_leads` rollover. Discovery + Daniel-review of phone/id_number/kupa cleaning + INSERT via service_role. Drops legacy `customers.health_fund` text column after dual-write verified.
-2. **M5_UI_CUSTOMER_CARD SPEC** — 5-tab customer card. Chrome MCP verification.
-3. **M5_UI_CUSTOMER_LIST SPEC** — Split-workspace list + sidebar + advanced search.
+1. **Phase D Foreman closure** — opticup-reviewer reads REVIEW.md, then opticup-strategic Foreman writes FOREMAN_REVIEW.md with Chrome MCP evidence cross-check + 2 author + 2 executor proposals.
+2. **M5_UI_CUSTOMER_LIST SPEC (Phase E)** — Split-workspace list + sidebar + advanced search + create-mode. Reuses `customers.html` entrypoint (no `?customer_id=` → list mode).
+3. **Tab 2 follow-up SPEC** — M6 ships `v_customer_vision_function_history` so the card's Tab 2 stub can light up.
+4. **M5_MIGRATION SPEC (Phase C)** — import 5,028 OpticPlus customers (crm_leads rollover already done by M5_LEADS_MIGRATION).
+5. **F-7 quick fix** — Tab 3 R/L summary double-prefix.
+6. **F-T5-DESIGN follow-up** — either remove the Locked badge or add an include-deleted card mode.
+7. **F-8 split** — `js/shared-field-map.js` per-module split (file hit the 350-line cap).
 
 ## Notes
 
