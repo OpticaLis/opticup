@@ -897,5 +897,78 @@ CREATE OR REPLACE VIEW v_storefront_brands AS
 -- 'prescription'). Iron Rule 11 + 32 both preserved across modules.
 
 -- ═══════════════════════════════════════════════════════════════
+-- Module 7 — Orders (sealed Phase A+B 2026-05-23)
+-- Detailed DDL: modules/Module 7 - Orders/docs/db-schema.sql
+-- ═══════════════════════════════════════════════════════════════
+
+-- New enums (9): order_status, sub_order_state, sub_order_kind,
+--   sub_order_location, item_type, repair_mode, repair_origin,
+--   task_status, discount_type.
+
+-- New tables (4): orders (17 cols), sub_orders (45 cols Pattern §5.1
+--   multi-state flags), sub_order_items (ON DELETE CASCADE from sub_orders),
+--   order_general_discounts. All RLS canonical 2-policy.
+-- Tenant-scoped UNIQUE: (order_number, tenant_id) WHERE not NULL;
+--   (order_id, letter) including soft-deleted (letter immutability).
+
+-- Views (7, security_invoker=on): v_order_customer_summary, v_order_full,
+--   v_lab_queue, v_open_reservations, v_open_tasks, v_open_repairs,
+--   v_ready_for_pickup.
+
+-- RPCs (6 + 1 trigger fn, all SECURITY DEFINER + Block A):
+--   create_order, add_sub_order, add_sub_order_item, transition_sub_order_state,
+--   cancel_sub_order, apply_general_discount + recompute_order_status_fn.
+--   REVOKE anon/PUBLIC + GRANT auth+service.
+
+-- Trigger: trg_recompute_order_status AFTER INSERT/UPDATE OF state, is_deleted
+--   ON sub_orders → orders.status (Pattern P21 — parent-status aggregation).
+
+-- Re-uses M5 allocate_tenant_number(_, 'order') + M1 decrement/increment_inventory direct.
+
+-- ═══════════════════════════════════════════════════════════════
+-- Module 8 — Payments (sealed Phase A+B 2026-05-23)
+-- Detailed DDL: modules/Module 8 - Payments/docs/db-schema.sql
+-- ═══════════════════════════════════════════════════════════════
+
+-- New enums (4): payment_status (10-state), check_bounce_reason,
+--   payment_channel_status, payment_event_kind.
+
+-- Extension (additive): payment_methods (M1-era stub) +7 cols incl.
+--   requires_pos, requires_external_receipt, sort_order, tenant_default,
+--   name_ru, icon, updated_at. 4 demo rows preserved + backfilled.
+--   Seeded 2 new methods per tenant (bit + salary_deduction).
+
+-- New tables (5):
+--   * payments (28 cols, state-machine, check-specific fields)
+--   * payment_channels (per-tenant adapter config)
+--   * payment_events_queue (Pattern P22 durable event queue)
+--   * Global: payment_capabilities (12 seed rows, service-write/public-read)
+--   * Global: payment_adapters (3 manifest rows — Mock active, Gama+Z Credit
+--     inactive with requires_nda=true; SKELETON ONLY, no integration code).
+-- Per-tenant tables: RLS canonical 2-policy. Global tables: service_bypass +
+-- public_read.
+-- Tenant-scoped UNIQUE: (payment_number, tenant_id) WHERE not NULL.
+
+-- Views (5, security_invoker=on): v_order_payment_summary,
+--   v_customer_payments_history, v_payments_for_reports,
+--   v_salary_deduction_pending, v_returned_checks_pending.
+
+-- RPCs (5, all SECURITY DEFINER + Block A): record_payment, mark_check_deposited,
+--   mark_check_cleared, mark_check_returned, mark_salary_deduction_processed.
+
+-- Trigger fns (2): emit_first_payment_event_fn (AFTER INSERT ON payments —
+--   emits first_payment when count for order = 1), emit_check_returned_event_fn
+--   (AFTER UPDATE OF status — emits on in_bank→returned).
+-- Triggers attached: trg_emit_first_payment_event, trg_emit_check_returned_event.
+
+-- M11 mutation contract: mark_salary_deduction_processed is the sanctioned
+-- cross-module RPC into M8.
+
+-- Re-uses M5 allocate_tenant_number(_, 'payment') + tenant_number_counters.
+
+-- Adapter integration code (IPaymentProvider class, LinetAdapter, GamaAdapter,
+-- ZCreditAdapter) OUT OF SCOPE. Phase C SPEC with NDA + sandbox + Daniel-in-loop.
+
+-- ═══════════════════════════════════════════════════════════════
 -- End of GLOBAL_SCHEMA.sql
 -- ═══════════════════════════════════════════════════════════════

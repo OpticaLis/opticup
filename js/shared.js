@@ -91,6 +91,12 @@ const T = {
   PRESCRIPTION_TYPES: 'prescription_types',
   LENS_MANUFACTURERS: 'lens_manufacturers',
   PRESCRIPTION_RECALL_AXES: 'prescription_recall_axes',
+  // ─── M7 Orders + M8 Payments Phase A+B (2026-05-23) ──────────
+  ORDERS: 'orders', SUB_ORDERS: 'sub_orders',
+  SUB_ORDER_ITEMS: 'sub_order_items', ORDER_GENERAL_DISCOUNTS: 'order_general_discounts',
+  PAYMENTS: 'payments', PAYMENT_METHODS: 'payment_methods',
+  PAYMENT_CHANNELS: 'payment_channels', PAYMENT_CAPABILITIES: 'payment_capabilities',
+  PAYMENT_ADAPTERS: 'payment_adapters', PAYMENT_EVENTS_QUEUE: 'payment_events_queue',
 };
 
 // Tenant slug — set synchronously from URL/sessionStorage for immediate availability.

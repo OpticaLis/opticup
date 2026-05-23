@@ -381,6 +381,47 @@ preamble checklist, pending Step 9 rewrite).
 
 ---
 
+## Module 7 — Orders (Phase A+B sealed 2026-05-23)
+
+**Tables owned:** orders (17 cols), sub_orders (45 cols Pattern §5.1 multi-state flags), sub_order_items, order_general_discounts.
+
+**Cross-module surfaces:**
+- 7 customer-data views (v_order_customer_summary, v_order_full, v_lab_queue, v_open_reservations, v_open_tasks, v_open_repairs, v_ready_for_pickup) all `security_invoker=on`.
+- 6 RPCs + 1 trigger fn: `create_order`, `add_sub_order` (letter immutability), `add_sub_order_item`, `transition_sub_order_state` (decrement/increment inventory atomic), `cancel_sub_order` (inventory restore), `apply_general_discount` + `recompute_order_status_fn`.
+- 1 trigger: `trg_recompute_order_status` — Pattern P21 parent-status aggregation (orders.status auto from child sub-order states).
+
+**Re-uses:** M5 `allocate_tenant_number(p_tenant_id, 'order')` + M1 `decrement_inventory`/`increment_inventory` (called direct, no wrappers per Brief §4.3).
+
+**New pattern introduced — P21 (Parent-Status Aggregation Trigger):** When a parent's status is a deterministic function of child rows' states, build trigger fn + AFTER INSERT/UPDATE on child. M7 first instance; future M8/M11 may inherit.
+
+## Module 8 — Payments (Phase A+B sealed 2026-05-23)
+
+**Tables owned:**
+- Per-tenant: `payments` (28 cols, state-machine), `payment_channels` (per-tenant adapter config), `payment_events_queue` (Pattern P22), `payment_methods` (EXTENDED from M1-era stub).
+- Global: `payment_capabilities` (12 capability slugs, service-write/public-read), `payment_adapters` (3 manifest rows — Mock/Gama/Z Credit, **SKELETON ONLY** — no integration code).
+
+**Cross-module surfaces:**
+- 5 views: `v_order_payment_summary` (M7 reads), `v_customer_payments_history` (M5), `v_payments_for_reports` (M11), `v_salary_deduction_pending` (M11+admin), `v_returned_checks_pending` (admin).
+- 5 RPCs: `record_payment`, `mark_check_deposited`, `mark_check_cleared`, `mark_check_returned`, `mark_salary_deduction_processed`. All Block A + REVOKE anon + GRANT auth/service_role.
+- 2 trigger fns: `emit_first_payment_event_fn`, `emit_check_returned_event_fn` — emit into payment_events_queue.
+- 2 triggers attached: `trg_emit_first_payment_event` (AFTER INSERT ON payments), `trg_emit_check_returned_event` (AFTER UPDATE OF status ON payments).
+
+**M11 mutation contract:** `mark_salary_deduction_processed` is the sanctioned cross-module RPC for M11's monthly salary report — only mutating call into M8 beyond reads.
+
+**M8 NEVER calls M7 directly.** Events emitted to `payment_events_queue`; M7 listener (Phase E UI) + M4 listener (deferred) drain.
+
+**New pattern introduced — P22 (Durable Event Queue):** For async cross-module events, build `{module}_events_queue` + `emit_*` trigger fns + AFTER INSERT/UPDATE triggers. Mirrors M1 K3 + M4 trigger patterns. M8 first formal codification; reusable for M9/M12/M13.
+
+**Adapter manifest skeleton:** `payment_adapters` has 3 rows (mock active, gama_pay + z_credit inactive with `requires_nda=true`) describing capabilities + credentials schema. ZERO integration code shipped — IPaymentProvider class + LinetAdapter/GamaAdapter/ZCreditAdapter all Phase C (separate SPEC with Daniel-in-loop + NDA + sandbox).
+
+**Discipline notes (M7 + M8):**
+- All M7+M8 RPCs use canonical Block A header. No hand-rolled JWT checks.
+- All RPCs: REVOKE EXECUTE FROM anon, PUBLIC + GRANT EXECUTE TO authenticated, service_role; trigger fns granted only to service_role.
+- Smoke (M7: 9/9; M8: 8/8; cross-contract M5→M7→M8: 6/6) PASS on demo. Advisors clean.
+- No Prizma row writes during build+smoke. DDL applied to both tenants; data only on demo. Config seeds (payment_capabilities + payment_adapters + payment_channels + payment_methods extends) applied to both tenants per Brief §3.
+
+---
+
 *End of GLOBAL_MAP.md. Detailed function-level contracts live in per-module
 MODULE_MAP.md files. The prior 919-line version (with function-level detail
 for all ERP code) is backed up under

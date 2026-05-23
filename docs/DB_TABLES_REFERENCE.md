@@ -225,6 +225,26 @@ Module 5 also extends `tenants` (+tenant_code) and `tenant_location` (+deactivat
 | `T.LENS_MANUFACTURERS` | `lens_manufacturers` | id, tenant_id, code, name, country, is_active, sort_order | Config per-tenant (P19). UNIQUE(code, tenant_id). Seed: 5 default. |
 | `T.PRESCRIPTION_RECALL_AXES` | `prescription_recall_axes` | id, tenant_id, prescription_id, prescription_kind (glasses/contacts), axis_kind (next_exam/health_fund_validity/prescription_validity/fit_check/glasses_delivery), due_at, is_enabled, triggered_at | Multi-axis recall storage. Partial index WHERE is_enabled AND triggered_at IS NULL. |
 
+## Module 7 — Orders (Phase A+B sealed 2026-05-23)
+
+| T constant | Table | Key columns | Notes |
+|---|---|---|---|
+| `T.ORDERS` | `orders` | id, tenant_id, customer_id (FK→customers), branch_id, order_number, status (enum), language, general_discount_amount, thanks_message_sent_at | order head; status aggregated from sub_orders by trigger |
+| `T.SUB_ORDERS` | `sub_orders` | id, tenant_id, order_id (FK→orders), letter (immutable), kind (enum 4), state (enum), is_repair, has_open_task, location, prescription_glasses_id (FK→M6), prescription_contacts_id (FK→M6), 8 flow-date+actor pairs, 5 repair fields, 7 task fields | Pattern §5.1 multi-state via flags. 45 cols total. |
+| `T.SUB_ORDER_ITEMS` | `sub_order_items` | id, tenant_id, sub_order_id (FK CASCADE), position, item_type, inventory_id (FK→M1.inventory), unit_price (snapshot), quantity, decrements_inventory | ON DELETE CASCADE from sub_orders |
+| `T.ORDER_GENERAL_DISCOUNTS` | `order_general_discounts` | id, tenant_id, order_id, discount_type, source_id, amount, pct, requires_pin_role, applied_at, applied_by | aggregated into orders.general_discount_amount |
+
+## Module 8 — Payments (Phase A+B sealed 2026-05-23)
+
+| T constant | Table | Scope | Key columns | Notes |
+|---|---|---|---|---|
+| `T.PAYMENTS` | `payments` | per-tenant | id, tenant_id, order_id (FK→M7), customer_id (FK→M5), payment_number, payment_method_id (FK), payment_channel_id (FK), amount, status (enum 10), external_receipt_number, check_* fields | state-machine; FK to orders ensures order existence |
+| `T.PAYMENT_METHODS` | `payment_methods` | per-tenant | id, tenant_id, code, name_he/en/ru, is_system, is_active, requires_pos, requires_external_receipt, icon, sort_order, tenant_default | EXTENDED additively from M1-era stub. Brief §2.2 |
+| `T.PAYMENT_CHANNELS` | `payment_channels` | per-tenant | id, tenant_id, adapter_name (FK→adapters), credentials_jsonb, is_default, fallback_channel_id, status (enum), enabled_capabilities_array, settlement_mode | per-tenant adapter config; credentials_jsonb unencrypted at Phase A |
+| `T.PAYMENT_CAPABILITIES` | `payment_capabilities` | **global** | id, code, name_he/en, category | service-write/public-read; 12 seed rows (Brief §2.4) |
+| `T.PAYMENT_ADAPTERS` | `payment_adapters` | **global** | id, name, display_name, version, auth_method, credentials_schema_jsonb, supported_capabilities_array, supported_settlement_modes_array, is_active, requires_nda | service-write/public-read; 3 manifest rows (SKELETON ONLY, no integration code) |
+| `T.PAYMENT_EVENTS_QUEUE` | `payment_events_queue` | per-tenant | id, tenant_id, payment_id, order_id, customer_id, event_kind (enum), event_payload jsonb, emitted_at, consumed_at, consumed_by | Pattern P22 durable event queue; M8 emits, M7+M4 listen |
+
 ## Key Globals (from `js/shared.js`)
 
 - `sb` — Supabase client (NOT `supabase` — that's a reserved name)
