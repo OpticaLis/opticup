@@ -29,7 +29,8 @@ CREATE TYPE public.customer_document_category AS ENUM ('doctor_prescription','ex
 --   crm_operational_consent, source, utm_source, utm_medium, utm_campaign, utm_content,
 --   utm_term, utm_campaign_id, first_interaction_at, consent_form_signed_at,
 --   is_deleted, deleted_at, updated_by.
--- Total: 42 columns.
+-- Added 2026-05-23 (M5_POLISH_PHONE2_LIST_COLUMNS): phone_secondary text (additive).
+-- Total: 43 columns.
 -- RLS: canonical 2-policy (service_bypass + tenant_isolation JWT-claim) — already present.
 -- FKs: home_branch_id→tenant_location, household_id→households, health_fund_id→health_funds.
 -- Tenant-scoped partial UNIQUE: (customer_number, tenant_id) WHERE not NULL;

@@ -24,8 +24,9 @@
     { k: 'address', l: 'כתובת',   t: 'text' }
   ];
   var FIELDS_CONTACT = [
-    { k: 'phone', l: 'נייד',   t: 'text', pinGated: true },
-    { k: 'email', l: 'אימייל', t: 'email', pinGated: true }
+    { k: 'phone',           l: 'נייד',        t: 'text',  pinGated: true },
+    { k: 'phone_secondary', l: 'טלפון-עבודה', t: 'text',  pinGated: true },
+    { k: 'email',           l: 'אימייל',      t: 'email', pinGated: true }
   ];
   var FIELDS_ADDITIONAL = [
     { k: 'profession', l: 'מקצוע', t: 'text' },

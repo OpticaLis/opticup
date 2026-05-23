@@ -270,7 +270,7 @@ const FIELD_MAP = {
   // ─── M5 Customers — SPEC M5_UI_CUSTOMER_CARD (2026-05-23) ─────
   customers: {
     'שם פרטי':'first_name','שם משפחה':'last_name','שם מלא':'full_name',
-    'ת"ז':'id_number','נייד':'phone','אימייל':'email',
+    'ת"ז':'id_number','נייד':'phone','טלפון-עבודה':'phone_secondary','אימייל':'email',
     'כתובת':'address','עיר':'city','תאריך-לידה':'birth_date','מין':'gender',
     'מקצוע':'profession','עין דומיננטית':'dominant_eye','שפה':'language_code',
     'קופ"ח':'health_fund_id','משפחה':'household_id','סניף-בית':'home_branch_id',
