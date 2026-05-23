@@ -25,6 +25,7 @@ To .claude/skills/opticup-architect/SKILL.md:
 - New Step 0.7 "Live-State Probe" — Brief author must probe schema/statuses/extensions BEFORE writing the SPEC.
 - New Step 0.8 "Line-Budget Buffer Convention" — line budgets stated as "N lines (±5 buffer)".
 - New Step 0.9 "User Memory Compliance Check" — Brief/Activation Prompt MUST NOT contradict any active user-memory feedback rule. SPECIFIC: never instruct executing session to surface a Hebrew status line. Always English.
+- New Step 0.10 "Plain-Language Explanation Rule" — when presenting options to Daniel, use 2-column comparison tables in plain Hebrew. NO jargon (throttle, rate-limit, cron, queue, etc.) without immediate plain-Hebrew parenthetical. End with explicit Architect recommendation + 1-sentence plain-Hebrew reason.
 
 To .claude/skills/opticup-executor/SKILL.md:
 - New Step 1.5.6 "DB Probe Pre-Flight" — pg_extension + pg_namespace + pg_proc + information_schema probes for EVERY SPEC touching DB.

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>אירוע השקת קולקציות - אופטיקה פריזמה</title>
+<style>
+  :root{ --gold:#c9a555; --gold-d:#9c7d22; --ink:#1a1a1a; --muted:#6b6b6b; --line:#e7e3d8; --bg:#faf8f3; --dark:#111; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ font-family:'Rubik','Heebo',-apple-system,'Segoe UI',sans-serif; color:var(--ink); background:var(--bg); line-height:1.6; }
+  .wrap{ max-width:1180px; margin:0 auto; padding:0 16px; }
+  header.hero{ background:var(--dark); color:#fff; text-align:center; padding:50px 16px 42px; }
+  .kicker{ font-size:12px; letter-spacing:3px; color:var(--gold); margin-bottom:14px; }
+  header.hero h1{ font-size:33px; font-weight:600; margin-bottom:10px; }
+  header.hero .sub{ font-size:17px; color:#d9d4c6; max-width:640px; margin:0 auto 20px; }
+  .event-chip{ display:inline-flex; align-items:center; gap:10px; background:rgba(201,165,85,.15); border:1px solid var(--gold); color:var(--gold); font-size:14px; padding:9px 18px; border-radius:8px; }
+  .pledge{ background:#1c1c1c; color:#f0ead8; text-align:center; font-size:14px; padding:13px 16px; border-bottom:1px solid #2a2a2a; }
+  .pledge b{ color:var(--gold); }
+  .trust{ display:flex; flex-wrap:wrap; justify-content:center; gap:26px; padding:18px 16px; border-bottom:1px solid var(--line); background:#fff; }
+  .trust div{ font-size:13px; color:var(--muted); } .trust b{ color:var(--ink); }
+  .tabs{ display:flex; justify-content:center; gap:8px; padding:22px 16px 6px; flex-wrap:wrap; }
+  .tab{ font-size:15px; font-weight:500; padding:10px 20px; border:1px solid var(--line); background:#fff; border-radius:9px; cursor:pointer; color:var(--muted); }
+  .tab.active{ background:var(--dark); color:#fff; border-color:var(--dark); }
+  .panel{ display:none; } .panel.active{ display:block; }
+  .sec-title{ text-align:center; padding:22px 16px 4px; }
+  .sec-title h2{ font-size:22px; font-weight:600; } .sec-title p{ font-size:14px; color:var(--muted); margin-top:6px; }
+  .grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:18px; padding:22px 0 12px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; transition:transform .15s, box-shadow .15s; }
+  .card:hover{ transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,.08); }
+  .ph{ background:#fff; height:200px; display:flex; align-items:center; justify-content:center; padding:18px 14px 8px; position:relative; cursor:zoom-in; }
+  .ph img{ max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; transition:opacity .35s; }
+  .ph img.main{ position:absolute; inset:18px 14px 8px; margin:auto; }
+  .ph img.alt{ position:absolute; inset:18px 14px 8px; margin:auto; opacity:0; }
+  .card:hover .ph img.main{ opacity:0; } .card:hover .ph img.alt{ opacity:1; }
+  .card .body{ flex:1; display:flex; flex-direction:column; justify-content:flex-end; }
+  .badges{ position:absolute; top:0; inset-inline:0; display:flex; justify-content:space-between; padding:9px; z-index:2; }
+  .bdg{ font-size:10px; font-weight:600; padding:3px 8px; border-radius:6px; }
+  .bdg-gold{ background:var(--gold); color:#3a2e0a; } .bdg-dark{ background:rgba(17,17,17,.85); color:#f0ead8; }
+  .body{ padding:12px 14px 16px; text-align:center; }
+  .brand{ font-size:13px; color:var(--muted); } .model{ font-size:11px; color:#aaa; margin-bottom:9px; }
+  .was{ font-size:13px; color:#aaa; text-decoration:line-through; }
+  .ev{ font-size:22px; font-weight:600; color:var(--gold-d); } .evlbl{ font-size:11px; color:var(--muted); margin-top:1px; }
+  .lux-note{ font-size:13px; color:var(--gold-d); font-weight:500; margin-top:6px; }
+  .note{ text-align:center; font-size:13px; color:#999; padding:8px 16px 6px; }
+  .faq{ max-width:780px; margin:0 auto; padding:10px 0 20px; }
+  .qa{ background:#fff; border:1px solid var(--line); border-radius:12px; margin-bottom:10px; overflow:hidden; }
+  .qa summary{ font-size:15px; font-weight:600; padding:16px 18px; cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .qa summary::-webkit-details-marker{ display:none; }
+  .qa summary::after{ content:"+"; color:var(--gold-d); font-size:20px; font-weight:400; }
+  .qa[open] summary::after{ content:"\2212"; }
+  .qa .ans{ padding:0 18px 16px; font-size:14px; color:var(--muted); line-height:1.7; }
+  .qa[open] summary{ color:var(--gold-d); }
+  .cta{ background:#fff; border:1px solid var(--line); border-radius:16px; text-align:center; padding:30px 20px; margin:26px 0 50px; }
+  .cta h3{ font-size:20px; font-weight:600; margin-bottom:6px; } .cta p{ font-size:14px; color:var(--muted); margin-bottom:18px; }
+  .btn{ display:inline-block; background:var(--gold); color:#3a2e0a; font-weight:600; font-size:16px; padding:13px 34px; border-radius:9px; text-decoration:none; }
+  footer{ text-align:center; font-size:12px; color:#aaa; padding:24px 16px 40px; }
+  .lb{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.82); z-index:100; align-items:center; justify-content:center; }
+  .lb.open{ display:flex; }
+  .lb-inner{ position:relative; background:#fff; border-radius:16px; padding:24px; max-width:90vw; max-height:88vh; display:flex; flex-direction:column; align-items:center; }
+  .lb-img{ max-width:78vw; max-height:64vh; width:auto; height:auto; object-fit:contain; }
+  .lb-cap{ margin-top:14px; text-align:center; } .lb-cap .b{ font-size:15px; font-weight:600; } .lb-cap .m{ font-size:12px; color:var(--muted); }
+  .lb-close{ position:absolute; top:10px; inset-inline-start:10px; width:34px; height:34px; border-radius:50%; border:none; background:var(--bg); font-size:18px; cursor:pointer; color:var(--ink); }
+  .lb-nav{ position:absolute; top:50%; transform:translateY(-50%); width:42px; height:42px; border-radius:50%; border:none; background:rgba(255,255,255,.92); box-shadow:0 2px 10px rgba(0,0,0,.2); font-size:22px; cursor:pointer; color:var(--ink); }
+  .lb-prev{ inset-inline-end:14px; } .lb-next{ inset-inline-start:14px; }
+  .lb-dots{ display:flex; gap:7px; margin-top:12px; }
+  .lb-dot{ width:9px; height:9px; border-radius:50%; background:var(--line); cursor:pointer; }
+  .lb-dot.active{ background:var(--gold); }
+  @media(max-width:760px){ header.hero h1{ font-size:25px; } .grid{ grid-template-columns:repeat(2,1fr); gap:12px; } .ev{ font-size:18px; } }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="kicker">אופטיקה פריזמה · סניף אשקלון</div>
+  <h1>אירוע השקת קולקציות</h1>
+  <div class="sub">בתי האופנה הגדולים וקולקציות היוקרה הנדירות - במחירי השקה בלעדיים, לנרשמים מראש בלבד.</div>
+  <div class="event-chip">יום שישי בבוקר · 29.5 · סניף אשקלון</div>
+</header>
+<div class="pledge">קונים באירוע עם <b>מנגנון התחייבות למחיר הזול בישראל</b> - מצאתם את אותו הדגם בזול יותר? הראו לנו ונשתדל להשוות.</div>
+<div class="trust">
+  <div><b>מימוש עם קופון אישי בלבד</b> - לנרשמים מראש</div>
+  <div><b>₪50</b> דמי שריון מקום · מתקזזים מהקנייה</div>
+  <div><b>הטבות נוספות</b> של מאות שקלים לנרשמים</div>
+</div>
+<div class="tabs">
+  <div class="tab active" data-tab="fashion">בתי אופנה נבחרים</div>
+  <div class="tab" data-tab="luxury">קולקציות יוקרה</div>
+  <div class="tab" data-tab="faq">שאלות ותשובות</div>
+</div>
+<div class="wrap">
+  <div class="panel active" id="fashion">
+    <div class="sec-title"><h2>בתי אופנה נבחרים</h2><p>מחיר השקה לכל דגם - תקף לנרשמים מראש, במימוש עם קופון אישי בערב האירוע</p></div>
+    <div class="grid" id="grid-fashion"></div>
+    <p class="note">זו טעימה בלבד - בערב האירוע יחכו לכם עשרות דגמים נוספים מהקולקציות החדשות. מוצגים משקפי שמש; יש גם מבחר רחב של משקפי ראייה.</p>
+  </div>
+  <div class="panel" id="luxury">
+    <div class="sec-title"><h2>קולקציות יוקרה</h2><p>מותגים נדירים בעבודת יד - John Dalia · Cazal · KameManNen · Matsuda · Fred. הטבות אירוע בלעדיות לנרשמים.</p></div>
+    <div class="grid" id="grid-luxury"></div>
+    <p class="note">מבחר נבחר בלבד - בערב האירוע יוצג מגוון רחב יותר. מוצגים משקפי שמש; קיימים גם דגמי ראייה.</p>
+  </div>
+  <div class="panel" id="faq">
+    <div class="sec-title"><h2>שאלות ותשובות</h2><p>כל מה שחשוב לדעת לפני האירוע</p></div>
+    <div class="faq">
+      <details class="qa" open><summary>איך עובדים מחירי ההשקה?</summary><div class="ans">מחירי ההשקה שמוצגים בעמוד תקפים אך ורק לנרשמים מראש, ומתממשים בעזרת הקופון האישי שתקבלו ביום האירוע. כך אנחנו מבטיחים שההטבות שמורות למי שבאמת מתכנן להגיע - ולא מתפזרות על קונים מזדמנים.</div></details>
+      <details class="qa"><summary>מהם דמי שריון המקום של ₪50?</summary><div class="ans">סכום סמלי ששומר את מקומכם באירוע ואת הקופון האישי על שמכם. הוא <b>מתקזז במלואו מהקנייה</b> - כלומר חוזר אליכם ברכישה. ואם החלטתם לבטל, תקבלו החזר מלא עד 48 שעות לפני האירוע, ללא שאלות.</div></details>
+      <details class="qa"><summary>יש הטבות מעבר למחירי ההשקה?</summary><div class="ans">בהחלט. לנרשמים מראש מחכות <b>הטבות נוספות בשווי מאות שקלים</b> מעבר למחירים המשתלמים שכבר ראיתם. את הפרטים המלאים נחשוף בערב האירוע - שווה להגיע.</div></details>
+      <details class="qa"><summary>מה זה "מנגנון התחייבות למחיר הזול בישראל"?</summary><div class="ans">קונים באירוע עם שקט נפשי: מצאתם את <b>אותו הדגם</b> בזול יותר במקום אחר? הראו לנו ונשתדל להשוות את המחיר. ככה אתם יודעים שהקנייה שלכם באירוע משתלמת באמת.</div></details>
+      <details class="qa"><summary>אפשר להגיע בלי להירשם מראש?</summary><div class="ans">אפשר להגיע ביום האירוע, ואם יישארו קופונים פנויים ממי שביטל - נשמח לארח אתכם. אבל שימו לב: <b>ההטבות הנוספות וההבטחה למקום שמורות אך ורק למי ששריין מראש</b>. מי שמגיע על הדרך תלוי בזמינות.</div></details>
+      <details class="qa"><summary>יש גם משקפי ראייה, או רק שמש?</summary><div class="ans">בעמוד מוצגים בעיקר משקפי שמש, אבל בחנות מחכה <b>מבחר רחב של משקפי ראייה</b> מאותם המותגים בדיוק, באותם תנאי השקה. מה שתראו כאן זו רק טעימה מהמלאי.</div></details>
+      <details class="qa"><summary>אילו מותגים יהיו באירוע?</summary><div class="ans">בתי האופנה הגדולים - Prada, Miu Miu, Tiffany & Co, Versace ו-Ray-Ban - לצד קולקציות יוקרה נדירות בעבודת יד: John Dalia, Cazal, KameManNen, Matsuda ו-Fred. הדגמים בעמוד הם רק חלק מהמלאי.</div></details>
+      <details class="qa"><summary>למתי האירוע, ואיפה?</summary><div class="ans">האירוע יתקיים ביום שישי בבוקר, 29.5, בסניף אשקלון. מי ששריין מקום יקבל את כל הפרטים המדויקים בהודעה אישית.</div></details>
+    </div>
+  </div>
+  <div class="cta">
+    <h3>שריינו את מקומכם באירוע</h3>
+    <p>המקומות מוגבלים ומוקצים לפי סדר הרשמה. שריון בדמי רישום ₪50 שמתקזזים במלואם מהקנייה. המחירים וההטבות - לנרשמים מראש בלבד.</p>
+    <a class="btn" id="ctaBtn" target="_blank" rel="noopener">שריון מקום בוואטסאפ</a>
+    <p style="font-size:12px;color:#aaa;margin:14px 0 0">לוחצים, שולחים את ההודעה המוכנה, והצוות שלנו משלים את ההרשמה איתכם אישית</p>
+  </div>
+</div>
+<footer>אופטיקה פריזמה · סניף אשקלון · כל המחירים בתוקף לאירוע ההשקה בלבד, לנרשמים מראש ובכפוף למלאי</footer>
+
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="תצוגת דגם מוגדלת">
+  <div class="lb-inner">
+    <button class="lb-close" id="lbClose" aria-label="סגירה">✕</button>
+    <button class="lb-nav lb-prev" id="lbPrev" aria-label="הקודם">›</button>
+    <img class="lb-img" id="lbImg" alt="">
+    <button class="lb-nav lb-next" id="lbNext" aria-label="הבא">‹</button>
+    <div class="lb-cap"><div class="b" id="lbBrand"></div><div class="m" id="lbModel"></div></div>
+    <div class="lb-dots" id="lbDots"></div>
+  </div>
+</div>
+
+<script id="data-fashion" type="application/json">[{"b":"Prada","m":"SPSB08","w":1100,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/3754197a-009c-4c93-a2fe-b17407bd4ac0/1775555380966_x2ab.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/3754197a-009c-4c93-a2fe-b17407bd4ac0/1775555381279_rxv6.webp"},{"b":"Miu Miu","m":"SMUB51","w":1250,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/7c340390-a8ce-4d4d-ab17-d956a14438bd/1778143431853_1r8a.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/7c340390-a8ce-4d4d-ab17-d956a14438bd/1778143432715_ti44.webp"},{"b":"Miu Miu","m":"SMUB13","w":1250,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/15cd1ead-0c88-4bd4-a12c-b917b2480dd8/1778143527484_4b58.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/15cd1ead-0c88-4bd4-a12c-b917b2480dd8/1778143528526_xdzl.webp"},{"b":"Miu Miu","m":"SMUB13","w":1250,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ddc9a2e9-1e73-4ecc-ac52-2787312059a4/1778143675983_jpd0.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ddc9a2e9-1e73-4ecc-ac52-2787312059a4/1778143676852_soig.webp"},{"b":"Miu Miu","m":"SMUB12","w":1250,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/75b97cc7-79d7-47df-9d50-989bc3a565d8/1778143840482_nivu.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/75b97cc7-79d7-47df-9d50-989bc3a565d8/1778143841356_fwkt.webp"},{"b":"Miu Miu","m":"SMUB12","w":1250,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/61eaa33c-aaad-421b-b3d3-aa84ef9e56ed/1778143949913_7e7o.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/61eaa33c-aaad-421b-b3d3-aa84ef9e56ed/1778143950932_2kcn.webp"},{"b":"Miu Miu","m":"SMUB11","w":1250,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/9c80fefe-9025-4ec1-8195-8910716500bb/1778144038616_1wpx.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/9c80fefe-9025-4ec1-8195-8910716500bb/1778144039480_o5i9.webp"},{"b":"Miu Miu","m":"SMUB11","w":1250,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/3b17ae26-81cd-441d-a4de-bf313291629d/1778144141276_fzy3.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/3b17ae26-81cd-441d-a4de-bf313291629d/1778144142411_4l9n.webp"},{"b":"Miu Miu","m":"SMUB10","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/9a216a1d-9df0-40a9-beb6-163d806106a0/1778144247396_7m6p.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/9a216a1d-9df0-40a9-beb6-163d806106a0/1778144248498_llv7.webp"},{"b":"Miu Miu","m":"SMUB10","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/50cbe4f5-550d-4b2d-a86e-c996612d5bdf/1778144312279_7g5x.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/50cbe4f5-550d-4b2d-a86e-c996612d5bdf/1778144312938_hxyk.webp"},{"b":"Miu Miu","m":"SMUB09","w":1250,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/a1d26a10-25b3-4346-8e8c-1be9467bbcda/1778144423004_8k4v.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/a1d26a10-25b3-4346-8e8c-1be9467bbcda/1778144423781_jblt.webp"},{"b":"Miu Miu","m":"SMUA54","w":1250,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/d643a4dc-427c-4b94-a657-b90a38a481f2/1778144486142_q28n.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/d643a4dc-427c-4b94-a657-b90a38a481f2/1778144486890_lub7.webp"},{"b":"Miu Miu","m":"SMUA54","w":1250,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/08e105fb-6e9e-4d4e-8b0b-e10e38fffef5/1778144628175_bjm7.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/08e105fb-6e9e-4d4e-8b0b-e10e38fffef5/1778144628986_ew7e.webp"},{"b":"Miu Miu","m":"SMU56Z","w":1250,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/aa9e332f-4b17-4c60-9fa4-16cf179c521c/1778145023859_v3w5.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/aa9e332f-4b17-4c60-9fa4-16cf179c521c/1778145024635_t2h0.webp"},{"b":"Miu Miu","m":"SMU54Z","w":1250,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/53067a29-6990-4be8-a1e6-73f81f2f29ee/1778145214622_nzap.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/53067a29-6990-4be8-a1e6-73f81f2f29ee/1778145215438_z8ga.webp"},{"b":"Miu Miu","m":"SMU11Z","w":1250,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/0853d882-9ebe-4365-95d0-603e1067bd72/1778145660880_kpq9.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/0853d882-9ebe-4365-95d0-603e1067bd72/1778145661812_uftv.webp"},{"b":"Miu Miu","m":"SMU11Z","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/0a15e999-cfa8-47ba-a42f-595d225f5cdf/1778145798009_y62u.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/0a15e999-cfa8-47ba-a42f-595d225f5cdf/1778145798761_z872.webp"},{"b":"Prada","m":"SPRD55","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/32b5f00a-7571-4332-90a4-907b29c87cd7/1778056935634_9g79.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/32b5f00a-7571-4332-90a4-907b29c87cd7/1778056937050_rt0m.webp"},{"b":"Prada","m":"SPRD05","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/f04a176b-cca2-4e18-a261-bc324486d4dd/1778057725121_bd8l.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/f04a176b-cca2-4e18-a261-bc324486d4dd/1778057725903_ftxr.webp"},{"b":"Prada","m":"SPRD05","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/aa454e49-c6f9-4cb7-ae97-0204feacf485/1778062111687_ob1r.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/aa454e49-c6f9-4cb7-ae97-0204feacf485/1778062112325_jmr6.webp"},{"b":"Prada","m":"SPRD01","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/356a3098-526a-487c-9917-22d19304718c/1778062217122_rqhu.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/356a3098-526a-487c-9917-22d19304718c/1778062217881_zqhf.webp"},{"b":"Prada","m":"SPRB16","w":1250,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/c9b2d074-6e81-42f7-afbc-0dd3382b8233/1776092978497_z18t.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/c9b2d074-6e81-42f7-afbc-0dd3382b8233/1776092979337_fz36.webp"},{"b":"Prada","m":"SPRB06","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/e7dd1a48-aa38-4521-8c25-cd0481312180/1778062405343_m9cx.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/e7dd1a48-aa38-4521-8c25-cd0481312180/1778062406100_d328.webp"},{"b":"Prada","m":"SPRB06","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/5099ab3f-c225-4274-9d1c-562b68182056/1778062522897_rslv.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/5099ab3f-c225-4274-9d1c-562b68182056/1778062523704_7giz.webp"},{"b":"Prada","m":"SPRB05","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fead86e8-fbc5-48fc-8f10-7a5145273991/1778062629456_6pep.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fead86e8-fbc5-48fc-8f10-7a5145273991/1778062630260_xbe4.webp"},{"b":"Prada","m":"SPRB05","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/37a347a7-cdc0-4012-b50e-7991d320fd19/1778062753423_ylkp.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/37a347a7-cdc0-4012-b50e-7991d320fd19/1778062754358_zvgm.webp"},{"b":"Prada","m":"SPRA16","w":1250,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/2f01f7ac-4424-49c8-89c1-2c9e24992847/1778062960760_xnnq.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/2f01f7ac-4424-49c8-89c1-2c9e24992847/1778062962030_da45.webp"},{"b":"Prada","m":"SPR65Z","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/f4a7c275-95ea-4c79-97f0-aa8f1f16fff1/1778063078392_vrq1.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/f4a7c275-95ea-4c79-97f0-aa8f1f16fff1/1778063079485_830o.webp"},{"b":"Prada","m":"SPR26Z","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/af5ef3c4-064e-46b4-8f0b-daaea51e257f/1778063234124_aeca.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/af5ef3c4-064e-46b4-8f0b-daaea51e257f/1778063234803_ae02.webp"},{"b":"Prada","m":"SPR26Z","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/8fc6cfcd-1ade-4801-88ac-234bb9243e38/1778063351295_79uk.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/8fc6cfcd-1ade-4801-88ac-234bb9243e38/1778063352431_kd6o.webp"},{"b":"Prada","m":"SPR15W","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/235b2066-aa01-4aa3-8dd7-d41418e23bf3/1778063473863_9mdd.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/235b2066-aa01-4aa3-8dd7-d41418e23bf3/1778063474591_cc0c.webp"},{"b":"Prada","m":"SPSB11-U","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/e63db5cc-a7d4-405b-8e91-54dd3ffe437e/1778140296944_iy31.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/e63db5cc-a7d4-405b-8e91-54dd3ffe437e/1778140297801_qf3y.webp"},{"b":"Prada","m":"SPSB11-U","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/8fcd58ee-ab00-4c9f-a5fb-dba57ea53b82/1778140363153_ekab.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/8fcd58ee-ab00-4c9f-a5fb-dba57ea53b82/1778140363784_dqpp.webp"},{"b":"Tiffany & Co","m":"TF4264-U","w":1100,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/d30e8822-830a-4f70-a451-1db9ea9c895f/1778064481085_hw6g.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/d30e8822-830a-4f70-a451-1db9ea9c895f/1778064482070_y1xa.webp"},{"b":"Tiffany & Co","m":"TF4231-U","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/9a3ec1d5-f165-4b07-827c-31039ad49713/1778064742041_lvsy.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/9a3ec1d5-f165-4b07-827c-31039ad49713/1778064743133_e881.webp"},{"b":"Tiffany & Co","m":"TF4231-U","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/5cdbea0d-383a-4ddb-b2a6-403e53f77980/1778064822080_0u6p.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/5cdbea0d-383a-4ddb-b2a6-403e53f77980/1778064822670_idzi.webp"},{"b":"Tiffany & Co","m":"TF3114","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/3d045fd3-a3bc-49b7-93cc-bdd5c511bc3e/1778064912832_gr2n.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/3d045fd3-a3bc-49b7-93cc-bdd5c511bc3e/1778064913771_ej69.webp"},{"b":"Tiffany & Co","m":"TF3114","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/92a5957d-3543-4b69-811a-a1914f9583c3/1778064991446_0uav.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/92a5957d-3543-4b69-811a-a1914f9583c3/1778064992276_grwh.webp"},{"b":"Tiffany & Co","m":"TF3111","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ee2ded34-2caa-4426-bfaa-378246cdc934/1778065079745_oqfp.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ee2ded34-2caa-4426-bfaa-378246cdc934/1778065080480_ysp8.webp"},{"b":"Tiffany & Co","m":"TF3111","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ff44c42e-88ef-4745-904f-393839b5d099/1778136006275_itbz.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ff44c42e-88ef-4745-904f-393839b5d099/1778136007340_wqr5.webp"},{"b":"Tiffany & Co","m":"TF3104D","w":1200,"e":890,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/48de2a73-4d9e-4ea0-8214-1dc8261b907b/1778136137400_ylvf.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/48de2a73-4d9e-4ea0-8214-1dc8261b907b/1778136138145_yov3.webp"},{"b":"Versace","m":"4510-U","w":1000,"e":690,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/f5eb7e37-fc87-48cf-b2f6-55985b0f9aba/1778146699123_3gox.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/f5eb7e37-fc87-48cf-b2f6-55985b0f9aba/1778146700008_51to.webp"},{"b":"Versace","m":"4514-D","w":850,"e":690,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fc80c593-013d-4f3f-a102-ead98f00affe/1778063588343_tpqf.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fc80c593-013d-4f3f-a102-ead98f00affe/1778063589179_br2u.webp"},{"b":"Versace","m":"4512-D","w":850,"e":690,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/30df4a22-88de-48d6-89bf-e48a076e780d/1778063715586_yk3y.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/30df4a22-88de-48d6-89bf-e48a076e780d/1778063716538_crp8.webp"},{"b":"Versace","m":"4510-U","w":850,"e":690,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/9612925e-513f-4072-8ba5-d857d4a8d941/1778063796083_mm7u.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/9612925e-513f-4072-8ba5-d857d4a8d941/1778063796963_vyu6.webp"},{"b":"Versace","m":"4409","w":1000,"e":690,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/feb7a2d1-1a30-4634-bb58-abc7e067d3e0/1778063905925_38m7.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/feb7a2d1-1a30-4634-bb58-abc7e067d3e0/1778063906556_gxrl.webp"},{"b":"Versace","m":"4361","w":1000,"e":690,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/4b20c15a-d521-4259-9f8d-7d5daa04e522/1778064006473_7ssh.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/4b20c15a-d521-4259-9f8d-7d5daa04e522/1778064007260_yfr4.webp"},{"b":"Versace","m":"4361","w":1000,"e":690,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/421c482d-3b04-4c1d-8bdf-3906d873c905/1778064081714_145j.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/421c482d-3b04-4c1d-8bdf-3906d873c905/1778064082354_7036.webp"},{"b":"Ray-Ban","m":"RJ9506S","w":500,"e":400,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/b19d32b9-7de2-4d68-bd6b-bcae52478812/1779182685615_vsfk.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/b19d32b9-7de2-4d68-bd6b-bcae52478812/1779182686635_js90.webp"},{"b":"Ray-Ban","m":"RJ9506S","w":500,"e":400,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/5e0511bf-7a5a-4a37-8bb2-00b37d969840/1779181843198_6eru.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/5e0511bf-7a5a-4a37-8bb2-00b37d969840/1779181844069_clxv.webp"},{"b":"Ray-Ban","m":"RJ9647S","w":500,"e":400,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/2eba88b2-1381-4fe3-a7b9-843b3808deea/1779182273751_stbn.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/2eba88b2-1381-4fe3-a7b9-843b3808deea/1779182274764_e648.webp"},{"b":"Ray-Ban","m":"RL9557S","w":500,"e":400,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/abfa287a-f590-4248-8781-8a338ad10016/1779182486811_pxyc.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/abfa287a-f590-4248-8781-8a338ad10016/1779182487776_nzdq.webp"},{"b":"Ray-Ban","m":"RB3447","w":500,"e":400,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/2a855379-0606-4874-87c0-6b9d533ffb3d/1779182103666_gndi.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/2a855379-0606-4874-87c0-6b9d533ffb3d/1779182104674_lj6a.webp"},{"b":"Ray-Ban","m":"RB4395","w":650,"e":400,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ef764b67-057a-45e7-ba82-1e8afa7604a6/1776147460122_x9xv.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ef764b67-057a-45e7-ba82-1e8afa7604a6/1776147460981_i261.webp"},{"b":"Ray-Ban","m":"RB0840","w":800,"e":400,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/bcd2d92f-efad-4997-9cf2-d3828948e290/1776157504349_wsud.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/bcd2d92f-efad-4997-9cf2-d3828948e290/1776157505281_z76f.webp"},{"b":"Ray-Ban","m":"RB2187","w":800,"e":400,"i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/3a0b62b5-40cb-45c5-b18b-8a6d3f98a441/1776157589284_2upn.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/3a0b62b5-40cb-45c5-b18b-8a6d3f98a441/1776157590215_aovb.webp"}]</script>
+<script id="data-luxury" type="application/json">[{"b":"Cazal","m":"995","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/11d80cb7-82bc-4fcf-915a-4b709db64a47/1775379075860_pogg.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/11d80cb7-82bc-4fcf-915a-4b709db64a47/1775379076169_4k4b.webp"},{"b":"Cazal","m":"8045","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/9637dee5-6488-46d8-9aa9-bc49e0e7fd49/1775379320382_joxn.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/9637dee5-6488-46d8-9aa9-bc49e0e7fd49/1775379320756_ahv4.webp"},{"b":"Cazal","m":"9505","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/1849dce9-fedc-43c2-87ef-f4f770e6e9ef/1775379507088_elgb.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/1849dce9-fedc-43c2-87ef-f4f770e6e9ef/1775379507463_hz51.webp"},{"b":"Cazal","m":"9111","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/95ee52ce-36fa-4e12-b4ad-dbb77f930cf8/1775379454248_oa4j.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/95ee52ce-36fa-4e12-b4ad-dbb77f930cf8/1775379454562_gdqq.webp"},{"b":"Cazal","m":"8051","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/7868278c-7bea-4738-91a6-28b35a8fa2ba/1775379378508_73e8.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/7868278c-7bea-4738-91a6-28b35a8fa2ba/1775379378855_0h43.webp"},{"b":"Cazal","m":"757/3","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/45eae2d2-4b2a-4b10-b8ea-7af2ca81d08f/1775378940984_g9lb.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/45eae2d2-4b2a-4b10-b8ea-7af2ca81d08f/1775378941380_olss.webp"},{"b":"Cazal","m":"9107","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/0eac8f33-853d-4e75-8576-30231be81b7d/1775379421924_n81b.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/0eac8f33-853d-4e75-8576-30231be81b7d/1775379422469_sjhi.webp"},{"b":"Cazal","m":"7121/3","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/434a2fc4-f64a-415f-b4de-a5b8d7776a07/1775379210050_absh.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/434a2fc4-f64a-415f-b4de-a5b8d7776a07/1775379210361_am8e.webp"},{"b":"Cazal","m":"889","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/37e9a492-3397-4c2a-8b87-25a0910bdf1d/1775379045634_ld7h.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/37e9a492-3397-4c2a-8b87-25a0910bdf1d/1775379045960_ha7q.webp"},{"b":"Cazal","m":"889","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/97508947-c182-4485-8c08-e937ce577ae4/1775378996065_5ef5.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/97508947-c182-4485-8c08-e937ce577ae4/1775378996386_vqu0.webp"},{"b":"Cazal","m":"9507","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/21201a14-2e8c-4506-adb0-8ca537240ef3/1775379612438_7mic.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/21201a14-2e8c-4506-adb0-8ca537240ef3/1775379613304_93ij.webp"},{"b":"Fred","m":"FG40047U","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ecc639b8-7396-4aea-b0c7-f1604fa8f839/1775547843181_15sm.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ecc639b8-7396-4aea-b0c7-f1604fa8f839/1775547843507_zryf.webp"},{"b":"Fred","m":"FG40001U","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/1d392040-35ad-4f17-bb7b-91e9e502665b/1775547783877_jrm6.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/1d392040-35ad-4f17-bb7b-91e9e502665b/1775547784839_vr6u.webp"},{"b":"Fred","m":"FG40003U","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/48610f11-718d-4b35-b5a7-0adbd256ae7f/1775547804035_mw8w.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/48610f11-718d-4b35-b5a7-0adbd256ae7f/1775547804421_uu2n.webp"},{"b":"John Dalia","m":"Timothy","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/50f37c1c-5610-4420-a6b2-20266b2156fb/1779191057071_uqd0.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/50f37c1c-5610-4420-a6b2-20266b2156fb/1779191056103_oukt.webp"},{"b":"John Dalia","m":"Dwayne","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/4594440e-e30b-4d34-a1d7-b8d72e28a4e8/1779190901458_8ktn.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/4594440e-e30b-4d34-a1d7-b8d72e28a4e8/1779190902239_lf84.webp"},{"b":"John Dalia","m":"Dwayne","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/1c7dc6aa-37bb-4c2f-9548-3a3ae7ac47b2/1779190815349_vfir.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/1c7dc6aa-37bb-4c2f-9548-3a3ae7ac47b2/1779190816732_mkqg.webp"},{"b":"John Dalia","m":"R03","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/1f21cfd4-b918-4125-8551-42e867c97bea/1777308935219_kwl1.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/1f21cfd4-b918-4125-8551-42e867c97bea/1777308935789_g330.webp"},{"b":"John Dalia","m":"R01 Gold","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/e063cbe9-a99b-42e7-af2e-842084ee3f4e/1777308980291_lt2v.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/e063cbe9-a99b-42e7-af2e-842084ee3f4e/1777308987293_8xat.webp"},{"b":"John Dalia","m":"R01 Gold","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/f4af0ef1-c46e-4d75-97ea-1a3ed34f2d2a/1778570269584_hxf7.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/f4af0ef1-c46e-4d75-97ea-1a3ed34f2d2a/1778569992519_o72g.webp"},{"b":"John Dalia","m":"R01 Carbon","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/f893d77c-c585-4453-b72e-81c01ecbcf95/1777309111413_92at.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/f893d77c-c585-4453-b72e-81c01ecbcf95/1777309112036_caxy.webp"},{"b":"John Dalia","m":"R01","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/2a23caee-46b1-4f87-a038-dec7a8bdbb51/1777309159013_n56w.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/2a23caee-46b1-4f87-a038-dec7a8bdbb51/1777309159536_sxsx.webp"},{"b":"John Dalia","m":"P09","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/0a13583b-a4d4-497c-9bcf-2eba36386f01/1777309220806_ah8z.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/0a13583b-a4d4-497c-9bcf-2eba36386f01/1777309221283_pz2z.webp"},{"b":"John Dalia","m":"P04","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/40213754-995d-49bf-b9c6-8a41a94cd07d/1777309274496_v1e1.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/40213754-995d-49bf-b9c6-8a41a94cd07d/1777309275093_4qsd.webp"},{"b":"John Dalia","m":"Leo","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/68d5351a-5d38-431f-a170-9c3c7212bcc0/1777309313700_t922.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/68d5351a-5d38-431f-a170-9c3c7212bcc0/1777309314448_dduh.webp"},{"b":"John Dalia","m":"Curtis","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/1c3e384e-4e5f-4cc4-a0de-b39c0b5a16f0/1777309489731_05km.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/1c3e384e-4e5f-4cc4-a0de-b39c0b5a16f0/1777309490759_erm6.webp"},{"b":"John Dalia","m":"Curtis","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/0a176cd5-07be-41ee-bbc0-facaf09c088b/1777309537865_fpym.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/0a176cd5-07be-41ee-bbc0-facaf09c088b/1777309538438_vlff.webp"},{"b":"John Dalia","m":"Curtis","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fdff3a2e-e453-446f-8d20-957e6c15b426/1777309605514_rixs.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fdff3a2e-e453-446f-8d20-957e6c15b426/1777309606291_lqcl.webp"},{"b":"John Dalia","m":"P08","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/0a0a5abc-96d9-4ba5-b6c2-b56ee4cf105e/1776683703991_pjbk.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/0a0a5abc-96d9-4ba5-b6c2-b56ee4cf105e/1776683704594_85ys.webp"},{"b":"KameManNen","m":"9503","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/641f1c65-b477-46f8-a2ce-ad97c02e363c/1776755554787_w75i.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/641f1c65-b477-46f8-a2ce-ad97c02e363c/1776755555391_zpua.webp"},{"b":"KameManNen","m":"9500","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/5511a299-7a05-4984-bd2d-535623f1b519/1776755505065_o4qi.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/5511a299-7a05-4984-bd2d-535623f1b519/1776755505873_2hm4.webp"},{"b":"KameManNen","m":"9501","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/165393c6-71ac-47a0-8305-8d1e7955b728/1776755098269_x275.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/165393c6-71ac-47a0-8305-8d1e7955b728/1776755098952_5it0.webp"},{"b":"KameManNen","m":"9504","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/82bee347-f47f-448d-9e56-b86c99fd1254/1776755642388_d9un.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/82bee347-f47f-448d-9e56-b86c99fd1254/1776755643247_b0j8.webp"},{"b":"KameManNen","m":"9502","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/52c6b97b-dc03-4f7b-b004-70e4ad324071/1776755434670_4pqu.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/52c6b97b-dc03-4f7b-b004-70e4ad324071/1776755435362_g6wn.webp"},{"b":"KameManNen","m":"9504","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fa5a22f1-9412-46b9-86c7-5f26508cf230/1776755035316_muky.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fa5a22f1-9412-46b9-86c7-5f26508cf230/1776755036223_n896.webp"},{"b":"KameManNen","m":"9917","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/d7f69384-60ee-4ea3-9050-4313f37069a0/1775551584909_s5r1.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/d7f69384-60ee-4ea3-9050-4313f37069a0/1775551585238_chku.webp"},{"b":"KameManNen","m":"1234","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/4b0e1db0-a8bb-4e3e-84f4-6da190bd90da/1775551454807_i3et.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/4b0e1db0-a8bb-4e3e-84f4-6da190bd90da/1775551455156_jux9.webp"},{"b":"KameManNen","m":"1223","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/c335eb71-c05c-48d4-af88-feebf0ad7bff/1775551422501_xe4t.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/c335eb71-c05c-48d4-af88-feebf0ad7bff/1775551423170_8fu0.webp"},{"b":"Matsuda","m":"10601H","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fea746ad-3952-4a8b-a78e-90085c9732c4/1775552852782_wa3x.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fea746ad-3952-4a8b-a78e-90085c9732c4/1775552853483_mihf.webp"},{"b":"Matsuda","m":"3137","i1":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ce108f64-46d8-49a7-8b2b-1d65f847e4f5/1775552924058_6yzx.webp","i2":"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ce108f64-46d8-49a7-8b2b-1d65f847e4f5/1775552924698_dq3c.webp"}]</script>
+<script>
+  var P = "https://prizma-optic.co.il/api/image/";
+  var fmt = function(n){ return "₪" + Math.round(n).toLocaleString(); };
+  function spread(items){
+    var byBrand = {};
+    items.forEach(function(it){ (byBrand[it.b] = byBrand[it.b] || []).push(it); });
+    Object.keys(byBrand).forEach(function(b){ byBrand[b].sort(function(){ return Math.random()-0.5; }); });
+    var out = [], last = null, guard = 0, total = items.length;
+    while(out.length < total && guard < total*5){
+      guard++;
+      var cand = Object.keys(byBrand).filter(function(b){ return byBrand[b].length>0 && b!==last; });
+      if(cand.length===0){ cand = Object.keys(byBrand).filter(function(b){ return byBrand[b].length>0; }); }
+      cand.sort(function(a,b){ return byBrand[b].length - byBrand[a].length; });
+      var pick = cand[0]; out.push(byBrand[pick].shift()); last = pick;
+    }
+    return out;
+  }
+  function imgs(it){
+    return '<img class="main" loading="lazy" alt="'+it.b+' '+it.m+'" src="'+P+it.i1+'">'+
+      (it.i2 ? '<img class="alt" loading="lazy" alt="" src="'+P+it.i2+'">' : '');
+  }
+  function ph(it, badges){
+    return '<div class="ph" tabindex="0" role="button" aria-label="הגדלת תמונה" data-i1="'+P+it.i1+'" data-i2="'+(it.i2?P+it.i2:'')+'" data-b="'+it.b+'" data-m="דגם '+it.m+'">'+badges+imgs(it)+'</div>';
+  }
+  function fashionCard(it){
+    return '<div class="card">'+ph(it,'<div class="badges"><span class="bdg bdg-gold">קופון אישי בלבד</span><span class="bdg bdg-dark">לנרשמים מראש</span></div>')+
+      '<div class="body"><div class="brand">'+it.b+'</div><div class="model">דגם '+it.m+'</div>'+
+      '<div class="was">'+fmt(it.w)+'</div><div class="ev">'+fmt(it.e)+'</div><div class="evlbl">מחיר השקה</div></div></div>';
+  }
+  function luxuryCard(it){
+    return '<div class="card">'+ph(it,'<div class="badges"><span class="bdg bdg-gold">הטבות אירוע בלעדיות</span><span class="bdg bdg-dark">לנרשמים מראש</span></div>')+
+      '<div class="body"><div class="brand">'+it.b+'</div><div class="model">דגם '+it.m+'</div>'+
+      '<div class="lux-note">הטבות אירוע בלעדיות</div></div></div>';
+  }
+  var DF = JSON.parse(document.getElementById("data-fashion").textContent);
+  var DL = JSON.parse(document.getElementById("data-luxury").textContent);
+  document.getElementById("grid-fashion").innerHTML = spread(DF).map(fashionCard).join("");
+  document.getElementById("grid-luxury").innerHTML = spread(DL).map(luxuryCard).join("");
+
+  var WA = "972533645404";
+  var waMsg = "היי, אני רוצה לשריין מקום לאירוע השקת הקולקציות ביום שישי 29.5 בסניף אשקלון. [הגעתי מעמוד ההשקה]";
+  var cta = document.getElementById("ctaBtn");
+  if(cta){ cta.href = "https://wa.me/" + WA + "?text=" + encodeURIComponent(waMsg); }
+
+  var tabs = document.querySelectorAll(".tab");
+  tabs.forEach(function(t){ t.addEventListener("click", function(){
+    tabs.forEach(function(x){ x.classList.remove("active"); }); t.classList.add("active");
+    document.querySelectorAll(".panel").forEach(function(p){ p.classList.remove("active"); });
+    document.getElementById(t.dataset.tab).classList.add("active");
+    window.scrollTo({top:0, behavior:"smooth"});
+  }); });
+
+  (function(){
+    var lb=document.getElementById("lb"), lbImg=document.getElementById("lbImg"),
+        lbBrand=document.getElementById("lbBrand"), lbModel=document.getElementById("lbModel"),
+        lbDots=document.getElementById("lbDots");
+    var arr=[], idx=0;
+    function render(){
+      lbImg.src=arr[idx];
+      Array.prototype.forEach.call(lbDots.children,function(d,i){ d.classList.toggle("active",i===idx); });
+      var multi=arr.length>1;
+      document.getElementById("lbPrev").style.display=multi?"":"none";
+      document.getElementById("lbNext").style.display=multi?"":"none";
+    }
+    function open(p){
+      arr=[p.getAttribute("data-i1")]; var i2=p.getAttribute("data-i2"); if(i2) arr.push(i2);
+      idx=0; lbBrand.textContent=p.getAttribute("data-b"); lbModel.textContent=p.getAttribute("data-m");
+      lbDots.innerHTML=arr.map(function(){return '<span class="lb-dot"></span>';}).join("");
+      Array.prototype.forEach.call(lbDots.children,function(d,i){ d.onclick=function(){ idx=i; render(); }; });
+      render(); lb.classList.add("open");
+    }
+    function close(){ lb.classList.remove("open"); }
+    document.addEventListener("click",function(e){ var p=e.target.closest&&e.target.closest(".ph"); if(p) open(p); });
+    document.addEventListener("keydown",function(e){
+      if(!lb.classList.contains("open")) return;
+      if(e.key==="Escape") close();
+      if((e.key==="ArrowLeft"||e.key==="ArrowRight") && arr.length>1){ idx=(idx+1)%arr.length; render(); }
+    });
+    document.getElementById("lbClose").onclick=close;
+    document.getElementById("lbPrev").onclick=function(){ idx=(idx-1+arr.length)%arr.length; render(); };
+    document.getElementById("lbNext").onclick=function(){ idx=(idx+1)%arr.length; render(); };
+    lb.addEventListener("click",function(e){ if(e.target===lb) close(); });
+  })();
+</script>
+</body>
+</html>

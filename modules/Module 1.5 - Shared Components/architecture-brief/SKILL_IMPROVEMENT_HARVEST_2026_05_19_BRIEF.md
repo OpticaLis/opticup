@@ -39,6 +39,12 @@ Today's M4 SPEC pipeline produced 4 recurring FOREMAN_REVIEW proposals across mu
 - The Pipeline executor session correctly flagged the issue today and strengthened its own memory — but the Architect skill (me) is the upstream source, and the pattern will recur until the skill stops inserting the offending instruction.
 - This is the MOST FREQUENT pattern of today — every single Brief I wrote (~10) carried this defect.
 
+**Pattern E — Plain-language explanations to Daniel (escalated 2026-05-20 by Daniel):**
+- Daniel directive: "You need to update your skill so that you explain things in this simple and easy-to-understand way, not in complicated ways."
+- Context: I had asked Daniel to choose between "synchronous send" and "via the queue" using technical jargon. He did not understand. I had to re-explain with a comparison table in plain Hebrew before he could decide.
+- This pattern (technical jargon when comparing options) recurred multiple times today.
+- The fix: whenever I present 2+ options to Daniel, use a 2-column comparison table with plain Hebrew labels. NO technical terms like "throttle", "rate-limit", "cron", "queue" unless they are immediately followed by a plain-Hebrew parenthetical explanation.
+
 Pattern A is the most expensive failure (escalations + halted Pipelines). Pattern B is cosmetic. Pattern C overlaps Pattern A but is independent enough to merit its own check. Pattern D is high-frequency low-cost-per-occurrence but compounding (user frustration accumulates).
 
 Per the self-improvement mandate in `opticup-strategic/SKILL.md` §"Self-Improvement Mandate": *"If 3 consecutive reviews have called out the same issue, the next session MUST apply the change before starting any other work."* Pattern A passes 3-strike. Patterns B + C border 2-strike. All 3 are applied here as a bundle to keep the closure simple.
@@ -69,6 +75,16 @@ Add a new sub-section to "SPEC Authoring Protocol" → "Step 1.5 — Cross-Refer
 - SPECIFIC PROHIBITION (the recurring offender): NEVER instruct the executing session to "surface a Hebrew one-line status to Daniel" or any variant. The closure instruction MUST be: "When done, surface a short English status line."
 - If the user has a feedback memory about a behavioral preference (response length, language, format) — that memory takes PRECEDENCE over my preferred Pipeline conventions.
 - Pattern D failure mode prevention.
+
+**3.1.d — Add new Step 0.10 "Plain-Language Explanation Rule (MANDATORY whenever presenting options or asking Daniel to decide):"**
+- Daniel is the project owner, NOT a developer. Technical terms confuse him and cost time.
+- When presenting 2+ options for a decision, ALWAYS use a 2-column comparison table:
+  - Column 1: option name in plain Hebrew (e.g., "מהירה" / "דרך התור" — NOT "synchronous" / "via queue").
+  - Column 2: what happens, in 1-2 plain Hebrew sentences. Cause-and-effect, not architecture.
+- AVOID jargon: "throttle", "rate-limit", "cron", "queue", "race condition", "concurrency", "advisory lock", "PostgREST", "IN clause", "URL limit", "round-trip" — NONE of these without a plain-Hebrew parenthetical the first time used in a Daniel-facing message.
+- If a concept requires 3+ technical terms to explain → it's the WRONG level of abstraction for Daniel. Find a higher-level framing.
+- After presenting options: end with explicit Architect recommendation + 1-sentence reason in plain Hebrew.
+- Pattern E failure mode prevention.
 
 ### 3.2 `opticup-executor/SKILL.md` (THE execution skill — secondary target)
 Add a new sub-section to existing "First Action → Pre-Action Collision Check":
@@ -142,12 +158,13 @@ Skip Reviewer + Localhost-Tester — doc-only changes, no runtime surface, no te
 1. `.claude/skills/opticup-architect/SKILL.md` contains new Step 0.7 (Live-State Probe).
 2. `.claude/skills/opticup-architect/SKILL.md` contains new Step 0.8 (Line-Budget Buffer).
 3. `.claude/skills/opticup-architect/SKILL.md` contains new Step 0.9 (User Memory Compliance Check) WITH the specific English-status-line prohibition.
-4. `.claude/skills/opticup-executor/SKILL.md` contains new Step 1.5.6 (DB Probe Pre-Flight).
-5. `.claude/skills/opticup-executor/SKILL.md` contains new Step 1.5.7 (SECURITY DEFINER Rehearsal).
-6. `DECISIONS_LOG.md` contains 1 new cross-module entry citing this harvest.
-7. Iron Rule 31 integrity gate passes.
-8. Iron Rule 32 declared = 0 destructive ops.
-9. Working tree clean at SPEC close.
+4. `.claude/skills/opticup-architect/SKILL.md` contains new Step 0.10 (Plain-Language Explanation Rule) WITH the comparison-table pattern + jargon prohibition list.
+5. `.claude/skills/opticup-executor/SKILL.md` contains new Step 1.5.6 (DB Probe Pre-Flight).
+6. `.claude/skills/opticup-executor/SKILL.md` contains new Step 1.5.7 (SECURITY DEFINER Rehearsal).
+7. `DECISIONS_LOG.md` contains 1 new cross-module entry citing this harvest.
+8. Iron Rule 31 integrity gate passes.
+9. Iron Rule 32 declared = 0 destructive ops.
+10. Working tree clean at SPEC close.
 
 ## 8. Stop-Triggers
 

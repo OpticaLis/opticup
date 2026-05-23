@@ -266,6 +266,38 @@ const FIELD_MAP = {
   // ─── M1 Lens — SPEC M1_LENS_DB_SCHEMA_RECEIPTS_NOTES (2026-05-17) ─────
   lens_variant_notes: {
     'וריאציה':'variant_id','תוכן':'body','מחבר':'author_id'
+  },
+  // ─── M5 Customers — SPEC M5_UI_CUSTOMER_CARD (2026-05-23) ─────
+  customers: {
+    'שם פרטי':'first_name','שם משפחה':'last_name','שם מלא':'full_name',
+    'ת"ז':'id_number','נייד':'phone','טלפון-עבודה':'phone_secondary','אימייל':'email',
+    'כתובת':'address','עיר':'city','תאריך-לידה':'birth_date','מין':'gender',
+    'מקצוע':'profession','עין דומיננטית':'dominant_eye','שפה':'language_code',
+    'קופ"ח':'health_fund_id','משפחה':'household_id','סניף-בית':'home_branch_id',
+    'מספר לקוח':'customer_number','מצב מחזור-חיים':'lifecycle_stage',
+    'הסכמת שיווק (לקוח)':'customer_marketing_consent',
+    'הסכמת תפעול (לקוח)':'customer_operational_consent',
+    'הסכמת שיווק (CRM)':'crm_marketing_consent',
+    'הסכמת תפעול (CRM)':'crm_operational_consent',
+    'מקור':'source','UTM source':'utm_source','UTM medium':'utm_medium',
+    'UTM campaign':'utm_campaign','אינטראקציה ראשונה':'first_interaction_at',
+    'טופס-הסכמה חתום':'consent_form_signed_at'
+  },
+  customer_notes: {
+    'לקוח':'customer_id','סוג הערה':'note_type','תוכן':'content','נוצר ע"י':'created_by'
+  },
+  customer_documents: {
+    'לקוח':'customer_id','קטגוריה':'category','נתיב קובץ':'file_path',
+    'שם מקורי':'original_name','הועלה בתאריך':'uploaded_at','הועלה ע"י':'uploaded_by'
+  },
+  households: {
+    'לקוח-ראשי':'primary_customer_id','סטטוס':'status'
+  },
+  health_funds: {
+    'שם':'name','קוד':'code','פעיל':'is_active','סדר מיון':'sort_order'
+  },
+  tenant_languages: {
+    'קוד שפה':'language_code','פעיל':'is_active','ברירת-מחדל':'is_default','סדר מיון':'sort_order'
   }
 };
 

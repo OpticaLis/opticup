@@ -808,5 +808,204 @@ CREATE OR REPLACE VIEW v_storefront_brands AS
 --     NOT directly from ai_content.
 
 -- ═══════════════════════════════════════════════════════════════
+-- Module 5 — Customers (sealed Phase A+B 2026-05-22)
+-- Detailed DDL: modules/Module 5 - Customers/docs/db-schema.sql
+-- ═══════════════════════════════════════════════════════════════
+
+-- Extensions on existing tables (additive):
+--   ALTER TABLE tenants       ADD COLUMN tenant_code text NOT NULL UNIQUE
+--      Backfilled: prizma='01', demo='02'.
+--   ALTER TABLE tenant_location ADD COLUMN deactivated_at timestamptz NULL
+--   ALTER TABLE customers     RENAME branch_id → home_branch_id;
+--      + 26 new columns (first_name, last_name, customer_number, lifecycle_stage,
+--        household_id, health_fund_id, language_code, gender, profession,
+--        dominant_eye, 4 consent booleans, source, utm_*×6, first_interaction_at,
+--        consent_form_signed_at, is_deleted, deleted_at, updated_by).
+--      Total post-ALTER: 42 columns. Canonical 2-policy RLS preserved.
+
+-- New enums (4): customer_lifecycle_stage, household_status, customer_note_type,
+--   customer_document_category.
+
+-- New tables (8):
+--   households, health_funds, tenant_languages, customer_notes, customer_documents,
+--   tenant_settings, tenant_number_counters, (and customers extended above).
+-- All RLS canonical 2-policy. All FK columns indexed. Tenant-scoped UNIQUE on
+-- (customer_number, tenant_id) WHERE not NULL; (phone, tenant_id) WHERE NOT NULL
+-- AND is_deleted=false; (id_number, tenant_id) WHERE NOT NULL AND is_deleted=false;
+-- (code, tenant_id) on health_funds; (language_code, tenant_id) on tenant_languages.
+
+-- Seed: tenant_languages 8 rows (he default, ru, en active, es inactive — per tenant);
+--   health_funds 10 rows (Leumit, Maccabi, Clalit, Clalit Platinum, Meuhedet — per tenant).
+
+-- Views (7 customer-data, all security_invoker=on):
+--   v_customer_for_exam, _for_order, _for_payment, _full, _for_messaging,
+--   _for_loyalty, _for_appointment.
+
+-- RPCs (8 functions, all SECURITY DEFINER + search_path SET + Block A header):
+--   create_customer, merge_customers, assign_to_household,
+--   delete_last_unused_customer (Iron Rule 32), update_customer_display_preferences,
+--   allocate_tenant_number (shared infra),
+--   compute_lifecycle_stage_on_order (deferred trigger — M7 wires),
+--   compute_lifecycle_dormant_sweep (deferred stub — M7 adds body).
+-- REVOKE EXECUTE FROM anon, PUBLIC + GRANT EXECUTE TO authenticated, service_role.
+
+-- ═══════════════════════════════════════════════════════════════
+-- Module 6 — Prescriptions / Eye Exams (sealed Phase A+B 2026-05-22)
+-- Detailed DDL: modules/Module 6 - Prescriptions/docs/db-schema.sql
+-- ═══════════════════════════════════════════════════════════════
+
+-- New enums (19):
+--   exam_status, exam_outcome, exam_type, prescription_status, prescription_source,
+--   prescription_exam_reason, prescription_treatment, prescription_refraction_method,
+--   glasses_lens_type, glasses_lens_material, prism_base, eye_side,
+--   cl_lens_type, cl_replacement_period, cl_wear_schedule, cl_material, cl_tint,
+--   recall_axis_kind, prescription_kind.
+
+-- New tables (8):
+--   eye_exams, prescriptions_glasses, prescription_glasses_eyes (Pattern 11),
+--   prescriptions_contacts, prescription_contacts_eyes (Pattern 11),
+--   prescription_types (config P19, capability flags), lens_manufacturers (config P19),
+--   prescription_recall_axes.
+-- All RLS canonical 2-policy. Tenant-scoped UNIQUE: (prescription_number, tenant_id)
+-- WHERE not NULL on both prescription tables; (code, tenant_id) on prescription_types
+-- and lens_manufacturers; (prescription_id, eye) on both eye tables.
+-- ON DELETE CASCADE from parent prescription to child eyes.
+
+-- Seed: prescription_types 16 rows (8 default types per tenant: for_distance,
+--   for_reading, for_computer, progressive, bifocal, multifocal_cl, for_sunglasses,
+--   health_fund); lens_manufacturers 10 rows (acuvue, air_optix, proclear, biofinity,
+--   dailies — per tenant).
+
+-- Views (9 — all security_invoker=on):
+--   v_exam_for_customer, v_exam_for_doctor,
+--   v_prescription_glasses_for_order, v_prescription_contacts_for_order,
+--   v_recall_due (window-fn 1-row-per-prescription),
+--   v_prescription_history_for_customer (UNION glasses+contacts),
+--   v_customer_prescriptions_summary (cross-contract — M5 customer card consumes),
+--   v_prescription_full_for_editor, v_prescriptions_list_for_customer (UNION).
+
+-- RPCs (7, all SECURITY DEFINER + search_path + Block A):
+--   create_exam, create_prescription_draft (M5↔M6 entry-point),
+--   commit_prescription (atomic; calls allocate_tenant_number for prescription_number;
+--     fires compute_recall_due_dates), cancel_draft_prescription (Iron Rule 32 — no
+--     counter touch on draft cancel), supersede_prescription, compute_recall_due_dates
+--     (multi-axis: 4 for glasses, 5 for contacts including fit_check),
+--     clone_prescription.
+-- REVOKE EXECUTE FROM anon, PUBLIC + GRANT EXECUTE TO authenticated, service_role.
+
+-- Re-uses M5 infrastructure: tenant_number_counters + allocate_tenant_number(p_tenant_id,
+-- 'prescription'). Iron Rule 11 + 32 both preserved across modules.
+
+-- ═══════════════════════════════════════════════════════════════
+-- Module 7 — Orders (sealed Phase A+B 2026-05-23)
+-- Detailed DDL: modules/Module 7 - Orders/docs/db-schema.sql
+-- ═══════════════════════════════════════════════════════════════
+
+-- New enums (9): order_status, sub_order_state, sub_order_kind,
+--   sub_order_location, item_type, repair_mode, repair_origin,
+--   task_status, discount_type.
+
+-- New tables (4): orders (17 cols), sub_orders (45 cols Pattern §5.1
+--   multi-state flags), sub_order_items (ON DELETE CASCADE from sub_orders),
+--   order_general_discounts. All RLS canonical 2-policy.
+-- Tenant-scoped UNIQUE: (order_number, tenant_id) WHERE not NULL;
+--   (order_id, letter) including soft-deleted (letter immutability).
+
+-- Views (7, security_invoker=on): v_order_customer_summary, v_order_full,
+--   v_lab_queue, v_open_reservations, v_open_tasks, v_open_repairs,
+--   v_ready_for_pickup.
+
+-- RPCs (6 + 1 trigger fn, all SECURITY DEFINER + Block A):
+--   create_order, add_sub_order, add_sub_order_item, transition_sub_order_state,
+--   cancel_sub_order, apply_general_discount + recompute_order_status_fn.
+--   REVOKE anon/PUBLIC + GRANT auth+service.
+
+-- Trigger: trg_recompute_order_status AFTER INSERT/UPDATE OF state, is_deleted
+--   ON sub_orders → orders.status (Pattern P21 — parent-status aggregation).
+
+-- Re-uses M5 allocate_tenant_number(_, 'order') + M1 decrement/increment_inventory direct.
+
+-- ═══════════════════════════════════════════════════════════════
+-- Module 8 — Payments (sealed Phase A+B 2026-05-23)
+-- Detailed DDL: modules/Module 8 - Payments/docs/db-schema.sql
+-- ═══════════════════════════════════════════════════════════════
+
+-- New enums (4): payment_status (10-state), check_bounce_reason,
+--   payment_channel_status, payment_event_kind.
+
+-- Extension (additive): payment_methods (M1-era stub) +7 cols incl.
+--   requires_pos, requires_external_receipt, sort_order, tenant_default,
+--   name_ru, icon, updated_at. 4 demo rows preserved + backfilled.
+--   Seeded 2 new methods per tenant (bit + salary_deduction).
+
+-- New tables (5):
+--   * payments (28 cols, state-machine, check-specific fields)
+--   * payment_channels (per-tenant adapter config)
+--   * payment_events_queue (Pattern P22 durable event queue)
+--   * Global: payment_capabilities (12 seed rows, service-write/public-read)
+--   * Global: payment_adapters (3 manifest rows — Mock active, Gama+Z Credit
+--     inactive with requires_nda=true; SKELETON ONLY, no integration code).
+-- Per-tenant tables: RLS canonical 2-policy. Global tables: service_bypass +
+-- public_read.
+-- Tenant-scoped UNIQUE: (payment_number, tenant_id) WHERE not NULL.
+
+-- Views (5, security_invoker=on): v_order_payment_summary,
+--   v_customer_payments_history, v_payments_for_reports,
+--   v_salary_deduction_pending, v_returned_checks_pending.
+
+-- RPCs (5, all SECURITY DEFINER + Block A): record_payment, mark_check_deposited,
+--   mark_check_cleared, mark_check_returned, mark_salary_deduction_processed.
+
+-- Trigger fns (2): emit_first_payment_event_fn (AFTER INSERT ON payments —
+--   emits first_payment when count for order = 1), emit_check_returned_event_fn
+--   (AFTER UPDATE OF status — emits on in_bank→returned).
+-- Triggers attached: trg_emit_first_payment_event, trg_emit_check_returned_event.
+
+-- M11 mutation contract: mark_salary_deduction_processed is the sanctioned
+-- cross-module RPC into M8.
+
+-- Re-uses M5 allocate_tenant_number(_, 'payment') + tenant_number_counters.
+
+-- Adapter integration code (IPaymentProvider class, LinetAdapter, GamaAdapter,
+-- ZCreditAdapter) OUT OF SCOPE. Phase C SPEC with NDA + sandbox + Daniel-in-loop.
+
+-- ═══════════════════════════════════════════════════════════════
+-- NIGHT_RUN 2026-05-23 — 3 tracks
+-- ═══════════════════════════════════════════════════════════════
+--
+-- Track 1 (Module 1.5 — M5_M8_CROSS_CONTRACT_FIXES):
+--   11 migrations additive: lifecycle trigger attach (compute_lifecycle_stage_on_order
+--   on payments WHEN paid+amount≥1), sub_orders.rx_snapshot_jsonb column,
+--   add_sub_order snapshot population, emit_first_payment_event_fn WHEN gate +
+--   exception-trap dedup, mark_check_returned race-safe predicate, partial
+--   uniques on payment_events_queue (order_id WHERE first_payment, payment_id
+--   WHERE check_returned), 3 FK indexes on payment_events_queue (tenant_id,
+--   order_id, customer_id), 2 CHECK constraints (payments.amount>0,
+--   sub_order_items.quantity>0), 4 missing FK indexes (eye_exams.branch_id,
+--   prescriptions_glasses.health_fund_id, prescriptions_contacts.health_fund_id,
+--   sub_orders.repair_origin_order_id). Smoke 7/7 PASS.
+--
+-- Track 2 (Module 5 — M5_LEADS_MIGRATION):
+--   ALTER TYPE customer_lifecycle_stage ADD VALUE 'lead'.
+--   ALTER customers ADD COLUMN source_crm_lead_id uuid REFERENCES crm_leads(id)
+--     + partial UNIQUE (source_crm_lead_id, tenant_id) WHERE NOT NULL.
+--   New RPC migrate_crm_leads_to_customers(p_tenant_id) — service_role-only,
+--   idempotent, phone-dedup LINK-or-INSERT.
+--   Demo 4 active leads + Prizma 1,296 active leads migrated. crm_leads UNCHANGED.
+--
+-- Track 3 (Module 9 — M9_SCHEMA):
+--   12 migrations: 8 enums (lab_job_status, lab_flow, shipping_box_direction,
+--   shipping_box_type, shipping_box_status, quality_status, compensation_status,
+--   lab_event_kind), 10 new tables (lab_jobs + lab_categories + lab_compensation_tiers
+--   + lab_notes + shipping_boxes + shipping_box_items + lab_damage_reasons
+--   + lab_couriers + lab_supplier_thresholds + lab_events_queue with Pattern P22
+--   day-1 idempotency: 3 partial-unique indexes on compensation_threshold per
+--   lab_job + compensation_approved per lab_job + box_overdue per shipping_box).
+--   9 RPCs + 1 helper fn (compute_lab_clock_color_fn) + 2 views (v_m9_status_log
+--   over activity_log per Iron Rule 21 + v_lab_queue_full).
+--   Seeds: 14 lab_categories + 10 lab_damage_reasons + 2 lab_couriers across
+--   both tenants. Smoke 10/10 PASS. 0 Prizma row writes on data tables.
+
+-- ═══════════════════════════════════════════════════════════════
 -- End of GLOBAL_SCHEMA.sql
 -- ═══════════════════════════════════════════════════════════════

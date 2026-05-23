@@ -342,6 +342,173 @@ preamble checklist, pending Step 9 rewrite).
 
 ---
 
+## Module 5 — Customers (Phase A+B sealed 2026-05-22)
+
+**Tables owned:** customers (extended legacy), households, health_funds, tenant_languages, customer_notes, customer_documents, tenant_settings, tenant_number_counters. Also extends `tenants` (+tenant_code) + `tenant_location` (+deactivated_at).
+
+**Cross-module surfaces:**
+- 7 customer Views: `v_customer_for_exam`, `_for_order`, `_for_payment`, `_full`, `_for_messaging`, `_for_loyalty`, `_for_appointment`. All `security_invoker=on`.
+- 5 customer RPCs: `create_customer`, `merge_customers`, `assign_to_household`, `delete_last_unused_customer` (Iron Rule 32), `update_customer_display_preferences`.
+- 1 shared infrastructure RPC: `allocate_tenant_number(p_tenant_id, p_entity_kind)` — atomic per-tenant per-entity-kind sequence. Used by M5 ('customer'), M6 ('prescription'), future modules.
+- 2 deferred trigger functions: `compute_lifecycle_stage_on_order` (built, not wired — M7 attaches), `compute_lifecycle_dormant_sweep` (stub, not scheduled).
+
+**Iron Rule 32 contract:** `delete_last_unused_customer` enforces the sequential-number cancellation rule. Customer can only be hard-deleted if customer_number=MAX(customer_number) for tenant AND zero incoming FKs. Counter decremented atomically.
+
+**Customer Number composite display:** `tenant_code + branch_code (=tenant_location.short_code) + customer_number(5-zero-padded)`. Tenant_code seed: prizma='01', demo='02'.
+
+**SECURITY-FINDING #1 partial update (2026-05-22):** Original 2026-04 finding listed customers, prescriptions, sales, work_orders as having `anon_all_*` policies + missing tenant_id. As of 2026-05-22 probe: all 4 tables now have the canonical 2-policy (`service_bypass` + `tenant_isolation` JWT-claim); no anon_all leftover policies. tenant_id columns exist on all 4. The finding can be re-scoped or closed in the next SECURITY_HOTFIX sweep. M5_SCHEMA SPEC (folder `modules/Module 5 - Customers/docs/specs/M5_SCHEMA/`) confirmed this state at chain start; the customers extension preserved canonical RLS throughout.
+
+### Module 5 — Customer Card UI (Phase D sealed 2026-05-23)
+
+**Entrypoint:** `customers.html` at repo root (registered in CLAUDE.md §0.5 + `scripts/checks/root-allowlist.json`). URL pattern: `customers.html?t=<tenant_slug>&customer_id=<uuid>`. Bare entry renders empty-state pointing at Phase E.
+
+**Page JS (8 files under `modules/customers/`):**
+- `customer-card.js` — page boot + state + tab orchestration. Exposes `window.M5Card = { state, trace, activateTab, setEditMode, refreshCustomer, rerenderActiveTab }` + initializes `window.__cardTrace` (Iron Rule 34 runtime trace surface for Chrome MCP closure evidence).
+- `customer-card-header.js` — header rendering, wired badges (Inactive ↔ lifecycle_stage='dormant', Locked ↔ is_deleted), edit-mode toggle.
+- `customer-card-coming-soon.js` — **single source of truth for deferred-feature UX** per D-BADGES decision. ONE `showComingSoon(featureId)` + ONE `COMING_SOON_LABEL` constant + ONE `COMING_SOON_REGISTRY` map. Iron Rule 21 anchor. `bindComingSoon(el, featureId)` is the discipline helper — never write a per-feature handler.
+- `customer-card-tab-details.js` — Tab 1. col-3 + col-2 field blocks + medical sub-tabs (Medical Q / Diagnostics) + queue block (blurred) + bottom flags. Edit-mode header toggle → per-field 500ms-debounced auto-save via DB.update('customers', { id: customer_id }, patch).
+- `customer-card-tab-vision.js` — Tab 2 stub (D-T2). Zero DB calls. Single click → `showComingSoon('vision_function')`. Unblocked when M6 ships `v_customer_vision_function_history`.
+- `customer-card-tab-prescriptions.js` — Tab 3. M6-owned `v_customer_prescriptions_summary` (read) + `create_prescription_draft(p_tenant_id, customer_id, kind)` RPC.
+- `customer-card-tab-orders.js` — Tab 4. Reads `orders` (+`sub_orders` count) for the customer; all CTAs route to `showComingSoon('orders_m7_ui')`.
+- `customer-card-tab-docs.js` — Tab 5. `customer_documents` list + filter + drag/drop upload to the new `customer-docs` storage bucket. NO delete + NO scan (D-T5).
+
+**Storage:** new private bucket `customer-docs` with 4 tenant-gated RLS policies on `storage.objects` (`auth.jwt() ->> 'tenant_id' = (storage.foldername(name))[1]`). Path convention: `customer-docs/{tenant_id}/{customer_id}/{document_id}.{ext}`.
+
+**Iron Rule 34 closure surface:** `window.__cardTrace` is an array populated by every interaction handler with `{event, t, ...payload}` entries. Used by Chrome MCP closure evidence (T3 edit-mode trace, T7 create_prescription_draft trace, T9 storage upload trace).
+
+**Iron Rule 21 discipline anchor:** every blurred / deferred UI element uses the same `showComingSoon` handler + the same `COMING_SOON_LABEL` string + a registered entry in `COMING_SOON_REGISTRY` documenting the future module that will light it up. No scattered placeholder strings anywhere on the card.
+
+**Scope OUT (Phase E / follow-ups):** ~~customer LIST view, create-mode~~ (✅ shipped Phase E 2026-05-23), full Tab 2 body (M6 follow-up), Tab 5 delete + scan, badge data wiring (VIP/חבר-מועדון/Subscription/Queue), Tab 4 M7 UI, `customer_documents` column expansion (size_bytes/mime_type/description).
+
+### Module 5 — Customer List + Create-Mode UI (Phase E sealed 2026-05-23)
+
+**Entrypoint:** `customers.html` (existing — reused from Phase D). URL routing: `?customer_id=<uuid>` → card mode (Phase D); bare `?t=<slug>` → list mode (Phase E).
+
+**Page JS (4 files under `modules/customers/`):**
+- `customer-list.js` (271L) — list-mode boot + state + parallel fetch (`v_customer_for_exam` + `v_customer_full` lifecycle/phone join + `tenant_location`) + row render + search debounce 400ms + pill filter + row-click → card.
+- `customer-list-sidebar.js` (91L) — Sketch 2 sidebar: 3 groups (quick-actions / customers / module-links) + tenant_location footer.
+- `customer-list-filters.js` (104L) — `normalizePhoneQuery(q)` (strip non-digits + leading 0 for E.164 suffix match) + `CUSTOMER_LIST_PILLS` registry (10 pills: 3 wired / 7 coming-soon) + `applyListSearch` + `applyListPillFilter`.
+- `customer-create.js` (162L) — create-modal form + `DB.rpc('create_customer', {p_tenant_id, p_payload})` + dedup-hit UX (created=false → existing-customer surface with "פתח כרטיס" button).
+
+**Wired vs blurred:** 3 wired sidebar customer filters (all/leads-as-active/leads) + 3 wired top filter pills (all/active/leads) + everything else routes through `showComingSoon(featureId)`. 11 new registry keys added to the existing `COMING_SOON_REGISTRY` (additive only).
+
+**Dedup contract on create:** `create_customer` RPC returns `{ customer_id, customer_number, created: bool, reason: 'new'|'id_number_exists'|'phone_exists' }`. The UI inspects `created`: true → Toast + 600ms redirect to new card; false → existing-customer surface (no silent duplicate). Submit-time phone normalization (`0XXXXXXXXX → +972XXXXXXXXX`) so the RPC's phone-exists branch matches stored E.164.
+
+**Phone-search gotcha resolved:** demo (and Prizma) phones stored as +972 E.164. The `normalizePhoneQuery` helper enables natural search by local format (`050-3348349` → suffix `503348349` ILIKE).
+
+## Module 6 — Prescriptions / Eye Exams (Phase A+B sealed 2026-05-22)
+
+**Tables owned:** eye_exams, prescriptions_glasses + child eyes (Pattern 11), prescriptions_contacts + child eyes (Pattern 11), prescription_types (config P19), lens_manufacturers (config P19), prescription_recall_axes.
+
+**Cross-module surfaces:**
+- 9 views: `v_exam_for_customer`, `v_exam_for_doctor`, `v_prescription_glasses_for_order`, `v_prescription_contacts_for_order`, `v_recall_due` (window-fn 1-per-prescription), `v_prescription_history_for_customer` (UNION), **`v_customer_prescriptions_summary`** (cross-contract — M6 owns, M5 customer card consumes), `v_prescription_full_for_editor`, `v_prescriptions_list_for_customer` (UNION).
+- 7 RPCs: `create_exam`, **`create_prescription_draft`** (M5↔M6 entry-point), `commit_prescription` (atomic + prescription_number via shared `allocate_tenant_number`), `cancel_draft_prescription` (Iron Rule 32 — counter UNCHANGED), `supersede_prescription`, `compute_recall_due_dates` (multi-axis), `clone_prescription`.
+
+**Patterns implemented:**
+- Pattern 9 (state-machine via enum + status_changed_at/by audit).
+- Pattern 10 (Fact-vs-Rule): M6 emits `v_recall_due` (fact); M12 future will own `recall_rules` (rule).
+- Pattern 11 (two-rows-for-symmetric-pair): R/L eyes in child tables with UNIQUE(prescription_id, eye).
+
+**Re-uses M5 infrastructure:** `allocate_tenant_number(p_tenant_id, 'prescription')` — same `tenant_number_counters` table, different entity_kind. Iron Rule 11 + 32 both preserved across modules without duplicating the counter.
+
+**Discipline notes (M5 + M6):**
+- All M5 + M6 RPCs use the canonical Block A header from `.claude/skills/opticup-strategic/references/JWT_VALIDATION_HEADER.sql`. No hand-rolled JWT checks.
+- All RPCs: REVOKE EXECUTE FROM anon, PUBLIC + GRANT EXECUTE TO authenticated, service_role.
+- Smoke (M5: 9/9; M6: 9/9; cross-contract: 5/5) all PASS on demo. Advisors clean (0 new HIGH/ERROR; WARN matches project pattern `authenticated_security_definer_function_executable`).
+- No Prizma row writes during build+smoke. DDL applied to both tenants; data only on demo.
+
+---
+
+## Module 7 — Orders (Phase A+B sealed 2026-05-23)
+
+**Tables owned:** orders (17 cols), sub_orders (45 cols Pattern §5.1 multi-state flags), sub_order_items, order_general_discounts.
+
+**Cross-module surfaces:**
+- 7 customer-data views (v_order_customer_summary, v_order_full, v_lab_queue, v_open_reservations, v_open_tasks, v_open_repairs, v_ready_for_pickup) all `security_invoker=on`.
+- 6 RPCs + 1 trigger fn: `create_order`, `add_sub_order` (letter immutability), `add_sub_order_item`, `transition_sub_order_state` (decrement/increment inventory atomic), `cancel_sub_order` (inventory restore), `apply_general_discount` + `recompute_order_status_fn`.
+- 1 trigger: `trg_recompute_order_status` — Pattern P21 parent-status aggregation (orders.status auto from child sub-order states).
+
+**Re-uses:** M5 `allocate_tenant_number(p_tenant_id, 'order')` + M1 `decrement_inventory`/`increment_inventory` (called direct, no wrappers per Brief §4.3).
+
+**New pattern introduced — P21 (Parent-Status Aggregation Trigger):** When a parent's status is a deterministic function of child rows' states, build trigger fn + AFTER INSERT/UPDATE on child. M7 first instance; future M8/M11 may inherit.
+
+## Module 8 — Payments (Phase A+B sealed 2026-05-23)
+
+**Tables owned:**
+- Per-tenant: `payments` (28 cols, state-machine), `payment_channels` (per-tenant adapter config), `payment_events_queue` (Pattern P22), `payment_methods` (EXTENDED from M1-era stub).
+- Global: `payment_capabilities` (12 capability slugs, service-write/public-read), `payment_adapters` (3 manifest rows — Mock/Gama/Z Credit, **SKELETON ONLY** — no integration code).
+
+**Cross-module surfaces:**
+- 5 views: `v_order_payment_summary` (M7 reads), `v_customer_payments_history` (M5), `v_payments_for_reports` (M11), `v_salary_deduction_pending` (M11+admin), `v_returned_checks_pending` (admin).
+- 5 RPCs: `record_payment`, `mark_check_deposited`, `mark_check_cleared`, `mark_check_returned`, `mark_salary_deduction_processed`. All Block A + REVOKE anon + GRANT auth/service_role.
+- 2 trigger fns: `emit_first_payment_event_fn`, `emit_check_returned_event_fn` — emit into payment_events_queue.
+- 2 triggers attached: `trg_emit_first_payment_event` (AFTER INSERT ON payments), `trg_emit_check_returned_event` (AFTER UPDATE OF status ON payments).
+
+**M11 mutation contract:** `mark_salary_deduction_processed` is the sanctioned cross-module RPC for M11's monthly salary report — only mutating call into M8 beyond reads.
+
+**M8 NEVER calls M7 directly.** Events emitted to `payment_events_queue`; M7 listener (Phase E UI) + M4 listener (deferred) drain.
+
+**New pattern introduced — P22 (Durable Event Queue):** For async cross-module events, build `{module}_events_queue` + `emit_*` trigger fns + AFTER INSERT/UPDATE triggers. Mirrors M1 K3 + M4 trigger patterns. M8 first formal codification; reusable for M9/M12/M13.
+
+**Adapter manifest skeleton:** `payment_adapters` has 3 rows (mock active, gama_pay + z_credit inactive with `requires_nda=true`) describing capabilities + credentials schema. ZERO integration code shipped — IPaymentProvider class + LinetAdapter/GamaAdapter/ZCreditAdapter all Phase C (separate SPEC with Daniel-in-loop + NDA + sandbox).
+
+**Discipline notes (M7 + M8):**
+- All M7+M8 RPCs use canonical Block A header. No hand-rolled JWT checks.
+- All RPCs: REVOKE EXECUTE FROM anon, PUBLIC + GRANT EXECUTE TO authenticated, service_role; trigger fns granted only to service_role.
+- Smoke (M7: 9/9; M8: 8/8; cross-contract M5→M7→M8: 6/6) PASS on demo. Advisors clean.
+- No Prizma row writes during build+smoke. DDL applied to both tenants; data only on demo. Config seeds (payment_capabilities + payment_adapters + payment_channels + payment_methods extends) applied to both tenants per Brief §3.
+
+---
+
+---
+
+## 2026-05-23 NIGHT_RUN chain — 3 tracks closed 🟢
+
+### Track 1 — M5_M8_CROSS_CONTRACT_FIXES (Module 1.5)
+
+8 findings closed across M5/M6/M7/M8:
+- **F-A-1 lifecycle trigger wired** — `trg_advance_lifecycle_on_paid_payment` on payments AFTER INSERT OR UPDATE OF status WHEN paid+amount≥1 → calls `compute_lifecycle_stage_on_order()` → advances `customers.lifecycle_stage` prospect→active. Closes M5 §1.1 + §8 #50 contract.
+- **F-A-2 invariant documented** in M7 db-schema.sql header: orders.status quote→active flows ONLY via Pattern P21 (recompute_order_status_fn aggregator over sub_orders); first payment alone does NOT advance orders.
+- **F-B-1 prescription value snapshot** — `sub_orders.rx_snapshot_jsonb` populated by `add_sub_order` at link-time. Order history immune to source M6 mutations.
+- **F-B-2 first-payment gate** — trigger WHEN `NEW.status='paid' AND NEW.amount >= 1`.
+- **F-D1+F-D2 partial-unique idempotency on payment_events_queue** — `(order_id) WHERE first_payment` + `(payment_id) WHERE check_returned`. Trigger fns wrap INSERT in BEGIN/EXCEPTION WHEN unique_violation THEN NULL/END. Pattern P22 hardening codified.
+- **F-C3 mark_check_returned race-safe** — UPDATE adds `WHERE status='in_bank'` predicate; raises 40001 on row_count=0.
+- **F-F1 payment_events_queue indexes** — tenant_id + order_id + customer_id.
+- **F-C2 CHECK constraints** — payments.amount > 0 + sub_order_items.quantity > 0.
+- **F-F2 4 unindexed FKs** — eye_exams.branch_id, prx_glasses/contacts.health_fund_id, sub_orders.repair_origin_order_id.
+
+Smoke 7/7 PASS. Pattern P22 now codified for inheritance (M9 inherited from day-1).
+
+### Track 2 — M5_LEADS_MIGRATION (Module 5)
+
+`crm_leads → customers` additive seam:
+- New enum value `customer_lifecycle_stage='lead'`.
+- New column `customers.source_crm_lead_id uuid REFERENCES crm_leads(id)` + partial UNIQUE.
+- New RPC `migrate_crm_leads_to_customers(p_tenant_id)` — service_role-only, idempotent, phone-dedup.
+- Demo: 4 active leads → 4 lead-lifecycle customers (after T2-S2 link test).
+- **Prizma: 1,296 active leads → 1,296 lead-lifecycle customers.**
+- crm_leads UNCHANGED (28 demo / 1354 prizma totals). 9 crm_leads FK tables intact. M4 production keeps writing crm_leads.
+- Future M4-cutover SPEC uses `source_crm_lead_id` as seam to re-point the 9 FK tables.
+
+### Track 3 — M9_SCHEMA (Module 9)
+
+10 new tables + 8 enums + 9 RPCs + 1 helper fn + 2 views:
+- `lab_jobs` (state-machine, 1:1 sub_order), `lab_categories` (config P19), `lab_compensation_tiers`, `lab_notes`, `shipping_boxes` (unified outbound/inbound 9 box_types), `shipping_box_items`, `lab_damage_reasons` (config), `lab_couriers` (config), `lab_supplier_thresholds`, `lab_events_queue` (Pattern P22 with day-1 idempotency — 3 partial-unique indexes inherited from Track 1).
+- 9 RPCs all SECURITY DEFINER + Block A + REVOKE anon + GRANT authenticated+service_role. `compute_lab_clock_color_fn` service_role-only.
+- 2 views: `v_m9_status_log` (over activity_log per Iron Rule 21) + `v_lab_queue_full` (M9-owned KDS surface).
+- Smoke 10/10 (8 functional + 2 cross-contract). 0 Prizma row writes on data tables; config seeds (14 lab_categories + 10 lab_damage_reasons + 2 lab_couriers) applied to both tenants per Brief.
+
+**Deferred (separate SPECs):** M1 lens-extension blocker, M7 sub_orders.lab_flow column, M12 templates delivery, M13 loyalty_grant_credit_compensation, production pg_cron schedule.
+
+### Pattern catalog (current)
+
+- **P19** — config-table-per-tenant (vs enum)
+- **P21** — parent-status aggregation trigger (M7 first instance — `recompute_order_status_fn`)
+- **P22** — durable event queue with day-1 partial-unique idempotency (M8 first; codified Track 1; inherited M9)
+- **Pattern: documented-invariant** (F-A-2) — when multiple mechanisms could implement a transition, pick one and document the invariant in the owning module's db-schema header
+
+---
+
 *End of GLOBAL_MAP.md. Detailed function-level contracts live in per-module
 MODULE_MAP.md files. The prior 919-line version (with function-level detail
 for all ERP code) is backed up under

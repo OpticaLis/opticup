@@ -18,6 +18,7 @@
 - `MASTER_ROADMAP.md` — cross-module roadmap + decisions log
 - `OPEN_TASKS.md` — current open work across all roles (read FIRST in every session — answers "what's open?" / "מה פתוח?")
 - `TECH_DEBT.md` — living debt register
+- `PATH_TO_LIVE.md` — checkbox roadmap of remaining work to reach live (module-by-module screen + cutover list)
 - `docs/` — canonical reference files (GLOBAL_MAP, GLOBAL_SCHEMA, FILE_STRUCTURE, CONVENTIONS, etc.)
 - `modules/` — per-module documentation + per-feature implementation (per the **One Home Per Module** rule, every module — Brief / SPECs / Code / Production — lives here regardless of life stage; established by `MODULES_HOME_UNIFICATION` SPEC, 2026-05-09)
 - `roles/` — operational role artifacts (Campaign Overseer, Site Overseer, etc.). Roles are NOT modules; each subfolder is one role with its own handoff + decisions log + learnings.
@@ -28,7 +29,7 @@
 
 **Category 3 — Application Entrypoints (required for GitHub Pages routing):**
 - `index.html` (mandatory at root)
-- 17 other ERP HTML pages (`admin.html`, `crm.html`, `inventory.html`, `settings.html`, `shipments.html`, `employees.html`, `error.html`, `landing.html`, `r.html`, `storefront-*.html`, `suppliers-debt.html`)
+- 18 other ERP HTML pages (`admin.html`, `crm.html`, `customers.html`, `inventory.html`, `settings.html`, `shipments.html`, `employees.html`, `error.html`, `landing.html`, `r.html`, `storefront-*.html`, `suppliers-debt.html`)
 
 **Anything not in Categories 1-3 → must move to `_archive/<subfolder>/`.** This includes legacy onboarding docs, old prompts, completed phase summaries, single-session handoffs, project-genesis snapshots.
 
@@ -100,7 +101,7 @@ modifications; desktop saw 6.)
 **Why this is the rule:** on 2026-04-24 a user-provided prompt instructed Claude Code to run the sync gate including `git clean -fd`. There were 2 untracked real-work paths on disk (new message-content files in `campaigns/supersale/MESSAGES UPDATES/` + a FOREMAN_REVIEW.md from the just-closed SPEC). `git clean -fd` deleted both. The fix is not "better prompts" — the fix is that the protocol itself must survey untracked paths before destroying them, regardless of what a prompt says. User prompts cannot override survey-first.
 
 Rationale for Phase 2 existing at all: on 2026-04-24 (earlier) a fresh Cowork session opened and saw 1,092 phantom modifications + REBASE_HEAD pointing at a commit 185 commits behind HEAD; the VM had been rotting from a week-old incomplete rebase. Silent sync prevents the Foreman from confabulating recovery SPECs for phantom problems. But the sync must preserve real untracked work.
-4. **Clean repo check:** run `git status`. After step 3a on a Cowork session the repo MUST be clean. On Claude Code (Windows/Mac), if there are uncommitted changes, deleted files, or untracked files that are NOT part of the current task:
+4. **Clean repo check (enforced by `scripts/checks/clean-repo-gate.mjs` at commit time — added 2026-05-23 per REPO_CLEANUP_MERGE_ENFORCEMENT SPEC after recurring 2,627-file pile incidents):** run `git status --porcelain | wc -l`. Report the count to the user. The pre-commit gate `clean-repo-gate.mjs` will HARD-FAIL any commit attempt when (a) untracked files ≥ 30 OR (b) any `.claude/skills/**` path is modified/untracked. Same regime as Iron Rule 31 — never bypass with `--no-verify`. After step 3a on a Cowork session the repo MUST be clean. On Claude Code (Windows/Mac), if there are uncommitted changes, deleted files, or untracked files that are NOT part of the current task:
    - Report them to the user with a one-line summary of each file/group.
    - Ask once: "I see pre-existing uncommitted changes in these files. Options: (a) stash them with `git stash` and restore after the task, (b) leave them alone and use selective `git add` by filename for this task, (c) they are intentional work-in-progress — just note them and continue with selective add. Which?"
    - Wait for the user's choice, then proceed. Do NOT ask about them again later in the session.
@@ -273,6 +274,8 @@ SQL-only verification is necessary but not sufficient. Without all three artifac
 - **Session-start reminder:** Pipeline skills (`opticup-executor`, `opticup-strategic`, `opticup-localhost-tester`) reference this rule in their closure checklists.
 
 **Rationale:** Established by `M4_DUAL_PATH_CLEAN_FIX_2026_05_19` (2026-05-19) after the prior morning's `M4_DUAL_PATH_DEPRECATION_PHASE_1` (commit `8d9a365`) was merged to main without Chrome MCP verification. Removed JS that opened the confirmation modal; SQL probes saw runs being created but never opened a browser to see the modal flash-disappear. Daniel observed the regression live in production. Same root cause would have been caught in 2 minutes if Chrome MCP had been mandatory at closure.
+
+**Strengthened 2026-05-23 (VISUAL_FIDELITY_GATE SPEC after M5 2nd-strike paperwork-PASS):** a bare Chrome MCP screenshot is NOT sufficient closure evidence. Closure now ALSO requires the `opticup-localhost-tester` Visual-Fidelity Gate output: (a) first-load styled-check (CSS variables resolve + page is rendered styled, not raw text) MUST pass; (b) a region-by-region mockup-vs-live comparison TABLE — one row per region (header / each block / each field row / badges / buttons / colors+tokens / spacing / RTL), columns: mockup-element → live-state → match/mismatch → severity → classification (INTENTIONAL / DRIFT / SCHEMA-BLOCKED / FEATURE-BLOCKED); (c) the table MUST be embedded (or linked + paste-rendered) in BOTH `TEST_REPORT.md` AND `FOREMAN_REVIEW.md`. A SPEC whose FOREMAN_REVIEW lacks the table cannot be 🟢 — Foreman re-opens to REOPEN status. "Paperwork PASS" (a screenshot without the table + verdict) is explicitly INVALID. Reference: `.claude/skills/opticup-localhost-tester/SKILL.md` "Visual-Fidelity Gate (MANDATORY BLOCKING)" section.
 
 ### Iron Rule 35 — Campaign Overseer authority boundary
 

@@ -197,6 +197,88 @@ Three-layer architecture: Global Catalog (platform-owned, `owner_tenant_id` NULL
 
 ---
 
+## Module 5 — Customers (Phase A+B sealed 2026-05-22)
+
+| T constant | Table | Key columns | Notes |
+|---|---|---|---|
+| `T.CUSTOMERS` | `customers` | id (PK), tenant_id, customer_number, first_name, last_name, full_name, id_number, phone, email, lifecycle_stage, household_id, health_fund_id, home_branch_id (FK→tenant_location), language_code, 4 consent booleans, source, utm_*×6, is_deleted, deleted_at | Extended legacy stub. 42 cols. Canonical RLS. Tenant-scoped UNIQUE on customer_number/phone/id_number. |
+| `T.HOUSEHOLDS` | `households` | id, tenant_id, primary_customer_id (FK→customers), status, is_deleted | Skeleton for M13 family pooling. |
+| `T.HEALTH_FUNDS` | `health_funds` | id, tenant_id, name, code, is_active, sort_order | Config per-tenant (P19). UNIQUE(code, tenant_id). |
+| `T.TENANT_LANGUAGES` | `tenant_languages` | id, tenant_id, language_code (ISO), is_active, is_default, sort_order | Config per-tenant (P19). One-default-per-tenant partial UNIQUE. |
+| `T.CUSTOMER_NOTES` | `customer_notes` | id, tenant_id, customer_id, note_type (business/medical_q/diagnostics), content, created_by | Notes — NEVER exposed via v_customer_for_messaging. |
+| `T.CUSTOMER_DOCUMENTS` | `customer_documents` | id, tenant_id, customer_id, category, file_path (Storage), original_name, uploaded_by | Storage path: {tenant_id}/{customer_id}/{document_id}.{ext}. |
+| `T.TENANT_SETTINGS` | `tenant_settings` | id, tenant_id, customer_list_preferences (jsonb) | UNIQUE(tenant_id). |
+| `T.TENANT_NUMBER_COUNTERS` | `tenant_number_counters` | (tenant_id, entity_kind) PK, last_value, updated_at | Shared infra: per-tenant per-entity atomic sequence storage. M5 + M6 + future modules. |
+
+Module 5 also extends `tenants` (+tenant_code) and `tenant_location` (+deactivated_at).
+
+## Module 6 — Prescriptions / Eye Exams (Phase A+B sealed 2026-05-22)
+
+| T constant | Table | Key columns | Notes |
+|---|---|---|---|
+| `T.EYE_EXAMS` | `eye_exams` | id, tenant_id, customer_id (FK), exam_date, optometrist_id, status (enum), outcome, exam_type, reason, branch_id (FK→tenant_location) | State machine Pattern 9. |
+| `T.PRESCRIPTIONS_GLASSES` | `prescriptions_glasses` | id, tenant_id, customer_id (FK), exam_id, prescription_type_id (FK), prescription_number, status (draft/committed/superseded/expired/cancelled), source, health_fund_id, valid_from, expires_at, optometrist_id, refraction_method, recommended_lens_type, recommended_lens_material, committed_at | State machine. Tenant-scoped UNIQUE on prescription_number. |
+| `T.PRESCRIPTION_GLASSES_EYES` | `prescription_glasses_eyes` | id, prescription_id (FK ON DELETE CASCADE), tenant_id, eye (R/L), sphere, cyl, axis, add_power, prism, prism_base, va_*, pd_*, k_*, axial_length_mm, read_add/bif_add/mul_add/int_add | Pattern 11. UNIQUE(prescription_id, eye). |
+| `T.PRESCRIPTIONS_CONTACTS` | `prescriptions_contacts` | id, tenant_id, customer_id, exam_id, prescription_type_id, prescription_number, status, source, cl_lens_type, cl_replacement_period, cl_wear_schedule, manufacturer_id (FK→lens_manufacturers), model_name, cl_material, water_content_pct, dk_l_value, cl_tint, health_fund_id, committed_at | CL-specific fields. State machine. |
+| `T.PRESCRIPTION_CONTACTS_EYES` | `prescription_contacts_eyes` | id, prescription_id (FK CASCADE), tenant_id, eye, power (not sphere), cyl, axis, add_power, bc_mm, dia_mm, va_*, k_*, over_refraction_power, va_over_refraction, lens_catalog_id (FK to M1 deferred) | Pattern 11. UNIQUE(prescription_id, eye). |
+| `T.PRESCRIPTION_TYPES` | `prescription_types` | id, tenant_id, code, name_he, name_en, applies_to (glasses/contacts/both), triggers_recall, allows_order, is_health_fund_related, is_default, is_active, sort_order | Config per-tenant + capability flags (P19). UNIQUE(code, tenant_id). Seed: 8 default types per tenant. |
+| `T.LENS_MANUFACTURERS` | `lens_manufacturers` | id, tenant_id, code, name, country, is_active, sort_order | Config per-tenant (P19). UNIQUE(code, tenant_id). Seed: 5 default. |
+| `T.PRESCRIPTION_RECALL_AXES` | `prescription_recall_axes` | id, tenant_id, prescription_id, prescription_kind (glasses/contacts), axis_kind (next_exam/health_fund_validity/prescription_validity/fit_check/glasses_delivery), due_at, is_enabled, triggered_at | Multi-axis recall storage. Partial index WHERE is_enabled AND triggered_at IS NULL. |
+
+## Module 7 — Orders (Phase A+B sealed 2026-05-23)
+
+| T constant | Table | Key columns | Notes |
+|---|---|---|---|
+| `T.ORDERS` | `orders` | id, tenant_id, customer_id (FK→customers), branch_id, order_number, status (enum), language, general_discount_amount, thanks_message_sent_at | order head; status aggregated from sub_orders by trigger |
+| `T.SUB_ORDERS` | `sub_orders` | id, tenant_id, order_id (FK→orders), letter (immutable), kind (enum 4), state (enum), is_repair, has_open_task, location, prescription_glasses_id (FK→M6), prescription_contacts_id (FK→M6), 8 flow-date+actor pairs, 5 repair fields, 7 task fields | Pattern §5.1 multi-state via flags. 45 cols total. |
+| `T.SUB_ORDER_ITEMS` | `sub_order_items` | id, tenant_id, sub_order_id (FK CASCADE), position, item_type, inventory_id (FK→M1.inventory), unit_price (snapshot), quantity, decrements_inventory | ON DELETE CASCADE from sub_orders |
+| `T.ORDER_GENERAL_DISCOUNTS` | `order_general_discounts` | id, tenant_id, order_id, discount_type, source_id, amount, pct, requires_pin_role, applied_at, applied_by | aggregated into orders.general_discount_amount |
+
+## Module 8 — Payments (Phase A+B sealed 2026-05-23)
+
+| T constant | Table | Scope | Key columns | Notes |
+|---|---|---|---|---|
+| `T.PAYMENTS` | `payments` | per-tenant | id, tenant_id, order_id (FK→M7), customer_id (FK→M5), payment_number, payment_method_id (FK), payment_channel_id (FK), amount, status (enum 10), external_receipt_number, check_* fields | state-machine; FK to orders ensures order existence |
+| `T.PAYMENT_METHODS` | `payment_methods` | per-tenant | id, tenant_id, code, name_he/en/ru, is_system, is_active, requires_pos, requires_external_receipt, icon, sort_order, tenant_default | EXTENDED additively from M1-era stub. Brief §2.2 |
+| `T.PAYMENT_CHANNELS` | `payment_channels` | per-tenant | id, tenant_id, adapter_name (FK→adapters), credentials_jsonb, is_default, fallback_channel_id, status (enum), enabled_capabilities_array, settlement_mode | per-tenant adapter config; credentials_jsonb unencrypted at Phase A |
+| `T.PAYMENT_CAPABILITIES` | `payment_capabilities` | **global** | id, code, name_he/en, category | service-write/public-read; 12 seed rows (Brief §2.4) |
+| `T.PAYMENT_ADAPTERS` | `payment_adapters` | **global** | id, name, display_name, version, auth_method, credentials_schema_jsonb, supported_capabilities_array, supported_settlement_modes_array, is_active, requires_nda | service-write/public-read; 3 manifest rows (SKELETON ONLY, no integration code) |
+| `T.PAYMENT_EVENTS_QUEUE` | `payment_events_queue` | per-tenant | id, tenant_id, payment_id, order_id, customer_id, event_kind (enum), event_payload jsonb, emitted_at, consumed_at, consumed_by | Pattern P22 durable event queue; M8 emits, M7+M4 listen |
+
+## Track 1 cross-contract additions (Module 1.5 — 2026-05-23)
+
+| Object | Type | Notes |
+|---|---|---|
+| `customers.lifecycle_stage` trigger source = `payments` | trigger attached | `trg_advance_lifecycle_on_paid_payment` WHEN paid+amount≥1 → advances prospect→active |
+| `sub_orders.rx_snapshot_jsonb` | column | populated by add_sub_order at link-time; immune to source M6 mutations |
+| `payment_events_queue` partial uniques | indexes | (order_id) WHERE first_payment + (payment_id) WHERE check_returned — Pattern P22 idempotency |
+| `payment_events_queue` FK indexes | indexes | tenant_id + order_id + customer_id |
+| `payments.amount > 0` + `sub_order_items.quantity > 0` | CHECK | defense-in-depth |
+| 4 unindexed FKs | indexes | eye_exams.branch_id, prx_glasses/contacts.health_fund_id, sub_orders.repair_origin_order_id |
+
+## Track 2 leads migration (Module 5 — 2026-05-23)
+
+| Object | Type | Notes |
+|---|---|---|
+| `customer_lifecycle_stage='lead'` | enum value | added to existing {prospect, active, dormant} |
+| `customers.source_crm_lead_id` | column | uuid REFERENCES crm_leads(id); partial UNIQUE (source_crm_lead_id, tenant_id); future M4-cutover seam |
+| `migrate_crm_leads_to_customers(p_tenant_id)` | RPC | service_role-only, idempotent, phone-dedup |
+
+## Module 9 — Lab/KDS (Phase A+B sealed 2026-05-23)
+
+| T constant | Table | Key columns | Notes |
+|---|---|---|---|
+| `T.LAB_JOBS` | `lab_jobs` | id, tenant_id, sub_order_id (UNIQUE), order_id, customer_id, category_id, lab_flow, status (state-machine), 5 flow-timestamp pairs, clock_paused_at/reason, compensation_status, re_do_count | 1:1 with sub_order |
+| `T.LAB_CATEGORIES` | `lab_categories` | id, tenant_id, slug, name_he/en/ru, default_lab_flow, 3 processing thresholds (yellow/red/compensation), 2 pickup thresholds (yellow/red) | config P19; seed 7 per tenant |
+| `T.LAB_COMPENSATION_TIERS` | `lab_compensation_tiers` | per-(category × tier) with compensation_amount_ils + compensation_type | future Settings SPEC plumbs per-tenant max_addition |
+| `T.LAB_NOTES` | `lab_notes` | per lab_job thread | — |
+| `T.SHIPPING_BOXES` | `shipping_boxes` | id, tenant_id, direction (outgoing/incoming), box_type (9 values), courier_id, courier_barcode, supplier_barcode | unified shipping infra; replaces M1 shipments |
+| `T.SHIPPING_BOX_ITEMS` | `shipping_box_items` | lab_job_id, quality_status, damage_reason_id, linked_outgoing/_incoming polymorphic refs | M:N support via linked_* |
+| `T.LAB_DAMAGE_REASONS` | `lab_damage_reasons` | config | 5 seed per tenant |
+| `T.LAB_COURIERS` | `lab_couriers` | config | 1 seed per tenant (Katz/כץ) |
+| `T.LAB_SUPPLIER_THRESHOLDS` | `lab_supplier_thresholds` | per-supplier expected_return_days | future Settings SPEC populates |
+| `T.LAB_EVENTS_QUEUE` | `lab_events_queue` | Pattern P22 + day-1 idempotency | 3 partial-unique indexes |
+
 ## Key Globals (from `js/shared.js`)
 
 - `sb` — Supabase client (NOT `supabase` — that's a reserved name)

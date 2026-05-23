@@ -1,0 +1,17 @@
+{
+  "url": "https://www.prizma-optic.co.il/ru/brands/",
+  "lang": "ru",
+  "path": "/brands/",
+  "label": "brands-index",
+  "http": 200,
+  "scores": {
+    "performance": 91,
+    "accessibility": 95,
+    "seo": 100,
+    "best-practices": 100
+  },
+  "axeViolationCount": 2,
+  "capturedAt": "2026-05-23T03:52:09.401Z",
+  "fetchTime": "2026-05-23T03:51:57.669Z",
+  "lighthouseVersion": "12.8.2"
+}

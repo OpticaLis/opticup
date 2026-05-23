@@ -2,8 +2,11 @@
 
 > **Note:** Sentinel re-generates the section above the LIGHTHOUSE-CRON marker each scan. The Lighthouse cron appends below the marker. Do not delete the marker line.
 
-**Last refresh:** **2026-05-19 ~07:35 UTC — scheduled hourly run; Missions 1 + 2 refreshed. Delta vs 2026-05-19 ~05:50 UTC 4-hour run: 0 NEW CRITICAL, 0 NEW HIGH, 1 NEW MEDIUM (M-NEW-39-5 — Hebrew-locale + ₪ cluster extends by 4 instances across `catalog-suppliers-col.js` line 149 + `lens-pos-list-detail.js` lines 19/45/67 + `lens-pos-list-stats.js` line 9 — same finding-class as M-NEW-33-3 / M-NEW-38-5), 0 NEW LOW. 0 RESOLVED.** 6 source files modified since prior Missions 1+2 scan (3× `modules/lens-catalog-admin/` + 2× `modules/lens-pos-list/` + 1× `supabase/functions/_shared/event-variables.ts`). Live RLS verification PASS: 0 public tables without RLS, 16 tables without tenant_id all legitimately platform-scope, exactly 5 `auth.uid()` policies all on intentionally platform-admin tables. All 3 active HIGH carries unchanged. Postgres ERROR-log cadence for `v_ai_content` back to baseline (3 fires in latest 6-min returned sample, down from peak two refreshes ago). Prior refreshes: 2026-05-19 ~05:50 UTC (Missions 3+4+5+8), 2026-05-19 ~04:09 UTC (Missions 6+7+9 daily), 2026-05-18 ~07:55 UTC (Missions 3+4+5+8), 2026-05-18 ~07:10 UTC (Missions 6+7+9), 2026-05-18 ~06:10 UTC (Missions 1+2 hourly).
-**Production status (this refresh):** 🟡 **WATCH — unchanged from prior 24h.** Customer-facing flows healthy: 0 customer reports; cron jobs 6/7/8/10 still firing every 60s on schedule; Supabase project `ACTIVE_HEALTHY`. Single ERROR-level `duplicate key value violates unique constraint "uq_crm_message_queue_idem"` seen in this run's log sample — this is the CRM-queue idempotency-key constraint firing as designed (replay protection), expected behavior, not a finding. The two recurring DB-side view permission errors (`v_ai_content` continuing at baseline rate, `v_content_translations` quiet this sample) continue exactly as the 4-hour-run record — still noise that hides real problems, still warrants Architect triage but no user-visible failure. **Active alerts:** **H-NEW-39-1** (M1 schema-doc drift compounded, from 4-hour run), **H-NEW-34-1** (`v_ai_content` anon-SELECT denied, 5th consecutive day); **H-NEW-36-1** (`v_content_translations` sibling, 4th consecutive day); **H-NEW-25-1** (`v_storefront_products.updated_at`, 7th silent cycle — schema mismatch persists). **Notable security-side carry:** `function_search_path_mutable` WARN count remained at 16 (was 47 two refreshes ago) — measurable hardening from this week's M1 Lens marathon `SET search_path='public'` clauses.
+**Last refresh:** **2026-05-23 ~07:20 UTC — scheduled 4-hour run; Missions 3 (SaaS Readiness) + 4 (Documentation Accuracy) + 5 (Technical Debt) + 8 (Cross-Module Integrity) refreshed.** Delta this 4-hour run: **0 NEW CRITICAL, 0 NEW HIGH, 0 NEW MEDIUM, 0 NEW LOW, 0 RESOLVED.** Focused sweep of the 24h window (7 commits; headline = M5 Customers + M6 Prescriptions Phase A+B schema foundation + `js/shared.js` + `fb-capi-dispatch` EF + 1 M4 migration). **Mission 3:** all 15 new M5+M6 tables SaaS-perfect (live: tenant_id NOT NULL + RLS + 2-policy + tenant-scoped UNIQUE × 15); `shared.js` ADDED config-driven `formatMoney()` and made `formatILS()` a delegating wrapper — net debt REDUCTION. **Mission 4:** M5+M6 §10 Integration Ceremony is exemplary (all 15 tables + RPCs propagated to global + per-module docs); the standing M4 doc-drift HIGH **H-NEW-41-1 re-verified — UNCHANGED, not growing** (M4 untouched this window; `crm_suppressions`/`m4_dispatch_lock`/`mv_crm_lead_event_history` still 0 hits in schema docs); M3 SESSION_CONTEXT now 12 days stale (carry, +1 day, MEDIUM). **Mission 5:** 0 NEW; `brands.js` 371 remains the lone over-cap HIGH carry (untouched). **Mission 8:** CLEAN — every M5/M6 RPC stays within own tables; cross-module surfaces are declared contracts. All findings verified against `git show HEAD:` + live Supabase (never the CRLF-phantom working tree). **All HIGH/MEDIUM alerts below are carried unchanged** — this run added and resolved none.
+
+**Prior refresh:** **2026-05-23 ~04:10 UTC — scheduled daily run; Missions 6 (Supabase Health) + 7 (Progress Tracking) + 9 (Executive Summary) refreshed.** Delta vs prior daily run: **1 NEW HIGH (H-NEW-23-1 — `_backup_supersale_pages_20260522` RLS-off + full anon/authenticated grants; the DB now has TWO RLS-disabled backup tables where yesterday there was one)**, 1 NEW MEDIUM (M-NEW-23-1 — `crm_suppressions` heavy seq-scan / missing lookup index: 181K seq-scans / 45M tuples read on 251 rows, hit on every message dispatch), 0 NEW CRITICAL, 0 NEW LOW. **Carries re-verified live:** H-NEW-45-1 (`_events_ops_backups` RLS off, row count grew 42→60 — still actively written), H-NEW-1-2 (`v_crm_event_stats` still SECURITY DEFINER), H-NEW-41-1 (M4 schema-doc drift — `crm_suppressions` still 0 hits in all schema docs), M-NEW-1-2 (`v_storefront_pages` SECURITY DEFINER). **Positive:** M5 (Customers) + M6 (Prescriptions) Phase A+B schema foundations landed with a correct §10 Integration Ceremony (global + per-module docs all merged). (Missions 1+2 hourly and 3+4+5+8 four-hour carries below are from prior runs, preserved for continuity.)
+**Production status (this refresh):** 🟢 **HEALTHY.** Project `tsxrrxzmdxaenlvocyit` (prizma-optic) `ACTIVE_HEALTHY`; all 29 Edge Functions ACTIVE; Postgres 24h logs clean (the only ERROR was the Sentinel's own probe using a wrong table name — no real application errors, no RLS-violation events); message pipeline quiet (20 sent / 1 rejected / 0 failed in 24h). **No finding here is a live runtime failure** — there is only ONE tenant (Prizma), so no cross-tenant data has actually leaked; the RLS-off backup tables + SECURITY DEFINER views break the *isolation guarantee* (a problem the moment a 2nd store is added) but cause no customer-facing error today. The supersale backup table holds largely public-by-design page content; `_events_ops_backups` carries real tenant payloads and is the higher-sensitivity of the two. No evidence in logs of anon misuse.
+**Scan environment:** Cowork VM, FUSE-stale snapshot (~2,513 phantom-modified files = pure CRLF↔LF churn — sample unchanged file showed 325 ins / 325 del on 325 identical lines; ghost `.git/*.lock` blocked only cosmetic ref updates during `git pull`, file *contents* are at the correct commit). On-disk HEAD `a384aad` = origin/develop (0 behind). Sentinel is read-only — no destructive git recovery attempted (correct per CLAUDE.md §3a Phase 2.5: Cowork = read+plan, desktop = execute).
 
 ---
 
@@ -15,249 +18,75 @@ None.
 
 ## Active HIGH alerts
 
-### H-NEW-34-1 — NEW: `permission denied for view v_ai_content` recurring (6 fires/hour, anon-role consumer)
+### H-NEW-23-1 — NEW: `_backup_supersale_pages_20260522` public table has RLS DISABLED + full anon/authenticated grants
 
-- **Status:** NEW this refresh. Postgres logs show 6 `permission denied for view v_ai_content` ERROR events in the last 60 minutes, several per minute at peak. Live `information_schema.role_table_grants` audit confirms: `anon` has `INSERT, UPDATE, DELETE, REFERENCES, TRIGGER, TRUNCATE` on the view but **no `SELECT`**. `authenticated`, `service_role`, `optic_readonly`, `postgres` all have SELECT. The asymmetric grant (write-but-not-read for anon) is unusual and is the root cause.
-- **Impact:** A consumer routed as anon is attempting to SELECT from `v_ai_content` and the request fails server-side. The product still appears to operate (no customer reports, no 5xx on EFs), so the consumer is likely handling the error in JS — but the call is failing intermittently and any data it was supposed to render is missing. Risk: AI-generated storefront copy (description, SEO title, SEO description per the view definition) not loading on anon-side reads.
-- **Action:** Architect triage at next session. Two options: (a) `GRANT SELECT ON public.v_ai_content TO anon` after verifying the view body filters/exposes `tenant_id` correctly and that there is no cross-tenant leak (this is a multi-tenant view of `ai_content`); (b) find the consumer and re-route it via service_role or off this view entirely. **Do NOT GRANT blindly** — verify tenant isolation first. Likely 15-30 min SPEC.
-- **Owner:** opticup-architect (Tier 2). Bundle with H-NEW-25-1 below — both are anon-side view/schema mismatches.
+- **Status:** NEW this refresh (Mission 6). Live verification: a dated backup table created 2026-05-22 (during the supersale page work) has `relrowsecurity=false` (RLS off) and both `anon` and `authenticated` hold full `SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER` grants. **The DB now has TWO RLS-disabled public base tables** (this one + `_events_ops_backups`) where yesterday there was one.
+- **What's in it:** 12 rows — a snapshot of `storefront_pages`. Columns include `tenant_id`, `slug`, `title`, `blocks(jsonb)`, `previous_blocks(jsonb)`, `meta_title`, `meta_description`, SEO fields. The page content is largely **public-by-design** (storefront pages are world-readable), so data sensitivity is lower than `_events_ops_backups`. **But** anon also holds DELETE/TRUNCATE, so an unauthenticated caller could wipe the backup, and the table still carries `tenant_id` so it violates the isolation guarantee (Iron Rule 15) the moment a 2nd store exists. No log evidence of anon access.
+- **Suggested action:** This is a one-off dated rollback backup. Cleanest fix: **drop it** once Daniel confirms the supersale page work is settled (it has served its purpose). If retained: `ENABLE ROW LEVEL SECURITY` + `REVOKE ALL … FROM anon, authenticated` (service_role-only). Bundle into the same security-hardening SPEC as H-NEW-45-1. Add a Reviewer guard: any future `_backup_*` table created via `CREATE TABLE … AS SELECT` must enable RLS + revoke client grants in the same migration (CTAS inherits no RLS). Owner: opticup-architect (Tier 2).
 
-### H-NEW-39-1 — NEW: 21 fresh migrations + `lens_design.version` + 4 pg sequences not in canonical schema docs (extends H-NEW-37-1)
+### H-NEW-45-1 — CARRY: `_events_ops_backups` public table has RLS DISABLED + full anon/authenticated grants
 
-- **Status:** NEW this refresh. `docs/GLOBAL_SCHEMA.sql` and `modules/Module 1 - Inventory Management/docs/db-schema.sql` and `docs/DB_TABLES_REFERENCE.md` all show **0 hits** for: (a) the new `lens_design.version` column added 2026-05-18 via `migrations/M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A_lens_design_version.sql`, (b) the 4 new pg sequences `lot_number_seq` / `transfer_number_seq` / `box_number_seq` / `purchase_order_number_seq` (`supabase/migrations/20260518130000…20260518130003`), (c) the 4 RPC body rewrites that consume them via `nextval()` (`20260518130004…20260518130007`), (d) the 10 RPC non-numeric-safe Phase 2 migrations, (e) the `m1_platform_catalog_rls_write_bypass` policy bundle.
-- **Impact:** Schema docs are the canonical reference per CLAUDE.md §7 Authority Matrix. Future M1 / M1.5 sessions reading these files would be looking at a state ~21 migrations behind reality. Compounds M4-DEBT-01 (migrations git-drift) — the migrations now exist in `supabase/migrations/` (git-tracked since 2026-05-04) but the canonical schema reference has not been refreshed. The 6 existing-not-yet-merged tables from H-NEW-37-1 (`accessory_variant`, `contact_lens_variant`, `lens_variant_notes`, `purchase_receipt.has_no_invoice`, etc.) compound here.
-- **Action:** schedule an Integration-Ceremony SPEC that walks the cumulative un-merged migration delta into `docs/GLOBAL_SCHEMA.sql` + the M1 db-schema + `DB_TABLES_REFERENCE.md`. Bundle with H-NEW-37-1. Estimated ~60-90 min SPEC. Owner: opticup-strategic (M1 Foreman).
+- **Status:** CARRY (first reported 2026-05-22 ~04:11, Mission 6; re-verified live this scan — RLS=false, **row count grew 42 → 60** so still actively written, anon SELECT=true). The Supabase security advisor reports `rls_disabled_in_public` on `public._events_ops_backups`. Live verification confirms: `relrowsecurity=false` (RLS off) and both `anon` and `authenticated` roles hold full `SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER` grants on it.
+- **What's in it:** 60 rows. Columns: `backup_id, created_at, spec_slug, source_table, source_id, tenant_id, slug, lang, payload(jsonb), note`. It is an ops-backup vault holding JSONB snapshots of real tenant rows captured during SPEC executions. It **carries `tenant_id` and real tenant data inside `payload`** — higher-sensitivity than the supersale backup above.
+- **Impact:** Because RLS is off and anon has SELECT, an unauthenticated client could in principle `SELECT * FROM _events_ops_backups` and read backed-up row payloads **across all tenants** (today only Prizma exists, so no cross-tenant leak yet — but the multi-tenant isolation guarantee is violated, Iron Rule 15). anon also holds DELETE/TRUNCATE, so the backup vault could be wiped by an unauthenticated caller. No evidence in the 24h logs that this access has actually occurred.
+- **Suggested action:** Architect triage. Recommended fix: `ALTER TABLE public._events_ops_backups ENABLE ROW LEVEL SECURITY;` + add the canonical two-policy pattern (`service_bypass` to service_role + `tenant_isolation` JWT-claim USING clause per CLAUDE.md Rule 15), AND `REVOKE ALL ON public._events_ops_backups FROM anon, authenticated;` (a backup vault should be service_role-only). Verify which process writes to it (likely an Events-Ops/SPEC backup step using service_role) before revoking, so the writer keeps working. ~15-30 min SPEC. Owner: opticup-architect (Tier 2).
 
-### H-NEW-25-1 — RE-OPENED: `v_storefront_products.updated_at does not exist` (recurring after 5+ silent cycles)
+### H-NEW-1-2 — CARRY: `v_crm_event_stats` runs SECURITY DEFINER → RLS bypass on cross-tenant CRM revenue stats
 
-- **Status:** **RE-OPENED this refresh.** Previously recommended for downgrade after 5 silent cycles — now firing again at 2026-05-15 23:20 UTC (~25 min before scan). Schema audit confirms: `v_storefront_products` has 22 columns and **no `updated_at` column** despite parent table `inventory.updated_at` existing. A consumer (likely a storefront ISR refresh job or external sync) is querying it and getting an error.
-- **Impact:** Same as before — the consumer's refresh task fails silently. When it fires, whatever the consumer was supposed to do (cache invalidate, ISR re-render, sync detection) does not happen. No customer-visible failure today, but the data pipeline path is broken.
-- **Action:** Architect triage at next session. Two options: (a) modify the view to expose `inventory.updated_at` (must follow Iron Rule 29 View Modification Protocol — declare via SPEC, test, GRANT preservation); (b) find the consumer and stop querying `updated_at`. Recommend (a) unless consumer-side reason discovered. ~15-30 min SPEC.
-- **Owner:** opticup-architect (Tier 2). Bundle with H-NEW-34-1 — both can ship in one Module 3 / Module 4 architect SPEC pass.
+- **Status:** CARRY (first reported 2026-05-22 ~06:10, Mission 2; re-verified live this scan — `security_invoker` still NOT SET → runs SECURITY DEFINER as the view owner, bypassing the *querying user's* RLS on base tables `crm_events` + `crm_event_attendees`). The view selects `tenant_id` but has **no `WHERE tenant_id` filter** — it relied on caller RLS, which is bypassed.
+- **Exposure:** view returns internal event analytics — `total_revenue`, `purchase_amount` sums, registration/attendance/purchase counts per event. `anon` has **no SELECT** (no unauthenticated leak), but `authenticated` **has SELECT**, so an authenticated user scoped to tenant A could read tenant B's event revenue. **No live leak today (single tenant — Prizma only), but multi-tenant isolation is broken.**
+- **Suggested action:** Recreate the view `WITH (security_invoker = on)` (project standard) — the caller's RLS then re-applies and the view becomes tenant-safe; also confirm whether `authenticated` should hold SELECT directly. Add a migration-template/Reviewer guard so any `CREATE OR REPLACE VIEW` on a public view re-asserts `security_invoker=on`. ~15-30 min. Bundle with M-NEW-1-2 (same fix on `v_storefront_pages`). Owner: opticup-architect (Tier 2).
 
-### ~~H-NEW-25-2~~ — RESOLVED this scan — M3 SESSION_CONTEXT.md NUL-padded (Cowork-VM artifact)
 
-- **Status:** **RESOLVED this scan.** NUL count = 0 verified on Windows-desktop FS this run (`tr -d -c '\0' < <path> | wc -c` returned 0). Real content remains current per L-NEW-26-3 resolution.
-- **Closing action:** none required. Watch-flag re-opens if a future Cowork session writes the file and re-introduces NULs.
+### H-NEW-41-1 — CARRY (GROWN): M4 schema/file docs drifted from live DB — new `crm_suppressions` table + MV + ~8 RPCs undocumented
 
+- **Status:** CARRY since 2026-05-19 (Mission 4); **GROWN this 3+4+5+8 refresh.** Live Supabase MCP confirms these objects EXIST but are absent from every schema doc: new table **`crm_suppressions`** (commit `94fd920`, 2026-05-22) = 0 hits in `docs/GLOBAL_SCHEMA.sql` + `docs/DB_TABLES_REFERENCE.md` + `modules/Module 4 - CRM/docs/db-schema.sql`; **`m4_dispatch_lock`** (prior carry) still 0 hits; materialized view **`mv_crm_lead_event_history`** 0 hits in schema docs; ~8 new RPCs (`bulk_approve_leads_to_tier2`, `create_static_short_link`, `edit_static_short_link`, `delete_static_short_link`, `dashboard_status_counts`, `message_performance_summary`, `claim_unconsumed_status_change_events`, `enqueue_crm_messages_idempotent`) = 0 hits in `docs/GLOBAL_MAP.md`. Plus the long-standing FILE_STRUCTURE.md half (0 hits for `crm-messaging-resend`, `short-links-tiles/`, `template-static-card.js`).
+- **Why it's real drift (not a SPEC-only pattern):** the M4 db-schema.sql DOES document the *previous* new-table batch (`crm_capi_dispatch_queue` / `crm_status_change_events` / `crm_lead_touchpoints` — 23 hits), proving the project convention is to propagate new tables. The docs simply lag: M4 db-schema.sql last touched 2026-05-15 (7d), GLOBAL_SCHEMA.sql 2026-05-17, GLOBAL_MAP.md 2026-05-17, FILE_STRUCTURE.md 2026-05-19.
+- **Impact:** a future session reading the schema docs would not know `crm_suppressions` (a customer-contact-data table) exists — exactly the drift class that causes duplicate-table / wrong-assumption bugs (Rule 21). No live runtime impact.
+- **Suggested action:** bundled `M4_DOC_RESYNC` SPEC — add the 3 tables/MV to GLOBAL_SCHEMA.sql + DB_TABLES_REFERENCE.md + M4 db-schema.sql, the ~8 RPCs to GLOBAL_MAP.md, and the file/dir rows to FILE_STRUCTURE.md, in one Integration-Ceremony-style merge. ~30-45 min. Owner: opticup-architect (Tier 2) / next M4 phase close.
 ---
 
 ## Active MEDIUM alerts
 
-### M-NEW-39-5 — NEW: Hebrew-locale + ₪ currency cluster extends by 4 instances (M-NEW-33-3 class)
+> MEDIUM/LOW are summarized here for continuity but are NOT commit-blocking. Full detail in `GUARDIAN_REPORT.md`.
 
-- **Status:** NEW this refresh. 6 source files modified since prior Missions 1+2 scan; 4 of them introduce new Rule 9 violations in the same finding-class as the existing M-NEW-33-3 / M-NEW-37-2 / M-NEW-38-5 cluster:
-  - `modules/lens-catalog-admin/catalog-suppliers-col.js:149` — `localeCompare(..., 'he')` in supplier-list sort.
-  - `modules/lens-pos-list/lens-pos-list-detail.js:19,45,67` — `'he-IL'` locale + two `'₪'` currency literals in PO detail panel.
-  - `modules/lens-pos-list/lens-pos-list-stats.js:9` — `fmtMoney` helper hardcodes `'₪'` + `'he-IL'`.
-- **Impact:** zero today (Prizma = ILS = correct by accident). Future tenant in a non-Hebrew, non-ILS locale would inherit Hebrew sorting + ₪ symbols everywhere on the lens-pos-list + catalog-admin surface.
-- **Action:** bundle into the existing `M4_M1_5_TENANT_LOCALE_PROPAGATION` SPEC. Read locale from `OpticupConfig.tenant.ui_config.locale` (default 'he-IL'); read currency symbol from `OpticupConfig.tenant.currency.symbol` (default '₪'). The new lens-pos-list cluster adds 4 instances to the ~40+ existing literals on the SPEC's target surface — one fix shape clears all of them. ~1-2 hour SPEC bundled with prior cluster members, or accept as tenant-2 onboarding tax.
+### M-NEW-23-1 — NEW: `crm_suppressions` heavy seq-scan / missing lookup index
 
-### M-NEW-39-1 — NEW: FILE_STRUCTURE.md says lens-catalog-admin has "7 files" — actual is 10
+- Live verification (Mission 6.5): the new suppression table (added 2026-05-22) shows **181,255 seq-scans / 45.3M tuples read / only 404 idx-scans** on 251 rows — by far the highest seq_tup_read in the DB. It is queried on every message dispatch (FB-CAPI suppression gate + send-message suppression check), so the missing index is hit hard. Low absolute cost today (tiny table) but it is the single clearest missing-index signal and worsens as the suppression list grows. Action: add a lookup index — probably `(tenant_id, contact_value)` or `(tenant_id, channel, contact_value)` — at the next M4 phase. ~10 min.
 
-- **Status:** NEW this refresh. `docs/FILE_STRUCTURE.md` lens-catalog-admin row reads "7 files (M1 Lens Phase 1A — Optic Up team only)". Actual `ls modules/lens-catalog-admin/` returns 10: `catalog-auth.js`, `catalog-brands-col.js`, `catalog-designs-col.js`, `catalog-detail-pane.js`, `catalog-import.js`, `catalog-modal-helpers.js`, `catalog-suppliers-col.js`, `catalog-variant-modal.js`, `lens-catalog-admin-partial.html`, `lens-catalog-admin.js`. Mismatch: `catalog-import.js`, `catalog-modal-helpers.js`, `catalog-variant-modal.js` (added in M1_LENS_CATALOG_MOCKUP_FIDELITY_STAGE1 + M1_LENS_CATALOG_PLATFORM_ADMIN_STAGE_2A on 2026-05-18) plus the partial-HTML aren't in the prose.
-- **Impact:** docs drift; next M1 session would have a wrong mental model of the catalog-admin surface. Zero customer impact.
-- **Action:** single-line update at the lens-catalog-admin row in FILE_STRUCTURE.md. ~5 min. Bundle with M-NEW-39-2 + M-NEW-37-3 + M-NEW-37-4 next opticup-architect session.
+### M-NEW-1-2 — CARRY: `v_storefront_pages` runs SECURITY DEFINER (public-by-design data, lower risk)
 
-### M-NEW-39-2 — NEW: entire `modules/admin-platform/` (10 files, ~1,907 lines) undocumented in FILE_STRUCTURE.md + GLOBAL_MAP.md
+- Re-verified live this scan: `v_storefront_pages` still has `security_invoker` **NOT SET** (SECURITY DEFINER); `anon` + `authenticated` both have SELECT. It exposes `storefront_pages WHERE status='published' AND is_deleted=false`. **Unlike `v_crm_event_stats`, this data is intentionally public** — the storefront is a public site and published pages are world-readable (app filters by tenant/domain), so real-world exposure is low. But it still deviates from the `security_invoker=on` standard. Action: recreate `WITH (security_invoker=on)` in the same SPEC as H-NEW-1-2. ~5 min incremental.
 
-- **Status:** NEW this refresh. `grep -E "admin-platform" docs/FILE_STRUCTURE.md docs/GLOBAL_MAP.md` returns **0 hits** in either file. Directory exists at 10 JS files: `admin-activity-viewer.js`, `admin-app.js`, `admin-audit.js`, `admin-auth.js`, `admin-dashboard.js`, `admin-db.js`, `admin-feature-overrides.js`, `admin-plans.js`, `admin-provisioning.js`, `admin-tenant-detail.js` — wired from `admin.html` Platform-Admin entrypoint. Pre-existing-but-undocumented; only now caught because this scan widened the changed-surface sweep.
-- **Impact:** an entire production module shell is invisible to the canonical references. Future M2 (Platform Admin) work would have no doc starting-point. Compounds with M4-DEBT-01 doc-drift class.
-- **Action:** add the directory + module shell to FILE_STRUCTURE.md (one line + sub-list) and add the module to GLOBAL_MAP.md function/module registry. ~10 min. Owner: opticup-architect (Tier 2) or batched into M2 docs SPEC. Bundle with M-NEW-39-1.
+### M-NEW-23-2 — M4 SESSION_CONTEXT ~18 commits behind (carry, grown)
 
-### M-NEW-39-4 — NEW: `admin-tenant-detail.js` at 361 lines exceeds Rule 12 absolute 350-line cap
+- `modules/Module 4 - CRM/docs/SESSION_CONTEXT.md` last updated 2026-05-21 17:36. Since then 18 M4 commits landed (suppression-list Phase 1+2, FB-CAPI suppression gate that closed a GDPR PII-to-Meta leak, attendee invited-status removal). Materially current (2 days) but behind the suppression-list + GDPR-gate batch — none mentioned in SC. Action: append a suppression-list + FB-CAPI-gate closure block at next M4 session. ~10 min.
 
-- **Status:** NEW this refresh. `wc -l modules/admin-platform/admin-tenant-detail.js` returns 361. Iron Rule 12: target 300 / absolute max 350.
-- **Impact:** Rule 12 violation by 11 lines. Co-residents (admin-provisioning.js 320, admin-app.js 237, admin-plans.js 261, shared/js/catalog-private-admin.js 326, modules/inventory/inventory-shell-lens.js 310) are under absolute. H-3 carry (brands.js 371) unchanged.
-- **Action:** 30-min SPEC to split out the audit-log sub-section (lines ~320-360) into `admin-tenant-audit.js`. Brings main file to ~310 lines (still over target but under absolute). Lower priority than M-NEW-39-2.
+### M3 SESSION_CONTEXT 12 days stale (carry, growing)
 
-### M-NEW-34-3 — NEW: M1 ROADMAP Lens-1B marker still ⬜ despite 5 Phase 1B SPECs closed
-
-- **Status:** NEW this refresh. `modules/Module 1 - Inventory Management/ROADMAP.md:84` reads `| Lens-1B | ⬜ | **מלאי עדשות — שלב 1B** — 6 מסכי לקוח | ...` but M1 SESSION_CONTEXT records FIVE Lens-1B-aligned SPECs closed in last 48h: `M1_LENS_PHASE_1B_FOUNDATION` 🟢, `M1B_FOUNDATION_PERMISSIONS_HOTFIX` 🟢, `M1_LENS_PHASE_1B_PROCUREMENT` 🟡, `M1_LENS_PHASE_1B_GAP_CLOSURE` 🟢, `M1_LENS_PHASE_2_COMPLETION` 🟡. 7 lens screens wired to ERP main menu (Part D of PHASE_2_COMPLETION). Phase 1B work is materially done; ROADMAP marker is behind reality.
-- **Impact:** Future M1 sessions reading the ROADMAP would believe Phase 1B hasn't started. Architect (Foreman) is best positioned to decide ✅ vs 🟡 (the latter reflects PHASE_2_COMPLETION's deferred Part A Tier-3 work).
-- **Action:** at next M1 Module Close Ceremony, flip line 84 marker (✅ or 🟡) and add a Lens-1B closure block analogous to Lens-1A pointing at the 5 SPEC folders. ~10 min. Bundle with M-NEW-34-2.
-
-### M-NEW-34-2 — carry (GROWING): M3 SESSION_CONTEXT now 8 days stale
-
-- **Status:** NEW this refresh. `modules/Module 3 - Storefront/docs/SESSION_CONTEXT.md` reads `## Last updated: 2026-05-11`. Since then:
-  - 2026-05-15 — `M3_STOREFRONT_FB_CAPI_EVENT_ID_HANDOFF` 🟢 CLOSED (the storefront-side handoff that completes the FB CAPI dedup loop M4 shipped on the ERP side; directly impacts ad-budget attribution).
-  - 2026-05-15 evening — `docs(m3): storefront outage diagnosis 2026-05-15 evening` (`e479ce7`).
-  - 9 SPEC folder artifacts harvested into Module 3 docs/specs (`ee2dd03`).
-- **Impact:** Per CLAUDE.md §7 Authority Matrix, this file is the **authoritative source of M3 phase status**. Next M3 session would start from a wrong baseline. Medium not high because SPEC folders themselves are correct; the storefront repo is the second authoritative source.
-- **Action:** in next M3 architect session, append 3 short blocks to M3 SESSION_CONTEXT: (1) FB CAPI handoff closure, (2) outage diagnosis summary + resolution, (3) Brief harvest. ~10 min. Bundle with M-NEW-34-3.
-
-### ~~M-NEW-34-1~~ — RESOLVED this refresh — FUNNEL_ROADMAP P2.3 flipped to ✅
-
-- **Status:** **RESOLVED.** `roles/site-overseer/FUNNEL_ROADMAP.md` line 163 now reads `| P2.3 | M4_TEMPLATE_VALIDATION_UNIFIED | 6 | 2-3 hrs | ✅ CLOSED 2026-05-14 |`. P2.1 also flipped today to `✅ CLOSED 2026-05-15 — ERP-side CAPI substrate shipped` (per M4_FB_CAPI_HYBRID_DEDUPLICATION close).
-- **Closing action:** none required. Phase 2 is now formally in progress with 2 of 3 rows closed (P2.1 + P2.3).
-
-### ~~M-NEW-33-1~~ — RESOLVED post-scan — M1 SESSION_CONTEXT.md refreshed
-
-- **Status:** **RESOLVED.** Mid-scan window concurrent commit `b448c1e docs(m1): module-level docs reflect Phase 1A close` (2026-05-14 ~18:38 UTC) updated M1 SESSION_CONTEXT.md. Further verified this refresh: M1 SC now also carries M1A_CURRENCIES_GLOBAL_HOTFIX entry from later same day. Two-tier verification.
-- **Closing action:** none required.
-
-### ~~M-NEW-33-2~~ — FULLY RESOLVED 2026-05-15 07:50 UTC — M1 Phase 1A db-schema.sql delta merged
-
-- **Status:** **FULLY RESOLVED.** The M1-owned `modules/Module 1 - Inventory Management/docs/db-schema.sql` Phase 1A delta merged via commit `fdf3e2c` — 17 tables + 9 RPCs + 1 trigger + 1 K5 view + Phase 1A summary section (lines 1969-2034) documented. Prior partial-resolution (GLOBAL_SCHEMA + DB_TABLES_REFERENCE via commit `0cf6123`) is now fully complete.
-- **Carry items still tracked elsewhere:** the M4 MODULE_MAP backlog (M-NEW-29-2 + M-NEW-31-2 + 3 CRM v2 files: `crm-confirm-send-v2.js`, `crm-confirm-send-v2-render.js`, `crm-short-links-stats.js`) is its own separate finding — see M-NEW-29-2 below. The M-NEW-33-2 bundle references in older items below are historical; their target is now M-NEW-29-2 / the M4 Integration Ceremony.
-- **Closing action:** none required for the M1 schema doc. M4 MODULE_MAP work remains open under M-NEW-29-2.
-
-### M-NEW-33-3 — NEW: Hebrew-locale hardcoding suite extends (carry-class)
-
-- **Status:** NEW this scan **as carry-class extension only** — no individual file finding this window's diff. The pattern `'he-IL'` / `localeCompare('he')` is present in 40+ JS files across the repo. Prior carries M-NEW-27-2 (`shared/js/sort-utils.js`), M-NEW-29-1 (`crm-queue-live.js`), M-NEW-32-1 (`crm-helpers.js`) are all in the same class. This window's new files (`crm-confirm-send-v2.js`, `crm-short-links-stats.js`) do NOT introduce new locale-API literals (they use template-string Hebrew copy only, not the locale API), so the count holds at 40+.
-- **Impact:** zero today (Prizma is `he-IL`). Future second tenant in a non-Hebrew locale would inherit Hebrew formatting everywhere.
-- **Action:** open SPEC `M4_M1_5_TENANT_LOCALE_PROPAGATION` bundling all 40+ files. Read tenant locale from `OpticupConfig.tenant.ui_config.locale` (default 'he-IL'). ~1-2 hour SPEC. Or accept as "future tenant-2 onboarding tax" and defer to first SaaS prospect.
-
-### M-NEW-33-4 — NEW: CLAUDE.md §0.5 prose + FILE_STRUCTURE.md stale vs root-allowlist.json (data-driven source of truth)
-
-- **Status:** NEW this scan. `CLAUDE.md` line 31 still says "17 other ERP HTML pages" and lists `employees.html` (which is redirect-only stub since `9f61e8b refactor(links): redirect employees.html → settings.html#permissions`). The data-driven `scripts/checks/root-allowlist.json` has 18 entries in `category_3_html_entrypoints`, includes `lens-catalog-admin.html` (new this scan window), and CORRECTLY excludes `employees.html`. The allowlist is the source of truth (it's the file pre-commit hook reads); the prose is stale.
-- **Extends prior:** this finding supersedes M-NEW-27-3 by adding the `lens-catalog-admin.html` asymmetry on top of the prior `employees.html` issue.
-- **Impact:** docs drift, dev-experience confusion. Zero customer impact.
-- **Action:** in next opticup-architect session, update CLAUDE.md §0.5 line 31 + `docs/FILE_STRUCTURE.md` to: (a) drop `employees.html` from literal list OR annotate `(redirect-only stub → settings.html#permissions; archived at _archive/pre-consolidation/employees.html)`, (b) add `lens-catalog-admin.html`, (c) bump the "17" count to match the 18-entry allowlist. ~5 min prose fix.
-
-### ~~M-NEW-25-2~~ — RESOLVED this scan — `docs/guardian/` output files NUL-padded
-
-- **Status:** **RESOLVED this scan.** NUL counts on FS this run: GUARDIAN_ALERTS.md = 0, DAILY_SUMMARY.md = 0. Windows-desktop FS produces clean files; the Cowork-VM artifact only fires on the Cowork mount.
-
-### ~~M-NEW-26-1~~ — RESOLVED this scan — Legacy NUL-padding in dormant SQL file
-
-- **Status:** **RESOLVED this scan.** `modules/Module 3 - Storefront/sql/manual_action_1_rls_canonical_fixes.sql` NUL count = 0 on FS this run.
-
-### ~~M-NEW-27-1~~ — RESOLVED this scan — 7 production files NUL-padded on Cowork-VM filesystem
-
-- **Status:** **RESOLVED this scan.** NUL sweep across all 15 changed code files this window + 5 prior-carry files: every count is 0. The Windows-desktop machine does not produce the Cowork-VM artifact. Sweep SPEC no longer needed (or only needed if a Cowork session re-introduces NULs). The complementary L-NEW-27-1 (`null-bytes.mjs` doesn't cover `.json` / `.sql`) remains open as detection-gap finding but no longer has active corruption to detect.
-
-### ~~M-NEW-27-2~~ — carry — `shared/js/sort-utils.js` Hebrew-locale hardcoding
-
-- Bundled under M-NEW-33-3 above.
-
-### ~~M-NEW-27-3~~ — superseded by M-NEW-33-4
-
-- The `employees.html` half is now bundled with the new `lens-catalog-admin.html` half under M-NEW-33-4. Same fix clears both.
-
-### ~~M-NEW-28-1~~ — PERMANENTLY CLOSED — `event_max_attendees` unsubstituted_placeholder
-
-- **Status:** **PERMANENTLY CLOSED.** 3rd consecutive silent cycle (2026-05-15 03:25 UTC refresh: 0 failed messages in 24h, 0 failed in last 1h, 21 total messages sent). Upstream architectural fix shipped today via `M4_TEMPLATE_VALIDATION_UNIFIED` (Phase 2 P2.3): pre-enqueue validation now catches unsubstituted placeholders BEFORE they reach the send path; bad templates write `crm_message_log status='rejected'` + populate `crm_automation_rules.last_error` for operator visibility, rather than failing at send-time. Defense-in-depth: validation runs at plan-time (automation-engine) AND at send-time (send-message). No further monitoring required.
-
-### M-NEW-28-2 — 4 net-new advisor lint types (security delta) — partially resolved
-
-- **Status:** carry, partially resolved. `extension_in_public` × 2 still open (defer SPEC). `auth_leaked_password_protection` × 1 still open (not active today, defer to email/password tenant onboarding). `public_bucket_allows_listing` was reduced to 1 (`inventory-images` — the last public bucket; `tenant-logos` was hardened 2026-05-13). `rls_policy_always_true` resolved 2026-05-13.
-- **Total advisor count this scan: 149 (17 ERROR + 132 WARN) — ZERO DELTA from baseline.**
-- **Action:** carry as-is.
-
-### M-NEW-29-1 — carry — `modules/crm/crm-queue-live.js:26` hardcodes `toLocaleTimeString('he-IL')`
-
-- Bundled under M-NEW-33-3.
-
-### M-NEW-29-2 — carry — 2 net-new M4 JS files missing from MODULE_MAP.md
-
-- Bundled into the M-NEW-33-2 Integration Ceremony SPEC.
-
-### M-NEW-29-3 — carry — 2 net-new tables not propagated to docs/GLOBAL_SCHEMA / DB_TABLES_REFERENCE / M4 db-schema
-
-- Bundled into the M-NEW-33-2 Integration Ceremony SPEC.
-
-### M-NEW-31-1 — carry — M4 db-schema.sql out of sync with live DB (5 new objects in last 27h)
-
-- Bundled into the M-NEW-33-2 Integration Ceremony SPEC.
-
-### M-NEW-31-2 — carry — 6 net-new M4 JS/TS files absent from MODULE_MAP.md
-
-- Bundled into the M-NEW-33-2 Integration Ceremony SPEC (now 11 net-new M4 JS files counting the 3 from this scan).
-
-### M-NEW-32-1 — carry — `modules/crm/crm-helpers.js` Hebrew-locale hardcoding
-
-- Bundled under M-NEW-33-3.
-
-### M-5 — Live DB security advisors (carry)
-
-- **Status:** stable carry. 17 ERROR + 132 WARN security advisors **across all advisor levels (149 total) — zero delta vs 2026-05-14 baseline.**
-- **Top categories (unchanged):** `authenticated_security_definer_function_executable` (56), `anon_security_definer_function_executable` (42), `function_search_path_mutable` (30 ← +0 new from M1 Phase 1A's 9 RPCs which inherit the same pre-existing project pattern), `security_definer_view` (17). All are project-design choices for the canonical RPC + Views pattern; carry-allowlisted.
-- **Action:** no action; review at next quarterly security audit.
-
-### M-NEW-30-1 — carry — `media_library` 99.8% seq-scan ratio
-
-- **Status:** stable carry (not re-verified this scan; not in top-15 tables by size).
-
-### M-NEW-30-2 — carry — M4 SC slightly behind 14 newer commits
-
-- **Status:** RESOLVED this scan implicitly — M4 SC has 4 distinct dated entries from today (2026-05-14) covering P1.1, P1.2, P1.3, P1.4 closures. Most-current of any module SESSION_CONTEXT.
-
-### M-6 / M-12 / M-13 — pre-existing carries
-
-Stable; no change. See full `GUARDIAN_REPORT.md` for details.
+- `modules/Module 3 - Storefront/docs/SESSION_CONTEXT.md` last updated 2026-05-11; per Authority Matrix it is the authoritative source of M3 phase status. Was 11 days in prior report; now 12. No M3 commits in 24h (dormant), so low risk, but next M3 session would start from a stale baseline. Action: append FB-CAPI handoff closure + outage diagnosis + brief harvest. ~10 min.
 
 ---
 
 ## Active LOW alerts
 
-### L-NEW-34-2 — NEW: Cowork-VM-mount truncation on `scripts/checks/*` + `verify.mjs`
+### L-NEW-23-1 — M4 CHANGELOG significantly behind (grown)
 
-- **Status:** NEW this refresh. Detection class: file truncation on the Cowork-VM filesystem mount — a different symptom of the same FS class as the historical NUL-padding artifact (M-NEW-25-2 / M-NEW-26-1 / M-NEW-27-1, all RESOLVED on Windows-desktop FS).
-- **Affected (6 files, disk vs git byte-count):** `scripts/checks/rule-14-tenant-id.mjs` (git=2569, disk=1164 — truncated 55%), `scripts/checks/destructive-ops-declared.mjs` (git=14113, disk=12136 — truncated 14%), `scripts/checks/rule-15-rls.mjs` (git=1284, disk=1319 — trailing garbage past truncation), `scripts/checks/rule-21-orphans.mjs` (git=1758, disk=1812), `scripts/checks/null-bytes.mjs` (git=1658, disk=1710), `scripts/verify.mjs` (git=5371, disk=5512). Evidence: `node -c scripts/checks/rule-15-rls.mjs` fails with `SyntaxError: Unexpected end of input` because the on-disk file ends mid-token (`return { violations, warn`). `git show HEAD:` returns the correct full content for every file.
-- **Impact:** ZERO on production / on Windows-desktop / on Claude Code execution paths. A pre-commit hook executed FROM INSIDE the Cowork VM mount would crash with SyntaxError on import; everywhere else (Windows-desktop, Mac, CI) sees the correct git content.
-- **Action:** none on the repo. Implement L-NEW-27-1 (extend `scripts/checks/null-bytes.mjs` to also detect the truncation class + cover `.json` / `.sql` extensions) — that work would catch this artifact at the gate level. Currently a known-and-tolerated cross-FS artifact.
+- `modules/Module 4 - CRM/docs/CHANGELOG.md` last touched 2026-05-15; 116 M4 commits have landed since (Sprint 1-3 batch + suppression list + FB-CAPI gate not reflected). This carry has grown well beyond the prior ~17-commit estimate — the CHANGELOG is now meaningfully out of date as a phase-history record. Watch for promotion to MEDIUM. Action: bring CHANGELOG current at next M4 phase close; fold into the same M4 doc-resync that closes H-NEW-41-1.
 
-### L-NEW-34-3 — NEW: `storefront_config_public` 100% seq-scan ratio (NEW Public Data Layer mirror table)
+### Performance seq-scan carries (unchanged)
 
-- **Status:** NEW this refresh. `storefront_config_public` had 38,289 sequential scans / only 9 index scans lifetime (100% miss rate) under anon read load. The table is one of the 6 new Public Data Layer mirror tables (`*_public` per memory `project_public_data_layer`). Likely missing an index on the lookup key (probably `tenant_id` or `slug`).
-- **Impact:** Cost is negligible today — table is tiny — but at multi-tenant scale (or at higher anon traffic) this becomes a CPU hotspot.
-- **Action:** Add explicit index in the next Public Data Layer follow-up SPEC (queued: `BRAND_VISIBILITY_CASCADE` or `FUNCTION_REVOKES` per project memory). ~5 min when paired with the related SPEC. `storefront_reviews` (100% seq-scan / 1 lifetime idx_scan) has the same pattern — fix both in one pass.
-
-### L-NEW-34-4 — NEW: single SMS `crm_message_log status='failed'` row at 06:47 UTC 2026-05-15
-
-- **Status:** NEW this refresh. 1 row in 24h with `status='failed'`, `error_message=NULL`, `channel='sms'`, `template_id=NULL`, `broadcast_id=NULL`, created 2026-05-15 06:47 UTC. Single fire, ~21 hours old, did not recur. The 3 `rejected` rows in the same window are healthy gate behavior (Template Validation Unified is working).
-- **Impact:** Low — single fire, silent since. The upstream Template Validation gate would have caught a bad-template root cause; this is likely an SMS provider transient or a manual-send failure unrelated to the validation pipeline.
-- **Action:** Architect triage at next M4 session. Pull the row by id (`847e1a9d-f76b-49bb-98a8-8e7921a01af8`) and inspect — `content` field may carry context absent from the queryable columns. ~10 min triage.
-
-### ~~L-NEW-33-1~~ — RESOLVED partially this refresh — column-not-found errors update
-
-- **Status:** **PARTIALLY RESOLVED.** Of the 3 distinct errors tracked under L-NEW-33-1 (`b.event_id`, `"locale"`, `l.to_address`), none of the 3 specific signatures recurred in the last 24h. However, **`v_storefront_products.updated_at` re-fired today** — see H-NEW-25-1 RE-OPENED. The `"locale"` error was likely a sibling of the same outdated-consumer-query class as H-NEW-25-1; if H-NEW-25-1 fix lands, expect `"locale"` to be addressed in the same SPEC.
-- **Closing action:** Close the L-NEW-33-1 wrapper as superseded by H-NEW-25-1 (re-opened). The H-NEW-25-1 root-cause SPEC should sweep the consumer codebase for ALL `updated_at|locale|to_address` SELECT on Views.
-
-### L-NEW-33-2 — NEW: `snapshots/` directory at repo root not on `root-allowlist.json`
-
-- **Status:** NEW this scan. `snapshots/` directory is tracked at repo root (contains `log.json` per `scripts/snapshot.mjs` Bounded Autonomy infra per CLAUDE.md §11) but not on `scripts/checks/root-allowlist.json` directories list.
-- **Impact:** the pre-commit `check-root-discipline.mjs` would WARN (exit 2) on `snapshots/` if it were freshly added, but since it's pre-existing it does not block anything today. Cosmetic/maintenance.
-- **Action:** add `snapshots` to allowlist `directories.category_2_sources_of_truth` section. Bundle with M-NEW-33-4 prose fix.
-
-### L-NEW-32-1 — carry — `modules/crm/crm-broadcast-cancel.js:108,113` innerHTML interpolation without escapeHtml
-
-- **Status:** carry-stable. Same 2 lines unchanged. Low realistic risk (server side is JWT-authenticated EF; values are operator-controlled error strings + numerics).
-- **Action:** trivial wrap (`escapeHtml(String(r.X))`) in next CRM-UX SPEC. ~3 min.
-
-### L-NEW-27-1 — carry — Rule 31 gate (`null-bytes.mjs`) does not cover `.json` or `.sql` extensions
-
-- **Status:** carry, detection-gap class only. Since M-NEW-27-1 is RESOLVED (no active corruption to detect this scan), the urgency drops further, but the gap remains.
-- **Action:** paper-SPEC `INTEGRITY_GATE_EXTEND_TO_JSON_AND_SQL` (~5 min — add 2 strings to a Set in `scripts/checks/null-bytes.mjs`).
-
-### L-NEW-27-2 — carry — `employees.html` is 0 bytes post-redirect-consolidation
-
-- **Status:** carry until post-deploy verification. `curl -I https://app.opticalis.co.il/employees.html` to confirm redirect HTML is served.
-
-### L-NEW-28-1 — carry — `crm_message_log` retention/archival watch-flag (14 MB, ~370 MB/year projected)
-
-- **Status:** carry. Defer to 2026 Q4 SaaS-hardening planning.
-
-### L-NEW-29-1 — carry — `automation-engine` GLOBAL_MAP entry says "v7 ACTIVE" but live is past v7
-
-- Bundled into the M-NEW-33-2 Integration Ceremony SPEC.
-
-### L-NEW-30-1 / L-NEW-31-1 / L-2 / L-13 / L-17 / L-20 / L-21 / L-22 / L-25 — pre-existing carries
-
-Stable; no change.
+- `storefront_config_public` (629K seq-scans / 2 rows / 12 idx-scans), `storefront_reviews` (27K seq-scans / 5 rows), `media_library` (174K seq-scans / 451 rows) — tiny tables, negligible cost today; add lookup indexes in the next Public Data Layer follow-up SPEC. Carry.
 
 ---
 
 ## Operational Note
 
-**Sentinel scan environment this run:** Windows desktop (`C:\Users\User\opticup`), NOT Cowork VM. Filesystem is clean; the recurring Cowork-VM mount-drift + NUL-padding artifacts do not affect this run. All 4 NUL-padding carry findings (H-NEW-25-2, M-NEW-25-2, M-NEW-26-1, M-NEW-27-1) are RESOLVED on this machine's FS view. If a future Cowork session re-introduces NULs, the alerts will re-open at the next Sentinel run from that VM. Production was never affected by any of the NUL-padding instances (production deploys from `git checkout origin/main`, not from any Cowork-VM FS).
+**Anon-view-grant carries quiet this cycle.** The three recurring HIGH view-grant findings from prior daily runs (H-NEW-34-1 / H-NEW-36-1 / H-NEW-25-1) produced ZERO `permission denied for view` ERROR events in the full 24h Postgres-log sample this run. They are not asserted as active HIGH this refresh. If they re-fire on a future scan, they re-open.
 
-**Funnel Phase 1 COMPLETE 🎉.** P1.1 (UTM triple-layer persistence), P1.2 (broadcast_id propagation), P1.3 (short.gy → internal redirect), P1.4 (register_lead_to_event RPC map) all closed today via Full-Auto Pipeline. End-to-end funnel attribution chain wired: `crm_broadcasts → crm_message_queue → crm_message_log → short_links → short_link_clicks → crm_lead_touchpoints`.
+**Postgres-log security state (this scan):** the 24h Postgres-log sample is clean — the ONLY ERROR is the Sentinel's own probe (a query against `public.crm_messages`, a table that does not exist; the live tables are `crm_message_queue` / `crm_message_log`). No real application errors, no `permission denied for view`, no RLS-violation patterns. Live RLS check found exactly 2 RLS-disabled public base tables: `_events_ops_backups` (H-NEW-45-1) and `_backup_supersale_pages_20260522` (H-NEW-23-1). Live SECURITY DEFINER view check found exactly 2: `v_crm_event_stats` (H-NEW-1-2) and `v_storefront_pages` (M-NEW-1-2) — both unchanged from yesterday. The WARN bands (security_definer_function_executable, function_search_path_mutable, extension_in_public, materialized_view_in_api, public_bucket_allows_listing, auth_leaked_password_protection) are the established project-design carries for the canonical RPC + Views + JWT-claim-RLS pattern — carry-allowlisted, review at quarterly security audit.
 
-**M1 Phase 1A platform-catalog substrate is live.** 19 new tables + 9 atomic RPCs + 1 K3 trigger + 1 K5 view + 1 Edge Function (`lens-catalog-import`) + 1 admin HTML page (`lens-catalog-admin.html`) + 17 new T-constants in `shared.js`. Customer-facing screens deferred to Phase 1B (separate SPEC stub already sealed). Documentation propagation incomplete — see M-NEW-33-1 + M-NEW-33-2.
-
----
+**Single highest-ROI action this scan:** one short security-hardening SPEC that (1) drops or secures the 2 RLS-disabled backup tables (`_backup_supersale_pages_20260522` — recommend drop; `_events_ops_backups` — enable RLS + revoke anon/authenticated, keeping the service_role writer working), (2) recreates `v_crm_event_stats` + `v_storefront_pages` `WITH (security_invoker=on)`, and (3) adds two Reviewer/migration-template guards: any `CREATE OR REPLACE VIEW` on a public view must re-assert `security_invoker=on`, and any `_backup_*` table created via `CREATE TABLE … AS SELECT` must enable RLS + revoke client grants in the same migration (CTAS inherits no RLS). Closes H-NEW-23-1 + H-NEW-45-1 + H-NEW-1-2 + M-NEW-1-2 and prevents recurrence. ~45-60 min total. Owner: opticup-architect (Tier 2). All four are isolation-guarantee gaps, not live customer-facing failures (single tenant today).
 
 <!-- LIGHTHOUSE-CRON-APPEND-MARKER — entries below this line are managed by roles/site-overseer/tools/lighthouse/scripts/append-alert.mjs. Do not edit by hand. -->
 
@@ -280,6 +109,7 @@ Stable; no change.
 | https://www.prizma-optic.co.il/supersale/ | performance | 85 | 76 | < floor 80 | [json](docs/guardian/lighthouse-reports/daily/2026-05-14/he-supersale.json) |
 | https://www.prizma-optic.co.il/ru/supersale/ | performance | 79 | 77 | < floor 80 | [json](docs/guardian/lighthouse-reports/daily/2026-05-14/ru-supersale.json) |
 
+<<<<<<< Updated upstream
 → Full report: `docs/guardian/lighthouse-reports/daily/2026-05-14/SUMMARY.md`
 
 ## Daily run — 2026-05-15 <!-- run:daily:2026-05-15 -->
@@ -331,3 +161,11 @@ Stable; no change.
 
 **ALL CLEAR** — 30/30 URLs OK; 0 comparisons against no prior baseline; 0 regressions. avg perf 86, avg a11y 95.
 → Full report: `docs/guardian/lighthouse-reports/daily/2026-05-21/SUMMARY.md`
+
+## Daily run — 2026-05-23 <!-- run:daily:2026-05-23 -->
+
+**ALL CLEAR** — 30/30 URLs OK; 0 comparisons against no prior baseline; 0 regressions. avg perf 87, avg a11y 95.
+→ Full report: `docs/guardian/lighthouse-reports/daily/2026-05-23/SUMMARY.md`
+=======
+→ Full report: `docs/guardian/lighthouse-reports/daily/2026-05-14/SUMMA
+>>>>>>> Stashed changes

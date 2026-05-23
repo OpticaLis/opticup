@@ -1,0 +1,108 @@
+<!--
+  Optic Up — M5 Customer Card (5 tabs)
+  Single-customer view. URL: customers.html?t=<tenant_slug>&customer_id=<uuid>
+  Bare entry (no customer_id) renders an empty-state pointing to Phase E.
+  Stack: Vanilla JS + Supabase (no build step). RTL. Hybrid+Navy tokens.
+  Mockup: modules/Module 5 - Customers/architecture-brief/M5_CUSTOMER_CARD_MOCKUP.html
+-->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<title>Optic Up — כרטיס לקוח</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<!-- Shared CSS (ERP design system) -->
+<link rel="stylesheet" href="shared/css/variables.css">
+<link rel="stylesheet" href="shared/css/components.css">
+<link rel="stylesheet" href="shared/css/components-extra.css">
+<link rel="stylesheet" href="shared/css/layout.css">
+<link rel="stylesheet" href="shared/css/forms.css">
+<link rel="stylesheet" href="shared/css/modal.css">
+<link rel="stylesheet" href="shared/css/toast.css">
+<link rel="stylesheet" href="shared/css/table.css">
+
+<!-- Page CSS -->
+<link rel="stylesheet" href="css/customers.css">
+
+</head>
+<body class="cust-page">
+
+  <h1 style="font-size:18px;font-weight:500;margin:0 0 4px;">כרטיס לקוח</h1>
+  <p class="lede" id="cust-lede-status">טוען…</p>
+
+  <main id="cust-card-root">
+    <!-- Bare entrypoint (no customer_id) state — replaced by card on load -->
+    <div class="cust-empty-state" id="cust-empty-state" style="display:none;">
+      <h2>בחירת לקוח נדרשת</h2>
+      <p>פתח את הכרטיס דרך <code>customers.html?customer_id=&lt;uuid&gt;</code>.</p>
+      <p>רשימת הלקוחות (Phase E) <em>בקרוב</em>.</p>
+    </div>
+
+    <!-- Card shell — rendered by customer-card.js -->
+    <div class="cust-card" id="cust-card" style="display:none;">
+      <div class="cust-header" id="cust-header"><!-- populated by customer-card-header.js --></div>
+      <div class="cust-tabs"  id="cust-tabs"  ><!-- populated by customer-card.js --></div>
+      <div class="cust-content" id="cust-content"><!-- populated per-tab --></div>
+    </div>
+
+    <!-- List shell — populated by customer-list.js when no customer_id in URL (Phase E) -->
+    <div id="cust-list-root"></div>
+  </main>
+
+  <!-- Modal + toast + loading containers (consumed by Modal.*, Toast.*, showLoading) -->
+  <div id="toast-c"></div>
+  <div id="confirm-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3 id="confirm-title"></h3>
+      <p id="confirm-text"></p>
+      <div class="modal-actions">
+        <button id="confirm-yes" class="btn btn-primary">אישור</button>
+        <button id="confirm-no"  class="btn">ביטול</button>
+      </div>
+    </div>
+  </div>
+  <div id="loading" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.4);align-items:center;justify-content:center;z-index:9999;">
+    <div style="background:#fff;padding:20px 30px;border-radius:8px;display:flex;gap:10px;align-items:center;">
+      <div class="spinner"></div><span id="loading-text">טוען…</span>
+    </div>
+  </div>
+
+  <!-- ─── Shared infrastructure (canonical ERP load order) ─── -->
+  <script src="shared/js/theme-loader.js"></script>
+  <script src="shared/js/modal-builder.js"></script>
+  <script src="shared/js/toast.js"></script>
+  <script src="shared/js/supabase-client.js"></script>
+  <script src="shared/js/activity-logger.js"></script>
+
+  <script src="js/shared-field-map.js"></script>
+  <script src="js/shared.js"></script>
+  <script src="js/shared-ui.js"></script>
+  <script src="js/auth-service.js"></script>
+  <script src="js/supabase-ops.js"></script>
+  <script src="js/pin-modal.js"></script>
+  <script src="js/search-select.js"></script>
+
+  <!-- ─── M5 Customer Card (this page) ─── -->
+  <script src="modules/customers/customer-card-coming-soon.js"></script>
+  <script src="modules/customers/customer-card-header.js"></script>
+  <script src="modules/customers/customer-card-tab-details.js"></script>
+  <script src="modules/customers/customer-card-tab-vision.js"></script>
+  <script src="modules/customers/customer-card-tab-prescriptions.js"></script>
+  <script src="modules/customers/customer-card-tab-orders.js"></script>
+  <script src="modules/customers/customer-card-tab-docs.js"></script>
+
+  <!-- ─── M5 Customer List + Create-Mode (Phase E) — loaded before customer-card.js so list mount is available ─── -->
+  <script src="modules/customers/customer-list-filters.js"></script>
+  <script src="modules/customers/customer-list-sidebar.js"></script>
+  <script src="modules/customers/customer-list-columns.js"></script>
+  <script src="modules/customers/customer-list.js"></script>
+  <script src="modules/customers/customer-create.js"></script>
+
+  <script src="modules/customers/customer-card.js"></script>
+
+</body>
+</html>

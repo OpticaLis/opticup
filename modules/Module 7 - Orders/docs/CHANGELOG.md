@@ -1,6 +1,23 @@
 # Module 7 — Orders · Changelog
 
-> First commits land here once Module 7 enters build phase. Until then, this file tracks pre-build artifact changes only.
+> Build phase opened 2026-05-23 with M7_SCHEMA Phase A+B sealed.
+
+---
+
+## 2026-05-23 — Phase A+B Schema closed 🟢
+
+**SPEC:** `M7_SCHEMA` (closed 🟢). Overnight Full-Auto Pipeline chain Half 1 of M7+M8 chain.
+
+- **4 tables:** orders (17 cols), sub_orders (45 cols multi-state flags via Pattern §5.1), sub_order_items (14 cols), order_general_discounts (12 cols).
+- **9 enums** for state-machines + bounded property sets.
+- **6 RPCs + 1 trigger fn** — re-uses M5 `allocate_tenant_number(_, 'order')` + M1 `decrement_inventory`/`increment_inventory` direct (Brief §4.3).
+- **7 views** for cross-module surfaces.
+- **Status aggregation trigger** (Pattern P21 — first instance in project) — orders.status auto-computes from child sub_orders.
+- **Smoke 9/9 PASS** on demo + 0 Prizma writes.
+- Sealed under `docs/specs/M7_SCHEMA/` (7 artifacts).
+- Iron Rules in sharp focus: 1, 11, 14, 15, 16, 18, 19, 22, 32 — all conformed.
+
+Commits land at chain-close — see `git log --oneline --grep='m7'`.
 
 ---
 

@@ -24,6 +24,7 @@ opticup/
 ├── index.html                  — home screen: PIN login + module cards
 ├── admin.html                  — platform admin entry (Module 2)
 ├── crm.html                    — CRM module entry (Module 4)
+├── customers.html              — M5 customer card (Phase D 2026-05-23 — single-customer 5-tab view; ?customer_id=<uuid>)
 ├── inventory.html              — inventory management module (full app)
 ├── suppliers-debt.html         — supplier debt tracking module
 ├── employees.html              — standalone employee management page
@@ -299,6 +300,29 @@ modules/
 │
 ├── stock-count/                — 9 files
 │   (list, session, camera, scan, filters, unknown, approve, view, report)
+│
+├── customers/                  — 12 files (M5 customer card Phase D 2026-05-23 + list/create Phase E 2026-05-23)
+│   (customer-card (boot + state + tab orchestration + __cardTrace + Phase-E
+│    list-mode routing branch),
+│    customer-card-header (avatar+name+meta+badges+edit toggle+actions),
+│    customer-card-coming-soon (ONE shared showComingSoon + COMING_SOON_LABEL +
+│    COMING_SOON_REGISTRY — Iron Rule 21 anchor; +11 Phase-E registry keys),
+│    customer-card-tab-details (Tab 1 — col-3/col-2 blocks + medical sub-tabs
+│    + queue + bottom flags + per-field debounced auto-save),
+│    customer-card-tab-vision (Tab 2 — stub per D-T2; M6 follow-up),
+│    customer-card-tab-prescriptions (Tab 3 — v_customer_prescriptions_summary
+│    + filters + create_prescription_draft RPC),
+│    customer-card-tab-orders (Tab 4 — M7 orders summary; all CTAs → coming-soon),
+│    customer-card-tab-docs (Tab 5 — customer-docs bucket upload + list + open),
+│    customer-list (Phase E — list boot + fetch v_customer_for_exam +
+│    v_customer_full lifecycle/phone merge + tenant_location + render + search
+│    debounce + pill filter + row-click → card),
+│    customer-list-sidebar (Phase E — Sketch 2 sidebar: 3 groups +
+│    tenant_location footer),
+│    customer-list-filters (Phase E — normalizePhoneQuery for leading-zero +
+│    E.164 suffix match + CUSTOMER_LIST_PILLS registry + applyListSearch/Filter),
+│    customer-create (Phase E — modal form + create_customer RPC + dedup-safe
+│    UX: created=true → redirect; created=false → existing-customer surface))
 │
 └── storefront/                 — 20 files (Studio admin UI — manages storefront content)
     (storefront-settings, storefront-brands, storefront-products, storefront-content,

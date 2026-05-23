@@ -407,3 +407,32 @@ Briefs should EXPLICITLY enumerate the surfaces VFV must cover and the bug-regre
 ```
 
 **Pipeline aggregation:** Any single 🔴 fidelity verdict → Pipeline cannot close 🟢 overall. The Tester returns the Pipeline to the Executor for fixes, with the DRIFT list as the actionable input.
+
+---
+
+### Visual-Fidelity Gate (MANDATORY BLOCKING — added 2026-05-23 per VISUAL_FIDELITY_GATE SPEC after M5 2nd-strike)
+
+**Trigger:** Tier C ALWAYS runs when the touched files include any browser-consumed `.html` / `.js` / `.css`, even when the SPEC's Read List does not explicitly name a mockup. If no mockup file exists, the gate runs against the SPEC's described layout + the project design system (Hybrid+Navy tokens, framed blocks, RTL discipline) — same blocking discipline.
+
+**Step 0 — First-load styled-check (catches CSS-link gaps + variable-resolution gaps before any comparison work):**
+
+1. Grep the HTML `<head>` for every stylesheet `<link rel="stylesheet">` the page should load. Confirm the module's own CSS file is in the list.
+2. Open the page in Chrome MCP. Run `getComputedStyle(document.documentElement).getPropertyValue('<one-canonical-token>')` (e.g. `--accent` for Hybrid+Navy, `--color-primary` for legacy). If empty string → the page is rendering with UNRESOLVED CSS variables → **automatic 🔴 BLOCKING FAIL**. This single check would have caught the M5 Phase D / E bug.
+3. Also probe `getComputedStyle(<a key card/block element>).backgroundColor`. If the bg is `rgba(0,0,0,0)` (transparent) on an element that should be surfaced (`.cust-card`, `.crm-card`, etc.) → variables unresolved → 🔴.
+4. Confirm the page is rendered styled (NOT raw text). Compare the screenshot to "raw HTML in browser" intuition; if the screenshot LOOKS like a markdown dump → 🔴.
+
+**Step 1 — Stylesheet-link audit:** every CSS file the module needs must be linked from the HTML AND must load (Chrome MCP `document.styleSheets` shows non-zero `cssRules.length`). 0 rules == file missing or broken. 🔴.
+
+**Step 2 — Mockup-vs-live 1:1 comparison (the core gate):** identical to Tier C above, with one mandatory addition: the comparison table must be EMBEDDED (image links + plain-text table) in BOTH `TEST_REPORT.md` AND propagated to `FOREMAN_REVIEW.md` at close. A bare screenshot path without the table is INVALID; the Foreman cannot write 🟢 without the table visible in their review.
+
+**Step 3 — Embed the evidence — mandatory contents:**
+- Live screenshot path (JPEG q=60-70 with retry-on-timeout per CLOSURE P-AUTHOR-3).
+- Mockup screenshot path OR mockup file path with "rendered at 1920×1080" note.
+- Markdown table: one row per region (header / each block / each field row / badges / buttons / colors+tokens / spacing / RTL). Columns: mockup-element → live-state → match/mismatch → severity → classification (INTENTIONAL / DRIFT / SCHEMA-BLOCKED / FEATURE-BLOCKED).
+- Verdict line: 🟢 1:1 / 🟡 minor drift acceptable / 🔴 BLOCK.
+
+**Step 4 — "Paperwork PASS" is explicitly INVALID:** if `TEST_REPORT.md` says "fidelity PASS" with no image AND no comparison table → that TEST_REPORT is itself a 🔴 finding. The Reviewer + Foreman must re-open the SPEC and demand the table. (Codified after Phase D + E shipped 🟢 with paperwork-only fidelity evidence.)
+
+**Step 5 — Refusal contract:** the Localhost-Tester REFUSES to return GREEN until (a) Step 0 passes (variables resolved + page styled, not raw), (b) the table is filled in, (c) every 🔴 DRIFT row has an Executor fix in place OR an explicit `SCHEMA-BLOCKED` / `FEATURE-BLOCKED` classification with the schema/feature gap logged as a finding. Re-tests after fixes follow the same procedure (no partial / no shortcut).
+
+**Bootstrap discipline — pipeline activation:** when ANY UI SPEC dispatches the chain Foreman → Executor → Reviewer → **Localhost-Tester** → Foreman, the Foreman cannot SKIP the Localhost-Tester step. Phase D + E inlined Chrome MCP smokes from inside the Executor without invoking the Tester as a separate gate, which is how paperwork-PASS slipped through. New rule: when the SPEC adds/modifies a `.html` / `.js` / `.css` touched by the browser, the Localhost-Tester is invoked + writes its own `LOCALHOST_TESTER_REPORT.md` (or appends to TEST_REPORT under a `## Localhost-Tester Visual-Fidelity Gate` heading) BEFORE the Foreman writes FOREMAN_REVIEW. If the section is missing from TEST_REPORT, FOREMAN_REVIEW must be marked 🔴 / REOPEN.
