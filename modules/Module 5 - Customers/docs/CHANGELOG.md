@@ -1,5 +1,17 @@
 # Module 5 — Customers — Changelog
 
+## Visual-Fidelity Gate applied (M5 card + list) — 2026-05-23
+
+Root cause behind the M5 Phase D + E "paperwork-PASS" fidelity evidence: `css/customers.css` referenced Hybrid+Navy tokens (`--bg-page`, `--accent`, `--border-subtle`, `--text-primary`, etc.) — copied from the mockup — but never declared them anywhere. `shared/css/variables.css` uses a different production naming convention (`--color-primary`, `--color-success`). All `var(--*)` resolved to empty string → card looked unstyled. Caught by the Architect (2nd strike after M1 lens) → blocking gate created (`modules/Module 1.5 - Shared Components/docs/specs/VISUAL_FIDELITY_GATE/`).
+
+Fix in `css/customers.css`: the `.cust-page` selector now declares all 24 Hybrid+Navy tokens directly (per opticup-executor's "page-scope override" pattern). Post-fix: every token resolves, card + list render with the canonical Navy `#1e3a8a` header / white surfaces / navy-soft active tabs.
+
+Re-verified region-by-region against both mockups (M5_CUSTOMER_CARD_MOCKUP.html + M5_CUSTOMERS_LIST_MOCKUPS.html Sketch 2) with comparison tables embedded in `VISUAL_FIDELITY_GATE/TEST_REPORT.md` + `FOREMAN_REVIEW.md`. Card + list both 🟡 — tokens + structure 1:1; remaining drift rows (Address/Contact/Additional-info schema gaps; aspirational mockup columns) all classified SCHEMA-BLOCKED / FEATURE-BLOCKED with finding-IDs.
+
+**No M5 schema change. No Prizma writes. No merge to main.**
+
+---
+
 ## Phase E — UI Customer List + Create-Mode — closed 2026-05-23 🟢 (M5 screen layer complete)
 
 Sketch 2 Split Workspace (sidebar + main table) on the existing `customers.html` entrypoint — no new root entrypoint, reuses Phase D's routing (`?customer_id=` = card; bare = list). 4 new page JS files under `modules/customers/` totaling 628 lines (all ≤300/350 cap): customer-list.js (271L) / customer-list-sidebar.js (91L) / customer-list-filters.js (104L) / customer-create.js (162L). Plus +100L additive CSS selectors + 1-line list-mode routing branch in customer-card.js + 11 additive coming-soon registry entries.
