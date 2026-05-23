@@ -168,10 +168,35 @@ test('3: integration — staged delete + NO auth SPEC → exit 1', () => {
   }
 });
 
+// Test 4: comment-awareness — SQL comments with destructive patterns should NOT trigger
+test('4: comment-awareness — SQL comment with DROP TABLE → no violation', () => {
+  const FIX_DIR = 'tests/__dog_test3_DELETEME';
+  const FIX_FILE = `${FIX_DIR}/migration.sql`;
+  try {
+    mkdirSync(join(REPO, FIX_DIR), { recursive: true });
+    writeFileSync(join(REPO, FIX_FILE),
+      '-- This migration secures backup tables\n' +
+      '-- Rollback: see backups/ folder for the original table\n' +
+      'ALTER TABLE public._events_ops_backups ENABLE ROW LEVEL SECURITY;\n',
+      'utf8');
+    execSync(`git add "${FIX_FILE}"`, { cwd: REPO, stdio: 'ignore' });
+
+    const { status, stdout } = runCheck();
+
+    safeUnstage(FIX_DIR);
+
+    assert(status === 0,
+      `Expected exit 0 (SQL comments should be skipped), got ${status}. stdout=${stdout}`);
+  } finally {
+    safeUnstage(FIX_DIR);
+  }
+});
+
 // Final cleanup safety net
 safeUnstage(FIXTURE_SPEC_DIR);
 safeUnstage('tests/__dog_test_DELETEME');
 safeUnstage('tests/__dog_test2_DELETEME');
+safeUnstage('tests/__dog_test3_DELETEME');
 
 const failed = RESULTS.filter(r => r.status === 'FAIL');
 const passed = RESULTS.filter(r => r.status === 'PASS');

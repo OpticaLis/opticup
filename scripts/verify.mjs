@@ -88,6 +88,11 @@ if (verbose) {
 //                              (auto-discovered). Enforces: every SPEC.md inside modules/*/docs/specs/*/
 //                              declares its destructive ops; staged commits do not introduce undeclared
 //                              destructive patterns (DROP/TRUNCATE/file deletes/mass renames/--no-verify).
+//   - check-view-security-invoker — Recurrence guard: any CREATE VIEW in SQL must assert
+//                              WITH (security_invoker = on). Added 2026-05-24 by night-run §1.3.
+//   - check-backup-table-rls  — Recurrence guard: any _backup_* table created via CREATE TABLE
+//                              must ENABLE RLS + REVOKE client grants in same file (CTAS inherits
+//                              no RLS). Added 2026-05-24 by night-run §1.3.
 let checkEntries;
 try {
   checkEntries = await readdir(CHECKS_DIR);

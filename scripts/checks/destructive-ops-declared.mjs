@@ -210,6 +210,8 @@ async function scanDestructivePatternsInDiff(filePath) {
       if (line.startsWith('+')) {
         lineNo += 1;
         const content = line.slice(1);
+        const trimmed = content.trimStart();
+        if (trimmed.startsWith('--') || trimmed.startsWith('#') || trimmed.startsWith('//')) continue;
         for (const { re, label } of DESTRUCTIVE_PATTERNS) {
           if (re.test(content)) {
             violations.push({ line: lineNo, label, text: content.trim().slice(0, 120) });
@@ -342,7 +344,6 @@ if (isMain) {
     console.log(`\n${specs.length} SPECs scanned, ${bad} non-compliant.`);
     process.exit(bad === 0 ? 0 : 1);
   }
-  // No flags → print help and exit 0 (so CI smoke `--help` test succeeds).
-  console.log(HELP_TEXT);
+  console.log(HELP_TEXT); // No flags → print help (CI smoke `--help` test)
   process.exit(0);
 }
