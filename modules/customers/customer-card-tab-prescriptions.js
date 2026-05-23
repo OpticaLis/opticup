@@ -54,7 +54,7 @@
              '<td>#' + escapeHtml(String(rxNum)) + '</td>' +
              '<td><span class="cust-pill ' + kindPillClass(r.kind) + '">' + escapeHtml(kindLabel(r.kind)) + '</span></td>' +
              '<td><span class="cust-pill ' + statusPillClass(r.status) + '">' + escapeHtml(statusLabel(r.status)) + '</span></td>' +
-             '<td>R: ' + escapeHtml(rSum) + '<br>L: ' + escapeHtml(lSum) + '</td>' +
+             '<td>' + escapeHtml(rSum) + '<br>' + escapeHtml(lSum) + '</td>' +
              '<td>' + escapeHtml(expiresStr) + '</td>' +
              '<td>' + escapeHtml(notesStr) + '</td>' +
              '<td class="cust-row-action">' +
