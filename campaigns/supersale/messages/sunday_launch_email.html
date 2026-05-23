@@ -1,0 +1,266 @@
+<!--
+  ═══════════════════════════════════════════════════════════════════
+  SuperSale Sunday Launch Teaser Email - Wave 1 (~1,142 invited-not-registered)
+  ═══════════════════════════════════════════════════════════════════
+  Authored 2026-05-22 for Events-Ops preview. NOT inserted into CRM, NOT sent.
+  Companion to the already-approved Sunday SMS. Drives the reader to the
+  /supersale-launch/ landing page and to reserve a spot via WhatsApp.
+
+  Variables in use (CRM substitution syntax - no new tokens introduced):
+    %name%               = lead's first name
+    %event_name%         = event name
+    %event_date%         = event date (DD/MM/YYYY)
+    %event_day_of_week%  = e.g., "יום שישי" (dynamic)
+    %event_time%         = e.g., "10:00 - 18:00"
+    %unsubscribe_url%    = per-recipient unsubscribe URL
+
+  Static URLs (hardcoded per brief - not per-lead):
+    Landing  → https://prizma-optic.co.il/supersale-launch/
+    WhatsApp → https://wa.me/972533645404 (prefilled reserve message)
+    Takanon  → https://prizma-optic.co.il/supersale-takanon/
+
+  Design canon: matches event_registration_open_email_he (dark elegant header,
+  single gold #c9a555 family, Rubik/Heebo, RTL, mobile-responsive table layout,
+  inline CSS only, email-client safe).
+  ═══════════════════════════════════════════════════════════════════
+-->
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>הצצה בלעדית למחירי האירוע - אופטיקה פריזמה</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    table { border-collapse: collapse !important; }
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      background-color: #000000;
+      font-family: 'Rubik', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    @media screen and (max-width: 600px) {
+      .container { width: 100% !important; }
+      .mobile-padding { padding-left: 20px !important; padding-right: 20px !important; }
+      .mobile-btn { width: 100% !important; display: block !important; box-sizing: border-box; }
+      .event-box { padding: 20px !important; }
+      .preview-box { padding: 22px 20px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#000000; direction:rtl; font-family:'Rubik','Segoe UI',Tahoma,sans-serif;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#000000; background-image: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #000000 70%);">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <!-- Main Container -->
+        <table border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="max-width:600px; background-color:#1a1a1a; border-radius:12px; overflow:hidden; border: 1px solid #2d2d2d; box-shadow: 0 10px 40px rgba(201, 165, 85, 0.15);">
+
+          <!-- Gold Bar Top -->
+          <tr>
+            <td height="4" style="background: linear-gradient(135deg, #c9a555 0%, #c9a555 50%, #e8da94 100%); line-height:4px; font-size:0;">&nbsp;</td>
+          </tr>
+
+          <!-- Wordmark -->
+          <tr>
+            <td align="center" style="padding: 40px 0 20px 0;">
+              <p style="margin:0; color:#c9a555; font-size:24px; font-weight:700; letter-spacing:4px; text-transform:uppercase; font-family:'Rubik','Segoe UI',sans-serif;">
+                PRIZMA OPTIC
+              </p>
+              <p style="margin:5px 0 0 0; color:#999999; font-size:12px; letter-spacing:2px; text-transform:uppercase; font-family:'Rubik','Segoe UI',sans-serif;">
+                Luxury Eyewear Events
+              </p>
+            </td>
+          </tr>
+
+          <!-- Main Content -->
+          <tr>
+            <td class="mobile-padding" style="padding: 10px 50px 40px 50px; text-align:right;">
+
+              <!-- Eyebrow + H1 hook (matches SMS) -->
+              <p style="margin:0 0 10px 0; font-size:12px; font-weight:700; color:#c9a555; text-transform:uppercase; letter-spacing:0.15em; text-align:center;">
+                הצצה בלעדית
+              </p>
+              <h1 style="margin:0 0 18px 0; font-size:26px; font-weight:700; color:#ffffff; text-align:center; line-height:1.35;">
+                המחירים והדגמים שיחכו לכם<br>באירוע הקרוב - חשופים מראש
+              </h1>
+              <p style="margin:0 0 28px 0; font-size:16px; line-height:1.7; color:#cccccc; text-align:center;">
+                היי %name%, ריכזנו לכם בעמוד אחד את <strong style="color:#ffffff;">קטלוג הדגמים והמחירים</strong> שיחכו ב-%event_name%. הצצה אמיתית, בלי הפתעות, לפני שמשריינים מקום.
+              </p>
+
+              <!-- ═══ EVENT DETAILS CARD (gold right-border) ═══ -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#1a1a1a; border:1px solid #2d2d2d; border-right:4px solid #c9a555; border-radius:12px; margin-bottom:28px;">
+                <tr>
+                  <td class="event-box" style="padding: 25px;">
+                    <p style="margin:0 0 5px 0; font-size:12px; font-weight:700; color:#c9a555; text-transform:uppercase; letter-spacing:0.15em;">
+                      פרטי האירוע
+                    </p>
+                    <p style="margin:0 0 18px 0; font-size:22px; font-weight:700; color:#ffffff;">
+                      %event_name%
+                    </p>
+                    <table border="0" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td width="32" valign="middle" style="padding-bottom:12px;">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a555" stroke-width="1.5" style="vertical-align:middle;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/>
+                          </svg>
+                        </td>
+                        <td valign="middle" style="font-size:16px; color:#ffffff; padding-bottom:12px;">
+                          <strong>%event_day_of_week%, %event_date%</strong>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td width="32" valign="middle" style="padding-bottom:12px;">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a555" stroke-width="1.5" style="vertical-align:middle;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                        </td>
+                        <td valign="middle" style="font-size:16px; color:#cccccc; padding-bottom:12px;">
+                          שעות הפעילות: %event_time%
+                        </td>
+                      </tr>
+                      <tr>
+                        <td width="32" valign="middle">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#c9a555" style="vertical-align:middle;">
+                            <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+                          </svg>
+                        </td>
+                        <td valign="middle" style="font-size:16px; color:#cccccc;">
+                          הרצל 32, אשקלון (יש חניה במקום)
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- ═══ WHAT'S INSIDE - informative, not salesy ═══ -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background: linear-gradient(135deg, rgba(201, 165, 85, 0.08) 0%, rgba(232, 218, 148, 0.05) 100%); border:1px solid rgba(201, 165, 85, 0.3); border-radius:12px; margin-bottom:26px;">
+                <tr>
+                  <td class="preview-box" style="padding: 26px 25px;">
+                    <p style="margin:0 0 6px 0; font-size:12px; font-weight:700; color:#c9a555; text-transform:uppercase; letter-spacing:0.15em; text-align:center;">
+                      מה יחכה בעמוד
+                    </p>
+                    <h3 style="margin:0 0 18px 0; font-size:20px; font-weight:700; color:#ffffff; text-align:center;">
+                      קטלוג הדגמים והמחירים, חשוף מראש
+                    </h3>
+
+                    <!-- Two-row info block: בתי אופנה (with price) + קולקציות יוקרה (no price) -->
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td style="padding: 0 0 14px 0; border-bottom:1px solid rgba(201, 165, 85, 0.18);">
+                          <p style="margin:0 0 4px 0; font-size:15px; font-weight:700; color:#ffffff;">
+                            בתי אופנה נבחרים
+                          </p>
+                          <p style="margin:0 0 4px 0; font-size:14px; line-height:1.6; color:#dddddd;">
+                            Prada, Miu Miu, Tiffany &amp; Co, Versace, Ray-Ban ועוד - במחירי אירוע <strong style="color:#e8da94;">החל מ-400 ₪</strong>.
+                          </p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 0 0 0;">
+                          <p style="margin:0 0 4px 0; font-size:15px; font-weight:700; color:#ffffff;">
+                            קולקציות יוקרה
+                          </p>
+                          <p style="margin:0; font-size:14px; line-height:1.6; color:#dddddd;">
+                            John Dalia, Cazal, KameManNen, Matsuda ו-Fred - קולקציות נדירות בעבודת יד, עם הטבות אירוע בלעדיות לנרשמים מראש.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- ═══ EARLY-RESERVER NOTE (light, reason to act now) ═══ -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 28px; background-color:#1a1a1a; border-radius:12px; border:1px solid #2d2d2d;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <p style="margin:0 0 8px 0; font-size:13px; font-weight:700; color:#c9a555; text-transform:uppercase; letter-spacing:0.12em;">
+                      אקסטרא לנרשמים מראש
+                    </p>
+                    <p style="margin:0; color:#dddddd; font-size:14px; line-height:1.65;">
+                      מי שמשריין מקום מראש מקבל <strong style="color:#ffffff;">הטבת אקסטרא של ₪50 הנחה</strong> על משקפי בית אופנה פרימיום, בנוסף לכל הטבות האירוע. הקופון האישי נשמר על שמכם ומחכה בקופה.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- ═══ PRIMARY CTA - canon §4.1 Style 1 (gold gradient, dark text) ═══ -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="center">
+                    <a href="https://prizma-optic.co.il/supersale-launch/" class="mobile-btn" style="display:inline-block; padding:18px 36px; background:linear-gradient(135deg, #c9a555 0%, #c9a555 50%, #e8da94 100%); color:#1a1a1a; font-family:'Rubik','Segoe UI',sans-serif; font-size:17px; font-weight:700; text-decoration:none; border-radius:9999px; letter-spacing:0.3px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);">
+                      לצפייה בדגמים ובמחירים
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- WhatsApp secondary CTA -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 14px;">
+                <tr>
+                  <td align="center">
+                    <a href="https://wa.me/972533645404?text=%D7%94%D7%99%D7%99%2C%20%D7%90%D7%A0%D7%99%20%D7%A8%D7%95%D7%A6%D7%94%20%D7%9C%D7%A9%D7%A8%D7%99%D7%99%D7%9F%20%D7%9E%D7%A7%D7%95%D7%9D%20%D7%9C%D7%90%D7%99%D7%A8%D7%95%D7%A2%20%D7%94%D7%A9%D7%A7%D7%AA%20%D7%94%D7%A7%D7%95%D7%9C%D7%A7%D7%A6%D7%99%D7%95%D7%AA%20%D7%91%D7%99%D7%95%D7%9D%20%D7%A9%D7%99%D7%A9%D7%99%2029.5%20%D7%91%D7%A1%D7%A0%D7%99%D7%A3%20%D7%90%D7%A9%D7%A7%D7%9C%D7%95%D7%9F.%20%5B%D7%94%D7%92%D7%A2%D7%AA%D7%99%20%D7%9E%D7%94%D7%9E%D7%99%D7%99%D7%9C%5D" class="mobile-btn" style="display:inline-block; padding:13px 28px; background-color:transparent; color:#c9a555; border: 1.5px solid #c9a555; font-family:'Rubik','Segoe UI',sans-serif; font-size:14px; font-weight:700; text-decoration:none; border-radius:9999px; letter-spacing:0.3px;">
+                      לשריון מקום בוואטסאפ
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- ═══ FAQ NUDGE ═══ -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 32px; background-color:#1a1a1a; border-radius:12px; border:1px solid #2d2d2d;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <h3 style="margin:0 0 8px 0; font-size:15px; font-weight:700; color:#c9a555;">
+                      שאלות ותשובות בעמוד
+                    </h3>
+                    <p style="margin:0; color:#cccccc; font-size:14px; line-height:1.65;">
+                      בעמוד מחכה גם מדור <strong style="color:#ffffff;">שאלות ותשובות</strong> - איך עובדים מחירי האירוע, מנגנון התחייבות למחיר הזול בישראל, מסירת המשקפיים והמשלוחים, וכל המידע שכדאי לדעת לפני שמגיעים. שווה קריאה.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Sign Off -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 32px; border-top: 1px solid #2d2d2d;">
+                <tr>
+                  <td style="padding-top: 20px;">
+                    <p style="margin:0; font-size:15px; color:#ffffff;">בברכה,</p>
+                    <p style="margin:5px 0 0 0; font-size:15px; color:#c9a555; font-weight:700;">צוות אופטיקה פריזמה</p>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Unsubscribe Block -->
+          <tr>
+            <td align="center" style="padding: 18px 20px; border-top: 1px solid #2d2d2d; color:#999999; font-size:12px; line-height:1.6;">
+              <p style="margin:0 0 10px 0;">המייל נשלח אליכם בעקבות הרשמתכם למערכת עדכוני האירועים של אופטיקה פריזמה.</p>
+              <a href="%unsubscribe_url%" style="color:#c9a555; text-decoration:underline;">הסרה מרשימת התפוצה</a>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ═══ COPYRIGHT (under main card) ═══ -->
+        <table border="0" cellpadding="0" cellspacing="0" width="600" class="container">
+          <tr>
+            <td align="center" style="padding: 20px 0; color:#666666; font-size:11px; line-height:1.6;">
+              © כל הזכויות שמורות לאופטיקה פריזמה | הרצל 32, אשקלון
+              <br>
+              ההטבות מיועדות לנרשמים מראש בלבד. ההשתתפות בכפוף לאישור סופי וזמינות המלאי.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
