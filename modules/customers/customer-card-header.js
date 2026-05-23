@@ -2,7 +2,7 @@
    M5 Customer Card — header rendering + edit-mode toggle + actions.
    Source views: v_customer_for_exam (composite display + first/last + age)
                  v_customer_full (phone + city for the meta line).
-   Wired badges: Inactive ↔ lifecycle_stage='dormant'; Locked ↔ is_deleted.
+   Wired badge: Inactive ↔ lifecycle_stage='dormant'.
    Blurred badges: VIP, חבר-מועדון — bound via bindComingSoon().
    ============================================================ */
 (function () {
@@ -38,9 +38,8 @@
     var ini = initials(customer.full_name, customer.first_name, customer.last_name);
     var editing = !!(window.M5Card && window.M5Card.state.editMode);
 
-    // Wired badges
+    // Wired badge
     var isDormant = customer.lifecycle_stage === 'dormant';
-    var isLocked  = customer.is_deleted === true;
 
     var metaParts = [];
     metaParts.push('📱 ' + escapeHtml(phone));
@@ -55,7 +54,6 @@
           '<div class="cust-meta">' + meta + '</div>' +
         '</div>' +
         (isDormant ? ' <span class="cust-pill cust-pill-gray" title="lifecycle_stage=dormant">לא פעיל</span>' : '') +
-        (isLocked  ? ' <span class="cust-pill cust-pill-coral" title="is_deleted=true">נעול</span>' : '') +
         ' <span class="cust-pill cust-pill-amber" data-coming-soon="vip">VIP</span>' +
         ' <span class="cust-pill cust-pill-teal"  data-coming-soon="loyalty_member">חבר-מועדון</span>' +
       '</div>' +

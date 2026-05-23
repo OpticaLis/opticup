@@ -108,7 +108,36 @@ No reopener-class findings. The card is functional + secure + well-bounded.
 | `modules/Module 5 - Customers/docs/MODULE_MAP.md` | ⏳ Pending | The MODULE_MAP file is schema-focused; Phase D added UI files, not schema. The new UI surface is captured in GLOBAL_MAP §"Module 5 — Customer Card UI" subsection. Could add a "UI Surfaces" section to MODULE_MAP for completeness — proposing as a separate small SPEC (or pick up in Phase E). |
 | `MODULE_SPEC.md` | N/A | Business logic unchanged. |
 
-## Verdict
+## Closure Addendum (CLOSURE_SPEC, 2026-05-23)
+
+The CLOSURE_SPEC (`CLOSURE_SPEC.md`) cleared the 2 non-🟢 follow-ups in one tight pass:
+
+- **T11 visual fidelity:** ⚠ → ✅. Clean per-tab viewport JPEG set captured at quality=60 (the workaround for the prior timeout) and saved under `screenshots/closure/`. Each tab has a one-line mockup-vs-live fidelity note in `TEST_REPORT.md §"T11 closure capture"`. All 5 tabs ✅ structural match; no material drift beyond the already-settled stub/blur/coming-soon decisions.
+- **F-T5-DESIGN:** ⚠ → **RESOLVED**. The Locked badge was removed from both surfaces (header pill in `customer-card-header.js` + bottom flags row in `customer-card-tab-details.js`). The `isLocked` variable declarations + their conditional render branches + the stale Locked reference in the header doc comment are all gone. The blurred coming-soon registry was NOT modified (Locked was never a coming-soon entry — verified by grep before editing). Other badges (Inactive wired, VIP / חבר-מועדון / Subscription / Queue blurred) unchanged. Card boots clean post-removal: 0 console errors, all 5 tabs render, all 4 blurred badges still route through `showComingSoon`.
+
+**Documented future wants (not built — recorded only):**
+- Customer LOCK feature — TECH_DEBT.md #M5_CUSTOMER_LOCK_FEATURE.
+- See-deleted / audit mode — TECH_DEBT.md #M5_SEE_DELETED_AUDIT_MODE.
+
+**Closure SPEC commits:**
+- `33ae182` docs(m5d): seal CLOSURE_SPEC.md
+- (this close) `feat(m5d): remove dead Locked badge + T11 closure capture + close 🟢`
+
+**Author improvement proposal harvested from this closure (1):**
+- **P-AUTHOR-3 — Screenshot-tool retry/quality fallback in CLOSURE-class SPECs.** Symptom: full-page PNG screenshots intermittently time out on `mcp__chrome-devtools__take_screenshot`. Fix: codify the "viewport JPEG quality=60 with one retry" pattern in `opticup-strategic` SKILL.md as the canonical Chrome MCP screenshot recipe for Iron Rule 34 closure evidence. Pin in SPEC_TEMPLATE.md §3b. Eliminates the 30-second-per-retry delay every closure SPEC will otherwise repeat.
+
+**Executor improvement proposal harvested from this closure (1):**
+- **P-EXEC-3 — A11y-snapshot-as-evidence equivalence.** Symptom: when full-page screenshots time out, the a11y snapshot from `take_snapshot` provides structurally-equivalent evidence (text content + UID-tagged DOM tree). The original Phase D Foreman review accepted a11y snapshots as adequate Iron Rule 34 evidence; codify this in `opticup-executor` SKILL.md so the Executor doesn't waste smoke iterations retrying screenshots when the a11y trace already proves the fidelity. JPEGs supplement (visual) but are not strictly required if the trace is complete.
+
+## Verdict (CLOSURE)
+
+🟢 **CLOSED.**
+
+Both T11 + F-T5-DESIGN cleared. Iron Rule 34 closure re-verified with the JPEG fidelity set + post-removal a11y snapshots + 0-console-error reboot. The render+action wiring pattern is now the spotless template every later M5-M9 UI screen will copy. Phase E (customer list + create-mode) is the natural next SPEC.
+
+---
+
+## Verdict (Phase D — pre-closure, retained for history)
 
 🟡 **CLOSED WITH FOLLOW-UPS.**
 

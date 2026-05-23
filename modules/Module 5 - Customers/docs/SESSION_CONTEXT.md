@@ -1,7 +1,7 @@
 # Module 5 — Customers — Session Context
 
-**Last updated:** 2026-05-23 Phase D code-complete.
-**Status:** 🟢 Phase A+B (Schema + RPCs) CLOSED · 🟢 M5_LEADS_MIGRATION CLOSED · ✅ Phase D (UI Customer Card) **code-complete; awaiting Foreman closure**. Phase C (OpticPlus migration), Phase E (UI customer list + create-mode) deferred.
+**Last updated:** 2026-05-23 Phase D closed 🟢 (CLOSURE_SPEC).
+**Status:** 🟢 Phase A+B (Schema + RPCs) CLOSED · 🟢 M5_LEADS_MIGRATION CLOSED · 🟢 **Phase D (UI Customer Card) CLOSED** — Iron Rule 34 closure complete (T11 ✅, F-T5-DESIGN RESOLVED, dead Locked badge removed, clean visual-fidelity set across all 5 tabs). Phase C (OpticPlus migration), Phase E (UI customer list + create-mode) deferred.
 
 ## Current state
 
@@ -59,13 +59,14 @@
 
 Out of Phase D scope, requires Daniel-in-loop:
 
-1. **Phase D Foreman closure** — opticup-reviewer reads REVIEW.md, then opticup-strategic Foreman writes FOREMAN_REVIEW.md with Chrome MCP evidence cross-check + 2 author + 2 executor proposals.
-2. **M5_UI_CUSTOMER_LIST SPEC (Phase E)** — Split-workspace list + sidebar + advanced search + create-mode. Reuses `customers.html` entrypoint (no `?customer_id=` → list mode).
-3. **Tab 2 follow-up SPEC** — M6 ships `v_customer_vision_function_history` so the card's Tab 2 stub can light up.
-4. **M5_MIGRATION SPEC (Phase C)** — import 5,028 OpticPlus customers (crm_leads rollover already done by M5_LEADS_MIGRATION).
-5. **F-7 quick fix** — Tab 3 R/L summary double-prefix.
-6. **F-T5-DESIGN follow-up** — either remove the Locked badge or add an include-deleted card mode.
-7. **F-8 split** — `js/shared-field-map.js` per-module split (file hit the 350-line cap).
+1. **M5_UI_CUSTOMER_LIST SPEC (Phase E)** — Split-workspace list + sidebar + advanced search + create-mode. Reuses `customers.html` entrypoint (no `?customer_id=` → list mode).
+2. **Tab 2 follow-up SPEC** — M6 ships `v_customer_vision_function_history` so the card's Tab 2 stub can light up.
+3. **M5_MIGRATION SPEC (Phase C)** — import 5,028 OpticPlus customers (crm_leads rollover already done by M5_LEADS_MIGRATION).
+4. **Customer LOCK feature (future, NEW)** — block an ACTIVE customer from edits / order creation / payment edits without deleting. Freeze for debt / dispute / pending check. Distinct from soft-delete. Surfaced while removing the dead Locked badge in CLOSURE_SPEC. Requires an Architect cross-module pass (likely gates M7 + M8 for a locked customer) before becoming a SPEC. Logged in TECH_DEBT.md #M5_CUSTOMER_LOCK_FEATURE.
+5. **See-deleted / audit mode (future, NEW — smaller)** — a future include-deleted view (in Phase E list, or a dedicated audit screen) that would make a real "deleted customer" indicator reachable through the UI (the views currently filter `is_deleted=false`). Logged in TECH_DEBT.md #M5_SEE_DELETED_AUDIT_MODE.
+6. **F-8 split** — `js/shared-field-map.js` per-module split (file hit the 350-line cap during Phase D).
+7. **F-2 + F-3 schema column expansions** — `customer_documents.{size_bytes,mime_type,description}` + an `orders.total_amount` aggregation view/RPC.
+8. **F-6 follow-up** — extract `authReady()` helper into `auth-service.js` so each new ERP page doesn't reinvent the `loadSession()` boot.
 
 ## Notes
 

@@ -13,7 +13,7 @@
 | **A** | Schema + RLS + Views + Config seeds | ⬜ in progress (2026-05-22 overnight) | `docs/specs/M5_SCHEMA/` | Combined with Phase B in one overnight schema SPEC |
 | **B** | RPCs + dedup + Iron Rule 32 | ⬜ in progress (2026-05-22 overnight) | `docs/specs/M5_SCHEMA/` | Combined with Phase A |
 | C | OpticPlus migration (5,028 customers + 1,158 leads) | ⬜ deferred | `docs/specs/M5_MIGRATION/` (not yet authored) | Separate SPEC, Daniel-in-loop. crm_leads rollover already done by M5_LEADS_MIGRATION (4+1296). |
-| **D** | **UI — Customer card (5 tabs)** | **✅ code-complete 2026-05-23** | `docs/specs/M5_UI_CUSTOMER_CARD/` | First UI on the M5-M9 spine. Chrome MCP smokes T1-T10 PASS (7 full + 2 design findings); T11 partial (screenshot timeout). Awaiting Foreman closure. |
+| **D** | **UI — Customer card (5 tabs)** | **✅ 🟢 CLOSED 2026-05-23** | `docs/specs/M5_UI_CUSTOMER_CARD/` (incl. `CLOSURE_SPEC.md`) | First UI on the M5-M9 spine. Iron Rule 34 closure complete: T11 ✅ (clean per-tab JPEG fidelity set), F-T5-DESIGN RESOLVED (dead Locked badge removed). Render+action wiring pattern established for every later M5-M9 UI screen. |
 | E | UI — Customer list + create-mode | ⬜ deferred | `docs/specs/M5_UI_CUSTOMER_LIST/` (not yet authored) | UI SPEC, Daniel-in-loop. Reuses customers.html entrypoint. |
 
 Phases A + B together = the **schema foundation** built tonight. They are sealed in one combined SPEC (`M5_SCHEMA`) per the overnight Brief recommendation: each half remains independently verifiable but they share one DDL transaction graph and one functional smoke suite. UI + migration phases are out-of-scope tonight (require Daniel-in-loop for Chrome MCP smoke + curated data review respectively).

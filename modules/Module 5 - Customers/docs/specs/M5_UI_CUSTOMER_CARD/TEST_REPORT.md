@@ -16,7 +16,7 @@
 | **T8** | Tab 4 orders summary | ✅ PASS | After Step-11 fix (drop `total_amount`, add FK hint `sub_orders!sub_orders_order_id_fkey`): 5 orders rendered for "דניאל לוי" with `order_number`, `created_at`, `sub_orders` count (order #4 had 4 sub-orders), `status='quote'`. All CTAs ("+ הזמנה חדשה", "→ פתח מסך-M7", per-row "פתח") wired to `showComingSoon('orders_m7_ui')` with the canonical label. |
 | **T9** | Tab 5 docs upload to `customer-docs` bucket | ✅ PASS | Uploaded a tiny in-memory PDF via the wired drag/drop input. Trace event order: `storage_upload_called(size:15, path:8d8c.../8fcc.../<docid>) → storage_upload_resolved(error:null) → customer_documents_insert_called → customer_documents_insert_resolved(error:null) → docs_loaded`. DB verified: 2 rows inserted (synthetic-event double-fire from the smoke harness, not the production input event). Storage object created at `customer-docs/{tenant_id}/{customer_id}/{document_id}.pdf`. RLS policy on storage.objects engaged correctly. Test rows + storage objects cleaned up at smoke teardown. |
 | **T10** | Cross-tenant guard | ✅ PASS | Navigated `customers.html?t=demo&customer_id=<prizma-customer-uuid>` on demo-authenticated session. Got "שגיאה בטעינת הלקוח: Cannot coerce the result to a single JSON object" (PostgREST 406 from RLS rejecting the cross-tenant row). Zero Prizma data leaked into the rendered card. |
-| **T11** | Mockup-vs-live fidelity | ⚠ PARTIAL | Visual screenshot capture timed out repeatedly (Chrome MCP tool limitation — full-page PNG screenshots > viewport JPEG). A11y snapshots captured per tab show structural fidelity (correct sections, headings, button labels, pill text). Pixel-level visual diff vs. mockup deferred to Foreman review with screenshot retries; the JPEG viewport screenshots that succeeded show Tabs 1 + 2 + 4 rendered against Hybrid+Navy tokens matching the mockup's palette. |
+| **T11** | Mockup-vs-live fidelity | ✅ PASS (CLOSURE_SPEC 2026-05-23) | See "T11 closure capture" section below. Clean per-tab viewport JPEG set under `screenshots/closure/` + per-tab fidelity notes. Retry-on-timeout (drop quality to 60) was the workaround; all 5 captures succeeded. |
 
 ## Console error count
 
@@ -32,6 +32,25 @@
 - T9 customer_documents rows hard-deleted via service_role DELETE + storage objects removed via `sb.storage.remove()` (2 objects).
 
 Final demo state: `customers WHERE id='8fcc5610-...'` → lifecycle='prospect', is_deleted=false, last_name='לוי', phone='+972501111111'. Customer is in the same state as at smoke start.
+
+## T11 closure capture (CLOSURE_SPEC, 2026-05-23)
+
+Per-tab viewport JPEG captures against live demo customer `8fcc5610-...` ("דניאל לוי"). Capture technique: `mcp__chrome-devtools__take_screenshot --format=jpeg --quality=60`. The lower-quality JPEG avoids the `Page.captureScreenshot timed out` that hit the original Phase D close.
+
+| Tab | Capture | Mockup-vs-live fidelity note |
+|---|---|---|
+| 1 Details (פרטים) | `screenshots/closure/tab1_details.jpeg` | ✅ Structural match — header (avatar + name+age + phone meta + VIP/חבר-מועדון blurred pills + 3 action buttons), composite display `02STA00001`, 5 tab nav, 3-col personal/address/contact + 2-col additional-info/business-notes + medical area with Medical Q / Diagnostics sub-tabs + queue block (blurred) + bottom flags (Inactive wired / Subscription blurred — **no Locked**). Hybrid+Navy tokens correct. Birthday auto-tag present. |
+| 2 Vision (תפקודי ראייה) | `screenshots/closure/tab2_vision_stub.jpeg` | ✅ Matches D-T2 decision — single centered panel with `COMING_SOON_LABEL` + the M6 follow-up reference. Mockup's aspirational 24-row vision-function test grid is the documented deferral; rendering it as a stub is the agreed shape. |
+| 3 Prescriptions (בדיקות ראייה) | `screenshots/closure/tab3_prescriptions.jpeg` | ✅ Structural match — info banner + 4 filter pills with live counts (הכל 4 / משקפיים 4 / עדשות-מגע 0 / פעילים 0) + "+ מרשם חדש" + 8-column table (date / mo`. / type / state / R-L summary / expiry / notes / actions). **F-7 fix verified live** — R/L summaries single-prefixed ("R: -3.00 / -1.00 x 180"), not double. 4 demo prescriptions visible with correct kind/status pills. |
+| 4 Orders (הזמנות) | `screenshots/closure/tab4_orders.jpeg` | ✅ Structural match — amber banner ("לשונית הזמנות = מסך-M7 המלא") + 2 CTAs ("+ הזמנה חדשה", "→ פתח מסך-M7" — both blurred/coming-soon) + summary table (5 M7 orders, status='quote', sub_orders count for order #4 = 4). The mockup's "סכום" (amount) column is deliberately omitted per F-3 (no `orders.total_amount` deployed) — documented tech-debt. |
+| 5 Docs (מסמכים) | `screenshots/closure/tab5_docs.jpeg` | ✅ Structural match — 5 filter pills (counts all 0 after smoke teardown) + scan button (blurred/coming-soon per D-T5) + empty-state message + drag/drop upload zone with PDF/JPG/PNG · 10MB constraint. No delete button (per D-T5). |
+
+**Item B verification (Locked badge removed):**
+- Header pill a11y snapshot post-removal: `VIP` (uid 16_6) + `חבר-מועדון` (uid 16_7) — no Locked / נעול present. Other badges unchanged. ✅
+- Bottom flags row a11y snapshot post-removal: `Inactive` (uid 16_58) + `Subscription` (uid 16_59) — no Locked. ✅
+- `grep -n "Locked|נעול|isLocked" modules/customers/*.js` → 0 hits (grep exit code 1 = no match). ✅
+- Console messages on hard-reload after removal: 0 errors (1 pre-existing Supabase GoTrueClient multi-instance WARN, not an error — same warning was present before the removal; not introduced by this SPEC). ✅
+- COMING_SOON_REGISTRY unchanged — Locked was never in it. ✅
 
 ## Iron Rule 34 closure evidence (per SPEC §3b)
 

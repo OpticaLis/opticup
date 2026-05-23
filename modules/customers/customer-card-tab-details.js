@@ -140,7 +140,6 @@
 
   function renderFlagsRow(customer) {
     var isDormant = customer.lifecycle_stage === 'dormant';
-    var isLocked  = customer.is_deleted === true;
     var ts = new Date().toLocaleTimeString('he-IL');
     return '<div class="cust-flags-row">' +
              '<span class="cust-flag" title="lifecycle_stage=dormant">' +
@@ -148,9 +147,6 @@
              '</span>' +
              '<span class="cust-flag blurred" data-coming-soon="subscription">' +
                '<span class="box"></span> Subscription' +
-             '</span>' +
-             '<span class="cust-flag" title="is_deleted=true">' +
-               '<span class="box' + (isLocked ? ' checked' : '') + '"></span> Locked' +
              '</span>' +
              '<span class="cust-autosave" id="cust-autosave-ind">✓ נשמר אוטומטית · ' + escapeHtml(ts) + '</span>' +
            '</div>';

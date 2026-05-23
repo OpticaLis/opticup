@@ -7,6 +7,30 @@
 
 ## Active Debt
 
+### #M5_CUSTOMER_LOCK_FEATURE — 🟢 Customer LOCK (block ACTIVE customer w/o delete)
+
+**Where:** M5 customers entity + M7 orders + M8 payments (cross-module).
+
+**What:** A new "locked" state for an ACTIVE customer that blocks edits/order-creation/payment-edits without soft-deleting them. Distinct from `is_deleted=true` (which removes them from `v_customer_for_exam` / `v_customer_full`). Use cases: pending check / unpaid debt / dispute freeze / pre-litigation hold.
+
+**Why it's debt (🟢):** surfaced 2026-05-23 while removing the dead `Locked / נעול` badge from the customer card (F-T5-DESIGN). The badge was checking `customer.is_deleted=true` but those customers never load → unreachable. The product wanted a real "locked" indicator, but the underlying behavior (block-but-keep-visible) is a new feature, not a render fix. Logged here for the next Architect pass.
+
+**Planned fix:** new SPEC after Phase E. Likely adds: `customers.is_locked boolean NOT NULL DEFAULT false` + `customers.locked_reason text` + `customers.locked_until timestamptz` + an Edge-Function gate on M7 order-creation + M8 payment-edits that returns 42501-equivalent for locked customers. Surface in the card via a real Locked pill (replacing the removed dead one). Needs cross-module Architect pass first (gates M7/M8 behavior).
+
+**Source:** `modules/Module 5 - Customers/docs/specs/M5_UI_CUSTOMER_CARD/CLOSURE_SPEC.md` §4. Brief §4. SESSION_CONTEXT "what's next" #4.
+
+### #M5_SEE_DELETED_AUDIT_MODE — 🟢 See-deleted / audit mode (include `is_deleted=true` in UI)
+
+**Where:** M5 customers UI (Phase E list + a possible audit screen).
+
+**What:** A future include-deleted view that makes soft-deleted customers reachable through the UI. Today the views `v_customer_for_exam` / `v_customer_full` filter `is_deleted=false`, so a deleted customer cannot be opened in the card. An audit/undelete flow needs either a separate view (reading the base `customers` table) or a query-param toggle on the existing views.
+
+**Why it's debt (🟢):** smaller follow-up surfaced alongside #M5_CUSTOMER_LOCK_FEATURE. The current behavior (refusing to render deleted customers) is defensible for the staff card, but undelete/audit flows are genuine needs.
+
+**Planned fix:** Phase E (customer list) could add a "מחוקים" filter pill that switches to a base-table query under a permission gate. Alternatively a dedicated `/audit/customers.html?include_deleted=true` screen.
+
+**Source:** `modules/Module 5 - Customers/docs/specs/M5_UI_CUSTOMER_CARD/CLOSURE_SPEC.md` §7. SESSION_CONTEXT "what's next" #5.
+
 ### #M1_LENS_CATALOG_GLASSES_VS_CONTACTS_SPLIT — 🔴 Catalog mixes two product domains (blocks any re-seed)
 
 **Where:** `tests/קטלוג-עדשות-18.5.26.xls` (Excel source), `lens_brand` / `lens_design` / `lens_variant` global tables, `contact_lens_*` tables (already exist per M1_CONTACT_LENSES_ACCESSORIES).
