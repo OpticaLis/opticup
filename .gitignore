@@ -1,5 +1,11 @@
 node_modules/
 
+# Clean-repo discipline (REPO_CLEANUP_MERGE_ENFORCEMENT SPEC 2026-05-23) —
+# patterns for transient artifacts that should never have been tracked.
+*.log
+scripts/tmp-*
+.pr-body.md
+
 # .claude/ — track project skills only; explicitly ignore local Claude config.
 # Pattern: ignore the whole dir, re-include skills tree, then specifically
 # ignore the known per-user / per-machine items so they don't leak.
