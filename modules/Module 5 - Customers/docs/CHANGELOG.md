@@ -1,5 +1,15 @@
 # Module 5 — Customers — Changelog
 
+## 2026-05-23 — M5_LEADS_MIGRATION closed 🟢 + lifecycle trigger wired (via Track 1)
+
+NIGHT_RUN chain Track 2: `crm_leads → customers` additive seam. Demo 4 active leads + Prizma 1,296 active leads migrated to `customers` with `lifecycle_stage='lead'`. crm_leads UNCHANGED (28+1354 totals). New column `customers.source_crm_lead_id` is the back-reference for future M4-cutover FK re-point. New enum value `'lead'` added.
+
+Sealed under `docs/specs/M5_LEADS_MIGRATION/`.
+
+NIGHT_RUN chain Track 1 also re-wired the lifecycle trigger (deferred from M5 Phase A+B): `compute_lifecycle_stage_on_order()` is now attached to `payments` AFTER INSERT OR UPDATE OF status WHEN paid+amount≥1 → customer auto-advances `prospect → active` on first paid payment. Closes the original M5 §1.1 promise. Sealed under `modules/Module 1.5 - Shared Components/docs/specs/M5_M8_CROSS_CONTRACT_FIXES/`.
+
+---
+
 ## Phase A+B — Schema + RPCs + Views — closed 2026-05-22 🟢
 
 Overnight Full-Auto Pipeline chain Half 1. Smoke 9/9 PASS on demo. Cross-contract bridge with M6 5/5 PASS. Advisors clean. No Prizma row writes.
