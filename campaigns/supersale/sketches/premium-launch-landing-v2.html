@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>אירוע השקת קולקציות - אופטיקה פריזמה</title>
+<style>
+  :root{ --gold:#c9a555; --gold-d:#9c7d22; --ink:#1a1a1a; --muted:#6b6b6b; --line:#e7e3d8; --bg:#faf8f3; --dark:#111; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ font-family:'Rubik','Heebo',-apple-system,'Segoe UI',sans-serif; color:var(--ink); background:var(--bg); line-height:1.6; }
+  .wrap{ max-width:1180px; margin:0 auto; padding:0 16px; }
+
+  header.hero{ background:var(--dark); color:#fff; text-align:center; padding:50px 16px 42px; }
+  .kicker{ font-size:12px; letter-spacing:3px; color:var(--gold); margin-bottom:14px; }
+  header.hero h1{ font-size:33px; font-weight:600; margin-bottom:10px; }
+  header.hero .sub{ font-size:17px; color:#d9d4c6; max-width:640px; margin:0 auto 20px; }
+  .event-chip{ display:inline-flex; align-items:center; gap:10px; background:rgba(201,165,85,.15); border:1px solid var(--gold); color:var(--gold); font-size:14px; padding:9px 18px; border-radius:8px; }
+
+  .pledge{ background:#1c1c1c; color:#f0ead8; text-align:center; font-size:14px; padding:13px 16px; border-bottom:1px solid #2a2a2a; }
+  .pledge b{ color:var(--gold); }
+
+  .trust{ display:flex; flex-wrap:wrap; justify-content:center; gap:26px; padding:18px 16px; border-bottom:1px solid var(--line); background:#fff; }
+  .trust div{ font-size:13px; color:var(--muted); }
+  .trust b{ color:var(--ink); }
+
+  .tabs{ display:flex; justify-content:center; gap:8px; padding:22px 16px 6px; flex-wrap:wrap; }
+  .tab{ font-size:15px; font-weight:500; padding:10px 20px; border:1px solid var(--line); background:#fff; border-radius:9px; cursor:pointer; color:var(--muted); }
+  .tab.active{ background:var(--dark); color:#fff; border-color:var(--dark); }
+
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  .sec-title{ text-align:center; padding:22px 16px 4px; }
+  .sec-title h2{ font-size:22px; font-weight:600; }
+  .sec-title p{ font-size:14px; color:var(--muted); margin-top:6px; }
+
+  .grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:18px; padding:22px 0 12px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; transition:transform .15s, box-shadow .15s; }
+  .card:hover{ transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,.08); }
+  .ph{ background:#fff; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; padding:14px; position:relative; }
+  .ph img{ max-width:100%; max-height:100%; object-fit:contain; }
+  .badges{ position:absolute; top:0; inset-inline:0; display:flex; justify-content:space-between; padding:9px; }
+  .bdg{ font-size:10px; font-weight:600; padding:3px 8px; border-radius:6px; }
+  .bdg-gold{ background:var(--gold); color:#3a2e0a; }
+  .bdg-dark{ background:rgba(17,17,17,.85); color:#f0ead8; }
+  .body{ padding:12px 14px 16px; text-align:center; }
+  .brand{ font-size:13px; color:var(--muted); }
+  .model{ font-size:11px; color:#aaa; margin-bottom:9px; }
+  .was{ font-size:13px; color:#aaa; text-decoration:line-through; }
+  .ev{ font-size:22px; font-weight:600; color:var(--gold-d); }
+  .evlbl{ font-size:11px; color:var(--muted); margin-top:1px; }
+  .lux-note{ font-size:13px; color:var(--gold-d); font-weight:500; margin-top:6px; }
+
+  .note{ text-align:center; font-size:13px; color:#999; padding:8px 16px 6px; }
+
+  .faq{ max-width:760px; margin:0 auto; padding:10px 0 20px; }
+  .qa{ background:#fff; border:1px solid var(--line); border-radius:12px; margin-bottom:12px; padding:16px 18px; }
+  .qa h4{ font-size:15px; font-weight:600; margin-bottom:6px; color:var(--ink); }
+  .qa p{ font-size:14px; color:var(--muted); }
+
+  .cta{ background:#fff; border:1px solid var(--line); border-radius:16px; text-align:center; padding:30px 20px; margin:26px 0 50px; }
+  .cta h3{ font-size:20px; font-weight:600; margin-bottom:6px; }
+  .cta p{ font-size:14px; color:var(--muted); margin-bottom:18px; }
+  .btn{ display:inline-block; background:var(--gold); color:#3a2e0a; font-weight:600; font-size:16px; padding:13px 34px; border-radius:9px; text-decoration:none; }
+
+  footer{ text-align:center; font-size:12px; color:#aaa; padding:24px 16px 40px; }
+
+  @media(max-width:760px){
+    header.hero h1{ font-size:25px; }
+    .grid{ grid-template-columns:repeat(2,1fr); gap:12px; }
+    .ev{ font-size:18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="kicker">אופטיקה פריזמה · סניף אשקלון</div>
+  <h1>אירוע השקת קולקציות</h1>
+  <div class="sub">בתי האופנה הגדולים וקולקציות היוקרה הנדירות - במחירי השקה בלעדיים, לנרשמים מראש בלבד.</div>
+  <div class="event-chip">יום שישי בבוקר · 29.5 · סניף אשקלון</div>
+</header>
+
+<div class="pledge">מחויבות פריזמה: <b>המחיר הזול בישראל</b> על כל דגם - מצאתם זול יותר? נשמח להשוות.</div>
+
+<div class="trust">
+  <div><b>מימוש עם קופון אישי בלבד</b> - לנרשמים מראש</div>
+  <div><b>₪50</b> דמי שריון מקום · מתקזזים מהקנייה</div>
+  <div><b>הטבות נוספות</b> של מאות שקלים לנרשמים</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="fashion">בתי אופנה נבחרים</div>
+  <div class="tab" data-tab="luxury">קולקציות יוקרה</div>
+  <div class="tab" data-tab="faq">שאלות ותשובות</div>
+</div>
+
+<div class="wrap">
+
+  <div class="panel active" id="fashion">
+    <div class="sec-title">
+      <h2>בתי אופנה נבחרים</h2>
+      <p>מחיר השקה לכל דגם - תקף לנרשמים מראש, במימוש עם קופון אישי בערב האירוע</p>
+    </div>
+    <div class="grid" id="grid-fashion"></div>
+    <p class="note">זו טעימה בלבד - בערב האירוע יחכו לכם עשרות דגמים נוספים מהקולקציות החדשות. מוצגים משקפי שמש; יש גם מבחר רחב של משקפי ראייה.</p>
+  </div>
+
+  <div class="panel" id="luxury">
+    <div class="sec-title">
+      <h2>קולקציות יוקרה</h2>
+      <p>מותגים נדירים בעבודת יד - John Dalia · Cazal · KameManNen · Matsuda · Hublot · Fred. הטבות בלעדיות לנרשמי האירוע.</p>
+    </div>
+    <div class="grid" id="grid-luxury"></div>
+    <p class="note">מבחר נבחר בלבד - בערב האירוע יוצג מגוון רחב יותר. מוצגים משקפי שמש; קיימים גם דגמי ראייה.</p>
+  </div>
+
+  <div class="panel" id="faq">
+    <div class="sec-title"><h2>שאלות ותשובות</h2></div>
+    <div class="faq">
+      <div class="qa"><h4>איך עובדים מחירי ההשקה?</h4><p>מחירי ההשקה תקפים אך ורק לנרשמים מראש, ומתממשים עם הקופון האישי שתקבלו ביום האירוע. זו הדרך שלנו לשמור את ההטבות למי שבאמת מתכנן להגיע.</p></div>
+      <div class="qa"><h4>מהם דמי שריון המקום של ₪50?</h4><p>סכום קטן ששומר את מקומכם באירוע ואת הקופון האישי על שמכם. הוא מתקזז במלואו מהקנייה - כלומר משולם בחזרה ברכישה. אפשר לבטל ולקבל החזר מלא עד 48 שעות לפני האירוע.</p></div>
+      <div class="qa"><h4>אפשר להגיע בלי להירשם מראש?</h4><p>אפשר להגיע ביום האירוע, ואם יישארו קופונים פנויים ממי שביטל - נשמח לארח אתכם. אבל ההטבות הנוספות וההבטחה למקום שמורות אך ורק למי ששריין מראש.</p></div>
+      <div class="qa"><h4>יש הטבות מעבר למחירי ההשקה?</h4><p>כן - לנרשמים מראש מחכות הטבות נוספות בשווי מאות שקלים, מעבר למחירים המשתלמים. הפרטים המלאים יימסרו בערב האירוע.</p></div>
+      <div class="qa"><h4>המחירים באמת הכי זולים?</h4><p>אנחנו מחויבים למחיר הזול בישראל על כל דגם. מצאתם את אותו הדגם זול יותר במקום אחר? ספרו לנו ונשמח להשוות.</p></div>
+      <div class="qa"><h4>יש גם משקפי ראייה?</h4><p>בהחלט. בעמוד מוצגים בעיקר משקפי שמש, אבל בחנות מחכה מבחר רחב של משקפי ראייה מאותם המותגים, באותם תנאי השקה.</p></div>
+    </div>
+  </div>
+
+  <div class="cta">
+    <h3>שריינו את מקומכם באירוע</h3>
+    <p>המקומות מוגבלים ומוקצים לפי סדר הרשמה. שריון בדמי רישום ₪50 שמתקזזים במלואם מהקנייה. המחירים וההטבות - לנרשמים מראש בלבד.</p>
+    <a class="btn" href="#" id="ctaBtn">לשריון מקום באירוע ←</a>
+  </div>
+</div>
+
+<footer>אופטיקה פריזמה · סניף אשקלון · כל המחירים בתוקף לאירוע ההשקה בלבד, לנרשמים מראש ובכפוף למלאי</footer>
+
+<script>
+  var P = "https://prizma-optic.co.il/api/image/";
+  var FASHION = [
+    {b:"Prada",m:"SPRA16",was:1250,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/2f01f7ac-4424-49c8-89c1-2c9e24992847/1778062960760_xnnq.webp"},
+    {b:"Prada",m:"SPRD01",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/356a3098-526a-487c-9917-22d19304718c/1778062217122_rqhu.webp"},
+    {b:"Prada",m:"SPRB15",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/98723fc5-043c-48d8-999e-95848e900cfc/1778062297785_z7wn.webp"},
+    {b:"Prada",m:"SPRB06",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/e7dd1a48-aa38-4521-8c25-cd0481312180/1778062405343_m9cx.webp"},
+    {b:"Prada",m:"SPRB06",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/5099ab3f-c225-4274-9d1c-562b68182056/1778062522897_rslv.webp"},
+    {b:"Prada",m:"SPRB05",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fead86e8-fbc5-48fc-8f10-7a5145273991/1778062629456_6pep.webp"},
+    {b:"Prada",m:"SPRB05",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/37a347a7-cdc0-4012-b50e-7991d320fd19/1778062753423_ylkp.webp"},
+    {b:"Prada",m:"SPR65Z",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/f4a7c275-95ea-4c79-97f0-aa8f1f16fff1/1778063078392_vrq1.webp"},
+    {b:"Prada",m:"SPR26Z",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/af5ef3c4-064e-46b4-8f0b-daaea51e257f/1778063234124_aeca.webp"},
+    {b:"Prada",m:"SPR26Z",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/8fc6cfcd-1ade-4801-88ac-234bb9243e38/1778063351295_79uk.webp"},
+    {b:"Prada",m:"SPR15W",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/235b2066-aa01-4aa3-8dd7-d41418e23bf3/1778063473863_9mdd.webp"},
+    {b:"Prada",m:"SPSB11-U",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/8fcd58ee-ab00-4c9f-a5fb-dba57ea53b82/1778140363153_ekab.webp"},
+    {b:"Prada",m:"SPRD55",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/32b5f00a-7571-4332-90a4-907b29c87cd7/1778056935634_9g79.webp"},
+    {b:"Prada",m:"SPRD05",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/f04a176b-cca2-4e18-a261-bc324486d4dd/1778057725121_bd8l.webp"},
+    {b:"Prada",m:"SPRD05",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/aa454e49-c6f9-4cb7-ae97-0204feacf485/1778062111687_ob1r.webp"},
+    {b:"Miu Miu",m:"SMUB12",was:1250,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/75b97cc7-79d7-47df-9d50-989bc3a565d8/1778143840482_nivu.webp"},
+    {b:"Miu Miu",m:"SMUB12",was:1250,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/61eaa33c-aaad-421b-b3d3-aa84ef9e56ed/1778143949913_7e7o.webp"},
+    {b:"Miu Miu",m:"SMUB11",was:1250,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/9c80fefe-9025-4ec1-8195-8910716500bb/1778144038616_1wpx.webp"},
+    {b:"Miu Miu",m:"SMUB11",was:1250,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/3b17ae26-81cd-441d-a4de-bf313291629d/1778144141276_fzy3.webp"},
+    {b:"Miu Miu",m:"SMUB51",was:1250,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/7c340390-a8ce-4d4d-ab17-d956a14438bd/1778143431853_1r8a.webp"},
+    {b:"Miu Miu",m:"SMUB13",was:1250,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/15cd1ead-0c88-4bd4-a12c-b917b2480dd8/1778143527484_4b58.webp"},
+    {b:"Miu Miu",m:"SMUB13",was:1250,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ddc9a2e9-1e73-4ecc-ac52-2787312059a4/1778143675983_jpd0.webp"},
+    {b:"Miu Miu",m:"SMUB09",was:1250,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/a1d26a10-25b3-4346-8e8c-1be9467bbcda/1778144423004_8k4v.webp"},
+    {b:"Miu Miu",m:"SMUA54",was:1250,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/d643a4dc-427c-4b94-a657-b90a38a481f2/1778144486142_q28n.webp"},
+    {b:"Miu Miu",m:"SMUA54",was:1250,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/08e105fb-6e9e-4d4e-8b0b-e10e38fffef5/1778144628175_bjm7.webp"},
+    {b:"Miu Miu",m:"SMU56Z",was:1250,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/aa9e332f-4b17-4c60-9fa4-16cf179c521c/1778145023859_v3w5.webp"},
+    {b:"Miu Miu",m:"SMU54Z",was:1250,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/53067a29-6990-4be8-a1e6-73f81f2f29ee/1778145214622_nzap.webp"},
+    {b:"Miu Miu",m:"SMUB10",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/9a216a1d-9df0-40a9-beb6-163d806106a0/1778144247396_7m6p.webp"},
+    {b:"Miu Miu",m:"SMU11Z",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/0a15e999-cfa8-47ba-a42f-595d225f5cdf/1778145798009_y62u.webp"},
+    {b:"Miu Miu",m:"SMUB10",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/50cbe4f5-550d-4b2d-a86e-c996612d5bdf/1778144312279_7g5x.webp"},
+    {b:"Tiffany & Co",m:"TF3114",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/3d045fd3-a3bc-49b7-93cc-bdd5c511bc3e/1778064912832_gr2n.webp"},
+    {b:"Tiffany & Co",m:"TF4231-U",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/9a3ec1d5-f165-4b07-827c-31039ad49713/1778064742041_lvsy.webp"},
+    {b:"Tiffany & Co",m:"TF4231-U",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/5cdbea0d-383a-4ddb-b2a6-403e53f77980/1778064822080_0u6p.webp"},
+    {b:"Tiffany & Co",m:"TF3114",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/92a5957d-3543-4b69-811a-a1914f9583c3/1778064991446_0uav.webp"},
+    {b:"Tiffany & Co",m:"TF3111",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ee2ded34-2caa-4426-bfaa-378246cdc934/1778065079745_oqfp.webp"},
+    {b:"Tiffany & Co",m:"TF3111",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ff44c42e-88ef-4745-904f-393839b5d099/1778136006275_itbz.webp"},
+    {b:"Tiffany & Co",m:"TF3104D",was:1200,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/48de2a73-4d9e-4ea0-8214-1dc8261b907b/1778136137400_ylvf.webp"},
+    {b:"Tiffany & Co",m:"TF4264-U",was:1100,ev:890,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/d30e8822-830a-4f70-a451-1db9ea9c895f/1778064481085_hw6g.webp"},
+    {b:"Versace",m:"4510-U",was:1000,ev:690,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/f5eb7e37-fc87-48cf-b2f6-55985b0f9aba/1778146699123_3gox.webp"},
+    {b:"Versace",m:"4361",was:1000,ev:690,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/4b20c15a-d521-4259-9f8d-7d5daa04e522/1778064006473_7ssh.webp"},
+    {b:"Versace",m:"4409",was:1000,ev:690,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/feb7a2d1-1a30-4634-bb58-abc7e067d3e0/1778063905925_38m7.webp"},
+    {b:"Versace",m:"4361",was:1000,ev:690,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/421c482d-3b04-4c1d-8bdf-3906d873c905/1778064081714_145j.webp"},
+    {b:"Versace",m:"4510-U",was:850,ev:690,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/9612925e-513f-4072-8ba5-d857d4a8d941/1778063796083_mm7u.webp"},
+    {b:"Versace",m:"4512-D",was:850,ev:690,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/30df4a22-88de-48d6-89bf-e48a076e780d/1778063715586_yk3y.webp"},
+    {b:"Versace",m:"4514-D",was:850,ev:690,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fc80c593-013d-4f3f-a102-ead98f00affe/1778063588343_tpqf.webp"},
+    {b:"Dolce & Gabbana",m:"DG2324",was:1100,ev:690,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/2ae66438-698c-4a96-b25f-d3516486929a/1775542637797_p8o5.webp"},
+    {b:"Dolce & Gabbana",m:"DG6204",was:1000,ev:690,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/70a96264-e04c-452b-bf49-abfacded364f/1775542871321_l901.webp"},
+    {b:"Dolce & Gabbana",m:"4541",was:1000,ev:690,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/7a61c5cb-a859-45ee-9d98-5f643ed53046/1778141000490_0r8x.webp"},
+    {b:"Dolce & Gabbana",m:"4541",was:1000,ev:690,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/b7d873c0-4c9d-4698-a56f-f9130e19fc4c/1778140908820_frjh.webp"},
+    {b:"Ray-Ban",m:"RB0840",was:800,ev:400,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/bcd2d92f-efad-4997-9cf2-d3828948e290/1776157504349_wsud.webp"},
+    {b:"Ray-Ban",m:"RB2187",was:800,ev:400,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/3a0b62b5-40cb-45c5-b18b-8a6d3f98a441/1776157589284_2upn.webp"},
+    {b:"Ray-Ban",m:"RB2140",was:550,ev:400,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/09e230f3-08ab-4621-8d0a-549dc042a86b/1779181966768_xc59.webp"},
+    {b:"Ray-Ban",m:"RL9557S",was:500,ev:400,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/abfa287a-f590-4248-8781-8a338ad10016/1779182486811_pxyc.webp"},
+    {b:"Ray-Ban",m:"RJ9506S",was:500,ev:400,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/b19d32b9-7de2-4d68-bd6b-bcae52478812/1779182685615_vsfk.webp"},
+    {b:"Ray-Ban",m:"RB3447",was:500,ev:400,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/2a855379-0606-4874-87c0-6b9d533ffb3d/1779182103666_gndi.webp"},
+    {b:"Ray-Ban",m:"RJ9506S",was:500,ev:400,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/5e0511bf-7a5a-4a37-8bb2-00b37d969840/1779181843198_6eru.webp"},
+    {b:"Ray-Ban",m:"RJ9647S",was:500,ev:400,img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/2eba88b2-1381-4fe3-a7b9-843b3808deea/1779182273751_stbn.webp"}
+  ];
+  var LUXURY = [
+    {b:"John Dalia",m:"Curtis",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/1c3e384e-4e5f-4cc4-a0de-b39c0b5a16f0/1777309489731_05km.webp"},
+    {b:"John Dalia",m:"Dwayne",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/1c7dc6aa-37bb-4c2f-9548-3a3ae7ac47b2/1779190815349_vfir.webp"},
+    {b:"John Dalia",m:"Leo",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/68d5351a-5d38-431f-a170-9c3c7212bcc0/1777309313700_t922.webp"},
+    {b:"John Dalia",m:"P04",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/40213754-995d-49bf-b9c6-8a41a94cd07d/1777309274496_v1e1.webp"},
+    {b:"John Dalia",m:"P09",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/0a13583b-a4d4-497c-9bcf-2eba36386f01/1777309220806_ah8z.webp"},
+    {b:"John Dalia",m:"R01",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/2a23caee-46b1-4f87-a038-dec7a8bdbb51/1777309159013_n56w.webp"},
+    {b:"John Dalia",m:"R01 Carbon",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/f893d77c-c585-4453-b72e-81c01ecbcf95/1777309111413_92at.webp"},
+    {b:"John Dalia",m:"R01 Gold",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/f4af0ef1-c46e-4d75-97ea-1a3ed34f2d2a/1778570269584_hxf7.webp"},
+    {b:"John Dalia",m:"R03",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/1f21cfd4-b918-4125-8551-42e867c97bea/1777308935219_kwl1.webp"},
+    {b:"John Dalia",m:"Timothy",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/50f37c1c-5610-4420-a6b2-20266b2156fb/1779191057071_uqd0.webp"},
+    {b:"Cazal",m:"7121/3",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/434a2fc4-f64a-415f-b4de-a5b8d7776a07/1775379210050_absh.webp"},
+    {b:"Cazal",m:"757/3",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/45eae2d2-4b2a-4b10-b8ea-7af2ca81d08f/1775378940984_g9lb.webp"},
+    {b:"Cazal",m:"8045",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/9637dee5-6488-46d8-9aa9-bc49e0e7fd49/1775379320382_joxn.webp"},
+    {b:"Cazal",m:"8051",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/7868278c-7bea-4738-91a6-28b35a8fa2ba/1775379378508_73e8.webp"},
+    {b:"Cazal",m:"889",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/37e9a492-3397-4c2a-8b87-25a0910bdf1d/1775379045634_ld7h.webp"},
+    {b:"Cazal",m:"9107",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/0eac8f33-853d-4e75-8576-30231be81b7d/1775379421924_n81b.webp"},
+    {b:"Cazal",m:"9111",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/95ee52ce-36fa-4e12-b4ad-dbb77f930cf8/1775379454248_oa4j.webp"},
+    {b:"Cazal",m:"9505",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/1849dce9-fedc-43c2-87ef-f4f770e6e9ef/1775379507088_elgb.webp"},
+    {b:"KameManNen",m:"9500",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/5511a299-7a05-4984-bd2d-535623f1b519/1776755505065_o4qi.webp"},
+    {b:"KameManNen",m:"9501",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/165393c6-71ac-47a0-8305-8d1e7955b728/1776755098269_x275.webp"},
+    {b:"KameManNen",m:"9502",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/52c6b97b-dc03-4f7b-b004-70e4ad324071/1776755434670_4pqu.webp"},
+    {b:"KameManNen",m:"9503",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/641f1c65-b477-46f8-a2ce-ad97c02e363c/1776755554787_w75i.webp"},
+    {b:"KameManNen",m:"9504",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fa5a22f1-9412-46b9-86c7-5f26508cf230/1776755035316_muky.webp"},
+    {b:"KameManNen",m:"9917",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/d7f69384-60ee-4ea3-9050-4313f37069a0/1775551584909_s5r1.webp"},
+    {b:"Hublot",m:"H013",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/d705960a-5a83-43c5-8964-107d2906173b/1775550379260_cjvq.webp"},
+    {b:"Hublot",m:"H015",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/bfc0c0ff-4569-4232-acbf-f4736ea541fe/1775550397276_q798.webp"},
+    {b:"Hublot",m:"H018",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/b08bce83-e3d7-49da-9f48-53942d978e24/1775550416329_1ez0.webp"},
+    {b:"Hublot",m:"H019",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/c0a0fe37-b488-4ab6-a436-66e2d049a802/1775550445359_u8bh.webp"},
+    {b:"Hublot",m:"H046",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/81e2c24f-0b3a-4020-8530-cedd0bb81bc7/1775550515331_8mta.webp"},
+    {b:"Fred",m:"FG40001U",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/1d392040-35ad-4f17-bb7b-91e9e502665b/1775547783877_jrm6.webp"},
+    {b:"Fred",m:"FG40003U",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/48610f11-718d-4b35-b5a7-0adbd256ae7f/1775547804035_mw8w.webp"},
+    {b:"Fred",m:"FG40047U",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ecc639b8-7396-4aea-b0c7-f1604fa8f839/1775547843181_15sm.webp"},
+    {b:"Fred",m:"FG50002U",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/afd57877-fb85-4cb4-9357-2ba1a708dbdd/1776754914634_mrmj.webp"},
+    {b:"Fred",m:"FG50013U-TR",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/38389bc0-57b5-4c57-9154-9053f183a6ed/1775547895633_txm8.webp"},
+    {b:"Matsuda",m:"10601H",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/fea746ad-3952-4a8b-a78e-90085c9732c4/1775552852782_wa3x.webp"},
+    {b:"Matsuda",m:"2903",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/039020d4-bce1-4db0-9c74-8f2c70600aae/1775551726375_kgok.webp"},
+    {b:"Matsuda",m:"3137",img:"frames/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/ce108f64-46d8-49a7-8b2b-1d65f847e4f5/1775552924058_6yzx.webp"}
+  ];
+  var fmt = function(n){ return "₪" + Math.round(n).toLocaleString(); };
+
+  function fashionCard(it){
+    return '<div class="card"><div class="ph">'+
+      '<div class="badges"><span class="bdg bdg-gold">קופון אישי בלבד</span><span class="bdg bdg-dark">לנרשמים מראש</span></div>'+
+      '<img loading="lazy" alt="'+it.b+' '+it.m+'" src="'+P+it.img+'"></div>'+
+      '<div class="body"><div class="brand">'+it.b+'</div><div class="model">דגם '+it.m+'</div>'+
+      '<div class="was">'+fmt(it.was)+'</div><div class="ev">'+fmt(it.ev)+'</div>'+
+      '<div class="evlbl">מחיר השקה</div></div></div>';
+  }
+  function luxuryCard(it){
+    return '<div class="card"><div class="ph">'+
+      '<div class="badges"><span class="bdg bdg-gold">הטבות בלעדיות</span><span class="bdg bdg-dark">לנרשמים מראש</span></div>'+
+      '<img loading="lazy" alt="'+it.b+' '+it.m+'" src="'+P+it.img+'"></div>'+
+      '<div class="body"><div class="brand">'+it.b+'</div><div class="model">דגם '+it.m+'</div>'+
+      '<div class="lux-note">הטבת השקה בלעדית</div></div></div>';
+  }
+  document.getElementById("grid-fashion").innerHTML = FASHION.map(fashionCard).join("");
+  document.getElementById("grid-luxury").innerHTML = LUXURY.map(luxuryCard).join("");
+
+  var tabs = document.querySelectorAll(".tab");
+  tabs.forEach(function(t){
+    t.addEventListener("click", function(){
+      tabs.forEach(function(x){ x.classList.remove("active"); });
+      t.classList.add("active");
+      document.querySelectorAll(".panel").forEach(function(p){ p.classList.remove("active"); });
+      document.getElementById(t.dataset.tab).classList.add("active");
+      window.scrollTo({top:0, behavior:"smooth"});
+    });
+  });
+</script>
+</body>
+</html>
