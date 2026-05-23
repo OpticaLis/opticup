@@ -1487,3 +1487,18 @@ Saves ~5 minutes per occurrence + prevents wrong-cause-chase. As of 2026-05-18 P
 **How to apply (b):** Tier C template for JWT-gated RPCs from MCP wraps the call in `DO $$ ... PERFORM set_config('request.jwt.claims', ...); v_result := my_rpc(...); ... END $$;`. Eliminates the 42501 friction on every direct-RPC Tier C smoke. See the 4 Tier C cycles in `M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE_PHASE_2/EXECUTION_REPORT.md §3.2` for canonical examples.
 
 **Source:** `modules/Module 1.5 - Shared Components/docs/specs/M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE/FINDINGS.md` + `M1_RPC_NEXT_NUMBER_NON_NUMERIC_SAFE_PHASE_2/EXECUTION_REPORT.md §3.2` (2026-05-18).
+
+---
+
+## Clean-Repo discipline — Executor session-end (added 2026-05-23 per REPO_CLEANUP_MERGE_ENFORCEMENT SPEC)
+
+Before reporting "SPEC closed. Awaiting Foreman review" at the end of any SPEC execution, the Executor MUST:
+
+1. Run `git status --porcelain | wc -l` — report the count to the chat.
+2. Run `git status --porcelain | grep '.claude/skills/'` — if non-empty: those orphan skill edits BELONG to this SPEC's commit chain. Add them to the closing commit (selective `git add` by explicit filename) BEFORE marking the SPEC closed. Do NOT leave skill edits as dangling tree-dirt for the next session.
+3. Run `node scripts/checks/clean-repo-gate.mjs --test` (the gate's regression test) if any check infrastructure was touched.
+4. If `npm run verify:integrity` fails the clean-repo-gate (exit 1) → STOP. The SPEC is not closed. Resolve the pile (commit or `git rm` or `.gitignore` patterns), re-run integrity, then close.
+
+Wildcard adds (`git add -A` / `git add .` / `git commit -a` / `git commit -am`) are FORBIDDEN — CLAUDE.md §9 #6. The Executor uses explicit-filename `git add` throughout. If unsure which files to add, `git status --porcelain` + categorize, then add each explicitly.
+
+Reference: `modules/Module 1.5 - Shared Components/docs/specs/REPO_CLEANUP_MERGE_ENFORCEMENT/CLEAN_REPO_ROOT_CAUSE.md` for the recurring-failure recipe + root-cause taxonomy.

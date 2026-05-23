@@ -1711,3 +1711,29 @@ For ANY UI SPEC (one that adds/modifies a `.html` / `.js` / `.css` consumed by t
 
 4. **The Foreman never claims a UI 🟢 from a text claim** — the verdict must come from looking at the embedded screenshot vs the mockup. Architect rule + Foreman rule.
 
+---
+
+## Clean-Repo discipline — Foreman bootstrap + closure (added 2026-05-23 per REPO_CLEANUP_MERGE_ENFORCEMENT SPEC)
+
+### Bootstrap report (every Foreman session opening)
+
+At First Action §4 (the dirty-repo check), the Foreman session reports the untracked-file count + flags `.claude/skills/**` orphans:
+
+```
+$ git status --porcelain | wc -l            # total dirty
+$ git status --porcelain | grep '^??' | wc -l   # untracked
+$ git status --porcelain | grep -c '.claude/skills/'  # orphan skill edits
+```
+
+Report in the readiness ack line: `"… repo: <total> dirty (<untracked> untracked, <N> skill-orphan)"`. If **untracked ≥ 30 OR skill-orphan ≥ 1** → **refuse to start a new SPEC** until the pile is resolved. Reference: `scripts/checks/clean-repo-gate.mjs` (Layer 1 hook).
+
+### Skill-edit ownership rule (Foreman closure checklist)
+
+Every Foreman SPEC closure MUST verify:
+
+- [ ] **Any `.claude/skills/**` file the SPEC modified is committed in this SPEC's commit chain** — orphan skill edits cannot persist past the Foreman close. If the SPEC harvested improvement proposals into a skill file, those edits belong to THIS SPEC; commit them. The next session opens to a clean tree.
+
+If the Foreman writes a 🟢 verdict with uncommitted skill edits in the tree → FOREMAN_REVIEW must be marked 🔴 REOPEN. Codified after repeated dirty-tree incidents (2,627-file pile, 2026-05-23) traced to orphan skill harvests with no owning SPEC.
+
+Reference: `modules/Module 1.5 - Shared Components/docs/specs/REPO_CLEANUP_MERGE_ENFORCEMENT/CLEAN_REPO_ROOT_CAUSE.md` for the full root-cause taxonomy.
+

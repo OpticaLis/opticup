@@ -408,3 +408,15 @@ For ANY UI SPEC (`.html` / `.js` / `.css` touched), the Reviewer's audit MUST ve
 4. **"Paperwork PASS" rejection:** if the SPEC's TEST_REPORT says "Chrome MCP fidelity PASS" but contains NO image AND NO comparison table → REVIEW.md verdict 🔴 FAIL. Codified after M5 Phase D + E paperwork-PASS slip (2026-05-23).
 
 Reference: `.claude/skills/opticup-localhost-tester/SKILL.md` "Visual-Fidelity Gate (MANDATORY BLOCKING)".
+
+---
+
+## Reviewer audit — Clean-Repo discipline (added 2026-05-23 per REPO_CLEANUP_MERGE_ENFORCEMENT SPEC)
+
+For ANY SPEC closure, the Reviewer audits:
+
+1. **`scripts/checks/clean-repo-gate.mjs` ran exit 0** during `npm run verify:integrity` or `node scripts/verify.mjs --full` at the SPEC's close commit. If the gate fired (untracked ≥ 30 OR `.claude/skills/**` orphans present) → REVIEW.md verdict 🔴 FAIL.
+2. **The SPEC's commits do NOT use `git add -A` / `git add .` / `git commit -a` / `git commit -am`.** Verify via `git log --raw` on the SPEC's commit range. Wildcard adds = automatic 🔴.
+3. **Any `.claude/skills/**` edit in the SPEC range is committed AS PART of the SPEC chain** — not left as a dangling tree-dirt for the next session.
+
+Reference: `modules/Module 1.5 - Shared Components/docs/specs/REPO_CLEANUP_MERGE_ENFORCEMENT/CLEAN_REPO_ROOT_CAUSE.md`.
