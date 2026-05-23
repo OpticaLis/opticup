@@ -72,6 +72,25 @@
       return;
     }
 
+    // Inject the PIN-issued JWT into the sb client so RLS engages.
+    // loadSession() reads sessionStorage.jwt_token + recreates window.sb
+    // with the Authorization: Bearer <jwt> header. Without this, the
+    // customer views (security_invoker=on) deny rows to anon RLS.
+    if (typeof loadSession === 'function') {
+      try {
+        var session = await loadSession();
+        trace('auth_session_loaded', { has_session: !!session });
+        if (!session) {
+          document.getElementById('cust-lede-status').textContent =
+            'אינך מחובר. חזור למסך הראשי והזן PIN.';
+          trace('boot_no_session');
+          return;
+        }
+      } catch (e) {
+        trace('auth_session_failed', { error: String(e) });
+      }
+    }
+
     try {
       await loadCustomer(cid);
     } catch (e) {

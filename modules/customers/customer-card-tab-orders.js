@@ -19,13 +19,15 @@
   async function fetchOrders(customerId) {
     // M7 schema (deployed 2026-05-23 NIGHT_RUN Track 4). Iron Rule 22 — tenant_id
     // auto-injected by DB.select. customer_id filter via key-value filter.
+    // sub_orders has TWO FK to orders (order_id + repair_origin_order_id) — use
+    // the explicit FK hint for the count embed. total_amount doesn't exist on
+    // orders today; see FINDINGS F-3 (needs aggregation view or RPC).
     var res = await DB.select('orders', { customer_id: customerId }, {
-      columns: 'id, order_number, created_at, status, total_amount, sub_orders(count)',
+      columns: 'id, order_number, created_at, status, sub_orders!sub_orders_order_id_fkey(count)',
       order: 'created_at.desc',
       silent: true
     });
     if (res.error) {
-      // It's possible total_amount / column names drifted; surface the error in trace.
       window.M5Card && window.M5Card.trace('orders_fetch_error', { error: String(res.error.message || res.error) });
       return [];
     }
@@ -34,15 +36,14 @@
 
   function rowHtml(order) {
     var dateStr = order.created_at ? new Date(order.created_at).toLocaleDateString('he-IL') : '—';
-    var amount = (order.total_amount != null) ? formatMoney(order.total_amount) : '—';
     var subCount = (order.sub_orders && order.sub_orders[0]) ? order.sub_orders[0].count : 0;
     var subStr = subCount > 0 ? (subCount + ' תת-הזמנות') : '—';
     var statusCls = statusPillClass(order.status);
+    var orderNum = order.order_number || order.id.slice(0, 8);
     return '<tr>' +
-             '<td><strong>' + escapeHtml(String(order.order_number || order.id.slice(0, 8))) + '</strong></td>' +
+             '<td><strong>' + escapeHtml(String(orderNum)) + '</strong></td>' +
              '<td>' + escapeHtml(dateStr) + '</td>' +
              '<td>' + escapeHtml(subStr) + '</td>' +
-             '<td>' + escapeHtml(amount) + '</td>' +
              '<td><span class="cust-pill ' + statusCls + '">' + escapeHtml(String(order.status || '—')) + '</span></td>' +
              '<td><button class="cust-filter" data-coming-soon="orders_m7_ui">פתח</button></td>' +
            '</tr>';
@@ -83,7 +84,7 @@
     }
     listHost.innerHTML =
       '<table class="cust-table">' +
-        '<thead><tr><th>מספר</th><th>תאריך</th><th>תוכן</th><th>סכום</th><th>סטטוס</th><th></th></tr></thead>' +
+        '<thead><tr><th>מספר</th><th>תאריך</th><th>תוכן</th><th>סטטוס</th><th></th></tr></thead>' +
         '<tbody>' + orders.map(rowHtml).join('') + '</tbody>' +
       '</table>';
     // Re-bind row CTAs

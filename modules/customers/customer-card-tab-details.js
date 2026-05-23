@@ -230,7 +230,8 @@
 
     window.M5Card.trace('update_sent', { field: key, value: newVal });
     var patch = {}; patch[key] = newVal;
-    var res = await DB.update('customers', { id: S.customerId }, patch, { silent: true });
+    // DB.update signature: (table, idValue, changes, opts) — idValue is the SCALAR uuid.
+    var res = await DB.update('customers', S.customerId, patch, { silent: true });
     window.M5Card.trace('update_resolved', { field: key, error: res.error ? String(res.error.message || res.error) : null });
 
     if (res.error) {
