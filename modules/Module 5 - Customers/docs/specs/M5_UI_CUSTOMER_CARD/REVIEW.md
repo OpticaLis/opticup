@@ -70,7 +70,23 @@ None. All findings are LOW/INFO/MEDIUM-design — none block Phase D closure.
 5. **F-8 — split `js/shared-field-map.js` per-module**. At the 350-line cap; only going to grow.
 6. **F-9 — Sentinel/SPEC to reconcile CLAUDE.md §0.5 prose count vs. root-allowlist.json** (pre-existing drift).
 
-### Verdict
+### Closure Audit (CLOSURE_SPEC, 2026-05-23)
+
+Spot-checks against the closure commit `da62c91`:
+
+- **Item B deletion completeness:** `grep -n "Locked|נעול|isLocked" modules/customers/*.js` → 0 hits (exit code 1). Both surfaces cleared. ✅
+- **COMING_SOON_REGISTRY untouched:** `grep -n "locked" modules/customers/customer-card-coming-soon.js` → 0 hits (was 0 before, still 0). ✅
+- **Other badges intact:** a11y snapshot after reload shows VIP + חבר-מועדון in header, Inactive + Subscription in bottom flags. All 4 blurred targets (vip, loyalty_member, subscription, queue_position) still in the registry + still bound on render. ✅
+- **5 fidelity JPEGs:** all 5 present in `screenshots/closure/`. Per-tab mockup-vs-live notes in TEST_REPORT.md §"T11 closure capture". No material drift. ✅
+- **Console clean:** the only message on reload is the pre-existing Supabase GoTrueClient multi-instance WARN (visible before this SPEC too — caused by `loadSession()` recreating the sb client). No new errors. ✅
+- **Iron Rule 31 / 32:** integrity gate exit 0; destructive ops declared (UI deletion + governance file edits) and accepted by pre-commit hook. ✅
+- **No Prizma writes / no schema change / no merge to main:** verified. ✅
+
+**Closure verdict:** 🟢 **PASS.** Both Phase D follow-ups cleared cleanly. The card is the spotless template every later M5-M9 UI screen will copy.
+
+---
+
+### Verdict (Phase D pre-closure, retained for history)
 
 🟡 **PASS WITH NOTES — proceed to Foreman closure.**
 
