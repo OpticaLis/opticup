@@ -28,7 +28,7 @@
 
 **Category 3 — Application Entrypoints (required for GitHub Pages routing):**
 - `index.html` (mandatory at root)
-- 17 other ERP HTML pages (`admin.html`, `crm.html`, `inventory.html`, `settings.html`, `shipments.html`, `employees.html`, `error.html`, `landing.html`, `r.html`, `storefront-*.html`, `suppliers-debt.html`)
+- 18 other ERP HTML pages (`admin.html`, `crm.html`, `customers.html`, `inventory.html`, `settings.html`, `shipments.html`, `employees.html`, `error.html`, `landing.html`, `r.html`, `storefront-*.html`, `suppliers-debt.html`)
 
 **Anything not in Categories 1-3 → must move to `_archive/<subfolder>/`.** This includes legacy onboarding docs, old prompts, completed phase summaries, single-session handoffs, project-genesis snapshots.
 

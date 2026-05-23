@@ -1,7 +1,7 @@
 {
   "_doc": "Root Discipline Rule allowlist — derived from CLAUDE.md §0.5. Maintained per Module Close Ceremony.",
   "_version": "1.0.0",
-  "_last_updated": "2026-05-15",
+  "_last_updated": "2026-05-23",
   "_managed_by": "STRUCTURE_PROTECTIONS SPEC + manual updates per CLAUDE.md §0.5 changes",
 
   "files": {
@@ -25,6 +25,7 @@
       "index.html",
       "admin.html",
       "crm.html",
+      "customers.html",
       "inventory.html",
       "settings.html",
       "shipments.html",
