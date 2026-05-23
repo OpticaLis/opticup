@@ -1,12 +1,48 @@
 /* ============================================================
-   M5 Customer Card — page styles
-   Hybrid+Navy tokens from shared/css/variables.css (no new tokens).
+   M5 Customer Card + List — page styles
+   Hybrid+Navy tokens scoped to .cust-page (per opticup-executor's
+   "page-scope body { --primary } override" pattern). shared/css/
+   variables.css uses a different production token naming
+   convention (--color-primary etc.) — the customers page declares
+   its own Hybrid+Navy scope here so the mockup's --bg-page /
+   --accent / --border-subtle etc. resolve correctly without
+   polluting the global :root or other pages.
    RTL via logical properties (margin-inline-*, padding-inline-*).
    Mockup: modules/Module 5 - Customers/architecture-brief/M5_CUSTOMER_CARD_MOCKUP.html
    ============================================================ */
 
-.cust-page { background: var(--bg-page); color: var(--text-primary); margin: 0; padding: 18px;
-  font-family: var(--font-sans, -apple-system, "Segoe UI", Heebo, sans-serif); font-size: 12px; direction: rtl; }
+.cust-page {
+  /* Hybrid+Navy canonical tokens (Batch 3 re-skin, 2026-05-11; mirrored from the mockup) */
+  --bg-page: #fafaf7;
+  --bg-surface: #ffffff;
+  --bg-surface-alt: #f4f4f5;
+  --accent: #1e3a8a;
+  --accent-hover: #1e40af;
+  --accent-soft: #e6f1fb;
+  --accent-text: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
+  --border-subtle: #e2e8f0;
+  --border-default: #cbd5e1;
+  --border-strong-token: #94a3b8;
+  --success: #16a34a;
+  --success-soft: #d1fae5;
+  --warning: #d97706;
+  --warning-soft: #fef3c7;
+  --danger: #dc2626;
+  --danger-soft: #fee2e2;
+  --info: #0891b2;
+  --info-soft: #cffafe;
+  --font-sans: "Inter","Heebo",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+
+  background: var(--bg-page);
+  color: var(--text-primary);
+  margin: 0; padding: 18px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  direction: rtl;
+}
 
 .cust-page .lede { color: var(--text-secondary); margin: 0 0 14px; font-size: 12px; max-width: 1100px; }
 
