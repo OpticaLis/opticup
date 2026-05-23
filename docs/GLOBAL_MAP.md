@@ -358,6 +358,28 @@ preamble checklist, pending Step 9 rewrite).
 
 **SECURITY-FINDING #1 partial update (2026-05-22):** Original 2026-04 finding listed customers, prescriptions, sales, work_orders as having `anon_all_*` policies + missing tenant_id. As of 2026-05-22 probe: all 4 tables now have the canonical 2-policy (`service_bypass` + `tenant_isolation` JWT-claim); no anon_all leftover policies. tenant_id columns exist on all 4. The finding can be re-scoped or closed in the next SECURITY_HOTFIX sweep. M5_SCHEMA SPEC (folder `modules/Module 5 - Customers/docs/specs/M5_SCHEMA/`) confirmed this state at chain start; the customers extension preserved canonical RLS throughout.
 
+### Module 5 — Customer Card UI (Phase D sealed 2026-05-23)
+
+**Entrypoint:** `customers.html` at repo root (registered in CLAUDE.md §0.5 + `scripts/checks/root-allowlist.json`). URL pattern: `customers.html?t=<tenant_slug>&customer_id=<uuid>`. Bare entry renders empty-state pointing at Phase E.
+
+**Page JS (8 files under `modules/customers/`):**
+- `customer-card.js` — page boot + state + tab orchestration. Exposes `window.M5Card = { state, trace, activateTab, setEditMode, refreshCustomer, rerenderActiveTab }` + initializes `window.__cardTrace` (Iron Rule 34 runtime trace surface for Chrome MCP closure evidence).
+- `customer-card-header.js` — header rendering, wired badges (Inactive ↔ lifecycle_stage='dormant', Locked ↔ is_deleted), edit-mode toggle.
+- `customer-card-coming-soon.js` — **single source of truth for deferred-feature UX** per D-BADGES decision. ONE `showComingSoon(featureId)` + ONE `COMING_SOON_LABEL` constant + ONE `COMING_SOON_REGISTRY` map. Iron Rule 21 anchor. `bindComingSoon(el, featureId)` is the discipline helper — never write a per-feature handler.
+- `customer-card-tab-details.js` — Tab 1. col-3 + col-2 field blocks + medical sub-tabs (Medical Q / Diagnostics) + queue block (blurred) + bottom flags. Edit-mode header toggle → per-field 500ms-debounced auto-save via DB.update('customers', { id: customer_id }, patch).
+- `customer-card-tab-vision.js` — Tab 2 stub (D-T2). Zero DB calls. Single click → `showComingSoon('vision_function')`. Unblocked when M6 ships `v_customer_vision_function_history`.
+- `customer-card-tab-prescriptions.js` — Tab 3. M6-owned `v_customer_prescriptions_summary` (read) + `create_prescription_draft(p_tenant_id, customer_id, kind)` RPC.
+- `customer-card-tab-orders.js` — Tab 4. Reads `orders` (+`sub_orders` count) for the customer; all CTAs route to `showComingSoon('orders_m7_ui')`.
+- `customer-card-tab-docs.js` — Tab 5. `customer_documents` list + filter + drag/drop upload to the new `customer-docs` storage bucket. NO delete + NO scan (D-T5).
+
+**Storage:** new private bucket `customer-docs` with 4 tenant-gated RLS policies on `storage.objects` (`auth.jwt() ->> 'tenant_id' = (storage.foldername(name))[1]`). Path convention: `customer-docs/{tenant_id}/{customer_id}/{document_id}.{ext}`.
+
+**Iron Rule 34 closure surface:** `window.__cardTrace` is an array populated by every interaction handler with `{event, t, ...payload}` entries. Used by Chrome MCP closure evidence (T3 edit-mode trace, T7 create_prescription_draft trace, T9 storage upload trace).
+
+**Iron Rule 21 discipline anchor:** every blurred / deferred UI element uses the same `showComingSoon` handler + the same `COMING_SOON_LABEL` string + a registered entry in `COMING_SOON_REGISTRY` documenting the future module that will light it up. No scattered placeholder strings anywhere on the card.
+
+**Scope OUT (Phase E / follow-ups):** customer LIST view, create-mode, full Tab 2 body (M6 follow-up), Tab 5 delete + scan, badge data wiring (VIP/חבר-מועדון/Subscription/Queue), Tab 4 M7 UI, `customer_documents` column expansion (size_bytes/mime_type/description).
+
 ## Module 6 — Prescriptions / Eye Exams (Phase A+B sealed 2026-05-22)
 
 **Tables owned:** eye_exams, prescriptions_glasses + child eyes (Pattern 11), prescriptions_contacts + child eyes (Pattern 11), prescription_types (config P19), lens_manufacturers (config P19), prescription_recall_axes.
