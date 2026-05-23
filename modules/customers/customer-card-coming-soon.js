@@ -43,7 +43,12 @@
     sidebar_comms:                 'M12 Communications / WhatsApp',
     sidebar_appointments:          'M14 Appointments',
     sidebar_birthday_filter:       'birthday filter (needs cron + filter view — Phase F)',
-    sidebar_loyalty:               'M13 Loyalty members list'
+    sidebar_loyalty:               'M13 Loyalty members list',
+    // List column-picker — future columns (M5_POLISH_PHONE2_LIST_COLUMNS 2026-05-23)
+    list_col_last_exam:            'M6 — v_customer_for_exam latest exam_date join',
+    list_col_last_order:           'M7 — orders aggregation (latest order)',
+    list_col_club_tier:            'M13 Loyalty (tier)',
+    list_col_age:                  'computed from customers.birth_date (DOB not populated on demo)'
   };
 
   /**

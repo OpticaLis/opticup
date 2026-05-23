@@ -17,7 +17,8 @@
     page: 0,
     totalCount: null,
     countsByPill: {},
-    branches: []
+    branches: [],
+    activeColumns: null    // per-tenant chosen list_columns (loaded by loadTenantListColumns)
   };
 
   function trace(ev, payload) {
@@ -51,22 +52,46 @@
     return '';
   }
 
+  // Per-column cell renderer — keyed by column.render (from CUSTOMER_LIST_COLUMNS).
+  function renderCell(renderKey, r) {
+    if (renderKey === 'name') {
+      var pill = lifecyclePillForRow(r);
+      var numDisplay = r.customer_number_display || (r.customer_number != null ? '#' + r.customer_number : '—');
+      return '<div class="cust-list-cell cust-list-name">' +
+               '<div class="nm">' + escapeHtml(r.full_name || '—') + ' ' + pill + '</div>' +
+               '<div class="sub">' + escapeHtml(numDisplay) + '</div>' +
+             '</div>';
+    }
+    if (renderKey === 'phone')              return '<div class="cust-list-cell cust-list-num">' + escapeHtml(r.phone || '—') + '</div>';
+    if (renderKey === 'phone_secondary')    return '<div class="cust-list-cell cust-list-num">' + escapeHtml(r.phone_secondary || '—') + '</div>';
+    if (renderKey === 'email')              return '<div class="cust-list-cell">' + escapeHtml(r.email || '—') + '</div>';
+    if (renderKey === 'city')               return '<div class="cust-list-cell">' + escapeHtml(r.city || '—') + '</div>';
+    if (renderKey === 'id_number')          return '<div class="cust-list-cell cust-list-num">' + escapeHtml(r.id_number || '—') + '</div>';
+    if (renderKey === 'source')             return '<div class="cust-list-cell">' + escapeHtml(r.source || '—') + '</div>';
+    if (renderKey === 'lifecycle')          return '<div class="cust-list-cell">' + lifecyclePillForRow(r) + '</div>';
+    if (renderKey === 'customer_number_display') {
+      var nd = r.customer_number_display || (r.customer_number != null ? '#' + r.customer_number : '—');
+      return '<div class="cust-list-cell cust-list-num">' + escapeHtml(nd) + '</div>';
+    }
+    if (renderKey === 'health_fund_name')   return '<div class="cust-list-cell">' + escapeHtml(r.health_fund_name || '—') + '</div>';
+    if (renderKey === 'created_at') {
+      var s = r.created_at ? new Date(r.created_at).toLocaleDateString('he-IL') : '—';
+      return '<div class="cust-list-cell">' + escapeHtml(s) + '</div>';
+    }
+    return '<div class="cust-list-cell">—</div>';
+  }
+
   function rowHtml(r) {
     var ini = initials(r.full_name, r.first_name, r.last_name);
-    var age = ageFrom(r.birth_date);
-    var ageStr = age != null ? ' · ' + age : '';
-    var numDisplay = r.customer_number_display || (r.customer_number != null ? '#' + r.customer_number : '—');
-    var hf = r.health_fund_name || '—';
-    var phone = r.phone || '—';
-    var pill = lifecyclePillForRow(r);
+    var activeCols = state.activeColumns || window.DEFAULT_LIST_COLUMNS || ['name', 'phone', 'city', 'health_fund'];
+    var cells = activeCols.map(function (id) {
+      var col = (window.CUSTOMER_LIST_COLUMNS || []).find(function (c) { return c.id === id; });
+      if (!col || !col.wired) return '';
+      return renderCell(col.render, r);
+    }).join('');
     return '<div class="cust-list-row" data-customer-id="' + escapeHtml(r.id) + '" tabindex="0">' +
              '<div class="cust-list-av">' + escapeHtml(ini) + '</div>' +
-             '<div class="cust-list-name">' +
-               '<div class="nm">' + escapeHtml(r.full_name || '—') + ' ' + pill + '</div>' +
-               '<div class="sub">' + escapeHtml(numDisplay) + escapeHtml(ageStr) + '</div>' +
-             '</div>' +
-             '<div class="cust-list-phone">' + escapeHtml(phone) + '</div>' +
-             '<div class="cust-list-hf">' + escapeHtml(hf) + '</div>' +
+             cells +
              '<div class="cust-list-actions">' +
                '<button class="cust-list-open" data-customer-id="' + escapeHtml(r.id) + '">פתח כרטיס</button>' +
              '</div>' +
@@ -89,6 +114,7 @@
              '<input class="cust-list-search" placeholder="חיפוש לקוח: שם · טלפון · ת.ז · מספר-לקוח" value="' + escapeHtml(state.searchQuery) + '">' +
              '<button class="cust-list-tb-btn" data-coming-soon="customer_list_barcode_scan">📷 סריקת ברקוד</button>' +
              '<button class="cust-list-tb-btn" data-coming-soon="customer_list_advanced_search">⚙️ חיפוש מתקדם</button>' +
+             '<button class="cust-list-tb-btn" id="cust-colpick-btn">⚙ עמודות</button>' +
              '<button class="cust-list-new" id="cust-new-customer-btn">+ לקוח חדש</button>' +
            '</div>';
   }
@@ -123,6 +149,8 @@
   function rerender() {
     var root = document.getElementById('cust-list-root');
     if (!root) return;
+    // Set the CSS custom prop so the row grid auto-sizes to the chosen column count.
+    root.style.setProperty('--cust-col-count', String((state.activeColumns || []).length || 4));
     root.innerHTML =
       '<div class="cust-list-shell">' +
         '<aside class="cust-list-side" id="cust-list-side">' + window.renderListSidebar(state) + '</aside>' +
@@ -196,6 +224,15 @@
         window.openCustomerCreateModal();
       }
     });
+
+    // עמודות — open column picker
+    var colpickBtn = document.getElementById('cust-colpick-btn');
+    if (colpickBtn) colpickBtn.addEventListener('click', function () {
+      if (typeof window.openColumnPicker === 'function') {
+        trace('column_picker_open');
+        window.openColumnPicker();
+      }
+    });
   }
 
   function setPill(pid) {
@@ -221,7 +258,7 @@
         silent: true
       }),
       DB.select('v_customer_full', null, {
-        columns: 'id,lifecycle_stage,phone,email,city,id_number,is_deleted',
+        columns: 'id,lifecycle_stage,phone,phone_secondary,email,city,id_number,source,is_deleted',
         rawFilters: function (q) { return q.eq('is_deleted', false); },
         limit: PAGE_SIZE * 4,    // pull enough rows to map phone+lifecycle onto our page
         silent: true
@@ -248,9 +285,11 @@
       var f = fullById[e.id] || {};
       return Object.assign({}, e, {
         phone: f.phone || null,
+        phone_secondary: f.phone_secondary || null,
         email: f.email || null,
         city: f.city || null,
-        id_number: f.id_number || null
+        id_number: f.id_number || null,
+        source: f.source || null
       });
     });
     state.branches = branches.data || [];
@@ -270,6 +309,14 @@
     }
     root.innerHTML = '<div class="cust-list-shell"><div class="cust-list-loading">טוען…</div></div>';
     try {
+      // Load tenant's chosen columns BEFORE the data fetch so the first paint is
+      // already with the right columns (no flash-of-default-columns).
+      if (typeof window.loadTenantListColumns === 'function') {
+        state.activeColumns = await window.loadTenantListColumns();
+        trace('list_columns_loaded', { count: (state.activeColumns || []).length });
+      } else {
+        state.activeColumns = window.DEFAULT_LIST_COLUMNS || ['name', 'phone', 'city', 'health_fund'];
+      }
       await fetchData();
     } catch (e) {
       root.innerHTML = '<div class="cust-empty-state"><h2>שגיאה בטעינת הרשימה</h2><p>' + escapeHtml(String(e && e.message || e)) + '</p></div>';
