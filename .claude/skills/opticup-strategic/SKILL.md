@@ -1692,3 +1692,22 @@ Future K-RPC SPECs reuse this template. The §8 author records the side-effect-t
 
 **Source:** `modules/Module 1 - Inventory Management/docs/specs/M1_LENS_GOODS_RECEIPT_REBUILD/FOREMAN_REVIEW.md` (2026-05-18, written by the resilience SPEC's closure session).
 
+---
+
+## Foreman Closure Checklist — Visual-Fidelity Gate enforcement (added 2026-05-23 per VISUAL_FIDELITY_GATE SPEC)
+
+For ANY UI SPEC (one that adds/modifies a `.html` / `.js` / `.css` consumed by the browser), the Foreman CANNOT write a 🟢 verdict in FOREMAN_REVIEW.md unless:
+
+1. **`TEST_REPORT.md` contains a `## Localhost-Tester Visual-Fidelity Gate` section** (or a sibling `LOCALHOST_TESTER_REPORT.md` exists in the SPEC folder) with:
+   - **Step 0 first-load styled-check result** — confirmed CSS variables resolve (not empty string) + page renders styled (not raw text).
+   - **Stylesheet-link audit** — every module CSS file linked + loaded (cssRules > 0).
+   - **Live screenshot** (JPEG q=60-70) + **mockup screenshot** (or mockup file path).
+   - **Region-by-region comparison table**: one row per region (header / each block / each field row / badges / buttons / colors+tokens / spacing / RTL). Columns: mockup-element → live-state → match/mismatch → severity → classification (INTENTIONAL / DRIFT / SCHEMA-BLOCKED / FEATURE-BLOCKED).
+   - **Per-surface verdict line:** 🟢 1:1 / 🟡 minor drift acceptable / 🔴 BLOCK.
+
+2. **The Foreman's own FOREMAN_REVIEW.md** MUST also embed (or paste) the comparison table — not just reference it. The Architect + Daniel review the table in the FOREMAN_REVIEW directly; redirecting them to TEST_REPORT is insufficient.
+
+3. **A "fidelity PASS" with no embedded table is INVALID** and the FOREMAN_REVIEW must be marked 🔴 REOPEN. Codified after the M5 Phase D + E paperwork-PASS incident (2026-05-23). Reference: `.claude/skills/opticup-localhost-tester/SKILL.md` "Visual-Fidelity Gate (MANDATORY BLOCKING)".
+
+4. **The Foreman never claims a UI 🟢 from a text claim** — the verdict must come from looking at the embedded screenshot vs the mockup. Architect rule + Foreman rule.
+
