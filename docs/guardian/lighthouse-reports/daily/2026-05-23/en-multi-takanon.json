@@ -1,0 +1,17 @@
+{
+  "url": "https://www.prizma-optic.co.il/en/multi-takanon/",
+  "lang": "en",
+  "path": "/multi-takanon/",
+  "label": "multi-takanon",
+  "http": 200,
+  "scores": {
+    "performance": 86,
+    "accessibility": 95,
+    "seo": 100,
+    "best-practices": 100
+  },
+  "axeViolationCount": 2,
+  "capturedAt": "2026-05-23T03:56:14.925Z",
+  "fetchTime": "2026-05-23T03:56:05.179Z",
+  "lighthouseVersion": "12.8.2"
+}
