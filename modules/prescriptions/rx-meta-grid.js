@@ -8,13 +8,15 @@
   ];
 
   var _rxTypeOptions = [{ v: '', l: '—' }];
+  var _typesLoaded = false;
   async function loadPrescriptionTypes() {
+    if (_typesLoaded) return;
     var res = await DB.select('prescription_types', {}, { silent: true, order: 'name_he.asc' });
-    if (res && res.data) {
+    if (res && res.data && res.data.length > 0) {
       _rxTypeOptions = [{ v: '', l: '—' }].concat(res.data.map(function (r) { return { v: r.id, l: r.name_he }; }));
+      _typesLoaded = true;
     }
   }
-  loadPrescriptionTypes();
 
   var GLASSES_FIELDS = [
     { key: 'valid_from', label: 'תאריך מרשם', type: 'date', table: 'prescriptions_glasses' },
@@ -112,6 +114,7 @@
   }
 
   window.RxMetaGrid = {
+    loadTypes: loadPrescriptionTypes,
     render: function (rx, ro) { return renderGrid(GLASSES_FIELDS, rx, ro); },
     renderContacts: function (rx, ro) { return renderGrid(CONTACTS_FIELDS, rx, ro); },
     mount: function (rx, ro) { mountGrid(document.getElementById('rx-center'), rx, ro); },

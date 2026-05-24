@@ -72,6 +72,7 @@
     }
 
     await loadCustomerHeader();
+    if (window.RxMetaGrid && window.RxMetaGrid.loadTypes) await window.RxMetaGrid.loadTypes();
     renderTypeBar();
     await refresh();
 
