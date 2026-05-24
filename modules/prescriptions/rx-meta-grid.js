@@ -2,16 +2,26 @@
 (function () {
   'use strict';
 
+  var EXAM_TYPE_OPTIONS = [
+    { v: '', l: '—' }, { v: 'final', l: 'סופי' }, { v: 'old', l: 'ישן' },
+    { v: 'subjective', l: 'סובייקטיבי' }, { v: 'objective', l: 'אובייקטיבי' }
+  ];
+
+  var _rxTypeOptions = [{ v: '', l: '—' }];
+  async function loadPrescriptionTypes() {
+    var res = await DB.select('prescription_types', {}, { silent: true, order: 'name_he.asc' });
+    if (res && res.data) {
+      _rxTypeOptions = [{ v: '', l: '—' }].concat(res.data.map(function (r) { return { v: r.id, l: r.name_he }; }));
+    }
+  }
+  loadPrescriptionTypes();
+
   var GLASSES_FIELDS = [
     { key: 'valid_from', label: 'תאריך מרשם', type: 'date', table: 'prescriptions_glasses' },
-    { key: 'exam_type', label: 'סוג בדיקה', type: 'readonly' },
+    { key: 'exam_type', label: 'סוג בדיקה', type: 'select', table: '_exam',
+      options: EXAM_TYPE_OPTIONS },
     { key: 'prescription_type_id', label: 'סוג מרשם', type: 'select', table: 'prescriptions_glasses',
-      options: [
-        { v: '', l: '—' },
-        { v: 'single_vision', l: 'למרחק' }, { v: 'progressive', l: 'פרוגרסיבי' },
-        { v: 'bifocal', l: 'ביפוקל' }, { v: 'reading', l: 'לקריאה' },
-        { v: 'computer', l: 'למחשב' }
-      ]
+      optionsRef: '_rxTypeOptions'
     },
     { key: 'exam_reason', label: 'סיבת בדיקה', type: 'select', table: 'prescriptions_glasses',
       options: [
@@ -32,7 +42,8 @@
 
   var CONTACTS_FIELDS = [
     { key: 'valid_from', label: 'תאריך', type: 'date', table: 'prescriptions_contacts' },
-    { key: 'exam_type', label: 'סוג בדיקה', type: 'readonly' },
+    { key: 'exam_type', label: 'סוג בדיקה', type: 'select', table: '_exam',
+      options: EXAM_TYPE_OPTIONS },
     { key: 'cl_lens_type', label: 'סוג עדשה', type: 'select', table: 'prescriptions_contacts',
       options: [
         { v: '', l: '—' }, { v: 'daily_soft', l: 'יומית · רכה' }, { v: 'monthly_soft', l: 'חודשית · רכה' },
@@ -69,12 +80,13 @@
         (readOnly ? ' disabled' : '') + ' /></div></div>';
     }
     if (field.type === 'select') {
-      var opts = (field.options || []).map(function (o) {
-        var sel = o.v === val ? ' selected' : '';
+      var fieldOpts = field.optionsRef ? _rxTypeOptions : (field.options || []);
+      var opts = fieldOpts.map(function (o) {
+        var sel = o.v === String(val) ? ' selected' : '';
         return '<option value="' + escapeHtml(o.v) + '"' + sel + '>' + escapeHtml(o.l) + '</option>';
       }).join('');
       return '<div class="rx-meta-cell"><label>' + escapeHtml(field.label) + '</label>' +
-        '<div class="v"><select data-field="' + field.key + '" data-table="' + field.table + '"' +
+        '<div class="v"><select data-field="' + field.key + '" data-table="' + (field.table || '') + '"' +
         (readOnly ? ' disabled' : '') + '>' + opts + '</select></div></div>';
     }
     return '';
@@ -88,7 +100,13 @@
     if (readOnly) return;
     container.querySelectorAll('.rx-meta-grid [data-field]').forEach(function (el) {
       el.addEventListener('change', function () {
-        window.RxEditor.autosaveField(el.getAttribute('data-table'), rx.id, el.getAttribute('data-field'), el.value);
+        var tbl = el.getAttribute('data-table');
+        var fld = el.getAttribute('data-field');
+        if (tbl === '_exam') {
+          window.RxEditor.state.examType = el.value;
+          return;
+        }
+        window.RxEditor.autosaveField(tbl, rx.id, fld, el.value);
       });
     });
   }

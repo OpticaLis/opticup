@@ -59,15 +59,18 @@
 
   function stripForEdit(key, display) {
     var s = String(display || '').trim();
-    if (!s || s === '—') return '';
+    if (!s || s === '—' || s === '-') return '';
     s = s.replace(/[°△]/g, '').replace(/mm$/i, '').trim();
     s = s.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
     return s;
   }
 
   function bindInput(el, key, saveCb) {
+    el.style.direction = 'ltr';
+    el.style.textAlign = 'center';
     el.addEventListener('focus', function () {
-      el.value = stripForEdit(key, el.value);
+      var stripped = stripForEdit(key, el.value);
+      el.value = stripped === '-' || stripped === '+' ? '' : stripped;
     });
     function commit() {
       var result = formatField(key, el.value);
