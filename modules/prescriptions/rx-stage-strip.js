@@ -9,25 +9,33 @@
     { type: 'final', label: 'סופי', icon: '✅' }
   ];
 
-  var _examId = null;
+  var _visitDate = null;
   var _stages = [];
 
   async function load() {
     var S = window.RxEditor.state;
-    if (!S.prescription || !S.prescription.exam_id) { _examId = null; _stages = []; return; }
-    _examId = S.prescription.exam_id;
+    if (!S.prescription || !S.prescription.exam_id) { _visitDate = null; _stages = []; return; }
+    var examRes = await DB.select('eye_exams', { id: S.prescription.exam_id }, { single: true, silent: true });
+    if (!examRes || !examRes.data) { _visitDate = null; _stages = []; return; }
+    _visitDate = examRes.data.exam_date;
+    var allExams = await DB.select('eye_exams', { customer_id: S.customerId }, {
+      silent: true, rawFilters: function (q) { return q.eq('exam_date', _visitDate).eq('is_deleted', false); }
+    });
+    if (!allExams || !allExams.data) { _stages = []; return; }
     var parentTable = S.kind === 'glasses' ? 'prescriptions_glasses' : 'prescriptions_contacts';
-    var res = await DB.select(parentTable, { exam_id: _examId }, { silent: true, order: 'created_at.asc' });
-    if (res && res.data) {
-      var examRes = await DB.select('eye_exams', { id: _examId }, { single: true, silent: true });
-      var examType = (examRes && examRes.data) ? examRes.data.exam_type : null;
-      _stages = res.data.map(function (rx) { return { id: rx.id, status: rx.status, examType: examType }; });
+    var examIds = allExams.data.map(function (e) { return e.id; });
+    _stages = [];
+    for (var i = 0; i < allExams.data.length; i++) {
+      var ex = allExams.data[i];
+      var rxRes = await DB.select(parentTable, { exam_id: ex.id }, { silent: true, limit: 1 });
+      var rx = rxRes && rxRes.data && rxRes.data[0];
+      if (rx) _stages.push({ id: rx.id, status: rx.status, examType: ex.exam_type, examId: ex.id });
     }
   }
 
   function render() {
     var S = window.RxEditor.state;
-    if (!_examId || _stages.length <= 1) return '';
+    if (!_examId) return '';
     var html = '<div class="rx-stage-strip">';
     html += '<span class="rx-stage-label">שלבי ביקור:</span>';
     STAGES.forEach(function (st) {
@@ -64,13 +72,11 @@
 
   async function createStage(examType) {
     var S = window.RxEditor.state;
-    if (!_examId) return;
-    var examRes = await DB.select('eye_exams', { id: _examId }, { single: true, silent: true });
-    if (!examRes || !examRes.data) return;
+    if (!_visitDate) return;
     var newExamId = await DB.rpc('create_exam', {
       p_tenant_id: getTenantId(),
       p_customer_id: S.customerId,
-      p_exam_date: examRes.data.exam_date || new Date().toISOString().substring(0, 10),
+      p_exam_date: _visitDate,
       p_exam_type: examType
     }, { silent: true });
     if (newExamId.error) { Toast.error('Stage creation failed'); return; }
