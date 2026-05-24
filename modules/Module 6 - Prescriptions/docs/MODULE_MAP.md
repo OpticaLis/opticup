@@ -30,7 +30,15 @@ Property sets: `prescription_source`, `prescription_exam_reason`, `prescription_
 | `compute_recall_due_dates` | `(p_tenant_id, p_prescription_id, p_kind) → integer` | Generates 4 axes for glasses, 5 for contacts |
 | `clone_prescription` | `(p_tenant_id, p_source_id, p_kind) → uuid` | Creates new draft from source (parent + eyes copied) |
 
+| `process_due_recalls` | `(p_tenant_id) → integer` | Recall engine: marks due axes triggered, optionally queues M4 messages |
+
 All SECURITY DEFINER + Block A header + REVOKE anon/PUBLIC + GRANT authenticated+service_role.
+
+## pg_cron Jobs
+
+| Job | Schedule | Command |
+|---|---|---|
+| `m6_recall_engine` | `0 8 * * *` (daily 08:00 UTC) | `SELECT process_due_recalls(id) FROM tenants WHERE is_active = true` |
 
 ## Views (9)
 
@@ -47,6 +55,23 @@ All SECURITY DEFINER + Block A header + REVOKE anon/PUBLIC + GRANT authenticated
 | `v_prescriptions_list_for_customer` | M6 editor sidebar | UNION glasses + contacts; compact |
 
 All views WITH (security_invoker = on).
+
+## UI Files (Phase E — Prescription Editor)
+
+| File | Purpose |
+|---|---|
+| `prescriptions.html` | ERP page entry point (root) |
+| `css/prescriptions.css` | Page CSS (Hybrid+Navy tokens + layout) |
+| `modules/prescriptions/rx-editor.js` | Bootstrap + state + type toggle |
+| `modules/prescriptions/rx-sidebar.js` | History sidebar + search + filters |
+| `modules/prescriptions/rx-center.js` | Center editor layout + context bar + lifecycle |
+| `modules/prescriptions/rx-meta-grid.js` | Meta grid (7 fields) rendering + autosave |
+| `modules/prescriptions/rx-param-table.js` | Per-eye refraction table (17 fields × 2 eyes) |
+| `modules/prescriptions/rx-add-block.js` | Per-eye ADD block (4 fields × 2 eyes + copy R→L) |
+| `modules/prescriptions/rx-secondary.js` | Secondary row (glasses) |
+| `modules/prescriptions/rx-notes.js` | Notes + recall axes display + HF info + print strip |
+| `modules/prescriptions/rx-contacts-params.js` | Contacts per-eye table (14 fields × 2 eyes) |
+| `modules/prescriptions/rx-contacts-secondary.js` | Contacts secondary (manufacturer, model, etc.) |
 
 ## Re-used M5 infrastructure
 

@@ -1,7 +1,7 @@
 # Module 6 — Prescriptions / Eye Exams — Session Context
 
-**Last updated:** 2026-05-22 overnight chain close.
-**Status:** 🟢 Phase A+B (Schema + RPCs + Views + cross-contract bridge) CLOSED.
+**Last updated:** 2026-05-24 night run.
+**Status:** 🟢 Phase A+B+C+E+F CLOSED (Schema + RPCs + Views + Recall Engine + Editor UI + M5 Card Wiring).
 
 ## Current state
 
@@ -39,9 +39,6 @@
 
 ## What's next
 
-Out of overnight scope:
-
 1. **M6_MIGRATION SPEC** — import 6,248 OpticPlus exams + 251 contact-lens prescriptions. Depends on M5_MIGRATION.
-2. **M6_RECALL_ENGINE SPEC** — wire pg_cron + activate the 3 day-1 recall variants.
-3. **M6_UI_EDITOR SPEC** — Pattern 12 (sidebar + center) prescription editor. Chrome MCP verification.
-4. **M6_UI_M5_INTEGRATION SPEC** — M5 customer card tab-3 consumes v_customer_prescriptions_summary.
+2. **Visual-Fidelity Gate closure** — Chrome MCP screenshots + region comparison table for Phase E + F (pending localhost verification).
+3. **Phase G+** — Print/send actions, order creation from prescription (M7 dependency).
