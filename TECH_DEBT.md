@@ -7,6 +7,24 @@
 
 ## Active Debt
 
+### #M6_EDITOR_MM_DECIMAL_PLACES — ✅ RESOLVED 2026-05-25 (M6 exhaustive QA, B1+B2) — PD whole-number + BC/DIA 1dp
+
+**Where:** `modules/prescriptions/rx-field-format.js` (mm formatting branch).
+
+**What:** PD fields render `32.00mm` but PD is a whole number → should be `32mm`. BC/DIA render
+`8.40mm`/`14.20mm` → 1 decimal place is the clinical norm (`8.4mm`/`14.2mm`). Functional + correct
+today, just not the cleanest display for pros.
+
+**Why it's debt (🟢):** surfaced 2026-05-25 during Architect visual review of the M6 input-behavior
+merge. Daniel approved merge-now + polish-next. Not blocking — values store + display correctly.
+
+**Planned fix:** per-field decimal-places config in the mm branch of formatField() (PD=0 dp, BC/DIA=1
+dp, axial=2 dp). Bundle with the M6 §4 UX proposals run.
+
+**Source:** `modules/Module 6 - Prescriptions/architecture-brief/M6_EDITOR_INPUT_BEHAVIOR_BRIEF.md` §2;
+decisions/M6.md 2026-05-24/25.
+
+
 ### #M5_CUSTOMER_LOCK_FEATURE — 🟢 Customer LOCK (block ACTIVE customer w/o delete)
 
 **Where:** M5 customers entity + M7 orders + M8 payments (cross-module).

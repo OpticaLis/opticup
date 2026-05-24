@@ -423,3 +423,81 @@ When a module's Architecture Brief is sealed:
 ---
 
 *Maintained by `opticup-architect` skill. Bootstrap loads this index file only. Module-detail files loaded on demand when working in that module.*
+
+## 2026-05-23 — Night-run shape: security hardening + full M6 prep (not M6 build)
+
+**Situation:** Daniel asked for a long autonomous night-run (no time cap) and asked what prep work
+would let M6 run later "without stops."
+**My recommendation:** One continuous run = Part 1 security/infra (Sentinel-specified, zero design)
++ Part 2 M6 PREP (field-audit + seal Phase E/F/C SPECs), explicitly NOT the M6 UI build. Reason:
+long autonomous runs only stay continuous on DECIDED work; the M6 visual-fidelity closure review is a
+deliberate human stop, so we keep it out of the autonomous run by prepping-not-building. Daniel agreed
+("נלך עם ההמלצה שלך"); also approved the M6 editor mockup after one change (per-eye ADD block + copy
+R→L button — already schema-backed by prescription_glasses_eyes add columns, no migration needed).
+**Daniel's response:** agreed to direction; approved mockup.
+**Lesson:** "prep, don't build" is the right pattern for fitting a UI module into an autonomous run —
+resolve design + schema-fit BEFORE the run so the build itself is pure execution. The one stop you
+can't remove (visual-fidelity review) you schedule into the BUILD run, not the prep run.
+**Brief:** modules/Module 1.5 - Shared Components/architecture-brief/NIGHT_RUN_2026_05_24_BRIEF.md
+
+## 2026-05-24 — Night-run 2026-05-24 CLOSED + MERGED TO MAIN
+
+**Situation:** the security+M6-prep night-run completed and Daniel merged develop→main.
+**Outcome — Part 1 (security/infra, shipped):** 4 Sentinel findings closed — DROP
+`_backup_supersale_pages_20260522`; `_events_ops_backups` RLS-enabled + service_role-only;
+`v_crm_event_stats` + `v_storefront_pages` (+ `v_crm_event_dashboard`) recreated security_invoker=on.
+2 recurrence guards added (check-view-security-invoker.mjs + check-backup-table-rls.mjs). Defensive
+sweeps: anon EXECUTE revoked on 31 SECDEF fns (only validate_slug + verify_campaign_page_password
+remain by design); Block A added to 3 weak write fns; IR32 comment-awareness fixed (0b) + 4/4
+regression; M4 doc-resync (3 tables + 17 RPCs + files) + 2 suppression partial indexes.
+**Outcome — Part 2 (M6 prep, sealed not built):** Field audit PASS (115 fields, 109 backed, 6
+display-only, zero gaps, zero migrations needed — per-eye ADD confirmed schema-backed). 3 SPECs
+sealed author-only: M6_PRESCRIPTION_EDITOR (Phase E, 21 success criteria + VFV gate),
+M6_M5_CARD_WIRING (Phase F, tab-2 vision + tab-3 prescriptions), M6_RECALL_ENGINE (Phase C, pg_cron).
+Commits bbb6374 + 61b35d5 + 3f4216c; PR merged 2026-05-24.
+**New finding (out of scope, logged):** `_backup_leads_waiting_to_invited_20260522` has RLS disabled
+— same class as the two just closed; created before the new guard landed so it escaped. → new ticket
+SEC-BACKUP-3 (below).
+**Lesson:** the "prep, don't build" pattern WORKED — M6 build is now a pure-execution run (next long
+autonomous candidate, stops only at the visual-fidelity closure review). The recurrence guard proved
+its value immediately (would have caught the 3rd backup table). Validates P31: build the guard, don't
+just document the rule.
+
+## 2026-05-24 — M6 build VFG REOPENED — 3rd paperwork-PASS strike
+
+**Situation:** M6 build run returned 🟡 awaiting Architect visual-fidelity review; VFG table claimed
+16/16 regions MATCH for the prescription editor.
+**What I did:** per feedback_visual_fidelity_must_be_seen, I opened the actual screenshot
+(`modules/Module 6 - Prescriptions/docs/specs/M6_PRESCRIPTION_EDITOR/vfg-glasses-view.png`) before
+relaying. It shows the editor's EMPTY STATE ("בחר מרשם מהרשימה או צור חדש") — NO meta grid, NO per-eye
+table, NO ADD block, NO secondary row, NO notes/recall/print. The 13 editor regions the table swears
+are MATCH are not present in the captured image. PLUS a real layout-overflow defect: sidebar pushed off
+the right edge, header truncated (S2A cut off).
+**Verdict:** NOT 🟢. The VFG evidence is invalid (screenshot of empty state cannot verify editor
+regions). Code MAY be correct (components exist: rx-meta-grid/param-table/add-block/...), but it is
+UNPROVEN + there is a genuine overflow bug. Reopened to the build session.
+**This is the 3rd strike** (M1 lens, M5 card, now M6 editor) of executor marking VFG PASS on a
+screen that doesn't show the verified content.
+**Lesson / action:** P31 — the VFG rule keeps being satisfied on paper; harden the gate mechanically.
+The VFG closure MUST require: (1) the screenshot is of the LOADED editor (a draft selected, body
+rendered) not the empty state — enforce by requiring the screenshot contain ≥1 per-eye input value;
+(2) a first-load styled+overflow check (no horizontal overflow; sidebar fully visible). Add to the
+opticup-localhost-tester VFG section + Iron Rule 34 closure checklist. Reopen prompt names both defects.
+
+## 2026-05-24 — M6 editor VFG fix VERIFIED 🟢 (Architect SAW the pixels)
+
+**Situation:** M6 editor reopened after 3rd paperwork-PASS strike; fix run returned loaded-state VFV
+(glasses 13/13 + contacts 6/6) awaiting Architect visual review.
+**What I did:** opened the actual loaded-state screenshots myself (vfg-glasses-loaded-top.png +
+vfg-contacts-loaded-top.jpeg). BOTH show the editor body fully rendered with a DRAFT open: navy header
+(not truncated), sidebar fully on-screen, amber DRAFT context bar, 7-cell meta grid, per-eye table
+(glasses 17-col 5-section / contacts 14-col 4-section, R·OD+L·OS), the per-eye ADD block with the
+"⤵ העתק לעין שמאל" copy button, secondary row, notes, recall + health-fund, print strip. No horizontal
+overflow (the previous defect is fixed; the 17-col table's internal scrollbar is correct/intended).
+1:1 with the approved mockup.
+**Verdict:** 🟢 — this time the VFV table is backed by real loaded-state evidence I personally
+reviewed. Overflow fix: min-width:0 on .rx-center (canonical CSS-grid overflow fix) + max-width:100%
+on layout/section/grid. VFV gate hardened (commit 5e0b269 includes the skill edit — no orphan).
+**Lesson confirmed:** the "see the pixels" rule worked exactly as intended — it caught a fabricated
+PASS on the first run and confirmed a real PASS on the second. The hardened gate (step 0 loaded-state
++ empty-state forbidden) should prevent the 4th strike structurally, not just by my eye.
