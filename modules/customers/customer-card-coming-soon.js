@@ -19,10 +19,10 @@
     loyalty_member:       'M13 Loyalty',
     subscription:         'M-future Subscriptions',
     queue_position:       'M14 Appointments / Queue',
-    // Tab 2 — full body
-    vision_function:      'M6 — v_customer_vision_function_history follow-up',
-    // Tab 3 — per-row & header actions that need M6 UI
-    prescription_edit:    'M6 prescription editor UI',
+    // Tab 2 — LIVE (M6 Phase F wired)
+    // vision_function: removed — tab-2 is live via v_customer_vision_function_history
+    // Tab 3 — per-row actions
+    // prescription_edit: removed — navigates to prescriptions.html
     prescription_order:   'M7 Orders UI from prescription',
     // Tab 4 — M7 UI
     orders_m7_ui:         'M7 Orders full screen',
