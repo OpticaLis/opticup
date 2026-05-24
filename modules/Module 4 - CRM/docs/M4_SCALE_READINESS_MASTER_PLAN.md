@@ -122,7 +122,34 @@
 
 ---
 
-## Sequencing + Timeline Recommendation
+### SPEC 6: M4_WHATSAPP_CHANNEL (URGENT — Daniel directive 2026-05-24)
+
+**Problem:** Daniel needs to send WhatsApp messages to customers. M4 dispatch pipeline is hardcoded to SMS + email. Green API is already used via Make for QR/catalog flows, but not for CRM campaign dispatch.
+
+**Key insight (from code audit):** The dispatch architecture is webhook-based — `send-message EF → Make webhook → Make routes by channel → vendor`. The Make payload already includes `{ channel, recipient_phone, body }`. Adding WhatsApp is primarily a **validation/schema lift**, not a re-architecture. The heaviest work is Make-side (ops, not code).
+
+**Scope:**
+1. send-message EF: expand channel validation to accept `'whatsapp'`. Add recipient phone check (same as SMS). Add WhatsApp test-mode allowlist (same pattern as SMS/email allowlists in `tenants.ui_config`).
+2. dispatch-queue EF: wire WhatsApp throttling via `crm_dispatch_config` table (added by SPEC 2 — if SPEC 6 lands first, create the config row directly).
+3. crm_message_templates: allow `channel='whatsapp'` in schema. Create WhatsApp templates for existing automation flows (body format: plain text, similar to SMS).
+4. Make scenario (9104395): Daniel/ops add a WhatsApp route calling Green API sendMessage. This is a Make-side config change — not ERP code.
+5. Short links: activate `W`-prefix convention for WhatsApp links (already reserved).
+6. Consent: for v1, same gate as SMS (phone + not unsubscribed). Formal WhatsApp opt-in flow is a separate future SPEC.
+
+**Not in scope:** WhatsApp Business API migration (Green API via Make is fastest; migrate later if volume justifies). Bidirectional WhatsApp conversations. Rich media templates.
+
+**Success criteria:**
+- A WhatsApp template can be created in the CRM template editor with `channel='whatsapp'`.
+- A broadcast or automation can dispatch WhatsApp messages through the same pipeline as SMS/email.
+- Test-mode allowlist gates WhatsApp on demo (same as SMS/email).
+- Make scenario receives `channel='whatsapp'` and routes to Green API.
+- Short links with `W` prefix resolve and increment `click_count`.
+
+**Timing:** URGENT per Daniel. Can run in parallel with SPEC 3 (screen audit) — no dependency on SPECs 1-2. Make-side config is ops work, not blocked by ERP pipeline. Estimated effort: 1-2 sessions (ERP-side) + ops Make config.
+
+---
+
+## Sequencing + Timeline Recommendation (updated 2026-05-24)
 
 ```
 Now ─────────────────── First 5K campaign ──────── 10K+ campaigns
@@ -130,15 +157,24 @@ Now ─────────────────── First 5K campaign 
   ├─ SPEC 1 (queue lifecycle) │                        │
   ├─ SPEC 2 (throughput)      │                        │
   ├─ SPEC 3 (screen queries)  │                        │
+  ├─ SPEC 6 (WhatsApp) ═══╗  │                        │
+  │   (parallel w/ SPEC 3) ╚══╝                        │
   │                           ├─ SPEC 4 (email vendor) │
   │                           ├─ SPEC 5 (list hygiene) │
 ```
 
 **Pre-10K-blocking (must land first):** SPECs 1, 2, 3 — in that order. SPEC 1 is the highest-leverage fix (table lifecycle); SPEC 2 is the usability fix (operator doesn't babysit); SPEC 3 is the safety net (no screen breaks).
 
+**Urgent (Daniel directive):** SPEC 6 (WhatsApp) — can run in parallel with SPEC 3. No dependency on SPECs 1-2 (WhatsApp uses the same queue/dispatch path that already works for SMS/email). SPEC 2's `crm_dispatch_config` should include WhatsApp columns from day one.
+
 **Can wait:** SPECs 4, 5 — triggered by volume milestones, not calendar dates.
 
-**Question for Daniel:** When is the first campaign likely to hit 5K+ leads? That date minus 2 weeks is the deadline for SPECs 1-3.
+**Questions for Daniel (blocking SPEC 6):**
+1. Does the Make scenario (9104395) already have a WhatsApp route, or does one need to be added?
+2. Is the Green API account configured for outbound marketing messages (not just inbound QR/catalog)?
+3. Consent: OK to send WhatsApp to all leads with a phone number (same as SMS), or require explicit WhatsApp opt-in first?
+
+**Question for Daniel (blocking SPECs 1-3):** When is the first campaign likely to hit 5K+ leads? That date minus 2 weeks is the deadline for SPECs 1-3.
 
 ---
 
