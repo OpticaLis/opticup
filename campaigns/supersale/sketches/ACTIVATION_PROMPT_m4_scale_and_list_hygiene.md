@@ -1,0 +1,16 @@
+You are the Optic Up Architect (opticup-architect skill, Tier-2 strategic). Daniel is preparing Module 4 (CRM/messaging) for ~10,000 leads within the coming months and wants the system ready BEFORE the load arrives. Read the full brief first: campaigns/supersale/sketches/BRIEF_m4_scale_and_list_hygiene.md.
+
+CONTEXT: this is cross-cutting M4 infrastructure, not a single config change. It triggered from a real incident today (2026-05-24): a 1,137-lead × 2-channel broadcast (2,274 queued msgs) caused two live ERP screens to hit `statement timeout` because crm_message_queue grew to ~20,600 rows with no (tenant_id, created_at) index — Seq Scan 2,156ms. A live hotfix index dropped it to 50ms, but that's a point fix. At 10K leads the same class of failure recurs in several places.
+
+MEASURED REALITY (live, do not re-estimate — re-verify if you want, but these are current): dispatch ~55 msg/min; crm_message_queue 20,637 rows/23MB after ~one campaign cycle (sent rows accumulate in the hot table, no archival); crm_message_log 10,762 rows/35MB; Prizma active leads 1,298. Projection: one 10K campaign = 20,000 queue rows = ~6h continuous send; after a few campaigns the tables hit hundreds of thousands of rows and screens time out again; vendor daily caps + email deliverability become hard limits.
+
+WHAT TO PLAN (priority order, my recommendation — challenge it if you disagree):
+1. Queue table lifecycle — archive sent/failed rows out of hot crm_message_queue (history table or date-partitioning) on a schedule so the operational table stays small. This is the real fix; today's index is a stopgap.
+2. Throughput + vendor-aware rate limiting — configurable batch/parallelism in dispatch-queue, per-tenant daily caps, back-off on vendor 4xx/5xx, auto-spread large blasts across hours/days so a 10K send doesn't need a human babysitting it.
+3. Screen queries at scale — audit every M4 screen query for seq-scans; covering indexes and/or scheduled materialized views for history/stats.
+4. Email deliverability for volume — evaluate SES/SendGrid + SPF/DKIM/DMARC + warm-up vs current path (likely defer until volume justifies).
+5. List hygiene / "suspicious leads" — flag leads that repeatedly fail (today: 13 unsubstituted_placeholder failures across 7 leads), look fictitious, or never engage; operator review list to keep-vs-delete. Cleaner list = less load + better deliverability. Pairs with scale.
+
+RULES/CONSTRAINTS: multi-tenant SaaS (Iron Rule 20 litmus; new tables need tenant_id + RLS per Rules 14/15; per-tenant config in tables per Rule 19). Capture the migration-git-drift discipline (today's index applied via MCP is NOT in git migrations yet — there's an existing tech-debt item). This is multi-SPEC cross-module work.
+
+OUTPUT: a Master-Plan slice + a sequenced list of SPECs (queue-lifecycle + vendor-aware rate-limiting FIRST as load-bearing), each with success criteria, ready for the Foreman to author and the Executor to build. Include a timing recommendation: which slices are pre-10K-blocking vs. can wait, and surface the timeline confirmation question to Daniel. Log the decision in references/DECISIONS_LOG.md per your protocol. Do NOT write the SPECs or code yourself — Architect plans + decomposes; the Foreman/Executor pipeline executes.
