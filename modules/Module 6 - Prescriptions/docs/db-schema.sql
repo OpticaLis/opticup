@@ -210,11 +210,12 @@ CREATE POLICY tenant_isolation ON public.prescription_recall_axes AS PERMISSIVE 
 
 -- All 8 tables: RLS enabled + canonical 2-policy (service_bypass + tenant_isolation JWT-claim).
 
--- Views (9): v_exam_for_customer, _for_doctor, v_prescription_glasses_for_order,
+-- Views (10): v_exam_for_customer, _for_doctor, v_prescription_glasses_for_order,
 --   _contacts_for_order, v_recall_due (window-fn 1-row-per-prescription),
 --   v_prescription_history_for_customer (UNION glasses+contacts),
 --   v_customer_prescriptions_summary (cross-contract UNION; M5 customer card consumes),
---   v_prescription_full_for_editor, v_prescriptions_list_for_customer (UNION).
+--   v_prescription_full_for_editor, v_prescriptions_list_for_customer (UNION),
+--   v_customer_visits_for_sidebar (one row per exam/visit; stage_count + best_rx_status + default_rx_id).
 -- All WITH (security_invoker = on).
 
 -- RPCs (7): create_exam, create_prescription_draft (M5↔M6 entry), commit_prescription,
