@@ -20,7 +20,7 @@
 
   var GLASSES_FIELDS = [
     { key: 'valid_from', label: 'תאריך מרשם', type: 'date', table: 'prescriptions_glasses' },
-    { key: 'exam_type', label: 'סוג בדיקה', type: 'select', table: '_exam',
+    { key: 'exam_type', label: 'סוג בדיקה', type: 'select', table: 'prescriptions_glasses',
       options: EXAM_TYPE_OPTIONS },
     { key: 'prescription_type_id', label: 'סוג מרשם', type: 'select', table: 'prescriptions_glasses',
       optionsRef: '_rxTypeOptions'
@@ -44,7 +44,7 @@
 
   var CONTACTS_FIELDS = [
     { key: 'valid_from', label: 'תאריך', type: 'date', table: 'prescriptions_contacts' },
-    { key: 'exam_type', label: 'סוג בדיקה', type: 'select', table: '_exam',
+    { key: 'exam_type', label: 'סוג בדיקה', type: 'select', table: 'prescriptions_contacts',
       options: EXAM_TYPE_OPTIONS },
     { key: 'cl_lens_type', label: 'סוג עדשה', type: 'select', table: 'prescriptions_contacts',
       options: [
@@ -102,13 +102,7 @@
     if (readOnly) return;
     container.querySelectorAll('.rx-meta-grid [data-field]').forEach(function (el) {
       el.addEventListener('change', function () {
-        var tbl = el.getAttribute('data-table');
-        var fld = el.getAttribute('data-field');
-        if (tbl === '_exam') {
-          window.RxEditor.state.examType = el.value;
-          return;
-        }
-        window.RxEditor.autosaveField(tbl, rx.id, fld, el.value);
+        window.RxEditor.autosaveField(el.getAttribute('data-table'), rx.id, el.getAttribute('data-field'), el.value);
       });
     });
   }

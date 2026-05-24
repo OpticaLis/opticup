@@ -1,4 +1,6 @@
-/* rx-stage-strip.js — M6 multi-prescription stage strip (per-visit stages) */
+/* rx-stage-strip.js — M6 multi-prescription stage strip (per-visit stages)
+   Correct model: ONE eye_exam per visit, MULTIPLE prescriptions under it,
+   each prescription carrying its own exam_type stage. */
 (function () {
   'use strict';
 
@@ -9,33 +11,26 @@
     { type: 'final', label: 'סופי', icon: '✅' }
   ];
 
-  var _visitDate = null;
+  var _examId = null;
   var _stages = [];
 
   async function load() {
     var S = window.RxEditor.state;
-    if (!S.prescription || !S.prescription.exam_id) { _visitDate = null; _stages = []; return; }
-    var examRes = await DB.select('eye_exams', { id: S.prescription.exam_id }, { single: true, silent: true });
-    if (!examRes || !examRes.data) { _visitDate = null; _stages = []; return; }
-    _visitDate = examRes.data.exam_date;
-    var allExams = await DB.select('eye_exams', { customer_id: S.customerId }, {
-      silent: true, rawFilters: function (q) { return q.eq('exam_date', _visitDate).eq('is_deleted', false); }
-    });
-    if (!allExams || !allExams.data) { _stages = []; return; }
+    if (!S.prescription || !S.prescription.exam_id) { _examId = null; _stages = []; return; }
+    _examId = S.prescription.exam_id;
     var parentTable = S.kind === 'glasses' ? 'prescriptions_glasses' : 'prescriptions_contacts';
-    var examIds = allExams.data.map(function (e) { return e.id; });
-    _stages = [];
-    for (var i = 0; i < allExams.data.length; i++) {
-      var ex = allExams.data[i];
-      var rxRes = await DB.select(parentTable, { exam_id: ex.id }, { silent: true, limit: 1 });
-      var rx = rxRes && rxRes.data && rxRes.data[0];
-      if (rx) _stages.push({ id: rx.id, status: rx.status, examType: ex.exam_type, examId: ex.id });
-    }
+    var res = await DB.select(parentTable, { exam_id: _examId }, {
+      silent: true, order: 'created_at.asc',
+      rawFilters: function (q) { return q.eq('is_deleted', false); }
+    });
+    _stages = (res && res.data || []).map(function (rx) {
+      return { id: rx.id, status: rx.status, examType: rx.exam_type, examId: _examId };
+    });
   }
 
   function render() {
     var S = window.RxEditor.state;
-    if (!_visitDate) return '';
+    if (!_examId) return '';
     var html = '<div class="rx-stage-strip">';
     html += '<span class="rx-stage-label">שלבי ביקור:</span>';
     STAGES.forEach(function (st) {
@@ -62,9 +57,7 @@
       });
     });
     document.querySelectorAll('.rx-stage-strip [data-stage-type]:not([data-stage-id])').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        createStage(btn.getAttribute('data-stage-type'));
-      });
+      btn.addEventListener('click', function () { createStage(btn.getAttribute('data-stage-type')); });
     });
     var copyBtn = document.getElementById('rx-stage-copy');
     if (copyBtn) copyBtn.addEventListener('click', copyFromPrevious);
@@ -72,22 +65,16 @@
 
   async function createStage(examType) {
     var S = window.RxEditor.state;
-    if (!_visitDate) return;
-    var newExamId = await DB.rpc('create_exam', {
-      p_tenant_id: getTenantId(),
-      p_customer_id: S.customerId,
-      p_exam_date: _visitDate,
-      p_exam_type: examType
-    }, { silent: true });
-    if (newExamId.error) { Toast.error('Stage creation failed'); return; }
+    if (!_examId) return;
     var rxRes = await DB.rpc('create_prescription_draft', {
       p_tenant_id: getTenantId(),
       p_customer_id: S.customerId,
       p_kind: S.kind,
-      p_exam_id: newExamId.data
+      p_exam_id: _examId,
+      p_exam_type: examType
     }, { silent: true });
-    if (rxRes.error) { Toast.error('Draft creation failed'); return; }
-    Toast.success('שלב ' + examType + ' נוצר.');
+    if (rxRes.error) { Toast.error('Stage creation failed: ' + (rxRes.error.message || '')); return; }
+    Toast.success('שלב נוצר.');
     window.RxEditor.trace('stage_created', { examType: examType, rxId: rxRes.data });
     await window.RxSidebar.load();
     if (rxRes.data) window.RxEditor.selectPrescription(rxRes.data);
@@ -96,14 +83,17 @@
   async function copyFromPrevious() {
     var S = window.RxEditor.state;
     if (!S.prescription) return;
-    var currentIdx = -1;
-    for (var i = 0; i < _stages.length; i++) {
-      if (_stages[i].id === S.prescriptionId) { currentIdx = i; break; }
+    var currentStage = S.prescription.exam_type;
+    var stageOrder = STAGES.map(function (s) { return s.type; });
+    var currentIdx = stageOrder.indexOf(currentStage);
+    var prevStage = null;
+    for (var i = currentIdx - 1; i >= 0; i--) {
+      var m = _stages.filter(function (s) { return s.examType === stageOrder[i]; })[0];
+      if (m) { prevStage = m; break; }
     }
-    if (currentIdx <= 0) { Toast.info('אין שלב קודם להעתקה.'); return; }
-    var prevId = _stages[currentIdx - 1].id;
+    if (!prevStage) { Toast.info('אין שלב קודם להעתקה.'); return; }
     var eyeTable = S.kind === 'glasses' ? 'prescription_glasses_eyes' : 'prescription_contacts_eyes';
-    var prevEyes = await DB.select(eyeTable, { prescription_id: prevId }, { silent: true });
+    var prevEyes = await DB.select(eyeTable, { prescription_id: prevStage.id }, { silent: true });
     if (!prevEyes || !prevEyes.data || !prevEyes.data.length) { Toast.info('אין נתונים בשלב הקודם.'); return; }
     var currR = (S.prescription.eyes_r || {}).id;
     var currL = (S.prescription.eyes_l || {}).id;

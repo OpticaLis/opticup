@@ -129,15 +129,15 @@
     var examRes = await DB.rpc('create_exam', {
       p_tenant_id: getTenantId(),
       p_customer_id: S.customerId,
-      p_exam_date: new Date().toISOString().substring(0, 10),
-      p_exam_type: 'final'
+      p_exam_date: new Date().toISOString().substring(0, 10)
     }, { silent: true });
     if (examRes.error) { Toast.error('Exam creation failed'); return; }
     var res = await DB.rpc('create_prescription_draft', {
       p_tenant_id: getTenantId(),
       p_customer_id: S.customerId,
       p_kind: S.kind,
-      p_exam_id: examRes.data
+      p_exam_id: examRes.data,
+      p_exam_type: 'final'
     }, { silent: true });
     if (res.error) {
       Toast.error('יצירת מרשם נכשלה: ' + (res.error.message || ''));
