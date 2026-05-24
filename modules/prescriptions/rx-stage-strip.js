@@ -19,12 +19,23 @@
     if (!S.prescription || !S.prescription.exam_id) { _examId = null; _stages = []; return; }
     _examId = S.prescription.exam_id;
     var parentTable = S.kind === 'glasses' ? 'prescriptions_glasses' : 'prescriptions_contacts';
+    var eyeTable = S.kind === 'glasses' ? 'prescription_glasses_eyes' : 'prescription_contacts_eyes';
+    var dataField = S.kind === 'glasses' ? 'sphere' : 'power';
     var res = await DB.select(parentTable, { exam_id: _examId }, {
       silent: true, order: 'created_at.asc',
       rawFilters: function (q) { return q.eq('is_deleted', false); }
     });
-    _stages = (res && res.data || []).map(function (rx) {
-      return { id: rx.id, status: rx.status, examType: rx.exam_type, examId: _examId };
+    var rxRows = (res && res.data) || [];
+    var rxIds = rxRows.map(function (r) { return r.id; });
+    var eyeRes = rxIds.length > 0 ? await DB.select(eyeTable, {}, {
+      silent: true,
+      rawFilters: function (q) { return q.in('prescription_id', rxIds).not(dataField, 'is', null); }
+    }) : { data: [] };
+    var rxWithData = {};
+    ((eyeRes && eyeRes.data) || []).forEach(function (e) { rxWithData[e.prescription_id] = true; });
+    _stages = rxRows.map(function (rx) {
+      return { id: rx.id, status: rx.status, examType: rx.exam_type, examId: _examId,
+               hasData: !!rxWithData[rx.id] || rx.status === 'committed' };
     });
   }
 
@@ -36,8 +47,8 @@
     STAGES.forEach(function (st) {
       var match = _stages.filter(function (s) { return s.examType === st.type; })[0];
       var active = match && match.id === S.prescriptionId;
-      var filled = !!match;
-      var cls = 'rx-stage' + (active ? ' active' : '') + (!filled ? ' dimmed' : '');
+      var filled = match && match.hasData;
+      var cls = 'rx-stage' + (active && filled ? ' active' : '') + (!filled ? ' dimmed' : '');
       var tag = !filled ? ' <span class="rx-stage-skip">(דולג)</span>' : '';
       html += '<button class="' + cls + '" data-stage-type="' + st.type + '"' +
         (match ? ' data-stage-id="' + match.id + '"' : '') + '>' +
@@ -50,14 +61,16 @@
   }
 
   function mount() {
-    document.querySelectorAll('.rx-stage-strip [data-stage-id]').forEach(function (btn) {
+    document.querySelectorAll('.rx-stage-strip [data-stage-type]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        var id = btn.getAttribute('data-stage-id');
-        if (id) window.RxEditor.selectPrescription(id);
+        var stageId = btn.getAttribute('data-stage-id');
+        var stageType = btn.getAttribute('data-stage-type');
+        if (stageId) {
+          window.RxEditor.selectPrescription(stageId);
+        } else {
+          createStage(stageType);
+        }
       });
-    });
-    document.querySelectorAll('.rx-stage-strip [data-stage-type]:not([data-stage-id])').forEach(function (btn) {
-      btn.addEventListener('click', function () { createStage(btn.getAttribute('data-stage-type')); });
     });
     var copyBtn = document.getElementById('rx-stage-copy');
     if (copyBtn) copyBtn.addEventListener('click', copyFromPrevious);
