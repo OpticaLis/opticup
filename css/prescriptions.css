@@ -28,9 +28,9 @@
 }
 .rx-cust-header .left { display:flex; align-items:center; gap:12px; }
 .rx-cust-header .av {
-  width:34px; height:34px; border-radius:6px; background:var(--accent-hover); color:#fff;
+  min-width:34px; height:34px; border-radius:6px; background:var(--accent-hover); color:#fff;
   display:inline-flex; align-items:center; justify-content:center;
-  font-size:11px; font-weight:500; font-variant-numeric:tabular-nums;
+  font-size:9px; font-weight:500; font-variant-numeric:tabular-nums; padding:0 4px; white-space:nowrap;
 }
 .rx-cust-header .nm { font-size:14px; font-weight:500; }
 .rx-cust-header .meta { font-size:10px; color:#cbd5e1; margin-top:2px; }
@@ -58,7 +58,7 @@
 .rx-type-bar .ct { font-size:10px; color:var(--text-tertiary); margin-inline-start:auto; }
 
 /* Main layout */
-.rx-main-layout { display:grid; grid-template-columns:280px 1fr; min-height:780px; }
+.rx-main-layout { display:grid; grid-template-columns:280px 1fr; min-height:780px; max-width:100%; }
 
 /* Sidebar */
 .rx-sidebar {
@@ -108,7 +108,7 @@
 }
 
 /* Center editor */
-.rx-center { background:var(--bg-page); padding:14px; overflow:auto; }
+.rx-center { background:var(--bg-page); padding:14px; overflow-x:auto; overflow-y:auto; min-width:0; }
 
 /* Context bar */
 .rx-ctx-bar {
@@ -134,7 +134,7 @@
 /* Meta grid */
 .rx-meta-grid {
   background:var(--bg-surface); border:0.5px solid var(--border-subtle); border-radius:var(--r-md);
-  display:grid; grid-template-columns:repeat(7,1fr); gap:0; margin-bottom:12px; overflow:hidden;
+  display:grid; grid-template-columns:repeat(7,1fr); gap:0; margin-bottom:12px; overflow:hidden; max-width:100%;
 }
 .rx-meta-cell {
   padding:9px 10px; border-inline-end:0.5px solid var(--border-subtle);
@@ -151,7 +151,7 @@
 /* Param table */
 .rx-param-section {
   background:var(--bg-surface); border:0.5px solid var(--border-subtle); border-radius:var(--r-md);
-  margin-bottom:12px; overflow:hidden;
+  margin-bottom:12px; overflow:hidden; max-width:100%;
 }
 .rx-param-section .ph {
   padding:9px 14px; background:var(--bg-surface-alt); border-bottom:0.5px solid var(--border-subtle);
