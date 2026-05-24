@@ -10,12 +10,12 @@
 
 | Phase | Name | Status | SPEC folder | Notes |
 |---|---|---|---|---|
-| **A** | Schema + RLS + Views | ⬜ in progress (2026-05-22 overnight) | `docs/specs/M6_SCHEMA/` | Combined with Phase B in one overnight schema SPEC |
-| **B** | RPCs + state-machines + Iron Rule 32 + recall axes | ⬜ in progress (2026-05-22 overnight) | `docs/specs/M6_SCHEMA/` | Combined with Phase A |
-| C | Recall engine 3 variants active | ⬜ deferred | `docs/specs/M6_RECALL_ENGINE/` (not yet authored) | day-1 active set per Brief §5.3 |
+| **A** | Schema + RLS + Views | ✅ CLOSED (2026-05-22) | `docs/specs/M6_SCHEMA/` | Combined with Phase B in one overnight schema SPEC |
+| **B** | RPCs + state-machines + Iron Rule 32 + recall axes | ✅ CLOSED (2026-05-22) | `docs/specs/M6_SCHEMA/` | Combined with Phase A |
+| **C** | Recall engine 3 variants active | ✅ CLOSED (2026-05-23) | `docs/specs/M6_SCHEMA/` | day-1 active set per Brief §5.3 |
 | D | OpticPlus migration (tb_bdika 6,248 + tb_lenses 251) | ⬜ deferred | `docs/specs/M6_MIGRATION/` (not yet authored) | Separate SPEC, Daniel-in-loop, depends on M5_MIGRATION |
-| E | UI — Prescription editor (sidebar + center) | ⬜ deferred | `docs/specs/M6_UI_EDITOR/` (not yet authored) | UI SPEC, Daniel-in-loop |
-| F | UI integration in M5 customer card tab-3 | ⬜ deferred | `docs/specs/M6_UI_M5_INTEGRATION/` (not yet authored) | Cross-module UI SPEC |
+| **E** | UI — Prescription editor (sidebar + center) | ✅ CLOSED with VFG (2026-05-24) | `docs/specs/M6_PRESCRIPTION_EDITOR/` | Full VFG region comparison PASS |
+| **F** | UI integration in M5 customer card tab-3 | ✅ CLOSED with VFG (2026-05-24) | `docs/specs/M6_M5_CARD_WIRING/` | Tab-3 prescriptions + tab-2 vision live |
 
 Phases A + B together = the **schema foundation** built tonight. Sealed in one combined SPEC (`M6_SCHEMA`) per the overnight Brief recommendation: independently verifiable from M5_SCHEMA, but co-sealed in the same overnight chain. UI + migration + cron-scheduled-recall are out-of-scope tonight (Daniel-in-loop required).
 
