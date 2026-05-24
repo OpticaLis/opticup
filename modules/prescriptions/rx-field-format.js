@@ -46,10 +46,7 @@
     var dp = 2;
     var suffix = '';
     if (key === 'prism') suffix = '△';
-    else if (MM_FIELDS.indexOf(key) !== -1) { suffix = 'mm'; dp = s.indexOf('.') !== -1 ? 2 : 0; if (dp === 0) dp = 0; else dp = 2; }
-    else if (K_FIELDS.indexOf(key) !== -1) dp = 2;
-
-    if (MM_FIELDS.indexOf(key) !== -1) dp = 2;
+    else if (MM_FIELDS.indexOf(key) !== -1) suffix = 'mm';
 
     var formatted = num.toFixed(dp);
     if (MINUS_SIGN.indexOf(key) !== -1 || PLUS_SIGN.indexOf(key) !== -1) {
@@ -63,7 +60,8 @@
   function stripForEdit(key, display) {
     var s = String(display || '').trim();
     if (!s || s === '—') return '';
-    s = s.replace(/[°△△]/g, '').replace(/mm$/i, '').trim();
+    s = s.replace(/[°△]/g, '').replace(/mm$/i, '').trim();
+    s = s.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
     return s;
   }
 
