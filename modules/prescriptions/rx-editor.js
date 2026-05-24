@@ -160,6 +160,13 @@
     }
     var rx = rxRes.data;
     var eyes = (eyeRes && eyeRes.data) || [];
+    if (rx.status === 'draft' && eyes.length === 0) {
+      var ins = await Promise.all([
+        DB.insert(eyeTable, { prescription_id: id, eye: 'R', tenant_id: getTenantId() }, { silent: true }),
+        DB.insert(eyeTable, { prescription_id: id, eye: 'L', tenant_id: getTenantId() }, { silent: true })
+      ]);
+      eyes = [ins[0].data, ins[1].data].filter(Boolean);
+    }
     rx.eyes_r = eyes.filter(function (e) { return e.eye === 'R'; })[0] || {};
     rx.eyes_l = eyes.filter(function (e) { return e.eye === 'L'; })[0] || {};
     rx.recall_axes = (recallRes && recallRes.data) || [];
