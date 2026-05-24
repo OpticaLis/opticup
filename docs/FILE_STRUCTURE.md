@@ -324,6 +324,13 @@ modules/
 │    customer-create (Phase E — modal form + create_customer RPC + dedup-safe
 │    UX: created=true → redirect; created=false → existing-customer surface))
 │
+├── crm/                        — 81 files (Module 4 — CRM lead pipeline + events + messaging)
+│   (crm-bootstrap, crm-dashboard, crm-leads-*, crm-event-*, crm-automation-*,
+│    crm-confirm-send-v2, crm-broadcast-*, crm-messaging-resend, crm-coupon-dispatch)
+│   ├── crm-short-links-tiles/  — short-link management UI
+│   │   (broadcasts-table, drilldown, filter-bar, template-static-card)
+│   └── public/                 — public-facing CRM pages (lead registration)
+│
 └── storefront/                 — 20 files (Studio admin UI — manages storefront content)
     (storefront-settings, storefront-brands, storefront-products, storefront-content,
      storefront-translations, storefront-glossary, studio-block-schemas,

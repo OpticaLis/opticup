@@ -213,7 +213,7 @@
 --     translation_corrections, tenant_i18n_overrides
 
 -- ------------------------------------------------------------
--- Module 4 — CRM (28 tables)
+-- Module 4 — CRM (31 tables + 1 MV)
 -- ------------------------------------------------------------
 -- Lead → registration → event-day pipeline with messaging hub + automation engine.
 -- Module 4 entered MAINTENANCE phase 2026-05-06; all 4 audit CRITICALs CLOSED.
@@ -247,6 +247,12 @@
 --
 --   Admin tooling (1):
 --     crm_monday_column_map (one-time Monday board → tenant_id mapping)
+--
+--   Pipeline infra (3 + 1 MV, added 2026-05-22):
+--     crm_suppressions (GDPR opt-out gate, queried on every message dispatch),
+--     m4_dispatch_lock (advisory lock row for dispatch-queue single-writer),
+--     crm_capi_dispatch_queue (FB CAPI offline-event queue)
+--     mv_crm_lead_event_history (materialized view — lead×event attendance)
 --
 -- RLS pattern (post-M4_TENANT_ISOLATION_HARDENING_PART1 + PART2, 2026-05-06):
 --   Every M4 table has RLS enabled with the canonical 2-policy pattern:

@@ -213,6 +213,9 @@ A structurally-separate set of **mirror tables** sitting between private source-
 | **CRM (Module 4)** — public ingress | register_lead_to_event, submit_storefront_lead, verify_campaign_page_password (anon+auth+service) | 3 |
 | **CRM (Module 4)** — staff actions | check_in_attendee, move_attendee_between_events, transfer_credit_to_new_attendee, restore_event_from_log, soft_delete_event_if_empty, sync_lead_status_from_attendee (auth+service only, post-PART2) | 6 |
 | **CRM (Module 4)** — admin/trigger | cascade_attendee_soft_delete (DB trigger), import_leads_from_monday (one-time admin) — service_role only post-PART2 | 2 |
+| **CRM (Module 4)** — lead pipeline (2026-05) | crm_bulk_approve_leads_to_tier2, crm_resolve_tier2_leads, crm_resolve_tier2_leads_jsonb, crm_attendee_aggregates_for_leads, crm_attendee_aggregates_for_leads_jsonb, update_lead_status_with_origin, update_event_status_with_overrides (auth+service, Block A) | 7 |
+| **CRM (Module 4)** — messaging infra (2026-05) | enqueue_crm_messages_idempotent, crm_message_performance_summary, crm_dashboard_status_counts, claim_unconsumed_status_change_events, crm_check_contact_suppressed, crm_resubscribe_contact (auth+service) | 6 |
+| **CRM (Module 4)** — short links (2026-05) | crm_create_static_short_link (2 overloads), crm_update_static_short_link, crm_delete_static_short_link (auth+service) | 4 |
 | OCR | update_ocr_template_stats (×2) | 2 |
 | Triggers | save_previous_blocks, update_*_updated_at (×3), update_updated_at | 5 |
 
