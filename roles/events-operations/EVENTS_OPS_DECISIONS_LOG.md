@@ -560,10 +560,26 @@ New events-operations decisions continue from REC-013. The consolidated skill op
    - FAQ: coupon-only realization, limited coupons sent ≤48h after final reservation, hundreds-of-shekels extra benefits for pre-registered only, walk-in allowed (free-coupon basis, no extra benefits — framed to push registration), 1+1 reading + lens benefits (single-vision + multifocal).
 2. **Price update 790→890** applied to ALL live supersale pages (`/supersale/`, `supersale`, `/successfulsupersale/` [= the THANK-YOU page, not historical], `/supersalepricescatalog/`) in he/en/ru — campaign_price + headline text. Backup table `_backup_supersale_pages_20260522` (12 rows). Verified 0 remaining 790; 0 original_price=790 touched.
 
-### REMAINING (do next, recommended order)
-1. **Flip 708 leads `waiting`→`invited`** on Prizma (Daniel: "they were all invited, automation bug fixed"). MUST verify demo-first that no automation fires on the flip — there IS an active rule "שינוי סטטוס ליד: ברוך הבא לרשומים" on lead status_change → `waiting`, but it reacts to entering `waiting`, not leaving it; still confirm no rule fires on entering `invited`. Back up the 708 ids+status first.
-2. **Build 3 panel messages** (Sun/Mon/Tue waves) pointing to /supersale-launch/, to drive the 1,137. Sun = big launch (SMS+email), Mon eve = urgency ("X spots left"), Tue = WhatsApp last call. Demo-first, visual preview, IR35 (no new placeholders).
-3. **Measurement loop:** business-state metrics (not clicks — bots), define before/after so we learn what worked; log result here.
+### PROGRESS UPDATE (2026-05-23 — end of session 2)
+
+**DONE since the original handoff:**
+- ✅ **708 flip done.** `waiting`→`invited` on Prizma. Verified no automation fires (only active lead-status rule reacts to entering `waiting`, not invited). Backup table `_backup_leads_waiting_to_invited_20260522`. Audience now **1,142 `invited`** (was 708+434).
+- ✅ **Landing page /supersale-launch/ LIVE on prod** — fully iterated (v2→v12, PRs #28–#32). Final state: 56 fashion-sun (price tiers interleaved with NATURAL scatter — cheap anchor in first row, see [[feedback_price_anchor_visible_first]]) + 56 fashion-reading (1+1 badge, 15 mixed brands incl Gucci/Dior/SaintLaurent/Etnia/Mykita/Porsche/Swarovski — Valentino/Kenzo/Fendi/Armani/Celine/JimmyChoo removed as stale) + 32 luxury-sun + 32 luxury-reading. "מחיר אירוע" label (not "השקה"). ₪890 cards show "למשריינים מראש: 840 ש"ח" (₪890 tier only, no asterisk). 12 FAQ alternating gold/white incl 3 "final-punch" Qs (brand-event uniqueness, lab/remote→eye-exam-at-event+home-delivery-2-3-days, lens benefits). Badge text centered. Takanon link in pledge + brand-event FAQ. Coupon-limit FAQ kept (2 sun + 2 reading frames).
+- ✅ **Wave-1 templates created in BOTH demo + prizma, byte-identical (md5 verified).** Slugs `supersale_launch_teaser_email_he` + `supersale_launch_teaser_sms_he`. **CRITICAL DISPATCH NOTE: queue with BASE slug `supersale_launch_teaser`** — the dispatcher appends `_<channel>_<language>` itself. Queuing the full slug → `template_not_found`. (Learned the hard way this session.)
+- ✅ **Test send verified on demo** — email+SMS delivered to Daniel's lead. Two gotchas hit & cleared: (a) Daniel's email+phone were in `crm_suppressions` (reason user_unsubscribed, backfill 2026-05-22) → had to delete demo suppression rows to deliver; (b) base-slug issue above.
+- ⚠️ **Suppression check done on Prizma: only 4 of 1,142 invited are suppressed** → ~1,138 will actually receive Wave 1. Good coverage.
+
+### REMAINING (next session)
+1. **🔴 SEND WAVE 1 (Sunday) — everything is ready, only the send is left.** Email+SMS to the 1,142 invited (≈1,138 deliverable). Templates exist in prizma. Queue with BASE slug `supersale_launch_teaser`. **MANDATORY: show Daniel the exact recipient count and get explicit in-chat approval BEFORE triggering the broadcast** — this is the highest-blast-radius action in the campaign. Daniel wants it sent Sunday morning (schedule scheduled_at accordingly). The SMS contains a raw landing URL — consider a short r/ link before the real send (bot-click hygiene).
+2. **Build Wave 2 (Monday eve) + Wave 3 (Wednesday).** Daniel's framing: Mon = "מקומות אחרונים" (last spots / urgency). Wed = "התפנו מקומות מביטולים ברגע האחרון" (cancellations freed up spots). Same flow: author HTML/SMS → visual preview for Daniel → Claude Code creates templates demo→prizma (Iron Rule 33) → test on demo → send with count-approval. (Daniel originally said Sun/Mon/Tue; latest is Sun/Mon/Wed — confirm.)
+3. **Measurement loop:** business-state metrics (registrations created, not clicks). Define baseline now (current registered count) vs after each wave; log results here.
+4. **Side-bug to file:** `promote-config-to-prizma.mjs` audit-log write returns PGRST204 — `crm_audit_log.actor` column missing/renamed. Promotion itself works; audit logging silently fails. Open a ticket.
+
+### Workflow established this session (reuse it)
+- Daniel runs NOTHING himself — Events-Ops executes all SQL + Vercel via connectors ([[feedback_events_ops_i_run_everything]]).
+- Claude Code handoffs use BRIEF + separate ACTIVATION_PROMPT files in `campaigns/supersale/sketches/` ([[feedback_events_ops_brief_activation_workflow]]). Large/escaping-sensitive DB writes + storefront git ops go to Claude Code, not Cowork SQL (Cowork truncated the email file once).
+- Storefront edits: Cowork authors brief → Claude Code edits /supersale-launch/ on develop → auto Vercel preview → Daniel approves → Daniel merges PR to main (Daniel-only).
+- Visual preview before every approval (rendered, never raw HTML).
 
 ### Key facts for any new session
 - Prizma tenant `6ad0781b-37f0-47a9-92e3-be9ed1477e1c`; demo `8d8cfa7e-ef58-49af-9702-a862d459cccb`. Test phones ONLY 0537889878 / 0503348349.
