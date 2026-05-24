@@ -46,8 +46,15 @@
   function mount(rx, readOnly) {
     if (readOnly) return;
     document.querySelectorAll('.rx-secondary-row [data-field][data-table="prescriptions_glasses"]').forEach(function (el) {
-      el.addEventListener('change', function () {
-        window.RxEditor.autosaveField('prescriptions_glasses', rx.id, el.getAttribute('data-field'), el.value);
+      if (el.tagName === 'SELECT') {
+        el.addEventListener('change', function () {
+          window.RxEditor.autosaveField('prescriptions_glasses', rx.id, el.getAttribute('data-field'), el.value);
+        });
+        return;
+      }
+      var fieldKey = el.getAttribute('data-field');
+      window.RxFieldFormat.bindInput(el, fieldKey, function (dbVal) {
+        window.RxEditor.autosaveField('prescriptions_glasses', rx.id, fieldKey, dbVal);
       });
     });
   }

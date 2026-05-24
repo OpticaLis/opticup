@@ -58,7 +58,8 @@
         }).join('');
         cells += '<td><select data-eye="' + eye + '" data-field="' + c.key + '"' + (readOnly ? ' disabled' : '') + '>' + opts + '</select></td>';
       } else {
-        cells += '<td><input data-eye="' + eye + '" data-field="' + c.key + '" value="' + escapeHtml(val) + '"' +
+        var disp = val && window.RxFieldFormat ? window.RxFieldFormat.formatField(c.key, val, true).display : val;
+        cells += '<td><input data-eye="' + eye + '" data-field="' + c.key + '" value="' + escapeHtml(disp || val) + '"' +
           ' placeholder="—"' + (readOnly ? ' disabled' : '') + ' /></td>';
       }
     });
@@ -82,13 +83,22 @@
     var lEye = rx.eyes_l || {};
     document.querySelectorAll('.rx-param-table [data-eye][data-field]').forEach(function (el) {
       if (el.closest('.rx-param-section .ph')) return;
-      var isAdd = el.closest('[data-add-block]');
-      if (isAdd) return;
-      el.addEventListener('change', function () {
+      if (el.closest('[data-add-block]')) return;
+      if (el.tagName === 'SELECT') {
+        el.addEventListener('change', function () {
+          var eye = el.getAttribute('data-eye');
+          var eyeId = eye === 'R' ? rEye.id : lEye.id;
+          if (!eyeId) return;
+          window.RxEditor.autosaveField('prescription_glasses_eyes', eyeId, el.getAttribute('data-field'), el.value);
+        });
+        return;
+      }
+      var fieldKey = el.getAttribute('data-field');
+      window.RxFieldFormat.bindInput(el, fieldKey, function (dbVal) {
         var eye = el.getAttribute('data-eye');
         var eyeId = eye === 'R' ? rEye.id : lEye.id;
         if (!eyeId) return;
-        window.RxEditor.autosaveField('prescription_glasses_eyes', eyeId, el.getAttribute('data-field'), el.value);
+        window.RxEditor.autosaveField('prescription_glasses_eyes', eyeId, fieldKey, dbVal);
       });
     });
   }
