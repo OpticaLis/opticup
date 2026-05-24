@@ -117,14 +117,12 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST" && req.method !== "GET") return jsonResp({ ok: false, error: "method_not_allowed" }, 405);
 
-  const batchSize = 15; // 2026-05-20: hotfix M4_SMS_RATE_LIMIT_HOTFIX — reduced from 60 to halve cron-tick overlap (was 4 concurrent invocations causing Supabase per-trace rate-limit on send-message). M4_NIGHT_RUN_2026_05_20 W2.1 keeps this band-aid as belt-and-suspenders with the new advisory lock; structural fix is the lock.
+  const batchSize = 15; // M4_SMS_RATE_LIMIT_HOTFIX: reduced from 60; advisory lock is the structural fix
   const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // M4_NIGHT_RUN_2026_05_20 W2.1 — advisory lock: serialize concurrent cron
-  // ticks so at most ONE dispatch-queue invocation processes the queue at a
-  // time. Eliminates the 4×-overlap rate-limit bug class.
+  // Advisory lock: serialize concurrent cron ticks (M4_NIGHT_RUN W2.1)
   const lockToken = await tryAcquireDispatchLock(db);
   if (!lockToken) {
     return jsonResp({ ok: true, processed: 0, skipped: "lock_held" });
@@ -138,10 +136,7 @@ Deno.serve(async (req: Request) => {
 
 async function runDispatchTick(db: any, batchSize: number): Promise<Response> {
 
-  // Reaper (P29): mark crm_automation_runs.status='running' rows older than
-  // 1h as 'aborted'. The CrmConfirmSend modal has no abandonment recovery —
-  // if the admin closes the window without approving, the run sits forever.
-  // Idempotent: predicate re-checked on UPDATE; finished_at IS NULL guard
+  // Reaper: mark stale 'running' automation_runs as 'aborted' after 1h
   // means we never touch rows that already transitioned terminally.
   // tenant_id captured per-row in the RETURNING for audit (service role
   // bypasses RLS, so a tenant_id WHERE filter would be a no-op).
@@ -167,14 +162,9 @@ async function runDispatchTick(db: any, batchSize: number): Promise<Response> {
   }
 
   // Claim batch: UPDATE queued → processing, up to batchSize rows, return them.
-  // Uses a WITH ... UPDATE ... RETURNING pattern through PostgREST — PostgREST
-  // doesn't support CTE so we do SELECT-then-UPDATE-by-id in 2 round trips.
-  // Acceptable — the unique row id prevents double-processing under concurrent
-  // ticks because the UPDATE only flips status='queued' → 'processing'.
+  // Claim batch: SELECT-then-UPDATE-by-id (PostgREST has no CTE)
   const claimRes = await db
     .from("crm_message_queue")
-    // 2026-05-14 M4_BROADCAST_ID_PROPAGATION (P1.2) — also fetch broadcast_id
-    // so it can be forwarded to send-message in the dispatch payload.
     .select("id, tenant_id, run_id, lead_id, event_id, channel, template_slug, body, subject, variables, language, broadcast_id, scheduled_at")
     .eq("status", "queued")
     .lte("scheduled_at", new Date().toISOString())
@@ -204,7 +194,7 @@ async function runDispatchTick(db: any, batchSize: number): Promise<Response> {
     id: string; tenant_id: string; run_id: string | null;
     lead_id: string; event_id: string | null;
     broadcast_id: string | null;
-    channel: "sms"|"email";
+    channel: "sms"|"email"|"whatsapp";
     template_slug?: string; body?: string; subject?: string;
     variables?: Record<string, unknown>;
     language: string; scheduled_at: string; retries?: number;
@@ -214,6 +204,18 @@ async function runDispatchTick(db: any, batchSize: number): Promise<Response> {
   for (const row of rows) {
     const r = row as ClaimedRow;
     if (claimedIds.has(r.id)) claimed.push(r);
+  }
+
+  // WhatsApp daily cap: defer if today's sent WhatsApp >= 2000 (Dialog360 Regular plan)
+  const waRows = claimed.filter((r) => r.channel === "whatsapp");
+  if (waRows.length) {
+    const d = new Date(); d.setHours(0,0,0,0);
+    const { count } = await db.from("crm_message_log").select("id", { count: "exact", head: true })
+      .eq("channel", "whatsapp").eq("status", "sent").gte("created_at", d.toISOString());
+    if ((count || 0) >= 2000) {
+      for (const r of waRows) await db.from("crm_message_queue").update({ status: "deferred_cap" }).eq("id", r.id);
+      claimed.splice(0, claimed.length, ...claimed.filter((r) => r.channel !== "whatsapp"));
+    }
   }
 
   const groups = new Map<string, ClaimedRow[]>();
@@ -242,7 +244,8 @@ async function runDispatchTick(db: any, batchSize: number): Promise<Response> {
     // Sleep ONCE per group, AFTER parallel dispatches. Use the slowest
     // channel's throttle (SMS=1000ms; email-only group=500ms).
     const hasSms = group.some((r) => r.channel === "sms");
-    await sleep(hasSms ? 1000 : 500);
+    const hasWa = group.some((r) => r.channel === "whatsapp");
+    await sleep(hasSms || hasWa ? 1000 : 500);
   }
 
   return jsonResp({ ok: true, processed: claimedIds.size, sent, failed, rejected });

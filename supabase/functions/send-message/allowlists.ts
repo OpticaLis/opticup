@@ -79,3 +79,28 @@ export async function emailAllowed(db: any, tenantId: string, email: string | nu
     typeof a === "string" && normalizeEmail(a) === n
   );
 }
+
+// deno-lint-ignore no-explicit-any
+export async function whatsappAllowed(db: any, tenantId: string, phone: string | null): Promise<boolean> {
+  if (!phone) return true;
+  const { data: tenant, error } = await db
+    .from("tenants")
+    .select("ui_config")
+    .eq("id", tenantId)
+    .maybeSingle();
+  if (error) {
+    console.warn("whatsappAllowed: tenant lookup failed; failing CLOSED for safety", error);
+    return false;
+  }
+  const ui = tenant?.ui_config;
+  const allowlist = ui && typeof ui === "object" ? (ui as Record<string, unknown>).test_mode_whatsapp_allowlist : null;
+  if (allowlist == null) return true;
+  if (!Array.isArray(allowlist)) {
+    console.warn("whatsappAllowed: malformed allowlist on tenant", tenantId);
+    return false;
+  }
+  const n = normalizePhone(phone);
+  return allowlist.some((a: unknown) =>
+    typeof a === "string" && normalizePhone(a) === n
+  );
+}

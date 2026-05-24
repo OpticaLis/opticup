@@ -17,12 +17,14 @@ interface DispatchParams {
   runId: string | null;
   templateId: string | null;
   broadcastId: string | null;
-  channel: "sms" | "email";
+  channel: "sms" | "email" | "whatsapp";
   finalBody: string;
   finalSubject: string | null;
   recipientPhone: string | null;
   recipientEmail: string | null;
   shortLinkIds: string[];
+  whatsappTemplateName?: string | null;
+  whatsappTemplateVars?: string[];
 }
 
 type JsonResponseFn = (body: Record<string, unknown>, status?: number) => Response;
@@ -80,7 +82,13 @@ export async function writeDispatchAndSend(
     }
   }
 
-  // --- Call Make webhook ---
+  // --- WhatsApp: dispatch via Dialog360 (direct HTTP, NOT via Make) ---
+  if (p.channel === "whatsapp") {
+    const { dispatchViaDialog360 } = await import("./dialog360.ts");
+    return await dispatchViaDialog360(db, p as any, logRow, jsonResponse);
+  }
+
+  // --- SMS/Email: Call Make webhook ---
   if (!makeWebhookUrl) {
     await db
       .from("crm_message_log")

@@ -9,7 +9,7 @@ import {
 } from "./event-variables.ts";
 import { injectLeadVariables } from "./lead-variables.ts";
 import { writeDispatchAndSend } from "./dispatch.ts";
-import { phoneAllowed, emailAllowed } from "./allowlists.ts";
+import { phoneAllowed, emailAllowed, whatsappAllowed } from "./allowlists.ts";
 
 // send-message — CRM message dispatch (P3c+P4 Architecture v3).
 // Flow: POST {tenant_id, lead_id, channel, template_slug|body, variables} →
@@ -116,8 +116,8 @@ Deno.serve(async (req: Request) => {
   // --- Validate ---
   if (!tenantId) return errorResponse("Missing tenant_id", 400);
   if (!leadId) return errorResponse("Missing lead_id", 400);
-  if (!channel || (channel !== "sms" && channel !== "email")) {
-    return errorResponse("Invalid channel (must be sms or email)", 400);
+  if (!channel || !["sms", "email", "whatsapp"].includes(channel)) {
+    return errorResponse("Invalid channel (must be sms, email, or whatsapp)", 400);
   }
   if (!templateSlug && !rawBody) {
     return errorResponse("Missing template_slug or body", 400);
@@ -180,7 +180,7 @@ Deno.serve(async (req: Request) => {
     const fullSlug = `${templateSlug}_${channel}_${language}`;
     const { data: tpl, error: tplErr } = await db
       .from("crm_message_templates")
-      .select("id, body, subject, required_variables")
+      .select("id, body, subject, required_variables, whatsapp_template_name")
       .eq("tenant_id", tenantId)
       .eq("slug", fullSlug)
       .eq("is_active", true)
@@ -291,6 +291,9 @@ Deno.serve(async (req: Request) => {
   if (channel === "email" && !recipientEmail) {
     return errorResponse("Missing variables.email for email channel", 400);
   }
+  if (channel === "whatsapp" && !recipientPhone) {
+    return errorResponse("Missing variables.phone for WhatsApp channel", 400);
+  }
 
   // --- Allowlist gate (layer 1) ---
   // SMS allowlist source: tenants.test_mode_sms_allowlist (C001 2026-05-03).
@@ -313,16 +316,32 @@ Deno.serve(async (req: Request) => {
     });
     return jsonResponse({ ok: false, error: "email_not_allowed" }, 200);
   }
+  if (channel === "whatsapp" && !(await whatsappAllowed(db, tenantId, recipientPhone))) {
+    await db.from("crm_message_log").insert({
+      tenant_id: tenantId, lead_id: leadId, event_id: eventId, run_id: runId,
+      template_id: templateId, broadcast_id: broadcastId, channel, content: finalBody,
+      status: "rejected", error_message: "whatsapp_not_allowed: " + recipientPhone,
+    });
+    return jsonResponse({ ok: false, error: "whatsapp_not_allowed" }, 200);
+  }
 
-  // --- Final-stage dispatch (write pending log → backfill short_links → Make → mark sent/failed) ---
+  // WhatsApp template vars: map CRM %name% etc. to positional {{1}} params
+  const waTemplateName = channel === "whatsapp" && tpl ? (tpl as any).whatsapp_template_name : null;
+  const waVarMap = displayVars as Record<string, unknown>;
+  const waTemplateVars = channel === "whatsapp" && waTemplateName
+    ? [waVarMap.name, waVarMap.event_name, waVarMap.event_date].filter(Boolean).map(String) : [];
+
+  // --- Final-stage dispatch ---
   return await writeDispatchAndSend(
     db,
     {
       tenantId, leadId, eventId, runId, templateId,
       broadcastId,
-      channel: channel as "sms" | "email",
+      channel: channel as "sms" | "email" | "whatsapp",
       finalBody, finalSubject, recipientPhone, recipientEmail,
       shortLinkIds,
+      whatsappTemplateName: waTemplateName,
+      whatsappTemplateVars: waTemplateVars,
     },
     MAKE_WEBHOOK_URL,
     jsonResponse,
