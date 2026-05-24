@@ -172,6 +172,7 @@
     rx.eyes_l = eyes.filter(function (e) { return e.eye === 'L'; })[0] || {};
     rx.recall_axes = (recallRes && recallRes.data) || [];
     state.prescription = rx;
+    if (window.RxStageStrip) await window.RxStageStrip.load();
     window.RxCenter.render(rx);
   }
 

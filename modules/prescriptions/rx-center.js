@@ -96,6 +96,7 @@
     var readOnly = !isDraft;
 
     var html = renderContextBar(rx);
+    if (window.RxStageStrip) html += window.RxStageStrip.render();
 
     if (S.kind === 'glasses') {
       html += window.RxMetaGrid.render(rx, readOnly);
@@ -124,6 +125,7 @@
       window.RxContactsSecondary.mount(rx, readOnly);
     }
     window.RxNotes.mount(rx, readOnly);
+    if (window.RxStageStrip) window.RxStageStrip.mount();
   }
 
   function renderEmpty() {

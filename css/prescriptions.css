@@ -260,3 +260,31 @@
 }
 .rx-print-strip button:hover:not([disabled]) { background:var(--accent-soft); color:var(--accent); }
 .rx-print-strip button[disabled] { opacity:0.4; cursor:not-allowed; }
+
+/* Stage strip */
+.rx-stage-strip {
+  display:flex; gap:6px; align-items:center; flex-wrap:wrap;
+  padding:10px 14px; margin-bottom:12px;
+  background:var(--bg-surface); border:0.5px solid var(--border-subtle); border-radius:var(--r-md);
+}
+.rx-stage-label { font-size:10px; color:var(--text-tertiary); font-weight:500; text-transform:uppercase; letter-spacing:0.3px; margin-inline-end:4px; }
+.rx-stage {
+  background:var(--bg-surface); border:1.5px solid var(--accent); padding:7px 14px; border-radius:var(--r-md);
+  font-size:11px; font-weight:500; cursor:pointer; font-family:inherit;
+  display:inline-flex; align-items:center; gap:6px; color:var(--accent);
+}
+.rx-stage:hover { background:var(--accent-soft); }
+.rx-stage.active { background:var(--accent); color:#fff; }
+.rx-stage.dimmed {
+  border-style:dashed; border-color:var(--text-tertiary); color:var(--text-tertiary);
+  opacity:0.55; font-weight:400;
+}
+.rx-stage.dimmed:hover { opacity:0.75; background:var(--bg-surface-alt); }
+.rx-stage .ic { font-size:14px; }
+.rx-stage-skip { font-size:9px; font-weight:400; }
+.rx-stage-copy, .rx-stage-compare {
+  background:var(--bg-surface-alt); border:0.5px solid var(--border-subtle); padding:6px 10px;
+  border-radius:4px; font-size:10px; cursor:pointer; font-family:inherit; margin-inline-start:auto;
+}
+.rx-stage-copy:hover { background:var(--accent-soft); color:var(--accent); }
+.rx-stage-compare { opacity:0.4; cursor:not-allowed; }
