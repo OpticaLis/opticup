@@ -146,9 +146,10 @@
   }
 
   async function loadPrescription(id) {
+    var parentTable = state.kind === 'glasses' ? 'v_prescription_full_for_editor' : 'prescriptions_contacts';
     var eyeTable = state.kind === 'glasses' ? 'prescription_glasses_eyes' : 'prescription_contacts_eyes';
     var [rxRes, eyeRes, recallRes] = await Promise.all([
-      DB.select('v_prescription_full_for_editor', { id: id }, { single: true, silent: true }),
+      DB.select(parentTable, { id: id }, { single: true, silent: true }),
       DB.select(eyeTable, { prescription_id: id }, { silent: true }),
       DB.select('prescription_recall_axes', { prescription_id: id }, { silent: true })
     ]);
