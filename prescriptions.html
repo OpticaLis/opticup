@@ -1,0 +1,95 @@
+<!--
+  Optic Up — M6 Prescription Editor
+  Sidebar-history + center-editor (Pattern 12).
+  URL: prescriptions.html?t=<tenant_slug>&customer_id=<uuid>[&prescription_id=<uuid>]
+  Stack: Vanilla JS + Supabase (no build step). RTL. Hybrid+Navy tokens.
+  Mockup: modules/Module 6 - Prescriptions/architecture-brief/M6_PRESCRIPTION_EDITOR_MOCKUP.html
+-->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<title>Optic Up — מרשם</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<!-- Shared CSS (ERP design system) -->
+<link rel="stylesheet" href="shared/css/variables.css">
+<link rel="stylesheet" href="shared/css/components.css">
+<link rel="stylesheet" href="shared/css/components-extra.css">
+<link rel="stylesheet" href="shared/css/layout.css">
+<link rel="stylesheet" href="shared/css/forms.css">
+<link rel="stylesheet" href="shared/css/modal.css">
+<link rel="stylesheet" href="shared/css/toast.css">
+<link rel="stylesheet" href="shared/css/table.css">
+
+<!-- Page CSS -->
+<link rel="stylesheet" href="css/prescriptions.css">
+
+</head>
+<body class="rx-page">
+
+  <h1 style="font-size:18px;font-weight:500;margin:0 0 4px;">מסך מרשם</h1>
+  <p class="lede" id="rx-lede-status">טוען…</p>
+
+  <main id="rx-root">
+    <div class="rx-app" id="rx-app" style="display:none;">
+      <!-- Customer header -->
+      <div class="rx-cust-header" id="rx-cust-header"></div>
+      <!-- Type toggle bar -->
+      <div class="rx-type-bar" id="rx-type-bar"></div>
+      <!-- Main layout: sidebar + center -->
+      <div class="rx-main-layout">
+        <div class="rx-sidebar" id="rx-sidebar"></div>
+        <div class="rx-center" id="rx-center"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal + toast containers -->
+  <div id="toast-c"></div>
+  <div id="confirm-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3 id="confirm-title"></h3>
+      <p id="confirm-text"></p>
+      <div class="modal-actions">
+        <button id="confirm-yes" class="btn btn-primary">אישור</button>
+        <button id="confirm-no"  class="btn">ביטול</button>
+      </div>
+    </div>
+  </div>
+  <div id="loading" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.4);align-items:center;justify-content:center;z-index:9999;">
+    <div style="background:#fff;padding:20px 30px;border-radius:8px;display:flex;gap:10px;align-items:center;">
+      <div class="spinner"></div><span id="loading-text">טוען…</span>
+    </div>
+  </div>
+
+  <!-- Shared infrastructure (canonical ERP load order) -->
+  <script src="shared/js/theme-loader.js"></script>
+  <script src="shared/js/modal-builder.js"></script>
+  <script src="shared/js/toast.js"></script>
+  <script src="shared/js/supabase-client.js"></script>
+  <script src="shared/js/activity-logger.js"></script>
+
+  <script src="js/shared-field-map.js"></script>
+  <script src="js/shared.js"></script>
+  <script src="js/shared-ui.js"></script>
+  <script src="js/auth-service.js"></script>
+  <script src="js/supabase-ops.js"></script>
+
+  <!-- M6 Prescription Editor modules -->
+  <script src="modules/prescriptions/rx-sidebar.js"></script>
+  <script src="modules/prescriptions/rx-meta-grid.js"></script>
+  <script src="modules/prescriptions/rx-param-table.js"></script>
+  <script src="modules/prescriptions/rx-add-block.js"></script>
+  <script src="modules/prescriptions/rx-secondary.js"></script>
+  <script src="modules/prescriptions/rx-notes.js"></script>
+  <script src="modules/prescriptions/rx-contacts-params.js"></script>
+  <script src="modules/prescriptions/rx-contacts-secondary.js"></script>
+  <script src="modules/prescriptions/rx-center.js"></script>
+  <script src="modules/prescriptions/rx-editor.js"></script>
+
+</body>
+</html>

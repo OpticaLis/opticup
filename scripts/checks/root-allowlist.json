@@ -47,7 +47,8 @@
       "lens-pricing.html",
       "lens-purchase-order.html",
       "lens-pos-list.html",
-      "lens-goods-receipt.html"
+      "lens-goods-receipt.html",
+      "prescriptions.html"
     ],
     "category_legacy_acknowledged": [
       "serve.js",
