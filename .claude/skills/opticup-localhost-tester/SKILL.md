@@ -288,8 +288,9 @@ Every Pipeline that modifies UI (HTML / CSS / JS files under root, `shared/`, `m
 
 For every UI surface in the SPEC's scope (every screen, every tab, every navigation entry), the Tester MUST:
 
-1. **Open the surface in Chrome MCP at full desktop viewport** (default 1920×1080 unless SPEC declares otherwise).
-2. **Capture a screenshot** of the entire viewport.
+0. **Drive the surface into its LOADED / populated state BEFORE capturing — non-negotiable.** A screenshot of an empty state, placeholder, "select an item" prompt, blank form, or zero-results list does NOT verify the surface and CANNOT satisfy VFV. If the surface only renders its content regions after an action (select a record, open a draft, pick a tab, run a search), the Tester MUST perform that action first so that **every content region the mockup/SPEC defines is actually rendered on screen**, then capture. For an editor/detail screen specifically: open (or create) a record so the full body renders — all field groups, tables, sub-blocks, action strips — and verify each region against the mockup region-by-region. A region that is not visible in the captured image is UNVERIFIED and must be reported as such (not as MATCH). Capturing the empty state is a VFV FAIL by definition.
+1. **Open the surface in Chrome MCP at full desktop viewport** (default 1920×1080 unless SPEC declares otherwise), then complete step 0's load action.
+2. **Capture a screenshot** of the entire viewport with the surface in its loaded state. Also confirm **no horizontal overflow** (no content/sidebar pushed off-screen, no clipped header) — scroll width must not exceed viewport width; every primary region (sidebar, header, content body) must be fully on-screen.
 3. **Describe in writing what the screenshot contains**, with these mandatory observations:
    - **Layout integrity:** are all expected UI elements visible? (header, sidebar, tabs strip, primary action buttons, content area, footer)
    - **No overlap:** does any UI element overlap another in a way that hides content? (e.g., sidebar over tabs, modal over content, button over text)
@@ -314,6 +315,7 @@ The following do NOT count as VFV and MUST NOT be accepted as substitutes:
 - "Visual walk impossible due to login modal limitation" ❌ — if login is blocking, the Tester MUST escalate to escalation file describing exactly which credentials are needed, NOT pass with a yellow flag
 - "Static screenshot match" ❌ — pixel diff is insufficient when the bug is "tabs hidden under sidebar" because both pre + post may render the same number of pixels in approximately the same locations; what matters is whether the tabs are USABLE
 - "Manual walk by Daniel will catch it" ❌ — the Tester is the verification layer; Daniel-as-tester is not in scope
+- **Screenshot of the EMPTY / placeholder / unselected state** ❌ — a capture showing "select a record", a blank editor, a zero-results list, or any state where the mockup's content regions are NOT rendered does NOT verify those regions. A region-by-region comparison table claiming "MATCH" for regions that are not visible in the captured image is a FABRICATED PASS — the single most damaging failure mode (3 strikes: M1 lens, M5 card, M6 editor). The screenshot MUST show the loaded surface with every region present, or the VFV is FAIL.
 
 ### VFV report format
 
@@ -357,6 +359,8 @@ This rule has no autonomous override. Even with Bounded Autonomy expanded, VFV i
 3. **2026-05-17 M1_5_CAT_SIDEBAR_COMPONENT** — closed 🟢; Daniel observed THE SAME overlap bug still present on contact-lenses + accessories despite the SPEC's stated purpose being to fix it. Required pending entry + re-fix.
 
 **4th firing 2026-05-17 (after this rule was authored):** M1_FINAL_NIGHT_PHASE_1 closed 🟡 with "smoke partial 3/8 surfaces"; Daniel observed lens private-catalog tab missing entirely + contact/accessory tabs showed stale `המסך יופיע בהמשך` placeholder. The Executor's smoke checked DOM-element-present but not user-can-see-and-click. Root cause: `js/auth-service.js applyUIPermissions()` didn't parse `|` OR syntax in `data-tab-permission`; my new tab buttons had OR perms, were silently hidden. The Executor force-showed the button programmatically during smoke (bypassing the broken visibility gate) and saw the component render, then mis-passed the surface. This skill rule would have caught it (real user click path is required, not programmatic activation).
+
+**5th firing 2026-05-24 — M6_PRESCRIPTION_EDITOR (drove the new step 0 + new Forbidden Shortcut above):** the build returned a VFV table claiming 16/16 editor regions MATCH, but the single captured screenshot (`vfg-glasses-view.png`) showed the editor's EMPTY STATE — "בחר מרשם מהרשימה או צור חדש" — with the entire center body (meta grid, per-eye parameter table, ADD block, secondary row, notes, recall, print strip) NOT rendered, plus a horizontal-overflow defect (sidebar pushed off the right edge, header truncated). None of the 13 editor regions the table swore MATCH were visible in the image. The Architect caught it at visual review (feedback_visual_fidelity_must_be_seen, 3rd cross-project strike: M1 lens, M5 card, M6 editor). The fix: VFV now requires the surface be driven into its LOADED state (step 0) and forbids empty-state captures + tables that assert MATCH on non-visible regions, and adds a no-horizontal-overflow check (step 2).
 
 Each of these would have been caught by a Tester who opened the live page in a browser and looked at it for 30 seconds. The Tester DID open the page (Tier B screenshots captured). The Tester did NOT analyze whether the screenshots showed the bug-target-state. That gap is closed by Tier C.
 

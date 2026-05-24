@@ -58,7 +58,7 @@
              '<td>' + escapeHtml(expiresStr) + '</td>' +
              '<td>' + escapeHtml(notesStr) + '</td>' +
              '<td class="cust-row-action">' +
-               '<button data-coming-soon="prescription_edit">פתח ב-M6 ←</button>' +
+               '<button data-open-rx="' + escapeHtml(r.id) + '" data-kind="' + escapeHtml(r.kind || 'glasses') + '">פתח מרשם ←</button>' +
                (isActive ? '<button data-coming-soon="prescription_order">📦 הזמנה</button>' : '') +
              '</td>' +
            '</tr>';
@@ -136,9 +136,8 @@
       Toast.error('יצירת מרשם נכשלה: ' + (res.error.message || 'unknown'));
       return;
     }
-    Toast.success('מרשם נוצר (טיוטה).');
-    // Reload Tab 3 data + re-render
-    await refresh(customerId);
+    Toast.success('מרשם נוצר (טיוטה). מעביר לעורך…');
+    navigateToEditor(res.data, kind);
   }
 
   async function refresh(customerId) {
@@ -153,10 +152,24 @@
     bindEvents(pane);
   }
 
+  function navigateToEditor(rxId, kind) {
+    var t = new URLSearchParams(window.location.search).get('t') || '';
+    var cid = window.M5Card.state.customerId;
+    window.location.href = 'prescriptions.html?t=' + encodeURIComponent(t) +
+      '&customer_id=' + encodeURIComponent(cid) +
+      '&prescription_id=' + encodeURIComponent(rxId) +
+      '&kind=' + encodeURIComponent(kind || 'glasses');
+  }
+
   function bindEvents(pane) {
     if (!pane) return;
     pane.querySelectorAll('[data-coming-soon]').forEach(function (el) {
       window.bindComingSoon(el, el.getAttribute('data-coming-soon'));
+    });
+    pane.querySelectorAll('[data-open-rx]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        navigateToEditor(btn.getAttribute('data-open-rx'), btn.getAttribute('data-kind'));
+      });
     });
     pane.querySelectorAll('[data-filter]').forEach(function (btn) {
       btn.addEventListener('click', function () {

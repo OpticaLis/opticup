@@ -1,30 +1,60 @@
 /* ============================================================
-   M5 Customer Card — Tab 2 (Vision Function) — STUB per D-T2.
-   v_customer_vision_function_history NOT deployed (M6 follow-up).
-   ZERO DB calls — verifiable via Chrome MCP network panel.
-   Single panel, click anywhere → showComingSoon('vision_function').
+   M5 Customer Card — Tab 2 (Vision Function History).
+   Source: M6-owned view `v_customer_vision_function_history`.
+   Renders a timeline of vision function exam results.
    ============================================================ */
 (function () {
   'use strict';
 
-  window.renderTabVision = function (pane /*, S */) {
-    pane.innerHTML =
-      '<div class="cust-stub-panel" data-coming-soon="vision_function" role="button" tabindex="0">' +
-        '<h3>תפקודי ראייה</h3>' +
-        '<p>' + escapeHtml(window.COMING_SOON_LABEL || 'בקרוב') +
-          ' (' + escapeHtml((window.COMING_SOON_REGISTRY && window.COMING_SOON_REGISTRY.vision_function) || 'M6') + ')' +
-        '</p>' +
-        '<p style="margin-top:14px;font-size:11px;">' +
-          'בדיקות-תפקוד מקיפות (24 בדיקות — ortho, AC/A, NRA, PRA, Stereopsis וכו\') ' +
-          'יוצגו כאן ברגע ש-M6 ישלים את <code>v_customer_vision_function_history</code>.' +
-        '</p>' +
+  function formatDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('he-IL');
+  }
+
+  function renderTimeline(rows) {
+    if (!rows || !rows.length) {
+      return '<div class="cust-stub-panel" style="padding:24px;">' +
+        '<p>אין היסטוריית תפקודי-ראייה ללקוח זה.</p>' +
+        '<p style="font-size:11px;color:var(--text-tertiary);margin-top:8px;">תפקודי-ראייה ייווצרו אוטומטית כאשר מרשם יוקם במודול-מרשמים.</p>' +
       '</div>';
+    }
+    var html = '<div class="cust-vision-timeline">';
+    rows.forEach(function (r) {
+      var date = formatDate(r.exam_date || r.valid_from);
+      var type = r.exam_type || '—';
+      var optometrist = r.optometrist_name || '—';
+      var kind = r.kind === 'contacts' ? 'עדשות-מגע' : 'משקפיים';
+      html += '<div class="cust-vision-entry">' +
+        '<div class="cust-vision-date">' + escapeHtml(date) + '</div>' +
+        '<div class="cust-vision-body">' +
+          '<div class="cust-vision-meta">' +
+            '<span class="cust-pill cust-pill-navy">' + escapeHtml(kind) + '</span> ' +
+            '<span>' + escapeHtml(type) + '</span> · ' +
+            '<span>' + escapeHtml(optometrist) + '</span>' +
+          '</div>' +
+          (r.r_summary ? '<div class="cust-vision-summary">R: ' + escapeHtml(r.r_summary) + ' · L: ' + escapeHtml(r.l_summary || '—') + '</div>' : '') +
+        '</div>' +
+      '</div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  window.renderTabVision = function (pane, S) {
+    pane.innerHTML =
+      '<div style="background:var(--info-soft);border:0.5px solid var(--info);border-radius:6px;padding:9px 13px;margin-bottom:12px;font-size:11px;color:var(--info);">' +
+        '👁️ <strong>היסטוריית תפקודי-ראייה</strong> — נתונים ממודול-מרשמים (M6).' +
+      '</div>' +
+      '<div id="cust-vision-host">טוען…</div>';
   };
 
-  window.mountTabVision = function (pane /*, S */) {
-    // Single click anywhere on the panel → coming-soon toast.
-    pane.querySelectorAll('[data-coming-soon]').forEach(function (el) {
-      window.bindComingSoon(el, el.getAttribute('data-coming-soon'));
-    });
+  window.mountTabVision = async function (pane, S) {
+    var res = await DB.select('v_customer_vision_function_history',
+      { customer_id: S.customerId },
+      { order: 'valid_from.desc', silent: true });
+    var host = pane.querySelector('#cust-vision-host');
+    if (host) {
+      host.innerHTML = renderTimeline((res && res.data) || []);
+    }
   };
 })();
