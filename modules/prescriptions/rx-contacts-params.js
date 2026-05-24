@@ -46,7 +46,7 @@
     var cells = '<td class="' + cls + '">' + escapeHtml(label) + '</td>';
     COLS.forEach(function (c) {
       var val = eyeData[c.key] != null ? String(eyeData[c.key]) : '';
-      var disp = val && window.RxFieldFormat ? window.RxFieldFormat.formatField(c.key, val).display : val;
+      var disp = val && window.RxFieldFormat ? window.RxFieldFormat.formatField(c.key, val, true).display : val;
       cells += '<td><input data-eye="' + eye + '" data-field="' + c.key + '" value="' + escapeHtml(disp || val) + '"' +
         ' placeholder="—"' + (readOnly ? ' disabled' : '') + ' /></td>';
     });

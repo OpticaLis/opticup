@@ -58,7 +58,7 @@
         }).join('');
         cells += '<td><select data-eye="' + eye + '" data-field="' + c.key + '"' + (readOnly ? ' disabled' : '') + '>' + opts + '</select></td>';
       } else {
-        var disp = val && window.RxFieldFormat ? window.RxFieldFormat.formatField(c.key, val).display : val;
+        var disp = val && window.RxFieldFormat ? window.RxFieldFormat.formatField(c.key, val, true).display : val;
         cells += '<td><input data-eye="' + eye + '" data-field="' + c.key + '" value="' + escapeHtml(disp || val) + '"' +
           ' placeholder="—"' + (readOnly ? ' disabled' : '') + ' /></td>';
       }

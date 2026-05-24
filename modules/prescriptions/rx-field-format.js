@@ -12,7 +12,7 @@
 
   function snap025(n) { return Math.round(n * 4) / 4; }
 
-  function formatField(key, raw) {
+  function formatField(key, raw, fromDb) {
     var s = String(raw || '').trim();
     if (!s || s === '—') return { display: '', dbValue: null, autoSigned: false };
 
@@ -33,7 +33,7 @@
     if (SNAP_025.indexOf(key) !== -1) num = snap025(num);
 
     var autoSigned = false;
-    if (!hasExplicitSign && num !== 0) {
+    if (!fromDb && !hasExplicitSign && num !== 0) {
       if (MINUS_SIGN.indexOf(key) !== -1) {
         num = -Math.abs(num);
         autoSigned = true;

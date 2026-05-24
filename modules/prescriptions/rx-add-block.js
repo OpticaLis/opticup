@@ -22,7 +22,7 @@
       var cls = eye === 'R' ? 'eye-cell r' : 'eye-cell l';
       var cells = ADD_FIELDS.map(function (f) {
         var val = data[f.key] != null ? String(data[f.key]) : '';
-        var disp = val && window.RxFieldFormat ? window.RxFieldFormat.formatField(f.key, val).display : val;
+        var disp = val && window.RxFieldFormat ? window.RxFieldFormat.formatField(f.key, val, true).display : val;
         return '<td><input data-eye="' + eye + '" data-field="' + f.key + '" value="' + escapeHtml(disp || val) + '"' +
           ' placeholder="—"' + (readOnly ? ' disabled' : '') + ' /></td>';
       }).join('');
