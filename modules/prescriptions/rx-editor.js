@@ -168,6 +168,18 @@
       ]);
       eyes = [ins[0].data, ins[1].data].filter(Boolean);
     }
+    if (rx.status === 'draft' && !rx.exam_id) {
+      var parentTbl = state.kind === 'glasses' ? 'prescriptions_glasses' : 'prescriptions_contacts';
+      var examRes = await DB.rpc('create_exam', {
+        p_tenant_id: getTenantId(), p_customer_id: state.customerId,
+        p_exam_date: rx.valid_from || new Date().toISOString().substring(0, 10)
+      }, { silent: true });
+      if (examRes && examRes.data) {
+        await DB.update(parentTbl, id, { exam_id: examRes.data, exam_type: rx.exam_type || 'final' }, { silent: true });
+        rx.exam_id = examRes.data;
+        rx.exam_type = rx.exam_type || 'final';
+      }
+    }
     rx.eyes_r = eyes.filter(function (e) { return e.eye === 'R'; })[0] || {};
     rx.eyes_l = eyes.filter(function (e) { return e.eye === 'L'; })[0] || {};
     rx.recall_axes = (recallRes && recallRes.data) || [];
