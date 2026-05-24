@@ -122,57 +122,93 @@
 
 ---
 
-### SPEC 6: M4_WHATSAPP_CHANNEL (URGENT — Daniel directive 2026-05-24)
+### SPEC 6: M4_WHATSAPP_CHANNEL — Dialog360 Integration (URGENT + CORRECTED 2026-05-24)
 
-**Problem:** Daniel needs to send WhatsApp messages to customers. M4 dispatch pipeline is hardcoded to SMS + email. Green API is already used via Make for QR/catalog flows, but not for CRM campaign dispatch.
+> **Daniel correction (2026-05-24):** WhatsApp marketing sends MUST go through Dialog360 (360dialog) — the official WhatsApp Business API provider — NOT Green API. Green API is not built for bulk marketing; sending 1000+ recipients gets the number BANNED (ToS violation). This aligns with the sealed M12 Communications Brief (2026-05-09, Decision #1) which already locked Dialog360 as the WhatsApp BSP.
 
-**Key insight (from code audit):** The dispatch architecture is webhook-based — `send-message EF → Make webhook → Make routes by channel → vendor`. The Make payload already includes `{ channel, recipient_phone, body }`. Adding WhatsApp is primarily a **validation/schema lift**, not a re-architecture. The heaviest work is Make-side (ops, not code).
+**Problem:** Daniel needs to send WhatsApp marketing messages to customers at campaign scale. M4 dispatch pipeline is hardcoded to SMS + email. Dialog360 is the compliant path: official WABA, pre-approved templates, legal bulk sending.
 
-**Scope:**
-1. send-message EF: expand channel validation to accept `'whatsapp'`. Add recipient phone check (same as SMS). Add WhatsApp test-mode allowlist (same pattern as SMS/email allowlists in `tenants.ui_config`).
-2. dispatch-queue EF: wire WhatsApp throttling via `crm_dispatch_config` table (added by SPEC 2 — if SPEC 6 lands first, create the config row directly).
-3. crm_message_templates: allow `channel='whatsapp'` in schema. Create WhatsApp templates for existing automation flows (body format: plain text, similar to SMS).
-4. Make scenario (9104395): Daniel/ops add a WhatsApp route calling Green API sendMessage. This is a Make-side config change — not ERP code.
-5. Short links: activate `W`-prefix convention for WhatsApp links (already reserved).
-6. Consent: for v1, same gate as SMS (phone + not unsubscribed). Formal WhatsApp opt-in flow is a separate future SPEC.
+**Key architecture (from M12 Brief, verified in code):** WhatsApp dispatch bypasses Make entirely — direct EF → Dialog360 REST API. Make stays only for SMS (Global SMS) and Email. The M12 Brief defines a `channel_configs` table for per-tenant vendor credentials (encrypted JSONB).
 
-**Not in scope:** WhatsApp Business API migration (Green API via Make is fastest; migrate later if volume justifies). Bidirectional WhatsApp conversations. Rich media templates.
+**Decomposed into 2 sub-SPECs:**
+
+#### SPEC 6A: M4_WHATSAPP_CHANNEL_INFRA (ERP-side, 2-3 sessions)
+
+1. **`channel_configs` table** (from M12 Brief): `tenant_id`, `channel` (whatsapp/sms/email), `provider` (dialog360/global_sms/gmail), `sender_identity`, `provider_credentials` (encrypted JSONB — WABA ID, API key, phone_number_id). Iron Rule 14/15/19.
+2. **send-message EF:** accept `channel='whatsapp'`. Add Dialog360 dispatch path (direct HTTP POST to `https://waba.360dialog.io/v1/messages` with pre-approved template name + parameters). Parallel to existing Make webhook path for SMS/email.
+3. **dispatch-queue EF:** wire WhatsApp throttling via `crm_dispatch_config` (whatsapp_throttle_ms, whatsapp_daily_cap — columns added by SPEC 2).
+4. **crm_message_templates:** allow `channel='whatsapp'`. Add `whatsapp_template_name` column (maps CRM template → Dialog360 pre-approved template name + language code). WhatsApp templates are NOT free-form — they reference a pre-approved template by name, with variable slots.
+5. **WhatsApp test-mode allowlist** (same pattern as SMS/email).
+6. **Consent:** add `marketing_whatsapp_opt_in` boolean to `crm_leads`. Dispatch gate: only send marketing WhatsApp to leads with `opt_in=true` + not unsubscribed.
+7. **Short links:** activate `W`-prefix convention.
+
+#### SPEC 6B: M4_WHATSAPP_TEMPLATES_AND_LAUNCH (ops + verification, 1 session)
+
+1. **Submit templates to Dialog360** for Meta approval: author Hebrew marketing templates (body text from existing SMS/email copy, reformatted for WhatsApp template structure: header, body with {{1}} {{2}} vars, footer, optional CTA button). Category: `marketing`. Language: `he`.
+2. **Map approved template names** to CRM `crm_message_templates` records (populate `whatsapp_template_name`).
+3. **E2E send test:** demo tenant → Dialog360 sandbox → verify delivery + click tracking (W-prefix short links).
+4. **Prizma go-live:** configure `channel_configs` with production Dialog360 credentials.
 
 **Success criteria:**
-- A WhatsApp template can be created in the CRM template editor with `channel='whatsapp'`.
-- A broadcast or automation can dispatch WhatsApp messages through the same pipeline as SMS/email.
-- Test-mode allowlist gates WhatsApp on demo (same as SMS/email).
-- Make scenario receives `channel='whatsapp'` and routes to Green API.
-- Short links with `W` prefix resolve and increment `click_count`.
+- A WhatsApp template references a Dialog360-approved template name.
+- A broadcast can dispatch WhatsApp messages via direct EF → Dialog360 API (NOT via Make).
+- Marketing WhatsApp only sent to leads with `marketing_whatsapp_opt_in=true`.
+- Test-mode allowlist gates WhatsApp on demo.
+- W-prefix short links resolve and increment per-channel `click_count`.
+- Template approval status visible in the CRM template editor (approved/pending/rejected).
 
-**Timing:** URGENT per Daniel. Can run in parallel with SPEC 3 (screen audit) — no dependency on SPECs 1-2. Make-side config is ops work, not blocked by ERP pipeline. Estimated effort: 1-2 sessions (ERP-side) + ops Make config.
+**Not in scope:** Bidirectional WhatsApp conversations. Rich media (images/documents). WhatsApp Commerce (catalog/cart). Green API removal (stays for QR/catalog inbound flows).
 
 ---
 
-## Sequencing + Timeline Recommendation (updated 2026-05-24)
+### Timeline risk: WhatsApp template approval lead time
+
+WhatsApp Business API templates must be submitted to Dialog360 → Meta for approval BEFORE any message can be sent. This is an **external dependency outside the code pipeline:**
+
+| Category | Typical approval | Risk |
+|---|---|---|
+| Utility (order updates, delivery) | Minutes to hours | Low |
+| Marketing (campaign blasts) | 24-48 hours | Medium — rejections require resubmission |
+| Authentication (OTP/verification) | Minutes | Low |
+
+**Mitigation:** Daniel should submit the first batch of Hebrew marketing templates to Dialog360 NOW — independent of ERP code work. Template text can be drafted from existing SMS copy. This is the longest lead-time item and should start immediately.
+
+---
+
+## Sequencing + Timeline Recommendation (updated 2026-05-24, Dialog360 corrected)
 
 ```
-Now ─────────────────── First 5K campaign ──────── 10K+ campaigns
-  │                           │                        │
-  ├─ SPEC 1 (queue lifecycle) │                        │
-  ├─ SPEC 2 (throughput)      │                        │
-  ├─ SPEC 3 (screen queries)  │                        │
-  ├─ SPEC 6 (WhatsApp) ═══╗  │                        │
-  │   (parallel w/ SPEC 3) ╚══╝                        │
-  │                           ├─ SPEC 4 (email vendor) │
-  │                           ├─ SPEC 5 (list hygiene) │
+NOW (start immediately)
+  │
+  ├─ [OPS] Dialog360 account setup + template submission ←── longest lead time
+  │
+  ├─ SPEC 1 (queue lifecycle)
+  ├─ SPEC 2 (throughput — incl. WA throttle cols + channel_configs design)
+  ├─ SPEC 3 (screen queries)  ═══════╗
+  ├─ SPEC 6A (WA infra / Dialog360)  ╠══ parallel
+  │                                   ║
+  ├─ SPEC 6B (templates + launch) ════╝ ← blocked on template approval
+  │
+  │── First 5K campaign ─────────────── 10K+ campaigns
+  │                                        │
+  │                    ├─ SPEC 4 (email)   │
+  │                    ├─ SPEC 5 (hygiene) │
 ```
 
-**Pre-10K-blocking (must land first):** SPECs 1, 2, 3 — in that order. SPEC 1 is the highest-leverage fix (table lifecycle); SPEC 2 is the usability fix (operator doesn't babysit); SPEC 3 is the safety net (no screen breaks).
+**Pre-10K-blocking:** SPECs 1, 2, 3 — in that order.
 
-**Urgent (Daniel directive):** SPEC 6 (WhatsApp) — can run in parallel with SPEC 3. No dependency on SPECs 1-2 (WhatsApp uses the same queue/dispatch path that already works for SMS/email). SPEC 2's `crm_dispatch_config` should include WhatsApp columns from day one.
+**Urgent (Daniel directive):** SPEC 6A (WhatsApp infra) runs in parallel with SPEC 3. SPEC 6B (templates + launch) is blocked on Dialog360 template approval — start ops submission NOW.
 
-**Can wait:** SPECs 4, 5 — triggered by volume milestones, not calendar dates.
+**SPEC 2 coordination:** `crm_dispatch_config` table MUST include WhatsApp columns. The `channel_configs` table (from SPEC 6A) could be introduced in SPEC 2 if it lands first — either way, only one table definition, no collision.
 
-**Questions for Daniel (blocking SPEC 6):**
-1. Does the Make scenario (9104395) already have a WhatsApp route, or does one need to be added?
-2. Is the Green API account configured for outbound marketing messages (not just inbound QR/catalog)?
-3. Consent: OK to send WhatsApp to all leads with a phone number (same as SMS), or require explicit WhatsApp opt-in first?
+**Can wait:** SPECs 4, 5 — triggered by volume milestones.
+
+**Blocking questions for Daniel (updated for Dialog360):**
+1. **Dialog360 account:** Is it already set up? Do we have API credentials (API key, WABA ID)?
+2. **WABA number:** Is the number (+972 53-434-7265 per M12 Brief, or the Prizma WhatsApp 972533645404) approved and active on Dialog360?
+3. **Template submission:** Has anyone started submitting WhatsApp message templates for approval? If not, draft the first batch NOW from existing SMS copy.
+4. **Sandbox:** Does Dialog360 provide a sandbox/test environment, or do we test on the production WABA with the allowlist gate?
+5. **Consent source:** Where do leads currently opt in for WhatsApp? Is there a checkbox on the registration form, or does one need to be added?
 
 **Question for Daniel (blocking SPECs 1-3):** When is the first campaign likely to hit 5K+ leads? That date minus 2 weeks is the deadline for SPECs 1-3.
 
