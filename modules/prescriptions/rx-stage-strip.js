@@ -35,7 +35,7 @@
 
   function render() {
     var S = window.RxEditor.state;
-    if (!_examId) return '';
+    if (!_visitDate) return '';
     var html = '<div class="rx-stage-strip">';
     html += '<span class="rx-stage-label">שלבי ביקור:</span>';
     STAGES.forEach(function (st) {
