@@ -7,6 +7,8 @@
   var SNAP_025 = MINUS_SIGN.concat(PLUS_SIGN).concat(['prism']);
   var AXIS_FIELDS = ['axis', 'k_axis'];
   var MM_FIELDS = ['pd_distance', 'pd_near', 'bc_mm', 'dia_mm', 'pupil_diameter_mm', 'axial_length_mm', 'pupil_height_mm'];
+  var PD_FIELDS = ['pd_distance', 'pd_near'];
+  var BDIA_FIELDS = ['bc_mm', 'dia_mm'];
   var K_FIELDS = ['k1', 'k2', 'k_avg'];
   var VA_FIELDS = ['va_with_correction', 'va_without_correction', 'va_pinhole', 'va_over_refraction', 'bcva_binocular'];
 
@@ -46,7 +48,11 @@
     var dp = 2;
     var suffix = '';
     if (key === 'prism') suffix = '△';
-    else if (MM_FIELDS.indexOf(key) !== -1) suffix = 'mm';
+    else if (MM_FIELDS.indexOf(key) !== -1) {
+      suffix = 'mm';
+      if (PD_FIELDS.indexOf(key) !== -1) dp = num % 1 === 0 ? 0 : 1;
+      else if (BDIA_FIELDS.indexOf(key) !== -1) dp = 1;
+    }
 
     var formatted = num.toFixed(dp);
     if (MINUS_SIGN.indexOf(key) !== -1 || PLUS_SIGN.indexOf(key) !== -1) {
