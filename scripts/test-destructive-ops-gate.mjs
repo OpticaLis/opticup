@@ -192,11 +192,60 @@ test('4: comment-awareness — SQL comment with DROP TABLE → no violation', ()
   }
 });
 
+// Test 5: comment-awareness — DROP POLICY in a SQL comment should NOT trigger
+test('5: comment-awareness — "-- DROP POLICY" in SQL comment → no violation', () => {
+  const FIX_DIR = 'tests/__dog_test4_DELETEME';
+  const FIX_FILE = `${FIX_DIR}/migration.sql`;
+  try {
+    mkdirSync(join(REPO, FIX_DIR), { recursive: true });
+    writeFileSync(join(REPO, FIX_FILE),
+      '-- DROP POLICY old_policy ON some_table;\n' +
+      '-- DROP TABLE legacy_backup;\n' +
+      '  -- TRUNCATE TABLE old_data;\n' +
+      'CREATE POLICY new_policy ON some_table USING (true);\n',
+      'utf8');
+    execSync(`git add "${FIX_FILE}"`, { cwd: REPO, stdio: 'ignore' });
+
+    const { status, stdout } = runCheck();
+
+    safeUnstage(FIX_DIR);
+
+    assert(status === 0,
+      `Expected exit 0 (destructive patterns in comments should be skipped), got ${status}. stdout=${stdout}`);
+  } finally {
+    safeUnstage(FIX_DIR);
+  }
+});
+
+// Test 6: inverse guard — DROP POLICY in real SQL still triggers a violation
+test('6: inverse guard — real "DROP POLICY" in SQL → violation fires', () => {
+  const FIX_DIR = 'tests/__dog_test5_DELETEME';
+  const FIX_FILE = `${FIX_DIR}/migration.sql`;
+  try {
+    mkdirSync(join(REPO, FIX_DIR), { recursive: true });
+    writeFileSync(join(REPO, FIX_FILE),
+      'DROP POLICY old_policy ON some_table;\n',
+      'utf8');
+    execSync(`git add "${FIX_FILE}"`, { cwd: REPO, stdio: 'ignore' });
+
+    const { status } = runCheck();
+
+    safeUnstage(FIX_DIR);
+
+    assert(status === 1,
+      `Expected exit 1 (real DROP POLICY must still trigger), got ${status}`);
+  } finally {
+    safeUnstage(FIX_DIR);
+  }
+});
+
 // Final cleanup safety net
 safeUnstage(FIXTURE_SPEC_DIR);
 safeUnstage('tests/__dog_test_DELETEME');
 safeUnstage('tests/__dog_test2_DELETEME');
 safeUnstage('tests/__dog_test3_DELETEME');
+safeUnstage('tests/__dog_test4_DELETEME');
+safeUnstage('tests/__dog_test5_DELETEME');
 
 const failed = RESULTS.filter(r => r.status === 'FAIL');
 const passed = RESULTS.filter(r => r.status === 'PASS');

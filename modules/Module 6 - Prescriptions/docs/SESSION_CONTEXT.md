@@ -1,7 +1,7 @@
 # Module 6 — Prescriptions / Eye Exams — Session Context
 
-**Last updated:** 2026-05-24 night run.
-**Status:** 🟢 Phase A+B+C+E+F CLOSED (Schema + RPCs + Views + Recall Engine + Editor UI + M5 Card Wiring).
+**Last updated:** 2026-05-24 VFG closure session.
+**Status:** 🟢 Phase A+B+C+E+F CLOSED with VFG evidence (Schema + RPCs + Views + Recall Engine + Editor UI + M5 Card Wiring). Module-complete except Phase D (migration).
 
 ## Current state
 
@@ -40,5 +40,4 @@
 ## What's next
 
 1. **M6_MIGRATION SPEC** — import 6,248 OpticPlus exams + 251 contact-lens prescriptions. Depends on M5_MIGRATION.
-2. **Visual-Fidelity Gate closure** — Chrome MCP screenshots + region comparison table for Phase E + F (pending localhost verification).
-3. **Phase G+** — Print/send actions, order creation from prescription (M7 dependency).
+2. **Phase G+** — Print/send actions, order creation from prescription (M7 dependency).

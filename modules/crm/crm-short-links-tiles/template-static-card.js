@@ -13,6 +13,10 @@
   var CLS_TD  = 'px-3 py-2.5 text-sm text-slate-800 border-b border-slate-100';
   var CLS_TD_NUM = 'px-3 py-2.5 text-sm text-end text-slate-800 border-b border-slate-100 tabular-nums';
 
+  var _activeChannel = 'all';
+  var _cachedRows = null;
+  var _cachedContainer = null;
+
   function formatTs(iso) {
     if (!iso) return '—';
     try {
@@ -24,18 +28,24 @@
   }
 
   async function render(container) {
+    _activeChannel = 'all';
+    _cachedContainer = container;
     container.innerHTML =
       '<div id="short-links-template-static-card" class="bg-white rounded-lg border border-slate-200 overflow-hidden">' +
-        '<div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-2">' +
+        '<div class="px-4 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">' +
           '<div class="flex items-center gap-2">' +
             '<span class="text-sm font-semibold text-slate-700">קישורים סטטיים (משותפים)</span>' +
             '<span class="text-xs text-slate-400">— תשתית שיווקית, לא פר-נמען</span>' +
           '</div>' +
-          '<button id="short-links-new-static-btn" type="button" class="px-3 py-1.5 bg-indigo-600 text-white rounded text-xs font-semibold hover:bg-indigo-700 transition">+ קישור קצר חדש</button>' +
+          '<div class="flex items-center gap-2">' +
+            '<div id="sl-channel-chips" class="flex gap-1">' + CrmShortLinksChannelGroup.renderFilterChips(_activeChannel) + '</div>' +
+            '<button id="short-links-new-static-btn" type="button" class="px-3 py-1.5 bg-indigo-600 text-white rounded text-xs font-semibold hover:bg-indigo-700 transition">+ קישור קצר חדש</button>' +
+          '</div>' +
         '</div>' +
         '<div class="text-center text-slate-400 py-6 text-sm">טוען...</div>' +
       '</div>';
     _wireCreateBtn(container);
+    _wireChannelChips(container);
 
     try {
       var rows = await _loadData();
@@ -58,6 +68,18 @@
     btn.addEventListener('click', function () { _openCreateModal(container); });
   }
 
+  function _wireChannelChips(container) {
+    container.querySelectorAll('[data-sl-channel]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        _activeChannel = btn.getAttribute('data-sl-channel');
+        var chipsEl = container.querySelector('#sl-channel-chips');
+        if (chipsEl) chipsEl.innerHTML = CrmShortLinksChannelGroup.renderFilterChips(_activeChannel);
+        _wireChannelChips(container);
+        if (_cachedRows) _renderRows(container, _cachedRows);
+      });
+    });
+  }
+
   function _openCreateModal(container) {
     var existing = document.getElementById('short-links-new-static-modal');
     if (existing) existing.remove();
@@ -70,11 +92,16 @@
         '<label class="block text-xs font-semibold text-slate-600 mb-1">כתובת יעד (URL)</label>' +
         '<input id="sls-url-input" type="url" placeholder="https://www.example.co.il/page" ' +
           'class="w-full border border-slate-300 rounded px-3 py-2 text-sm mb-3" />' +
-        '<label class="block text-xs font-semibold text-slate-600 mb-1">תווית (אופציונלי, להזכיר לעצמך)</label>' +
-        '<input id="sls-label-input" type="text" placeholder="לדוגמה: דף מבצעים" ' +
+        '<label class="block text-xs font-semibold text-slate-600 mb-1">תווית (מזהה הקישור)</label>' +
+        '<input id="sls-label-input" type="text" placeholder="לדוגמה: pricing_catalog" ' +
           'class="w-full border border-slate-300 rounded px-3 py-2 text-sm mb-1" />' +
-        '<p class="text-xs text-slate-500 mb-3">הקישור הזה ייווצר עם קוד ייחודי גלובלי. ' +
-          'תוקף עד 2099 (אינסופי בפועל).</p>' +
+        '<p class="text-xs text-slate-500 mb-3">התווית משמשת כמזהה הקבוצה. בבחירת ערוץ, הסיומת (_sms/_email) תתווסף אוטומטית.</p>' +
+        '<label class="block text-xs font-semibold text-slate-600 mb-1">ערוץ</label>' +
+        '<div id="sls-channel-radios" class="flex gap-3 mb-3">' +
+          '<label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="sls-channel" value="both" checked class="accent-blue-600"> <span class="text-sm">שניהם (SMS + מייל)</span></label>' +
+          '<label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="sls-channel" value="sms" class="accent-blue-600"> <span class="text-sm">SMS בלבד</span></label>' +
+          '<label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="sls-channel" value="email" class="accent-blue-600"> <span class="text-sm">מייל בלבד</span></label>' +
+        '</div>' +
         '<div id="sls-error" class="text-xs text-rose-600 mb-2 hidden"></div>' +
         '<div id="sls-success" class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2 mb-3 hidden"></div>' +
         '<div class="flex gap-2 justify-end">' +
@@ -95,51 +122,54 @@
     var okEl = document.getElementById('sls-success');
     var createBtn = document.getElementById('sls-create');
     var url = (urlInput && urlInput.value || '').trim();
+    var labelPrefix = (labelInput && labelInput.value || '').trim();
+    var channelRadio = overlay.querySelector('input[name="sls-channel"]:checked');
+    var channelVal = channelRadio ? channelRadio.value : 'both';
     errEl.classList.add('hidden'); okEl.classList.add('hidden');
-    if (!/^https?:\/\/\S+$/i.test(url)) {
-      errEl.textContent = 'יש להזין כתובת תקינה (מתחילה ב-http:// או https://)';
-      errEl.classList.remove('hidden');
-      return;
-    }
+    if (!/^https?:\/\/\S+$/i.test(url)) { errEl.textContent = 'יש להזין כתובת תקינה (מתחילה ב-http:// או https://)'; errEl.classList.remove('hidden'); return; }
+    if (!labelPrefix) { errEl.textContent = 'יש להזין תווית (מזהה קבוצה)'; errEl.classList.remove('hidden'); return; }
     createBtn.disabled = true;
     var oldText = createBtn.textContent;
     createBtn.textContent = 'יוצר...';
     try {
       var tid = getTenantId();
-      var labelVal = (labelInput && labelInput.value || '').trim() || null;
-      // SPEC 3 Item 5 (2026-05-21): persist optional label via 3rd RPC arg.
-      var rpc = await sb.rpc('crm_create_static_short_link', { p_tenant_id: tid, p_target_url: url, p_label: labelVal });
-      if (rpc.error) throw new Error(rpc.error.message);
-      var d = rpc.data || {};
-      if (!d.ok) {
-        var msg = d.error === 'url_invalid' ? 'כתובת לא תקינה'
-                 : d.error === 'url_empty' ? 'כתובת ריקה'
-                 : d.error === 'url_too_long' ? 'כתובת ארוכה מדי'
-                 : d.error === 'code_collision_exhausted' ? 'כשל ביצירת קוד ייחודי — נסה שוב'
-                 : 'שגיאה: ' + (d.error || 'unknown');
-        errEl.textContent = msg;
-        errEl.classList.remove('hidden');
-        createBtn.disabled = false;
-        createBtn.textContent = oldText;
-        return;
+      var channels = channelVal === 'both' ? ['sms', 'email'] : [channelVal];
+      var results = [];
+      for (var i = 0; i < channels.length; i++) {
+        var rpc = await sb.rpc('crm_create_channeled_short_link', { p_tenant_id: tid, p_target_url: url, p_label_prefix: labelPrefix, p_channel: channels[i] });
+        if (rpc.error) throw new Error(rpc.error.message);
+        var d = rpc.data || {};
+        if (!d.ok) {
+          var msg = d.error === 'url_invalid' ? 'כתובת לא תקינה'
+                   : d.error === 'url_empty' ? 'כתובת ריקה'
+                   : d.error === 'label_prefix_required' ? 'יש להזין תווית'
+                   : d.error === 'invalid_channel' ? 'ערוץ לא תקין'
+                   : d.error === 'code_collision_exhausted' ? 'כשל ביצירת קוד ייחודי — נסה שוב'
+                   : 'שגיאה: ' + (d.error || 'unknown');
+          errEl.textContent = msg;
+          errEl.classList.remove('hidden');
+          createBtn.disabled = false; createBtn.textContent = oldText;
+          return;
+        }
+        results.push(d);
       }
-      var label = (labelInput && labelInput.value || '').trim();
-      var labelHtml = label ? ('<div class="text-slate-600 mb-1">תווית: <b>' + escapeHtml(label) + '</b></div>') : '';
-      okEl.innerHTML = labelHtml +
-        '<div>הקישור נוצר. קוד: <code class="font-mono bg-emerald-100 px-1 py-0.5 rounded">' + escapeHtml(d.code) + '</code></div>' +
-        '<div class="mt-1">נתיב קצר: <code class="font-mono">' + escapeHtml(d.short_path) + '</code></div>' +
-        '<div class="text-slate-500 mt-1">מפנה אל: <span dir="ltr">' + escapeHtml(d.target_url) + '</span></div>';
+      var html = results.map(function (d) {
+        return '<div class="mb-1">' +
+          '<code class="font-mono bg-emerald-100 px-1 py-0.5 rounded">' + escapeHtml(d.code) + '</code> ' +
+          '<span class="text-slate-500">(' + escapeHtml(d.label) + ')</span> → ' +
+          '<code class="font-mono text-xs">' + escapeHtml(d.short_path) + '</code></div>';
+      }).join('');
+      okEl.innerHTML = '<div class="text-slate-600 mb-1">נוצר' + (results.length > 1 ? 'ו ' + results.length + ' קישורים' : ' קישור') + ':</div>' + html +
+        '<div class="text-slate-500 mt-1 text-xs">מפנה אל: <span dir="ltr">' + escapeHtml(results[0].target_url) + '</span></div>';
       okEl.classList.remove('hidden');
-      createBtn.disabled = false;
-      createBtn.textContent = oldText;
-      urlInput.value = ''; if (labelInput) labelInput.value = '';
-      if (typeof render === 'function') render(container);
-      if (window.Toast) Toast.success('קישור קצר חדש נוצר: ' + d.short_path);
+      createBtn.disabled = false; createBtn.textContent = oldText;
+      urlInput.value = ''; labelInput.value = '';
+      render(container);
+      if (window.Toast) Toast.success('נוצר' + (results.length > 1 ? 'ו ' + results.length + ' קישורים' : ' קישור חדש'));
     } catch (e) {
       errEl.textContent = 'שגיאה: ' + (e.message || String(e));
       errEl.classList.remove('hidden');
-      createBtn.disabled = false;
-      createBtn.textContent = oldText;
+      createBtn.disabled = false; createBtn.textContent = oldText;
     }
   }
 
@@ -183,124 +213,46 @@
   }
 
   function _renderRows(container, rows) {
+    _cachedRows = rows;
     var card = container.querySelector('#short-links-template-static-card');
     if (!card) return;
-    var body = card.querySelector('div:last-child');
-    if (!rows.length) { if (body) body.innerHTML = '<div class="text-center text-slate-400 py-4 text-sm">אין קישורים סטטיים פעילים.</div>'; return; }
+    var body = card.querySelector('table');
+    if (body) body.remove();
+    var loadingDiv = card.querySelector('div:last-child');
+    if (loadingDiv && loadingDiv.textContent.indexOf('טוען') !== -1) loadingDiv.remove();
+    if (!rows.length) { card.insertAdjacentHTML('beforeend', '<div class="text-center text-slate-400 py-4 text-sm">אין קישורים סטטיים פעילים.</div>'); return; }
 
-    var tbody = rows.map(function (r) {
+    var data = CrmShortLinksChannelGroup.buildGroups(rows);
+    var display = CrmShortLinksChannelGroup.getDisplayRows(data, _activeChannel);
+
+    var tbody = display.map(function (d) {
+      var codeHtml = d.codes.map(function (c) {
+        return '<code class="bg-slate-100 px-1.5 py-0.5 rounded text-xs">' + escapeHtml(c) + '</code>';
+      }).join(' ');
+      var breakdownHtml = d.breakdown ? '<div class="text-xs text-slate-400 mt-0.5">' + escapeHtml(d.breakdown) + '</div>' : '';
+      var labelDisplay = d.key || '—';
+      if (d.ungrouped) labelDisplay += ' <span class="text-xs text-amber-600">(אחר)</span>';
       return '<tr>' +
-        '<td class="' + CLS_TD + '"><code class="bg-slate-100 px-1.5 py-0.5 rounded text-xs">' + escapeHtml(r.code) + '</code></td>' +
-        '<td class="' + CLS_TD + ' text-xs text-slate-700">' + escapeHtml(r.label || '—') + '</td>' +
-        '<td class="' + CLS_TD + '"><a href="' + escapeAttr(r.target_url) + '" target="_blank" rel="noopener" class="text-blue-600 hover:underline text-xs" title="' + escapeAttr(r.target_url) + '">' + escapeHtml(r.target_trunc) + '</a></td>' +
-        '<td class="' + CLS_TD_NUM + ' font-semibold">' + r.total_clicks + '</td>' +
-        '<td class="' + CLS_TD + ' text-xs text-slate-500">' + escapeHtml(formatTs(r.last_clicked)) + '</td>' +
-        '<td class="' + CLS_TD + ' text-xs whitespace-nowrap">' +
-          '<button type="button" data-sls-edit="' + escapeAttr(r.id) + '" class="px-2 py-0.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-700 me-1">ערוך</button>' +
-          '<button type="button" data-sls-del="' + escapeAttr(r.id) + '" class="px-2 py-0.5 rounded bg-rose-100 hover:bg-rose-200 text-rose-700">מחק</button>' +
-        '</td>' +
+        '<td class="' + CLS_TD + '">' + codeHtml + '</td>' +
+        '<td class="' + CLS_TD + ' text-xs text-slate-700">' + labelDisplay + '</td>' +
+        '<td class="' + CLS_TD + '"><a href="' + escapeAttr(d.target_url) + '" target="_blank" rel="noopener" class="text-blue-600 hover:underline text-xs" title="' + escapeAttr(d.target_url) + '">' + escapeHtml(d.target_trunc) + '</a></td>' +
+        '<td class="' + CLS_TD_NUM + ' font-semibold">' + d.clicks + breakdownHtml + '</td>' +
+        '<td class="' + CLS_TD + ' text-xs text-slate-500">' + escapeHtml(formatTs(d.lastClicked)) + '</td>' +
       '</tr>';
     }).join('');
 
     var tableHtml =
       '<table class="w-full text-sm"><thead><tr>' +
         '<th class="' + CLS_TH + '">קוד</th>' +
-        '<th class="' + CLS_TH + '">תווית</th>' +
+        '<th class="' + CLS_TH + '">קבוצה</th>' +
         '<th class="' + CLS_TH + '">יעד</th>' +
         '<th class="' + CLS_TH_NUM + '">קליקים</th>' +
         '<th class="' + CLS_TH + '">קליק אחרון</th>' +
-        '<th class="' + CLS_TH + '">פעולות</th>' +
       '</tr></thead><tbody>' + tbody + '</tbody></table>';
 
-    if (body) body.remove();
     card.insertAdjacentHTML('beforeend', tableHtml);
-    _wireRowActions(container, rows);
   }
 
-  function _wireRowActions(container, rows) {
-    container.querySelectorAll('[data-sls-edit]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var id = b.getAttribute('data-sls-edit');
-        var row = rows.find(function (r) { return r.id === id; });
-        if (row) _openEditModal(container, row);
-      });
-    });
-    container.querySelectorAll('[data-sls-del]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var id = b.getAttribute('data-sls-del');
-        var row = rows.find(function (r) { return r.id === id; });
-        if (row) _openDeleteConfirm(container, row);
-      });
-    });
-  }
-
-  function _openEditModal(container, row) {
-    var overlay = document.createElement('div');
-    overlay.className = 'fixed inset-0 bg-black/40 z-50 flex items-center justify-center';
-    overlay.innerHTML =
-      '<div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6" dir="rtl">' +
-        '<h3 class="text-lg font-bold text-slate-800 mb-3">עריכת קישור סטטי</h3>' +
-        '<p class="text-xs text-slate-500 mb-3">קוד: <code class="font-mono">' + escapeHtml(row.code) + '</code> (קוד לא ניתן לשינוי)</p>' +
-        '<label class="block text-xs font-semibold text-slate-600 mb-1">כתובת יעד</label>' +
-        '<input id="slse-url" type="url" value="' + escapeAttr(row.target_url) + '" class="w-full border rounded px-3 py-2 text-sm mb-3" />' +
-        '<label class="block text-xs font-semibold text-slate-600 mb-1">תווית</label>' +
-        '<input id="slse-label" type="text" value="' + escapeAttr(row.label || '') + '" class="w-full border rounded px-3 py-2 text-sm mb-3" />' +
-        '<div id="slse-err" class="text-xs text-rose-600 mb-2 hidden"></div>' +
-        '<div class="flex gap-2 justify-end">' +
-          '<button id="slse-cancel" type="button" class="px-4 py-2 rounded bg-slate-200 text-sm font-semibold">ביטול</button>' +
-          '<button id="slse-save" type="button" class="px-4 py-2 rounded bg-indigo-600 text-white text-sm font-semibold">שמור</button>' +
-        '</div>' +
-      '</div>';
-    document.body.appendChild(overlay);
-    overlay.querySelector('#slse-cancel').addEventListener('click', function () { overlay.remove(); });
-    overlay.querySelector('#slse-save').addEventListener('click', async function () {
-      var newUrl = overlay.querySelector('#slse-url').value.trim();
-      var newLabel = overlay.querySelector('#slse-label').value.trim() || null;
-      var err = overlay.querySelector('#slse-err');
-      if (!/^https?:\/\/\S+$/i.test(newUrl)) { err.textContent = 'כתובת לא תקינה'; err.classList.remove('hidden'); return; }
-      try {
-        var rpc = await sb.rpc('crm_update_static_short_link', { p_tenant_id: getTenantId(), p_link_id: row.id, p_target_url: newUrl, p_label: newLabel });
-        if (rpc.error || !rpc.data || !rpc.data.ok) {
-          err.textContent = 'שגיאה: ' + (rpc.error ? rpc.error.message : (rpc.data && rpc.data.error) || 'unknown');
-          err.classList.remove('hidden'); return;
-        }
-        overlay.remove();
-        if (window.Toast) Toast.success('קישור עודכן');
-        if (typeof render === 'function') render(container);
-      } catch (e) { err.textContent = 'שגיאה: ' + (e.message || String(e)); err.classList.remove('hidden'); }
-    });
-  }
-
-  function _openDeleteConfirm(container, row) {
-    var overlay = document.createElement('div');
-    overlay.className = 'fixed inset-0 bg-black/40 z-50 flex items-center justify-center';
-    overlay.innerHTML =
-      '<div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6" dir="rtl">' +
-        '<h3 class="text-lg font-bold text-slate-800 mb-3">מחיקת קישור</h3>' +
-        '<p class="text-sm text-slate-700 mb-2">למחוק את הקישור הסטטי <code>' + escapeHtml(row.code) + '</code>' + (row.label ? ' (' + escapeHtml(row.label) + ')' : '') + '?</p>' +
-        '<p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">⚠️ פעולה זו תמחק גם את כל היסטוריית הקליקים על הקישור (' + (row.total_clicks || 0) + ' קליקים).</p>' +
-        '<div id="slsd-err" class="text-xs text-rose-600 mb-2 hidden"></div>' +
-        '<div class="flex gap-2 justify-end">' +
-          '<button id="slsd-cancel" type="button" class="px-4 py-2 rounded bg-slate-200 text-sm font-semibold">ביטול</button>' +
-          '<button id="slsd-del" type="button" class="px-4 py-2 rounded bg-rose-600 text-white text-sm font-semibold">מחק</button>' +
-        '</div>' +
-      '</div>';
-    document.body.appendChild(overlay);
-    overlay.querySelector('#slsd-cancel').addEventListener('click', function () { overlay.remove(); });
-    overlay.querySelector('#slsd-del').addEventListener('click', async function () {
-      var err = overlay.querySelector('#slsd-err');
-      try {
-        var rpc = await sb.rpc('crm_delete_static_short_link', { p_tenant_id: getTenantId(), p_link_id: row.id });
-        if (rpc.error || !rpc.data || !rpc.data.ok) {
-          err.textContent = 'שגיאה: ' + (rpc.error ? rpc.error.message : (rpc.data && rpc.data.error) || 'unknown');
-          err.classList.remove('hidden'); return;
-        }
-        overlay.remove();
-        if (window.Toast) Toast.success('הקישור נמחק');
-        if (typeof render === 'function') render(container);
-      } catch (e) { err.textContent = 'שגיאה: ' + (e.message || String(e)); err.classList.remove('hidden'); }
-    });
-  }
 
   // escapeAttr: mirrors helper in orchestrator (avoids global dependency)
   function escapeAttr(s) {
