@@ -46,7 +46,8 @@
     var cells = '<td class="' + cls + '">' + escapeHtml(label) + '</td>';
     COLS.forEach(function (c) {
       var val = eyeData[c.key] != null ? String(eyeData[c.key]) : '';
-      cells += '<td><input data-eye="' + eye + '" data-field="' + c.key + '" value="' + escapeHtml(val) + '"' +
+      var disp = val && window.RxFieldFormat ? window.RxFieldFormat.formatField(c.key, val).display : val;
+      cells += '<td><input data-eye="' + eye + '" data-field="' + c.key + '" value="' + escapeHtml(disp || val) + '"' +
         ' placeholder="—"' + (readOnly ? ' disabled' : '') + ' /></td>';
     });
     return '<tr>' + cells + '</tr>';
@@ -68,11 +69,12 @@
     var rEye = rx.eyes_r || {};
     var lEye = rx.eyes_l || {};
     document.querySelectorAll('.rx-param-section:not([data-add-block]) .rx-param-table [data-eye][data-field]').forEach(function (el) {
-      el.addEventListener('change', function () {
+      var fieldKey = el.getAttribute('data-field');
+      window.RxFieldFormat.bindInput(el, fieldKey, function (dbVal) {
         var eye = el.getAttribute('data-eye');
         var eyeId = eye === 'R' ? rEye.id : lEye.id;
         if (!eyeId) return;
-        window.RxEditor.autosaveField('prescription_contacts_eyes', eyeId, el.getAttribute('data-field'), el.value);
+        window.RxEditor.autosaveField('prescription_contacts_eyes', eyeId, fieldKey, dbVal);
       });
     });
   }

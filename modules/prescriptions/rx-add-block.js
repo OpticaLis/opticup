@@ -22,7 +22,8 @@
       var cls = eye === 'R' ? 'eye-cell r' : 'eye-cell l';
       var cells = ADD_FIELDS.map(function (f) {
         var val = data[f.key] != null ? String(data[f.key]) : '';
-        return '<td><input data-eye="' + eye + '" data-field="' + f.key + '" value="' + escapeHtml(val) + '"' +
+        var disp = val && window.RxFieldFormat ? window.RxFieldFormat.formatField(f.key, val).display : val;
+        return '<td><input data-eye="' + eye + '" data-field="' + f.key + '" value="' + escapeHtml(disp || val) + '"' +
           ' placeholder="—"' + (readOnly ? ' disabled' : '') + ' /></td>';
       }).join('');
       return '<td class="' + cls + '">' + escapeHtml(label) + '</td>' + cells;
@@ -54,11 +55,12 @@
     if (!block) return;
 
     block.querySelectorAll('[data-eye][data-field]').forEach(function (el) {
-      el.addEventListener('change', function () {
+      var fieldKey = el.getAttribute('data-field');
+      window.RxFieldFormat.bindInput(el, fieldKey, function (dbVal) {
         var eye = el.getAttribute('data-eye');
         var eyeId = eye === 'R' ? rEye.id : lEye.id;
         if (!eyeId) return;
-        window.RxEditor.autosaveField('prescription_glasses_eyes', eyeId, el.getAttribute('data-field'), el.value);
+        window.RxEditor.autosaveField('prescription_glasses_eyes', eyeId, fieldKey, dbVal);
       });
     });
 

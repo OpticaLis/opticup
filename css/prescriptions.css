@@ -183,6 +183,12 @@
 .rx-param-table td input:focus,
 .rx-param-table td select:focus { outline:1.5px solid var(--accent-hover); background:var(--accent-soft); }
 
+/* Auto-sign highlight (momentary flash when default sign applied) */
+@keyframes rx-sign-flash { 0%{background:#fef3c7;color:#92400e;} 100%{background:transparent;color:inherit;} }
+.rx-auto-signed { animation:rx-sign-flash 1.2s ease-out; }
+.rx-meta-cell .v input.rx-auto-signed,
+.rx-secondary-row .v input.rx-auto-signed { animation:rx-sign-flash 1.2s ease-out; }
+
 /* Section header colors */
 .h-refraction { background:#1e40af !important; }
 .h-va { background:#FAC775 !important; color:#412402 !important; }
