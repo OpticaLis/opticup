@@ -146,14 +146,24 @@
   }
 
   async function loadPrescription(id) {
-    var res = await DB.select('v_prescription_full_for_editor', { id: id }, { single: true, silent: true });
-    if (res.error || !res.data) {
+    var eyeTable = state.kind === 'glasses' ? 'prescription_glasses_eyes' : 'prescription_contacts_eyes';
+    var [rxRes, eyeRes, recallRes] = await Promise.all([
+      DB.select('v_prescription_full_for_editor', { id: id }, { single: true, silent: true }),
+      DB.select(eyeTable, { prescription_id: id }, { silent: true }),
+      DB.select('prescription_recall_axes', { prescription_id: id }, { silent: true })
+    ]);
+    if (rxRes.error || !rxRes.data) {
       state.prescription = null;
       window.RxCenter.renderEmpty();
       return;
     }
-    state.prescription = res.data;
-    window.RxCenter.render(res.data);
+    var rx = rxRes.data;
+    var eyes = (eyeRes && eyeRes.data) || [];
+    rx.eyes_r = eyes.filter(function (e) { return e.eye === 'R'; })[0] || {};
+    rx.eyes_l = eyes.filter(function (e) { return e.eye === 'L'; })[0] || {};
+    rx.recall_axes = (recallRes && recallRes.data) || [];
+    state.prescription = rx;
+    window.RxCenter.render(rx);
   }
 
   var _debounceTimers = {};

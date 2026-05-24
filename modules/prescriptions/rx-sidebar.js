@@ -17,9 +17,7 @@
   }
 
   function buildSummary(row) {
-    var r = row.r_summary || '—';
-    var l = row.l_summary || '—';
-    return 'R: ' + r + ' · L: ' + l;
+    return row.type_name_he || row.type_code || '—';
   }
 
   function filterRows(rows, f) {
@@ -41,7 +39,7 @@
     var S = window.RxEditor.state;
     var res = await DB.select('v_prescriptions_list_for_customer', { customer_id: S.customerId }, {
       silent: true,
-      order: 'valid_from.desc',
+      order: 'created_at.desc',
       rawFilters: function (q) { return q.eq('kind', S.kind); }
     });
     S.list = (res && res.data) || [];
@@ -82,7 +80,7 @@
     if (searchVal) {
       var lc = searchVal.toLowerCase();
       rows = rows.filter(function (r) {
-        var haystack = (formatDate(r.valid_from) + ' ' + (r.optometrist_name || '') + ' ' + (r.prescription_type_name || '')).toLowerCase();
+        var haystack = (formatDate(r.created_at) + ' ' + (r.type_name_he || '') + ' ' + (r.type_code || '')).toLowerCase();
         return haystack.indexOf(lc) !== -1;
       });
     }
@@ -91,11 +89,11 @@
       var sel = r.id === S.prescriptionId ? ' selected' : '';
       return '<div class="rx-item' + sel + '" data-id="' + escapeHtml(r.id) + '">' +
         '<div class="top">' +
-          '<span class="when">' + formatDate(r.valid_from) + '</span>' +
+          '<span class="when">' + formatDate(r.created_at) + '</span>' +
           '<span class="badge badge-' + escapeHtml(r.status || 'draft') + '">' + escapeHtml(STATUS_LABELS[r.status] || r.status || '') + '</span>' +
         '</div>' +
-        '<div class="desc">' + escapeHtml((r.optometrist_name || '') + ' · ' + (r.prescription_type_name || '')) + '</div>' +
-        '<div class="summary">' + escapeHtml(buildSummary(r)) + '</div>' +
+        '<div class="desc">' + escapeHtml(buildSummary(r)) + '</div>' +
+        (r.expires_at ? '<div class="summary">תוקף: ' + formatDate(r.expires_at) + '</div>' : '') +
       '</div>';
     }).join('');
   }
